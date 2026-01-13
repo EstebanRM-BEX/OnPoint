@@ -785,6 +785,7 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                                   );
                                   return;
                                 }
+//validacion nombre lote no vacio
 
                                 if (context
                                         .read<ConteoBloc>()
@@ -806,6 +807,38 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                                   );
                                   return;
                                 }
+                                //validamos que la fecha no este vacia si el producto requiere fecha de caducidad
+                                if ((context
+                                                .read<ConteoBloc>()
+                                                .currentProduct
+                                                .useExpirationDate ==
+                                            true ||
+                                        context
+                                                .read<ConteoBloc>()
+                                                .currentProduct
+                                                .useExpirationDate ==
+                                            1) &&
+                                    (context
+                                            .read<ConteoBloc>()
+                                            .dateLoteController
+                                            .text
+                                            .isEmpty ||
+                                        context
+                                                .read<ConteoBloc>()
+                                                .dateLoteController
+                                                .text ==
+                                            "")) {
+                                  Get.snackbar(
+                                    'Error al crear lote',
+                                    'La fecha de caducidad no puede estar vacía para este producto',
+                                    backgroundColor: white,
+                                    colorText: primaryColorApp,
+                                    icon:
+                                        Icon(Icons.error, color: Colors.amber),
+                                  );
+                                  return;
+                                }
+
 
                                 //validacion que la fecha del lote no puede ser menor o igual la fecha actual
                                 if (selectedDate != null) {

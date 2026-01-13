@@ -2,7 +2,6 @@ class ProductDevolucionTable {
   static const String tableName = 'tblproductos_devolucion';
 
   // Columnas de la tabla
-  // Columnas de la tabla
   static const String columnId = 'id';
   static const String columnProductId = 'product_id';
   static const String columnProductName = 'name';
@@ -21,7 +20,9 @@ class ProductDevolucionTable {
   static const String columnLocationName = 'location_name';
   static const String columnQuantity = 'quantity';
   static const String columnUseExpirationDate = 'use_expiration_date';
-
+  
+  // ✅ NUEVO: Columna de sincronización
+  static const String columnIsSynced = 'is_synced';
 
   static String createTable() {
     return '''
@@ -43,8 +44,17 @@ class ProductDevolucionTable {
         $columnLocationName TEXT,
         $columnQuantity REAL,
         $columnUseExpirationDate INTEGER,
-        $columnVolumeUomName TEXT
-        )
-        ''';
+        $columnVolumeUomName TEXT,
+        $columnIsSynced INTEGER DEFAULT 0
+      );
+
+      -- ✅ ÍNDICES DE RENDIMIENTO
+      
+      -- Índice Único para Upsert (Reemplaza duplicados Producto + Lote)
+      CREATE UNIQUE INDEX idx_unique_devolucion ON $tableName ($columnProductId, $columnLotId);
+
+      -- Índice para buscar rápido por código de barras
+      CREATE INDEX idx_dev_barcode ON $tableName ($columnBarcode);
+    ''';
   }
 }

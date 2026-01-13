@@ -963,7 +963,8 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     }
   }
 
-  //metodo pea crar un lote a un producto
+
+
   void _onCreateLoteProduct(
       CreateLoteProduct event, Emitter<ConteoState> emit) async {
     try {
@@ -976,18 +977,36 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       );
 
       if (response.result?.code == 200) {
-        //agregamos el nuevo lote a la lista de lotes
-        listLotesProduct.add(response.result?.result ?? LotesProduct());
-        listLotesProductFilters.add(response.result?.result ?? LotesProduct());
+        // Creamos el objeto del nuevo lote
+        final newLote = LotesProduct(
+          id: response.result?.result?.id,
+          name: response.result?.result?.name,
+          expirationDate: response.result?.result?.expirationDate ?? "",
+          quantity: response.result?.result?.quantity,
+          productId: response.result?.result?.productId,
+          productName: response.result?.result?.productName,
+        );
+
+        // 1. Agregamos el nuevo lote SOLO a la lista principal
+        listLotesProduct.add(newLote);
+
+        listLotesProductFilters = List.from(listLotesProduct);
+
+     
+        
         currentProductLote = response.result?.result;
         loteIsOk = true;
         dateLoteController.clear();
         newLoteController.clear();
+        
+        // Limpiamos el controlador de búsqueda si reiniciamos la lista
+        searchControllerLote.clear(); 
+
         add(SelectecLoteEvent(currentProductLote!));
         emit(CreateLoteProductSuccess());
       } else {
         emit(CreateLoteProductFailure(response.result?.msg ??
-            'Error al crear el lote concactarse con el administrador'));
+            'Error al crear el lote contactarse con el administrador'));
       }
     } catch (e, s) {
       emit(CreateLoteProductFailure('Error al crear el lote'));

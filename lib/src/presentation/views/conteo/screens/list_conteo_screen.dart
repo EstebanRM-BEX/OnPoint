@@ -227,28 +227,28 @@ class ListConteoScreen extends StatelessWidget {
                                                           color: black),
                                                     ),
                                                     const SizedBox(width: 5),
-                                                    Text(
-                                                      conteo?.numeroLineas ==
-                                                              conteo
-                                                                  ?.numeroItemsContados
-                                                          ? 'Completado'
-                                                          : conteo?.numeroItemsContados ==
-                                                                  0
-                                                              ? 'Pendiente'
-                                                              : 'En progreso',
-                                                      style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: conteo
-                                                                    ?.numeroLineas ==
-                                                                conteo
-                                                                    ?.numeroItemsContados
-                                                            ? green
-                                                            : conteo?.numeroItemsContados ==
-                                                                    0
-                                                                ? red
-                                                                : yellow,
-                                                      ),
-                                                    ),
+                                                  Text(
+  // LÓGICA DEL TEXTO
+  (conteo?.numeroLineas == 0) 
+      ? 'En progreso' // 1. Nueva validación: Si no hay líneas definidas
+      : (conteo?.numeroLineas == conteo?.numeroItemsContados)
+          ? 'Completado' // 2. Si son iguales (y no son cero ambos)
+          : (conteo?.numeroItemsContados == 0)
+              ? 'Pendiente' // 3. Si no ha contado nada
+              : 'En progreso', // 4. Cualquier otro caso (está contando)
+  
+  style: TextStyle(
+    fontSize: 12,
+    // LÓGICA DEL COLOR (Debe seguir el mismo orden)
+    color: (conteo?.numeroLineas == 0)
+        ? yellow // Color para nueva validación
+        : (conteo?.numeroLineas == conteo?.numeroItemsContados)
+            ? green
+            : (conteo?.numeroItemsContados == 0)
+                ? red
+                : yellow,
+  ),
+),
                                                   ],
                                                 ),
                                               ),

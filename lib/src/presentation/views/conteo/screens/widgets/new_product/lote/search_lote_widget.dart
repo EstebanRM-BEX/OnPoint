@@ -325,6 +325,8 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
                                     setState(() {
                                       selectedIndex = isSelected ? null : index;
                                     });
+                                    print(
+                                        'Lote seleccionado: ${context.read<ConteoBloc>().listLotesProductFilters[index].toMap()}');
                                   },
                                   child: Card(
                                     elevation: 3,
@@ -717,6 +719,7 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
                       ),
                     ),
                   ),
+                  //todo botones
                   Visibility(
                     visible: !context.read<ConteoBloc>().isKeyboardVisible,
                     child: Row(
@@ -767,6 +770,7 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
                                 ),
                               )),
                         ),
+                        //todo boton agregar lote
                         Visibility(
                           visible: !viewList,
                           child: ElevatedButton(
@@ -793,30 +797,52 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
                                   );
                                   return;
                                 }
-
+//validacion nombre lote no vacio
                                 if (context
                                         .read<ConteoBloc>()
                                         .newLoteController
                                         .text
                                         .isEmpty ||
                                     context
+                                            .read<ConteoBloc>()
+                                            .newLoteController
+                                            .text ==
+                                        '') {
+                                  Get.snackbar(
+                                    'Error al crear lote',
+                                    'El nombre del lote no puede estar vacío',
+                                    backgroundColor: white,
+                                    colorText: primaryColorApp,
+                                    icon:
+                                        Icon(Icons.error, color: Colors.amber),
+                                  );
+                                  return;
+                                }
+
+                                //validamos que la fecha no este vacia si el producto requiere fecha de caducidad
+                                if ((context
                                                 .read<ConteoBloc>()
-                                                .newLoteController
-                                                .text ==
-                                            '' &&
+                                                .currentProduct
+                                                .useExpirationDate ==
+                                            true ||
                                         context
+                                                .read<ConteoBloc>()
+                                                .currentProduct
+                                                .useExpirationDate ==
+                                            1) &&
+                                    (context
                                             .read<ConteoBloc>()
                                             .dateLoteController
                                             .text
                                             .isEmpty ||
-                                    context
-                                            .read<ConteoBloc>()
-                                            .dateLoteController
-                                            .text ==
-                                        "") {
+                                        context
+                                                .read<ConteoBloc>()
+                                                .dateLoteController
+                                                .text ==
+                                            "")) {
                                   Get.snackbar(
                                     'Error al crear lote',
-                                    'Los campos del lote no puede estar vacíos',
+                                    'La fecha de caducidad no puede estar vacía para este producto',
                                     backgroundColor: white,
                                     colorText: primaryColorApp,
                                     icon:

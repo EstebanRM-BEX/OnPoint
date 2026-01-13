@@ -15,6 +15,7 @@ import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:wms_app/src/services/webSocket_service.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -63,6 +64,7 @@ class LoginPage extends StatelessWidget {
               }
 
               if (state is ConfigurationLoaded) {
+                WebSocketService().connect();
                 context
                     .read<WMSPickingBloc>()
                     .add(LoadAllNovedades(context)); //novedades

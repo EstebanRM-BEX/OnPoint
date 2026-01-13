@@ -222,10 +222,12 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
           currentProduct.idMove ?? 0));
       batchBloc.add(ClearScannedValueEvent('product'));
     } else {
+      print("Validando codigo de barras alternativo...");
       final isok = validateScannedBarcode(
           scan, batchBloc.currentProduct, batchBloc, true);
 
       if (!isok) {
+        print("Codigo de barras no valido. $isok");
         _vibrationService.vibrate();
         _audioService.playErrorSound();
         batchBloc.add(ValidateFieldsEvent(field: "product", isOk: false));
@@ -237,6 +239,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
   bool validateScannedBarcode(String scannedBarcode,
       ProductsBatch currentProduct, PickingPickBloc batchBloc, bool isProduct) {
     // Buscar el barcode que coincida con el valor escaneado
+    print("scannedBarcode: $scannedBarcode");
 
     print("listOfBarcodes: ${batchBloc.listOfBarcodes}");
 

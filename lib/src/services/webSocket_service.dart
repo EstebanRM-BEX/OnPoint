@@ -1,85 +1,119 @@
 import 'dart:async';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 
 class WebSocketService {
-  // 1. Singleton: Permite que solo exista una instancia de este servicio
   static final WebSocketService _instance = WebSocketService._internal();
-
   factory WebSocketService() => _instance;
-
-  // Constructor privado para asegurar la instancia única
   WebSocketService._internal();
 
-  // 2. Propiedades del Canal y Estado
   WebSocketChannel? _channel;
   bool _isConnected = false;
 
-  // ✅ StreamController para exponer los mensajes a los BLoCs
   final StreamController<dynamic> _messageController = StreamController.broadcast();
-  
-  // ✅ Stream público para que los BLoCs se suscriban (pueden ser múltiples)
   Stream<dynamic> get messages => _messageController.stream;
 
-  // ⚠️ URL DE PRUEBA: Reemplazar con tu URL de backend, si es necesario.
-  final String _socketUrl = 'ws://34.127.73.152:5020/ws'; 
+  // 1. DEFINICIÓN DE LA RUTA BASE (Sin el protocolo)
+  final String _host = 'integracionsocket.360software.com.co';
+  final String _path = '/ws/test';
 
-  // 3. Conectar al WebSocket
-  void connect() {
-    if (_isConnected) {
-      print("WebSocketService: Ya conectado.");
-      return;
-    }
+  Future<void> connect() async {
+    // 🛡️ VALIDACIÓN 1: Si no hay sesión, NO hacemos nada.
+    final bool isLoggedIn = await PrefUtils.getIsLoggedIn();
+    if (!isLoggedIn) return;
+
+    // VALIDACIÓN 2: Si ya estamos conectados, no reconectamos.
+    if (_isConnected) return;
 
     try {
-      _channel = WebSocketChannel.connect(Uri.parse(_socketUrl));
-      _isConnected = true;
-      print("WebSocketService: Intentando conectar a $_socketUrl");
+      final String rawCookie = await PrefUtils.getCookie();
+      if (rawCookie.isEmpty) {
+        print("⛔ WebSocket: No hay credenciales (Cookie vacía).");
+        return;
+      }
 
-      // 4. Iniciar la escucha del canal
+      // Limpiamos el token para obtener solo la cadena larga (eyJ...)
+      String cleanToken = _extractTokenValue(rawCookie);
+
+      // ---------------------------------------------------------
+      // 🛠️ CONSTRUCCIÓN MANUAL DE LA URL (EXACTA)
+      // ---------------------------------------------------------
+      // Al armar el string manualmente, forzamos el formato 'wss://'
+      // y evitamos que Dart agregue puertos raros como :0
+      final String fullUrl = 'wss://$_host$_path?token=$cleanToken';
+
+      print("🔄 WebSocket: Conectando a $fullUrl");
+
+      // Conectamos
+      _channel = WebSocketChannel.connect(Uri.parse(fullUrl));
+      _isConnected = true;
+
       _channel!.stream.listen(
         (data) {
-          _handleMessage(data); // Envía el mensaje al StreamController
+          _handleMessage(data);
         },
         onDone: () {
           _isConnected = false;
-          print("WebSocketService: Conexión cerrada.");
-          // Lógica de reconexión si es necesaria
+          print("⚠️ WebSocket: Desconectado por el servidor.");
         },
         onError: (error) {
           _isConnected = false;
-          print("WebSocketService: Error en la conexión: $error");
+          print("❌ WebSocket Error: $error");
         },
       );
+      
+      print("✅ WebSocket: Conexión iniciada.");
+
     } catch (e) {
       _isConnected = false;
-      print("WebSocketService: Error al iniciar la conexión: $e");
+      print("❌ WebSocket Excepción Crítica: $e");
     }
   }
 
-  // 5. Manejar el mensaje: Añadir datos al Stream
+  /// Extrae el token limpio de la cookie
+  String _extractTokenValue(String rawCookie) {
+    try {
+      // 1. Separa por punto y coma (quita Expires, Path, etc.)
+      String mainPart = rawCookie.split(';').first;
+      
+      // 2. Si viene como "variable=valor", toma solo el valor
+      if (mainPart.contains('=')) {
+        return mainPart.split('=').last;
+      }
+      
+      // 3. Si ya es el token puro, lo devuelve
+      print('token limpio: $mainPart');
+      return mainPart;
+    } catch (e) {
+      return rawCookie;
+    }
+  }
+
   void _handleMessage(dynamic data) {
-    print("WebSocketService: Mensaje recibido: $data");
-    // ✅ Añadir el dato recibido al Stream para que los BLoCs reaccionen
     if (!_messageController.isClosed) {
-      _messageController.add(data); 
+      _messageController.add(data);
     }
   }
 
-  // 6. Enviar datos al servidor
   void sendMessage(dynamic data) {
     if (_isConnected && _channel != null) {
-      // Si envías JSON, usa jsonEncode(data)
       _channel!.sink.add(data);
     } else {
-      print("WebSocketService: Error, no conectado. No se puede enviar: $data");
+      print("⚠️ No se pudo enviar: Socket desconectado.");
     }
   }
 
-  // 7. Limpieza de recursos (¡Crucial!)
+  void disconnect() {
+    if (_channel != null) {
+      _channel!.sink.close();
+      _isConnected = false;
+      _channel = null;
+      print("🔌 WebSocket: Desconectado manualmente.");
+    }
+  }
+
   void dispose() {
-    _channel?.sink.close();
-    _messageController.close(); // ✅ CERRAR EL CONTROLLER
-    _isConnected = false;
-    print("WebSocketService: Recursos liberados.");
+    disconnect();
+    _messageController.close();
   }
 }

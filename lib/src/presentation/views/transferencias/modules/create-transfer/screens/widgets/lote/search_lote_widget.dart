@@ -776,12 +776,30 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                                 }
 
                                 if (bloc.newLoteController.text.isEmpty ||
-                                    bloc.newLoteController.text == '' &&
-                                        bloc.dateLoteController.text.isEmpty ||
-                                    bloc.dateLoteController.text == "") {
+                                    bloc.newLoteController.text == '') {
                                   Get.snackbar(
                                     'Error al crear lote',
-                                    'Los campos del lote no puede estar vacíos',
+                                    'El nombre del lote no puede estar vacío',
+                                    backgroundColor: white,
+                                    colorText: primaryColorApp,
+                                    icon:
+                                        Icon(Icons.error, color: Colors.amber),
+                                  );
+                                  return;
+                                }
+
+                                //validamos que la fecha no este vacia si el producto requiere fecha de caducidad
+                                if ((bloc.currentProduct?.useExpirationDate ==
+                                            true ||
+                                        bloc.currentProduct
+                                                ?.useExpirationDate ==
+                                            1) &&
+                                    (bloc.dateLoteController.text.isEmpty ||
+                                        bloc.dateLoteController.text.isEmpty ||
+                                        bloc.dateLoteController.text == "")) {
+                                  Get.snackbar(
+                                    'Error al crear lote',
+                                    'La fecha de caducidad no puede estar vacía para este producto',
                                     backgroundColor: white,
                                     colorText: primaryColorApp,
                                     icon:

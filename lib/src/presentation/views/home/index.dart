@@ -55,30 +55,28 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     if (state == AppLifecycleState.resumed) {
       if (mounted) {
-        // Variable para almacenar el contexto del diálogo
-        BuildContext? dialogContext;
-
-        // Aquí se ejecutan las acciones solo si la pantalla aún está montada
+        // 1. Mostrar el diálogo (Ya no guardamos el contexto en una variable 'dialogContext')
         showDialog(
           context: context,
           barrierDismissible: false,
           builder: (ctx) {
-            // ✅ CAPTURAMOS EL CONTEXTO DEL DIÁLOGO
-            dialogContext = ctx; // Almacenamos la referencia
             return const DialogLoading(
               message: "Espere un momento...",
             );
           },
         );
 
-        // Disparar evento de carga
+        // 2. Disparar evento de carga
         context.read<UserBloc>().add(LoadInfoDeviceEventUser());
 
-        // Cierre asíncrono seguro
+        // 3. Cierre asíncrono seguro
         Future.delayed(const Duration(seconds: 1), () {
-          // ✅ CORRECCIÓN CLAVE: Usamos el contexto capturado para el pop seguro
-          if (dialogContext != null && mounted) {
-            Navigator.of(dialogContext!, rootNavigator: true).pop();
+          // ✅ CORRECCIÓN: Verificar 'mounted' asegura que el widget (HomePage) sigue vivo
+          if (mounted) {
+            // Usamos 'context' (el propio de HomePage).
+            // 'rootNavigator: true' accede al navegador raíz donde se mostró el diálogo.
+            // .pop() cierra la última ruta apilada (que es tu diálogo).
+            Navigator.of(context, rootNavigator: true).pop();
           }
         });
       }

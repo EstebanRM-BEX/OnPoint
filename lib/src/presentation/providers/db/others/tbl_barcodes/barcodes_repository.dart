@@ -10,34 +10,23 @@ class BarcodesRepository {
   // Tamaño del bloque para inserción masiva
   static const int _batchSize = 500;
 
+/// --------------------------------------------------------------------------
+  /// METODO: insertOrUpdateBarcodes (Solo Guardar/Actualizar)
   /// --------------------------------------------------------------------------
-  /// METODO OPTIMIZADO: insertOrUpdateBarcodes (Estrategia Mark & Sweep)
-  /// --------------------------------------------------------------------------
-  /// 1. Marca todos los registros de este Batch+Type como is_synced = 0.
-  /// 2. Inserta los nuevos registros marcándolos como is_synced = 1.
-  /// 3. Elimina los registros que quedaron en 0 (ya no vienen del servidor).
+  /// - NO BORRA NADA.
+  /// - Si encuentra la combinación exacta (Batch+Move+Product+Barcode+Type), actualiza.
+  /// - Si no la encuentra, inserta nuevo.
   Future<void> insertOrUpdateBarcodes(
       List<Barcodes> barcodesList, String barcodeType) async {
+      
+    if (barcodesList.isEmpty) return;
+
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
-      if (barcodesList.isEmpty) return;
-
-      // Usamos el primer elemento para saber a qué Batch pertenecen estos códigos.
-      // ASUMIMOS que toda la lista pertenece al mismo Batch.
-      final int currentBatchId = barcodesList.first.batchId!;
 
       await db.transaction((txn) async {
         
-        // PASO 1: MARCA
-        // "Reseteamos" el estado solo para los registros de este Lote y Tipo.
-        await txn.rawUpdate('''
-          UPDATE ${BarcodesPackagesTable.tableName} 
-          SET ${BarcodesPackagesTable.columnIsSynced} = 0 
-          WHERE ${BarcodesPackagesTable.columnBatchId} = ? 
-          AND ${BarcodesPackagesTable.columnBarcodeType} = ?
-        ''', [currentBatchId, barcodeType]);
-
-        // PASO 2: UPSERT POR LOTES (Chunking)
+        // Procesamos la lista en bloques de 500 para velocidad
         for (var i = 0; i < barcodesList.length; i += _batchSize) {
           final end = (i + _batchSize < barcodesList.length)
               ? i + _batchSize
@@ -50,38 +39,39 @@ class BarcodesRepository {
             batch.insert(
               BarcodesPackagesTable.tableName,
               {
-                BarcodesPackagesTable.columnIdProduct: b.idProduct,
+                // CAMPOS CLAVE (Definen la unicidad)
                 BarcodesPackagesTable.columnBatchId: b.batchId,
                 BarcodesPackagesTable.columnIdMove: b.idMove,
+                BarcodesPackagesTable.columnIdProduct: b.idProduct,
                 BarcodesPackagesTable.columnBarcode: b.barcode,
+                BarcodesPackagesTable.columnBarcodeType: barcodeType,
+
+                // DATOS A GUARDAR
                 BarcodesPackagesTable.columnCantidad:
                     (b.cantidad == null || b.cantidad == 0) ? 1 : b.cantidad,
-                BarcodesPackagesTable.columnBarcodeType: barcodeType,
-                // ✅ Marcamos como "Vivo / Sincronizado"
+                
+                // (Opcional) Mantenemos esto en 1 por consistencia, 
+                // aunque ya no usamos la lógica de borrado.
                 BarcodesPackagesTable.columnIsSynced: 1, 
               },
-              // Si existe la combinación única, actualiza. Si no, inserta.
+              // ⚠️ ESTO ES LO IMPORTANTE:
+              // Reemplaza (Actualiza) si existe conflicto de índices únicos.
+              // Inserta si es nuevo.
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
           }
+          
+          // Ejecutamos el bloque
           await batch.commit(noResult: true);
         }
-
-        // PASO 3: BARRIDO
-        // Borramos lo que quedó en 0 (solo para este Batch y Tipo)
-        int deleted = await txn.delete(
-          BarcodesPackagesTable.tableName,
-          where: '${BarcodesPackagesTable.columnBatchId} = ? AND ${BarcodesPackagesTable.columnBarcodeType} = ? AND ${BarcodesPackagesTable.columnIsSynced} = ?',
-          whereArgs: [currentBatchId, barcodeType, 0],
-        );
-
-        print("🔄 Sync Barcodes ($barcodeType): Procesados ${barcodesList.length} | Eliminados Obsoletos: $deleted");
       });
+      
+      print("✅ Barcodes Guardados ($barcodeType): ${barcodesList.length} procesados. (Ninguno borrado)");
+
     } catch (e, s) {
       print("❌ Error en insertOrUpdateBarcodes: $e => $s");
     }
   }
-
   /// --------------------------------------------------------------------------
   /// MÉTODOS DE LECTURA (Sin cambios, solo optimizados por los Índices)
   /// --------------------------------------------------------------------------

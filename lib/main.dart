@@ -51,50 +51,42 @@ final connectionStatusCubit =
     ConnectionStatusCubit(internetChecker: internetChecker);
 
 final WebSocketService webSocketService = WebSocketService();
+
+
 void main() async {
-  // runZonedGuarded crea una zona de ejecución que captura errores no manejados
-  await runZonedGuarded<Future<void>>(() async {
-    // 🔧 INICIALIZACIÓN DE FLUTTER
-    // Asegura que los bindings de Flutter estén inicializados antes de cualquier operación
-    WidgetsFlutterBinding.ensureInitialized();
+  // 1. ✅ MUEVE ESTO AL PRINCIPIO (FUERA DEL runZonedGuarded)
+  // Esto asegura que los bindings se inicialicen en la zona raíz.
+  WidgetsFlutterBinding.ensureInitialized();
 
-    // 💾 INICIALIZACIÓN DE PREFERENCIAS
-    // Inicializa el sistema de almacenamiento local (SharedPreferences)
-    await Preferences.init();
+  // 2. ✅ INICIALIZACIONES GLOBALES (FUERA DEL runZonedGuarded)
+  await Preferences.init();
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-    // 📱 CONFIGURACIÓN DE ORIENTACIÓN
-    // Fuerza la app a permanecer en orientación vertical
-    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
-    // 🔥 INICIALIZACIÓN DE FIREBASE
-    // Configura Firebase con las opciones específicas de la plataforma
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+  // Configuración de Crashlytics para errores de Flutter (Renderizado/Widgets)
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
 
-    // 🚨 CONFIGURACIÓN DE MANEJO DE ERRORES DE FLUTTER
-    // Captura errores de Flutter y los envía a Crashlytics
-    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  // Configuración de pantalla de error personalizada
+  ErrorWidget.builder = (FlutterErrorDetails details) => ErrorMessageWidget(
+        title: 'Algo salió mal',
+        message: 'No se pudo cargar la información...',
+        buttonText: 'Cerrar la app',
+        onPressed: () {
+          exit(0);
+        },
+      );
 
-    // ⚠️ CONFIGURACIÓN DE PANTALLA DE ERROR
-    // Define un widget personalizado para mostrar cuando ocurren errores críticos
-    ErrorWidget.builder = (FlutterErrorDetails details) => ErrorMessageWidget(
-          title: 'Algo salió mal',
-          message: 'No se pudo cargar la información...',
-          buttonText: 'Cerrar la app',
-          onPressed: () {
-            exit(0); // Fuerza el cierre de la aplicación
-          },
-        );
+  // Conexión inicial del socket (puede ir aquí o dentro, pero mejor aquí si ya tienes sesión)
+  webSocketService.connect();
 
-    webSocketService.connect();
-
-    // 🚀 EJECUCIÓN DE LA APLICACIÓN
-    // Inicia la aplicación Flutter
+  // 3. ✅ CREA LA ZONA SOLO PARA EJECUTAR LA APP
+  runZonedGuarded(() {
     runApp(const MyApp());
   }, (error, stack) {
-    // 🎯 CAPTURADOR DE ERRORES GLOBALES
-    // Captura cualquier error no manejado en toda la aplicación y lo reporta a Crashlytics
+    // Captura de errores asíncronos (Dart puro, Futures, Streams)
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
   });
 }
@@ -105,13 +97,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 // Función para cerrar sesión
-    void _logOut() async {
+    void logOut() async {
       print("⏳ Sesión expirada por inactividad.");
 
       // 1. Usamos el contexto del Navigator, que sí tiene acceso a los BLoCs
       final contextWithProviders = navigatorKey.currentContext;
 
       if (contextWithProviders != null) {
+        WebSocketService().disconnect();
         PrefUtils.clearPrefs();
         Preferences.removeUrlWebsite();
         await DataBaseSqlite().deleteBDCloseSession();
@@ -175,7 +168,7 @@ class MyApp extends StatelessWidget {
           );
           return SessionTimeoutManager(
               duration: const Duration(hours: 1),
-              onSessionExpired: _logOut,
+              onSessionExpired: logOut,
               child: navigator!);
         },
       ),

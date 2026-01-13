@@ -558,8 +558,7 @@ class CreateTransferBloc
     }
   }
 
-//metodo pea crar un lote a un producto
-  void _onCreateLoteProduct(
+void _onCreateLoteProduct(
       CreateLoteProduct event, Emitter<CreateTransferState> emit) async {
     try {
       emit(CreateLoteProductLoading());
@@ -571,18 +570,29 @@ class CreateTransferBloc
       );
 
       if (response.result?.code == 200) {
-        //agregamos el nuevo lote a la lista de lotes
-        listLotesProduct.add(response.result?.result ?? LotesProduct());
-        listLotesProductFilters.add(response.result?.result ?? LotesProduct());
-        currentProductLote = response.result?.result;
+        
+        // 1. Capturamos el objeto del nuevo lote
+        final newLote = response.result?.result ?? LotesProduct();
+
+        // 2. Agregamos el nuevo lote a la lista PRINCIPAL
+        listLotesProduct.add(newLote);
+
+        // 3. Actualizamos la lista de FILTROS creando una copia fresca de la principal
+        // Esto evita que se agregue dos veces si las listas compartían referencia en memoria
+        listLotesProductFilters = List.from(listLotesProduct);
+        
+        // 4. Actualizamos variables de estado y UI
+        currentProductLote = newLote;
         loteIsOk = true;
+        
         dateLoteController.clear();
         newLoteController.clear();
+        
         add(SelectecLoteEvent(currentProductLote!));
         emit(CreateLoteProductSuccess());
       } else {
         emit(CreateLoteProductFailure(response.result?.msg ??
-            'Error al crear el lote concactarse con el administrador'));
+            'Error al crear el lote contactarse con el administrador'));
       }
     } catch (e, s) {
       emit(CreateLoteProductFailure('Error al crear el lote'));

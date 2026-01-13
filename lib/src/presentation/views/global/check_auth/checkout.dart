@@ -1,7 +1,8 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
-import 'package:wms_app/src/core/utils/prefs/pref_utils.dart'; // Ajusta la ruta si es necesario
+import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/src/services/webSocket_service.dart'; // Ajusta la ruta si es necesario
 
 class CheckAuthPage extends StatelessWidget {
   const CheckAuthPage({super.key});
@@ -24,8 +25,9 @@ class CheckAuthPage extends StatelessWidget {
 
       // ⚠️ CONFIGURACIÓN: Ajusta esto según tu regla de negocio (ej. 1 hora)
       // Para pruebas rápidas puedes usar: if (difference.inSeconds >= 10)
-      if (difference.inHours >= 1) { 
-        print("💀 Sesión expirada (App cerrada durante ${difference.inMinutes} mins). Forzando logout...");
+      if (difference.inHours >= 1) {
+        print(
+            "💀 Sesión expirada (App cerrada durante ${difference.inMinutes} mins). Forzando logout...");
 
         // Limpiamos la sesión usando el método nuevo que agregamos a PrefUtils
         await PrefUtils.clearSession();
@@ -47,7 +49,6 @@ class CheckAuthPage extends StatelessWidget {
         child: FutureBuilder<bool>(
           future: validateSession(),
           builder: (context, snapshot) {
-            
             // A. ESTADO CARGANDO
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const CircularProgressIndicator();
@@ -73,6 +74,9 @@ class CheckAuthPage extends StatelessWidget {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (isSessionValid) {
                   // ✅ Sesión válida -> Vamos al Home
+                  // Como la sesión es válida, reconectamos el socket antes de ir al Home.
+                  // El método connect() ya tiene validaciones internas, así que es seguro.
+                  WebSocketService().connect();
                   Navigator.pushReplacementNamed(context, '/home');
                 } else {
                   // ❌ Sesión inválida/expirada -> Vamos al Login (Enterprice)
@@ -81,7 +85,7 @@ class CheckAuthPage extends StatelessWidget {
               });
 
               // Mientras navega, mostramos un contenedor vacío o el loader
-              return Container(); 
+              return Container();
             }
 
             return const CircularProgressIndicator();

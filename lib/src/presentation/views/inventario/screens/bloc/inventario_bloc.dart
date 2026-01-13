@@ -231,18 +231,33 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       );
 
       if (response.result?.code == 200) {
-        //agregamos el nuevo lote a la lista de lotes
-        listLotesProduct.add(response.result?.result ?? LotesProduct());
-        listLotesProductFilters.add(response.result?.result ?? LotesProduct());
-        currentProductLote = response.result?.result;
+        
+        // 1. Capturamos el nuevo lote de forma segura
+        final newLote = response.result?.result ?? LotesProduct();
+
+        // 2. Agregamos a la lista MAESTRA
+        listLotesProduct.add(newLote);
+
+        // 3. Reconstruimos la lista de FILTROS basada en la maestra
+        // Esto rompe referencias y evita duplicados visuales
+        listLotesProductFilters = List.from(listLotesProduct);
+        
+        // 4. Actualizamos el estado actual
+        currentProductLote = newLote;
         loteIsOk = true;
+        
+        // 5. Limpieza
         dateLoteController.clear();
         newLoteController.clear();
+        
+        // Opcional: Limpiar buscador si quieres reiniciar la vista
+        // searchControllerLote.clear(); 
+
         add(SelectecLoteEvent(currentProductLote!));
         emit(CreateLoteProductSuccess());
       } else {
         emit(CreateLoteProductFailure(response.result?.msg ??
-            'Error al crear el lote concactarse con el administrador'));
+            'Error al crear el lote contactarse con el administrador'));
       }
     } catch (e, s) {
       emit(CreateLoteProductFailure('Error al crear el lote'));

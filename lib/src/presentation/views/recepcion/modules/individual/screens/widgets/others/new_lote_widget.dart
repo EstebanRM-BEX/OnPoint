@@ -585,7 +585,8 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                                         bgColor = Colors.blue[50]!;
                                         textColor = Colors.blue[900]!;
                                         icon = Icons.check_circle_outline;
-                                        text = "La fecha ingresada vence en $daysLeft días";
+                                        text =
+                                            "La fecha ingresada vence en $daysLeft días";
                                       }
 
                                       // C. Widget Visual
@@ -762,24 +763,22 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                                 );
                                 return;
                               }
-
-                              if (bloc.currentProduct.useExpirationDate ==
-                                      true ||
-                                  bloc.currentProduct.useExpirationDate == 1) {
-                                if (bloc.dateLoteController.text.isEmpty ||
-                                    bloc.dateLoteController.text == "") {
-                                  Get.snackbar(
-                                    'Error al crear lote',
-                                    'La fecha de caducidad no puede estar vacía',
-                                    backgroundColor: white,
-                                    colorText: primaryColorApp,
-                                    icon:
-                                        Icon(Icons.error, color: Colors.amber),
-                                  );
-                                  return;
-                                }
+                              //validamos que la fecha no este vacia si el producto requiere fecha de caducidad
+                              if ((bloc.currentProduct.useExpirationDate ==
+                                          true ||
+                                      bloc.currentProduct.useExpirationDate ==
+                                          1) &&
+                                  (bloc.dateLoteController.text.isEmpty ||
+                                      bloc.dateLoteController.text == "")) {
+                                Get.snackbar(
+                                  'Error al crear lote',
+                                  'La fecha de caducidad no puede estar vacía para este producto',
+                                  backgroundColor: white,
+                                  colorText: primaryColorApp,
+                                  icon: Icon(Icons.error, color: Colors.amber),
+                                );
+                                return;
                               }
-
                               //validacion que la fecha del lote no puede ser menor o igual la fecha actual
                               if (selectedDate != null) {
                                 final now = DateTime.now();

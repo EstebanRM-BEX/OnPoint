@@ -234,8 +234,6 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       );
 
       if (response.result?.code == 200) {
-
-
         //limpiamos los campos
         add(ClearValueEvent());
         emit(SendDevolucionSuccess(response));
@@ -351,12 +349,26 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
       if (response != null) {
         if (response.result?.code == 200) {
-          //agregamos el nuevo lote a la lista de lotes
-          listLotesProductFilters
-              .add(response.result?.result ?? LotesProduct());
-          lotesProductCurrent = response.result?.result ?? LotesProduct();
+          // 1. Capturamos el nuevo lote de la respuesta
+          final newLote = response.result?.result ?? LotesProduct();
+
+          // 2. Agregamos el nuevo lote a la lista PRINCIPAL (Maestra)
+          listLotesProduct.add(newLote);
+
+          // 3. Actualizamos la lista de FILTROS creando una copia nueva de la principal
+          // Esto garantiza que ambas listas tengan los mismos datos sin duplicar referencias
+          listLotesProductFilters = List.from(listLotesProduct);
+
+          // 4. Actualizamos el lote seleccionado actual
+          lotesProductCurrent = newLote;
+
+          // 5. Limpieza de controladores
           dateLoteController.clear();
           newLoteController.clear();
+
+          // Recomendado: Limpiar el buscador para que coincida con la lista completa
+          // searchControllerLote.clear();
+
           emit(CreateLoteProductSuccess(lotesProductCurrent));
         } else {
           emit(CreateLoteProductFailure(
