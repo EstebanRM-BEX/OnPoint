@@ -111,6 +111,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+dependency_overrides:
+  rive: ^0.13.4
 
 flutter_launcher_icons:
   android: true
