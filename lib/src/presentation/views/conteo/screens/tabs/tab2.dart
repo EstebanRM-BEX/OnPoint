@@ -30,6 +30,9 @@ class Tab2ScreenConteo extends StatefulWidget {
 class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
   FocusNode focusNode1 = FocusNode(); //location focus
 
+  // Controlador del Scroll
+  final ScrollController _scrollController = ScrollController();
+
   final TextEditingController _controllerToProduct = TextEditingController();
   final TextEditingController _controllerToLocation = TextEditingController();
 
@@ -44,6 +47,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     focusNode1.dispose();
     super.dispose();
   }
@@ -130,7 +134,8 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
 
     // 1️⃣ Buscar producto por código de barras principal
     final product = listOfProducts.firstWhere(
-      (p) => p.productBarcode?.toLowerCase() == scan ||
+      (p) =>
+          p.productBarcode?.toLowerCase() == scan ||
           p.productCode?.toLowerCase() == scan,
       orElse: () => CountedLine(),
     );
@@ -212,6 +217,15 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
       if (ubicacionEncontrada.isNotEmpty) {
         bloc.add(
             ExpandLocationEvent(ubicacionEncontrada)); // Expande por nombre
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              0.0, // Posición 0 (El inicio absoluto)
+              duration: const Duration(milliseconds: 500), // Medio segundo
+              curve: Curves.easeOut, // Animación suave
+            );
+          }
+        });
       }
 
       bloc.add(ClearScannedValueEvent('toLocation'));
@@ -241,13 +255,39 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
       child: BlocConsumer<ConteoBloc, ConteoState>(
         listener: (context, state) {},
         builder: (context, state) {
-          
+
+
+
           final conteoBloc = context.read<ConteoBloc>();
+
+
           final productosPorContar = conteoBloc.lineasContadas
               .where((element) => element.isDoneItem != 1)
               .toList();
 
           final productosPorUbicacion = _groupByLocation(productosPorContar);
+
+
+          // -----------------------------------------------------------
+          // 🚀 OPTIMIZACIÓN ANTI-JANK: PREPARAR DATOS ANTES DE LA LISTA
+          // -----------------------------------------------------------
+          
+          // A. Obtenemos las llaves y las ordenamos UNA SOLA VEZ
+          List<String> sortedLocations = productosPorUbicacion.keys.toList();
+          sortedLocations.sort(sortLocations);
+
+          // B. Aplicamos la lógica de "Mover al inicio" AQUÍ
+          final expandedLocation = conteoBloc.ubicacionExpanded;
+          if (expandedLocation.isNotEmpty) {
+            final foundIndex = sortedLocations.indexWhere(
+                (loc) => loc.toLowerCase() == expandedLocation.toLowerCase());
+
+            if (foundIndex != -1) {
+              final locationToMove = sortedLocations.removeAt(foundIndex);
+              sortedLocations.insert(0, locationToMove);
+            }
+          }
+          // -----------------------------------------------------------
 
           return Scaffold(
             backgroundColor: white,
@@ -333,14 +373,11 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
                       ? ProductEmpty()
                       : Expanded(
                           child: ListView.builder(
+                            controller: _scrollController,
                             // Obtener las claves y ordenar con el comparador personalizado
-                            itemCount: productosPorUbicacion.keys.length,
+                        itemCount: sortedLocations.length,
                             itemBuilder: (context, index) {
-                              final sortedLocations =
-                                  productosPorUbicacion.keys.toList();
-
-                              // Aquí es donde aplicas el comparador personalizado
-                              sortedLocations.sort(sortLocations);
+                            
 
                               final ubicacion = sortedLocations[index];
                               final productos =

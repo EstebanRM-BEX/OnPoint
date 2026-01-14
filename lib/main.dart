@@ -9,6 +9,7 @@ import 'package:wms_app/src/core/constans/colors.dart';
 import 'package:wms_app/src/core/routes/app_router.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
 import 'package:wms_app/src/api/http_response_handler.dart';
+import 'package:wms_app/src/core/utils/performance/jank_monitor.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/core/utils/widgets/error_widget.dart';
 import 'package:wms_app/src/presentation/blocs/keyboard/keyboard_bloc.dart';
@@ -50,43 +51,48 @@ final internetChecker = CheckInternetConnection();
 final connectionStatusCubit =
     ConnectionStatusCubit(internetChecker: internetChecker);
 
-final WebSocketService webSocketService = WebSocketService();
-
+// final WebSocketService webSocketService = WebSocketService();
 
 void main() async {
-  // 1. ✅ MUEVE ESTO AL PRINCIPIO (FUERA DEL runZonedGuarded)
-  // Esto asegura que los bindings se inicialicen en la zona raíz.
-  WidgetsFlutterBinding.ensureInitialized();
+  // 1. 🚀 INICIAMOS LA ZONA PRIMERO
+  // Al hacer esto, creamos un entorno controlado para capturar errores.
+  await runZonedGuarded(() async {
+    // 2. ✅ INICIALIZAMOS LOS BINDINGS ADENTRO
+    // Esto es CRÍTICO: Debe estar en la misma zona que runApp.
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. ✅ INICIALIZACIONES GLOBALES (FUERA DEL runZonedGuarded)
-  await Preferences.init();
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    // 3. INICIALIZACIONES GLOBALES
+    await Preferences.init();
+    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  // Configuración de Crashlytics para errores de Flutter (Renderizado/Widgets)
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    // Configuración de Crashlytics para errores de Flutter (Renderizado)
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
 
-  // Configuración de pantalla de error personalizada
-  ErrorWidget.builder = (FlutterErrorDetails details) => ErrorMessageWidget(
-        title: 'Algo salió mal',
-        message: 'No se pudo cargar la información...',
-        buttonText: 'Cerrar la app',
-        onPressed: () {
-          exit(0);
-        },
-      );
+    // Configuración de pantalla de error personalizada
+    ErrorWidget.builder = (FlutterErrorDetails details) => ErrorMessageWidget(
+          title: 'Algo salió mal',
+          message: 'No se pudo cargar la información...',
+          buttonText: 'Cerrar la app',
+          onPressed: () {
+            exit(0);
+          },
+        );
 
-  // Conexión inicial del socket (puede ir aquí o dentro, pero mejor aquí si ya tienes sesión)
-  webSocketService.connect();
+    // Conexión inicial del socket
+    // Nota: Como agregamos la validación de sesión en el servicio,
+    // esto es seguro llamarlo aquí; si no hay sesión, no hará nada.
+    // todo webSocketService.connect();
 
-  // 3. ✅ CREA LA ZONA SOLO PARA EJECUTAR LA APP
-  runZonedGuarded(() {
+    // 4. EJECUCIÓN DE LA APP
+    // Ahora runApp se ejecuta en la misma zona donde se hizo el ensureInitialized.
     runApp(const MyApp());
+    // JankMonitor().start();
   }, (error, stack) {
-    // Captura de errores asíncronos (Dart puro, Futures, Streams)
+    // 5. CAPTURADOR DE ERRORES ASÍNCRONOS (Dart puro, Futures rotos, etc.)
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
   });
 }
@@ -104,7 +110,7 @@ class MyApp extends StatelessWidget {
       final contextWithProviders = navigatorKey.currentContext;
 
       if (contextWithProviders != null) {
-        WebSocketService().disconnect();
+        // WebSocketService().disconnect();
         PrefUtils.clearPrefs();
         Preferences.removeUrlWebsite();
         await DataBaseSqlite().deleteBDCloseSession();
@@ -152,6 +158,9 @@ class MyApp extends StatelessWidget {
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
+        ],
+        navigatorObservers: [
+          JankRouteObserver(),
         ],
         theme: ThemeData(
           scaffoldBackgroundColor: Colors.grey[300],
