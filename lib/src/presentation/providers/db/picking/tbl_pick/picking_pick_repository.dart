@@ -20,6 +20,7 @@ class PickingPickRepository {
           final data = {
             PickingPickTable.columnId: pickItem.id,
             PickingPickTable.columnName: pickItem.name ?? '',
+            PickingPickTable.columnObservacion: pickItem.observacion ?? '',
             PickingPickTable.columnFechaCreacion: pickItem.fechaCreacion ?? '',
             PickingPickTable.columnLocationId: pickItem.locationId,
             PickingPickTable.columnLocationName: pickItem.locationName ?? '',
@@ -112,6 +113,7 @@ class PickingPickRepository {
         columns: [
           PickingPickTable.columnId,
           PickingPickTable.columnName,
+          PickingPickTable.columnObservacion,
           PickingPickTable.columnFechaCreacion,
           PickingPickTable.columnLocationId,
           PickingPickTable.columnLocationName,
@@ -213,22 +215,21 @@ class PickingPickRepository {
     }
   }
 
-
-
   //metodo para eliminar un pick por su id
   Future<int> deletePickById(int pickId) async {
     try {
-      final db = await DataBaseSqlite().getDatabaseInstance();  
+      final db = await DataBaseSqlite().getDatabaseInstance();
       final rowsDeleted = await db.delete(
         PickingPickTable.tableName,
         where: '${PickingPickTable.columnId} = ?',
         whereArgs: [pickId],
       );
-      print('Se eliminaron $rowsDeleted registros con ID $pickId en picking pick');
+      print(
+          'Se eliminaron $rowsDeleted registros con ID $pickId en picking pick');
       return rowsDeleted;
     } catch (e) {
       print("Error al eliminar el pick por ID: $e");
       return 0; // Devuelve 0 en caso de error
     }
-  } 
+  }
 }

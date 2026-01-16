@@ -572,6 +572,19 @@ class AppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Agregamos esta lógica de seguridad antes de construir el widget
+    bool showEditIcon = false;
+    try {
+      final configurations = context.read<InfoRapidaBloc>().configurations;
+      // Verificamos si configurations tiene datos antes de intentar acceder a sus hijos
+      if (configurations.result != null) { 
+         showEditIcon = configurations.result?.result?.updateItemInventory == true;
+      }
+    } catch (e) {
+      // Si ocurre el error "No element", simplemente ocultamos el icono
+      showEditIcon = false;
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: primaryColorApp,
@@ -619,15 +632,9 @@ class AppBar extends StatelessWidget {
                         style: TextStyle(color: white, fontSize: 18)),
                   ),
                   const Spacer(),
-                  //icono de editar
+                  // 2. Usamos la variable segura aquí
                   Visibility(
-                    visible: context
-                            .read<InfoRapidaBloc>()
-                            .configurations
-                            .result
-                            ?.result
-                            ?.updateItemInventory ==
-                        true,
+                    visible: showEditIcon, // Usamos el booleano calculado arriba
                     child: GestureDetector(
                       onTap: () {
                         context.read<InfoRapidaBloc>().add(IsEditEvent(

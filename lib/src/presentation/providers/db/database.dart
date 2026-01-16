@@ -88,7 +88,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 15,
+      version: 17,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -337,8 +337,9 @@ class DataBaseSqlite {
 
         print('✅ Optimización Novedades completada.');
         // 1. Agregar columna para Mark & Sweep
-        await db.execute('ALTER TABLE tblproductos_devolucion ADD COLUMN is_synced INTEGER DEFAULT 0;');
-        
+        await db.execute(
+            'ALTER TABLE tblproductos_devolucion ADD COLUMN is_synced INTEGER DEFAULT 0;');
+
         // 2. ÍNDICE ÚNICO (Crítico para Upsert):
         // Define que un Producto con un Lote específico es único en la lista de devoluciones.
         // Esto permite actualizar automáticamente si el registro ya existe.
@@ -348,25 +349,42 @@ class DataBaseSqlite {
         ''');
 
         // 3. ÍNDICES DE LECTURA (Búsquedas rápidas):
-        await db.execute('CREATE INDEX idx_dev_barcode ON tblproductos_devolucion (barcode);');
-        
+        await db.execute(
+            'CREATE INDEX idx_dev_barcode ON tblproductos_devolucion (barcode);');
+
         print('✅ Optimización Devoluciones completada.');
 
         print('🚀 Migrando Barcodes: Creando restricción única estricta...');
-        
+
         // 1. Borramos índices viejos si existen para evitar conflictos
-          await db.execute('DROP INDEX IF EXISTS idx_unique_barcode_entry;');
+        await db.execute('DROP INDEX IF EXISTS idx_unique_barcode_entry;');
 
         // 2. CREAR EL ÍNDICE ÚNICO ESTRICTO
         // Esta es la "regla" que ConflictAlgorithm.replace va a obedecer.
-        // Solo sobrescribirá si COINCIDEN TODOS estos campos. 
+        // Solo sobrescribirá si COINCIDEN TODOS estos campos.
         // Si cambia aunque sea el id_move, creará uno nuevo.
         await db.execute('''
           CREATE UNIQUE INDEX idx_strict_barcode_validation ON tblbarcodes_packages 
           (batch_id, id_move, id_product, barcode, barcode_type);
         ''');
-        
+
         print('✅ Restricción de unicidad aplicada correctamente.');
+      } catch (e) {
+        print("Error actualizando UbicacionesTable: $e");
+      }
+    }
+
+    if (oldVersion < 17) {
+      //observacion en picking pick
+      try {
+        await db.execute('''
+          ALTER TABLE ${PickingPickTable.columnObservacion}
+        ''');
+
+// observacion en packing pack
+        await db.execute('''
+          ADD COLUMN ${PedidoPackTable.columnObservacion} TEXT;
+        ''');
       } catch (e) {
         print("Error actualizando UbicacionesTable: $e");
       }

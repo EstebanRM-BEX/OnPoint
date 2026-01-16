@@ -5,6 +5,7 @@ class PedidoPackTable {
   static const String columnBatchId = 'batch_id';
   static const String columnId = 'id';
   static const String columnName = 'name';
+  static const String columnObservacion = 'observacion';
   static const String columnFechaCreacion = 'fecha_creacion';
   static const String columnLocationId = 'location_id';
   static const String columnLocationName = 'location_name';
@@ -55,6 +56,7 @@ class PedidoPackTable {
         $columnId INTEGER PRIMARY KEY,
         $columnBatchId INTEGER,
         $columnName TEXT,
+        $columnObservacion TEXT,
         $columnFechaCreacion TEXT, -- Almacenar DateTime como TEXT (ISO 8601 string)
         $columnLocationId INTEGER,
         $columnLocationName TEXT,

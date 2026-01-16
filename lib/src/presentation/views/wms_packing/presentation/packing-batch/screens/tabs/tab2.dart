@@ -59,6 +59,7 @@ class _Tab2ScreenState extends State<Tab2Screen> {
     final listOfProducts = bloc.listOfProductosProgress;
 
     /// Función auxiliar para procesar el producto encontrado
+    /// Función auxiliar para procesar el producto encontrado
     void processProduct(ProductoPedido product) {
       bloc
         ..add(FetchProductEvent(product))
@@ -82,14 +83,13 @@ class _Tab2ScreenState extends State<Tab2Screen> {
         ))
         ..add(ClearScannedValuePackEvent('toDo'));
 
-      // Variable para almacenar el contexto del diálogo
-      BuildContext? dialogContext;
+      // 1. Eliminamos la variable 'dialogContext' y su captura manual.
 
       showDialog(
         context: context,
+        barrierDismissible:
+            false, // Bloquea que el usuario lo cierre tocando afuera
         builder: (ctx) {
-          // ✅ Capturamos el contexto del diálogo como 'ctx'
-          dialogContext = ctx; // Almacenamos la referencia
           return const DialogLoading(
             message: 'Cargando información del producto...',
           );
@@ -97,13 +97,14 @@ class _Tab2ScreenState extends State<Tab2Screen> {
       );
 
       Future.delayed(const Duration(seconds: 1), () {
+        // Verifica si la pantalla Tab2Screen sigue montada
         if (!mounted) return;
-        // 1. Verificar si el contexto del diálogo es válido
-        if (dialogContext != null && dialogContext!.mounted) {
-          Navigator.of(dialogContext!).pop();
-        }
 
-        // 2. Navegación a la siguiente vista
+        // 2. SOLUCIÓN: Usamos el 'context' general de la clase (Tab2Screen).
+        // Navigator.pop() cierra la ruta superior de la pila, que es el Dialog que acabamos de abrir.
+        Navigator.of(context).pop();
+
+        // 3. Navegación a la siguiente vista
         Navigator.pushReplacementNamed(
           context,
           'Packing',

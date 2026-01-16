@@ -120,7 +120,7 @@ class _TransferenciaScreenState extends State<TransferenciaScreen>
                         right: 0,
                         child: CircleAvatar(
                           radius: 12,
-                          backgroundColor: yellow,
+                          backgroundColor: Colors.red,
                           child: Text(
                             context
                                 .read<TransferenciaBloc>()

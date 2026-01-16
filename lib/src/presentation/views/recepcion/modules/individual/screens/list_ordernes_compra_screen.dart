@@ -31,8 +31,17 @@ class ListOrdenesCompraScreen extends StatelessWidget {
   FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
 
-  void validateBarcode(String value, BuildContext context) {
+ void validateBarcode(String value, BuildContext context) {
     final bloc = context.read<RecepcionBloc>();
+    
+    // ✅ PROTECCIÓN 1: Si la lista está vacía, no hagas nada
+    if (bloc.listOrdenesCompra.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Espere a que carguen las órdenes...')),
+      );
+      return;
+    }
+
     final scan = (bloc.scannedValue5.isEmpty ? value : bloc.scannedValue5)
         .trim()
         .toLowerCase();
@@ -40,41 +49,28 @@ class ListOrdenesCompraScreen extends StatelessWidget {
     _controllerToDo.clear();
     print('🔎 Scan barcode (batch picking): $scan');
 
-    final listOfBatchs = bloc.listOrdenesCompra;
-
-    void processBatch(ResultEntrada batch) {
-      bloc.add(ClearScannedValueOrderEvent('toDo'));
-
-      print(batch.toMap());
-      try {
-        _handleOrderTap(
-          context,
-          batch,
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error al cargar los datos'),
-            duration: Duration(seconds: 4),
-          ),
-        );
-      }
-    }
-
-    // Buscar el producto usando el código de barras principal o el código de producto
-    final batchs = listOfBatchs.firstWhere(
-      (b) => b.name?.toLowerCase() == scan,
-      orElse: () => ResultEntrada(),
+    // ✅ PROTECCIÓN 2: Uso seguro de firstWhere
+    final ResultEntrada batchs = bloc.listOrdenesCompra.firstWhere(
+      (b) => (b.name?.toLowerCase() ?? '') == scan, // Evita error si name es null
+      orElse: () => ResultEntrada(), // Retorna objeto vacío si no encuentra nada
     );
 
     if (batchs.id != null) {
       print('🔎 batch encontrado : ${batchs.id} ${batchs.name} ');
-      processBatch(batchs);
-      return;
+      bloc.add(ClearScannedValueOrderEvent('toDo'));
+      try {
+        _handleOrderTap(context, batchs);
+      } catch (e) {
+        print("Error handleOrderTap: $e");
+      }
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       bloc.add(ClearScannedValueOrderEvent('toDo'));
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Orden no encontrada en la lista')),
+      );
     }
   }
 

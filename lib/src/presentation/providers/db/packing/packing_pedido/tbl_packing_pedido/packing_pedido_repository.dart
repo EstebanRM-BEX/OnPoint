@@ -91,7 +91,6 @@ class PedidoPackRepository {
             }
           }
         }
-
         // 5. Ejecutar todas las operaciones en el batch.
         await batch.commit(noResult: true);
       });
@@ -110,6 +109,7 @@ class PedidoPackRepository {
         PedidoPackTable.columnId: pedido.id,
         PedidoPackTable.columnBatchId: pedido.batchId,
         PedidoPackTable.columnName: pedido.name,
+        PedidoPackTable.columnObservacion: pedido.observacion,
         PedidoPackTable.columnFechaCreacion:
             pedido.fechaCreacion?.toIso8601String(),
         PedidoPackTable.columnLocationId: pedido.locationId,

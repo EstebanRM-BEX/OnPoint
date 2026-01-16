@@ -410,6 +410,29 @@ class IndexListPickScreen extends StatelessWidget {
                                               ),
                                             ],
                                           ),
+                                          if (batch.observacion != null &&
+                                              batch
+                                                  .observacion!.isNotEmpty) ...[
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text("Observación: ",
+                                                  style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: primaryColorApp)),
+                                            ),
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text(
+                                                batch.observacion.toString(),
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: black),
+                                                maxLines: 2,
+                                                overflow:
+                                                    TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
                                           Align(
                                             alignment: Alignment.centerLeft,
                                             child: Row(

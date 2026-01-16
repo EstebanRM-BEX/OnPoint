@@ -13,7 +13,6 @@ import 'package:wms_app/src/presentation/providers/network/check_internet_connec
 import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_start_picking_widget.dart';
-import 'package:wms_app/src/presentation/views/user/screens/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/user/screens/widgets/dialog_info_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/response_packing_pedido_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
@@ -381,6 +380,29 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                                             ),
                                           ],
                                         ),
+                                         if (batch.observacion != null &&
+                                              batch
+                                                  .observacion!.isNotEmpty) ...[
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text("Observación: ",
+                                                  style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: primaryColorApp)),
+                                            ),
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text(
+                                                batch.observacion.toString(),
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: black),
+                                                maxLines: 2,
+                                                overflow:
+                                                    TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                                  ],
                                         Align(
                                           alignment: Alignment.centerLeft,
                                           child: Row(

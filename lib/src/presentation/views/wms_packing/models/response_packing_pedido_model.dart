@@ -77,6 +77,7 @@ class PedidoPackingResult {
   final int? batchId;
   final int? id;
   final String? name;
+  final String? observacion;
   final dynamic? fechaCreacion;
   final int? locationId;
   final String? locationName;
@@ -122,6 +123,7 @@ class PedidoPackingResult {
     this.batchId,
     this.id,
     this.name,
+    this.observacion,
     this.fechaCreacion,
     this.locationId,
     this.locationName,
@@ -173,6 +175,7 @@ class PedidoPackingResult {
         batchId: json["batch_id"],
         id: json["id"],
         name: json["name"],
+        observacion: json["observacion"],
         fechaCreacion: json["fecha_creacion"] == null
             ? null
             : DateTime.parse(json["fecha_creacion"]),
@@ -226,6 +229,7 @@ class PedidoPackingResult {
         "batch_id": batchId,
         "id": id,
         "name": name,
+        "observacion": observacion,
         "fecha_creacion": fechaCreacion?.toIso8601String(),
         "location_id": locationId,
         "location_name": locationName,

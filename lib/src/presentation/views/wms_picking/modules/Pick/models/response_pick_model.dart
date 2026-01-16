@@ -74,6 +74,7 @@ class ResponsePickResult {
 class ResultPick {
   int? id;
   String? name;
+  String? observacion;
   String? fechaCreacion;
   int? locationId;
   String? locationName;
@@ -133,6 +134,7 @@ class ResultPick {
   ResultPick(
       {this.id,
       this.name,
+      this.observacion,
       this.fechaCreacion,
       this.locationId,
       this.locationName,
@@ -184,6 +186,7 @@ class ResultPick {
   factory ResultPick.fromMap(Map<String, dynamic> json) => ResultPick(
         id: json["id"],
         name: json["name"],
+        observacion: json["observacion"],
         fechaCreacion: json["fecha_creacion"],
         locationId: json["location_id"],
         locationName: json["location_name"],
@@ -243,6 +246,7 @@ class ResultPick {
   Map<String, dynamic> toMap() => {
         "id": id,
         "name": name,
+        "observacion": observacion,
         "fecha_creacion": fechaCreacion,
         "location_id": locationId,
         "location_name": locationName,

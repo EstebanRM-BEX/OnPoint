@@ -4,6 +4,8 @@ class PickingPickTable {
   // Columnas de la tabla
   static const String columnId = 'id';
   static const String columnName = 'name';
+  //observacion
+  static const String columnObservacion = 'observacion';
   static const String columnFechaCreacion = 'fecha_creacion';
   static const String columnLocationId = 'location_id';
   static const String columnLocationName = 'location_name';
@@ -61,6 +63,7 @@ class PickingPickTable {
       CREATE TABLE $tableName (
         $columnId INTEGER PRIMARY KEY,
         $columnName TEXT,
+        $columnObservacion TEXT,
         $columnFechaCreacion TEXT,
         $columnLocationId INTEGER,
         $columnLocationName TEXT,
