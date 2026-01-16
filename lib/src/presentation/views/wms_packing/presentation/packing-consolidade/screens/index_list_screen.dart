@@ -115,8 +115,8 @@ class _ListPackingConsolidadeScreenState
             // validamos si tiene tiempo de separacion de inicio
             if (batch.startTimePack == "" || batch.startTimePack == null) {
               packingBloc.add(
-                    StartTimePack(batch.id ?? 0, DateTime.now()),
-                  );
+                StartTimePack(batch.id ?? 0, DateTime.now()),
+              );
             }
 
             Navigator.pop(dialogContext); // Cierra el diálogo de asignación
@@ -132,63 +132,57 @@ class _ListPackingConsolidadeScreenState
   }
 
   void validateTime(dynamic batch, BuildContext context) {
+    final packingConsolidateBloc = context.read<PackingConsolidateBloc>();
+
     if (batch.startTimePack == "" || batch.startTimePack == null) {
       showDialog(
         context: context,
         barrierDismissible:
             false, // No permitir que el usuario cierre el diálogo manualmente
-        builder: (context) => DialogStartPackingWidget(
+        builder: (dialogContext) => DialogStartPackingWidget(
           onAccepted: () async {
-            // Disparar eventos de BatchBloc
-            context
-                .read<PackingConsolidateBloc>()
-                .add(LoadAllPedidosFromBatchEvent(
-                  batch.id ?? 0,
-                ));
-            context
-                .read<PackingConsolidateBloc>()
-                .add(ShowKeyboardEvent(false));
-            // viajamos a la vista de detalles del batch con sus pedidos
-
-            context
-                .read<PackingConsolidateBloc>()
+            packingConsolidateBloc
+                .add(LoadAllPedidosFromBatchEvent(batch.id ?? 0));
+            packingConsolidateBloc.add(ShowKeyboardEvent(false));
+            packingConsolidateBloc
                 .add(StartTimePack(batch.id ?? 0, DateTime.now()));
-
             Navigator.pop(context);
-
-            goBatchInfo(context, context.read<PackingConsolidateBloc>(), batch);
+            goBatchInfo(context, packingConsolidateBloc, batch);
           },
         ),
       );
     } else {
-      context.read<PackingConsolidateBloc>().add(LoadAllPedidosFromBatchEvent(
-            batch.id ?? 0,
-          ));
-      context.read<PackingConsolidateBloc>().add(ShowKeyboardEvent(false));
-      goBatchInfo(context, context.read<PackingConsolidateBloc>(), batch);
+      packingConsolidateBloc.add(LoadAllPedidosFromBatchEvent(batch.id ?? 0));
+      packingConsolidateBloc.add(ShowKeyboardEvent(false));
+      goBatchInfo(context, packingConsolidateBloc, batch);
     }
   }
 
   void goBatchInfo(BuildContext context, PackingConsolidateBloc batchBloc,
       BatchPackingModel batch) async {
-    // mostramos un dialogo de carga y despues
+    // Mostramos loading
     showDialog(
       context: context,
-      barrierDismissible:
-          false, // No permitir que el usuario cierre el diálogo manualmente
+      barrierDismissible: false,
       builder: (_) => const DialogLoading(
         message: 'Cargando interfaz...',
       ),
     );
 
+    // Simulamos carga (o esperamos respuesta real si fuera necesario)
     await Future.delayed(const Duration(seconds: 1));
-    Navigator.pop(context);
 
-    Navigator.pushReplacementNamed(
-      context,
-      'pedido-packing-consolidate-list',
-      arguments: [batch],
-    );
+    // ✅ CORRECCIÓN VITAL: Verificar 'mounted' después del await
+    // Si no verificas esto y el usuario se salió de la pantalla en ese segundo, la app crashea.
+    if (context.mounted) {
+      Navigator.pop(context); // Cerramos el loading
+
+      Navigator.pushReplacementNamed(
+        context,
+        'pedido-packing-consolidate-list',
+        arguments: [batch],
+      );
+    }
   }
 
   @override

@@ -380,29 +380,26 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                                             ),
                                           ],
                                         ),
-                                         if (batch.observacion != null &&
-                                              batch
-                                                  .observacion!.isNotEmpty) ...[
-                                            Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Text("Observación: ",
-                                                  style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: primaryColorApp)),
-                                            ),
-                                            Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Text(
-                                                batch.observacion.toString(),
+                                        if (batch.observacion != null &&
+                                            batch.observacion!.isNotEmpty) ...[
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Text("Observación: ",
                                                 style: TextStyle(
                                                     fontSize: 12,
-                                                    color: black),
-                                                maxLines: 2,
-                                                overflow:
-                                                    TextOverflow.ellipsis,
-                                              ),
+                                                    color: primaryColorApp)),
+                                          ),
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Text(
+                                              batch.observacion.toString(),
+                                              style: TextStyle(
+                                                  fontSize: 12, color: black),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                                  ],
+                                          ),
+                                        ],
                                         Align(
                                           alignment: Alignment.centerLeft,
                                           child: Row(
@@ -687,52 +684,37 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
   }
 
   void validateTime(PedidoPackingResult pedido, BuildContext context) {
+    final packingPedidoBloc = context.read<PackingPedidoBloc>();
+
     if (pedido.startTimeTransfer == "" || pedido.startTimeTransfer == null) {
       showDialog(
         context: context,
         barrierDismissible:
             false, // No permitir que el usuario cierre el diálogo manualmente
-        builder: (context) => DialogStartTimeWidget(
+        builder: (dialogContext) => DialogStartTimeWidget(
           onAccepted: () async {
-            context.read<PackingPedidoBloc>().searchControllerPedido.clear();
-
-            context.read<PackingPedidoBloc>().add(SearchPedidoEvent(
-                  '',
-                ));
-
-            context.read<PackingPedidoBloc>().add(ShowKeyboardEvent(false));
-
-            context.read<PackingPedidoBloc>().add(StartOrStopTimePack(
-                  pedido.id ?? 0,
-                  "start_time_transfer",
-                ));
-
-            context.read<PackingPedidoBloc>().add(
-                  LoadPedidoAndProductsEvent(
-                    pedido.id ?? 0,
-                  ),
-                );
-
-            Navigator.pop(context);
-            Navigator.pushReplacementNamed(context, 'detail-packing-pedido',
-                arguments: [0]);
+            packingPedidoBloc.searchControllerPedido.clear();
+            packingPedidoBloc.add(SearchPedidoEvent(''));
+            packingPedidoBloc.add(ShowKeyboardEvent(false));
+            packingPedidoBloc.add(
+                StartOrStopTimePack(pedido.id ?? 0, "start_time_transfer"));
+            packingPedidoBloc.add(LoadPedidoAndProductsEvent(pedido.id ?? 0));
+            Navigator.pop(dialogContext);
+            if (mounted) {
+              Navigator.pushReplacementNamed(context, 'detail-packing-pedido',
+                  arguments: [0]);
+            }
           },
           title: 'Iniciar Packing',
         ),
       );
     } else {
-      context.read<PackingPedidoBloc>().searchControllerPedido.clear();
-
-      context.read<PackingPedidoBloc>().add(SearchPedidoEvent(
-            '',
-          ));
-
-      context.read<PackingPedidoBloc>().add(ShowKeyboardEvent(false));
-      context.read<PackingPedidoBloc>().add(
-            LoadPedidoAndProductsEvent(
-              pedido.id ?? 0,
-            ),
-          );
+      packingPedidoBloc.searchControllerPedido.clear();
+      packingPedidoBloc.add(SearchPedidoEvent(''));
+      packingPedidoBloc.add(ShowKeyboardEvent(false));
+      packingPedidoBloc.add(
+        LoadPedidoAndProductsEvent(pedido.id ?? 0),
+      );
       Navigator.pushReplacementNamed(context, 'detail-packing-pedido',
           arguments: [0]);
     }

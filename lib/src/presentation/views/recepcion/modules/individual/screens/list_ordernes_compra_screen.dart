@@ -23,17 +23,25 @@ import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
-class ListOrdenesCompraScreen extends StatelessWidget {
-  ListOrdenesCompraScreen({super.key});
+class ListOrdenesCompraScreen extends StatefulWidget {
+  const ListOrdenesCompraScreen({super.key});
 
+  @override
+  State<ListOrdenesCompraScreen> createState() => _ListOrdenesCompraScreenState();
+}
+
+class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
   final AudioService _audioService = AudioService();
+
   final VibrationService _vibrationService = VibrationService();
+
   FocusNode focusNodeBuscar = FocusNode();
+
   final TextEditingController _controllerToDo = TextEditingController();
 
- void validateBarcode(String value, BuildContext context) {
+  void validateBarcode(String value, BuildContext context) {
     final bloc = context.read<RecepcionBloc>();
-    
+
     // ✅ PROTECCIÓN 1: Si la lista está vacía, no hagas nada
     if (bloc.listOrdenesCompra.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -51,8 +59,10 @@ class ListOrdenesCompraScreen extends StatelessWidget {
 
     // ✅ PROTECCIÓN 2: Uso seguro de firstWhere
     final ResultEntrada batchs = bloc.listOrdenesCompra.firstWhere(
-      (b) => (b.name?.toLowerCase() ?? '') == scan, // Evita error si name es null
-      orElse: () => ResultEntrada(), // Retorna objeto vacío si no encuentra nada
+      (b) =>
+          (b.name?.toLowerCase() ?? '') == scan, // Evita error si name es null
+      orElse: () =>
+          ResultEntrada(), // Retorna objeto vacío si no encuentra nada
     );
 
     if (batchs.id != null) {
@@ -67,7 +77,7 @@ class ListOrdenesCompraScreen extends StatelessWidget {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       bloc.add(ClearScannedValueOrderEvent('toDo'));
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Orden no encontrada en la lista')),
       );
@@ -681,61 +691,42 @@ class ListOrdenesCompraScreen extends StatelessWidget {
   }
 
   void validateTime(ResultEntrada ordenCompra, BuildContext context) async {
+    final recepcionBloc = context.read<RecepcionBloc>();
+
     if (ordenCompra.startTimeReception == "" ||
         ordenCompra.startTimeReception == null) {
       showDialog(
         context: context,
         barrierDismissible:
             false, // No permitir que el usuario cierre el diálogo manualmente
-        builder: (context) => DialogStartTimeWidget(
+        builder: (dialogContext) => DialogStartTimeWidget(
           onAccepted: () async {
-            context.read<RecepcionBloc>().searchControllerOrderC.clear();
-
-            context.read<RecepcionBloc>().add(SearchOrdenCompraEvent(
-                  '',
-                ));
-
-            context.read<RecepcionBloc>().add(ShowKeyboardEvent(false));
-
-            context.read<RecepcionBloc>().add(StartOrStopTimeOrder(
-                  ordenCompra.id ?? 0,
-                  "start_time_reception",
-                ));
-            context
-                .read<RecepcionBloc>()
+            recepcionBloc.searchControllerOrderC.clear();
+            recepcionBloc.add(SearchOrdenCompraEvent(''));
+            recepcionBloc.add(ShowKeyboardEvent(false));
+            recepcionBloc.add(StartOrStopTimeOrder(
+                ordenCompra.id ?? 0, "start_time_reception"));
+            recepcionBloc
                 .add(GetPorductsToEntrada(ordenCompra.id ?? 0, 'reception'));
-            //traemos la orden de entrada actual desde la bd actualizada
-            context
-                .read<RecepcionBloc>()
-                .add(CurrentOrdenesCompra(ordenCompra));
-            Navigator.pop(context);
-            Navigator.pushReplacementNamed(
-              context,
-              'recepcion',
-              arguments: [ordenCompra, 0],
-            );
+            recepcionBloc.add(CurrentOrdenesCompra(ordenCompra));
+            Navigator.pop(dialogContext);
+            if (mounted) {
+              Navigator.pushReplacementNamed(
+                context,
+                'recepcion',
+                arguments: [ordenCompra, 0],
+              );
+            }
           },
           title: 'Iniciar Recepcion',
         ),
       );
     } else {
-      context.read<RecepcionBloc>().searchControllerOrderC.clear();
-
-      context.read<RecepcionBloc>().add(SearchOrdenCompraEvent(
-            '',
-          ));
-
-      context.read<RecepcionBloc>().add(ShowKeyboardEvent(false));
-      context
-          .read<RecepcionBloc>()
-          .add(GetPorductsToEntrada(ordenCompra.id ?? 0, 'reception'));
-      //traemos la orden de entrada actual desde la bd actualizada
-      context.read<RecepcionBloc>().add(CurrentOrdenesCompra(ordenCompra));
-      // Navigator.pushReplacementNamed(
-      //   context,
-      //   'recepcion',
-      //   arguments: [ordenCompra, 0],
-      // );
+      recepcionBloc.searchControllerOrderC.clear();
+      recepcionBloc.add(SearchOrdenCompraEvent(''));
+      recepcionBloc.add(ShowKeyboardEvent(false));
+      recepcionBloc.add(GetPorductsToEntrada(ordenCompra.id ?? 0, 'reception'));
+      recepcionBloc.add(CurrentOrdenesCompra(ordenCompra));
 
       showDialog(
         context: context,
@@ -747,13 +738,14 @@ class ListOrdenesCompraScreen extends StatelessWidget {
       );
 
       await Future.delayed(const Duration(seconds: 1));
-      Navigator.pop(context);
-
-      Navigator.pushReplacementNamed(
-        context,
-        'recepcion',
-        arguments: [ordenCompra, 0],
-      );
+      if (mounted) {
+        Navigator.pop(context);
+        Navigator.pushReplacementNamed(
+          context,
+          'recepcion',
+          arguments: [ordenCompra, 0],
+        );
+      }
     }
   }
 }

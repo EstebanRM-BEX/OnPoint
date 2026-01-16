@@ -43,6 +43,18 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
 
   void validateBarcode(String value, BuildContext context) {
     final bloc = context.read<TransferenciaBloc>();
+
+// ✅ PROTECCIÓN 1: Evitar crash si la lista aún no carga
+    if (bloc.transferenciasDB.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Espere a que carguen las transferencias..."),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
     final scan = (bloc.scannedValue5.isEmpty ? value : bloc.scannedValue5)
         .trim()
         .toLowerCase();
@@ -72,8 +84,9 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
     }
 
     // Buscar el producto usando el código de barras principal o el código de producto
+    // ✅ PROTECCIÓN 2: Uso seguro de firstWhere con manejo de nulos
     final batchs = listOfBatchs.firstWhere(
-      (b) => b.name?.toLowerCase() == scan,
+      (b) => (b.name?.toLowerCase() ?? '') == scan,
       orElse: () => ResultTransFerencias(),
     );
 
@@ -573,7 +586,8 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
                                                 const SizedBox(width: 5),
                                                 Flexible(
                                                   child: Text(
-                                                    transferenciaDetail.origin ==
+                                                    transferenciaDetail
+                                                                .origin ==
                                                             ""
                                                         ? 'Sin orden de compra'
                                                         : transferenciaDetail
@@ -784,62 +798,47 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
   }
 
   void validateTime(ResultTransFerencias transfer, BuildContext context) async {
+    final transferenciaBloc = context.read<TransferenciaBloc>();
+
     if (transfer.startTimeTransfer == "" ||
         transfer.startTimeTransfer == null) {
       showDialog(
         context: context,
         barrierDismissible:
             false, // No permitir que el usuario cierre el diálogo manualmente
-        builder: (context) => DialogStartTimeWidget(
+        builder: (dialogContext) => DialogStartTimeWidget(
           onAccepted: () async {
-            context
-                .read<TransferenciaBloc>()
-                .add(ShowKeyboardEvent(showKeyboard: false));
-
-            context.read<TransferenciaBloc>().searchControllerTransfer.clear();
-
-            context
-                .read<TransferenciaBloc>()
-                .add(SearchTransferEvent("", 'transfer'));
-
-            context.read<TransferenciaBloc>().add(StartOrStopTimeTransfer(
-                  transfer.id ?? 0,
-                  "start_time_transfer",
-                ));
-            context
-                .read<TransferenciaBloc>()
-                .add(GetPorductsToTransfer(transfer.id ?? 0));
-            //traemos la orden de entrada actual desde la bd actualizada
-            context
-                .read<TransferenciaBloc>()
-                .add(CurrentTransferencia(transfer));
-            Navigator.pop(context);
-            Navigator.pushReplacementNamed(
-              context,
-              'transferencia-detail',
-              arguments: [transfer, 0],
-            );
+            // ✅ Usamos la variable 'transferenciaBloc' capturada.
+            // NO usamos context.read aquí adentro para evitar el error de Provider.
+            transferenciaBloc.add(ShowKeyboardEvent(showKeyboard: false));
+            transferenciaBloc.searchControllerTransfer.clear();
+            transferenciaBloc.add(SearchTransferEvent("", 'transfer'));
+            transferenciaBloc.add(StartOrStopTimeTransfer(
+              transfer.id ?? 0,
+              "start_time_transfer",
+            ));
+            transferenciaBloc.add(GetPorductsToTransfer(transfer.id ?? 0));
+            transferenciaBloc.add(CurrentTransferencia(transfer));
+            Navigator.pop(dialogContext);
+            // Verificamos mounted antes de navegar por seguridad
+            if (mounted) {
+              Navigator.pushReplacementNamed(
+                context,
+                'transferencia-detail',
+                arguments: [transfer, 0],
+              );
+            }
           },
           title: 'Iniciar Transferencia',
         ),
       );
     } else {
-      context
-          .read<TransferenciaBloc>()
-          .add(ShowKeyboardEvent(showKeyboard: false));
-
-      context.read<TransferenciaBloc>().searchControllerTransfer.clear();
-
-      context
-          .read<TransferenciaBloc>()
-          .add(SearchTransferEvent("", 'transfer'));
-
-      context
-          .read<TransferenciaBloc>()
-          .add(GetPorductsToTransfer(transfer.id ?? 0));
-      //traemos la orden de entrada actual desde la bd actualizada
-      context.read<TransferenciaBloc>().add(CurrentTransferencia(transfer));
-      context.read<TransferenciaBloc>().add(LoadLocations());
+      transferenciaBloc.add(ShowKeyboardEvent(showKeyboard: false));
+      transferenciaBloc.searchControllerTransfer.clear();
+      transferenciaBloc.add(SearchTransferEvent("", 'transfer'));
+      transferenciaBloc.add(GetPorductsToTransfer(transfer.id ?? 0));
+      transferenciaBloc.add(CurrentTransferencia(transfer));
+      transferenciaBloc.add(LoadLocations());
 
       showDialog(
         context: context,
@@ -851,13 +850,14 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
       );
 
       await Future.delayed(const Duration(seconds: 1));
-      Navigator.pop(context);
-
-      Navigator.pushReplacementNamed(
-        context,
-        'transferencia-detail',
-        arguments: [transfer, 0],
-      );
+      if (mounted) {
+        Navigator.pop(context);
+        Navigator.pushReplacementNamed(
+          context,
+          'transferencia-detail',
+          arguments: [transfer, 0],
+        );
+      }
     }
   }
 

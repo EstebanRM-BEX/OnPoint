@@ -20,9 +20,14 @@ import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
-class ListDevolutionsScreen extends StatelessWidget {
+class ListDevolutionsScreen extends StatefulWidget {
   const ListDevolutionsScreen({super.key});
 
+  @override
+  State<ListDevolutionsScreen> createState() => _ListDevolutionsScreenState();
+}
+
+class _ListDevolutionsScreenState extends State<ListDevolutionsScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
@@ -600,56 +605,42 @@ class ListDevolutionsScreen extends StatelessWidget {
   }
 
   void validateTime(ResultEntrada ordenCompra, BuildContext context) {
+    final recepcionBloc = context.read<RecepcionBloc>();
+
     if (ordenCompra.startTimeReception == "" ||
         ordenCompra.startTimeReception == null) {
       showDialog(
         context: context,
         barrierDismissible:
             false, // No permitir que el usuario cierre el diálogo manualmente
-        builder: (context) => DialogStartTimeWidget(
+        builder: (dialogContext) => DialogStartTimeWidget(
           onAccepted: () async {
-            context.read<RecepcionBloc>().searchControllerDev.clear();
-
-            context.read<RecepcionBloc>().add(SearchDevolucionEvent(
-                  '',
-                ));
-
-            context.read<RecepcionBloc>().add(ShowKeyboardEvent(false));
-
-            context.read<RecepcionBloc>().add(StartOrStopTimeOrder(
-                  ordenCompra.id ?? 0,
-                  "start_time_reception",
-                ));
-            context
-                .read<RecepcionBloc>()
-                .add(GetPorductsToEntrada(ordenCompra.id ?? 0, 'dev'));
-            //traemos la orden de entrada actual desde la bd actualizada
-            context
-                .read<RecepcionBloc>()
-                .add(CurrentOrdenesCompra(ordenCompra));
-            Navigator.pop(context);
-            Navigator.pushReplacementNamed(
-              context,
-              'recepcion',
-              arguments: [ordenCompra, 0],
-            );
+            recepcionBloc.searchControllerDev.clear();
+            recepcionBloc.add(SearchDevolucionEvent(''));
+            recepcionBloc.add(ShowKeyboardEvent(false));
+            recepcionBloc.add(StartOrStopTimeOrder(
+                ordenCompra.id ?? 0, "start_time_reception"));
+            recepcionBloc.add(GetPorductsToEntrada(ordenCompra.id ?? 0, 'dev'));
+            recepcionBloc.add(CurrentOrdenesCompra(ordenCompra));
+            Navigator.pop(dialogContext);
+            if (mounted) {
+              Navigator.pushReplacementNamed(
+                context,
+                'recepcion',
+                arguments: [ordenCompra, 0],
+              );
+            }
           },
           title: 'Iniciar Recepcion',
         ),
       );
     } else {
-      context.read<RecepcionBloc>().searchControllerDev.clear();
-
-      context.read<RecepcionBloc>().add(SearchDevolucionEvent(
-            '',
-          ));
-
-      context.read<RecepcionBloc>().add(ShowKeyboardEvent(false));
-      context
-          .read<RecepcionBloc>()
-          .add(GetPorductsToEntrada(ordenCompra.id ?? 0, 'dev'));
+      recepcionBloc.searchControllerDev.clear();
+      recepcionBloc.add(SearchDevolucionEvent(''));
+      recepcionBloc.add(ShowKeyboardEvent(false));
+      recepcionBloc.add(GetPorductsToEntrada(ordenCompra.id ?? 0, 'dev'));
       //traemos la orden de entrada actual desde la bd actualizada
-      context.read<RecepcionBloc>().add(CurrentOrdenesCompra(ordenCompra));
+      recepcionBloc.add(CurrentOrdenesCompra(ordenCompra));
       Navigator.pushReplacementNamed(
         context,
         'recepcion',

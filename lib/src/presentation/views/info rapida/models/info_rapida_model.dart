@@ -206,6 +206,7 @@ class Ubicacion {
   String? lote;
   dynamic loteId;
   String? fechaEliminacion;
+  String? fechaCaducidad;
   String? fechaEntrada;
   String? unidadMedida;
 
@@ -221,6 +222,7 @@ class Ubicacion {
     this.lote,
     this.loteId,
     this.fechaEliminacion,
+    this.fechaCaducidad,
     this.fechaEntrada,
     this.unidadMedida,
   });
@@ -237,6 +239,7 @@ class Ubicacion {
         lote: json["lote"],
         loteId: json["lote_id"],
         fechaEliminacion: json["fecha_eliminacion"],
+        fechaCaducidad: json["fecha_caducidad"],
         fechaEntrada: json["fecha_entrada"],
         unidadMedida: json["unidad_medida"],
       );
@@ -253,6 +256,7 @@ class Ubicacion {
         "lote": lote,
         "lote_id": loteId,
         "fecha_eliminacion": fechaEliminacion,
+        "fecha_caducidad": fechaCaducidad,
         "fecha_entrada": fechaEntrada,
         "unidad_medida": unidadMedida,
       };

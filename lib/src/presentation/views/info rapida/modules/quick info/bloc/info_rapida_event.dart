@@ -89,10 +89,7 @@ class ToggleProductExpansionEvent extends InfoRapidaEvent {
 }
 
 
-class SortLocationsEvent extends InfoRapidaEvent {
-  final bool ascending;
-  SortLocationsEvent(this.ascending);
-}
+
 
 class SortProductsEvent extends InfoRapidaEvent {
   final bool ascending;
@@ -102,4 +99,10 @@ class SortProductsEvent extends InfoRapidaEvent {
 class ViewProductImageEvent extends InfoRapidaEvent {
   final int idProduct;
   ViewProductImageEvent(this.idProduct);
+}
+
+class SortLocationsEvent extends InfoRapidaEvent {
+  final String criteria; // 'location', 'lote', 'date'
+  final bool ascending;
+  SortLocationsEvent(this.criteria, this.ascending);
 }

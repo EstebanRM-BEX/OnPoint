@@ -361,8 +361,8 @@ class ProductInfoScreen extends StatelessWidget {
                   ),
                 ),
 
-                Padding(
-                  padding: const EdgeInsets.only(top: 10, left: 20),
+               Padding(
+                  padding: const EdgeInsets.only(top: 10, left: 20, right: 10),
                   child: Row(
                     children: [
                       Align(
@@ -376,36 +376,103 @@ class ProductInfoScreen extends StatelessWidget {
                         ),
                       ),
                       const Spacer(),
-                      GestureDetector(
-                        onTap: () {
-                          context.read<InfoRapidaBloc>().add(SortLocationsEvent(
-                              !context.read<InfoRapidaBloc>().isAscending));
-                        },
-                        child: Row(
-                          children: [
-                            Text(
-                              "Ordenar ",
-                              style: TextStyle(
-                                  color: black,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(width: 5),
-                            Icon(
-                              context.read<InfoRapidaBloc>().isAscending
-                                  ? Icons.arrow_upward
-                                  : Icons.arrow_downward,
-                              color: primaryColorApp,
-                              size: 20,
-                            ),
-                          ],
-                        ),
+                      // Texto "Ordenar"
+                      Text(
+                        "Ordenar ",
+                        style: TextStyle(
+                            color: black,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(width: 10)
+                      // Los tres punticos con el menú de filtros
+                      PopupMenuButton<String>(
+                        icon: Icon(
+                          Icons.more_vert, // Los tres punticos
+                          color: primaryColorApp,
+                          size: 20,
+                        ),
+                        onSelected: (value) {
+                          final bloc = context.read<InfoRapidaBloc>();
+                          // Lógica para enviar el evento correcto
+                          switch (value) {
+                            case 'location_asc':
+                              bloc.add(SortLocationsEvent('location', true));
+                              break;
+                            case 'location_desc':
+                              bloc.add(SortLocationsEvent('location', false));
+                              break;
+                            case 'lote_asc':
+                              bloc.add(SortLocationsEvent('lote', true));
+                              break;
+                            case 'lote_desc':
+                              bloc.add(SortLocationsEvent('lote', false));
+                              break;
+                            case 'date_asc':
+                              bloc.add(SortLocationsEvent('date', true));
+                              break;
+                            case 'date_desc':
+                              bloc.add(SortLocationsEvent('date', false));
+                              break;
+                          }
+                        },
+                        itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                          // Sección UBICACIÓN
+                          const PopupMenuItem<String>(
+                            enabled: false,
+                            height: 30,
+                            child: Text('UBICACIÓN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'location_asc',
+                            height: 40,
+                            child: Row(children: [Icon(Icons.arrow_upward, size: 16), SizedBox(width: 8), Text('Nombre (A-Z)', style: TextStyle(fontSize: 13))]),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'location_desc',
+                            height: 40,
+                            child: Row(children: [Icon(Icons.arrow_downward, size: 16), SizedBox(width: 8), Text('Nombre (Z-A)', style: TextStyle(fontSize: 13))]),
+                          ),
+                          const PopupMenuDivider(),
+                          
+                          // Sección LOTE
+                          const PopupMenuItem<String>(
+                            enabled: false,
+                            height: 30,
+                            child: Text('LOTE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'lote_asc',
+                            height: 40,
+                            child: Row(children: [Icon(Icons.sort_by_alpha, size: 16), SizedBox(width: 8), Text('Ascendente (A-Z)', style: TextStyle(fontSize: 13))]),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'lote_desc',
+                            height: 40,
+                            child: Row(children: [Icon(Icons.sort_by_alpha, size: 16), SizedBox(width: 8), Text('Descendente (Z-A)', style: TextStyle(fontSize: 13))]),
+                          ),
+                          const PopupMenuDivider(),
+                          
+                          // Sección FECHA DE CADUCIDAD
+                          const PopupMenuItem<String>(
+                            enabled: false,
+                            height: 30,
+                            child: Text('FECHA CADUCIDAD', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'date_asc',
+                            height: 40,
+                            child: Row(children: [Icon(Icons.calendar_today, size: 16), SizedBox(width: 8), Text('Más antiguas primero', style: TextStyle(fontSize: 13))]),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'date_desc',
+                            height: 40,
+                            child: Row(children: [Icon(Icons.calendar_today, size: 16), SizedBox(width: 8), Text('Más recientes primero', style: TextStyle(fontSize: 13))]),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
-
                 //listado de ubicaciones
                 Expanded(
                     child: Padding(
@@ -472,11 +539,11 @@ class ProductInfoScreen extends StatelessWidget {
                               ),
                               ProductInfoRow(
                                 title:
-                                    'Fecha de eliminacion: ', // Este parece repetido, si es correcto, déjalo así
-                                value: ubicacion?.fechaEliminacion == null ||
-                                        ubicacion?.fechaEliminacion == ''
-                                    ? 'Sin fecha de eliminacion'
-                                    : '${ubicacion?.fechaEliminacion}',
+                                    'Fecha de caducidad: ', // Este parece repetido, si es correcto, déjalo así
+                                value: ubicacion?.fechaCaducidad == null ||
+                                        ubicacion?.fechaCaducidad == ''
+                                    ? 'Sin fecha de caducidad'
+                                    : '${ubicacion?.fechaCaducidad}',
                               ),
                               const SizedBox(height: 5),
                               GestureDetector(

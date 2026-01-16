@@ -677,60 +677,44 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
   }
 
   void validateTime(ResultTransFerencias transfer, BuildContext context) {
+    final transferenciaBloc = context.read<TransferenciaBloc>();
+
     if (transfer.startTimeTransfer == "" ||
         transfer.startTimeTransfer == null) {
       showDialog(
         context: context,
         barrierDismissible:
             false, // No permitir que el usuario cierre el diálogo manualmente
-        builder: (context) => DialogStartTimeWidget(
+        builder: (dialogContext) => DialogStartTimeWidget(
           onAccepted: () async {
-            context
-                .read<TransferenciaBloc>()
-                .add(ShowKeyboardEvent(showKeyboard: false));
-
-            context.read<TransferenciaBloc>().searchControllerTransfer.clear();
-
-            context
-                .read<TransferenciaBloc>()
-                .add(SearchTransferEvent("", 'entrega'));
-
-            context.read<TransferenciaBloc>().add(StartOrStopTimeTransfer(
-                  transfer.id ?? 0,
-                  "start_time_transfer",
-                ));
-            context
-                .read<TransferenciaBloc>()
-                .add(GetPorductsToTransfer(transfer.id ?? 0));
-            //traemos la orden de entrada actual desde la bd actualizada
-            context
-                .read<TransferenciaBloc>()
-                .add(CurrentTransferencia(transfer));
-            Navigator.pop(context);
-            Navigator.pushReplacementNamed(
-              context,
-              'transferencia-detail',
-              arguments: [transfer, 0],
-            );
+            transferenciaBloc.add(ShowKeyboardEvent(showKeyboard: false));
+            transferenciaBloc.searchControllerTransfer.clear();
+            transferenciaBloc.add(SearchTransferEvent("", 'entrega'));
+            transferenciaBloc.add(StartOrStopTimeTransfer(
+              transfer.id ?? 0,
+              "start_time_transfer",
+            ));
+            transferenciaBloc.add(GetPorductsToTransfer(transfer.id ?? 0));
+            transferenciaBloc.add(CurrentTransferencia(transfer));
+            Navigator.pop(dialogContext);
+            if (mounted) {
+              Navigator.pushReplacementNamed(
+                context,
+                'transferencia-detail',
+                arguments: [transfer, 0],
+              );
+            }
           },
           title: 'Iniciar Transferencia',
         ),
       );
     } else {
-      context
-          .read<TransferenciaBloc>()
-          .add(ShowKeyboardEvent(showKeyboard: false));
-
-      context.read<TransferenciaBloc>().searchControllerTransfer.clear();
-
-      context.read<TransferenciaBloc>().add(SearchTransferEvent("", 'entrega'));
-
-      context
-          .read<TransferenciaBloc>()
-          .add(GetPorductsToTransfer(transfer.id ?? 0));
-      //traemos la orden de entrada actual desde la bd actualizada
-      context.read<TransferenciaBloc>().add(CurrentTransferencia(transfer));
-      context.read<TransferenciaBloc>().add(LoadLocations());
+      transferenciaBloc.add(ShowKeyboardEvent(showKeyboard: false));
+      transferenciaBloc.searchControllerTransfer.clear();
+      transferenciaBloc.add(SearchTransferEvent("", 'entrega'));
+      transferenciaBloc.add(GetPorductsToTransfer(transfer.id ?? 0));
+      transferenciaBloc.add(CurrentTransferencia(transfer));
+      transferenciaBloc.add(LoadLocations());
       Navigator.pushReplacementNamed(
         context,
         'transferencia-detail',

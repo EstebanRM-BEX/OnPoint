@@ -146,26 +146,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     }
   }
 
-  void _onSortLocationsEvent(
-      SortLocationsEvent event, Emitter<InfoRapidaState> emit) {
-    try {
-      print('Ordenando ubicaciones, ascending: ${event.ascending}');
-      emit(SortLocationsLoading());
-      if (event.ascending) {
-        isAscending = true;
-        infoRapidaResult.result?.ubicaciones
-            ?.sort((a, b) => a.ubicacion!.compareTo(b.ubicacion!));
-      } else {
-        isAscending = false;
-        infoRapidaResult.result?.ubicaciones
-            ?.sort((a, b) => b.ubicacion!.compareTo(a.ubicacion!));
-      }
-      emit(SortLocationsSuccess());
-    } catch (e, s) {
-      print('Error en el SortLocationsEvent: $e, $s');
-      emit(SortLocationsFailure(e.toString()));
-    }
-  }
+ 
 
   void _onToggleProductExpansionEvent(
       ToggleProductExpansionEvent event, Emitter<InfoRapidaState> emit) {
@@ -458,4 +439,56 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     scannedValue1 = '';
     emit(ClearScannedValueState());
   }
+
+
+
+void _onSortLocationsEvent(
+      SortLocationsEvent event, Emitter<InfoRapidaState> emit) {
+    try {
+      print('Ordenando ubicaciones por: ${event.criteria}, ascending: ${event.ascending}');
+      emit(SortLocationsLoading());
+      
+      final locations = infoRapidaResult.result?.ubicaciones;
+      
+      if (locations != null) {
+        // Función de comparación base
+        int compare(dynamic a, dynamic b) {
+          switch (event.criteria) {
+            case 'lote':
+              // Ordenar por Lote (alfabético)
+              return (a.lote ?? '').compareTo(b.lote ?? '');
+              
+            case 'date':
+              // Ordenar por Fecha de Entrada
+              // Intentamos parsear la fecha, si falla usamos una fecha muy antigua
+              final dateA = DateTime.tryParse(a.fechaCaducidad ?? '') ?? DateTime(1900);
+              final dateB = DateTime.tryParse(b.fechaCaducidad ?? '') ?? DateTime(1900);
+              return dateA.compareTo(dateB);
+              
+            case 'location':
+            default:
+              // Por defecto ordenar por nombre de ubicación
+              return (a.ubicacion ?? '').compareTo(b.ubicacion ?? '');
+          }
+        }
+
+        // Aplicar el ordenamiento
+        if (event.ascending) {
+          locations.sort((a, b) => compare(a, b));
+          isAscending = true;
+        } else {
+          locations.sort((a, b) => compare(b, a)); // Invertimos a y b para descendente
+          isAscending = false;
+        }
+      }
+      
+      emit(SortLocationsSuccess());
+    } catch (e, s) {
+      print('Error en el SortLocationsEvent: $e, $s');
+      emit(SortLocationsFailure(e.toString()));
+    }
+  }
+
+ 
+
 }
