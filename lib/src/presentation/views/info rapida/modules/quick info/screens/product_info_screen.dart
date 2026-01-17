@@ -413,6 +413,11 @@ class ProductInfoScreen extends StatelessWidget {
                             case 'date_desc':
                               bloc.add(SortLocationsEvent('date', false));
                               break;
+                            case 'date_asc_entrada':
+                              bloc.add(SortLocationsEvent('entrada', true));
+                              break;
+                            case 'date_desc_entrada':
+                              bloc.add(SortLocationsEvent('entrada', false));
                           }
                         },
                         itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
@@ -443,12 +448,12 @@ class ProductInfoScreen extends StatelessWidget {
                           const PopupMenuItem<String>(
                             value: 'lote_asc',
                             height: 40,
-                            child: Row(children: [Icon(Icons.sort_by_alpha, size: 16), SizedBox(width: 8), Text('Ascendente (A-Z)', style: TextStyle(fontSize: 13))]),
+                            child: Row(children: [Icon(Icons.arrow_upward, size: 16), SizedBox(width: 8), Text('Ascendente (A-Z)', style: TextStyle(fontSize: 13))]),
                           ),
                           const PopupMenuItem<String>(
                             value: 'lote_desc',
                             height: 40,
-                            child: Row(children: [Icon(Icons.sort_by_alpha, size: 16), SizedBox(width: 8), Text('Descendente (Z-A)', style: TextStyle(fontSize: 13))]),
+                            child: Row(children: [Icon(Icons.arrow_downward, size: 16), SizedBox(width: 8), Text('Descendente (Z-A)', style: TextStyle(fontSize: 13))]),
                           ),
                           const PopupMenuDivider(),
                           
@@ -461,12 +466,28 @@ class ProductInfoScreen extends StatelessWidget {
                           const PopupMenuItem<String>(
                             value: 'date_asc',
                             height: 40,
-                            child: Row(children: [Icon(Icons.calendar_today, size: 16), SizedBox(width: 8), Text('Más antiguas primero', style: TextStyle(fontSize: 13))]),
+                            child: Row(children: [Icon(Icons.calendar_month, size: 16), SizedBox(width: 8), Text('Más Próximas', style: TextStyle(fontSize: 13))]),
                           ),
                           const PopupMenuItem<String>(
                             value: 'date_desc',
                             height: 40,
-                            child: Row(children: [Icon(Icons.calendar_today, size: 16), SizedBox(width: 8), Text('Más recientes primero', style: TextStyle(fontSize: 13))]),
+                            child: Row(children: [Icon(Icons.calendar_month, size: 16), SizedBox(width: 8), Text('Más Lejanas', style: TextStyle(fontSize: 13))]),
+                          ),
+                          //Seccion FECHA DE ENTRADA
+                          const PopupMenuItem<String>(
+                            enabled: false,
+                            height: 30,
+                            child: Text('FECHA ENTRADA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'date_asc_entrada',
+                            height: 40,
+                            child: Row(children: [Icon(Icons.calendar_month, size: 16), SizedBox(width: 8), Text('Más Antiguas', style: TextStyle(fontSize: 13))]),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'date_desc_entrada',
+                            height: 40,
+                            child: Row(children: [Icon(Icons.calendar_month, size: 16), SizedBox(width: 8), Text('Más Recientes', style: TextStyle(fontSize: 13))]),
                           ),
                         ],
                       ),

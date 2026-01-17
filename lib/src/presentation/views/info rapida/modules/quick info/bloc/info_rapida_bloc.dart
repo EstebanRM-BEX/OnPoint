@@ -466,9 +466,17 @@ void _onSortLocationsEvent(
               return dateA.compareTo(dateB);
               
             case 'location':
-            default:
-              // Por defecto ordenar por nombre de ubicación
+        
               return (a.ubicacion ?? '').compareTo(b.ubicacion ?? '');
+            case 'entrada':
+              // Ordenar por Fecha de Entrada
+              // Intentamos parsear la fecha, si falla usamos una fecha muy antigua
+              final dateA = DateTime.tryParse(a.fechaEntrada ?? '') ?? DateTime(1900);
+              final dateB = DateTime.tryParse(b.fechaEntrada ?? '') ?? DateTime(1900);
+              return dateA.compareTo(dateB);
+          default:
+          // Ordenar por Nombre de Ubicación (alfabético) por defecto
+          return (a.name ?? '').compareTo(b.name ?? '');
           }
         }
 
