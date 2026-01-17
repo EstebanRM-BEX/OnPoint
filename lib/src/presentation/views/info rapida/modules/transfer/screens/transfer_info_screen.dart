@@ -82,22 +82,40 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
     _handleDependencies();
   }
 
-  void validateMuelle(String value) {
+void validateMuelle(String value) {
     final bloc = context.read<TransferInfoBloc>();
+    
+    // ✅ PROTECCIÓN 1: Si la lista de ubicaciones aún no carga, evitamos el CRASH.
+    if (bloc.ubicaciones.isEmpty) {
+      _audioService.playErrorSound();
+      _vibrationService.vibrate();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Las ubicaciones aún no han cargado. Intente nuevamente."),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      // Limpiamos el campo para que el usuario pueda intentar de nuevo
+      _controllerLocationDest.clear();
+      return; 
+    }
+
     String scan = bloc.scannedValue1.toLowerCase() == ""
         ? value.toLowerCase()
         : bloc.scannedValue1.toLowerCase();
 
     _controllerLocationDest.text = "";
 
-    // Buscar el barcode que coincida con el valor escaneado
-    ResultUbicaciones? matchedUbicacion = bloc.ubicaciones.firstWhere(
-        (ubicacion) => ubicacion.barcode?.toLowerCase() == scan,
-        orElse: () =>
-            ResultUbicaciones() // Si no se encuentra ningún match, devuelve null
-        );
+    // ✅ PROTECCIÓN 2: Uso seguro de firstWhere con manejo de nulos
+    // (Aseguramos que name/barcode no sean nulos antes de comparar)
+    ResultUbicaciones matchedUbicacion = bloc.ubicaciones.firstWhere(
+        (ubicacion) => (ubicacion.barcode?.toLowerCase() ?? '') == scan,
+        orElse: () => ResultUbicaciones() // Retorna objeto vacío si no encuentra
+    );
 
-    if (matchedUbicacion.barcode != null) {
+    // Validamos si se encontró una ubicación real (que tenga ID o Barcode válido)
+    if (matchedUbicacion.barcode != null && matchedUbicacion.barcode != "") {
       bloc.add(ValidateFieldsEventTransfer(field: "muelle", isOk: true));
       bloc.add(ChangeLocationDestIsOkEventTransfer(
         true,
@@ -109,6 +127,12 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       print('Ubicacion no encontrada');
+      
+      // Feedback visual opcional
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Ubicación de destino no encontrada")),
+      );
+      
       bloc.add(ValidateFieldsEventTransfer(field: "muelle", isOk: false));
       bloc.add(ClearScannedValueEventTransfer('muelle'));
     }
