@@ -441,7 +441,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
         : _cantidadController.text);
 
     double truncado = double.parse(
-        (batchBloc.currentProduct.cantidadFaltante).toStringAsFixed(2));
+        (batchBloc.currentProduct.cantidadFaltante ?? 0.0).toString());
 
     if (cantidad == truncado) {
       _finishSeprateProductOrder(context, cantidad);
@@ -1001,8 +1001,9 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 5),
                                       child: Text(
-                                        (bloc.currentProduct.cantidadFaltante)
-                                            .toStringAsFixed(2),
+                                        (bloc.currentProduct.cantidadFaltante ??
+                                                0.0)
+                                            .toString(),
                                         style: TextStyle(
                                             color: primaryColorApp,
                                             fontSize: 13),
@@ -1032,18 +1033,19 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                                                         (bloc.currentProduct
                                                             .cantidadFaltante)
                                                     ? ((bloc.currentProduct
-                                                                .cantidadFaltante) -
-                                                            bloc.quantitySelected)
-                                                        .toStringAsFixed(2)
+                                                                    .cantidadFaltante) -
+                                                                bloc.quantitySelected ??
+                                                            0.0)
+                                                        .toString()
                                                     : '0'), // Aquí puedes definir qué mostrar si la condición no se cumple
                                                 style: TextStyle(
                                                   color: _getColorForDifference(
                                                     bloc.quantitySelected <=
                                                             (bloc.currentProduct
-                                                                .cantidadFaltante)
+                                                                .cantidadFaltante ?? 0.0)
                                                         ? ((bloc.currentProduct
-                                                                .cantidadFaltante) -
-                                                            bloc.quantitySelected)
+                                                                .cantidadFaltante ?? 0.0) -
+                                                            (bloc.quantitySelected ?? 0.0))
                                                         : 0, // Si no cumple, el color será para diferencia 0
                                                   ),
                                                   fontSize: 13,

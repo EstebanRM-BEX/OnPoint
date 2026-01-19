@@ -643,13 +643,12 @@ class DetailPickDoneScreen extends StatelessWidget {
                                                               primaryColorApp), // Color rojo para la primera parte
                                                     ),
                                                     TextSpan(
-                                                      text: batch
-                                                              ?.lineasTransferenciaEnviadas?[
-                                                                  index]
-                                                              .quantityDone
-                                                              .toStringAsFixed(
-                                                                  2) ??
-                                                          '',
+                                                      text: (batch
+                                                                  ?.lineasTransferenciaEnviadas?[
+                                                                      index]
+                                                                  .quantityDone ??
+                                                              0.0)
+                                                          .toString(),
                                                       style: TextStyle(
                                                           fontSize: 12,
                                                           color:

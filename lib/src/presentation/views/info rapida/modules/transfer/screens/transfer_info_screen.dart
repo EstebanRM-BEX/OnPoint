@@ -82,23 +82,24 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
     _handleDependencies();
   }
 
-void validateMuelle(String value) {
+  void validateMuelle(String value) {
     final bloc = context.read<TransferInfoBloc>();
-    
+
     // ✅ PROTECCIÓN 1: Si la lista de ubicaciones aún no carga, evitamos el CRASH.
     if (bloc.ubicaciones.isEmpty) {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Las ubicaciones aún no han cargado. Intente nuevamente."),
+          content:
+              Text("Las ubicaciones aún no han cargado. Intente nuevamente."),
           backgroundColor: Colors.orange,
           duration: Duration(seconds: 2),
         ),
       );
       // Limpiamos el campo para que el usuario pueda intentar de nuevo
       _controllerLocationDest.clear();
-      return; 
+      return;
     }
 
     String scan = bloc.scannedValue1.toLowerCase() == ""
@@ -111,8 +112,9 @@ void validateMuelle(String value) {
     // (Aseguramos que name/barcode no sean nulos antes de comparar)
     ResultUbicaciones matchedUbicacion = bloc.ubicaciones.firstWhere(
         (ubicacion) => (ubicacion.barcode?.toLowerCase() ?? '') == scan,
-        orElse: () => ResultUbicaciones() // Retorna objeto vacío si no encuentra
-    );
+        orElse: () =>
+            ResultUbicaciones() // Retorna objeto vacío si no encuentra
+        );
 
     // Validamos si se encontró una ubicación real (que tenga ID o Barcode válido)
     if (matchedUbicacion.barcode != null && matchedUbicacion.barcode != "") {
@@ -127,12 +129,12 @@ void validateMuelle(String value) {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       print('Ubicacion no encontrada');
-      
+
       // Feedback visual opcional
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Ubicación de destino no encontrada")),
       );
-      
+
       bloc.add(ValidateFieldsEventTransfer(field: "muelle", isOk: false));
       bloc.add(ClearScannedValueEventTransfer('muelle'));
     }
@@ -634,7 +636,6 @@ void validateMuelle(String value) {
                                                   ),
                                                 ),
                                                 const Spacer(),
-                                               
                                                 SizedBox(
                                                   height: 20,
                                                   width: 20,
@@ -726,17 +727,17 @@ void validateMuelle(String value) {
                                                     ),
                                                   ),
                                                   const Spacer(),
-                                                 SizedBox(
-                                                  height: 20,
-                                                  width: 20,
-                                                  child: SvgPicture.asset(
-                                                    color: primaryColorApp,
-                                                    "assets/icons/packing.svg",
+                                                  SizedBox(
                                                     height: 20,
                                                     width: 20,
-                                                    fit: BoxFit.cover,
+                                                    child: SvgPicture.asset(
+                                                      color: primaryColorApp,
+                                                      "assets/icons/packing.svg",
+                                                      height: 20,
+                                                      width: 20,
+                                                      fit: BoxFit.cover,
+                                                    ),
                                                   ),
-                                                ),
                                                 ],
                                               ),
                                             ),
@@ -796,7 +797,7 @@ void validateMuelle(String value) {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 5),
                                     child: Text(
-                                      '(${widget.ubicacion?.cantidadMano.toStringAsFixed(2) ?? ""})',
+                                      '(${(widget.ubicacion?.cantidadMano ?? 0.0).toString() })',
                                       style: TextStyle(
                                           color: primaryColorApp, fontSize: 15),
                                     ),

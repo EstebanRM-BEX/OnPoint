@@ -115,7 +115,6 @@ class HistoryListScreen extends StatelessWidget {
                                         MaterialPageRoute(
                                             builder: (context) =>
                                                 const WMSPickingPage(
-                                                  indexSelected: 0,
                                                 )),
                                         (route) => false);
                                   },

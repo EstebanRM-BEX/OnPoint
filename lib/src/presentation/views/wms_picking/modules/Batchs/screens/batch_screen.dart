@@ -28,7 +28,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dropdowbutton_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
-import 'package:wms_app/src/presentation/widgets/expiredate_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/popunButton_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/progressIndicatos_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/location/scanner_location_widget.dart';
@@ -171,8 +170,11 @@ class _BatchDetailScreenState extends State<BatchScreen>
 
     if (scan == product.barcodeLocation?.toLowerCase()) {
       bloc.add(ValidateFieldsEvent(field: "location", isOk: true));
-      bloc.add(ChangeLocationIsOkEvent(product.idProduct ?? 0,
-          bloc.batchWithProducts.batch?.id ?? 0, product.idMove ?? 0));
+      bloc.add(ChangeLocationIsOkEvent(
+          product.idProduct ?? 0,
+          bloc.batchWithProducts.batch?.id ?? 0,
+          product.idMove ?? 0,
+          bloc.typePicking));
       bloc.oldLocation = product.locationId.toString();
     } else {
       _vibrationService.vibrate();
@@ -194,8 +196,13 @@ class _BatchDetailScreenState extends State<BatchScreen>
 
     if (scan == product.barcode?.toLowerCase()) {
       bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
-      bloc.add(ChangeProductIsOkEvent(true, product.idProduct ?? 0,
-          bloc.batchWithProducts.batch?.id ?? 0, 0, product.idMove ?? 0));
+      bloc.add(ChangeProductIsOkEvent(
+          true,
+          product.idProduct ?? 0,
+          bloc.batchWithProducts.batch?.id ?? 0,
+          0,
+          product.idMove ?? 0,
+          bloc.typePicking));
     } else {
       final isOk = await validateScannedBarcode(scan, product, bloc, true);
       if (!isOk) {
@@ -219,8 +226,8 @@ class _BatchDetailScreenState extends State<BatchScreen>
     if (bloc.quantitySelected == product.quantity) return;
 
     if (scan == product.barcode?.toLowerCase()) {
-      bloc.add(AddQuantitySeparate(
-          product.idProduct ?? 0, product.idMove ?? 0, 1, false));
+      bloc.add(AddQuantitySeparate(product.idProduct ?? 0, product.idMove ?? 0,
+          1, false, bloc.typePicking));
     } else {
       await validateScannedBarcode(scan, product, bloc, false);
     }
@@ -460,15 +467,26 @@ class _BatchDetailScreenState extends State<BatchScreen>
                                     cantidadController.clear();
 
                                     batchBloc.add(ResetValuesEvent());
-                                    context
-                                        .read<WMSPickingBloc>()
-                                        .add(FilterBatchesBStatusEvent(
-                                          '',
-                                        ));
+                                    context.read<WMSPickingBloc>().add(
+                                        FilterBatchesBStatusEvent(
+                                            '', batchBloc.typePicking));
 
-                                    Navigator.pushReplacementNamed(
-                                        context, 'wms-picking',
-                                        arguments: 0);
+                                    //validamos el type
+                                    if (batchBloc.typePicking == 'components') {
+                                      Navigator.pushReplacementNamed(
+                                        context,
+                                        'picking-componentes-batch',
+                                      );
+                                    } else if (batchBloc.typePicking ==
+                                        'batch') {
+                                      Navigator.pushReplacementNamed(
+                                        context,
+                                        'wms-picking',
+                                      );
+                                    } else {
+                                      Navigator.pushReplacementNamed(
+                                          context, '/home');
+                                    }
                                   },
                                   icon: const Icon(Icons.arrow_back,
                                       color: Colors.white, size: 20),
@@ -581,8 +599,8 @@ class _BatchDetailScreenState extends State<BatchScreen>
                             currentProduct: currentProduct,
                           ),
                           expiryWidget: ExpirationBadgeWidget(
-                            expirationDate: batchBloc
-                                .currentProduct?.expireDate,
+                            expirationDate:
+                                batchBloc.currentProduct?.expireDate,
                           ),
                           listOfBarcodes: batchBloc.listOfBarcodes,
                           onBarcodesDialogTap: () {
@@ -779,7 +797,8 @@ class _BatchDetailScreenState extends State<BatchScreen>
                         batchBloc.add(ChangeQuantitySeparate(
                             intValue,
                             currentProduct.idProduct ?? 0,
-                            currentProduct.idMove ?? 0));
+                            currentProduct.idMove ?? 0,
+                            batchBloc.typePicking));
                       } else {
                         showDialog(
                           context: context,
@@ -793,7 +812,8 @@ class _BatchDetailScreenState extends State<BatchScreen>
                                 batchBloc.add(ChangeQuantitySeparate(
                                     intValue,
                                     currentProduct.idProduct ?? 0,
-                                    currentProduct.idMove ?? 0));
+                                    currentProduct.idMove ?? 0,
+                                    batchBloc.typePicking));
                                 _nextProduct(currentProduct, batchBloc);
                               },
                             );
@@ -869,10 +889,10 @@ class _BatchDetailScreenState extends State<BatchScreen>
 
     if (cantidad == currentProduct.quantity) {
       batchBloc.add(ChangeQuantitySeparate(
-        cantidad,
-        currentProduct.idProduct ?? 0,
-        currentProduct.idMove ?? 0,
-      ));
+          cantidad,
+          currentProduct.idProduct ?? 0,
+          currentProduct.idMove ?? 0,
+          batchBloc.typePicking));
     } else {
       FocusScope.of(context).unfocus();
       if (cantidad < (currentProduct.quantity ?? 0).toDouble()) {
@@ -885,10 +905,10 @@ class _BatchDetailScreenState extends State<BatchScreen>
               batchId: batchBloc.batchWithProducts.batch?.id ?? 0,
               onAccepted: () async {
                 batchBloc.add(ChangeQuantitySeparate(
-                  cantidad,
-                  currentProduct.idProduct ?? 0,
-                  currentProduct.idMove ?? 0,
-                ));
+                    cantidad,
+                    currentProduct.idProduct ?? 0,
+                    currentProduct.idMove ?? 0,
+                    batchBloc.typePicking));
                 _nextProduct(currentProduct, batchBloc);
                 cantidadController.clear();
               },
@@ -926,14 +946,15 @@ class _BatchDetailScreenState extends State<BatchScreen>
       // Función para actualizar la base de datos en varios campos a la vez
       Future<void> _updateDatabaseFields() async {
         await db.setFieldTableBatchProducts(
-          batch.id ?? 0,
-          currentProduct.idProduct ?? 0,
-          'is_separate',
-          1,
-          currentProduct.idMove ?? 0,
-        );
+            batch.id ?? 0,
+            currentProduct.idProduct ?? 0,
+            'is_separate',
+            1,
+            currentProduct.idMove ?? 0,
+            batchBloc.typePicking);
 
-        await db.incrementProductSeparateQty(batch.id ?? 0);
+        await db.incrementProductSeparateQty(
+            batch.id ?? 0, batchBloc.typePicking);
       }
 
       // Función para gestionar la transición al siguiente producto
@@ -948,29 +969,29 @@ class _BatchDetailScreenState extends State<BatchScreen>
           // Cambiar el producto actual
           context.read<BatchBloc>().add(ChangeCurrentProduct(
                 currentProduct: currentProduct,
+                type: batchBloc.typePicking,
               ));
 
           // Cambiar el estado de cantidad
           batchBloc.add(ChangeIsOkQuantity(
-            false,
-            currentProduct.idProduct ?? 0,
-            batch.id ?? 0,
-            currentProduct.idMove ?? 0,
-          ));
+              false,
+              currentProduct.idProduct ?? 0,
+              batch.id ?? 0,
+              currentProduct.idMove ?? 0,
+              batchBloc.typePicking));
 
           // Marcar como "no correcto" la cantidad
           await db.setFieldTableBatchProducts(
-            batch.id ?? 0,
-            currentProduct.idProduct ?? 0,
-            'is_quantity_is_ok',
-            0,
-            currentProduct.idMove ?? 0,
-          );
+              batch.id ?? 0,
+              currentProduct.idProduct ?? 0,
+              'is_quantity_is_ok',
+              0,
+              currentProduct.idMove ?? 0,
+              batchBloc.typePicking);
 
           // Recargar productos
-          context
-              .read<BatchBloc>()
-              .add(FetchBatchWithProductsEvent(batch.id ?? 0));
+          context.read<BatchBloc>().add(FetchBatchWithProductsEvent(
+              batch.id ?? 0, batchBloc.typePicking));
 
           // Esperar 1 segundo y mover el foco
           await Future.delayed(const Duration(seconds: 1));
@@ -979,6 +1000,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
           // Si no estamos en la última posición, cambiamos el producto actual
           context.read<BatchBloc>().add(ChangeCurrentProduct(
                 currentProduct: currentProduct,
+                type: batchBloc.typePicking,
               ));
 
           // Validamos el campo "quantity"
@@ -997,7 +1019,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
       // Ejecutar las operaciones en bloque
       await _updateDatabaseFields();
       batchBloc.add(ShowQuantityEvent(false));
-      batchBloc.sortProductsByLocationId();
+      batchBloc.sortProductsByLocationId(batchBloc.typePicking);
       await _moveToNextProduct();
     } catch (e, s) {
       print("❌ Error en _nextProduct: $e -> $s");
@@ -1022,21 +1044,23 @@ class _BatchDetailScreenState extends State<BatchScreen>
       if (isProduct) {
         batchBloc.add(ValidateFieldsEvent(field: "product", isOk: true));
 
-        batchBloc.add(ChangeQuantitySeparate(
-            0, currentProduct.idProduct ?? 0, currentProduct.idMove ?? 0));
+        batchBloc.add(ChangeQuantitySeparate(0, currentProduct.idProduct ?? 0,
+            currentProduct.idMove ?? 0, batchBloc.typePicking));
 
         batchBloc.add(ChangeProductIsOkEvent(
             true,
             currentProduct.idProduct ?? 0,
             batchBloc.batchWithProducts.batch?.id ?? 0,
             0,
-            currentProduct.idMove ?? 0));
+            currentProduct.idMove ?? 0,
+            batchBloc.typePicking));
 
         batchBloc.add(ChangeIsOkQuantity(
             true,
             currentProduct.idProduct ?? 0,
             batchBloc.batchWithProducts.batch?.id ?? 0,
-            currentProduct.idMove ?? 0));
+            currentProduct.idMove ?? 0,
+            batchBloc.typePicking));
 
         return true;
       } else {
@@ -1048,8 +1072,12 @@ class _BatchDetailScreenState extends State<BatchScreen>
           return false;
         }
 
-        batchBloc.add(AddQuantitySeparate(currentProduct.idProduct ?? 0,
-            currentProduct.idMove ?? 0, matchedBarcode.cantidad, false));
+        batchBloc.add(AddQuantitySeparate(
+            currentProduct.idProduct ?? 0,
+            currentProduct.idMove ?? 0,
+            matchedBarcode.cantidad,
+            false,
+            batchBloc.typePicking));
       }
       _vibrationService.vibrate();
       _audioService.playErrorSound();
@@ -1063,7 +1091,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
   void validatePicking(
       BatchBloc batchBloc, BuildContext context, ProductsBatch currentProduct) {
     batchBloc.add(FetchBatchWithProductsEvent(
-        batchBloc.batchWithProducts.batch?.id ?? 0));
+        batchBloc.batchWithProducts.batch?.id ?? 0, batchBloc.typePicking));
 
     //validamos que la cantidad de productos separados sea igual a la cantidad de productos pedidos
 //validamos el 100 de las unidades separadas
@@ -1101,7 +1129,8 @@ class _BatchDetailScreenState extends State<BatchScreen>
                           true) {
                         //cerramos el focus
                         batchBloc.isSearch = false;
-                        batchBloc.add(LoadProductEditEvent());
+                        batchBloc
+                            .add(LoadProductEditEvent(batchBloc.typePicking));
                         // batchBloc.add(IsShouldRunDependencies(false));
                         Navigator.pushReplacementNamed(
                           context,
@@ -1136,19 +1165,33 @@ class _BatchDetailScreenState extends State<BatchScreen>
             true,
             currentProduct.idProduct ?? 0,
             batchBloc.batchWithProducts.batch?.id ?? 0,
-            currentProduct.idMove ?? 0));
+            currentProduct.idMove ?? 0,
+            batchBloc.typePicking));
 
         batchBloc.add(EndTimePick(
             batchBloc.batchWithProducts.batch?.id ?? 0, DateTime.now()));
 
         batchBloc.add(PickingOkEvent(batchBloc.batchWithProducts.batch?.id ?? 0,
-            currentProduct.idProduct ?? 0));
-        context.read<WMSPickingBloc>().add(FilterBatchesBStatusEvent(
-              '',
-            ));
+            currentProduct.idProduct ?? 0, batchBloc.typePicking));
+        context
+            .read<WMSPickingBloc>()
+            .add(FilterBatchesBStatusEvent('', batchBloc.typePicking));
         batchBloc.index = 0;
         batchBloc.isSearch = true;
-        Navigator.pushReplacementNamed(context, 'wms-picking', arguments: 0);
+        //validamos el type
+        if (batchBloc.typePicking == 'components') {
+          Navigator.pushReplacementNamed(
+            context,
+            'picking-componentes-batch',
+          );
+        } else if (batchBloc.typePicking == 'batch') {
+          Navigator.pushReplacementNamed(
+            context,
+            'wms-picking',
+          );
+        } else {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
       }
     } else {
       showDialog(
@@ -1164,7 +1207,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
                       true) {
                     //cerramos el focus
                     batchBloc.isSearch = false;
-                    batchBloc.add(LoadProductEditEvent());
+                    batchBloc.add(LoadProductEditEvent(batchBloc.typePicking));
                     Navigator.pushReplacementNamed(
                       context,
                       'batch-detail',

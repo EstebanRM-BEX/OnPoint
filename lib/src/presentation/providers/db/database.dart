@@ -88,7 +88,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 17,
+      version: 19,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -182,6 +182,7 @@ class DataBaseSqlite {
     await db.execute('''
       CREATE TABLE tblbatch_products (
         id INTEGER PRIMARY KEY,
+        type TEXT,
         id_product INTEGER,
         batch_id INTEGER,
         expire_date VARCHAR(255),
@@ -389,6 +390,28 @@ class DataBaseSqlite {
         print("Error actualizando UbicacionesTable: $e");
       }
     }
+    if (oldVersion < 18) {
+      //añadir campo de type picking en la tabla de batch products
+      try {
+        await db.execute('''
+          ALTER TABLE tblbatch_products
+          ADD COLUMN type TEXT;
+        ''');
+      } catch (e) {
+        print("Error actualizando tblbatch_products: $e");
+      }
+    }
+    if (oldVersion < 19) {
+      //añadir campo de type batch picking en la tabla de tblbatchs
+      try {
+        await db.execute('''
+          ALTER TABLE tblbatchs
+          ADD COLUMN type TEXT;
+        ''');
+      } catch (e) {
+        print("Error actualizando tblbatchs: $e");
+      }
+    }
   }
 
   //todo repositorios de las tablas
@@ -493,7 +516,7 @@ class DataBaseSqlite {
   //Todo: Métodos para batchs_products
 
   Future<void> insertBatchProducts(
-      List<ProductsBatch> productsBatchList) async {
+      List<ProductsBatch> productsBatchList, String type) async {
     try {
       final db = await getDatabaseInstance();
       if (db == null) return;
@@ -513,6 +536,7 @@ class DataBaseSqlite {
 
           final data = {
             "id_product": product.idProduct,
+            "type": type,
             "batch_id": product.batchId,
             "expire_date":
                 product.expireDate == false ? "" : product.expireDate,
@@ -598,12 +622,12 @@ class DataBaseSqlite {
 
   //metodo para traer un producto de un batch de la tabla tblbatch_products
   Future<ProductsBatch?> getProductBatch(
-      int batchId, int productId, int idMove) async {
+      int batchId, int productId, int idMove, String type) async {
     final db = await getDatabaseInstance();
     final List<Map<String, dynamic>> maps = await db!.query(
       'tblbatch_products',
-      where: 'batch_id = ? AND id_product = ? AND id_move = ?',
-      whereArgs: [batchId, productId, idMove],
+      where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
+      whereArgs: [batchId, productId, idMove, type],
     );
 
     if (maps.isNotEmpty) {
@@ -613,15 +637,16 @@ class DataBaseSqlite {
   }
 
   //* Obtener todos los productos de tblbatch_products
-  Future<List<ProductsBatch>> getProducts() async {
+  Future<List<ProductsBatch>> getProducts(String type) async {
     final db = await getDatabaseInstance();
-    final List<Map<String, dynamic>> maps =
-        await db!.query('tblbatch_products');
+    final List<Map<String, dynamic>> maps = await db!
+        .query('tblbatch_products', where: 'type = ?', whereArgs: [type]);
     return maps.map((map) => ProductsBatch.fromMap(map)).toList();
   }
 
   //* Obtener un batch con sus productos
-  Future<BatchWithProducts?> getBatchWithProducts(int batchId) async {
+  Future<BatchWithProducts?> getBatchWithProducts(
+      int batchId, String type) async {
     try {
       final db = await getDatabaseInstance();
       final List<Map<String, dynamic>> batchMaps = await db!.query(
@@ -636,8 +661,8 @@ class DataBaseSqlite {
       final BatchsModel batch = BatchsModel.fromMap(batchMaps.first);
       final List<Map<String, dynamic>> productMaps = await db.query(
         'tblbatch_products',
-        where: 'batch_id = ?',
-        whereArgs: [batchId],
+        where: 'batch_id = ? AND type = ?',
+        whereArgs: [batchId, type],
       );
       final List<ProductsBatch> products =
           productMaps.map((map) => ProductsBatch.fromMap(map)).toList();
@@ -662,14 +687,23 @@ class DataBaseSqlite {
     await deleBarcodes("orden");
   }
 
-  Future<void> delePicking() async {
+  Future<void> deleAllPicking() async {
     final db = await getDatabaseInstance();
     await db.delete(BatchPickingTable.tableName);
     await db.delete('tblbatch_products');
-    await db.delete(BarcodesPackagesTable.tableName);
     await db.delete(SubmuellesTable.tableName);
     await deleOrigin("picking");
-    // await db.delete(DocOriginTable.tableName);
+    await deleOrigin("components");
+  }
+
+  Future<void> delePicking(String type) async {
+    final db = await getDatabaseInstance();
+    await db.delete(BatchPickingTable.tableName,
+        where: '${BatchPickingTable.columnType} = ?', whereArgs: [type]);
+    await db.delete('tblbatch_products', where: 'type = ?', whereArgs: [type]);
+    await deleBarcodes(type);
+    await db.delete(SubmuellesTable.tableName);
+    await deleOrigin(type);
   }
 
   Future<void> delePick(String typPick) async {
@@ -820,7 +854,7 @@ class DataBaseSqlite {
   }
 
   Future<void> deleteBDCloseSession() async {
-    await delePicking();
+    await deleAllPicking();
     await delePickAll();
     await delePackingAll();
     await deleAllRecepcion();
@@ -833,201 +867,229 @@ class DataBaseSqlite {
   }
 
   //*metodo para actualizar la tabla de productos de un batch
-  Future<int?> setFieldTableBatchProducts(int batchId, int productId,
-      String field, dynamic setValue, int idMove) async {
+ Future<int?> setFieldTableBatchProducts(int batchId, int productId,
+      String field, dynamic setValue, int idMove, String type) async {
     final db = await getDatabaseInstance();
+    
+    // ✅ SOLUCIÓN: Usamos '?' para los valores y pasamos una lista de argumentos.
+    // Nota: $field se deja igual porque es el nombre de la columna, no un valor.
     final resUpdate = await db!.rawUpdate(
-        ' UPDATE tblbatch_products SET $field = $setValue WHERE batch_id = $batchId AND id_product = $productId AND id_move = $idMove');
+        'UPDATE tblbatch_products SET $field = ? WHERE batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
+        [setValue, batchId, productId, idMove, type]); // <--- Aquí pasamos la lista
+        
     print("update tblbatch_products ($field): $resUpdate");
 
     return resUpdate;
   }
 
-  Future<int?> setFieldStringTableBatchProducts(int batchId, int productId,
-      String field, dynamic setValue, int idMove) async {
-    final db = await getDatabaseInstance();
-    final resUpdate = await db!.rawUpdate(
-        " UPDATE tblbatch_products SET $field = '$setValue' WHERE batch_id = $batchId AND id_product = $productId AND id_move = $idMove");
-    // print("update tblbatch_products ($field): $resUpdate");
 
-    return resUpdate;
+  // ✅ 1. Método genérico para actualizar un campo string
+  // Usamos db.update para manejar automáticamente los tipos de datos
+  Future<int?> setFieldStringTableBatchProducts(int batchId, int productId,
+      String field, dynamic setValue, int idMove, String type) async {
+    final db = await getDatabaseInstance();
+    
+    // db.update es mejor que rawUpdate porque maneja las comillas automáticamente
+    return await db!.update(
+      'tblbatch_products',
+      {field: setValue}, // Mapa: columna -> valor
+      where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
+      whereArgs: [batchId, productId, idMove, type],
+    );
   }
 
-  //obtener el tiempo de inicio de la separacion de la tabla product
+  // ✅ 2. Obtener un campo específico
   Future<String> getFieldTableProducts(
-      int batchId, int productId, int moveId, String field) async {
+      int batchId, int productId, int moveId, String field, String type) async {
     try {
       final db = await getDatabaseInstance();
-      final res = await db!.rawQuery('''
-      SELECT $field FROM tblbatch_products WHERE batch_id = $batchId AND  id_product = $productId AND id_move = $moveId LIMIT 1
-    ''');
+      
+      final res = await db!.query(
+        'tblbatch_products',
+        columns: [field],
+        where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
+        whereArgs: [batchId, productId, moveId, type],
+        limit: 1,
+      );
+
       if (res.isNotEmpty) {
-        String responsefield = res[0]['${field}'].toString();
-        return responsefield;
+        return res.first[field].toString();
       }
       return "";
     } catch (e, s) {
       print("error getFieldTableProducts: $e => $s");
+      return "";
     }
-    return "";
   }
 
-  //todo: Metodos para realizar el picking de un producto
+  // --- MÉTODOS PARA EL PICKING (Stopwatch y Novedades) ---
 
+  // ✅ 3. Iniciar cronómetro
   Future<int?> startStopwatch(
-      int batchId, int productId, int moveId, String date) async {
+      int batchId, int productId, int moveId, String date, String type) async {
     final db = await getDatabaseInstance();
-    final resUpdate = await db!.rawUpdate(
-        "UPDATE tblbatch_products SET time_separate_start = '$date' WHERE batch_id = $batchId AND id_product = $productId AND id_move = $moveId ");
-    print("startStopwatch: $resUpdate");
-    return resUpdate;
+    
+    return await db!.update(
+      'tblbatch_products',
+      {'time_separate_start': date},
+      where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
+      whereArgs: [batchId, productId, moveId, type],
+    );
   }
 
+  // ✅ 4. Guardar tiempo total
   Future<int?> totalStopwatchProduct(
-      int batchId, int productId, int moveId, double time) async {
+      int batchId, int productId, int moveId, double time, String type) async {
     final db = await getDatabaseInstance();
-    final resUpdate = await db!.rawUpdate(
-        "UPDATE tblbatch_products SET time_separate = $time WHERE batch_id = $batchId AND id_product = $productId AND id_move = $moveId ");
-    print("startStopwatch: $resUpdate");
-    return resUpdate;
+    
+    return await db!.update(
+      'tblbatch_products',
+      {'time_separate': time},
+      where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
+      whereArgs: [batchId, productId, moveId, type],
+    );
   }
 
+  // ✅ 5. Finalizar cronómetro
   Future<int?> endStopwatchProduct(
-      int batchId, String date, int productId, int moveId) async {
+      int batchId, String date, int productId, int moveId, String type) async {
     final db = await getDatabaseInstance();
-    final resUpdate = await db!.rawUpdate(
-        "UPDATE tblbatch_products SET time_separate_end = '$date' WHERE batch_id = $batchId AND id_product = $productId AND id_move = $moveId");
-
-    print("endStopwatchProduct: $resUpdate");
-    return resUpdate;
+    
+    return await db!.update(
+      'tblbatch_products',
+      {'time_separate_end': date},
+      where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
+      whereArgs: [batchId, productId, moveId, type],
+    );
   }
 
+  // ✅ 6. Actualizar fecha transacción
   Future<int?> dateTransaccionProduct(
-      int batchId, String date, int productId, int moveId) async {
+      int batchId, String date, int productId, int moveId, String type) async {
     final db = await getDatabaseInstance();
-    final resUpdate = await db!.rawUpdate(
-        "UPDATE tblbatch_products SET fecha_transaccion = '$date' WHERE batch_id = $batchId AND id_product = $productId AND id_move = $moveId");
-
-    print("dateTransaccionProduct: $resUpdate");
-    return resUpdate;
+    
+    return await db!.update(
+      'tblbatch_products',
+      {'fecha_transaccion': date},
+      where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
+      whereArgs: [batchId, productId, moveId, type],
+    );
   }
 
+  // ✅ 7. Actualizar novedad u observación
   Future<int?> updateNovedad(
     int batchId,
     int productId,
     String novedad,
     int idMove,
+    String type,
   ) async {
     final db = await getDatabaseInstance();
-    final resUpdate = await db!.rawUpdate(
-        " UPDATE tblbatch_products SET observation = '$novedad' WHERE batch_id = $batchId AND id_product = $productId AND id_move = $idMove");
-    print("updateNovedad: $resUpdate");
-    return resUpdate;
+    
+    return await db!.update(
+      'tblbatch_products',
+      {'observation': novedad},
+      where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
+      whereArgs: [batchId, productId, idMove, type],
+    );
   }
 
-  //sumamos la cantidad de productos separados en la tabla de tblbatch
-  Future<int?> incrementProductSeparateQty(int batchId) async {
+  // --- MÉTODOS DE INCREMENTO (Estos ya estaban bien, solo retoques) ---
+
+  // ✅ 8. Incrementar cantidad separada en Batch
+  Future<int?> incrementProductSeparateQty(int batchId, String type) async {
     final db = await getDatabaseInstance();
 
-    // Usamos una transacción para asegurar que la operación sea atómica
     return await db!.transaction((txn) async {
-      // Primero, obtenemos el valor actual de product_separate_qty
       final result = await txn.query(
         'tblbatchs',
         columns: ['product_separate_qty'],
-        where: 'id = ?',
-        whereArgs: [batchId],
+        where: 'id = ? AND type = ?',
+        whereArgs: [batchId, type],
       );
 
       if (result.isNotEmpty) {
-        // Extraemos el valor actual
         dynamic currentQty = (result.first['product_separate_qty']) ?? 0;
-
-        // Incrementamos la cantidad
         dynamic newQty = currentQty + 1;
 
-        // Actualizamos la tabla
         return await txn.update(
           'tblbatchs',
           {'product_separate_qty': newQty},
           where: 'id = ?',
-          whereArgs: [batchId],
+          whereArgs: [batchId], // Aquí type no es estrictamente necesario si ID es único, pero no hace daño
         );
       }
-
-      return null; // No se encontró el batch con el batchId proporcionado
+      return null;
     });
   }
 
-  //incrementar la cantidad de productos separados en la tabla de tblbatch_products
-  Future<int?> incremenQtytProductSeparate(
-      int batchId, int productId, int idMove, dynamic quantity) async {
+  // ✅ 9. Incrementar cantidad separada en Producto
+  Future<int?> incremenQtytProductSeparate(int batchId, int productId,
+      int idMove, dynamic quantity, String type) async {
     final db = await getDatabaseInstance();
+    
     return await db!.transaction((txn) async {
-      // Primero, obtenemos el valor actual de quantity_separate y quantity
       final result = await txn.query(
         'tblbatch_products',
         columns: ['quantity_separate', 'quantity'],
-        where: 'batch_id = ? AND id_product = ? AND id_move = ?',
-        whereArgs: [
-          batchId,
-          productId,
-          idMove
-        ], // Usamos whereArgs para los parámetros
+        where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
+        whereArgs: [batchId, productId, idMove, type],
       );
 
       if (result.isNotEmpty) {
-        // Extraemos los valores actuales
-        dynamic currentQtySeparate = (result.first['quantity_separate']) ?? 0;
-        dynamic currentQty = (result.first['quantity']) ?? 0;
+        // Aseguramos que los números sean tratados como num (int o double)
+        num currentQtySeparate = (result.first['quantity_separate'] as num?) ?? 0;
+        num currentQty = (result.first['quantity'] as num?) ?? 0;
 
-        // Incrementamos la cantidad de quantity_separate
-        dynamic newQtySeparate = currentQtySeparate + quantity;
+        num newQtySeparate = currentQtySeparate + (quantity as num);
 
-        // Validamos que quantity_separate no sea mayor que quantity
         if (newQtySeparate > currentQty) {
-          newQtySeparate = currentQty; // Si es mayor, lo igualamos a quantity
+          newQtySeparate = currentQty;
         }
 
-        // Actualizamos la tabla
+        // CORRECCIÓN: Agregué 'type' al whereArgs del update para ser consistentes
         return await txn.update(
           'tblbatch_products',
           {'quantity_separate': newQtySeparate},
-          where: 'batch_id = ? AND id_product = ? AND id_move = ?',
-          whereArgs: [
-            batchId,
-            productId,
-            idMove
-          ], // Usamos whereArgs para los parámetros
+          where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
+          whereArgs: [batchId, productId, idMove, type], 
         );
       }
-
-      return null; // No se encontró el batch con el batchId proporcionado
+      return null;
     });
   }
 
-  //actualozar el index de la lista de productos
+  // --- MÉTODOS DE OBTENCIÓN DE DATOS COMPLETOS ---
 
-  Future<List> getProductBacth(
+  // ✅ 10. Get Producto Batch
+  Future<List<Map<String, dynamic>>> getProductBacth(
     int batchId,
     int productId,
+    String type,
   ) async {
     final db = await getDatabaseInstance();
 
-    final res = await db!.rawQuery('''
-      SELECT * FROM tblbatch_products WHERE batch_id = $batchId AND id_product = $productId  LIMIT 1
-    ''');
-    return res;
+    return await db!.query(
+      'tblbatch_products',
+      where: 'batch_id = ? AND id_product = ? AND type = ?',
+      whereArgs: [batchId, productId, type],
+      limit: 1,
+    );
   }
 
-  Future<List> getBacth(
+  // ✅ 11. Get Batch
+  Future<List<Map<String, dynamic>>> getBacth(
     int batchId,
+    String type,
   ) async {
     final db = await getDatabaseInstance();
 
-    final res = await db!.rawQuery('''
-      SELECT * FROM tblbatchs WHERE id = $batchId   LIMIT 1
-    ''');
-    return res;
+    return await db!.query(
+      'tblbatchs',
+      where: 'id = ? AND type = ?',
+      whereArgs: [batchId, type],
+      limit: 1,
+    );
   }
+
 }

@@ -588,9 +588,9 @@ class _Tab2ScreenState extends State<Tab2Screen> {
                                                                   ? product
                                                                       .pendingQuantity
                                                                   : product
-                                                                      .quantity)
-                                                              .toStringAsFixed(
-                                                                  2),
+                                                                          .quantity ??
+                                                                      0.0)
+                                                              .toString(),
                                                           style:
                                                               const TextStyle(
                                                             fontSize: 12,

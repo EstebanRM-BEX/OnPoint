@@ -85,7 +85,7 @@ class _DialogAdvetenciaCantidadScreenState
                   ),
                   TextSpan(
                     text:
-                        '${widget.currentProduct.cantidadFaltante.toStringAsFixed(2)}',
+                        (widget.currentProduct.cantidadFaltante ?? 0.0).toString(),
                     style: const TextStyle(
                       color: green,
                       fontSize: 14,

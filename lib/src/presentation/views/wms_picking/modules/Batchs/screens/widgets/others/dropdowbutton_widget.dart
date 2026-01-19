@@ -173,7 +173,9 @@ class _DialogAdvetenciaCantidadScreenState
                             widget.batchId,
                             widget.currentProduct.idProduct ?? 0,
                             selectedNovedad ?? '',
-                            widget.currentProduct.idMove ?? 0);
+                            widget.currentProduct.idMove ?? 0, context
+                                .read<BatchBloc>()
+                                .typePicking);
 
                         Navigator.pop(context); // Cierra el diálogo
                         widget.onAccepted(); // Llama al callback

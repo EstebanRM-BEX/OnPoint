@@ -172,6 +172,7 @@ class _SelectSubMuelleBottomSheetState
                                     }).toList(),
                                     batchBloc.subMuelleSelected,
                                     isOccupied == null ? false : isOccupied!,
+                                    batchBloc.typePicking,
                                   ));
 
                                   Navigator.pop(context);

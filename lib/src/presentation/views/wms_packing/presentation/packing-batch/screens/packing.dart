@@ -700,9 +700,10 @@ class _PackingScreenState extends State<PackingScreen> {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 10),
                                         child: Text(
-                                          packingBloc.currentProduct.quantity
-                                                  .toStringAsFixed(2) ??
-                                              "",
+                                          (packingBloc.currentProduct
+                                                      .quantity ??
+                                                  0.0)
+                                              .toString(),
                                           style: TextStyle(
                                             color: primaryColorApp,
                                             fontSize: 14,

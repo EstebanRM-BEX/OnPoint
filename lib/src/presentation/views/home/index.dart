@@ -11,10 +11,10 @@ import 'package:wms_app/src/presentation/views/home/bloc/home_bloc.dart';
 import 'package:wms_app/src/presentation/views/home/widgets/background.dart';
 import 'package:wms_app/src/presentation/views/home/widgets/dialog_devoluciones_widget.dart';
 import 'package:wms_app/src/presentation/views/home/widgets/dialog_inventario_widget.dart';
-import 'package:wms_app/src/presentation/views/home/widgets/dialog_picking_widget%20copy.dart';
+import 'package:wms_app/src/presentation/views/home/widgets/dialog_picking_componentes_widget.dart';
+import 'package:wms_app/src/presentation/views/home/widgets/dialog_picking_widget.dart';
 import 'package:wms_app/src/presentation/views/home/widgets/widget.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
-import 'package:wms_app/src/presentation/views/recepcion/modules/batchs/bloc/recepcion_batch_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/src/presentation/views/user/screens/bloc/user_bloc.dart';
@@ -25,7 +25,6 @@ import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/
 import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
 import 'package:wms_app/src/services/preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -194,9 +193,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         ],
         child: RefreshIndicator(
           onRefresh: () async {
-            //mostramos dialogo
+            // 1. Validar si el widget sigue montado antes de hacer nada
+            if (!context.mounted) return;
+
+            // mostramos dialogo
             showDialog(
               context: context,
+              barrierDismissible: false,
               builder: (context) {
                 return const DialogLoading(
                   message: "Espere un momento...",
@@ -205,13 +208,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             );
 
             //* generales
-            context.read<WMSPickingBloc>().add(LoadAllNovedades(context)); //n
+            // Usamos context.read en lugar de context.read directo si es posible capturarlo antes,
+            // pero aquí está bien si validamos el contexto.
+            context.read<WMSPickingBloc>().add(LoadAllNovedades(context));
             context.read<UserBloc>().add(GetUbicacionesEvent());
-            //esperamos 2 segundos para cerrar el dialogo
-            await Future.delayed(const Duration(seconds: 2), () {
-              Navigator.pop(context);
-            });
-            context.read<HomeBloc>().add(AppVersionEvent());
+
+            // esperamos 2 segundos
+            await Future.delayed(const Duration(seconds: 2));
+
+            // ✅ CORRECCIÓN CRÍTICA:
+            // Verificar 'mounted' ANTES de usar el contexto o cerrar diálogos después de un await.
+            if (context.mounted) {
+              Navigator.pop(
+                  context); // Cerrar diálogo solo si la pantalla existe
+              context.read<HomeBloc>().add(AppVersionEvent());
+            }
           },
           child: Scaffold(
             backgroundColor: white,
@@ -545,7 +556,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       ),
                                       GestureDetector(
                                         onTap: () async {
-                                          final rol = context.read<HomeBloc>().userRol; // Obtenemos el rol
+                                          final rol = context
+                                              .read<HomeBloc>()
+                                              .userRol; // Obtenemos el rol
                                           if (rol == 'reception' ||
                                               rol == 'admin') {
                                             context
@@ -583,7 +596,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     children: [
                                       GestureDetector(
                                         onTap: () async {
-                                          final rol = context.read<HomeBloc>().userRol; // Obtenemos el rol
+                                          final rol = context
+                                              .read<HomeBloc>()
+                                              .userRol; // Obtenemos el rol
                                           if (rol == 'reception' ||
                                               rol == 'admin') {
                                             context
@@ -635,7 +650,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       ),
                                       GestureDetector(
                                         onTap: () async {
-                                          final rol = context.read<HomeBloc>().userRol; // Obtenemos el rol
+                                          final rol = context
+                                              .read<HomeBloc>()
+                                              .userRol; // Obtenemos el rol
                                           if (rol == 'transfer' ||
                                               rol == 'admin') {
                                             if (context
@@ -690,7 +707,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       ),
                                       GestureDetector(
                                         onTap: () async {
-                                          final rol = context.read<HomeBloc>().userRol; // Obtenemos el rol
+                                          final rol = context
+                                              .read<HomeBloc>()
+                                              .userRol; // Obtenemos el rol
                                           if (rol == 'inventory' ||
                                               rol == 'admin') {
                                             showDialog(
@@ -731,30 +750,39 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                   ?.accessProductionModule ==
                                               true) {
                                             showDialog(
-                                                context: context,
-                                                builder: (context) {
-                                                  return const DialogLoading(
-                                                      message:
-                                                          'Cargando componentes...');
-                                                });
-                                            await Future.delayed(const Duration(
-                                                seconds:
-                                                    1)); // Ajusta el tiempo si es necesario
+                                              context: context,
+                                              builder: (context) {
+                                                return DialogPickingComponentes(
+                                                  contextHome: context,
+                                                );
+                                              },
+                                            );
 
-                                            Navigator.pop(context);
-                                            Navigator.pushReplacementNamed(
-                                              context,
-                                              'picking-componentes',
-                                            );
-                                          } else {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                    "Su usuario no tiene permisos para acceder a este módulo"),
-                                                duration: Duration(seconds: 4),
-                                              ),
-                                            );
+                                            //   showDialog(
+                                            //       context: context,
+                                            //       builder: (context) {
+                                            //         return const DialogLoading(
+                                            //             message:
+                                            //                 'Cargando componentes...');
+                                            //       });
+                                            //   await Future.delayed(const Duration(
+                                            //       seconds:
+                                            //           1)); // Ajusta el tiempo si es necesario
+
+                                            //   Navigator.pop(context);
+                                            //   Navigator.pushReplacementNamed(
+                                            //     context,
+                                            //     'picking-componentes',
+                                            //   );
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                      "Su usuario no tiene permisos para acceder a este módulo"),
+                                                  duration: Duration(seconds: 4),
+                                                ),
+                                              );
                                           }
                                         },
                                         child: ImteModule(

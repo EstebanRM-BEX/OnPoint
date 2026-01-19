@@ -17,9 +17,6 @@ class HistoryDetailScreen extends StatelessWidget {
       builder: (context, state) {
         final batch = context.read<WMSPickingBloc>().historyBatchId;
 
-
-
-        
         return Scaffold(
           backgroundColor: white,
           body: Column(
@@ -46,8 +43,7 @@ class HistoryDetailScreen extends StatelessWidget {
                         child: Column(
                           children: [
                             Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 IconButton(
                                   icon: const Icon(Icons.arrow_back,
@@ -62,8 +58,8 @@ class HistoryDetailScreen extends StatelessWidget {
                                   },
                                 ),
                                 Padding(
-                                  padding: EdgeInsets.only(
-                                      left: size.width * 0.25),
+                                  padding:
+                                      EdgeInsets.only(left: size.width * 0.25),
                                   child: const Text(
                                     'DETALLES',
                                     style: TextStyle(
@@ -300,7 +296,7 @@ class HistoryDetailScreen extends StatelessWidget {
                                             primaryColorApp), // Color rojo para la primera parte
                                   ),
                                   TextSpan(
-                                    text: batch.startTimePick??"",
+                                    text: batch.startTimePick ?? "",
                                     style: TextStyle(
                                         fontSize: 14,
                                         color:
@@ -323,7 +319,7 @@ class HistoryDetailScreen extends StatelessWidget {
                                             primaryColorApp), // Color rojo para la primera parte
                                   ),
                                   TextSpan(
-                                    text: batch.endTimePick ??"",
+                                    text: batch.endTimePick ?? "",
                                     style: TextStyle(
                                         fontSize: 14,
                                         color:
@@ -344,11 +340,11 @@ class HistoryDetailScreen extends StatelessWidget {
               )),
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.all(8.0),
-                  margin: EdgeInsets.only(bottom: 15),
+                    padding: const EdgeInsets.all(8.0),
+                    margin: EdgeInsets.only(bottom: 15),
                     child: ListView.builder(
-                        padding:
-                            EdgeInsets.only(top: 10, bottom: size.height * 0.15),
+                        padding: EdgeInsets.only(
+                            top: 10, bottom: size.height * 0.15),
                         shrinkWrap: true,
                         physics: const ScrollPhysics(),
                         itemCount: batch.listItems?.length ?? 0,
@@ -366,8 +362,8 @@ class HistoryDetailScreen extends StatelessWidget {
                                         batch.listItems?[index].productId?[1]
                                                 .toString() ??
                                             '',
-                                        style:
-                                            TextStyle(fontSize: 12, color: black),
+                                        style: TextStyle(
+                                            fontSize: 12, color: black),
                                       ),
                                     ),
                                     Align(
@@ -383,8 +379,8 @@ class HistoryDetailScreen extends StatelessWidget {
                                                       primaryColorApp), // Color rojo para la primera parte
                                             ),
                                             TextSpan(
-                                              text: batch
-                                                      .listItems?[index].lotId?[1]
+                                              text: batch.listItems?[index]
+                                                      .lotId?[1]
                                                       .toString() ??
                                                   '',
                                               style: TextStyle(
@@ -440,10 +436,10 @@ class HistoryDetailScreen extends StatelessWidget {
                                                           primaryColorApp), // Color rojo para la primera parte
                                                 ),
                                                 TextSpan(
-                                                  text: batch.listItems?[index]
-                                                          .quantityDone
-                                                          .toStringAsFixed(2) ??
-                                                      '',
+                                                  text: (batch.listItems?[index]
+                                                              .quantityDone ??
+                                                          0.0)
+                                                      .toString(),
                                                   style: TextStyle(
                                                       fontSize: 12,
                                                       color:

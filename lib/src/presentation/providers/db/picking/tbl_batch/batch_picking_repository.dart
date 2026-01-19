@@ -7,7 +7,7 @@ import 'batch_picking_table.dart'; // Importa el archivo de la tabla
 
 class BatchPickingRepository {
   Future<void> insertAllBatches(
-      List<BatchsModel> listOfBatchs, int userId) async {
+      List<BatchsModel> listOfBatchs, int userId, String type) async {
     final db = await DataBaseSqlite().getDatabaseInstance();
 
     await db.transaction((txn) async {
@@ -18,6 +18,7 @@ class BatchPickingRepository {
           final data = {
             BatchPickingTable.columnId: batchItem.id,
             BatchPickingTable.columnName: batchItem.name ?? '',
+            BatchPickingTable.columnType: type,
             BatchPickingTable.columnScheduledDate:
                 batchItem.scheduleddate.toString(),
             BatchPickingTable.columnPickingTypeId: batchItem.pickingTypeId,
@@ -61,15 +62,15 @@ class BatchPickingRepository {
   }
 
   // Método para obtener un batch por su ID
-  Future<BatchsModel?> getBatchById(int batchId) async {
+  Future<BatchsModel?> getBatchById(int batchId, String type) async {
     try {
       Database db = await DataBaseSqlite().getDatabaseInstance();
 
       // Realiza la consulta a la tabla tblbatchs
       final List<Map<String, dynamic>> maps = await db.query(
         BatchPickingTable.tableName,
-        where: '${BatchPickingTable.columnId} = ?',
-        whereArgs: [batchId],
+        where: '${BatchPickingTable.columnId} = ? AND ${BatchPickingTable.columnType} = ?',
+        whereArgs: [batchId, type],
       );
 
       // Si se encontró un registro, lo mapea a un objeto BatchsModel
@@ -86,7 +87,7 @@ class BatchPickingRepository {
   }
 
 //metodo para obtener todos los batchs de un usuario
-  Future<List<BatchsModel>> getAllBatchs(int userId) async {
+  Future<List<BatchsModel>> getAllBatchs(int userId, String type) async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
 
@@ -96,6 +97,7 @@ class BatchPickingRepository {
         columns: [
           BatchPickingTable.columnId,
           BatchPickingTable.columnName,
+          BatchPickingTable.columnType,
           BatchPickingTable.columnScheduledDate,
           BatchPickingTable.columnPickingTypeId,
           BatchPickingTable.columnMuelle,
@@ -116,8 +118,8 @@ class BatchPickingRepository {
           BatchPickingTable.columnZonaEntrega,
           BatchPickingTable.columnIsSeparate,
         ],
-        where: '${BatchPickingTable.columnUserId} = ?',
-        whereArgs: [userId],
+        where: '${BatchPickingTable.columnUserId} = ? AND ${BatchPickingTable.columnType} = ?',
+        whereArgs: [userId, type],
       );
 
       // Mapeo directo
@@ -143,14 +145,14 @@ class BatchPickingRepository {
 
   // Método para actualizar un campo específico de un batch de picking
   Future<int?> setFieldTableBatch(
-      int batchId, String field, dynamic setValue) async {
+      int batchId, String field, dynamic setValue, String type) async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
 
       // Usamos rawUpdate para actualizar el campo específico
       final resUpdate = await db.rawUpdate(
-          'UPDATE ${BatchPickingTable.tableName} SET $field = ? WHERE ${BatchPickingTable.columnId} = ?',
-          [setValue, batchId]);
+          'UPDATE ${BatchPickingTable.tableName} SET $field = ? WHERE ${BatchPickingTable.columnId} = ? AND ${BatchPickingTable.columnType} = ?',
+          [setValue, batchId, type]);
 
       return resUpdate;
     } catch (e) {
@@ -160,14 +162,14 @@ class BatchPickingRepository {
   }
 
 // Método para obtener el valor de un campo específico de un batch de picking
-  Future<String> getFieldTableBatch(int batchId, String field) async {
+  Future<String> getFieldTableBatch(int batchId, String field, String type) async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
 
       // Ejecutar consulta raw para obtener el valor del campo
       final res = await db.rawQuery('''
-      // SELECT $field FROM ${BatchPickingTable.tableName} WHERE ${BatchPickingTable.columnId} = ? LIMIT 1
-    ''', [batchId]);
+      // SELECT $field FROM ${BatchPickingTable.tableName} WHERE ${BatchPickingTable.columnId} = ? AND ${BatchPickingTable.columnType} = ? LIMIT 1
+    ''', [batchId, type]);
 
       if (res.isNotEmpty) {
         // Devuelve el valor del campo como String
@@ -181,14 +183,14 @@ class BatchPickingRepository {
   }
 
   // Método para iniciar el cronómetro de un batch de picking
-  Future<int?> startStopwatchBatch(int batchId, String date) async {
+  Future<int?> startStopwatchBatch(int batchId, String date, String type) async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
 
       // Actualiza el campo 'start_time_pick' con la fecha proporcionada
       final resUpdate = await db.rawUpdate(
-          "UPDATE ${BatchPickingTable.tableName} SET ${BatchPickingTable.columnStartTimePick} = ? WHERE ${BatchPickingTable.columnId} = ?",
-          [date, batchId]);
+          "UPDATE ${BatchPickingTable.tableName} SET ${BatchPickingTable.columnStartTimePick} = ? WHERE ${BatchPickingTable.columnId} = ? AND ${BatchPickingTable.columnType} = ?",
+          [date, batchId, type]);
 
       print("startStopwatchBatch: $resUpdate");
       return resUpdate;
@@ -199,14 +201,14 @@ class BatchPickingRepository {
   }
 
   // Método para finalizar el cronómetro de un batch de picking
-  Future<int?> endStopwatchBatch(int batchId, String date) async {
+  Future<int?> endStopwatchBatch(int batchId, String date, String type) async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
 
       // Actualiza el campo 'end_time_pick' con la fecha proporcionada
       final resUpdate = await db.rawUpdate(
-          "UPDATE ${BatchPickingTable.tableName} SET ${BatchPickingTable.columnEndTimePick} = ? WHERE ${BatchPickingTable.columnId} = ?",
-          [date, batchId]);
+          "UPDATE ${BatchPickingTable.tableName} SET ${BatchPickingTable.columnEndTimePick} = ? WHERE ${BatchPickingTable.columnId} = ? AND ${BatchPickingTable.columnType} = ?",
+          [date, batchId, type]);
 
       print("endStopwatchBatch: $resUpdate");
       return resUpdate;

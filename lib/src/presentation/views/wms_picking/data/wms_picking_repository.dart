@@ -164,6 +164,142 @@ class WmsPickingRepository {
     );
   }
 
+  //metodo para pedir los batchs
+  Future<DataBatch> resBatchsByComponents(
+    bool isLoadinDialog,
+  ) async {
+    // Verificar si el dispositivo tiene acceso a Internet
+    var connectivityResult = await Connectivity().checkConnectivity();
+
+    if (connectivityResult == ConnectivityResult.none) {
+      print("Error: No hay conexión a Internet.");
+      return DataBatch(
+          code: 500, msg: 'No internet connection', updateVersion: false, result: []
+      ); // Si no hay conexión, retornar una lista vacía
+    }
+
+    try {
+      var response = await ApiRequestService().getValidation(
+        endpoint: 'batchs/componentes',
+        isunecodePath: true,
+        isLoadinDialog: isLoadinDialog,
+      );
+
+      if (response.statusCode < 400) {
+        // Decodifica la respuesta JSON a un mapa
+        Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        // Accede a la clave "data" y luego a "result"
+
+        // Asegúrate de que 'result' exista y sea una lista
+        if (jsonResponse.containsKey('result')) {
+          if (jsonResponse['result']['code'] == 400) {
+            Get.snackbar(
+              'Error',
+              'Error : ${jsonResponse['result']['msg']}',
+              backgroundColor: white,
+              colorText: primaryColorApp,
+              icon: Icon(Icons.check, color: Colors.red),
+            );
+
+            return DataBatch(
+                code: 400,
+                msg: jsonResponse['result']['msg'] ?? 'Error',
+                updateVersion: false,
+                result: []
+            );
+
+
+          } else if (jsonResponse['result']['code'] == 200) {
+            if (jsonResponse['result'].containsKey('result')) {
+              // Si contiene 'result', se procede con el mapeo
+              List<dynamic> batches = jsonResponse['result']['result'];
+              List<BatchsModel> products =
+                  batches.map((data) => BatchsModel.fromMap(data)).toList();
+                  return DataBatch(
+                  code: 200,
+                  msg: jsonResponse['result']['msg'] ?? 'Success',
+                  updateVersion: jsonResponse['result']['update_version'] ?? false,
+                  result: products
+              );
+            }
+          } else if (jsonResponse['result']['code'] == 403) {
+            Get.defaultDialog(
+              title: 'Dispositivo no autorizado',
+              titleStyle: TextStyle(
+                  color: primaryColorApp,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16),
+              middleText:
+                  'Este dispositivo no está autorizado para usar la aplicación. su suscripción ha expirado o no está activa, por favor contacte con el administrador.',
+              middleTextStyle: TextStyle(color: black, fontSize: 14),
+              backgroundColor: Colors.white,
+              radius: 10,
+              barrierDismissible:
+                  false, // Evita que se cierre al tocar fuera del diálogo
+              onWillPop: () async => false,
+            );
+            return DataBatch(
+                code: 403,
+                msg: 'Device not authorized',
+                updateVersion: false,
+                result: []
+            );
+          }
+        } else if (jsonResponse.containsKey('error')) {
+          if (jsonResponse['error']['code'] == 100) {
+            Get.defaultDialog(
+              title: 'Alerta',
+              titleStyle: TextStyle(color: Colors.red, fontSize: 18),
+              middleText: 'Sesion expirada, por favor inicie sesión nuevamente',
+              middleTextStyle: TextStyle(color: black, fontSize: 14),
+              backgroundColor: Colors.white,
+              radius: 10,
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Get.back();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColorApp,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Text('Aceptar', style: TextStyle(color: white)),
+                ),
+              ],
+            );
+            return DataBatch(
+                code: 100,
+                msg: 'Session expired',
+                updateVersion: false,
+                result: []
+            );
+          }
+        }
+      } 
+    } on SocketException catch (e) {
+      // Manejo de error de red
+      print('Error de red: $e');
+      return DataBatch(
+          code: 500, msg: 'Network error: $e', updateVersion: false, result: []
+      );
+    } catch (e, s) {
+      // Manejo de otros errores
+      Get.snackbar(
+        'Error',
+        'Error en resBatchsByComponents: $e $s',
+        backgroundColor: white,
+        colorText: primaryColorApp,
+        icon: Icon(Icons.check, color: Colors.red),
+      );
+
+    }
+    return DataBatch(
+        code: 500, msg: 'Unknown error', updateVersion: false, result: []
+    );
+  }
+
   Future<List<HistoryBatch>> resBatchsHistory(
     bool isLoadinDialog,
     String date,

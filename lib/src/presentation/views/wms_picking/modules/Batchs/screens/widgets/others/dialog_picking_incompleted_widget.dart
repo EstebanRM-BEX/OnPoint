@@ -33,7 +33,8 @@ class DialogPickingIncompleted extends StatelessWidget {
             actionsAlignment: MainAxisAlignment.center,
             backgroundColor: Colors.white,
             title: const Center(
-                child: Text('360 Software Informa', style: TextStyle(color: yellow, fontSize: 14))),
+                child: Text('360 Software Informa',
+                    style: TextStyle(color: yellow, fontSize: 14))),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -111,14 +112,14 @@ class DialogPickingIncompleted extends StatelessWidget {
                         true,
                         currentProduct.idProduct ?? 0,
                         batchBloc.batchWithProducts.batch?.id ?? 0,
-                        currentProduct.idMove ?? 0));
+                        currentProduct.idMove ?? 0,
+                        batchBloc.typePicking));
 
                     batchBloc.add(PickingOkEvent(
                         batchBloc.batchWithProducts.batch?.id ?? 0,
-                        currentProduct.idProduct ?? 0));
+                        currentProduct.idProduct ?? 0, batchBloc.typePicking));
 
                     batchBloc.add(EndTimePick(
-                  
                         batchBloc.batchWithProducts.batch?.id ?? 0,
                         DateTime.now()));
 
@@ -126,12 +127,15 @@ class DialogPickingIncompleted extends StatelessWidget {
                         .read<WMSPickingBloc>()
                         .add(FilterBatchesBStatusEvent(
                           '',
+                          batchBloc.typePicking
                         ));
                     context.read<BatchBloc>().index = 0;
                     context.read<BatchBloc>().isSearch = true;
                     Navigator.pop(context);
-                    Navigator.pushReplacementNamed(context, 'wms-picking',
-                        arguments: 1);
+                    Navigator.pushReplacementNamed(
+                      context,
+                      'wms-picking',
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,

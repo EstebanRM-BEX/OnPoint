@@ -798,7 +798,8 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
           productEdit.idProduct ?? 0,
           'time_separate',
           30,
-          productEdit.idMove ?? 0);
+          productEdit.idMove ?? 0,
+          'pick');
     }
 
     DateTime fechaTransaccion = DateTime.now();
@@ -853,6 +854,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         'is_send_odoo',
         0,
         product?.idMove ?? 0,
+        'pick',
       );
       return false;
     }
@@ -955,6 +957,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
             'is_send_odoo',
             1,
             event.product.idMove ?? 0,
+            'pick',
           );
 
 //actualizamos la lista de productos
@@ -971,6 +974,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
           'is_send_odoo',
           0,
           event.product.idMove ?? 0,
+          'pick',
         );
 
         DateTime fechaTransaccion = DateTime.now();

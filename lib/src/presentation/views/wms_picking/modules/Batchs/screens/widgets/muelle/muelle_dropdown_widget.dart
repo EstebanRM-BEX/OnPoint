@@ -151,7 +151,7 @@ class _MuelleDropdownWidgetState extends State<MuelleDropdownWidget> {
     ProductsBatch currentProduct,
   ) async {
     batchBloc.add(FetchBatchWithProductsEvent(
-        batchBloc.batchWithProducts.batch?.id ?? 0));
+        batchBloc.batchWithProducts.batch?.id ?? 0, batchBloc.typePicking));
 
     // Validamos que la cantidad de productos separados sea igual a la cantidad de productos pedidos
     final double unidadesSeparadas =
@@ -188,7 +188,7 @@ class _MuelleDropdownWidgetState extends State<MuelleDropdownWidget> {
                           true) {
                         //cerramos el focus
                         batchBloc.isSearch = false;
-                        batchBloc.add(LoadProductEditEvent());
+                        batchBloc.add(LoadProductEditEvent(batchBloc.typePicking));
                         Navigator.pushReplacementNamed(
                           context,
                           'batch-detail',
@@ -222,20 +222,22 @@ class _MuelleDropdownWidgetState extends State<MuelleDropdownWidget> {
             true,
             currentProduct.idProduct ?? 0,
             batchBloc.batchWithProducts.batch?.id ?? 0,
-            currentProduct.idMove ?? 0));
+            currentProduct.idMove ?? 0, 
+            batchBloc.typePicking));
 
         batchBloc.add(EndTimePick(
             batchBloc.batchWithProducts.batch?.id ?? 0, DateTime.now()));
 
         batchBloc.add(PickingOkEvent(batchBloc.batchWithProducts.batch?.id ?? 0,
-            currentProduct.idProduct ?? 0));
+            currentProduct.idProduct ?? 0, batchBloc.typePicking));
         context.read<WMSPickingBloc>().add(FilterBatchesBStatusEvent(
               '',
+              batchBloc.typePicking
             ));
         context.read<BatchBloc>().index = 0;
         context.read<BatchBloc>().isSearch = true;
 
-        Navigator.pushReplacementNamed(context, 'wms-picking', arguments: 0);
+        Navigator.pushReplacementNamed(context, 'wms-picking', );
       }
     } else {
       showDialog(
@@ -252,7 +254,7 @@ class _MuelleDropdownWidgetState extends State<MuelleDropdownWidget> {
                       true) {
                     // Cerramos el foco
                     batchBloc.isSearch = false;
-                    batchBloc.add(LoadProductEditEvent());
+                    batchBloc.add(LoadProductEditEvent( batchBloc.typePicking));
 
                     Navigator.pushReplacementNamed(
                       context,

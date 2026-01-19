@@ -5,8 +5,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:wms_app/src/core/constans/colors.dart';
 
-class DialogPicking extends StatelessWidget {
-  const DialogPicking({
+class DialogPickingComponentes extends StatelessWidget {
+  const DialogPickingComponentes({
     super.key,
     required this.contextHome,
   });
@@ -25,7 +25,7 @@ class DialogPicking extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('SELECCION DE PICKING',
+            Text('SELECCION DE PICKING COMPONENTES',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: primaryColorApp,
@@ -46,8 +46,10 @@ class DialogPicking extends StatelessWidget {
                 onPressed: () {
                   Navigator.pop(context);
 
-                  Navigator.pushReplacementNamed(contextHome, 'wms-picking',
-                      arguments: 0);
+                  Navigator.pushReplacementNamed(
+                    contextHome,
+                    'picking-componentes-batch',
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(200, 40),
@@ -66,8 +68,8 @@ class DialogPicking extends StatelessWidget {
                   //cerramos el dialogo
                   Navigator.pop(context);
                   Navigator.pushReplacementNamed(
-                    contextHome,
-                    'pick',
+                    context,
+                    'picking-componentes',
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -77,7 +79,7 @@ class DialogPicking extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: Text('POR PEDIDO',
+                child: Text('POR PICK',
                     style: TextStyle(
                       color: white,
                       fontSize: 12,
@@ -105,4 +107,3 @@ class DialogPicking extends StatelessWidget {
     );
   }
 }
-

@@ -1,5 +1,7 @@
 // ignore_for_file: unnecessary_type_check, unnecessary_null_comparison, avoid_print, unnecessary_import, unrelated_type_equality_checks, use_build_context_synchronously
 
+import 'dart:math';
+
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
@@ -19,6 +21,10 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
   //*batchs
   List<BatchsModel> listOfBatchs = [];
   List<BatchsModel> filteredBatchs = []; // Lista para los productos filtrados
+  List<BatchsModel> listOfBatchsByComponents = [];
+  List<BatchsModel> filteredBatchsByComponents =
+      []; // Lista para los productos filtrados
+
   List<HistoryBatch> historyBatchs = []; // Lista para los productos filtrados
   List<HistoryBatch> filtersHistoryBatchs =
       []; // Lista para los productos filtrados
@@ -41,16 +47,15 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
   final DataBaseSqlite _databas = DataBaseSqlite();
 
   WMSPickingBloc() : super(ProductspickingInitial()) {
-    //*filtrar los batchs por fecha
-
     //*obtener todos los batchs desde odoo
     on<LoadAllBatchsEvent>(_onLoadAllBatchsEvent);
+    //*obtener todos los batchs desde de picking por componentes
+    on<LoadAllBatchsByComponentsEvent>(_onLoadAllBatchsByComponentsEvent);
     //*obtener todos los batchs desde el historial de odoo
     on<LoadHistoryBatchsEvent>(_onLoadHistoryBatchsEvent);
     //*obtener un batch por id del hisorial
     on<LoadHistoryBatchIdEvent>(_onLoadHistoryBatchIdEvent);
-    //*buscar un batch
-    on<SearchBatchEvent>(_onSearchBacthEvent);
+
     //*Buscar un batch en el historial
     on<SearchBatchHistoryEvent>(_onSearchBacthHistoryEvent);
     // *filtrar por estado los batchs desde SQLite
@@ -163,12 +168,20 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
     final int userId = await PrefUtils.getUserId();
 
     final batchsFromDB =
-        await _databas.batchPickingRepository.getAllBatchs(userId);
+        await _databas.batchPickingRepository.getAllBatchs(userId, event.type);
 
-    filteredBatchs.clear();
-    filteredBatchs = batchsFromDB;
+    if (event.type == 'components') {
+      filteredBatchsByComponents.clear();
+      filteredBatchsByComponents = batchsFromDB;
+    } else {
+      filteredBatchs.clear();
+      filteredBatchs = batchsFromDB;
+    }
 
-    emit(LoadBatchsSuccesBDState(listOfBatchs: filteredBatchs));
+    emit(LoadBatchsSuccesBDState(
+        listOfBatchs: event.type == 'components'
+            ? filteredBatchsByComponents
+            : filteredBatchs));
   }
 
   void _onLoadAllBatchsEvent(
@@ -194,7 +207,7 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
         if (listOfBatchs.isNotEmpty) {
           await DataBaseSqlite()
               .batchPickingRepository
-              .insertAllBatches(listOfBatchs, userId);
+              .insertAllBatches(listOfBatchs, userId, 'batch');
 
           // Convertir el mapa en una lista de productos únicos con cantidades sumadas
           final productsIterable =
@@ -206,22 +219,13 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
           final allBarcodes = _extractAllBarcodes(response.result ?? [])
               .toList(growable: false);
 
-          // final List<Muelles> responseMuelles =
-          //     await wmsPickingRepository.getmuelles(
-          //   false,
-          // );
-
           // print('response muelles: ${responseMuelles.length}');
           print('productsToInsert: ${productsIterable.length}');
           print('allBarcodes: ${allBarcodes.length}');
           print('originsIterable: ${originsIterable.length}');
-
-          // await DataBaseSqlite()
-          //     .submuellesRepository
-          //     .insertSubmuelles(responseMuelles);
-
           // Enviar la lista agrupada a insertBatchProducts
-          await DataBaseSqlite().insertBatchProducts(productsIterable);
+          await DataBaseSqlite()
+              .insertBatchProducts(productsIterable, event.type);
 
           await DataBaseSqlite()
               .docOriginRepository
@@ -237,10 +241,81 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
           // //* Carga los batches desde la base de datos
           add(FilterBatchesBStatusEvent(
             '',
+            'batch',
           ));
         }
 
         emit(LoadBatchsSuccesState(listOfBatchs: listOfBatchs));
+      } else {
+        print('Error resBatchs: response is null');
+      }
+    } catch (e, s) {
+      print('Error LoadAllBatchsEvent: $e, $s');
+      emit(BatchsPickingErrorState(e.toString()));
+    }
+  }
+
+  void _onLoadAllBatchsByComponentsEvent(
+      LoadAllBatchsByComponentsEvent event, Emitter<PickingState> emit) async {
+    try {
+      emit(BatchsPickingLoadingState());
+
+      final response = await wmsPickingRepository.resBatchsByComponents(
+        event.isLoadinDialog,
+      );
+
+      listOfBatchsByComponents.clear();
+      filteredBatchsByComponents.clear();
+
+      if (response.result != null && response.result is List) {
+        int userId = await PrefUtils.getUserId();
+        listOfBatchsByComponents.addAll(response.result ?? []);
+
+        if ((response.updateVersion ?? false) == true) {
+          emit(NeedUpdateVersionState());
+        }
+
+        if (listOfBatchsByComponents.isNotEmpty) {
+          await DataBaseSqlite()
+              .batchPickingRepository
+              .insertAllBatches(listOfBatchsByComponents, userId, 'components');
+          // Convertir el mapa en una lista de productos únicos con cantidades sumadas
+          final productsIterable = _extractAllProducts(listOfBatchsByComponents)
+              .toList(growable: false);
+
+          final originsIterable = _extractAllOrigins(listOfBatchsByComponents)
+              .toList(growable: false);
+
+          final allBarcodes = _extractAllBarcodes(response.result ?? [])
+              .toList(growable: false);
+
+          // print('response muelles: ${responseMuelles.length}');
+          print('productsToInsert: ${productsIterable.length}');
+          print('allBarcodes: ${allBarcodes.length}');
+          print('originsIterable: ${originsIterable.length}');
+          // Enviar la lista agrupada a insertBatchProducts
+          await DataBaseSqlite()
+              .insertBatchProducts(productsIterable, 'components');
+
+          await DataBaseSqlite()
+              .docOriginRepository
+              .insertAllDocsOrigins(originsIterable, 'components');
+          if (allBarcodes.isNotEmpty) {
+            // Enviar la lista agrupada a insertBarcodesPackageProduct
+            await DataBaseSqlite()
+                .barcodesPackagesRepository
+                .insertOrUpdateBarcodes(allBarcodes, 'components');
+          }
+
+          // //* Carga los batches desde la base de datos
+          add(FilterBatchesBStatusEvent(
+            '',
+            'components',
+          ));
+        }
+
+        
+        emit(LoadBatchsSuccesState(listOfBatchs: listOfBatchsByComponents));
       } else {
         print('Error resBatchs: response is null');
       }
@@ -330,29 +405,6 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
       print('Error LoadHistoryBatchsEvent: $e, $s');
       emit(BatchsPickingErrorState(e.toString()));
     }
-  }
-
-  void _onSearchBacthEvent(
-      SearchBatchEvent event, Emitter<PickingState> emit) async {
-    print('event._onSearchBacthEvent: ${event.query}');
-    final query = event.query.toLowerCase();
-    final int userid = await PrefUtils.getUserId();
-    final batchsFromDB =
-        await _databas.batchPickingRepository.getAllBatchs(userid);
-
-    if (query.isEmpty) {
-      filteredBatchs = batchsFromDB;
-      filteredBatchs = filteredBatchs
-          .where((element) => element.isSeparate == null)
-          .toList();
-    } else {
-      filteredBatchs = batchsFromDB.where((batch) {
-        return batch.name?.toLowerCase().contains(query) ?? false;
-      }).toList();
-    }
-    // Emitir la lista filtrada
-
-    emit(LoadBatchsSuccesState(listOfBatchs: filteredBatchs));
   }
 
   void _onSearchBacthHistoryEvent(

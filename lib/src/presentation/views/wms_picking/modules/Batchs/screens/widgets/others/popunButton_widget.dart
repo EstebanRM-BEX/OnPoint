@@ -36,6 +36,7 @@ class PopupMenuButtonWidget extends StatelessWidget {
                 batchBloc.isSearch = true;
                 batchBloc.add(FetchBatchWithProductsEvent(
                   batchBloc.batchWithProducts.batch?.id ?? 0,
+                  batchBloc.typePicking,
                 ));
 
                 Navigator.pushReplacementNamed(
@@ -91,7 +92,7 @@ class PopupMenuButtonWidget extends StatelessWidget {
                               onPressed: () {
                                 batchBloc.add(ProductPendingEvent(
                                     batchBloc.batchWithProducts.batch?.id ?? 0,
-                                    currentProduct));
+                                    currentProduct, batchBloc.typePicking));
                                 Navigator.pop(context);
                               },
                               style: ElevatedButton.styleFrom(

@@ -102,6 +102,7 @@ class ProductDropdownWidget extends StatelessWidget {
                           batchBloc.batchWithProducts.batch?.id ?? 0,
                           0,
                           currentProduct.idMove ?? 0,
+                          batchBloc.typePicking,
                         ));
                       } else {
                         _vibrationService.vibrate();

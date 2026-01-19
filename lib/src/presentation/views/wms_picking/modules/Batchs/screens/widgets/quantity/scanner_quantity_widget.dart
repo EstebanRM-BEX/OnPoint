@@ -107,7 +107,7 @@ class QuantityScannerWidget extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 5),
                         child: Text(
-                          totalQuantity?.toStringAsFixed(2) ?? "",
+                          (totalQuantity ?? 0.0).toString(),
                           style:
                               TextStyle(color: primaryColorApp, fontSize: 13),
                         ),
@@ -121,8 +121,11 @@ class QuantityScannerWidget extends StatelessWidget {
                             ? const SizedBox()
                             : Text(
                                 difference
-                                    .clamp(0, double.infinity)
-                                    .toStringAsFixed(2),
+                                    .clamp(
+                                        0,
+                                        double
+                                            .infinity) // Mantiene que no sea negativo
+                                    .toString(), // ✅ Muestra TODOS los decimales sin recortar
                                 style: TextStyle(
                                   color: _getColorForDifference(difference),
                                   fontSize: 13,

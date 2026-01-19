@@ -1703,9 +1703,8 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 5),
                                     child: Text(
-                                      currentProduct.quantity
-                                              ?.toStringAsFixed(2) ??
-                                          "",
+                                      (currentProduct.quantity ?? 0.0)
+                                          .toString(),
                                       style: TextStyle(
                                           color: primaryColorApp, fontSize: 13),
                                     ),
@@ -1730,9 +1729,10 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                             (batchBloc.quantitySelected <=
                                                     currentProduct.quantity
                                                 ? (currentProduct.quantity -
-                                                        batchBloc
-                                                            .quantitySelected)
-                                                    .toStringAsFixed(2)
+                                                            batchBloc
+                                                                .quantitySelected ??
+                                                        0.0)
+                                                    .toString()
                                                 : '0.0'),
                                             style: TextStyle(
                                               color: _getColorForDifference(

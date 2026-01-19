@@ -849,9 +849,8 @@ class Tab1Screen extends StatelessWidget {
                                                                             style:
                                                                                 TextStyle(fontSize: 12, color: black)), // Parte del texto en color negro (o el color que prefieras)
                                                                         TextSpan(
-                                                                          text: product
-                                                                              .quantitySeparate
-                                                                              .toStringAsFixed(2), // La cantidad en color rojo
+                                                                          text:
+                                                                              (product.quantitySeparate ?? 0.0).toString(), // La cantidad en color rojo
                                                                           style: TextStyle(
                                                                               color: primaryColorApp,
                                                                               fontSize: 12), // Estilo solo para la cantidad
@@ -973,9 +972,9 @@ class Tab1Screen extends StatelessWidget {
                                                                                 TextStyle(fontSize: 12, color: black)), // Parte del texto en color negro (o el color que prefieras)
 
                                                                         TextSpan(
-                                                                          text: product
-                                                                              .quantity
-                                                                              .toStringAsFixed(2), // La cantidad en color rojo
+                                                                          text: (product
+                                                                              .quantity??0.0)
+                                                                              .toString(), // La cantidad en color rojo
                                                                           style: TextStyle(
                                                                               color: primaryColorApp,
                                                                               fontSize: 12), // Estilo solo para la cantidad

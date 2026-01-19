@@ -21,8 +21,19 @@ class FilterBatchsByDateEvent extends PickingEvent {
 
 class LoadAllBatchsEvent extends PickingEvent {
   bool isLoadinDialog;
-  LoadAllBatchsEvent(this.isLoadinDialog);
+  String type;
+  LoadAllBatchsEvent(this.isLoadinDialog, this.type);
 }
+
+
+//*evento para cargar todos los batchs de picking por componentes
+class LoadAllBatchsByComponentsEvent extends PickingEvent {
+  bool isLoadinDialog;
+  String type;
+  LoadAllBatchsByComponentsEvent(this.isLoadinDialog, this.type);
+}
+
+
 //*evento para cargar hisotural de  los batchs de odoo
 
 class LoadHistoryBatchsEvent extends PickingEvent {
@@ -87,8 +98,9 @@ class ClearSearchBacthEvent extends PickingEvent {
 
 class FilterBatchesBStatusEvent extends PickingEvent {
   final String status;
+   String type;
 
-  FilterBatchesBStatusEvent(this.status);
+  FilterBatchesBStatusEvent(this.status, this.type);
 }
 
 //* evento para filtrar los batchs por tipo de operacion

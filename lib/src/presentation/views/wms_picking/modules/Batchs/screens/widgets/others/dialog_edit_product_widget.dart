@@ -69,8 +69,8 @@ class _DialogEditProductWidgetState extends State<DialogEditProductWidget> {
                 Text(
                     widget.productsBatch.quantitySeparate == null
                         ? "0"
-                        : widget.productsBatch.quantitySeparate
-                            .toStringAsFixed(2),
+                        : (widget.productsBatch.quantitySeparate ?? 0.0)
+                            .toString(),
                     style: const TextStyle(fontSize: 13, color: Colors.amber)),
               ],
             ),
@@ -86,7 +86,7 @@ class _DialogEditProductWidgetState extends State<DialogEditProductWidget> {
                           style: TextStyle(fontSize: 13, color: black)),
                       TextSpan(
                         text:
-                            "${(widget.productsBatch.quantity - (widget.productsBatch.quantitySeparate ?? 0)).toStringAsFixed(1)} ",
+                            "${(widget.productsBatch.quantity - (widget.productsBatch.quantitySeparate ?? 0) ?? 0.0).toString()} ",
                         style: TextStyle(
                           fontSize: 13,
                           color: primaryColorApp,
@@ -291,21 +291,22 @@ class _DialogEditProductWidgetState extends State<DialogEditProductWidget> {
                                       widget.productsBatch.batchId ?? 0,
                                       widget.productsBatch.idProduct ?? 0,
                                       selectedNovedad ?? '',
-                                      widget.productsBatch.idMove ?? 0);
+                                      widget.productsBatch.idMove ?? 0,
+                                      context.read<BatchBloc>().typePicking);
                                 }
                                 //actualizar la cantidad separada en la bd
                                 context.read<BatchBloc>().add(
                                     ChangeQuantitySeparate(
                                         cantidadReuqest,
                                         widget.productsBatch.idProduct ?? 0,
-                                        widget.productsBatch.idMove ?? 0));
+                                        widget.productsBatch.idMove ?? 0,
+                                        context.read<BatchBloc>().typePicking));
 
-                                context
-                                    .read<BatchBloc>()
-                                    .add(SendProductEditOdooEvent(
-                                      widget.productsBatch,
-                                      cantidadReuqest,
-                                    ));
+                                context.read<BatchBloc>().add(
+                                    SendProductEditOdooEvent(
+                                        widget.productsBatch,
+                                        cantidadReuqest,
+                                        context.read<BatchBloc>().typePicking));
                                 Navigator.pop(context);
                               }
                             },

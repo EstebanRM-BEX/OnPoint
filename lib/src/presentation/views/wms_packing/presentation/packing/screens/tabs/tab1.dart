@@ -1021,7 +1021,7 @@ class Tab1PedidoScreen extends StatelessWidget {
                                                                         ),
                                                                         TextSpan(
                                                                           text:
-                                                                              (product.quantitySeparate ?? 0.0).toStringAsFixed(2),
+                                                                              (product.quantitySeparate ?? 0.0).toString(),
                                                                           style:
                                                                               TextStyle(
                                                                             color:
@@ -1148,9 +1148,7 @@ class Tab1PedidoScreen extends StatelessWidget {
                                                                                 TextStyle(fontSize: 12, color: black)), // Parte del texto en color negro (o el color que prefieras)
 
                                                                         TextSpan(
-                                                                          text: product
-                                                                              .quantity
-                                                                              .toStringAsFixed(2), // La cantidad en color rojo
+                                                                          text: (product.quantity ?? 0.0).toString(), // La cantidad en color rojo
                                                                           style: TextStyle(
                                                                               color: primaryColorApp,
                                                                               fontSize: 12), // Estilo solo para la cantidad

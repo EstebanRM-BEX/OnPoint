@@ -113,6 +113,7 @@ class _LocationDropdownWidgetState extends State<LocationDropdownWidget> {
                           widget.currentProduct.idProduct ?? 0,
                           widget.batchBloc.batchWithProducts.batch?.id ?? 0,
                           widget.currentProduct.idMove ?? 0,
+                          widget.batchBloc.typePicking
                         ));
                         widget.batchBloc.oldLocation = expected;
                       } else {

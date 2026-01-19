@@ -1,5 +1,7 @@
 // ignore_for_file: unnecessary_null_comparison, unnecessary_type_check, avoid_print, prefer_is_empty, use_build_context_synchronously, prefer_if_null_operators
 
+import 'dart:math';
+
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/src/core/utils/formats_utils.dart';
@@ -21,6 +23,11 @@ part 'batch_event.dart';
 part 'batch_state.dart';
 
 class BatchBloc extends Bloc<BatchEvent, BatchState> {
+
+
+  //variable para el type de picking
+  String typePicking = '';
+
   List<ProductsBatch> listOfProductsBatch = [];
   List<ProductsBatch> filteredProducts = [];
   List<ProductsBatch> listOfProductsBatchDB = [];
@@ -212,7 +219,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
     try {
 
       //pasmos a limpiar la busqueda 
-      add(ClearSearchProudctsBatchEvent());
+      add(ClearSearchProudctsBatchEvent(event.type));
 
 
       currentProduct = event.selectedProduct;
@@ -269,7 +276,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
 
       if (responseTimeBatch) {
         await db.batchPickingRepository
-            .startStopwatchBatch(event.batchId, formattedDate);
+            .startStopwatchBatch(event.batchId, formattedDate, event.type);
         emit(TimeSeparateSuccess(formattedDate));
       } else {
         emit(TimeSeparateError('Error al iniciar el tiempo de separacion'));
@@ -298,7 +305,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
 
       if (responseTimeBatch) {
         await db.batchPickingRepository
-            .endStopwatchBatch(event.batchId, formattedDate);
+            .endStopwatchBatch(event.batchId, formattedDate, typePicking);
         emit(TimeSeparateSuccess(formattedDate));
       } else {
         emit(TimeSeparateError('Error al terminar el tiempo de separacion'));
@@ -450,10 +457,11 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           'is_send_odoo',
           1,
           event.product.idMove ?? 0,
+          event.type,
         );
 
         final response = await DataBaseSqlite()
-            .getBatchWithProducts(batchWithProducts.batch?.id ?? 0);
+            .getBatchWithProducts(batchWithProducts.batch?.id ?? 0, event.type);
         final List<ProductsBatch> products = response!.products!
             .where((product) =>
                 product.quantitySeparate != product.quantity ||
@@ -472,6 +480,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           'is_send_odoo',
           0,
           event.product.idMove ?? 0,
+          event.type,
         );
         emit(SendProductOdooError(response.result?.result?.first.error ?? ""));
       }
@@ -633,7 +642,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       // Primero, actualizamos la base de datos para todos los productos
       for (var product in event.productsSeparate) {
         await db.setFieldTableBatchProducts(product.batchId ?? 0,
-            product.idProduct ?? 0, 'is_muelle', 1, product.idMove ?? 0);
+            product.idProduct ?? 0, 'is_muelle', 1, product.idMove ?? 0, event.type);
 
         // Actualizamos el muelle del producto
         await db.setFieldTableBatchProducts(
@@ -641,7 +650,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
             product.idProduct ?? 0,
             'muelle_id',
             event.muelle.id ?? 0,
-            product.idMove ?? 0);
+            product.idMove ?? 0, event.type);
 
         // Actualizamos el nombre del muelle del producto
         await db.setFieldStringTableBatchProducts(
@@ -649,7 +658,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
             product.idProduct ?? 0,
             'location_dest_id',
             event.muelle.completeName ?? '',
-            product.idMove ?? 0);
+            product.idMove ?? 0, event.type);
 
         //actualizamos el id del muelle del producto
         await db.setFieldTableBatchProducts(
@@ -657,7 +666,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
             product.idProduct ?? 0,
             'id_location_dest',
             event.muelle.id ?? 0,
-            product.idMove ?? 0);
+            product.idMove ?? 0, event.type);
 
         //Actualizamos el barcode del muelle del producto
         await db.setFieldStringTableBatchProducts(
@@ -665,7 +674,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
             product.idProduct ?? 0,
             'barcode_location_dest',
             event.muelle.barcode ?? '',
-            product.idMove ?? 0);
+            product.idMove ?? 0, event.type);
       }
 
       // Después, enviamos la petición a Odoo con todos los productos en una sola vez
@@ -712,7 +721,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
 
       if (response.result?.code == 200) {
         add(FetchBatchWithProductsEvent(
-            event.productsSeparate[0].batchId ?? 0));
+            event.productsSeparate[0].batchId ?? 0, event.type));
         emit(SubMuelleEditSusses('Submuelle asignado correctamente'));
       } else {
         emit(SubMuelleEditFail('Error al asignar el submuelle'));
@@ -731,10 +740,11 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       bool responseEdit = await sendProuctEditOdoo(
         event.product,
         event.cantidad,
+        event.type,
       );
       if (responseEdit) {
         final response = await DataBaseSqlite()
-            .getBatchWithProducts(batchWithProducts.batch?.id ?? 0);
+            .getBatchWithProducts(batchWithProducts.batch?.id ?? 0, event.type);
         final List<ProductsBatch> products = response!.products!
             .where((product) => product.quantitySeparate != product.quantity)
             .toList();
@@ -755,7 +765,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       LoadProductEditEvent event, Emitter<BatchState> emit) async {
     try {
       final response = await DataBaseSqlite()
-          .getBatchWithProducts(batchWithProducts.batch?.id ?? 0);
+          .getBatchWithProducts(batchWithProducts.batch?.id ?? 0, event.type);
       if (response?.products?.isEmpty == true) {
         emit(ProductEditError());
         return;
@@ -788,7 +798,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           event.product.idProduct ?? 0,
           'is_pending',
           1,
-          event.product.idMove ?? 0);
+          event.product.idMove ?? 0, event.type);
 
       //deseleccionamos el producto actual
       if (event.product.productIsOk == 1) {
@@ -797,7 +807,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
             event.product.idProduct ?? 0,
             'product_is_ok',
             0,
-            event.product.idMove ?? 0);
+            event.product.idMove ?? 0, event.type);
       }
 
       //marcamos el producto con la ubicacion no leida
@@ -806,7 +816,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           event.product.idProduct ?? 0,
           'is_location_is_ok',
           0,
-          event.product.idMove ?? 0);
+          event.product.idMove ?? 0, event.type);
 
       //marcamos el producto como no leido
       await db.setFieldTableBatchProducts(
@@ -814,7 +824,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           event.product.idProduct ?? 0,
           'is_quantity_is_ok',
           0,
-          event.product.idMove ?? 0);
+          event.product.idMove ?? 0, event.type);
 
       //product_is_ok
       await db.setFieldTableBatchProducts(
@@ -822,11 +832,11 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           event.product.idProduct ?? 0,
           'product_is_ok',
           0,
-          event.product.idMove ?? 0);
+          event.product.idMove ?? 0, event.type);
 
       //ordenamos los productos por ubicacion
-      await sortProductsByLocationId();
-      add(FetchBatchWithProductsEvent(batchWithProducts.batch?.id ?? 0));
+      await sortProductsByLocationId(event.type);
+      add(FetchBatchWithProductsEvent(batchWithProducts.batch?.id ?? 0, event.type));
       emit(ProductPendingSuccess());
     } catch (e, s) {
       emit(ProductPendingError());
@@ -839,7 +849,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
     try {
       emit(PickingOkLoading());
       await db.batchPickingRepository
-          .setFieldTableBatch(event.batchId, 'is_separate', 1);
+          .setFieldTableBatch(event.batchId, 'is_separate', 1, event.type);
 
       emit(PickingOkState());
     } catch (e, s) {
@@ -855,7 +865,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       if (event.quantity > 0) {
         quantitySelected = event.quantity;
         await db.setFieldTableBatchProducts(batchWithProducts.batch?.id ?? 0,
-            event.productId, 'quantity_separate', event.quantity, event.idMove);
+            event.productId, 'quantity_separate', event.quantity, event.idMove, event.type);
       }
       emit(ChangeQuantitySeparateStateSuccess(quantitySelected));
     } catch (e, s) {
@@ -873,7 +883,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       } else {
         quantitySelected = quantitySelected + event.quantity;
         await db.incremenQtytProductSeparate(batchWithProducts.batch?.id ?? 0,
-            event.productId, event.idMove, event.quantity);
+            event.productId, event.idMove, event.quantity, event.type);
         emit(ChangeQuantitySeparateStateSuccess(quantitySelected));
       }
     } catch (e, s) {
@@ -922,12 +932,12 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
   }
 
 //*metodo para enviar al wms
-  void sendProuctOdoo() async {
+  void sendProuctOdoo( String type) async {
     try {
       DateTime dateTimeActuality = DateTime.parse(DateTime.now().toString());
       //traemos un producto de la base de datos  ya anteriormente guardado
       final product = await db.getProductBatch(batchWithProducts.batch?.id ?? 0,
-          currentProduct.idProduct ?? 0, currentProduct.idMove ?? 0);
+          currentProduct.idProduct ?? 0, currentProduct.idMove ?? 0, type);
 
       double secondsDifference = 0.0;
 // Verificación si la fecha de inicio es nula o vacía
@@ -978,6 +988,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
             'is_send_odoo',
             1,
             resultProduct.idMove ?? 0,
+            type,
           );
         }
       } else {
@@ -988,6 +999,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           'is_send_odoo',
           0,
           product?.idMove ?? 0,
+          type,
         );
       }
     } catch (e, s) {
@@ -998,16 +1010,17 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
   Future<bool> sendProuctEditOdoo(
     ProductsBatch productEdit,
     dynamic cantidad,
+    String type
   ) async {
     DateTime dateTimeActuality = DateTime.parse(DateTime.now().toString());
     //traemos un producto de la base de datos  ya anteriormente guardado
     final product = await db.getProductBatch(productEdit.batchId ?? 0,
-        productEdit.idProduct ?? 0, productEdit.idMove ?? 0);
+        productEdit.idProduct ?? 0, productEdit.idMove ?? 0, type);
 
     //todo: tiempor por batch
     //tiempo de separacion del producto, lo traemos de la bd
     final starTime = await db.batchPickingRepository
-        .getFieldTableBatch(productEdit.batchId ?? 0, 'start_time_pick');
+        .getFieldTableBatch(productEdit.batchId ?? 0, 'start_time_pick', type);
     DateTime dateTimeStart = starTime == "null" || starTime.isEmpty
         ? DateTime.now()
         : DateTime.parse(starTime);
@@ -1024,7 +1037,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           productEdit.idProduct ?? 0,
           'time_separate',
           30,
-          productEdit.idMove ?? 0);
+          productEdit.idMove ?? 0, type);
     }
 
     DateTime fechaTransaccion = DateTime.now();
@@ -1061,6 +1074,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           'is_send_odoo',
           1,
           resultProduct.idMove ?? 0,
+          type,
         );
       }
 
@@ -1073,6 +1087,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         'is_send_odoo',
         0,
         product?.idMove ?? 0,
+        type,
       );
       return false;
     }
@@ -1173,7 +1188,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           event.currentProduct.idProduct ?? 0,
           'is_selected',
           0,
-          currentProduct.idMove ?? 0);
+          currentProduct.idMove ?? 0, event.type);
 
       DateTime dateTimeActuality = DateTime.parse(DateTime.now().toString());
 
@@ -1182,13 +1197,13 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           batchWithProducts.batch?.id ?? 0,
           dateTimeActuality.toString(),
           currentProduct.idProduct ?? 0,
-          currentProduct.idMove ?? 0);
+          currentProduct.idMove ?? 0, event.type);
 
       final starTimeProduct = await db.getFieldTableProducts(
           currentProduct.batchId ?? 0,
           currentProduct.idProduct ?? 0,
           currentProduct.idMove ?? 0,
-          "time_separate_start");
+          "time_separate_start", event.type);
 
       DateTime dateTimeStartProduct =
           starTimeProduct == "null" || starTimeProduct.isEmpty
@@ -1207,9 +1222,9 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           batchWithProducts.batch?.id ?? 0,
           currentProduct.idProduct ?? 0,
           currentProduct.idMove ?? 0,
-          secondsDifferenceProduct);
+          secondsDifferenceProduct, event.type);
 
-      sendProuctOdoo();
+      sendProuctOdoo(event.type);
 
       if (filteredProducts.where((product) => product.isSeparate == 0).length !=
           0) {
@@ -1232,12 +1247,13 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           currentProduct.idProduct ?? 0,
           currentProduct.idMove ?? 0,
           DateTime.now().toString(),
+          event.type,
         );
       }
       emit(CurrentProductChangedState(
           currentProduct: currentProduct, index: index));
 
-      add(FetchBatchWithProductsEvent(batchWithProducts.batch?.id ?? 0));
+      add(FetchBatchWithProductsEvent(batchWithProducts.batch?.id ?? 0, event.type));
 
       //mostramos todas las variables
 
@@ -1254,7 +1270,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
     try {
       if (event.isOk) {
         await db.setFieldTableBatchProducts(event.batchId, event.productId,
-            'is_quantity_is_ok', 1, event.idMove);
+            'is_quantity_is_ok', 1, event.idMove, event.type);
       }
       quantityIsOk = event.isOk;
       emit(ChangeQuantityIsOkState(
@@ -1275,11 +1291,12 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           'is_location_is_ok',
           1,
           event.idMove,
+          event.type,
         );
 
         //cuando se lea la ubicacion se selecciona el batch
         await db.batchPickingRepository
-            .setFieldTableBatch(event.batchId, 'is_selected', 1);
+            .setFieldTableBatch(event.batchId, 'is_selected', 1, event.type);
         locationIsOk = true;
         emit(ChangeLocationIsOkState(
           locationIsOk,
@@ -1295,7 +1312,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
     try {
       if (event.locationDestIsOk) {
         await db.setFieldTableBatchProducts(event.batchId, event.productId,
-            'location_dest_is_ok', 1, event.idMove);
+            'location_dest_is_ok', 1, event.idMove, event.type);
       }
       locationDestIsOk = event.locationDestIsOk;
       emit(ChangeLocationDestIsOkState(
@@ -1316,6 +1333,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           event.productId,
           event.idMove,
           DateTime.now().toString(),
+          event.type,
         );
 
         //calculamos la fecha de transaccion
@@ -1327,16 +1345,17 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           fechaFormateada,
           event.productId,
           event.idMove,
+          event.type,
         );
 
         await db.setFieldTableBatchProducts(event.batchId, event.productId,
-            'is_quantity_is_ok', 1, event.idMove);
+            'is_quantity_is_ok', 1, event.idMove, event.type);
         quantityIsOk = event.productIsOk;
 
         await db.setFieldTableBatchProducts(
-            event.batchId, event.productId, 'is_selected', 1, event.idMove);
+            event.batchId, event.productId, 'is_selected', 1, event.idMove, event.type);
         await db.setFieldTableBatchProducts(
-            event.batchId, event.productId, 'product_is_ok', 1, event.idMove);
+            event.batchId, event.productId, 'product_is_ok', 1, event.idMove, event.type);
       }
       productIsOk = event.productIsOk;
       emit(ChangeProductIsOkState(
@@ -1353,7 +1372,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       searchController.clear();
       filteredProducts.clear();
       filteredProducts.addAll(batchWithProducts.products!);
-      await sortProductsByLocationId();
+      await sortProductsByLocationId(event.type);
       emit(LoadProductsBatchSuccesState(listOfProductsBatch: filteredProducts));
     } catch (e, s) {
       print("❌ Error en el ClearSearchProudctsBatchEvent $e ->$s");
@@ -1368,7 +1387,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       filteredProducts.clear();
       filteredProducts = batchWithProducts
           .products!; // Si la búsqueda está vacía, mostrar todos los productos
-      await sortProductsByLocationId();
+      await sortProductsByLocationId(event.type);
     } else {
       filteredProducts = batchWithProducts.products!.where((batch) {
         return batch.productId?.toLowerCase().contains(query) ??
@@ -1388,9 +1407,10 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       FetchBatchWithProductsEvent event, Emitter<BatchState> emit) async {
     try {
       batchWithProducts = BatchWithProducts();
+      typePicking = event.type;
 
       final response =
-          await DataBaseSqlite().getBatchWithProducts(event.batchId);
+          await DataBaseSqlite().getBatchWithProducts(event.batchId, event.type);
 
       if (response != null) {
         batchWithProducts = response;
@@ -1404,7 +1424,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         filteredProducts.clear();
         filteredProducts.addAll(batchWithProducts.products!);
 
-        await sortProductsByLocationId();
+        await sortProductsByLocationId(event.type);
 
         add(LoadDataInfoEvent());
         getPosicions();
@@ -1424,14 +1444,14 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
   }
 
 //*metodo para ordenar los productos por ubicacion
-  Future<List<ProductsBatch>> sortProductsByLocationId() async {
+  Future<List<ProductsBatch>> sortProductsByLocationId(String type) async {
     try {
       final products = filteredProducts.toList();
       final batch = batchWithProducts.batch;
 
       //traemos el batch actualizado
       final batchUpdated =
-          await db.batchPickingRepository.getBatchById(batch?.id ?? 0);
+          await db.batchPickingRepository.getBatchById(batch?.id ?? 0, type);
 
       //ORDENAMOS LOS PRODUCTOS SEGUN EL ORDENAMIENTO QUE DIGA EL BATCH
       switch (batchUpdated?.orderBy) {

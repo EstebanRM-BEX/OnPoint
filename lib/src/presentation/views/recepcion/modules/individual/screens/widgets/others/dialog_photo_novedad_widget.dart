@@ -13,32 +13,62 @@ class DialogCapturaNovedad extends StatefulWidget {
   @override
   State<DialogCapturaNovedad> createState() => _DialogCapturaNovedadState();
 }
-
 class _DialogCapturaNovedadState extends State<DialogCapturaNovedad> {
   final ImagePicker _picker = ImagePicker();
   File? _imageFile;
   bool _preguntando = true;
   bool _cargandoFoto = false;
+  
+  // 1. NUEVA VARIABLE SEMÁFORO
+  bool _isPicking = false; 
 
   Future<void> _tomarFoto() async {
+    // 2. BLOQUEO TEMPRANO: Si ya está activo, salimos inmediatamente.
+    if (_isPicking) return;
+    
+    _isPicking = true; // 🔴 Bloqueamos
+
     setState(() {
       _cargandoFoto = true;
     });
 
-    final pickedFile = await _picker.pickImage(source: ImageSource.camera);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-        _cargandoFoto = false;
-        _preguntando = false;
-      });
-    } else {
-      setState(() {
-        _cargandoFoto = false;
-      });
+    try {
+      // 3. LLAMADA PROTEGIDA
+      // Agregamos imageQuality para optimizar memoria (opcional pero recomendado)
+      final pickedFile = await _picker.pickImage(
+        source: ImageSource.camera, 
+        imageQuality: 50
+      );
+      
+      if (mounted) {
+        if (pickedFile != null) {
+          setState(() {
+            _imageFile = File(pickedFile.path);
+            _cargandoFoto = false;
+            _preguntando = false;
+          });
+        } else {
+          // El usuario canceló la cámara
+          setState(() {
+            _cargandoFoto = false;
+          });
+        }
+      }
+    } catch (e) {
+      // 4. CAPTURA DEL ERROR ESPECÍFICO
+      if (e.toString().contains('already_active')) {
+        debugPrint('Ignorando llamada duplicada a la cámara');
+      } else {
+        debugPrint('Error al tomar foto: $e');
+        if(mounted) {
+           setState(() => _cargandoFoto = false);
+        }
+      }
+    } finally {
+      // 5. LIBERACIÓN DEL SEMÁFORO
+      _isPicking = false; // 🟢 Desbloqueamos
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return BackdropFilter(

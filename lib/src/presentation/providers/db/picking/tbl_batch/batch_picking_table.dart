@@ -6,6 +6,7 @@ class BatchPickingTable {
   // Columnas de la tabla
   static const String columnId = 'id';
   static const String columnName = 'name';
+  static const String columnType = 'type';
   static const String columnScheduledDate = 'scheduleddate';
   static const String columnPickingTypeId = 'picking_type_id';
   static const String columnMuelle = 'muelle';
@@ -41,6 +42,7 @@ class BatchPickingTable {
       CREATE TABLE $tableName (
         $columnId INTEGER PRIMARY KEY,
         $columnName VARCHAR(255),
+        $columnType VARCHAR(255),
         $columnScheduledDate VARCHAR(255),
         $columnPickingTypeId VARCHAR(255),
         $columnMuelle VARCHAR(255),

@@ -420,8 +420,9 @@ class _Tab2ScreenTransState extends State<Tab2ScreenTrans> {
                                                     ),
                                                   ),
                                                   Text(
-                                                      (product.cantidadFaltante)
-                                                          .toStringAsFixed(2),
+                                                      (product.cantidadFaltante ??
+                                                              0.0)
+                                                          .toString(),
                                                       style: const TextStyle(
                                                           fontSize: 12,
                                                           color: black)),

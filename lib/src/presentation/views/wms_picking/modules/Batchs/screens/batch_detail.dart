@@ -3,7 +3,6 @@
 import 'dart:ui';
 
 import 'package:flutter_svg/svg.dart';
-import 'package:get/get.dart';
 import 'package:wms_app/src/core/constans/colors.dart';
 import 'package:wms_app/src/presentation/providers/network/check_internet_connection.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
@@ -127,17 +126,22 @@ class BatchDetailScreen extends StatelessWidget {
                                               .batch
                                               ?.isSeparate ==
                                           1) {
-                                        context
-                                            .read<WMSPickingBloc>()
-                                            .add(FilterBatchesBStatusEvent(
-                                              '',
-                                            ));
+                                        context.read<WMSPickingBloc>().add(
+                                            FilterBatchesBStatusEvent(
+                                                '',
+                                                context
+                                                    .read<BatchBloc>()
+                                                    .typePicking));
                                         Navigator.pushReplacementNamed(
-                                            context, 'wms-picking',
-                                            arguments: 1);
+                                          context,
+                                          'wms-picking',
+                                        );
                                       } else {
                                         context.read<BatchBloc>().add(
-                                            ClearSearchProudctsBatchEvent());
+                                            ClearSearchProudctsBatchEvent(
+                                                context
+                                                    .read<BatchBloc>()
+                                                    .typePicking));
 
                                         Navigator.pushReplacementNamed(
                                             context, 'batch');
@@ -305,9 +309,12 @@ class BatchDetailScreen extends StatelessWidget {
                                     focusNode: FocusNode(),
                                     textAlignVertical: TextAlignVertical.center,
                                     onChanged: (value) {
-                                      context
-                                          .read<BatchBloc>()
-                                          .add(SearchProductsBatchEvent(value));
+                                      context.read<BatchBloc>().add(
+                                          SearchProductsBatchEvent(
+                                              value,
+                                              context
+                                                  .read<BatchBloc>()
+                                                  .typePicking));
                                     },
                                     onTap: !context
                                             .read<UserBloc>()
@@ -328,7 +335,10 @@ class BatchDetailScreen extends StatelessWidget {
                                       suffixIcon: IconButton(
                                           onPressed: () {
                                             context.read<BatchBloc>().add(
-                                                ClearSearchProudctsBatchEvent());
+                                                ClearSearchProudctsBatchEvent(
+                                                    context
+                                                        .read<BatchBloc>()
+                                                        .typePicking));
                                             //cerramo el teclado
                                             FocusScope.of(context).unfocus();
                                             context
@@ -878,6 +888,10 @@ class BatchDetailScreen extends StatelessWidget {
                                                                   .add(
                                                                       SendProductOdooEvent(
                                                                     productsBatch,
+                                                                    context
+                                                                        .read<
+                                                                            BatchBloc>()
+                                                                        .typePicking,
                                                                   ));
                                                             },
                                                             style:
@@ -1019,10 +1033,10 @@ class BatchDetailScreen extends StatelessWidget {
                                                                           .quantitySeparate ==
                                                                       null
                                                                   ? "0"
-                                                                  : productsBatch
-                                                                      .quantitySeparate
-                                                                      .toStringAsFixed(
-                                                                          2),
+                                                                  : (productsBatch
+                                                                              .quantitySeparate ??
+                                                                          0.0)
+                                                                      .toString(),
                                                               style: TextStyle(
                                                                   fontSize: 12,
                                                                   color:
@@ -1120,10 +1134,12 @@ class BatchDetailScreen extends StatelessWidget {
                         controller: context.read<BatchBloc>().searchController,
                         onchanged: () {
                           context.read<BatchBloc>().add(
-                              SearchProductsBatchEvent(context
-                                  .read<BatchBloc>()
-                                  .searchController
-                                  .text));
+                              SearchProductsBatchEvent(
+                                  context
+                                      .read<BatchBloc>()
+                                      .searchController
+                                      .text,
+                                  context.read<BatchBloc>().typePicking));
                         },
                       ),
                     )
@@ -1216,9 +1232,8 @@ class DialogoConfirmateProductLoad extends StatelessWidget {
               ),
               onPressed: () {
                 Navigator.of(context).pop();
-                context
-                    .read<BatchBloc>()
-                    .add(LoadSelectedProductEvent(productsBatch));
+                context.read<BatchBloc>().add(LoadSelectedProductEvent(
+                    productsBatch, context.read<BatchBloc>().typePicking));
                 Navigator.pushReplacementNamed(context, 'batch');
               },
               child: const Text("Aceptar", style: TextStyle(color: white))),

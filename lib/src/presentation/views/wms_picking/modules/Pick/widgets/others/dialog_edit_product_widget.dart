@@ -122,7 +122,8 @@ class _DialogEditProductWidgetState extends State<DialogEditProductPickWidget> {
           widget.productsBatch.batchId ?? 0,
           widget.productsBatch.idProduct ?? 0,
           _selectedNovedad ?? '',
-          widget.productsBatch.idMove ?? 0);
+          widget.productsBatch.idMove ?? 0,
+          'pick');
     }
 
     // Actualizar la cantidad en el BLoC y BD
@@ -142,7 +143,7 @@ class _DialogEditProductWidgetState extends State<DialogEditProductPickWidget> {
     final size = MediaQuery.sizeOf(context);
 
     // El texto de la cantidad restante
-    final String remainingText = _quantityRemaining.toStringAsFixed(2);
+    final String remainingText = (_quantityRemaining ?? 0.0).toString();
 
     return AlertDialog(
       title: Center(

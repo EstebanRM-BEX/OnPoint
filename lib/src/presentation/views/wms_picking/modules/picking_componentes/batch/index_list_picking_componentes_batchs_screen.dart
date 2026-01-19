@@ -2,8 +2,6 @@
 
 import 'dart:ui';
 
-import 'package:flutter_holo_date_picker/date_picker.dart';
-import 'package:flutter_holo_date_picker/i18n/date_picker_i18n.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/src/core/constans/colors.dart';
@@ -24,16 +22,17 @@ import 'package:wms_app/src/presentation/widgets/barcode_scanner_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class WMSPickingPage extends StatefulWidget {
-  const WMSPickingPage({
+class PickingCompoBatchScreen extends StatefulWidget {
+  const PickingCompoBatchScreen({
     super.key,
   });
 
   @override
-  State<WMSPickingPage> createState() => _PickingPageState();
+  State<PickingCompoBatchScreen> createState() =>
+      _PickingCompoBatchScreenState();
 }
 
-class _PickingPageState extends State<WMSPickingPage> {
+class _PickingCompoBatchScreenState extends State<PickingCompoBatchScreen> {
   final AudioService _audioService = AudioService();
   final VibrationService _vibrationService = VibrationService();
   FocusNode focusNodeBuscar = FocusNode();
@@ -48,7 +47,7 @@ class _PickingPageState extends State<WMSPickingPage> {
     _controllerToDo.clear();
     print('🔎 Scan barcode (batch picking): $scan');
 
-    final listOfBatchs = bloc.listOfBatchs;
+    final listOfBatchs = bloc.listOfBatchsByComponents;
 
     void processBatch(BatchsModel batch) {
       bloc.add(ClearScannedValuePickingEvent('toDo'));
@@ -112,9 +111,10 @@ class _PickingPageState extends State<WMSPickingPage> {
           BlocListener<BatchBloc, BatchState>(
             listener: (context, state) {
               if (state is PickingOkState) {
-                context
-                    .read<WMSPickingBloc>()
-                    .add(FilterBatchesBStatusEvent('', 'batch'));
+                context.read<WMSPickingBloc>().add(FilterBatchesBStatusEvent(
+                      '',
+                      'components',
+                    ));
               }
             },
           ),
@@ -166,22 +166,23 @@ class _PickingPageState extends State<WMSPickingPage> {
                                                 context, '/home');
                                           },
                                         ),
+                                        Spacer(),
                                         GestureDetector(
                                           onTap: () async {
                                             final products =
                                                 await DataBaseSqlite()
-                                                    .getProducts('batch');
+                                                    .getProducts('components');
                                             final productsNoSendOdoo = products
                                                 .where((element) =>
                                                     element.isSendOdoo == 0)
                                                 .toList();
                                             if (productsNoSendOdoo.isEmpty) {
                                               await DataBaseSqlite()
-                                                  .delePicking('batch');
+                                                  .delePicking('components');
                                               context
                                                   .read<WMSPickingBloc>()
-                                                  .add(LoadAllBatchsEvent(
-                                                      true, 'batch'));
+                                                  .add(LoadAllBatchsByComponentsEvent(
+                                                      true, 'components'));
                                             } else {
                                               showDialog(
                                                   context: context,
@@ -190,78 +191,30 @@ class _PickingPageState extends State<WMSPickingPage> {
                                                   });
                                             }
                                           },
-                                          child: Padding(
-                                            padding: EdgeInsets.only(
-                                                left: size.width * 0.2),
-                                            child: Row(
-                                              children: [
-                                                const Text(
-                                                  'PICK BATCH',
-                                                  style: TextStyle(
-                                                      color: white,
-                                                      fontSize: 18,
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
+                                          child: Row(
+                                            children: [
+                                              const Text(
+                                                'COMPONENTES BATCH',
+                                                style: TextStyle(
+                                                    color: white,
+                                                    fontSize: 18,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
 
-                                                const SizedBox(
-                                                  width: 5,
-                                                ),
-                                                //icono de refres
-                                                Icon(
-                                                  Icons.refresh,
-                                                  color: white,
-                                                  size: 20,
-                                                ),
-                                              ],
-                                            ),
+                                              const SizedBox(
+                                                width: 5,
+                                              ),
+                                              //icono de refres
+                                              Icon(
+                                                Icons.refresh,
+                                                color: white,
+                                                size: 20,
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                        const Spacer(),
-                                        IconButton(
-                                          icon: const Icon(Icons.calendar_month,
-                                              color: white),
-                                          onPressed: () async {
-                                            // Primero, asegúrate de que el FocusNode esté activo
-                                            FocusScope.of(context).unfocus();
-                                            var pickedDate = await DatePicker
-                                                .showSimpleDatePicker(
-                                              titleText: 'Seleccione una fecha',
-                                              context,
-                                              confirmText: 'Buscar',
-                                              cancelText: 'Cancelar',
-                                              // initialDate: DateTime(2020),
-                                              firstDate:
-                                                  //un mes atras
-                                                  DateTime.now().subtract(
-                                                      const Duration(days: 30)),
-                                              lastDate: DateTime.now(),
-                                              dateFormat: "dd-MMMM-yyyy",
-                                              locale: DateTimePickerLocale.es,
-                                              looping: false,
-                                            );
-
-                                            // Verificar si el usuario seleccionó una fecha
-                                            if (pickedDate != null) {
-                                              // Formatear la fecha al formato "yyyy-MM-dd"
-                                              final formattedDate =
-                                                  DateFormat('yyyy-MM-dd')
-                                                      .format(pickedDate);
-
-                                              // Disparar el evento con la fecha seleccionada
-                                              context
-                                                  .read<WMSPickingBloc>()
-                                                  .add(
-                                                    LoadHistoryBatchsEvent(
-                                                        true, formattedDate),
-                                                  );
-
-                                              // Navegar a la pantalla de historial
-                                              Navigator.pushReplacementNamed(
-                                                  context, 'history-list');
-                                            }
-                                          },
-                                        ),
+                                        Spacer(),
                                       ],
                                     ),
                                   ],
@@ -290,25 +243,28 @@ class _PickingPageState extends State<WMSPickingPage> {
 
                       //*listado de batchs
                       Expanded(
-                        child: context
+                        child: 
+                        
+                        context
                                 .read<WMSPickingBloc>()
-                                .filteredBatchs
+                                .filteredBatchsByComponents
                                 .where((batch) => batch.isSeparate == null)
                                 .isNotEmpty
-                            ? ListView.builder(
+                            ?
+                             ListView.builder(
                                 padding: EdgeInsets.only(
                                     top: 10, bottom: size.height * 0.15),
                                 shrinkWrap: true,
                                 physics: const ScrollPhysics(),
                                 itemCount: context
                                     .read<WMSPickingBloc>()
-                                    .filteredBatchs
+                                    .filteredBatchsByComponents
                                     .where((batch) => batch.isSeparate == null)
                                     .length,
                                 itemBuilder: (contextBuilder, index) {
                                   final batch = context
                                       .read<WMSPickingBloc>()
-                                      .filteredBatchs
+                                      .filteredBatchsByComponents
                                       .where(
                                           (batch) => batch.isSeparate == null)
                                       .toList()[index];
@@ -718,7 +674,7 @@ class _PickingPageState extends State<WMSPickingPage> {
     final batchBloc = context.read<BatchBloc>();
 
     // 1. Cargar todos los datos del BLoC de forma asíncrona y una sola vez
-    batchBloc.add(FetchBatchWithProductsEvent(batch.id ?? 0, 'batch'));
+    batchBloc.add(FetchBatchWithProductsEvent(batch.id ?? 0, 'components'));
     batchBloc.add(LoadInfoDeviceEvent());
     batchBloc.add(LoadConfigurationsUser());
 
@@ -736,8 +692,8 @@ class _PickingPageState extends State<WMSPickingPage> {
         barrierDismissible: false,
         builder: (context) => DialogStartTimeWidget(
           onAccepted: () async {
-            batchBloc
-                .add(StartTimePick(batch.id ?? 0, DateTime.now(), 'batch'));
+            batchBloc.add(
+                StartTimePick(batch.id ?? 0, DateTime.now(), 'components'));
             Navigator.pop(context);
             navigateToBatchInfo();
           },

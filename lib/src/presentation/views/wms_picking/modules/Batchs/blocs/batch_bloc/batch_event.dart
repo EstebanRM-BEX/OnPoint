@@ -15,12 +15,16 @@ class LoadAllProductsBatchsEvent extends BatchEvent {
   });
 }
 
-class ClearSearchProudctsBatchEvent extends BatchEvent {}
+class ClearSearchProudctsBatchEvent extends BatchEvent {
+  final String type;
+  ClearSearchProudctsBatchEvent(this.type);
+}
 
 class SearchProductsBatchEvent extends BatchEvent {
   final String query;
+  final String type;
 
-  SearchProductsBatchEvent(this.query);
+  SearchProductsBatchEvent(this.query, this.type);
 }
 
 class LoadProductsBatchFromDBEvent extends BatchEvent {
@@ -33,8 +37,9 @@ class NextProductEvent extends BatchEvent {}
 
 class FetchBatchWithProductsEvent extends BatchEvent {
   final int batchId;
+  final String type;
 
-  FetchBatchWithProductsEvent(this.batchId);
+  FetchBatchWithProductsEvent(this.batchId, this.type);
 }
 
 class GetProductById extends BatchEvent {
@@ -47,7 +52,8 @@ class GetProductById extends BatchEvent {
 class StartTimePick extends BatchEvent {
   final int batchId;
   final DateTime time;
-  StartTimePick(this.batchId, this.time);
+  final String type;
+  StartTimePick(this.batchId, this.time, this.type);
 }
 
 class EndTimePick extends BatchEvent {
@@ -61,7 +67,8 @@ class ChangeLocationIsOkEvent extends BatchEvent {
   final int productId;
   final int batchId;
   final int idMove;
-  ChangeLocationIsOkEvent(this.productId, this.batchId, this.idMove);
+  final String type;
+  ChangeLocationIsOkEvent(this.productId, this.batchId, this.idMove, this.type);
 }
 
 class ChangeLocationDestIsOkEvent extends BatchEvent {
@@ -69,8 +76,9 @@ class ChangeLocationDestIsOkEvent extends BatchEvent {
   final int productId;
   final int batchId;
   final int idMove;
+  final String type;
   ChangeLocationDestIsOkEvent(
-      this.locationDestIsOk, this.productId, this.batchId, this.idMove);
+      this.locationDestIsOk, this.productId, this.batchId, this.idMove, this.type);
 }
 
 class ChangeProductIsOkEvent extends BatchEvent {
@@ -79,8 +87,9 @@ class ChangeProductIsOkEvent extends BatchEvent {
   final int batchId;
   final dynamic quantity;
   final int idMove;
+  final String type;
   ChangeProductIsOkEvent(this.productIsOk, this.productId, this.batchId,
-      this.quantity, this.idMove);
+      this.quantity, this.idMove, this.type);
 }
 
 class ChangeIsOkQuantity extends BatchEvent {
@@ -88,14 +97,17 @@ class ChangeIsOkQuantity extends BatchEvent {
   final int productId;
   final int batchId;
   final int idMove;
-  ChangeIsOkQuantity(this.isOk, this.productId, this.batchId, this.idMove);
+  final String type;
+  ChangeIsOkQuantity(this.isOk, this.productId, this.batchId, this.idMove, this.type);
 }
 
 class ChangeCurrentProduct extends BatchEvent {
   final ProductsBatch currentProduct;
+  final String type;
 
   ChangeCurrentProduct({
     required this.currentProduct,
+    required this.type,
   });
 }
 
@@ -121,7 +133,8 @@ class ChangeQuantitySeparate extends BatchEvent {
   final dynamic quantity;
   final int productId;
   final int idMove;
-  ChangeQuantitySeparate(this.quantity, this.productId, this.idMove);
+  final String type;
+  ChangeQuantitySeparate(this.quantity, this.productId, this.idMove, this.type);
 }
 
 class AddQuantitySeparate extends BatchEvent {
@@ -129,36 +142,44 @@ class AddQuantitySeparate extends BatchEvent {
   final int idMove;
   final dynamic quantity;
   final bool isOk;
-  AddQuantitySeparate(this.productId, this.idMove, this.quantity, this.isOk);
+  final String type;
+  AddQuantitySeparate(this.productId, this.idMove, this.quantity, this.isOk, this.type);
 }
 
 class PickingOkEvent extends BatchEvent {
   final int batchId;
   final int productId;
+  final String type;
 
-  PickingOkEvent(this.batchId, this.productId);
+  PickingOkEvent(this.batchId, this.productId, this.type);
 }
 
 class ProductPendingEvent extends BatchEvent {
   final int batchId;
-  final ProductsBatch product;
 
-  ProductPendingEvent(this.batchId, this.product);
+  final ProductsBatch product;
+  final String type;
+  ProductPendingEvent(this.batchId, this.product, this.type);
 }
 
 class LoadConfigurationsUser extends BatchEvent {
   LoadConfigurationsUser();
 }
 
-class LoadProductEditEvent extends BatchEvent {}
+class LoadProductEditEvent extends BatchEvent {
+  final String type;
+  LoadProductEditEvent(this.type);
+}
 
 class SendProductEditOdooEvent extends BatchEvent {
   final ProductsBatch product;
   final dynamic cantidad;
+  final String type;
 
   SendProductEditOdooEvent(
     this.product,
     this.cantidad,
+    this.type,
   );
 }
 
@@ -166,8 +187,10 @@ class AssignSubmuelleEvent extends BatchEvent {
   final List<ProductsBatch> productsSeparate;
   final Muelles muelle;
   final bool isOccupied;
+  final String type;
 
-  AssignSubmuelleEvent(this.productsSeparate, this.muelle, this.isOccupied);
+  AssignSubmuelleEvent(
+      this.productsSeparate, this.muelle, this.isOccupied, this.type);
 }
 
 class ScanBarcodeEvent extends BatchEvent {}
@@ -197,9 +220,11 @@ class SortProductsByLocation extends BatchEvent {}
 //evento para enviar un producto a odoo
 class SendProductOdooEvent extends BatchEvent {
   final ProductsBatch product;
+  final String type;
 
   SendProductOdooEvent(
     this.product,
+    this.type,
   );
 }
 
@@ -230,7 +255,8 @@ class FetchMuellesEvent extends BatchEvent {}
 
 class LoadSelectedProductEvent extends BatchEvent {
   final ProductsBatch selectedProduct;
-  LoadSelectedProductEvent(this.selectedProduct);
+  final String type;
+  LoadSelectedProductEvent(this.selectedProduct, this.type);
 }
 
 class ViewProductImageEvent extends BatchEvent {

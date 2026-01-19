@@ -70,10 +70,10 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/screens/
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/screens/scan_product_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/history/screens/history_detail_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/history/screens/list_batchs_history_screen.dart';
+import 'package:wms_app/src/presentation/views/wms_picking/modules/picking_componentes/batch/index_list_picking_componentes_batchs_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/picking_componentes/index_list_picking_componentes_screen.dart';
 
 class AppRoutes {
-
   //todo  Mapa estático de rutas
   static const String enterprice = 'enterprice';
   static const String auth = 'auth';
@@ -94,6 +94,8 @@ class AppRoutes {
 
   //todo picking componentes
   static const String pickingComponentes = 'picking-componentes';
+  //por batch
+  static const String pickingComponentesBatch = 'picking-componentes-batch';
 
   //todo WMS Packing
   static const String wmsPacking = 'wms-packing';
@@ -237,7 +239,6 @@ class AppRoutes {
 
       // todo WMS Picking
       wmsPicking: (context) => WMSPickingPage(
-            indexSelected: ModalRoute.of(context)!.settings.arguments as int,
           ),
       batch: (_) => const BatchScreen(),
       batchDetail: (_) => const BatchDetailScreen(),
@@ -246,7 +247,7 @@ class AppRoutes {
       pick: (_) => const IndexListPickScreen(),
       pickDone: (context) {
         final arguments =
-            ModalRoute.of(context)! .settings.arguments as List<dynamic>;
+            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
         final isFromPick = arguments[0] as bool;
         return IndexListPickDoneScreen(isFromPick: isFromPick);
       },
@@ -256,11 +257,15 @@ class AppRoutes {
         final arguments =
             ModalRoute.of(context)!.settings.arguments as List<dynamic>;
         final isFromPick = arguments[0] as bool;
-        return  DetailPickDoneScreen(isFromPick: isFromPick);
+        return DetailPickDoneScreen(isFromPick: isFromPick);
       },
 
       //todo picking componentes
       pickingComponentes: (_) => IndexListPickComponentsScreen(),
+      //por batch
+      pickingComponentesBatch: (context) {
+        return PickingCompoBatchScreen();
+      },
 
       // todo WMS Packing
       wmsPacking: (_) => const WmsPackingScreen(),

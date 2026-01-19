@@ -73,6 +73,7 @@ class DataBatch {
 class BatchsModel {
   final int? id;
   final String? name;
+  final String? type;
   final dynamic scheduleddate;
   final dynamic pickingTypeId;
   final String? muelle; 
@@ -111,6 +112,7 @@ class BatchsModel {
   BatchsModel({
     this.id,
     this.name,
+    this.type,
     this.scheduleddate,
     this.pickingTypeId,
     this.muelle,
@@ -148,6 +150,7 @@ class BatchsModel {
   factory BatchsModel.fromMap(Map<String, dynamic> json) => BatchsModel(
         id: json['id'],
         name: json['name'].toString(),
+        type: json['type'],
         scheduleddate: json["scheduleddate"],
         pickingTypeId: json['picking_type_id'],
         muelle: json['muelle'],
@@ -186,6 +189,7 @@ class BatchsModel {
   Map<String, dynamic> toMap() => {
         'id': id,
         'name': name,
+        'type': type,
         'scheduleddate': scheduleddate,
         'picking_type_id': pickingTypeId,
         'muelle': muelle,
@@ -254,6 +258,7 @@ class Origin{
 class ProductsBatch {
   final int? id;
   final dynamic barcode;
+  final String? type;
   final dynamic? weigth;
   final String? unidades;
 
@@ -317,6 +322,7 @@ class ProductsBatch {
     this.idMove,
     this.rimovalPriority,
     this.muelleId,
+    this.type,
     this.expireDate,
     // this.pickingId,
     this.orderProduct,
@@ -372,6 +378,7 @@ class ProductsBatch {
       rimovalPriority: map['rimoval_priority'],
       expireDate: map['expire_date'],
       batchId: map['batch_id'],
+      type: map['type'] ,
       orderProduct: map['order_product'],
       idProduct: map['id_product'],
       productId: map['product_id'],
@@ -431,6 +438,7 @@ class ProductsBatch {
       "expire_date": expireDate,
       "rimoval_priority": rimovalPriority,
       "id_product": idProduct,
+      "type": type,
       "batch_id": batchId,
       "id_move": idMove,
       "muelle_id": muelleId,
