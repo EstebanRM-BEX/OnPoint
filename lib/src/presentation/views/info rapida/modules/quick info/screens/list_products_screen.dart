@@ -74,7 +74,20 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
                 const DialogLoading(message: "Buscando informacion..."),
           );
         } else if (state is InfoRapidaLoaded) {
-          Navigator.pop(context);
+          Navigator.pop(context); // Cierra el loader
+
+          // ✅ CORRECCIÓN 1: Evitar Crash si el resultado es nulo
+          if (state.infoRapidaResult == null) {
+            Get.snackbar(
+              'Aviso',
+              'La búsqueda no arrojó datos válidos.',
+              backgroundColor: white,
+              colorText: Colors.orange,
+              icon: const Icon(Icons.warning, color: Colors.orange),
+            );
+            return;
+          }
+
           Get.snackbar(
             '360 Software Informa',
             'Información encontrada',
@@ -83,20 +96,33 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
             icon: const Icon(Icons.check_circle, color: Colors.green),
           );
 
-          final route = state.infoRapidaResult.type == 'product'
-              ? 'product-info'
-              : 'location-info';
+          // ✅ CORRECCIÓN 2: Bloque Try-Catch para "Bad state: No element"
+          // Si infoRapidaResult intenta acceder a lista.first y está vacía, capturamos el error.
+          try {
+            final route = state.infoRapidaResult!.type == 'product'
+                ? 'product-info'
+                : 'location-info';
 
-          Navigator.pushReplacementNamed(
-            context,
-            route,
-            arguments:
-                route == 'location-info' ? [state.infoRapidaResult] : null,
-          );
+            Navigator.pushReplacementNamed(
+              context,
+              route,
+              arguments:
+                  route == 'location-info' ? [state.infoRapidaResult] : null,
+            );
+          } catch (e) {
+            print("Error al procesar resultado: $e");
+            Get.snackbar(
+              'Error',
+              'Error al procesar los datos encontrados.',
+              backgroundColor: white,
+              colorText: Colors.red,
+              icon: const Icon(Icons.error, color: Colors.red),
+            );
+          }
         }
       },
       builder: (context, state) {
-    final bloc = context.read<InfoRapidaBloc>();
+        final bloc = context.read<InfoRapidaBloc>();
 
         return WillPopScope(
           onWillPop: () async => false,
@@ -203,7 +229,6 @@ class ProductListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: GestureDetector(
@@ -216,12 +241,37 @@ class ProductListTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildProductRow('Nombre', context.read<InfoRapidaBloc>().productosFilters[index].name, isError: false),
-                _buildProductRow('Barcode', context.read<InfoRapidaBloc>().productosFilters[index].barcode,
-                    isError:
-                        context.read<InfoRapidaBloc>().productosFilters[index].barcode == null || context.read<InfoRapidaBloc>().productosFilters[index].barcode!.isEmpty),
-                _buildProductRow('Code', context.read<InfoRapidaBloc>().productosFilters[index].code,
-                    isError: context.read<InfoRapidaBloc>().productosFilters[index].code == null || context.read<InfoRapidaBloc>().productosFilters[index].code!.isEmpty),
+                _buildProductRow('Nombre',
+                    context.read<InfoRapidaBloc>().productosFilters[index].name,
+                    isError: false),
+                _buildProductRow(
+                    'Barcode',
+                    context
+                        .read<InfoRapidaBloc>()
+                        .productosFilters[index]
+                        .barcode,
+                    isError: context
+                                .read<InfoRapidaBloc>()
+                                .productosFilters[index]
+                                .barcode ==
+                            null ||
+                        context
+                            .read<InfoRapidaBloc>()
+                            .productosFilters[index]
+                            .barcode!
+                            .isEmpty),
+                _buildProductRow('Code',
+                    context.read<InfoRapidaBloc>().productosFilters[index].code,
+                    isError: context
+                                .read<InfoRapidaBloc>()
+                                .productosFilters[index]
+                                .code ==
+                            null ||
+                        context
+                            .read<InfoRapidaBloc>()
+                            .productosFilters[index]
+                            .code!
+                            .isEmpty),
               ],
             ),
           ),

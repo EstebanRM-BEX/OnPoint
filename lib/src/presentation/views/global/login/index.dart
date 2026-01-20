@@ -22,142 +22,140 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
+return BlocProvider(
       create: (context) => LoginBloc(),
-      child: MultiBlocListener(
-        listeners: [
-          BlocListener<LoginBloc, LoginState>(
-            listener: (context, state) {
-              print('STATE LOGIN: $state');
-              if (state is LoginLoading) {
-                Get.dialog(
-                  DialogLoadingNetwork(
-                    titel: 'Login',
-                  ),
-                  barrierDismissible:
-                      false, // No permitir cerrar tocando fuera del diálogo
-                );
-              }
-              if (state is LoginSuccess) {
-                context.read<UserBloc>().add(RegisterDeviceIdEvent());
-              }
+      // 1. Primer Listener: LoginBloc
+      child: BlocListener<LoginBloc, LoginState>(
+        listener: (context, state) {
+          print('STATE LOGIN: $state');
+          if (state is LoginLoading) {
+            Get.dialog(
+              DialogLoadingNetwork(
+                titel: 'Login',
+              ),
+              barrierDismissible:
+                  false, // No permitir cerrar tocando fuera del diálogo
+            );
+          }
+          if (state is LoginSuccess) {
+            context.read<UserBloc>().add(RegisterDeviceIdEvent());
+          }
 
-              if (state is LoginFailure) {
-                Get.back();
-                showScrollableErrorDialog(state.error);
-              }
-            },
-          ),
-          BlocListener<UserBloc, UserState>(
-            listener: (context, state) async {
-              print('STATE USER: $state');
+          if (state is LoginFailure) {
+            Get.back();
+            showScrollableErrorDialog(state.error);
+          }
+        },
+        // 2. Segundo Listener (Hijo del primero): UserBloc
+        child: BlocListener<UserBloc, UserState>(
+          listener: (context, state) async {
+            print('STATE USER: $state');
 
-              if (state is RegisterDeviceIdError) {
-                Get.back();
-                showScrollableErrorDialog(state.message);
-              }
+            if (state is RegisterDeviceIdError) {
+              Get.back();
+              showScrollableErrorDialog(state.message);
+            }
 
-              if (state is RegisterDeviceIdSuccess) {
-                context
-                    .read<UserBloc>()
-                    .add(GetConfigurations()); //configuracion del usuario
-              }
+            if (state is RegisterDeviceIdSuccess) {
+              context
+                  .read<UserBloc>()
+                  .add(GetConfigurations()); //configuracion del usuario
+            }
 
-              if (state is ConfigurationLoaded) {
-                WebSocketService().connect();
-                context
-                    .read<WMSPickingBloc>()
-                    .add(LoadAllNovedades(context)); //novedades
-                context
-                    .read<UserBloc>()
-                    .add(GetUbicacionesEvent()); //ubicaciones
-                context
-                    .read<InventarioBloc>()
-                    .add(GetProductsEvent(isDialogLoading: true));
+            if (state is ConfigurationLoaded) {
+              WebSocketService().connect();
+              context
+                  .read<WMSPickingBloc>()
+                  .add(LoadAllNovedades(context)); //novedades
+              context
+                  .read<UserBloc>()
+                  .add(GetUbicacionesEvent()); //ubicaciones
+              context
+                  .read<InventarioBloc>()
+                  .add(GetProductsEvent(isDialogLoading: true));
 
-                context.read<LoginBloc>().email.clear();
-                context.read<LoginBloc>().password.clear();
-                Get.back();
-                Navigator.pushReplacementNamed(context, '/home');
-              }
+              context.read<LoginBloc>().email.clear();
+              context.read<LoginBloc>().password.clear();
+              Get.back();
+              Navigator.pushReplacementNamed(context, '/home');
+            }
 
-              if (state is ConfigurationError) {
-                Get.back();
-                showScrollableErrorDialog( state.message);
-              }
-            },
-          ),
-        ],
-        child: BlocBuilder<LoginBloc, LoginState>(
-          builder: (context, state) {
-            return WillPopScope(
-              onWillPop: () async {
-                return false;
-              },
-              child: Scaffold(
-                body: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          colors: [
-                        primaryColorApp,
-                        secondary,
-                        primaryColorApp
-                      ])),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      const WarningWidgetCubit(),
-                      const SizedBox(
-                        height: 20,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(
-                            top: 15, left: 20, right: 20, bottom: 5),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Center(
-                                child: Text(
-                              "Bienvenido a OnPoint",
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 22),
-                            )),
-
-                            Center(
-                              child: Text(
-                                  "Version: ${context.read<UserBloc>().versionApp}",
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 10)),
-                            )
-                            //FadeIn(duration: const  Duration(microseconds: 3), child: const Text("Bienvenido a BEXMovil Provigas", style: TextStyle(color: Colors.white, fontSize: 18),)),
-                          ],
+            if (state is ConfigurationError) {
+              Get.back();
+              showScrollableErrorDialog(state.message);
+            }
+          },
+          // 3. UI Visual (Hijo del segundo): El BlocBuilder y el Scaffold
+          child: BlocBuilder<LoginBloc, LoginState>(
+            builder: (context, state) {
+              return WillPopScope(
+                onWillPop: () async {
+                  return false;
+                },
+                child: Scaffold(
+                  body: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            colors: [
+                          primaryColorApp,
+                          secondary,
+                          primaryColorApp
+                        ])),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        const WarningWidgetCubit(),
+                        const SizedBox(
+                          height: 20,
                         ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.only(top: 15),
-                          decoration: const BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(40),
-                                  topRight: Radius.circular(40))),
-                          child: SingleChildScrollView(
-                            child: BlocBuilder<LoginBloc, LoginState>(
-                              builder: (context, state) {
-                                return const _LoginForm();
-                              },
-                            ),
+                        Padding(
+                          padding: const EdgeInsets.only(
+                              top: 15, left: 20, right: 20, bottom: 5),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Center(
+                                  child: Text(
+                                "Bienvenido a OnPoint",
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 22),
+                              )),
+
+                              Center(
+                                child: Text(
+                                    "Version: ${context.read<UserBloc>().versionApp}",
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 10)),
+                              )
+                            ],
                           ),
                         ),
-                      )
-                    ],
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.only(top: 15),
+                            decoration: const BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(40),
+                                    topRight: Radius.circular(40))),
+                            child: SingleChildScrollView(
+                              child: BlocBuilder<LoginBloc, LoginState>(
+                                builder: (context, state) {
+                                  return const _LoginForm();
+                                },
+                              ),
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );

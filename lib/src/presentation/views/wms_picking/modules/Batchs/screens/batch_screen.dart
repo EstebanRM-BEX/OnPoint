@@ -73,18 +73,33 @@ class _BatchDetailScreenState extends State<BatchScreen>
     WidgetsBinding.instance.addObserver(this);
   }
 
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
     if (state == AppLifecycleState.resumed && mounted) {
+      // 1. Variable para capturar el contexto del diálogo
+      BuildContext? dialogContext;
+
       showDialog(
         context: context,
-        builder: (context) =>
-            const DialogLoading(message: "Espere un momento..."),
+        barrierDismissible: false, // Evita cierre manual
+        builder: (ctx) {
+          // 2. Capturamos el contexto del builder
+          dialogContext = ctx;
+          return const DialogLoading(message: "Espere un momento...");
+        },
       );
+
       Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) Navigator.pop(context);
+        // 3. Verificamos que la pantalla siga montada
+        if (!mounted) return;
+
+        // 4. Verificamos que el diálogo siga existiendo y usamos SU contexto
+        if (dialogContext != null && dialogContext!.mounted) {
+          Navigator.of(dialogContext!).pop();
+        }
       });
     }
   }

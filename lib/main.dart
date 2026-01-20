@@ -123,64 +123,61 @@ class MyApp extends StatelessWidget {
           ?.pushNamedAndRemoveUntil('enterprice', (route) => false);
     }
 
-    return MultiBlocProvider(
-      providers: [
-        // ✅ Reutilizamos la instancia única del ConnectionStatusCubit
-        BlocProvider.value(value: connectionStatusCubit),
-
-        // 👉 Resto de tus BLoC habituales
-        BlocProvider(create: (_) => UserBloc()),
-        BlocProvider(create: (_) => RecepcionBloc()),
-        BlocProvider(create: (_) => TransferenciaBloc()),
-        BlocProvider(create: (_) => HomeBloc()),
-        BlocProvider(create: (_) => WMSPickingBloc()),
-        BlocProvider(create: (_) => BatchBloc()),
-        BlocProvider(create: (_) => WmsPackingBloc()),
-        BlocProvider(create: (_) => KeyboardBloc()),
-        BlocProvider(create: (_) => TransferInfoBloc()),
-        BlocProvider(create: (_) => InfoRapidaBloc()),
-        BlocProvider(create: (_) => InventarioBloc()),
-        BlocProvider(create: (_) => PickingPickBloc()),
-        BlocProvider(create: (_) => RecepcionBatchBloc()),
-        BlocProvider(create: (_) => PackingPedidoBloc()),
-        BlocProvider(create: (_) => DevolucionesBloc()),
-        BlocProvider(create: (_) => ConteoBloc()),
-        BlocProvider(create: (_) => CreateTransferBloc()),
-        BlocProvider(create: (_) => PackingConsolidateBloc()),
+    return GetMaterialApp(
+      navigatorKey: navigatorKey,
+      debugShowCheckedModeBanner: false,
+      initialRoute: AppRoutes.checkout,
+      routes: AppRoutes.routes,
+      supportedLocales: const [Locale('es', 'ES')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
       ],
-      child: GetMaterialApp(
-        navigatorKey: navigatorKey,
-        debugShowCheckedModeBanner: false,
-        initialRoute: AppRoutes.checkout,
-        routes: AppRoutes.routes,
-        supportedLocales: const [Locale('es', 'ES')],
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        navigatorObservers: [
-          JankRouteObserver(),
-        ],
-        theme: ThemeData(
-          scaffoldBackgroundColor: Colors.grey[300],
-          appBarTheme: AppBarTheme(elevation: 0, color: primaryColorApp),
-          colorScheme: ColorScheme.light(
-            primary: primaryColorApp,
-            secondary: primaryColorApp,
-          ),
+      navigatorObservers: [
+        JankRouteObserver(),
+      ],
+      theme: ThemeData(
+        scaffoldBackgroundColor: Colors.grey[300],
+        appBarTheme: AppBarTheme(elevation: 0, color: primaryColorApp),
+        colorScheme: ColorScheme.light(
+          primary: primaryColorApp,
+          secondary: primaryColorApp,
         ),
-        builder: (context, navigator) {
-          apiRequestService.initialize(
-            unencodePath: '/api',
-            httpHandler: HttpResponseHandler(context),
-          );
-          return SessionTimeoutManager(
+      ),
+      builder: (context, navigator) {
+        apiRequestService.initialize(
+          unencodePath: '/api',
+          httpHandler: HttpResponseHandler(context),
+        );
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: connectionStatusCubit),
+            BlocProvider(create: (_) => UserBloc()),
+            BlocProvider(create: (_) => RecepcionBloc()),
+            BlocProvider(create: (_) => TransferenciaBloc()),
+            BlocProvider(create: (_) => HomeBloc()),
+            BlocProvider(create: (_) => WMSPickingBloc()),
+            BlocProvider(create: (_) => BatchBloc()),
+            BlocProvider(create: (_) => WmsPackingBloc()),
+            BlocProvider(create: (_) => KeyboardBloc()),
+            BlocProvider(create: (_) => TransferInfoBloc()),
+            BlocProvider(create: (_) => InfoRapidaBloc()),
+            BlocProvider(create: (_) => InventarioBloc()),
+            BlocProvider(create: (_) => PickingPickBloc()),
+            BlocProvider(create: (_) => RecepcionBatchBloc()),
+            BlocProvider(create: (_) => PackingPedidoBloc()),
+            BlocProvider(create: (_) => DevolucionesBloc()),
+            BlocProvider(create: (_) => ConteoBloc()),
+            BlocProvider(create: (_) => CreateTransferBloc()),
+            BlocProvider(create: (_) => PackingConsolidateBloc()),
+          ],
+          child: SessionTimeoutManager(
               duration: const Duration(hours: 1),
               onSessionExpired: logOut,
-              child: navigator!);
-        },
-      ),
+              child: navigator!),
+        );
+      },
     );
   }
 }

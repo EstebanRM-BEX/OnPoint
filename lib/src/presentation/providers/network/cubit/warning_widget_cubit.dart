@@ -24,8 +24,17 @@ class WarningWidgetCubit extends StatelessWidget {
               children: [
                 Icon(Icons.wifi_off, color: primaryColorApp, size: 30),
                 const SizedBox(width: 8),
-                const Text('No hay conexión a internet',
-                    style: TextStyle(color: Colors.white, fontSize: 16)),
+                Flexible(
+                  child: const Text(
+                    'No hay conexión a internet',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                    textAlign: TextAlign
+                        .center, // Centramos por si se divide en 2 lineas
+                    overflow: TextOverflow
+                        .ellipsis, // Pone "..." si es demasiado largo
+                    maxLines: 2, // Permite hasta 2 lineas si es necesario
+                  ),
+                ),
               ],
             ),
           ),

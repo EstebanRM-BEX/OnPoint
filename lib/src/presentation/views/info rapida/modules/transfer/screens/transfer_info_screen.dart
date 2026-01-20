@@ -293,100 +293,95 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                     ),
                   ),
                   width: double.infinity,
-                  child: MultiBlocListener(
-                    listeners: [
-// 1. ESCUCHA DE TRANSFERENCIA (DISPARADOR)
-                      BlocListener<TransferInfoBloc, TransferInfoState>(
-                        // Solo escuchamos el evento de ÉXITO del envío de la transferencia
-                        listenWhen: (prev, current) =>
-                            current is SendTransferInfoSuccess,
-                        listener: (listenerContext, state) {
-                          if (state is SendTransferInfoSuccess) {
-                            // 💥 Paso 1: DISPARAR la carga de datos en el BLoC de destino
-                            listenerContext.read<InfoRapidaBloc>().add(
-                                GetInfoRapida(state.productId.toString(), true,
-                                    true, false));
+                  // ⚡️ CORRECCIÓN: Reemplazo de MultiBlocListener por anidación manual
+                  child: BlocListener<TransferInfoBloc, TransferInfoState>(
+                    // 1. PRIMER LISTENER: ESCUCHA DE TRANSFERENCIA
+                    listenWhen: (prev, current) =>
+                        current is SendTransferInfoSuccess,
+                    listener: (listenerContext, state) {
+                      if (state is SendTransferInfoSuccess) {
+                        // 💥 Paso 1: DISPARAR la carga de datos en el BLoC de destino
+                        listenerContext.read<InfoRapidaBloc>().add(
+                            GetInfoRapida(
+                                state.productId.toString(), true, true, false));
 
-                            // Opcional: Mostrar diálogo de carga AQUI
-                            showDialog(
-                              context: listenerContext,
-                              barrierDismissible: false,
-                              builder: (_) => const DialogLoading(
-                                  message: "Actualizando información..."),
-                            );
-                          }
-                        },
-                      ),
+                        // Opcional: Mostrar diálogo de carga AQUI
+                        showDialog(
+                          context: listenerContext,
+                          barrierDismissible: false,
+                          builder: (_) => const DialogLoading(
+                              message: "Actualizando información..."),
+                        );
+                      }
+                    },
+                    // 2. SEGUNDO LISTENER (ANIDADO): INFORMACIÓN RÁPIDA
+                    child: BlocListener<InfoRapidaBloc, InfoRapidaState>(
+                      listenWhen: (prev, current) =>
+                          current is InfoRapidaLoaded ||
+                          current is InfoRapidaError,
+                      listener: (listenerContext, state) {
+                        // Cerramos el diálogo de carga de forma segura
+                        // Verificamos si hay un diálogo o ruta activa para cerrar
+                        Navigator.of(listenerContext).pop();
 
-                      // 2. ESCUCHA DE INFORMACIÓN RÁPIDA (PUNTO DE SINCRONIZACIÓN)
-                      BlocListener<InfoRapidaBloc, InfoRapidaState>(
-                        // Solo escuchamos el estado final de carga (éxito o error)
-                        listenWhen: (prev, current) =>
-                            current is InfoRapidaLoaded ||
-                            current is InfoRapidaError,
-                        listener: (listenerContext, state) {
-                          // Cerramos el diálogo de carga antes de cualquier otra acción
-                          Navigator.pop(listenerContext);
+                        if (state is InfoRapidaLoaded) {
+                          // ✅ Paso 2: La carga fue exitosa. La navegación es segura.
+                          print('Datos de Info Rápida cargados. Navegando...');
+                          Navigator.pushReplacementNamed(
+                            listenerContext,
+                            'product-info',
+                          );
+                        } else if (state is InfoRapidaError) {
+                          // Manejo del error de carga de Info Rápida
+                          Get.snackbar('Error',
+                              state.error ?? 'Fallo al cargar información.');
+                        }
+                      },
+                      // 3. HIJO FINAL: TU UI VISUAL (El BlocBuilder original)
+                      child: BlocBuilder<TransferInfoBloc, TransferInfoState>(
+                          builder: (context, status) {
+                        return Column(
+                          children: [
+                            const WarningWidgetCubit(),
+                            Padding(
+                              padding: EdgeInsets.only(
+                                  // bottom: 5,
+                                  top: status != ConnectionStatus.online
+                                      ? 0
+                                      : 35),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.arrow_back,
+                                        color: white),
+                                    onPressed: () {
+                                      context
+                                          .read<TransferInfoBloc>()
+                                          .clearFields();
 
-                          if (state is InfoRapidaLoaded) {
-                            // ✅ Paso 2: La carga fue exitosa. La navegación es segura.
-                            print(
-                                'Datos de Info Rápida cargados. Navegando...');
-                            Navigator.pushReplacementNamed(
-                              listenerContext,
-                              'product-info',
-                            );
-                          } else if (state is InfoRapidaError) {
-                            // Manejo del error de carga de Info Rápida
-                            Get.snackbar('Error',
-                                state.error ?? 'Fallo al cargar información.');
-                          }
-                        },
-                      ),
-                    ],
-                    child: BlocBuilder<TransferInfoBloc, TransferInfoState>(
-                        builder: (context, status) {
-                      return Column(
-                        children: [
-                          const WarningWidgetCubit(),
-                          Padding(
-                            padding: EdgeInsets.only(
-                                // bottom: 5,
-                                top:
-                                    status != ConnectionStatus.online ? 0 : 35),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.arrow_back,
-                                      color: white),
-                                  onPressed: () {
-                                    context
-                                        .read<TransferInfoBloc>()
-                                        .clearFields();
-
-                                    Navigator.pushReplacementNamed(
-                                      context,
-                                      'product-info',
-                                    );
-                                  },
-                                ),
-                                Padding(
-                                  padding:
-                                      EdgeInsets.only(left: size.width * 0.2),
-                                  child: Text('TRANSFERENCIA',
-                                      style: TextStyle(
-                                          color: white, fontSize: 18)),
-                                ),
-                                const Spacer(),
-                              ],
+                                      Navigator.pushReplacementNamed(
+                                        context,
+                                        'product-info',
+                                      );
+                                    },
+                                  ),
+                                  Padding(
+                                    padding:
+                                        EdgeInsets.only(left: size.width * 0.2),
+                                    child: Text('TRANSFERENCIA',
+                                        style: TextStyle(
+                                            color: white, fontSize: 18)),
+                                  ),
+                                  const Spacer(),
+                                ],
+                              ),
                             ),
-
-                            //
-                          ),
-                        ],
-                      );
-                    }),
+                          ],
+                        );
+                      }),
+                    ),
                   ),
                 ),
                 Expanded(
@@ -797,7 +792,7 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 5),
                                     child: Text(
-                                      '(${(widget.ubicacion?.cantidadMano ?? 0.0).toString() })',
+                                      '(${(widget.ubicacion?.cantidadMano ?? 0.0).toString()})',
                                       style: TextStyle(
                                           color: primaryColorApp, fontSize: 15),
                                     ),
