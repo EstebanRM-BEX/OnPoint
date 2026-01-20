@@ -7,12 +7,12 @@ import 'package:http/http.dart';
 
 import 'package:flutter/material.dart';
 import 'package:wms_app/src/core/constans/colors.dart';
+import 'package:wms_app/main.dart'; // IMPORTANTE: Importar para acceder a navigatorKey
 
 class HttpResponseHandler {
-  final BuildContext context;
+  HttpResponseHandler();
 
-  HttpResponseHandler(this.context);
-
+  BuildContext? get context => navigatorKey.currentContext;
   Future handleHttpResponse(Future<Response> httpCall) async {
     var response = await httpCall;
     print('handleHttpResponse: ${response.statusCode}');
@@ -27,14 +27,14 @@ class HttpResponseHandler {
         _handle400(response);
         return response;
       case 401:
-        Navigator.of(context).pushNamed('/enterprice');
-        // throw UnauthorizedException(response.body);
+        Navigator.of(context!).pushNamed('/enterprice');
+      // throw UnauthorizedException(response.body);
 
       case 422:
         _handle422(response);
         return response;
       case 440:
-        // throw UnauthorizedException(response.body);
+      // throw UnauthorizedException(response.body);
       default:
         var message = jsonDecode(response.body)["message"];
         _showErrorSnackBar([message]);
@@ -72,7 +72,7 @@ class HttpResponseHandler {
       behavior: SnackBarBehavior.floating,
     );
     if (context != null) {
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      ScaffoldMessenger.of(context!).showSnackBar(snackBar);
     }
   }
 }

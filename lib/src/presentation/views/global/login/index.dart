@@ -177,7 +177,6 @@ class _LoginFormState extends State<_LoginForm> {
   @override
   void initState() {
     super.initState();
-    // Escuchar cambios de foco para reconstruir el keyboard
     _focusNodeEmail.addListener(_onFocusChanged);
     _focusNodePassword.addListener(_onFocusChanged);
   }
@@ -197,12 +196,11 @@ class _LoginFormState extends State<_LoginForm> {
     super.dispose();
   }
 
-  // Determinar el controlador activo basado en el foco
   TextEditingController _getActiveController(BuildContext context) {
     final loginBloc = context.read<LoginBloc>();
     if (_focusNodeEmail.hasFocus) return loginBloc.email;
     if (_focusNodePassword.hasFocus) return loginBloc.password;
-    return loginBloc.email; // default
+    return loginBloc.email;
   }
 
   @override
@@ -237,15 +235,13 @@ class _LoginFormState extends State<_LoginForm> {
                     TextFormField(
                       focusNode: _focusNodeEmail,
                       controller: context.read<LoginBloc>().email,
-                      onTap:
-                          !context.read<UserBloc>().fabricante.contains("Zebra")
-                              ? null
-                              : () {
-                                  setState(() {
-                                    FocusScope.of(context)
-                                        .requestFocus(_focusNodeEmail);
-                                  });
-                                },
+                      onTap: !context.read<UserBloc>().fabricante.contains("Zebra")
+                          ? null
+                          : () {
+                              setState(() {
+                                FocusScope.of(context).requestFocus(_focusNodeEmail);
+                              });
+                            },
                       style: const TextStyle(fontSize: 13),
                       decoration: InputDecoration(
                         disabledBorder: const OutlineInputBorder(),
@@ -255,12 +251,10 @@ class _LoginFormState extends State<_LoginForm> {
                           color: primaryColorApp,
                         ),
                         hintText: "Correo electrónico",
-                        hintStyle:
-                            const TextStyle(color: Colors.grey, fontSize: 12),
+                        hintStyle: const TextStyle(color: Colors.grey, fontSize: 12),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.all(10),
-                        errorStyle:
-                            const TextStyle(color: Colors.red, fontSize: 10),
+                        errorStyle: const TextStyle(color: Colors.red, fontSize: 10),
                       ),
                       validator: (value) => Validator.email(value, context),
                     ),
@@ -270,15 +264,13 @@ class _LoginFormState extends State<_LoginForm> {
                       obscureText: context.read<LoginBloc>().isVisible,
                       focusNode: _focusNodePassword,
                       style: const TextStyle(fontSize: 13),
-                      onTap:
-                          !context.read<UserBloc>().fabricante.contains("Zebra")
-                              ? null
-                              : () {
-                                  setState(() {
-                                    FocusScope.of(context)
-                                        .requestFocus(_focusNodePassword);
-                                  });
-                                },
+                      onTap: !context.read<UserBloc>().fabricante.contains("Zebra")
+                          ? null
+                          : () {
+                              setState(() {
+                                FocusScope.of(context).requestFocus(_focusNodePassword);
+                              });
+                            },
                       decoration: InputDecoration(
                         disabledBorder: const OutlineInputBorder(),
                         contentPadding: const EdgeInsets.all(10),
@@ -289,9 +281,7 @@ class _LoginFormState extends State<_LoginForm> {
                         ),
                         suffixIcon: IconButton(
                           onPressed: () {
-                            context
-                                .read<LoginBloc>()
-                                .add(TogglePasswordVisibility());
+                            context.read<LoginBloc>().add(TogglePasswordVisibility());
                           },
                           icon: Icon(
                             context.read<LoginBloc>().isVisible
@@ -302,10 +292,8 @@ class _LoginFormState extends State<_LoginForm> {
                           ),
                         ),
                         hintText: "Contraseña",
-                        errorStyle:
-                            const TextStyle(color: Colors.red, fontSize: 10),
-                        hintStyle:
-                            const TextStyle(color: Colors.grey, fontSize: 12),
+                        errorStyle: const TextStyle(color: Colors.red, fontSize: 10),
+                        hintStyle: const TextStyle(color: Colors.grey, fontSize: 12),
                         border: InputBorder.none,
                       ),
                       validator: (value) => Validator.password(value, context),
@@ -324,26 +312,26 @@ class _LoginFormState extends State<_LoginForm> {
                   elevation: 0,
                   color: primaryColorApp,
                   onPressed: () async {
-                    if (!context
-                        .read<UserBloc>()
-                        .fabricante
-                        .contains("Zebra")) {
+                    if (!context.read<UserBloc>().fabricante.contains("Zebra")) {
                       FocusScope.of(context).unfocus();
                     }
-                    if (!formkey.currentState!.validate()) return;
+                    
+                    // ⚡️ CORRECCIÓN 1: Validación segura (evita el crash si currentState es null)
+                    if (formkey.currentState?.validate() != true) return;
 
                     try {
-                      final result =
-                          await InternetAddress.lookup('example.com');
-                      if (result.isNotEmpty &&
-                          result[0].rawAddress.isNotEmpty) {
-                        context
-                            .read<LoginBloc>()
-                            .add(LoginButtonPressed(context));
+                      final result = await InternetAddress.lookup('example.com');
+                      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+                        // Aquí inicia el proceso. El Dialog se mostrará en el Listener, no aquí.
+                        context.read<LoginBloc>().add(LoginButtonPressed(context));
                       }
                     } catch (e, s) {
                       print("Error en login: $e $s");
-                      Navigator.of(context).pop();
+                      
+                      // ⚡️ CORRECCIÓN 2: Eliminado Navigator.pop(). 
+                      // No debemos cerrar nada aquí porque el diálogo de carga NUNCA se mostró.
+                      // (El diálogo solo se muestra si el evento LoginButtonPressed se dispara y el Bloc emite Loading)
+                      
                       Get.defaultDialog(
                         title: '360 Software Informa',
                         titleStyle: TextStyle(color: Colors.red, fontSize: 18),
@@ -360,8 +348,7 @@ class _LoginFormState extends State<_LoginForm> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            child:
-                                Text('Aceptar', style: TextStyle(color: white)),
+                            child: Text('Aceptar', style: TextStyle(color: white)),
                           ),
                         ],
                       );

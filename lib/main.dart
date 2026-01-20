@@ -46,33 +46,26 @@ import 'package:wms_app/src/services/webSocket_service.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final ApiRequestService apiRequestService = ApiRequestService();
 
-// ✅ Instancias únicas
+// Instancias únicas
 final internetChecker = CheckInternetConnection();
 final connectionStatusCubit =
     ConnectionStatusCubit(internetChecker: internetChecker);
 
-// final WebSocketService webSocketService = WebSocketService();
+final WebSocketService webSocketService = WebSocketService();
 
 void main() async {
-  // 1. 🚀 INICIAMOS LA ZONA PRIMERO
-  // Al hacer esto, creamos un entorno controlado para capturar errores.
-  await runZonedGuarded(() async {
-    // 2. ✅ INICIALIZAMOS LOS BINDINGS ADENTRO
-    // Esto es CRÍTICO: Debe estar en la misma zona que runApp.
-    WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();
 
-    // 3. INICIALIZACIONES GLOBALES
-    await Preferences.init();
-    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await Preferences.init();
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
-    // Configuración de Crashlytics para errores de Flutter (Renderizado)
-    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
 
-    // Configuración de pantalla de error personalizada
+  runZonedGuarded<Future<void>>(() async {
     ErrorWidget.builder = (FlutterErrorDetails details) => ErrorMessageWidget(
           title: 'Algo salió mal',
           message: 'No se pudo cargar la información...',
@@ -82,17 +75,10 @@ void main() async {
           },
         );
 
-    // Conexión inicial del socket
-    // Nota: Como agregamos la validación de sesión en el servicio,
-    // esto es seguro llamarlo aquí; si no hay sesión, no hará nada.
-    // todo webSocketService.connect();
+    // webSocketService.connect();
 
-    // 4. EJECUCIÓN DE LA APP
-    // Ahora runApp se ejecuta en la misma zona donde se hizo el ensureInitialized.
     runApp(const MyApp());
-    // JankMonitor().start();
   }, (error, stack) {
-    // 5. CAPTURADOR DE ERRORES ASÍNCRONOS (Dart puro, Futures rotos, etc.)
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
   });
 }
@@ -102,15 +88,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-// Función para cerrar sesión
     void logOut() async {
       print("⏳ Sesión expirada por inactividad.");
-
-      // 1. Usamos el contexto del Navigator, que sí tiene acceso a los BLoCs
       final contextWithProviders = navigatorKey.currentContext;
-
       if (contextWithProviders != null) {
-        // WebSocketService().disconnect();
         PrefUtils.clearPrefs();
         Preferences.removeUrlWebsite();
         await DataBaseSqlite().deleteBDCloseSession();
@@ -118,7 +99,6 @@ class MyApp extends StatelessWidget {
         PrefUtils.setIsLoggedIn(false);
       }
 
-      // 2. Navegar al Login y limpiar historial
       navigatorKey.currentState
           ?.pushNamedAndRemoveUntil('enterprice', (route) => false);
     }
@@ -134,9 +114,6 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      navigatorObservers: [
-        JankRouteObserver(),
-      ],
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.grey[300],
         appBarTheme: AppBarTheme(elevation: 0, color: primaryColorApp),
@@ -146,10 +123,13 @@ class MyApp extends StatelessWidget {
         ),
       ),
       builder: (context, navigator) {
+        // ⚡️ Inicialización corregida:
+        // Ya no necesitamos pasarle un 'context' porque usará el navigatorKey
         apiRequestService.initialize(
           unencodePath: '/api',
-          httpHandler: HttpResponseHandler(context),
+          httpHandler: HttpResponseHandler(), 
         );
+
         return MultiBlocProvider(
           providers: [
             BlocProvider.value(value: connectionStatusCubit),
@@ -173,9 +153,11 @@ class MyApp extends StatelessWidget {
             BlocProvider(create: (_) => PackingConsolidateBloc()),
           ],
           child: SessionTimeoutManager(
-              duration: const Duration(hours: 1),
-              onSessionExpired: logOut,
-              child: navigator!),
+            duration: const Duration(hours: 1),
+            onSessionExpired: logOut,
+            // ⚠️ Protección extra: Si navigator es nulo, mostramos un contenedor vacío
+            child: navigator ?? const SizedBox.shrink(),
+          ),
         );
       },
     );
