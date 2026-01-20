@@ -32,14 +32,7 @@ class LoginRepository {
       } else {
         print(response.body);
         if (response.body.contains('jsonrpc')) {
-
-          Get.snackbar(
-            'Error',
-            'Error en el metodo de la peticion de la API',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            icon: Icon(Icons.check, color: Colors.red),
-          );
+          throw Exception('Error en el método de la petición de la API');
         }
         return UserModelResponse();
       }

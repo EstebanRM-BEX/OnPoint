@@ -3,11 +3,13 @@ import 'dart:convert';
 class AppVersion {
   final String? jsonrpc;
   final dynamic id;
+  final String message;
   final AppVersionResult? result;
 
   AppVersion({
     this.jsonrpc,
     this.id,
+    this.message = '',
     this.result,
   });
 
@@ -19,6 +21,7 @@ class AppVersion {
   factory AppVersion.fromMap(Map<String, dynamic> json) => AppVersion(
         jsonrpc: json["jsonrpc"],
         id: json["id"],
+        message: json["message"] ?? '',
         result: json["result"] == null
             ? null
             : AppVersionResult.fromMap(json["result"]),
@@ -27,6 +30,7 @@ class AppVersion {
   Map<String, dynamic> toMap() => {
         "jsonrpc": jsonrpc,
         "id": id,
+        "message": message,
         "result": result?.toMap(),
       };
 }

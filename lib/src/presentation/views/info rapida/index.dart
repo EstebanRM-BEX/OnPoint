@@ -39,8 +39,20 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
 
   void validateBarcode(String value) {
     final bloc = context.read<InfoRapidaBloc>();
-    final scan =
-        bloc.scannedValue1.trim().isEmpty ? value : bloc.scannedValue1.trim();
+    
+    // ✅ CORRECCIÓN 1: Manejo seguro del texto escaneado
+    // Aseguramos que no se procesen espacios en blanco vacíos
+    String scan = value.trim();
+    
+    // Si el valor viene vacío, intentamos usar el del BLoC, pero también lo limpiamos
+    if (bloc.scannedValue1.trim().isNotEmpty) {
+      scan = bloc.scannedValue1.trim();
+    }
+    
+    // ✅ CORRECCIÓN CRÍTICA: Si después de limpiar, el texto está vacío, NO hacemos nada.
+    // Esto evita buscar "" en la base de datos, lo cual causa el error 'No element'.
+    if (scan.isEmpty) return; 
+
     _controllerSearch.text = '';
     bloc.add(GetInfoRapida(scan.toUpperCase(), false, false, false));
   }
@@ -67,7 +79,7 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
             backgroundColor: Colors.white,
             radius: 10,
             barrierDismissible:
-                false, // Evita que se cierre al tocar fuera del diálogo
+                false,
             onWillPop: () async => false,
           );
         } else if (state is NeedUpdateVersionState) {
@@ -83,7 +95,7 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
         } else if (state is InfoRapidaError) {
           _vibrationService.vibrate();
           _audioService.playErrorSound();
-          Navigator.pop(context);
+          Navigator.pop(context); // Cierra el loader si hubo error
           Get.snackbar(
             '360 Software Informa',
             state.error ??
@@ -95,20 +107,22 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
         } else if (state is InfoRapidaLoading) {
           showDialog(
             context: context,
+            barrierDismissible: false,
             builder: (context) =>
                 const DialogLoading(message: "Buscando información..."),
           );
         } else if (state is InfoRapidaLoaded) {
           Navigator.pop(context); // Cierra el loader
 
-          // 1. ✅ Chequeo de seguridad: Si la lista de resultados está vacía, mostramos error
+          // ✅ CORRECCIÓN 2: Validación de Nulidad
+          // Si el resultado es nulo, detenemos la ejecución para evitar el crash.
           if (state.infoRapidaResult == null) {
-            return;
+             return;
           }
-          // Si la información es válida, mostramos el Snackbar
+
           Future.microtask(() {
-            if (!mounted)
-              return; // ← Agregado: verificar si el widget sigue montado
+            // Verificamos si el widget sigue montado antes de mostrar UI
+            if (!mounted) return;
 
             Get.snackbar(
               '360 Software Informa',
@@ -118,31 +132,23 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
               icon: const Icon(Icons.check_circle, color: Colors.green),
             );
 
-            // 2. Navegación basada en el tipo (Línea 115, donde ocurre el error)
-            if (state.infoRapidaResult.type == 'product') {
-              // Usamos !. o chequeo nulo si infoRapidaResult es nullable
-
-              // 3. ✅ Aquí es donde debes asegurarte que la lista de productos NO esté vacía
-              // Este error ocurre si la lista 'products' está vacía y tu pantalla de destino
-              // (product-info) intenta acceder a su primer elemento sin verificar.
-
-              // Si el BLoC de InfoRapida tiene una lista de productos, asegúrate que no esté vacía
-              // if (state.infoRapidaResult!.products!.isNotEmpty) {
-              Navigator.pushReplacementNamed(context, 'product-info');
-              // } else {
-              //      context.read<InfoRapidaBloc>().add(ShowErrorEvent("El producto no tiene datos de inventario."));
-              // }
-            } else if (state.infoRapidaResult.type == 'ubicacion') {
+            // Guardamos el resultado en una variable local segura
+            final result = state.infoRapidaResult; 
+            
+            // Navegación segura (asumiendo que result no es nulo gracias al chequeo anterior)
+            if (result!.type == 'product') {
+               Navigator.pushReplacementNamed(context, 'product-info');
+            } else if (result.type == 'ubicacion') {
               Navigator.pushReplacementNamed(
                 context,
                 'location-info',
-                arguments: [state.infoRapidaResult],
+                arguments: [result],
               );
-            } else if (state.infoRapidaResult.type == 'paquete') {
+            } else if (result.type == 'paquete') {
               Navigator.pushReplacementNamed(
                 context,
                 'paquete-info',
-                arguments: [state.infoRapidaResult],
+                arguments: [result],
               );
             }
           });
@@ -210,9 +216,13 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
                               if (event is RawKeyDownEvent) {
                                 if (event.logicalKey ==
                                     LogicalKeyboardKey.enter) {
-                                  validateBarcode(context
-                                      .read<InfoRapidaBloc>()
-                                      .scannedValue1);
+                                  
+                                  // ✅ CORRECCIÓN 3: Evitar disparar validación si el escáner está vacío
+                                  // Esto previene que al presionar Enter accidentalmente crashee la app.
+                                  if (context.read<InfoRapidaBloc>().scannedValue1.trim().isNotEmpty) {
+                                     validateBarcode(context.read<InfoRapidaBloc>().scannedValue1);
+                                  }
+                                  
                                   return KeyEventResult.handled;
                                 } else {
                                   context.read<InfoRapidaBloc>().add(

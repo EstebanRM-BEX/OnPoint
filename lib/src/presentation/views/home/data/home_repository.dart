@@ -31,13 +31,9 @@ class HomeRepository {
         // Decodifica la respuesta JSON a un mapa
         if (jsonResponse.containsKey('result')) {
           if (jsonResponse['result']['code'] == 400) {
-            Get.snackbar(
-              'Error',
-              'Error : ${jsonResponse['result']['msg']}',
-              backgroundColor: white,
-              colorText: primaryColorApp,
-              icon: Icon(Icons.check, color: Colors.red),
-            );
+             return AppVersion(
+              message: jsonResponse['result']['msg'] ?? 'Error desconocido',
+             );
           } else if (jsonResponse['result']['code'] == 200) {
             return AppVersion.fromMap(jsonDecode(response.body));
           }

@@ -54,13 +54,6 @@ class WmsPackingRepository {
         // Asegúrate de que 'result' exista y sea una lista
         if (jsonResponse.containsKey('result')) {
           if (jsonResponse['result']['code'] == 400) {
-            Get.snackbar(
-              'Error',
-              'Error : ${jsonResponse['result']['msg']}',
-              backgroundColor: white,
-              colorText: primaryColorApp,
-              icon: Icon(Icons.check, color: Colors.red),
-            );
             return PackingModelResponseResult(
                 code: 400,
                 result: [],
@@ -176,13 +169,6 @@ class WmsPackingRepository {
         // Asegúrate de que 'result' exista y sea una lista
         if (jsonResponse.containsKey('result')) {
           if (jsonResponse['result']['code'] == 400) {
-            Get.snackbar(
-              'Error',
-              'Error : ${jsonResponse['result']['msg']}',
-              backgroundColor: white,
-              colorText: primaryColorApp,
-              icon: Icon(Icons.check, color: Colors.red),
-            );
             return PackingModelResponseResult(
                 code: 400,
                 result: [],
@@ -295,13 +281,6 @@ class WmsPackingRepository {
         // Asegúrate de que 'result' exista y sea una lista
         if (jsonResponse.containsKey('result')) {
           if (jsonResponse['result']['code'] == 400) {
-            Get.snackbar(
-              'Error',
-              'Error : ${jsonResponse['result']['msg']}',
-              backgroundColor: white,
-              colorText: primaryColorApp,
-              icon: Icon(Icons.check, color: Colors.red),
-            );
             return PackingPedidoResult(
                 code: 400,
                 msg: jsonResponse['result']['msg'] ?? 'Error desconocido',
@@ -835,6 +814,7 @@ class WmsPackingRepository {
     }
     return UnPacking(); // Retornamos un objeto vacío en caso de error de red
   }
+
   Future<UnPacking> unPackingConsolidate(
     UnPackingRequest request,
   ) async {
@@ -1012,6 +992,7 @@ class WmsPackingRepository {
     }
     return ResponseSendPacking(); // Retornamos un objeto vacío en caso de error de red
   }
+
   Future<ResponseSendPacking> sendPackingConsolidateRequest(
     PackingRequest packingRequest,
     bool isLoadingDialog,
@@ -1211,14 +1192,6 @@ class WmsPackingRepository {
     } catch (e, s) {
       // Manejo de otros errores
 
-      Get.snackbar(
-        'Error',
-        "Error en timePackingUser: $e $s",
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        icon: Icon(Icons.check, color: Colors.red),
-      );
-
       print('Error timePackingUser: $e, $s');
     }
     return false;
@@ -1293,14 +1266,6 @@ class WmsPackingRepository {
       return false;
     } catch (e, s) {
       // Manejo de otros errores
-
-      Get.snackbar(
-        'Error',
-        "Error en timePackingBatch: $e $s",
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        icon: Icon(Icons.check, color: Colors.red),
-      );
 
       print('Error timePackingBatch: $e, $s');
     }

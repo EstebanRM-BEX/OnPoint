@@ -71,12 +71,6 @@ class UserRepository {
           }
         }
       } else {
-        Get.snackbar(
-          'Error',
-          'Error al obtener las configuraciones',
-          backgroundColor: white,
-          icon: Icon(Icons.error, color: Colors.red),
-        );
         return Configurations();
       }
     } catch (e, s) {
@@ -140,14 +134,7 @@ class UserRepository {
             return [];
           }
         }
-      } else {
-        Get.snackbar(
-          'Error',
-          'Error al obtener las ubicaciones',
-          backgroundColor: white,
-          icon: Icon(Icons.error, color: Colors.red),
-        );
-      }
+      } 
     } catch (e, s) {
       print('Error en ubicaciones USER: $e $s');
     }
@@ -224,13 +211,6 @@ class UserRepository {
             return ResponsePdaRegister();
           }
         }
-      } else {
-        Get.snackbar(
-          'Error',
-          'Error al registrar dispositivo',
-          backgroundColor: white,
-          icon: Icon(Icons.error, color: Colors.red),
-        );
       }
     } catch (e, s) {
       print('Error en sendIdPda: $e $s');

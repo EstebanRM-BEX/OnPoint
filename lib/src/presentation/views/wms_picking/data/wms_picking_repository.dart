@@ -23,11 +23,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/models/response_send_
 import 'package:wms_app/src/presentation/views/wms_picking/models/submeuelle_model.dart';
 
 class WmsPickingRepository {
-
-
-
-
-
   //metodo para pedir los batchs
   Future<DataBatch> resBatchs(
     bool isLoadinDialog,
@@ -38,8 +33,10 @@ class WmsPickingRepository {
     if (connectivityResult == ConnectivityResult.none) {
       print("Error: No hay conexión a Internet.");
       return DataBatch(
-          code: 500, msg: 'No internet connection', updateVersion: false, result: []
-      ); // Si no hay conexión, retornar una lista vacía
+          code: 500,
+          msg: 'No internet connection',
+          updateVersion: false,
+          result: []); // Si no hay conexión, retornar una lista vacía
     }
 
     try {
@@ -57,34 +54,23 @@ class WmsPickingRepository {
         // Asegúrate de que 'result' exista y sea una lista
         if (jsonResponse.containsKey('result')) {
           if (jsonResponse['result']['code'] == 400) {
-            Get.snackbar(
-              'Error',
-              'Error : ${jsonResponse['result']['msg']}',
-              backgroundColor: white,
-              colorText: primaryColorApp,
-              icon: Icon(Icons.check, color: Colors.red),
-            );
-
             return DataBatch(
                 code: 400,
                 msg: jsonResponse['result']['msg'] ?? 'Error',
                 updateVersion: false,
-                result: []
-            );
-
-
+                result: []);
           } else if (jsonResponse['result']['code'] == 200) {
             if (jsonResponse['result'].containsKey('result')) {
               // Si contiene 'result', se procede con el mapeo
               List<dynamic> batches = jsonResponse['result']['result'];
               List<BatchsModel> products =
                   batches.map((data) => BatchsModel.fromMap(data)).toList();
-                  return DataBatch(
+              return DataBatch(
                   code: 200,
                   msg: jsonResponse['result']['msg'] ?? 'Success',
-                  updateVersion: jsonResponse['result']['update_version'] ?? false,
-                  result: products
-              );
+                  updateVersion:
+                      jsonResponse['result']['update_version'] ?? false,
+                  result: products);
             }
           } else if (jsonResponse['result']['code'] == 403) {
             Get.defaultDialog(
@@ -106,8 +92,7 @@ class WmsPickingRepository {
                 code: 403,
                 msg: 'Device not authorized',
                 updateVersion: false,
-                result: []
-            );
+                result: []);
           }
         } else if (jsonResponse.containsKey('error')) {
           if (jsonResponse['error']['code'] == 100) {
@@ -137,31 +122,24 @@ class WmsPickingRepository {
                 code: 100,
                 msg: 'Session expired',
                 updateVersion: false,
-                result: []
-            );
+                result: []);
           }
         }
-      } 
+      }
     } on SocketException catch (e) {
       // Manejo de error de red
       print('Error de red: $e');
       return DataBatch(
-          code: 500, msg: 'Network error: $e', updateVersion: false, result: []
-      );
+          code: 500,
+          msg: 'Network error: $e',
+          updateVersion: false,
+          result: []);
     } catch (e, s) {
       // Manejo de otros errores
-      Get.snackbar(
-        'Error',
-        'Error en resBatchs: $e $s',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        icon: Icon(Icons.check, color: Colors.red),
-      );
-
+      print('Error en resBatchs: $e $s');
     }
     return DataBatch(
-        code: 500, msg: 'Unknown error', updateVersion: false, result: []
-    );
+        code: 500, msg: 'Unknown error', updateVersion: false, result: []);
   }
 
   //metodo para pedir los batchs
@@ -174,8 +152,10 @@ class WmsPickingRepository {
     if (connectivityResult == ConnectivityResult.none) {
       print("Error: No hay conexión a Internet.");
       return DataBatch(
-          code: 500, msg: 'No internet connection', updateVersion: false, result: []
-      ); // Si no hay conexión, retornar una lista vacía
+          code: 500,
+          msg: 'No internet connection',
+          updateVersion: false,
+          result: []); // Si no hay conexión, retornar una lista vacía
     }
 
     try {
@@ -193,34 +173,23 @@ class WmsPickingRepository {
         // Asegúrate de que 'result' exista y sea una lista
         if (jsonResponse.containsKey('result')) {
           if (jsonResponse['result']['code'] == 400) {
-            Get.snackbar(
-              'Error',
-              'Error : ${jsonResponse['result']['msg']}',
-              backgroundColor: white,
-              colorText: primaryColorApp,
-              icon: Icon(Icons.check, color: Colors.red),
-            );
-
             return DataBatch(
                 code: 400,
                 msg: jsonResponse['result']['msg'] ?? 'Error',
                 updateVersion: false,
-                result: []
-            );
-
-
+                result: []);
           } else if (jsonResponse['result']['code'] == 200) {
             if (jsonResponse['result'].containsKey('result')) {
               // Si contiene 'result', se procede con el mapeo
               List<dynamic> batches = jsonResponse['result']['result'];
               List<BatchsModel> products =
                   batches.map((data) => BatchsModel.fromMap(data)).toList();
-                  return DataBatch(
+              return DataBatch(
                   code: 200,
                   msg: jsonResponse['result']['msg'] ?? 'Success',
-                  updateVersion: jsonResponse['result']['update_version'] ?? false,
-                  result: products
-              );
+                  updateVersion:
+                      jsonResponse['result']['update_version'] ?? false,
+                  result: products);
             }
           } else if (jsonResponse['result']['code'] == 403) {
             Get.defaultDialog(
@@ -242,8 +211,7 @@ class WmsPickingRepository {
                 code: 403,
                 msg: 'Device not authorized',
                 updateVersion: false,
-                result: []
-            );
+                result: []);
           }
         } else if (jsonResponse.containsKey('error')) {
           if (jsonResponse['error']['code'] == 100) {
@@ -273,31 +241,24 @@ class WmsPickingRepository {
                 code: 100,
                 msg: 'Session expired',
                 updateVersion: false,
-                result: []
-            );
+                result: []);
           }
         }
-      } 
+      }
     } on SocketException catch (e) {
       // Manejo de error de red
       print('Error de red: $e');
       return DataBatch(
-          code: 500, msg: 'Network error: $e', updateVersion: false, result: []
-      );
+          code: 500,
+          msg: 'Network error: $e',
+          updateVersion: false,
+          result: []);
     } catch (e, s) {
       // Manejo de otros errores
-      Get.snackbar(
-        'Error',
-        'Error en resBatchsByComponents: $e $s',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        icon: Icon(Icons.check, color: Colors.red),
-      );
-
+      print('Error en resBatchsByComponents: $e $s');
     }
     return DataBatch(
-        code: 500, msg: 'Unknown error', updateVersion: false, result: []
-    );
+        code: 500, msg: 'Unknown error', updateVersion: false, result: []);
   }
 
   Future<List<HistoryBatch>> resBatchsHistory(
@@ -327,33 +288,14 @@ class WmsPickingRepository {
 
         // Asegúrate de que 'result' exista y sea una lista
         if (jsonResponse.containsKey('result')) {
-          if (jsonResponse['result']['code'] == 400) {
-            Get.snackbar(
-              'Error',
-              'Error : ${jsonResponse['result']['msg']}',
-              backgroundColor: white,
-              colorText: primaryColorApp,
-              icon: Icon(Icons.check, color: Colors.red),
-            );
-          } else if (jsonResponse['result']['code'] == 200) {
+          if (jsonResponse['result']['code'] == 200) {
             if (jsonResponse['result'].containsKey('result')) {
               // Si contiene 'result', se procede con el mapeo
               List<dynamic> batches = jsonResponse['result']['result'];
               List<HistoryBatch> products =
                   batches.map((data) => HistoryBatch.fromMap(data)).toList();
               return products;
-            } else if (jsonResponse['result'].containsKey('msg')) {
-              // Si contiene 'msg', podrías manejar el mensaje de alguna forma
-              String msg = jsonResponse['result']['msg'];
-              // Aquí puedes manejar el mensaje de error o información según sea necesario
-
-              Get.snackbar(
-                'Error',
-                msg,
-                backgroundColor: white,
-                colorText: primaryColorApp,
-                icon: Icon(Icons.check, color: Colors.red),
-              );
+            } else {
               return [];
             }
           }
@@ -391,14 +333,6 @@ class WmsPickingRepository {
       return [];
     } catch (e, s) {
       // Manejo de otros errores
-
-      Get.snackbar(
-        'Error',
-        'Error en resBatchs: $e $s',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        icon: Icon(Icons.check, color: Colors.red),
-      );
 
       print('Error resBatchs: $e, $s');
     }
@@ -467,14 +401,6 @@ class WmsPickingRepository {
       print('Error de red: $e');
       return HistoryBatchId();
     } catch (e, s) {
-      Get.snackbar(
-        'Error',
-        'Error en getBatchById: $e $s',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        icon: Icon(Icons.check, color: Colors.red),
-      );
-
       // Manejo de otros errores
       print('Error getBatchById: $e, $s');
     }
@@ -519,14 +445,6 @@ class WmsPickingRepository {
       print('Error de red: $e');
       return [];
     } catch (e, s) {
-      Get.snackbar(
-        'Error',
-        'Error en getmuelles: $e $s',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        icon: Icon(Icons.check, color: Colors.red),
-      );
-
       // Manejo de otros errores
       print('Error getmuelles: $e, $s');
     }
@@ -566,13 +484,6 @@ class WmsPickingRepository {
       // Manejo de error de red
       print('Error de red: $e');
     } catch (e, s) {
-      Get.snackbar(
-        'Error',
-        'Error en sendPicking: $e $s',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        icon: Icon(Icons.check, color: Colors.red),
-      );
       // Manejo de otros errores
       print('Error sendPicking: $e, $s');
     }
@@ -603,13 +514,6 @@ class WmsPickingRepository {
       // Manejo de error de red
       print('Error de red: $e');
     } catch (e, s) {
-      Get.snackbar(
-        'Error',
-        'Error en ocuparMuelle: $e $s',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        icon: Icon(Icons.check, color: Colors.red),
-      );
       // Manejo de otros errores
       print('Error ocuparMuelle: $e, $s');
     }
@@ -682,13 +586,6 @@ class WmsPickingRepository {
       print('Error de red: $e');
       return [];
     } catch (e, s) {
-      Get.snackbar(
-        'Error',
-        'Error en getnovedades: $e $s',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        icon: Icon(Icons.check, color: Colors.red),
-      );
       // Manejo de otros errores
       print('Error getnovedades: $e, $s');
     }
@@ -765,16 +662,7 @@ class WmsPickingRepository {
       return false;
     } catch (e, s) {
       // Manejo de otros errores
-
-      Get.snackbar(
-        'Error',
-        'Error en resBatchs: $e $s',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        icon: Icon(Icons.check, color: Colors.red),
-      );
-
-      print('Error resBatchs: $e, $s');
+      print('Error timePickingUser: $e, $s');
     }
     return false;
   }
@@ -848,13 +736,6 @@ class WmsPickingRepository {
       return false;
     } catch (e, s) {
       // Manejo de otros errores
-      Get.snackbar(
-        'Error',
-        'Error en timePickingBatch: $e $s',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        icon: Icon(Icons.check, color: Colors.red),
-      );
 
       print('Error timePickingBatch: $e, $s');
     }
