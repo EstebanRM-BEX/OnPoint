@@ -73,7 +73,6 @@ class _BatchDetailScreenState extends State<BatchScreen>
     WidgetsBinding.instance.addObserver(this);
   }
 
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
@@ -371,11 +370,8 @@ class _BatchDetailScreenState extends State<BatchScreen>
                       }
 
                       if (state is CurrentProductChangedStateError) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          duration: const Duration(milliseconds: 1000),
-                          content: Text(state.msg),
-                          backgroundColor: Colors.red[200],
-                        ));
+                        Navigator.pop(context);
+                        showScrollableErrorDialog(state.msg);
                       }
 
                       if (state is ValidateFieldsStateError) {
@@ -857,89 +853,127 @@ class _BatchDetailScreenState extends State<BatchScreen>
 
     String input = cantidadController.text.trim();
 
-    // Si está vacío, usar la cantidad seleccionada del bloc
+    // 1. Preparación y Validación básica
     if (input.isEmpty) {
       input = batchBloc.quantitySelected.toString();
     }
-
-    // Reemplaza coma por punto para manejar formatos decimales europeos
     input = input.replaceAll(',', '.');
 
-    // Expresión regular para validar un número válido
     final isValid = RegExp(r'^\d+([.,]?\d+)?$').hasMatch(input);
 
-    // Validación de formato
     if (!isValid) {
-      _audioService.playErrorSound();
-      _vibrationService.vibrate();
-      Get.snackbar(
-        'Error',
-        'Cantidad inválida',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        duration: const Duration(milliseconds: 1000),
-        icon: Icon(Icons.error, color: Colors.amber),
-        snackPosition: SnackPosition.TOP,
-      );
-
+      _showFormatError();
       return;
     }
 
-    // Intentar convertir a double
     double? cantidad = double.tryParse(input);
     if (cantidad == null) {
-      _audioService.playErrorSound();
-      _vibrationService.vibrate();
-      Get.snackbar(
-        'Error',
-        'Cantidad inválida',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        duration: const Duration(milliseconds: 1000),
-        icon: Icon(Icons.error, color: Colors.amber),
-        snackPosition: SnackPosition.TOP,
-      );
+      _showFormatError();
       return;
     }
 
-    if (cantidad == currentProduct.quantity) {
+    // ---------------------------------------------------------
+    // DEFINICIÓN DE LÓGICA
+    // ---------------------------------------------------------
+
+    // Función auxiliar para NO REPETIR el código de envío a la API
+    void procesarTransaccion() {
       batchBloc.add(ChangeQuantitySeparate(
-          cantidad,
+          cantidad!, // Usamos ! porque ya validamos arriba
           currentProduct.idProduct ?? 0,
           currentProduct.idMove ?? 0,
           batchBloc.typePicking));
-    } else {
-      FocusScope.of(context).unfocus();
-      if (cantidad < (currentProduct.quantity ?? 0).toDouble()) {
-        showDialog(
-          context: context,
-          builder: (context) {
-            return DialogAdvetenciaCantidadScreen(
-              currentProduct: currentProduct,
-              cantidad: cantidad,
-              batchId: batchBloc.batchWithProducts.batch?.id ?? 0,
-              onAccepted: () async {
-                batchBloc.add(ChangeQuantitySeparate(
-                    cantidad,
-                    currentProduct.idProduct ?? 0,
-                    currentProduct.idMove ?? 0,
-                    batchBloc.typePicking));
-                _nextProduct(currentProduct, batchBloc);
-                cantidadController.clear();
-              },
-            );
-          },
-        );
-      } else {
-        _audioService.playErrorSound();
-        _vibrationService.vibrate();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          duration: const Duration(milliseconds: 1000),
-          content: const Text('Cantidad errónea'),
-          backgroundColor: Colors.red[200],
-        ));
+      _nextProduct(currentProduct, batchBloc);
+      cantidadController.clear();
+    }
+
+    final double cantidadSolicitada = (currentProduct.quantity ?? 0).toDouble();
+    final bool esExceso = cantidad > cantidadSolicitada;
+    final bool esExacto = cantidad == cantidadSolicitada;
+
+    final bool esBatch = batchBloc.typePicking == 'batch';
+    final bool esComponents = batchBloc.typePicking == 'components';
+    final bool tienePermisoExceso = batchBloc
+                .configurations.result?.result?.allowMoveExcessProduction ==
+            true ||
+        batchBloc.configurations.result?.result?.allowMoveExcessProduction == 1;
+
+    // ---------------------------------------------------------
+    // FLUJO DE DECISIÓN
+    // ---------------------------------------------------------
+
+    // 1. Si es exacto, pasa directo.
+    if (esExacto) {
+      procesarTransaccion();
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+
+    // 2. Manejo de EXCESOS (Cantidad Mayor)
+    if (esExceso) {
+      // Caso A: Batch (Nunca permite exceso)
+      if (esBatch) {
+        _showBusinessError('Cantidad errónea');
+        return;
+      }
+
+      // Caso B: Componentes
+      if (esComponents) {
+        if (tienePermisoExceso) {
+          // Si es componentes, es exceso y TIENE permiso -> ENVIAR DIRECTO (Sin diálogo)
+          procesarTransaccion();
+          return;
+        } else {
+          // Si NO tiene permiso -> Error
+          _showBusinessError('No tienes permiso para sobrepasar la cantidad');
+          return;
+        }
       }
     }
+
+    // 3. Manejo de MENOR CANTIDAD (O cualquier otro caso no cubierto arriba)
+    // Aquí sí mostramos el diálogo de advertencia (ej. cuando la cantidad es menor)
+    showDialog(
+      context: context,
+      builder: (context) {
+        return DialogAdvetenciaCantidadScreen(
+          currentProduct: currentProduct,
+          cantidad: cantidad,
+          batchId: batchBloc.batchWithProducts.batch?.id ?? 0,
+          onAccepted: () async {
+            // Llamamos a la misma función auxiliar
+            procesarTransaccion();
+          },
+        );
+      },
+    );
+  }
+
+  // --- Funciones Auxiliares ---
+
+  void _showFormatError() {
+    _audioService.playErrorSound();
+    _vibrationService.vibrate();
+    Get.snackbar(
+      'Error',
+      'Cantidad inválida',
+      backgroundColor: white,
+      colorText: primaryColorApp,
+      duration: const Duration(milliseconds: 1000),
+      icon: const Icon(Icons.error, color: Colors.amber),
+      snackPosition: SnackPosition.TOP,
+    );
+  }
+
+  void _showBusinessError(String message) {
+    _audioService.playErrorSound();
+    _vibrationService.vibrate();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      duration: const Duration(milliseconds: 1000),
+      content: Text(message),
+      backgroundColor: Colors.red[200],
+    ));
   }
 
   void _nextProduct(ProductsBatch currentProduct, BatchBloc batchBloc) async {

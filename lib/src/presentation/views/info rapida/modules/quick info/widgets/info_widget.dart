@@ -16,21 +16,18 @@ class ProductInfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+   return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            '$title ',
-            style: TextStyle(fontSize: 12, color: primaryColorApp),
-          ),
+        Text(
+          title.isNotEmpty ? '$title ' : '', // Solo muestra espacio si hay título
+          style: TextStyle(fontSize: 12, color: primaryColorApp),
         ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            value,
-            style: TextStyle(fontSize: 12, color: color),
-          ),
+        Text(
+          value,
+          style: TextStyle(fontSize: 12, color: color),
+          maxLines: 2, 
+          overflow: TextOverflow.ellipsis, 
         ),
       ],
     );

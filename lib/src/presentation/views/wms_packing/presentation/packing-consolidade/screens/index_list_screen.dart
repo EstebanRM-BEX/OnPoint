@@ -158,31 +158,46 @@ class _ListPackingConsolidadeScreenState
     }
   }
 
-  void goBatchInfo(BuildContext context, PackingConsolidateBloc batchBloc,
+void goBatchInfo(BuildContext context, PackingConsolidateBloc batchBloc,
       BatchPackingModel batch) async {
-    // Mostramos loading
+    
+    // 1. Variable para capturar el contexto ESPECÍFICO del diálogo
+    BuildContext? dialogContext;
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const DialogLoading(
-        message: 'Cargando interfaz...',
-      ),
+      builder: (ctx) {
+        dialogContext = ctx; // Asignamos el contexto aquí
+        return const DialogLoading(
+          message: 'Cargando interfaz...',
+        );
+      },
     );
 
-    // Simulamos carga (o esperamos respuesta real si fuera necesario)
+    // Simulamos carga
     await Future.delayed(const Duration(seconds: 1));
 
-    // ✅ CORRECCIÓN VITAL: Verificar 'mounted' después del await
-    // Si no verificas esto y el usuario se salió de la pantalla en ese segundo, la app crashea.
-    if (context.mounted) {
-      Navigator.pop(context); // Cerramos el loading
+    // 2. Verificar 'mounted' de la pantalla principal antes de hacer nada
+    if (!mounted) return;
 
-      Navigator.pushReplacementNamed(
-        context,
-        'pedido-packing-consolidate-list',
-        arguments: [batch],
-      );
+    // 3. Verificar si el DIÁLOGO existe y está montado antes de usar '!'
+    if (dialogContext != null && dialogContext!.mounted) {
+      Navigator.pop(dialogContext!); // Cerramos usando el contexto seguro
+    } else {
+      // Fallback: Si el diálogo no se capturó correctamente, intentamos cerrar con el contexto padre
+      // solo si es seguro hacerlo.
+      if (Navigator.canPop(context)) {
+         Navigator.pop(context);
+      }
     }
+
+    // 4. Navegación segura
+    Navigator.pushReplacementNamed(
+      context,
+      'pedido-packing-consolidate-list',
+      arguments: [batch],
+    );
   }
 
   @override

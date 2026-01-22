@@ -1732,7 +1732,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                                             batchBloc
                                                                 .quantitySelected ??
                                                         0.0)
-                                                    .toString()
+                                                     .toStringAsFixed(2)
                                                 : '0.0'),
                                             style: TextStyle(
                                               color: _getColorForDifference(

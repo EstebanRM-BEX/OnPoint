@@ -274,7 +274,7 @@ class UserScreen extends StatelessWidget {
                                                     fontSize: 14,
                                                     color: primaryColorApp)),
                                             // Text('WMS',
-                                            const Text('16',
+                                            const Text('19',
                                                 style: TextStyle(
                                                     fontSize: 14, color: black))
                                           ],
@@ -541,6 +541,40 @@ class UserScreen extends StatelessWidget {
                                                                       "Acceso al modulo de produccion",
                                                                   body:
                                                                       "Acceso al modulo de produccion en la aplicacion",
+                                                                );
+                                                              });
+                                                        },
+                                                        icon: Icon(Icons.help,
+                                                            color:
+                                                                primaryColorApp))
+                                                  ],
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    const Text(
+                                                        "Mover más de lo planteado : ",
+                                                        style: TextStyle(
+                                                            fontSize: 14,
+                                                            color: black)),
+                                                    const Spacer(),
+                                                    Checkbox(
+                                                        value: config
+                                                                .result
+                                                                ?.result
+                                                                ?.allowMoveExcessProduction ??
+                                                            false,
+                                                        onChanged: null),
+                                                    IconButton(
+                                                        onPressed: () {
+                                                          showDialog(
+                                                              context: context,
+                                                              builder:
+                                                                  (context) {
+                                                                return const DialogInfo(
+                                                                  title:
+                                                                      "Mover más de lo planteado (Producción)",
+                                                                  body:
+                                                                      "Permite al usuario mover más de lo planteado en picking por batch componentes (Producción)",
                                                                 );
                                                               });
                                                         },

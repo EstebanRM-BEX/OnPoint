@@ -1036,7 +1036,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                                                                     .cantidadFaltante) -
                                                                 bloc.quantitySelected ??
                                                             0.0)
-                                                        .toString()
+                                                    .toStringAsFixed(2)
                                                     : '0'), // Aquí puedes definir qué mostrar si la condición no se cumple
                                                 style: TextStyle(
                                                   color: _getColorForDifference(

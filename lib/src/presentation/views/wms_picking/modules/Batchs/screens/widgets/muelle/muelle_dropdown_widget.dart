@@ -188,7 +188,8 @@ class _MuelleDropdownWidgetState extends State<MuelleDropdownWidget> {
                           true) {
                         //cerramos el focus
                         batchBloc.isSearch = false;
-                        batchBloc.add(LoadProductEditEvent(batchBloc.typePicking));
+                        batchBloc
+                            .add(LoadProductEditEvent(batchBloc.typePicking));
                         Navigator.pushReplacementNamed(
                           context,
                           'batch-detail',
@@ -222,7 +223,7 @@ class _MuelleDropdownWidgetState extends State<MuelleDropdownWidget> {
             true,
             currentProduct.idProduct ?? 0,
             batchBloc.batchWithProducts.batch?.id ?? 0,
-            currentProduct.idMove ?? 0, 
+            currentProduct.idMove ?? 0,
             batchBloc.typePicking));
 
         batchBloc.add(EndTimePick(
@@ -230,14 +231,26 @@ class _MuelleDropdownWidgetState extends State<MuelleDropdownWidget> {
 
         batchBloc.add(PickingOkEvent(batchBloc.batchWithProducts.batch?.id ?? 0,
             currentProduct.idProduct ?? 0, batchBloc.typePicking));
-        context.read<WMSPickingBloc>().add(FilterBatchesBStatusEvent(
-              '',
-              batchBloc.typePicking
-            ));
+        context
+            .read<WMSPickingBloc>()
+            .add(FilterBatchesBStatusEvent('', batchBloc.typePicking));
         context.read<BatchBloc>().index = 0;
         context.read<BatchBloc>().isSearch = true;
 
-        Navigator.pushReplacementNamed(context, 'wms-picking', );
+        //validamos que tipo de batch es
+        if (batchBloc.typePicking == 'components') {
+          Navigator.pushReplacementNamed(
+            context,
+            'picking-componentes-batch',
+          );
+        } else if (batchBloc.typePicking == 'batch') {
+          Navigator.pushReplacementNamed(
+            context,
+            'wms-picking',
+          );
+        } else {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
       }
     } else {
       showDialog(
@@ -254,7 +267,7 @@ class _MuelleDropdownWidgetState extends State<MuelleDropdownWidget> {
                       true) {
                     // Cerramos el foco
                     batchBloc.isSearch = false;
-                    batchBloc.add(LoadProductEditEvent( batchBloc.typePicking));
+                    batchBloc.add(LoadProductEditEvent(batchBloc.typePicking));
 
                     Navigator.pushReplacementNamed(
                       context,

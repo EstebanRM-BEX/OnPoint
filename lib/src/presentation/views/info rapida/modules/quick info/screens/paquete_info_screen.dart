@@ -50,14 +50,13 @@ class PaqueteInfoScreen extends StatelessWidget {
                             onchanged: () {},
                           ))
                 : null,
-           
             body: SizedBox(
               width: size.width * 1,
               height: size.height * 1,
               child: Column(
                 children: [
                   AppBar(size: size),
-              
+
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: SizedBox(
@@ -302,11 +301,22 @@ class PaqueteInfoScreen extends StatelessWidget {
                                               size: 16,
                                             ),
                                             const SizedBox(width: 5),
-                                            ProductInfoRow(
-                                              title: 'Contacto: ',
-                                              value: producto?.tercero == false
-                                                  ? 'Sin tercero'
-                                                  : '${producto?.tercero}',
+                                            Text(
+                                              'Contacto: ',
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: primaryColorApp),
+                                            ),
+                                            Flexible(
+                                              child: Text(
+                                                producto?.tercero == false
+                                                    ? 'Sin tercero'
+                                                    : '${producto?.tercero}',
+                                                style: TextStyle(
+                                                    fontSize: 12, color: black),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
                                             ),
                                           ],
                                         ),

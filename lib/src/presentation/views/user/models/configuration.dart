@@ -92,6 +92,8 @@ class DataConfig {
   bool? manualDestLocationTransfer;
   bool? manualQuantityTransfer;
   bool? countQuantityInventory;
+  bool? allowMoveExcessProduction;
+
 
   bool? hideValidateTransfer;
   bool? hideValidateReception;
@@ -157,6 +159,7 @@ class DataConfig {
     this.returnsLocationDestOption,
     this.locationManualInventory,
     this.manualProductSelectionInventory,
+    this.allowMoveExcessProduction,
     //accessProductionModule
     this.accessProductionModule,
   });
@@ -210,6 +213,7 @@ class DataConfig {
         locationManualInventory: json["location_manual_inventory"],
         manualProductSelectionInventory: json["manual_product_selection_inventory"],
         accessProductionModule: json["access_production_module"],
+        allowMoveExcessProduction: json["allow_move_excess_production"],
       );
 
   Map<String, dynamic> toMap() => {
@@ -258,6 +262,7 @@ class DataConfig {
         "location_manual_inventory": locationManualInventory,
         "manual_product_selection_inventory": manualProductSelectionInventory,
         "access_production_module": accessProductionModule,
+        "allow_move_excess_production": allowMoveExcessProduction,
       };
 }
 

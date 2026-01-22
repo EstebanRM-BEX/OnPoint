@@ -465,7 +465,7 @@ class WmsPickingRepository {
 
     try {
       var response = await ApiRequestService().postPicking(
-        endpoint: 'send_batch',
+        endpoint: 'send_batch/2',
         isunecodePath: true,
         body: {
           "params": {

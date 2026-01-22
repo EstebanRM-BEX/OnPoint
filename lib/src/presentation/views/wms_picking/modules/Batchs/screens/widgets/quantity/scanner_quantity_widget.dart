@@ -125,7 +125,7 @@ class QuantityScannerWidget extends StatelessWidget {
                                         0,
                                         double
                                             .infinity) // Mantiene que no sea negativo
-                                    .toString(), // ✅ Muestra TODOS los decimales sin recortar
+                                    .toStringAsFixed(2),
                                 style: TextStyle(
                                   color: _getColorForDifference(difference),
                                   fontSize: 13,

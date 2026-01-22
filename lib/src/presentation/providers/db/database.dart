@@ -88,7 +88,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 19,
+      version: 20,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -410,6 +410,18 @@ class DataBaseSqlite {
         ''');
       } catch (e) {
         print("Error actualizando tblbatchs: $e");
+      }
+    }
+
+    if(oldVersion < 20){
+      //añadir campo de allow_move_excess en la tabla de configuraciones
+      try {
+        await db.execute('''
+          ALTER TABLE tblconfigurations
+          ADD COLUMN allow_move_excess_production INTEGER;
+        ''');
+      } catch (e) {
+        print("Error actualizando tblconfigurations: $e");
       }
     }
   }

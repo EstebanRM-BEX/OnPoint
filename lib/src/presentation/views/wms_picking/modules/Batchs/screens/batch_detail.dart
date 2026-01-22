@@ -200,13 +200,14 @@ class BatchDetailScreen extends StatelessWidget {
                                           child: Row(
                                             children: [
                                               Text(
-                                                "Unidades separadas: ${context.read<BatchBloc>().calcularUnidadesSeparadas()}%",
+                                                "Unidades separadas: ${(context.read<BatchBloc>().calcularUnidadesSeparadas())}%",
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   color: getColorForPercentage(
-                                                      double.parse(context
+                                                      double.tryParse(context
                                                           .read<BatchBloc>()
-                                                          .calcularUnidadesSeparadas())), // Convertir a double
+                                                          .calcularUnidadesSeparadas()) ?? 0.0
+                                                          ), // Convertir a double
                                                 ),
                                               ),
                                               const Spacer(),
@@ -436,13 +437,14 @@ class BatchDetailScreen extends StatelessWidget {
                                                             TextAlign.center,
                                                       ),
                                                     ),
+                                                   
                                                     if (!context
                                                             .read<BatchBloc>()
                                                             .isSearch &&
                                                         (productsBatch
-                                                                .quantity !=
+                                                                .quantitySeparate <
                                                             productsBatch
-                                                                .quantitySeparate))
+                                                                .quantity))
                                                       SizedBox(
                                                         width: 50,
                                                         height: 50,

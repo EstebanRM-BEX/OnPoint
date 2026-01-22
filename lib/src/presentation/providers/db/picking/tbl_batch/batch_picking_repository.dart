@@ -168,7 +168,7 @@ class BatchPickingRepository {
 
       // Ejecutar consulta raw para obtener el valor del campo
       final res = await db.rawQuery('''
-      // SELECT $field FROM ${BatchPickingTable.tableName} WHERE ${BatchPickingTable.columnId} = ? AND ${BatchPickingTable.columnType} = ? LIMIT 1
+      SELECT $field FROM ${BatchPickingTable.tableName} WHERE ${BatchPickingTable.columnId} = ? AND ${BatchPickingTable.columnType} = ? LIMIT 1
     ''', [batchId, type]);
 
       if (res.isNotEmpty) {
