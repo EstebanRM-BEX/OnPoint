@@ -139,7 +139,7 @@ class _UpdateAppDialogState extends State<UpdateAppDialog> {
       children: [
         Expanded(
           child: ListView.builder(
-            shrinkWrap: true,
+           physics: const AlwaysScrollableScrollPhysics(),
             itemCount: context
                     .read<HomeBloc>()
                     .appVersion

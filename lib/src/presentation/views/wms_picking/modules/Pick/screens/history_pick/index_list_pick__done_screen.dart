@@ -263,8 +263,7 @@ class IndexListPickDoneScreen extends StatelessWidget {
                         ? ListView.builder(
                             padding: EdgeInsets.only(
                                 top: 10, bottom: size.height * 0.15),
-                            shrinkWrap: true,
-                            physics: const ScrollPhysics(),
+                            physics: const AlwaysScrollableScrollPhysics(),
                             itemCount: bloc.filtersHistoryPicks.length,
                             itemBuilder: (contextBuilder, index) {
                               final batch = bloc.filtersHistoryPicks[index];

@@ -428,8 +428,7 @@ void goBatchInfo(BuildContext context, PackingConsolidateBloc batchBloc,
                             .isNotEmpty
                         ? ListView.builder(
                             padding: const EdgeInsets.only(top: 20, bottom: 20),
-                            shrinkWrap: true,
-                            physics: const ScrollPhysics(),
+                            physics: const AlwaysScrollableScrollPhysics(),
                             itemCount: context
                                 .read<PackingConsolidateBloc>()
                                 .listOfBatchsDB

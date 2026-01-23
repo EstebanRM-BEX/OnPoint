@@ -345,8 +345,7 @@ class HistoryDetailScreen extends StatelessWidget {
                     child: ListView.builder(
                         padding: EdgeInsets.only(
                             top: 10, bottom: size.height * 0.15),
-                        shrinkWrap: true,
-                        physics: const ScrollPhysics(),
+                       physics: const AlwaysScrollableScrollPhysics(),
                         itemCount: batch.listItems?.length ?? 0,
                         itemBuilder: (context, index) {
                           return Card(

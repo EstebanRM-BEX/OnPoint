@@ -38,8 +38,7 @@ class DialogBarcodes extends StatelessWidget {
               SizedBox(
                 height: 300, // Puedes ajustar la altura
                 child: ListView.builder(
-                  shrinkWrap:
-                      true, // Esto hace que el ListView tome solo el espacio necesario
+                  physics: const AlwaysScrollableScrollPhysics(),
                   itemCount: listOfBarcodes.length,
                   itemBuilder: (context, index) {
                     return Card(

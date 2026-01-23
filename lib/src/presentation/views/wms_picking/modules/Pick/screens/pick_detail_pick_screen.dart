@@ -321,8 +321,7 @@ class PickDetailScreen extends StatelessWidget {
                       // height: size.height * 0.75,
                       child: bloc.filteredProducts.isNotEmpty
                           ? ListView.builder(
-                              shrinkWrap: true,
-                              physics: const ScrollPhysics(),
+                             physics: const AlwaysScrollableScrollPhysics(),
                               itemCount: bloc.filteredProducts.length,
                               itemBuilder: (context, index) {
                                 // ✅ SOLUCIÓN 1: Verificación de límites del índice

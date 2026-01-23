@@ -372,8 +372,7 @@ class BatchDetailScreen extends StatelessWidget {
                               .filteredProducts
                               .isNotEmpty
                           ? ListView.builder(
-                              shrinkWrap: true,
-                              physics: const ScrollPhysics(),
+                             physics: const AlwaysScrollableScrollPhysics(),
                               itemCount: context
                                   .read<BatchBloc>()
                                   .filteredProducts

@@ -332,8 +332,7 @@ class IndexListPickScreen extends StatelessWidget {
                         ? ListView.builder(
                             padding: EdgeInsets.only(
                                 top: 10, bottom: size.height * 0.15),
-                            shrinkWrap: true,
-                            physics: const ScrollPhysics(),
+                            physics: const AlwaysScrollableScrollPhysics(),
                             itemCount: bloc.listOfPickFiltered
                                 .where((batch) => batch.isSeparate == 0)
                                 .length,

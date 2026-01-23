@@ -296,8 +296,7 @@ class WMSPickingPage extends StatefulWidget {
                               ? ListView.builder(
                                   padding: EdgeInsets.only(
                                       top: 10, bottom: size.height * 0.15),
-                                  shrinkWrap: true,
-                                  physics: const ScrollPhysics(),
+                               physics: const AlwaysScrollableScrollPhysics(),
                                   itemCount: context
                                       .read<WMSPickingBloc>()
                                       .filteredBatchs

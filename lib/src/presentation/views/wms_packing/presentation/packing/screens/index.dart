@@ -295,8 +295,7 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                           .isNotEmpty
                       ? ListView.builder(
                           padding: const EdgeInsets.only(top: 20, bottom: 20),
-                          shrinkWrap: true,
-                          physics: const ScrollPhysics(),
+                          physics: const AlwaysScrollableScrollPhysics(),
                           itemCount: context
                               .read<PackingPedidoBloc>()
                               .listOfPedidosFilters

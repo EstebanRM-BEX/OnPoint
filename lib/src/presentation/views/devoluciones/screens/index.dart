@@ -749,9 +749,8 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                                         ),
                                         itemCount:
                                             state.productosRelacionados.length,
-                                        shrinkWrap: true,
-                                        physics:
-                                            const NeverScrollableScrollPhysics(),
+                                        
+                                       physics: const AlwaysScrollableScrollPhysics(),
                                       ),
                                     ),
                                   ],
