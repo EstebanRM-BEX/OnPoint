@@ -212,6 +212,41 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     on<LoadHistoryPickComponentEvent>(_onLoadHistoryPickComponentEvent);
     //*ver imagen del producto
     on<ViewProductImageEvent>(_onViewProductImageEvent);
+
+    on<SortPickListEvent>((event, emit) {
+      // Creamos una copia de la lista actual para no mutar el estado directamente
+      List<ResultPick> sortedList = List.from(listOfPickFiltered);
+      // O usa `this.listOfPickFiltered` si lo manejas como variable de clase
+      sortedList.sort((a, b) {
+        int result = 0;
+        switch (event.field) {
+          case 'priority':
+            // Asumiendo que priority '1' es Alta y '0' es Normal
+            final pA = a.priority ?? '0';
+            final pB = b.priority ?? '0';
+            result = pA.compareTo(pB);
+            break;
+          case 'date':
+            // Parsear fechas
+            final dateA =
+                DateTime.tryParse(a.fechaCreacion ?? '') ?? DateTime(1900);
+            final dateB =
+                DateTime.tryParse(b.fechaCreacion ?? '') ?? DateTime(1900);
+            result = dateA.compareTo(dateB);
+            break;
+          case 'name':
+            final nameA = a.name ?? '';
+            final nameB = b.name ?? '';
+            result = nameA.toLowerCase().compareTo(nameB.toLowerCase());
+            break;
+        }
+        return event.ascending ? result : -result; // Invertir si es descendente
+      });
+      // Actualiza la lista en el Bloc y emite el estado
+      this.listOfPickFiltered = sortedList;
+      // Asegúrate de emitir un estado que refresque la lista, ej:
+      emit(PickingPickSuccess(sortedList));
+    });
   }
 
   void _onViewProductImageEvent(

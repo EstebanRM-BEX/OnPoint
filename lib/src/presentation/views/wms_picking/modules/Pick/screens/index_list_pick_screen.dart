@@ -220,6 +220,144 @@ class IndexListPickScreen extends StatelessWidget {
                                       ),
                                     ),
                                     const Spacer(),
+
+
+ // ✅ AQUI AGREGAMOS EL FILTRO (Igual que en ProductInfoScreen)
+                      PopupMenuButton<String>(
+                        icon: const Icon(
+                          Icons.more_vert, // Los tres punticos
+                          color:
+                              white, // Blanco porque el fondo es primaryColorApp
+                          size: 24,
+                        ),
+                        onSelected: (value) {
+                          final bloc = context.read<PickingPickBloc>();
+
+                          // Lógica de ordenamiento
+                          // Nota: Debes crear este evento en tu PickingPickBloc
+                          switch (value) {
+                            case 'priority_high':
+                              bloc.add(SortPickListEvent('priority',
+                                  false)); // Descendente (Alta primero)
+                              break;
+                            case 'priority_normal':
+                              bloc.add(SortPickListEvent('priority',
+                                  true)); // Ascendente (Normal primero)
+                              break;
+                            case 'date_asc':
+                              bloc.add(SortPickListEvent('date', true));
+                              break;
+                            case 'date_desc':
+                              bloc.add(SortPickListEvent('date', false));
+                              break;
+                            case 'name_asc':
+                              bloc.add(SortPickListEvent('name', true));
+                              break;
+                            case 'name_desc':
+                              bloc.add(SortPickListEvent('name', false));
+                              break;
+                          }
+                        },
+                        itemBuilder: (BuildContext context) =>
+                            <PopupMenuEntry<String>>[
+                          // Sección PRIORIDAD
+                          const PopupMenuItem<String>(
+                            enabled: false,
+                            height: 30,
+                            child: Text('PRIORIDAD',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: Colors.grey)),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'priority_high',
+                            height: 40,
+                            child: Row(children: [
+                              Icon(Icons.warning, size: 16, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('Alta primero',
+                                  style: TextStyle(fontSize: 13))
+                            ]),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'priority_normal',
+                            height: 40,
+                            child: Row(children: [
+                              Icon(Icons.check_circle,
+                                  size: 16, color: Colors.green),
+                              SizedBox(width: 8),
+                              Text('Normal primero',
+                                  style: TextStyle(fontSize: 13))
+                            ]),
+                          ),
+                          const PopupMenuDivider(),
+
+                          // Sección FECHA
+                          const PopupMenuItem<String>(
+                            enabled: false,
+                            height: 30,
+                            child: Text('FECHA',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: Colors.grey)),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'date_asc',
+                            height: 40,
+                            child: Row(children: [
+                              Icon(Icons.calendar_month_outlined, size: 16),
+                              SizedBox(width: 8),
+                              Text('Más Antiguas',
+                                  style: TextStyle(fontSize: 13))
+                            ]),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'date_desc',
+                            height: 40,
+                            child: Row(children: [
+                              Icon(Icons.calendar_month_outlined, size: 16),
+                              SizedBox(width: 8),
+                              Text('Más Recientes',
+                                  style: TextStyle(fontSize: 13))
+                            ]),
+                          ),
+                          const PopupMenuDivider(),
+
+                          // Sección NOMBRE
+                          const PopupMenuItem<String>(
+                            enabled: false,
+                            height: 30,
+                            child: Text('CONSECUTIVO',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: Colors.grey)),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'name_asc',
+                            height: 40,
+                            child: Row(children: [
+                              Icon(Icons.arrow_upward, size: 16),
+                              SizedBox(width: 8),
+                              Text('Consecutivo (A-Z)', style: TextStyle(fontSize: 13))
+                            ]),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'name_desc',
+                            height: 40,
+                            child: Row(children: [
+                              Icon(Icons.arrow_downward, size: 16),
+                              SizedBox(width: 8),
+                              Text('Consecutivo (Z-A)', style: TextStyle(fontSize: 13))
+                            ]),
+                          ),
+                        ],
+                      ),
+
+
+
                                   ],
                                 ),
                               ],
@@ -306,6 +444,8 @@ class IndexListPickScreen extends StatelessWidget {
                           ),
                         ),
                       ),
+
+                     
                       const SizedBox(width: 5),
                     ],
                   ),
@@ -424,11 +564,9 @@ class IndexListPickScreen extends StatelessWidget {
                                               child: Text(
                                                 batch.observacion.toString(),
                                                 style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: black),
+                                                    fontSize: 12, color: black),
                                                 maxLines: 2,
-                                                overflow:
-                                                    TextOverflow.ellipsis,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                           ],

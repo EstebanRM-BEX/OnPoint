@@ -266,3 +266,9 @@ class ViewProductImageEvent extends PickingPickEvent {
   final int idProduct;
   ViewProductImageEvent(this.idProduct);
 }
+
+class SortPickListEvent extends PickingPickEvent {
+  final String field;
+  final bool ascending;
+  SortPickListEvent(this.field, this.ascending);
+}

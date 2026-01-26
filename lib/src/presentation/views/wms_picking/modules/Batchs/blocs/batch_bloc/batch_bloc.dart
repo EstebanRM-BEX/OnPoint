@@ -167,7 +167,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
     //*evento para reiniciar los valores
     on<ResetValuesEvent>(_onResetValuesEvent);
     //*evento para enviar un producto a odoo
-    // on<SendProductOdooEvent>(_onSendProductOdooEvent);
+    on<SendProductOdooEvent>(_onSendProductOdooEvent);
     //*evento para actualizar el valor del scan
     on<UpdateScannedValueEvent>(_onUpdateScannedValueEvent);
     on<ClearScannedValueEvent>(_onClearScannedValueEvent);
@@ -397,97 +397,121 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
     }
   }
 
-  // void _onSendProductOdooEvent(
-  //     SendProductOdooEvent event, Emitter<BatchState> emit) async {
-  //   if (_isProcessing) {
-  //     // Si ya está en proceso, no ejecutamos nada
-  //     return;
-  //   }
+  void _onSendProductOdooEvent(
+      SendProductOdooEvent event, Emitter<BatchState> emit) async {
+    if (_isProcessing) {
+      // Si ya está en proceso, no ejecutamos nada
+      return;
+    }
 
-  //   try {
-  //     _isProcessing = true; // Activar la bandera para evitar duplicados
-  //     emit(SendProductOdooLoading());
+    try {
+      _isProcessing = true; // Activar la bandera para evitar duplicados
+      emit(SendProductOdooLoading());
 
-  //     DateTime dateTimeActuality = DateTime.parse(DateTime.now().toString());
-  //     double secondsDifference = 0.0;
+      DateTime dateTimeActuality = DateTime.parse(DateTime.now().toString());
+      double secondsDifference = 0.0;
 
-  //     try {
-  //       // Calcular la diferencia en segundos
-  //       Duration difference = dateTimeActuality.difference(DateTime.now());
-  //       secondsDifference = difference.inMilliseconds / 1000.0;
-  //       print("Diferencia en segundos: $secondsDifference");
-  //     } catch (e) {
-  //       print("❌ Error al parsear la fecha: $e");
-  //     }
+      try {
+        // Calcular la diferencia en segundos
+        Duration difference = dateTimeActuality.difference(DateTime.now());
+        secondsDifference = difference.inMilliseconds / 1000.0;
+        print("Diferencia en segundos: $secondsDifference");
+      } catch (e) {
+        print("❌ Error al parsear la fecha: $e");
+      }
 
-  //     final userid = await PrefUtils.getUserId();
-  //     final response = await repository.sendPicking(
-  //       idBatch: event.product.batchId ?? 0,
-  //       timeTotal: secondsDifference,
-  //       cantItemsSeparados: batchWithProducts.batch?.productSeparateQty ?? 0,
-  //       listItem: [
-  //         Item(
-  //           idMove: event.product.idMove ?? 0,
-  //           // idMove: 0,
-  //           productId: event.product.idProduct ?? 0,
-  //           lote: event.product.lotId ?? '',
-  //           cantidad: event.product.quantitySeparate ?? 0,
-  //           novedad: event.product.observation == ""
-  //               ? 'Sin novedad'
-  //               : event.product.observation ?? '',
-  //           timeLine: event.product.timeSeparate == null
-  //               ? 30.0
-  //               : event.product.timeSeparate.toDouble(),
-  //           muelle: event.product.muelleId ?? 0,
-  //           idOperario: userid,
-  //           fechaTransaccion: event.product.fechaTransaccion ?? '',
-  //         ),
-  //       ],
-  //     );
+      final userid = await PrefUtils.getUserId();
+      final response = await repository.sendPicking(
+        idBatch: event.product.batchId ?? 0,
+        tipoPicking: event.type,
+        timeTotal: secondsDifference,
+        cantItemsSeparados: batchWithProducts.batch?.productSeparateQty ?? 0,
+        listItem: [
+          Item(
+            idMove: event.product.idMove ?? 0,
+            // idMove: 0,
+            productId: event.product.idProduct ?? 0,
+            lote: event.product.lotId ?? '',
+            cantidad: event.product.quantitySeparate ?? 0,
+            novedad: event.product.observation == ""
+                ? 'Sin novedad'
+                : event.product.observation ?? '',
+            timeLine: event.product.timeSeparate == null
+                ? 30.0
+                : event.product.timeSeparate.toDouble(),
+            muelle: event.product.muelleId ?? 0,
+            idOperario: userid,
+            fechaTransaccion: event.product.fechaTransaccion ?? '',
+          ),
+        ],
+      );
 
-  //     if (response.result?.code == 200) {
-  //       // Recorrer todos los resultados de la respuesta
-  //       await db.setFieldTableBatchProducts(
-  //         event.product.batchId ?? 0,
-  //         event.product.idProduct ?? 0,
-  //         'is_send_odoo',
-  //         1,
-  //         event.product.idMove ?? 0,
-  //         event.type,
-  //       );
+      if (response.result?.code == 200) {
+        // Recorrer todos los resultados de la respuesta
+        await db.setFieldTableBatchProducts(
+          event.product.batchId ?? 0,
+          event.product.idProduct ?? 0,
+          'is_send_odoo',
+          1,
+          event.product.idMove ?? 0,
+          event.type,
+        );
 
-  //       final response = await DataBaseSqlite()
-  //           .getBatchWithProducts(batchWithProducts.batch?.id ?? 0, event.type);
-  //       final List<ProductsBatch> products = response!.products!
-  //           .where((product) =>
-  //               product.quantitySeparate != product.quantity ||
-  //               product.isSendOdoo == 0)
-  //           .toList();
-  //       batchWithProducts.products = response.products;
-  //       filteredProducts.clear();
-  //       filteredProducts.addAll(products);
+        final response = await DataBaseSqlite()
+            .getBatchWithProducts(batchWithProducts.batch?.id ?? 0, event.type);
+        final List<ProductsBatch> products = response!.products!
+            .where((product) =>
+                product.quantitySeparate != product.quantity ||
+                product.isSendOdoo == 0)
+            .toList();
+        batchWithProducts.products = response.products;
+        filteredProducts.clear();
+        filteredProducts.addAll(products);
 
-  //       emit(SendProductOdooSuccess());
-  //     } else {
-  //       // Elementos que no se pudieron enviar a Odoo
-  //       await db.setFieldTableBatchProducts(
-  //         event.product.batchId ?? 0,
-  //         event.product.idProduct ?? 0,
-  //         'is_send_odoo',
-  //         0,
-  //         event.product.idMove ?? 0,
-  //         event.type,
-  //       );
-  //       emit(SendProductOdooError(response.result?.result?.first.error ?? ""));
-  //     }
-  //   } catch (e, s) {
-  //     emit(SendProductOdooError(s.toString()));
-  //     print("❌ Error en el SendProductOdooEvent: $e ->$s");
-  //   } finally {
-  //     _isProcessing =
-  //         false; // Resetear la bandera una vez que el proceso termine
-  //   }
-  // }
+        emit(SendProductOdooSuccess());
+      } else {
+        // Elementos que no se pudieron enviar a Odoo
+
+        //marcamos el producto como no enviado a odoo
+        await db.setFieldTableBatchProducts(
+          event.product.batchId ?? 0,
+          event.product.idProduct ?? 0,
+          'is_send_odoo',
+          null,
+          event.product.idMove ?? 0,
+          event.type,
+        );
+//marcamos el producto como no separado
+        await db.setFieldTableBatchProducts(
+          event.product.batchId ?? 0,
+          event.product.idProduct ?? 0,
+          'is_separate',
+          0,
+          event.product.idMove ?? 0,
+          event.type,
+        );
+
+        // //volvemos a dejar la cantidad en 0
+        // await db.setFieldTableBatchProducts(
+        //   event.product.batchId ?? 0,
+        //   event.product.idProduct ?? 0,
+        //   'quantity_separate',
+        //   0,
+        //   event.product.idMove ?? 0,
+        //   event.type,
+        // );
+
+        emit(SendProductOdooError(
+            response.result?.msg ?? 'Error al enviar a wms'));
+      }
+    } catch (e, s) {
+      emit(SendProductOdooError(s.toString()));
+      print("❌ Error en el SendProductOdooEvent: $e ->$s");
+    } finally {
+      _isProcessing =
+          false; // Resetear la bandera una vez que el proceso termine
+    }
+  }
 
   //*evento para reiniciar los valores
   void _onResetValuesEvent(ResetValuesEvent event, Emitter<BatchState> emit) {
@@ -719,6 +743,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
 
       // Enviamos la lista completa de items
       final response = await repository.sendPicking(
+        tipoPicking: event.type,
         idBatch: event.productsSeparate[0].batchId ?? 0,
         timeTotal: 0.0,
         cantItemsSeparados: batchWithProducts.batch?.productSeparateQty ?? 0,
@@ -743,12 +768,13 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       SendProductEditOdooEvent event, Emitter<BatchState> emit) async {
     try {
       emit(LoadingSendProductEdit());
-      bool responseEdit = await sendProuctEditOdoo(
+
+      final (success, errorMessage) = await sendProuctEditOdoo(
         event.product,
         event.cantidad,
         event.type,
       );
-      if (responseEdit) {
+      if (success) {
         final response = await DataBaseSqlite()
             .getBatchWithProducts(batchWithProducts.batch?.id ?? 0, event.type);
         final List<ProductsBatch> products = response!.products!
@@ -759,7 +785,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         filteredProducts.addAll(products);
         emit(ProductEditOk());
       } else {
-        emit(ProductEditError());
+        emit(ProductEditError(errorMessage));
       }
     } catch (e, s) {
       print("❌ Error en el SendProductEditOdooEvent :$e->$s");
@@ -773,7 +799,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       final response = await DataBaseSqlite()
           .getBatchWithProducts(batchWithProducts.batch?.id ?? 0, event.type);
       if (response?.products?.isEmpty == true) {
-        emit(ProductEditError());
+        emit(ProductEditError('No hay productos para editar'));
         return;
       }
       final List<ProductsBatch> products = response!.products!
@@ -1002,6 +1028,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
 
       // --- ENVIAMOS A ODOO ---
       final response = await repository.sendPicking(
+          tipoPicking: type,
           idBatch: product?.batchId ?? 0,
           timeTotal: secondsDifference,
           cantItemsSeparados: batchWithProducts.batch?.productSeparateQty ?? 0,
@@ -1083,7 +1110,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
     }
   }
 
-  Future<bool> sendProuctEditOdoo(
+  Future<(bool, String)> sendProuctEditOdoo(
       ProductsBatch productEdit, dynamic cantidad, String type) async {
     print("sendProuctEditOdoo ------------");
     DateTime dateTimeActuality = DateTime.parse(DateTime.now().toString());
@@ -1120,6 +1147,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
 
     //enviamos el producto a odoo
     final response = await repository.sendPicking(
+        tipoPicking: type,
         idBatch: product?.batchId ?? 0,
         timeTotal: secondsDifference,
         cantItemsSeparados: batchWithProducts.batch?.productSeparateQty ?? 0,
@@ -1151,20 +1179,44 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           resultProduct.idMove ?? 0,
           type,
         );
+
+        //marcamos el producto como no separado
+        await db.setFieldTableBatchProducts(
+          resultProduct.idBatch ?? 0,
+          resultProduct.idProduct ?? 0,
+          'is_separate',
+          1,
+          resultProduct.idMove ?? 0,
+          type,
+        );
       }
 
-      return true;
+      return (true, 'Success');
     } else {
-      //elementos que no se pudieron enviar a odoo
+      //marcamos el producto como no enviado a odoo
       await db.setFieldTableBatchProducts(
         product?.batchId ?? 0,
         product?.idProduct ?? 0,
         'is_send_odoo',
-        0,
+        null,
         product?.idMove ?? 0,
         type,
       );
-      return false;
+
+      // //volvemos a dejar la cantidad en 0
+      // await db.setFieldTableBatchProducts(
+      //   product?.batchId ?? 0,
+      //   product?.idProduct ?? 0,
+      //   'quantity_separate',
+      //   product.quantitySeparate ?? 0,
+      //   currentProduct.idMove ?? 0,
+      //   type,
+      // );
+
+      print("cantidad del producto separada : ${product?.quantitySeparate}");
+      print("cantidad del producto  : ${product?.quantity}");
+
+      return (false, response.result?.msg ?? 'Error al enviar a wms');
     }
   }
 
@@ -1600,51 +1652,71 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
     }
   }
 
-  String calcularUnidadesSeparadas() {
+  /// 📊 PORCENTAJE REAL (Para mostrar en UI visualmente)
+  /// Calcula el porcentaje ignorando los excesos.
+  /// Ej: Pides 10, Llevas 100 -> Para la suma solo cuenta 10.
+  String calcularProgresoReal() {
     try {
       if (batchWithProducts.products == null ||
           batchWithProducts.products!.isEmpty) {
         return "0.00";
       }
 
-      double totalSeparadas = 0;
-      double totalCantidades = 0;
-
-      print("--- 🕵️ INICIO DEPURACIÓN PROGRESO ---");
+      double sumaRequeridaTotal = 0;
+      double sumaAvanzadaReal = 0; // Esta suma tiene "tope" por producto
 
       for (var product in batchWithProducts.products!) {
-        double sep = (product.quantitySeparate ?? 0).toDouble();
-        double qty = (product.quantity ?? 0).toDouble();
+        double solicitado = (product.quantity ?? 0).toDouble();
+        double separado = (product.quantitySeparate ?? 0).toDouble();
 
-        // 🔍 ESTO TE DIRÁ DÓNDE ESTÁ EL ERROR
-        print(
-            "Producto ID: ${product.productId} | Separado: $sep | Pedido: $qty");
+        sumaRequeridaTotal += solicitado;
 
-        totalSeparadas += sep;
-        totalCantidades += qty;
+        // LOGICA CLAVE:
+        // Si separaste más de lo pedido (Exceso), para el % global solo sumamos lo pedido.
+        // Si separaste menos, sumamos lo que llevas.
+        if (separado > solicitado) {
+          sumaAvanzadaReal += solicitado; // Topeamos al 100% de este item
+        } else {
+          sumaAvanzadaReal += separado;
+        }
       }
 
-      print(
-          "📊 SUMA TOTAL -> Separadas: $totalSeparadas | Totales: $totalCantidades");
+      if (sumaRequeridaTotal == 0) return "0.00";
 
-      if (totalCantidades == 0) {
-        print("⚠️ Error: El total pedido es 0, retornando 0.00");
-        return "0.00";
-      }
+      final progress = (sumaAvanzadaReal / sumaRequeridaTotal) * 100;
 
-      final progress = (totalSeparadas / totalCantidades) * 100;
-      print("🧮 Resultado final: $progress%");
-
-      // Validación de seguridad para que no rompa la UI visualmente
-      if (progress > 1000) {
-        return ">1000"; // O retorna "Error"
-      }
-
+      // Con esta lógica, el progreso nunca será > 100% si hay faltantes.
+      // Solo será 100% si todo está completo (incluso si hay excesos).
       return progress.toStringAsFixed(2);
-    } catch (e, s) {
-      print("❌ Error en calcularUnidadesSeparadas: $e");
+    } catch (e) {
+      print("Error calculando progreso real: $e");
       return "0.00";
     }
+  }
+
+  /// ✅ VALIDACIÓN ESTRICTA (Para el if de validatePicking)
+  /// Retorna TRUE solo si absolutamente todos los productos
+  /// tienen una cantidad separada mayor o igual a la solicitada.
+  bool isPickingCompleto() {
+    if (batchWithProducts.products == null ||
+        batchWithProducts.products!.isEmpty) {
+      return false;
+    }
+
+    // Iteramos producto por producto
+    for (var product in batchWithProducts.products!) {
+      double solicitado = (product.quantity ?? 0).toDouble();
+      double separado = (product.quantitySeparate ?? 0).toDouble();
+
+      // Si ALGUNO tiene menos de lo solicitado, el picking NO está completo
+      // Nota: Aquí el exceso en otro producto no importa, este if falla inmediatamente.
+      if (separado < solicitado) {
+        return false;
+      }
+    }
+
+    // Si pasó por todos y ninguno falló, entonces está completo.
+    return true;
   }
 
   String formatSecondsToHHMMSS(double secondsDecimal) {

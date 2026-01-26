@@ -1142,12 +1142,18 @@ class _BatchDetailScreenState extends State<BatchScreen>
     batchBloc.add(FetchBatchWithProductsEvent(
         batchBloc.batchWithProducts.batch?.id ?? 0, batchBloc.typePicking));
 
-    //validamos que la cantidad de productos separados sea igual a la cantidad de productos pedidos
-//validamos el 100 de las unidades separadas
-    final double unidadesSeparadas =
-        double.parse(batchBloc.calcularUnidadesSeparadas());
+    // -------------------------------------------------------------
+    // ⚡️ CAMBIO PRINCIPAL AQUÍ
+    // Usamos la función booleana que valida producto por producto
+    // en lugar de confiar en el porcentaje global.
+    // -------------------------------------------------------------
 
-    if (unidadesSeparadas == "100.0" || unidadesSeparadas >= 100.0) {
+    final bool estaCompleto = batchBloc.isPickingCompleto();
+
+    // if (unidadesSeparadas == "100.0" || unidadesSeparadas >= 100.0) <-- VIEJO
+    if (estaCompleto) {
+      // <-- NUEVO Y SEGURO
+
       var productsToSend = batchBloc.filteredProducts
           .where((element) => element.isSendOdoo == 0)
           .toList();
@@ -1243,12 +1249,14 @@ class _BatchDetailScreenState extends State<BatchScreen>
         }
       }
     } else {
+      final double porcentajeVisual =
+          double.tryParse(batchBloc.calcularProgresoReal()) ?? 0.0;
       showDialog(
           context: context,
           builder: (context) {
             return DialogPickingIncompleted(
                 currentProduct: batchBloc.currentProduct,
-                cantidad: unidadesSeparadas,
+                cantidad: porcentajeVisual,
                 batchBloc: batchBloc,
                 onAccepted: () {
                   if (batchBloc

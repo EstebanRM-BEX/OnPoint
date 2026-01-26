@@ -155,7 +155,7 @@ class _MuelleDropdownWidgetState extends State<MuelleDropdownWidget> {
 
     // Validamos que la cantidad de productos separados sea igual a la cantidad de productos pedidos
     final double unidadesSeparadas =
-        double.parse(batchBloc.calcularUnidadesSeparadas());
+        double.parse(batchBloc.calcularProgresoReal());
 
     if (unidadesSeparadas == "100.0" || unidadesSeparadas >= 100.0) {
       var productsToSend = batchBloc.filteredProducts

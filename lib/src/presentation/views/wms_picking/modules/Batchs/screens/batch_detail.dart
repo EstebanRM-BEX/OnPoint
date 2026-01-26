@@ -3,6 +3,7 @@
 import 'dart:ui';
 
 import 'package:flutter_svg/svg.dart';
+import 'package:get/get.dart';
 import 'package:wms_app/src/core/constans/colors.dart';
 import 'package:wms_app/src/presentation/providers/network/check_internet_connection.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
@@ -30,11 +31,15 @@ class BatchDetailScreen extends StatelessWidget {
     return BlocConsumer<BatchBloc, BatchState>(
       listener: (context, state) {
         if (state is ProductEditOk) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Producto ajustado correctamente"),
-              backgroundColor: Colors.green,
-            ),
+          Navigator.pop(context);
+          Get.snackbar(
+            '360 Software Informa',
+            'Producto ajustado correctamente',
+            backgroundColor: white,
+            colorText: primaryColorApp,
+            duration: const Duration(milliseconds: 1000),
+            icon: Icon(Icons.error, color: Colors.green),
+            snackPosition: SnackPosition.TOP,
           );
         }
 
@@ -45,19 +50,33 @@ class BatchDetailScreen extends StatelessWidget {
                 return const DialogLoading(message: "Enviando producto...");
               });
         }
-
         if (state is SendProductOdooError) {
+          Navigator.pop(context);
+          showScrollableErrorDialog(state.error);
+        }
+        if (state is LoadingSendProductEdit) {
+          showDialog(
+              context: context,
+              builder: (context) {
+                return const DialogLoading(message: "Enviando producto...");
+              });
+        }
+
+        if (state is ProductEditError) {
           Navigator.pop(context);
           showScrollableErrorDialog(state.error);
         }
 
         if (state is SendProductOdooSuccess) {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text("Producto enviado correctamente"),
-              backgroundColor: Colors.green[200],
-            ),
+          Get.snackbar(
+            '360 Software Informa',
+            'Producto enviado correctamente',
+            backgroundColor: white,
+            colorText: primaryColorApp,
+            duration: const Duration(milliseconds: 1000),
+            icon: Icon(Icons.error, color: Colors.green),
+            snackPosition: SnackPosition.TOP,
           );
         }
 
@@ -200,14 +219,14 @@ class BatchDetailScreen extends StatelessWidget {
                                           child: Row(
                                             children: [
                                               Text(
-                                                "Unidades separadas: ${(context.read<BatchBloc>().calcularUnidadesSeparadas())}%",
+                                                "Unidades separadas: ${(context.read<BatchBloc>().calcularProgresoReal())}%",
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   color: getColorForPercentage(
                                                       double.tryParse(context
-                                                          .read<BatchBloc>()
-                                                          .calcularUnidadesSeparadas()) ?? 0.0
-                                                          ), // Convertir a double
+                                                              .read<BatchBloc>()
+                                                              .calcularProgresoReal()) ??
+                                                          0.0), // Convertir a double
                                                 ),
                                               ),
                                               const Spacer(),
@@ -372,7 +391,7 @@ class BatchDetailScreen extends StatelessWidget {
                               .filteredProducts
                               .isNotEmpty
                           ? ListView.builder(
-                             physics: const AlwaysScrollableScrollPhysics(),
+                              physics: const AlwaysScrollableScrollPhysics(),
                               itemCount: context
                                   .read<BatchBloc>()
                                   .filteredProducts
@@ -436,7 +455,6 @@ class BatchDetailScreen extends StatelessWidget {
                                                             TextAlign.center,
                                                       ),
                                                     ),
-                                                   
                                                     if (!context
                                                             .read<BatchBloc>()
                                                             .isSearch &&

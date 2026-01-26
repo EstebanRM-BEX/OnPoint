@@ -456,6 +456,7 @@ class WmsPickingRepository {
     required double timeTotal,
     required int cantItemsSeparados,
     required List<Item> listItem,
+    required String tipoPicking,
     //
   }) async {
     print('idBatch: $idBatch');
@@ -465,7 +466,9 @@ class WmsPickingRepository {
 
     try {
       var response = await ApiRequestService().postPicking(
-        endpoint: 'send_batch/2',
+        endpoint:
+        tipoPicking == 'batch' ? 'send_batch' :
+         'send_batch/componentes',
         isunecodePath: true,
         body: {
           "params": {

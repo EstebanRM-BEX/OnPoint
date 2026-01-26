@@ -152,7 +152,10 @@ class LoadingSendProductEdit extends BatchState {}
 
 class ProductEditOk extends BatchState {}
 
-class ProductEditError extends BatchState {}
+class ProductEditError extends BatchState {
+  final String error;
+  ProductEditError(this.error);
+}
 
 class ScanBarcodeState extends BatchState {
   final String barcode;

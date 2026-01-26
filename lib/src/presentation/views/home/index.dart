@@ -770,23 +770,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                   );
                                                 },
                                               );
-
-                                              //   showDialog(
-                                              //       context: context,
-                                              //       builder: (context) {
-                                              //         return const DialogLoading(
-                                              //             message:
-                                              //                 'Cargando componentes...');
-                                              //       });
-                                              //   await Future.delayed(const Duration(
-                                              //       seconds:
-                                              //           1)); // Ajusta el tiempo si es necesario
-
-                                              //   Navigator.pop(context);
-                                              //   Navigator.pushReplacementNamed(
-                                              //     context,
-                                              //     'picking-componentes',
-                                              //   );
                                             } else {
                                               ScaffoldMessenger.of(context)
                                                   .showSnackBar(
