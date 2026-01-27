@@ -93,7 +93,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
   //configuracion del usuario //permisos
   Configurations configurations = Configurations();
-
+  String currentFilterKey = 'priority_high';
   //*lista de novedades
   List<Novedad> novedades = [];
 
@@ -194,6 +194,69 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     on<DeleteProductFromTemporaryPackageEvent>(
         _onDeleteProductFromTemporaryPackageEvent);
     on<ViewProductImageEvent>(_onViewProductImageEvent);
+  
+    on<SortPackingListEvent>((event, emit) {
+      List<PedidoPackingResult> sortedList = List.from(this.listOfPedidosFilters);
+      sortedList.sort((a, b) {
+        switch (event.field) {
+          case 'priority':
+            // Asumimos '1' = Alta, '0' = Normal.
+            final String pA = a.priority ?? '0';
+            final String pB = b.priority ?? '0';
+            // Si es ascendente: 0 -> 1 (Normal primero).
+            // Si es descendente: 1 -> 0 (Alta primero).
+            currentFilterKey =
+                event.ascending ? 'priority_normal' : 'priority_high';
+
+            return event.ascending ? pA.compareTo(pB) : pB.compareTo(pA);
+
+          case 'backorder':
+            // Verificamos si tienen nombre de backorder (no nulo y no vacío)
+            final bool hasBackorderA =
+                a.backorderName != null && a.backorderName!.isNotEmpty;
+            final bool hasBackorderB =
+                b.backorderName != null && b.backorderName!.isNotEmpty;
+
+            // Convertimos a números para poder comparar:
+            // 1 = Tiene Backorder
+            // 0 = No tiene
+            final int valA = hasBackorderA ? 1 : 0;
+            final int valB = hasBackorderB ? 1 : 0;
+            currentFilterKey =
+                event.ascending ? 'backorder_asc' : 'backorder_desc';
+            // Si es ascendente (true): 0 va primero (Sin backorder -> Con backorder)
+            // Si es descendente (false): 1 va primero (Con backorder -> Sin backorder)
+            return event.ascending
+                ? valA.compareTo(valB)
+                : valB.compareTo(valA);
+
+          case 'date':
+            // Parseo seguro de fechas
+            DateTime dateA =
+                DateTime.tryParse(a.fechaCreacion.toString()) ?? DateTime(1900);
+            DateTime dateB =
+                DateTime.tryParse(b.fechaCreacion.toString()) ?? DateTime(1900);
+
+            int resultDate = dateA.compareTo(dateB);
+            currentFilterKey = event.ascending ? 'date_asc' : 'date_desc';
+            return event.ascending ? resultDate : -resultDate;
+
+          case 'name':
+            final nameA = a.name ?? '';
+            final nameB = b.name ?? '';
+            currentFilterKey = event.ascending ? 'name_asc' : 'name_desc';
+            int resultName = nameA.toLowerCase().compareTo(nameB.toLowerCase());
+            return event.ascending ? resultName : -resultName;
+
+          default:
+            return 0;
+        }
+
+      });
+
+      this.listOfPedidosFilters = sortedList;
+      emit(PackingPackSuccess(sortedList));
+    });
   }
 
   void _onViewProductImageEvent(

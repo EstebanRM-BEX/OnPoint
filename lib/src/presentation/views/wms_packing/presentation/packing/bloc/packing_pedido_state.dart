@@ -292,3 +292,16 @@ class ViewProductImageFailure extends PackingPedidoState {
   final String error;
   ViewProductImageFailure(this.error);
 }
+
+
+// Estado para indicar que la lista de picks se cargó o actualizó (filtro/orden)
+class PackingPackSuccess extends PackingPedidoState {
+  // Opcional: Puedes pasar la lista aquí para ser más puro en el patrón BLoC
+  final List<PedidoPackingResult> picks; 
+
+  PackingPackSuccess(this.picks);
+  @override
+  List<Object> get props => [picks, DateTime.now()]; 
+  // Tip: Agregar DateTime.now() o UniqueKey() en props asegura que 
+  // Flutter redibuje aunque la lista sea "técnicamente" la misma pero en diferente orden.
+}

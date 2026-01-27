@@ -108,6 +108,8 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   bool isKeyboardVisible = false;
   bool viewQuantity = false;
 
+  String currentFilterKey = 'priority_high';
+
   //repositorio de inventario
   InventarioRepository inventarioRepository = InventarioRepository();
 
@@ -214,41 +216,68 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     on<ViewProductImageEvent>(_onViewProductImageEvent);
 
     on<SortPickListEvent>((event, emit) {
-      // Creamos una copia de la lista actual para no mutar el estado directamente
-      List<ResultPick> sortedList = List.from(listOfPickFiltered);
-      // O usa `this.listOfPickFiltered` si lo manejas como variable de clase
+      List<ResultPick> sortedList = List.from(this.listOfPickFiltered);
       sortedList.sort((a, b) {
-        int result = 0;
         switch (event.field) {
           case 'priority':
-            // Asumiendo que priority '1' es Alta y '0' es Normal
-            final pA = a.priority ?? '0';
-            final pB = b.priority ?? '0';
-            result = pA.compareTo(pB);
-            break;
+            // Asumimos '1' = Alta, '0' = Normal.
+            final String pA = a.priority ?? '0';
+            final String pB = b.priority ?? '0';
+            // Si es ascendente: 0 -> 1 (Normal primero).
+            // Si es descendente: 1 -> 0 (Alta primero).
+            currentFilterKey =
+                event.ascending ? 'priority_normal' : 'priority_high';
+
+            return event.ascending ? pA.compareTo(pB) : pB.compareTo(pA);
+
+          case 'backorder':
+            // Verificamos si tienen nombre de backorder (no nulo y no vacío)
+            final bool hasBackorderA =
+                a.backorderName != null && a.backorderName!.isNotEmpty;
+            final bool hasBackorderB =
+                b.backorderName != null && b.backorderName!.isNotEmpty;
+
+            // Convertimos a números para poder comparar:
+            // 1 = Tiene Backorder
+            // 0 = No tiene
+            final int valA = hasBackorderA ? 1 : 0;
+            final int valB = hasBackorderB ? 1 : 0;
+            currentFilterKey =
+                event.ascending ? 'backorder_asc' : 'backorder_desc';
+            // Si es ascendente (true): 0 va primero (Sin backorder -> Con backorder)
+            // Si es descendente (false): 1 va primero (Con backorder -> Sin backorder)
+            return event.ascending
+                ? valA.compareTo(valB)
+                : valB.compareTo(valA);
+
           case 'date':
-            // Parsear fechas
-            final dateA =
+            // Parseo seguro de fechas
+            DateTime dateA =
                 DateTime.tryParse(a.fechaCreacion ?? '') ?? DateTime(1900);
-            final dateB =
+            DateTime dateB =
                 DateTime.tryParse(b.fechaCreacion ?? '') ?? DateTime(1900);
-            result = dateA.compareTo(dateB);
-            break;
+
+            int resultDate = dateA.compareTo(dateB);
+            currentFilterKey = event.ascending ? 'date_asc' : 'date_desc';
+            return event.ascending ? resultDate : -resultDate;
+
           case 'name':
             final nameA = a.name ?? '';
             final nameB = b.name ?? '';
-            result = nameA.toLowerCase().compareTo(nameB.toLowerCase());
-            break;
+            currentFilterKey = event.ascending ? 'name_asc' : 'name_desc';
+            int resultName = nameA.toLowerCase().compareTo(nameB.toLowerCase());
+            return event.ascending ? resultName : -resultName;
+
+          default:
+            return 0;
         }
-        return event.ascending ? result : -result; // Invertir si es descendente
+
       });
-      // Actualiza la lista en el Bloc y emite el estado
+
       this.listOfPickFiltered = sortedList;
-      // Asegúrate de emitir un estado que refresque la lista, ej:
       emit(PickingPickSuccess(sortedList));
     });
   }
-
   void _onViewProductImageEvent(
       ViewProductImageEvent event, Emitter<PickingPickState> emit) async {
     try {
@@ -2055,6 +2084,12 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       if (result.isNotEmpty) {
         listOfPick = result;
         listOfPickFiltered = result;
+
+        this.listOfPickFiltered.sort((a, b) {
+          final String pA = a.priority ?? '0';
+          final String pB = b.priority ?? '0';
+          return pB.compareTo(pA); // Descendente
+        });
 
         emit(PickingPickLoadedBD(listOfPickFiltered));
         return;

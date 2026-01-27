@@ -256,3 +256,10 @@ class ViewProductImageEvent extends PackingPedidoEvent {
   final int idProduct;
   ViewProductImageEvent(this.idProduct);
 }
+
+
+class SortPackingListEvent extends PackingPedidoEvent {
+  final String field;
+  final bool ascending;
+  SortPackingListEvent(this.field, this.ascending);
+}
