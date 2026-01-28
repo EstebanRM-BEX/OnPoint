@@ -224,6 +224,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               }
             },
             child: Scaffold(
+              
+
               backgroundColor: white,
               body: Container(
                 color: primaryColorApp,

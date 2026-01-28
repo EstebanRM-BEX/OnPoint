@@ -398,6 +398,8 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
 
         if (state is ValidateStockFailure) {
           showScrollableErrorDialog(state.error);
+        } else if (state is CreateTransferFailure) {
+          showScrollableErrorDialog(state.error);
         } else
 
         //estado para cuando estamos agregando un producto a la transferencia
