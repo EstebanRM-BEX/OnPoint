@@ -6,7 +6,9 @@ sealed class InfoRapidaState {}
 final class InfoRapidaInitial extends InfoRapidaState {}
 
 class InfoRapidaLoading extends InfoRapidaState {}
+
 class NeedUpdateVersionState extends InfoRapidaState {}
+
 class InfoRapidaLoaded extends InfoRapidaState {
   final InfoRapidaResult infoRapidaResult;
   final String message;
@@ -132,35 +134,29 @@ class EditLocationFailure extends InfoRapidaState {
   EditLocationFailure(this.error);
 }
 
-
 class ProductExpansionToggled extends InfoRapidaState {
   final bool isExpanded;
 
   ProductExpansionToggled(this.isExpanded);
 }
 
-
 class SortLocationsLoading extends InfoRapidaState {}
 
-class SortLocationsSuccess extends InfoRapidaState {
-}
+class SortLocationsSuccess extends InfoRapidaState {}
 
 class SortLocationsFailure extends InfoRapidaState {
   final String error;
   SortLocationsFailure(this.error);
 }
 
-
 class SortProductsLoading extends InfoRapidaState {}
 
-class SortProductsSuccess extends InfoRapidaState {
-}
+class SortProductsSuccess extends InfoRapidaState {}
 
 class SortProductsFailure extends InfoRapidaState {
   final String error;
   SortProductsFailure(this.error);
 }
-
 
 class ViewProductImageLoading extends InfoRapidaState {}
 
@@ -172,4 +168,28 @@ class ViewProductImageSuccess extends InfoRapidaState {
 class ViewProductImageFailure extends InfoRapidaState {
   final String error;
   ViewProductImageFailure(this.error);
+}
+
+class RemoveProductFromMassTransferLoading extends InfoRapidaState {}
+
+class RemoveProductFromMassTransferSuccess extends InfoRapidaState {
+  final List<Producto> products;
+  RemoveProductFromMassTransferSuccess(this.products);
+}
+
+class RemoveProductFromMassTransferFailure extends InfoRapidaState {
+  final String error;
+  RemoveProductFromMassTransferFailure(this.error);
+}
+
+class ResetProductsFiltersMassTransferLoading extends InfoRapidaState {}
+
+class ResetProductsFiltersMassTransferSuccess extends InfoRapidaState {
+  final List<Producto> products;
+  ResetProductsFiltersMassTransferSuccess(this.products);
+}
+
+class ResetProductsFiltersMassTransferFailure extends InfoRapidaState {
+  final String error;
+  ResetProductsFiltersMassTransferFailure(this.error);
 }

@@ -32,6 +32,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   //*lista de productos
   List<Product> productos = [];
   List<Product> productosFilters = [];
+  List<Producto> productosFiltersMassTransfer = [];
 
   //*base de datos
   DataBaseSqlite db = DataBaseSqlite();
@@ -43,7 +44,14 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
 
   bool isAscending = true;
 
+  bool isMassTransferActive = false;
+  ResultUbicaciones? currentUbicationDest;
+
   TextEditingController? controllerActivo;
+
+  //*variables de escaneo
+  bool isLocationDestOk = true;
+  bool locationDestIsOk = false;
 
   //*configuracion del usuario //permisos
   Configurations configurations = Configurations();
@@ -89,14 +97,55 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     // ToggleProductExpansionEvent
     on<ToggleProductExpansionEvent>(_onToggleProductExpansionEvent);
 
-    //metodo para ordenar de formar ascendente o descendente las ubicaciones
+    //evento para ordenar de formar ascendente o descendente las ubicaciones
     on<SortLocationsEvent>(_onSortLocationsEvent);
 
-    //metodo para ordenar de forma ascendente o descendente los productos
+    //evento para ordenar de forma ascendente o descendente los productos
     on<SortProductsEvent>(_onSortProductsEvent);
 
-    //metodo para ver la url de un producto
+    //evento para ver la url de un producto
     on<ViewProductImageEvent>(_onViewProductImageEvent);
+
+    //evento para eliminar un producto de la lista de transferencias masivas
+    on<RemoveProductFromMassTransferEvent>(
+        _onRemoveProductFromMassTransferEvent);
+
+    //evento para resetear la lista de productos filtrados
+    on<ResetProductsFiltersMassTransferEvent>(
+        _onResetProductsFiltersMassTransferEvent);
+  }
+
+  //metodo para resetear la lista de productos
+  void _onResetProductsFiltersMassTransferEvent(
+      ResetProductsFiltersMassTransferEvent event,
+      Emitter<InfoRapidaState> emit) {
+    try {
+      print('Reseteando la lista de productos filtrados');
+      emit(ResetProductsFiltersMassTransferLoading());
+      productosFiltersMassTransfer = infoRapidaResult.result?.productos ?? [];
+      //borramos la informacion de la ubicacion destino
+      currentUbicationDest = ResultUbicaciones();
+      emit(ResetProductsFiltersMassTransferSuccess(
+          productosFiltersMassTransfer));
+    } catch (e, s) {
+      print('Error en el ResetProductsFiltersMassTransferEvent: $e, $s');
+      emit(ResetProductsFiltersMassTransferFailure(e.toString()));
+    }
+  }
+
+  //metodo para eliminar un producto de la lista de transferencias masivas
+  void _onRemoveProductFromMassTransferEvent(
+      RemoveProductFromMassTransferEvent event, Emitter<InfoRapidaState> emit) {
+    try {
+      print('Eliminando producto de la lista de transferencias masivas');
+      emit(RemoveProductFromMassTransferLoading());
+      productosFiltersMassTransfer
+          .removeWhere((element) => element.id == event.idProduct);
+      emit(RemoveProductFromMassTransferSuccess(productosFiltersMassTransfer));
+    } catch (e, s) {
+      print('Error en el RemoveProductFromMassTransferEvent: $e, $s');
+      emit(RemoveProductFromMassTransferFailure(e.toString()));
+    }
   }
 
   void _onViewProductImageEvent(
@@ -146,8 +195,6 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     }
   }
 
- 
-
   void _onToggleProductExpansionEvent(
       ToggleProductExpansionEvent event, Emitter<InfoRapidaState> emit) {
     print('isExpanded: $isExpanded');
@@ -164,14 +211,13 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
           event.locationId, event.name, event.barcode, true);
 
       if (response.result?.code == 200) {
-        await db.ubicacionesRepository
-            .insertOrUpdateSingle(
-              ResultUbicaciones(
-                id: event.locationId,
-                name: event.name,
-                barcode: event.barcode,
-              ),
-            );
+        await db.ubicacionesRepository.insertOrUpdateSingle(
+          ResultUbicaciones(
+            id: event.locationId,
+            name: event.name,
+            barcode: event.barcode,
+          ),
+        );
         infoRapidaResult = response.result ?? InfoRapidaResult();
         emit(EditLocationSuccess());
         add(
@@ -409,6 +455,9 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
 
       if (infoRapida.result?.code == 200) {
         infoRapidaResult = infoRapida.result!;
+        // create a copy of the list to avoid reference issues
+        productosFiltersMassTransfer =
+            List<Producto>.from(infoRapidaResult.result?.productos ?? []);
 
         emit(InfoRapidaLoaded(infoRapidaResult, infoRapida.result!.type!));
       } else {
@@ -440,16 +489,15 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     emit(ClearScannedValueState());
   }
 
-
-
-void _onSortLocationsEvent(
+  void _onSortLocationsEvent(
       SortLocationsEvent event, Emitter<InfoRapidaState> emit) {
     try {
-      print('Ordenando ubicaciones por: ${event.criteria}, ascending: ${event.ascending}');
+      print(
+          'Ordenando ubicaciones por: ${event.criteria}, ascending: ${event.ascending}');
       emit(SortLocationsLoading());
-      
+
       final locations = infoRapidaResult.result?.ubicaciones;
-      
+
       if (locations != null) {
         // Función de comparación base
         int compare(dynamic a, dynamic b) {
@@ -457,26 +505,29 @@ void _onSortLocationsEvent(
             case 'lote':
               // Ordenar por Lote (alfabético)
               return (a.lote ?? '').compareTo(b.lote ?? '');
-              
+
             case 'date':
               // Ordenar por Fecha de Entrada
               // Intentamos parsear la fecha, si falla usamos una fecha muy antigua
-              final dateA = DateTime.tryParse(a.fechaCaducidad ?? '') ?? DateTime(1900);
-              final dateB = DateTime.tryParse(b.fechaCaducidad ?? '') ?? DateTime(1900);
+              final dateA =
+                  DateTime.tryParse(a.fechaCaducidad ?? '') ?? DateTime(1900);
+              final dateB =
+                  DateTime.tryParse(b.fechaCaducidad ?? '') ?? DateTime(1900);
               return dateA.compareTo(dateB);
-              
+
             case 'location':
-        
               return (a.ubicacion ?? '').compareTo(b.ubicacion ?? '');
             case 'entrada':
               // Ordenar por Fecha de Entrada
               // Intentamos parsear la fecha, si falla usamos una fecha muy antigua
-              final dateA = DateTime.tryParse(a.fechaEntrada ?? '') ?? DateTime(1900);
-              final dateB = DateTime.tryParse(b.fechaEntrada ?? '') ?? DateTime(1900);
+              final dateA =
+                  DateTime.tryParse(a.fechaEntrada ?? '') ?? DateTime(1900);
+              final dateB =
+                  DateTime.tryParse(b.fechaEntrada ?? '') ?? DateTime(1900);
               return dateA.compareTo(dateB);
-          default:
-          // Ordenar por Nombre de Ubicación (alfabético) por defecto
-          return (a.name ?? '').compareTo(b.name ?? '');
+            default:
+              // Ordenar por Nombre de Ubicación (alfabético) por defecto
+              return (a.name ?? '').compareTo(b.name ?? '');
           }
         }
 
@@ -485,18 +536,16 @@ void _onSortLocationsEvent(
           locations.sort((a, b) => compare(a, b));
           isAscending = true;
         } else {
-          locations.sort((a, b) => compare(b, a)); // Invertimos a y b para descendente
+          locations.sort(
+              (a, b) => compare(b, a)); // Invertimos a y b para descendente
           isAscending = false;
         }
       }
-      
+
       emit(SortLocationsSuccess());
     } catch (e, s) {
       print('Error en el SortLocationsEvent: $e, $s');
       emit(SortLocationsFailure(e.toString()));
     }
   }
-
- 
-
 }

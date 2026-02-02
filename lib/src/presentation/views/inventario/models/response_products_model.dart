@@ -88,8 +88,6 @@ class Product {
   String? dateTransaction;
   String? expirationDateLote;
 
-
-
   Product({
     this.productId,
     this.name,
@@ -118,7 +116,6 @@ class Product {
     this.quantityDone,
     this.dateTransaction,
     this.expirationDateLote,
-
   });
 
   factory Product.fromMap(Map<String, dynamic> json) => Product(
@@ -153,9 +150,8 @@ class Product {
         dateStart: json['date_start'],
         dateEnd: json['date_end'],
         quantityDone: json['quantity_done'],
-        dateTransaction: json['date_transaction'],  
+        dateTransaction: json['date_transaction'],
         expirationDateLote: json['expiration_date'],
-
       );
 
   Map<String, dynamic> toMap() => {

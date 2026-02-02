@@ -4,7 +4,6 @@
 
 import 'dart:convert';
 
-
 InfoRapida infoRapidaFromMap(String str) =>
     InfoRapida.fromMap(json.decode(str));
 
@@ -85,7 +84,6 @@ class InfoResult {
   List<Ubicacion>? ubicaciones;
   String? unidadMedida;
 
-
   dynamic? isSticker;
   dynamic? isCertificate;
   String? fechaEmpaquetado;
@@ -99,9 +97,6 @@ class InfoResult {
   dynamic? numeroProductos;
 
   String? nombreAlmacen;
-
-
-
 
   InfoResult({
     this.id,
@@ -139,7 +134,7 @@ class InfoResult {
         peso: json["peso"],
         volumen: json["volumen"],
         codigoBarras: json["codigo_barras"],
-       
+
         categoria: json["categoria"],
         ubicaciones: json["ubicaciones"] == null
             ? []
@@ -173,7 +168,6 @@ class InfoResult {
         "peso": peso,
         "volumen": volumen,
         "codigo_barras": codigoBarras,
-        
         "categoria": categoria,
         "ubicaciones": ubicaciones == null
             ? []
@@ -291,8 +285,6 @@ class Producto {
     this.numeroCaja,
     this.nombreAlmacen,
     this.operador,
-
-    
   });
 
   factory Producto.fromMap(Map<String, dynamic> json) => Producto(

@@ -14,6 +14,8 @@ import 'package:wms_app/src/presentation/views/devoluciones/screens/index.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/locations_dest_screen.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/terceros_screen.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/models/info_rapida_model.dart';
+import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/screens/create-transfer/create_mass_trasnfer_screen.dart';
+import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/screens/create-transfer/widgets/locationDest/location_search_widget.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/screens/list_locations_screen.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/screens/list_products_screen.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/screens/locations_info_screen.dart';
@@ -185,6 +187,10 @@ class AppRoutes {
   static const String listProduct = 'list-product';
   static const String searchLocationDestTransInfo =
       'search-locations-dest-trans-info';
+  static const String createMassTransfer = 'create-mass-transfer';
+
+  static const String searchLocationCreateMassTransfer =
+      'search-location-create-mass-transfer';
 
   //todo: conteo
   static const String conteo = 'conteo';
@@ -238,8 +244,7 @@ class AppRoutes {
       auth: (_) => const LoginPage(),
 
       // todo WMS Picking
-      wmsPicking: (context) => WMSPickingPage(
-          ),
+      wmsPicking: (context) => WMSPickingPage(),
       batch: (_) => const BatchScreen(),
       batchDetail: (_) => const BatchDetailScreen(),
       historyLits: (_) => const HistoryListScreen(),
@@ -505,6 +510,18 @@ class AppRoutes {
           infoRapidaResult: info,
         );
       },
+
+      createMassTransfer: (_) => const CreateMassTrasferScreen(),
+
+      searchLocationCreateMassTransfer: (context) {
+        final arguments =
+            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
+        final isLocationDest = arguments[0] as bool?;
+        return SearchLocationCreateMassTransfercreen(
+          isLocationDest: isLocationDest ?? false,
+        );
+      },
+
       //todo transfer info
       transferInfo: (context) {
         final arguments =

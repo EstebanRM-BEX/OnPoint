@@ -88,16 +88,12 @@ class LocationInfoScreen extends StatelessWidget {
                             onchanged: () {},
                           ))
                 : null,
-            // appBar: PreferredSize(
-            //   preferredSize: Size.fromHeight(45), // ajusta el alto
-            //   child: AppBar(size: size), // tuwidget AppBar personalizado
-            // ),
             body: SizedBox(
               width: size.width * 1,
               height: size.height * 1,
               child: Column(
                 children: [
-                  AppBar(size: size),
+                  AppBar(size: size, infoRapidaResult: infoRapidaResult),
                   Padding(
                     padding: const EdgeInsets.only(top: 5, left: 20),
                     child: Align(
@@ -250,7 +246,7 @@ class LocationInfoScreen extends StatelessWidget {
                     ),
                   ),
 
-                  //listado de ubicaciones
+                  //listado de productos
                   Expanded(
                     child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -321,8 +317,10 @@ class AppBar extends StatelessWidget {
   const AppBar({
     super.key,
     required this.size,
+    required this.infoRapidaResult,
   });
 
+  final InfoRapidaResult? infoRapidaResult;
   final Size size;
 
   @override
@@ -383,24 +381,73 @@ class AppBar extends StatelessWidget {
                             ?.result
                             ?.updateLocationInventory ==
                         true,
-                    child: GestureDetector(
-                      onTap: () {
-                        context.read<InfoRapidaBloc>().add(IsEditEvent(
-                            !context.read<InfoRapidaBloc>().isEdit));
-                        context.read<InfoRapidaBloc>().add(
-                            ShowKeyboardInfoEvent(
-                                false, TextEditingController()));
-                      },
-                      child: Icon(
+                    child: PopupMenuButton<String>(
+                      // Usamos more_vert (3 puntos) o edit según prefieras
+                      icon: Icon(
                         context.read<InfoRapidaBloc>().isEdit
-                            ? Icons.close
-                            : Icons.edit,
+                            ? Icons
+                                .close // Si está editando, mostramos X para intuir cerrar
+                            : Icons.more_vert, // Si no, mostramos menú
                         color: white,
                         size: 20,
                       ),
+                      onSelected: (String value) {
+                        if (value == 'edit') {
+                          // Lógica original de Editar Ubicación
+                          context.read<InfoRapidaBloc>().add(IsEditEvent(
+                              !context.read<InfoRapidaBloc>().isEdit));
+                          context.read<InfoRapidaBloc>().add(
+                              ShowKeyboardInfoEvent(
+                                  false, TextEditingController()));
+                        } else if (value == 'mass_transfer') {
+                          // context
+                          //     .read<InfoRapidaBloc>()
+                          //     .add(ActivateMassTransferEvent());
+                          Navigator.pushReplacementNamed(
+                            context,
+                            'create-mass-transfer',
+                          );
+                        }
+                      },
+                      itemBuilder: (BuildContext context) {
+                        // Verificamos si ya está en modo edición para cambiar el texto del menú
+                        final isEditing = context.read<InfoRapidaBloc>().isEdit;
+
+                        return [
+                          PopupMenuItem<String>(
+                            value: 'edit',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  isEditing ? Icons.close : Icons.edit,
+                                  color: Colors
+                                      .black54, // Color para el menú (fondo blanco por defecto)
+                                ),
+                                const SizedBox(width: 10),
+                                Text(isEditing
+                                    ? "Cancelar edición"
+                                    : "Editar ubicación"),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'mass_transfer',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons
+                                      .swap_horiz, // Icono sugerido para transferencia
+                                  color: Colors.black54,
+                                ),
+                                SizedBox(width: 10),
+                                Text("Transferencia masiva"),
+                              ],
+                            ),
+                          ),
+                        ];
+                      },
                     ),
                   ),
-                  const SizedBox(width: 15),
                 ],
               ),
             ),

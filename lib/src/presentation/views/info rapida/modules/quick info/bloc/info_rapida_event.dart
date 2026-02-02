@@ -69,7 +69,6 @@ class UpdateProductEvent extends InfoRapidaEvent {
 
 class LoadConfigurationsUserInfo extends InfoRapidaEvent {}
 
-
 class EditLocationEvent extends InfoRapidaEvent {
   final int locationId;
   final String name;
@@ -88,9 +87,6 @@ class ToggleProductExpansionEvent extends InfoRapidaEvent {
   ToggleProductExpansionEvent(this.isExpanded);
 }
 
-
-
-
 class SortProductsEvent extends InfoRapidaEvent {
   final bool ascending;
   SortProductsEvent(this.ascending);
@@ -106,3 +102,10 @@ class SortLocationsEvent extends InfoRapidaEvent {
   final bool ascending;
   SortLocationsEvent(this.criteria, this.ascending);
 }
+
+class RemoveProductFromMassTransferEvent extends InfoRapidaEvent {
+  final int idProduct;
+  RemoveProductFromMassTransferEvent(this.idProduct);
+}
+
+class ResetProductsFiltersMassTransferEvent extends InfoRapidaEvent {}
