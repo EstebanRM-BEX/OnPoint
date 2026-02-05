@@ -193,3 +193,50 @@ class ResetProductsFiltersMassTransferFailure extends InfoRapidaState {
   final String error;
   ResetProductsFiltersMassTransferFailure(this.error);
 }
+
+class ChangeLocationIsOkState extends InfoRapidaState {
+  final bool isOk;
+  final bool isLocationDest;
+  ChangeLocationIsOkState(this.isOk, this.isLocationDest);
+}
+
+//*estado para validar campos
+class ValidateFieldsStateSuccess extends InfoRapidaState {
+  final bool isOk;
+  ValidateFieldsStateSuccess(this.isOk);
+}
+
+class ValidateFieldsStateError extends InfoRapidaState {
+  final String msg;
+  ValidateFieldsStateError(this.msg);
+}
+
+class ChangeProductOrderIsOkState extends InfoRapidaState {
+  final bool isOk;
+  ChangeProductOrderIsOkState(this.isOk);
+}
+
+class ChangeProductOrderIsOkFailure extends InfoRapidaState {
+  final String error;
+  ChangeProductOrderIsOkFailure(this.error);
+}
+
+class CreateTransferLoading extends InfoRapidaState {}
+
+class CreateTransferFailure extends InfoRapidaState {
+  final String error;
+  CreateTransferFailure(this.error);
+}
+
+class CreateTransferSuccess extends InfoRapidaState {
+  final RespondeCreateTransfer response;
+  CreateTransferSuccess(this.response);
+}
+
+class ActivateMassTransferState extends InfoRapidaState {
+  ActivateMassTransferState();
+}
+
+class ToggleProductMassTransferState extends InfoRapidaState {
+  ToggleProductMassTransferState();
+}

@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
 import 'package:wms_app/src/core/constans/colors.dart';
 import 'package:wms_app/src/presentation/providers/network/check_internet_connection.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
@@ -77,15 +78,15 @@ class _SearchLocationScreenState
                                       ),
                                       suffixIcon: IconButton(
                                           onPressed: () {
-                                            // bloc.searchControllerLocation
-                                            //     .clear();
-                                            // bloc.add(SearchLocationEvent(
-                                            //   '',
-                                            // ));
-                                            // bloc.add(
-                                            //     ShowKeyboardCreateTransferEvent(
-                                            //         false));
-                                            // FocusScope.of(context).unfocus();
+                                            bloc.searchControllerLocation
+                                                .clear();
+                                            bloc.add(SearchLocationEvent(
+                                              '',
+                                            ));
+                                            context.read<InfoRapidaBloc>().add(
+                                                ShowKeyboardInfoEvent(false,
+                                                    TextEditingController()));
+                                            FocusScope.of(context).unfocus();
                                           },
                                           icon: const Icon(
                                             Icons.close,
@@ -110,9 +111,9 @@ class _SearchLocationScreenState
                                             .contains("Zebra")
                                         ? null
                                         : () {
-                                            // bloc.add(
-                                            //     ShowKeyboardCreateTransferEvent(
-                                            //         true));
+                                            context.read<InfoRapidaBloc>().add(
+                                                ShowKeyboardInfoEvent(true,
+                                                    TextEditingController()));
                                           },
                                   ),
                                 ),
@@ -218,30 +219,37 @@ class _SearchLocationScreenState
                       child: ElevatedButton(
                         onPressed: () {
                           if (selectedIndex != null) {
-                            // // seleccionamos la ubicacion
-                            // final selectedLocation =
-                            //     bloc.ubicacionesFilters[selectedIndex!];
+                            // seleccionamos la ubicacion
+                            final selectedLocation =
+                                bloc.ubicacionesFilters[selectedIndex!];
+                            bloc.add(ShowKeyboardInfoEvent(
+                                false, TextEditingController()));
+//validamos que la ubicacion destino no sea la misma que la ubicacion de origen
+                            if (selectedLocation.id ==
+                                bloc.infoRapidaResult?.result?.id) {
+                              Get.snackbar(
+                                'Error',
+                                'La ubicacion de destino no puede ser la misma que la de origen',
+                                backgroundColor: Colors.white,
+                                colorText: primaryColorApp,
+                                icon: Icon(Icons.error, color: red),
+                              );
+                              return;
+                            }
 
-                            // //seleccionamos la ubicacion
-                            // bloc.add(ValidateFieldsEvent(
-                            //     field: widget.isLocationDest
-                            //         ? "locationDest"
-                            //         : "location",
-                            //     isOk: true));
-                            // bloc.add(ChangeLocationIsOkEvent(
-                            //     selectedLocation, widget.isLocationDest));
+                            bloc.add(ChangeLocationIsOkEvent(
+                                selectedLocation, widget.isLocationDest));
 
-                            // bloc.add(ShowKeyboardCreateTransferEvent(false));
-                            // FocusScope.of(context).unfocus();
+                            FocusScope.of(context).unfocus();
 
-                            // setState(() {
-                            //   selectedIndex == null;
-                            // });
+                            setState(() {
+                              selectedIndex == null;
+                            });
 
-                            // Navigator.pushReplacementNamed(
-                            //   context,
-                            //   'create-transfer',
-                            // );
+                            Navigator.pushReplacementNamed(
+                                context, 'create-mass-transfer', arguments: [
+                              context.read<InfoRapidaBloc>().infoRapidaResult
+                            ]);
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -318,9 +326,9 @@ class _AppBarInfo extends StatelessWidget {
                         IconButton(
                           icon: const Icon(Icons.arrow_back, color: white),
                           onPressed: () {
-                            // context.read<CreateTransferBloc>().add(
-                            //       ShowKeyboardCreateTransferEvent(false),
-                            //     );
+                            context.read<InfoRapidaBloc>().add(
+                                ShowKeyboardInfoEvent(
+                                    false, TextEditingController()));
                             Navigator.pushReplacementNamed(
                                 context, 'create-mass-transfer', arguments: [
                               context.read<InfoRapidaBloc>().infoRapidaResult

@@ -1,5 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get_connect/http/src/utils/utils.dart';
+import 'package:intl/intl.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
@@ -8,6 +10,9 @@ import 'package:wms_app/src/presentation/views/info%20rapida/models/info_rapida_
 import 'package:wms_app/src/presentation/views/info%20rapida/models/update_product_request.dart';
 import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
 import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
+import 'package:wms_app/src/presentation/views/transferencias/data/transferencias_repository.dart';
+import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/request_create_trasnfer_model.dart';
+import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/response_create_transfer_mode.dart';
 import 'package:wms_app/src/presentation/views/user/models/configuration.dart';
 
 part 'info_rapida_event.dart';
@@ -15,7 +20,9 @@ part 'info_rapida_state.dart';
 
 class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   final InfoRapidaRepository _infoRapidaRepository = InfoRapidaRepository();
-
+  //*repositorio
+  final TransferenciasRepository _transferenciasRepository =
+      TransferenciasRepository();
   InfoRapidaResult infoRapidaResult = InfoRapidaResult();
 
   String scannedValue1 = '';
@@ -46,6 +53,13 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
 
   bool isMassTransferActive = false;
   ResultUbicaciones? currentUbicationDest;
+  String scannedValue2 = ''; //ubicacion destino
+  String scannedValue3 = ''; //producto
+  Producto? currentProduct;
+  bool productIsOk = false;
+  bool isProductOk = true;
+  //date de inicio y fin de la transferencia
+  String dateTransferInicio = '';
 
   TextEditingController? controllerActivo;
 
@@ -64,7 +78,6 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
 
     //*evento para actualizar el valor del scan
     on<UpdateScannedValueEvent>(_onUpdateScannedValueEvent);
-    on<ClearScannedValueEvent>(_onClearScannedValueEvent);
 
     on<GetInfoRapida>(_onGetInfoRapida);
 
@@ -113,6 +126,205 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     //evento para resetear la lista de productos filtrados
     on<ResetProductsFiltersMassTransferEvent>(
         _onResetProductsFiltersMassTransferEvent);
+
+    //*metodo para validar la ubicacion
+    on<ChangeLocationIsOkEvent>(_onChangeLocationIsOkEvent);
+
+    on<ValidateFieldsEvent>(_onValidateFields);
+    on<ClearScannedValueTransferEvent>(_onClearScannedValueEvent);
+
+//*metodo para validar el producto
+    on<ChangeProductIsOkEvent>(_onChangeProductIsOkEvent);
+
+    //*evento para enviar y crear la transferencia
+    on<CreateNewMassTransferEvent>(_onCreateTransferEvent);
+
+    on<ActivateMassTransferEvent>(_onActivateMassTransferEvent);
+
+    on<ToggleProductMassTransferEvent>(_onToggleProductMassTransferEvent);
+  }
+
+  void _onToggleProductMassTransferEvent(
+      ToggleProductMassTransferEvent event, Emitter<InfoRapidaState> emit) {
+    print('isSelectedMassTransfer: ${event.isSelected}');
+    print('product id: ${event.product.id}');
+
+    //agregamos esos productos a la lista de productos para transferencia masiva
+    if (event.isSelected) {
+      //agregamos el producto a la lista
+      //validamos si el producto ya existe en la lista
+      if (!productosFiltersMassTransfer
+          .any((prod) => prod.id == event.product.id)) {
+        productosFiltersMassTransfer.add(event.product);
+      }
+    } else {
+      //removemos el producto de la lista
+      productosFiltersMassTransfer
+          .removeWhere((prod) => prod.id == event.product.id);
+    }
+    emit(ToggleProductMassTransferState());
+  }
+
+  void _onActivateMassTransferEvent(
+      ActivateMassTransferEvent event, Emitter<InfoRapidaState> emit) {
+    isMassTransferActive = event.activate;
+    if (event.activate) {
+      productosFiltersMassTransfer.clear();
+    }
+    emit(ActivateMassTransferState());
+  }
+
+  void _onCreateTransferEvent(
+      CreateNewMassTransferEvent event, Emitter<InfoRapidaState> emit) async {
+    try {
+      emit(CreateTransferLoading());
+
+      //obtenemos el id del operario
+      final userid = await PrefUtils.getUserId();
+
+      final request = CreateTransferRequest(
+        dateStart: dateTransferInicio,
+        dateEnd: DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+        idAlmacen: currentUbicationDest?.idWarehouse ?? 0,
+        idUbicacionOrigen: infoRapidaResult.result?.id ?? 0,
+        idUbicacionDestino: currentUbicationDest?.id ?? 0,
+        idOperario: userid,
+        fechaTransaccion:
+            DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+        listItems: productosFiltersMassTransfer
+            .map((product) => ListItem(
+                  idProducto: product.id ?? 0,
+                  cantidadEnviada: product.cantidad ?? 0,
+                  idLote: product.loteId ?? 0,
+                  timeLine: 2,
+                ))
+            .toList(),
+      );
+
+      final response =
+          await _transferenciasRepository.createTransfer(request, true);
+      if (response.result?.code == 200) {
+        //borramos todos los productos de la bd local de crear transferencia
+        await db.productCreateTransferRepository
+            .deleteAllProductsCreateTransfer();
+        //limpiamos la lista temporal
+        productosFiltersMassTransfer.clear();
+        //consultamos la informacion rapida de la ubicacion destino
+        add(GetInfoRapida(
+            currentUbicationDest?.id.toString() ?? '', true, false, false));
+        dateTransferInicio = '';
+        currentProduct = Producto();
+        scannedValue2 = '';
+        scannedValue3 = '';
+        isLocationDestOk = true;
+        locationDestIsOk = false;
+        productIsOk = false;
+        isProductOk = true;
+        currentUbicationDest = ResultUbicaciones();
+        productosFiltersMassTransfer.clear();
+        isMassTransferActive = false;
+
+        emit(CreateTransferSuccess(response));
+      } else {
+        emit(CreateTransferFailure(response.result?.msg ?? ""));
+      }
+    } catch (e, s) {
+      print("❌ Error en el CreateTransferEvent $e ->$s");
+      emit(CreateTransferFailure(e.toString()));
+    }
+  }
+
+  void _onChangeProductIsOkEvent(
+      ChangeProductIsOkEvent event, Emitter<InfoRapidaState> emit) async {
+    if (event.productIsOk) {
+      //Agregamos este producto a la lista de productos seleccionados para transferencia masiva(productosFiltersMassTransfer)
+
+//quiero validar si este producto ya existe en la lista de productos seleccionados para transferencia masiva
+      if (!productosFiltersMassTransfer
+          .any((prod) => prod.id == event.productSelect.id)) {
+        //el producto no existe en la lista, lo agregamos
+        currentProduct = event.productSelect;
+        productIsOk = event.productIsOk;
+        productosFiltersMassTransfer.add(event.productSelect);
+      } else {
+        //el producto ya existe en la lista
+        emit(ChangeProductOrderIsOkFailure(
+          'El producto ya se encuentra en la lista de transferencia masiva',
+        ));
+      }
+
+      emit(ChangeProductOrderIsOkState(
+        productIsOk,
+      ));
+    }
+  }
+
+//*evento para limpiar el valor del scan
+  void _onClearScannedValueEvent(
+      ClearScannedValueTransferEvent event, Emitter<InfoRapidaState> emit) {
+    try {
+      switch (event.scan) {
+        case 'info':
+          scannedValue1 = '';
+          emit(ClearScannedValueState());
+          break;
+        case 'product':
+          scannedValue3 = '';
+          emit(ClearScannedValueState());
+          break;
+
+        case 'locationDest':
+          scannedValue2 = '';
+          emit(ClearScannedValueState());
+          break;
+
+        default:
+          print('Scan type not recognized: ${event.scan}');
+      }
+      emit(ClearScannedValueState());
+    } catch (e, s) {
+      print("❌ Error en _onClearScannedValueEvent: $e, $s");
+    }
+  }
+
+  void _onValidateFields(
+      ValidateFieldsEvent event, Emitter<InfoRapidaState> emit) {
+    try {
+      switch (event.field) {
+        case 'locationDest':
+          isLocationDestOk = event.isOk;
+          break;
+
+        case 'product':
+          isProductOk = event.isOk;
+          break;
+      }
+      emit(ValidateFieldsStateSuccess(event.isOk));
+    } catch (e, s) {
+      emit(ValidateFieldsStateError('Error al validar campos'));
+      print("❌ Error en el ValidateFieldsEvent $e ->$s");
+    }
+  }
+
+  void _onChangeLocationIsOkEvent(
+      ChangeLocationIsOkEvent event, Emitter<InfoRapidaState> emit) async {
+    try {
+      if (isLocationDestOk) {
+        //valdiamos si es la ubicacion de destino
+        if (event.isLocationDest) {
+          currentUbicationDest = event.locationSelect;
+          locationDestIsOk = true;
+          add(SearchLocationEvent(''));
+          searchControllerLocation.clear();
+          emit(ChangeLocationIsOkState(
+            isLocationDestOk,
+            true,
+          ));
+        }
+      }
+    } catch (e, s) {
+      print("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
+    }
   }
 
   //metodo para resetear la lista de productos
@@ -122,9 +334,16 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     try {
       print('Reseteando la lista de productos filtrados');
       emit(ResetProductsFiltersMassTransferLoading());
-      productosFiltersMassTransfer = infoRapidaResult.result?.productos ?? [];
-      //borramos la informacion de la ubicacion destino
+      productosFiltersMassTransfer.clear();
+      isMassTransferActive = false;
       currentUbicationDest = ResultUbicaciones();
+      currentProduct = Producto();
+      scannedValue2 = '';
+      scannedValue3 = '';
+      isLocationDestOk = true;
+      locationDestIsOk = false;
+      productIsOk = false;
+      isProductOk = true;
       emit(ResetProductsFiltersMassTransferSuccess(
           productosFiltersMassTransfer));
     } catch (e, s) {
@@ -455,9 +674,6 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
 
       if (infoRapida.result?.code == 200) {
         infoRapidaResult = infoRapida.result!;
-        // create a copy of the list to avoid reference issues
-        productosFiltersMassTransfer =
-            List<Producto>.from(infoRapidaResult.result?.productos ?? []);
 
         emit(InfoRapidaLoaded(infoRapidaResult, infoRapida.result!.type!));
       } else {
@@ -470,7 +686,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
             error: infoRapida.result?.msg ?? 'Error desconocido'));
       }
 
-      add(ClearScannedValueEvent());
+      add(ClearScannedValueEvent('info'));
     } catch (e) {
       emit(InfoRapidaError());
     }
@@ -478,15 +694,22 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
 
   void _onUpdateScannedValueEvent(
       UpdateScannedValueEvent event, Emitter<InfoRapidaState> emit) {
-    scannedValue1 += event.scannedValue.trim();
-    print('scannedValue1: $scannedValue1');
-    emit(UpdateScannedValueState(scannedValue1));
-  }
+    switch (event.scan) {
+      case 'info':
+        scannedValue1 += event.scannedValue.trim();
+        print('scannedValue1: $scannedValue1');
+        break;
+      case 'locationDest':
+        scannedValue2 += event.scannedValue.trim();
+        print('scannedValue2: $scannedValue2');
+        break;
 
-  void _onClearScannedValueEvent(
-      ClearScannedValueEvent event, Emitter<InfoRapidaState> emit) {
-    scannedValue1 = '';
-    emit(ClearScannedValueState());
+      case 'product':
+        scannedValue3 += event.scannedValue.trim();
+        print('scannedValue3: $scannedValue3');
+        break;
+    }
+    emit(UpdateScannedValueState(scannedValue1));
   }
 
   void _onSortLocationsEvent(

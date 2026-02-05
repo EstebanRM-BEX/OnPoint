@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Para SystemNavigator
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/src/services/webSocket_service.dart';
 
 class SessionTimeoutManager extends StatefulWidget {
   final Widget child;
@@ -158,6 +159,17 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager> with Widg
         _loadingMessage = message;
         _isChecking = true; // Asegura que el diálogo se muestre
       });
+    }
+
+
+    // 1. 🔌 CERRAR WEBSOCKET
+    // Llamamos al método disconnect() que creamos en el paso anterior.
+    // Esto cierra el canal, resetea la suscripción y libera recursos.
+    try {
+      WebSocketService().disconnect(); 
+      print("🔌 WebSocket cerrado por inactividad.");
+    } catch (e) {
+      print("⚠️ Error al cerrar socket: $e");
     }
 
     // Ejecutamos tareas en paralelo para optimizar tiempo

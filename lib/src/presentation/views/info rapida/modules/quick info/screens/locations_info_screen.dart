@@ -259,20 +259,45 @@ class LocationInfoScreen extends StatelessWidget {
                                   color: white,
                                   elevation: 3,
                                   child: ListTile(
-                                    trailing: IconButton(
-                                      icon: Icon(Icons.arrow_forward_ios,
-                                          size: 20, color: primaryColorApp),
-                                      onPressed: () async {
-                                        getInfoProduct(
-                                            producto?.id.toString() ?? '',
-                                            context);
-                                      },
-                                    ),
-                                    onTap: () async {
-                                      getInfoProduct(
-                                          producto?.id.toString() ?? '',
-                                          context);
-                                    },
+                                    trailing:
+
+                                        //CheckBox para seleccionar productos para transferencia masiva
+
+                                        context
+                                                .read<InfoRapidaBloc>()
+                                                .isMassTransferActive
+                                            ? Checkbox(
+                                                value: context
+                                                    .read<InfoRapidaBloc>()
+                                                    .productosFiltersMassTransfer
+                                                    .any((p) =>
+                                                        p.id == producto?.id),
+                                                onChanged: (bool? value) {
+                                                  context
+                                                      .read<InfoRapidaBloc>()
+                                                      .add(
+                                                          ToggleProductMassTransferEvent(
+                                                              producto!,
+                                                              value ?? false));
+                                                },
+                                              )
+                                            : IconButton(
+                                                icon: Icon(
+                                                    Icons.arrow_forward_ios,
+                                                    size: 20,
+                                                    color: primaryColorApp),
+                                                onPressed: () async {
+                                                  getInfoProduct(
+                                                      producto?.id.toString() ??
+                                                          '',
+                                                      context);
+                                                },
+                                              ),
+                                    // onTap: () async {
+                                    //   getInfoProduct(
+                                    //       producto?.id.toString() ?? '',
+                                    //       context);
+                                    // },
                                     title: Text(
                                       producto?.producto ?? 'Sin nombre',
                                       style: TextStyle(
@@ -292,11 +317,72 @@ class LocationInfoScreen extends StatelessWidget {
                                               ? 'Sin barcode'
                                               : '${producto?.codigoBarras}',
                                         ),
+                                        ProductInfoRow(
+                                          title: 'Lote: ',
+                                          value: producto?.lote == null ||
+                                                  producto?.lote == ""
+                                              ? "Sin lote"
+                                              : "${producto?.lote}",
+                                          color: producto?.lote == null ||
+                                                  producto?.lote == ""
+                                              ? Colors.red
+                                              : black,
+                                        ),
+                                        //fecha de vencimiento
+                                        ProductInfoRow(
+                                          title: 'Caducidad :',
+                                          value: producto?.fechaVencimiento ==
+                                                      null ||
+                                                  producto?.fechaVencimiento ==
+                                                      ""
+                                              ? "Sin caducidad"
+                                              : "${producto?.fechaVencimiento}",
+                                          color: producto?.fechaVencimiento ==
+                                                      null ||
+                                                  producto?.fechaVencimiento ==
+                                                      ""
+                                              ? Colors.red
+                                              : black,
+                                        ),
                                       ],
                                     ),
                                   ));
                             })),
                   ),
+
+                  //btn de crear trasnferencia masiva
+                  if (context.read<InfoRapidaBloc>().isMassTransferActive)
+                    ElevatedButton(
+                        onPressed: () {
+                          if (context
+                              .read<InfoRapidaBloc>()
+                              .productosFiltersMassTransfer
+                              .isEmpty) {
+                            Get.snackbar(
+                              '360 Software Informa',
+                              'Debe seleccionar al menos un producto para realizar la transferencia masiva',
+                              backgroundColor: white,
+                              colorText: primaryColorApp,
+                              icon: const Icon(Icons.error, color: Colors.red),
+                            );
+                            return;
+                          }
+                          Navigator.pushReplacementNamed(
+                            context,
+                            'create-mass-transfer',
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: Size(size.width * 0.9, 30),
+                          backgroundColor: primaryColorApp,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: Text(
+                          "Crear transferencia masiva",
+                          style: TextStyle(color: white),
+                        ))
                 ],
               ),
             ),
@@ -355,6 +441,9 @@ class AppBar extends StatelessWidget {
                           false, TextEditingController()));
                       context
                           .read<InfoRapidaBloc>()
+                          .add(ResetProductsFiltersMassTransferEvent());
+                      context
+                          .read<InfoRapidaBloc>()
                           .add(GetListLocationsEvent());
                       Navigator.pushReplacementNamed(
                         context,
@@ -400,13 +489,10 @@ class AppBar extends StatelessWidget {
                               ShowKeyboardInfoEvent(
                                   false, TextEditingController()));
                         } else if (value == 'mass_transfer') {
-                          // context
-                          //     .read<InfoRapidaBloc>()
-                          //     .add(ActivateMassTransferEvent());
-                          Navigator.pushReplacementNamed(
-                            context,
-                            'create-mass-transfer',
-                          );
+                          context.read<InfoRapidaBloc>().add(
+                              ActivateMassTransferEvent(!context
+                                  .read<InfoRapidaBloc>()
+                                  .isMassTransferActive));
                         }
                       },
                       itemBuilder: (BuildContext context) {
@@ -430,7 +516,7 @@ class AppBar extends StatelessWidget {
                               ],
                             ),
                           ),
-                          const PopupMenuItem<String>(
+                          PopupMenuItem<String>(
                             value: 'mass_transfer',
                             child: Row(
                               children: [
@@ -440,7 +526,11 @@ class AppBar extends StatelessWidget {
                                   color: Colors.black54,
                                 ),
                                 SizedBox(width: 10),
-                                Text("Transferencia masiva"),
+                                Text(context
+                                        .read<InfoRapidaBloc>()
+                                        .isMassTransferActive
+                                    ? "Desactivar transferencia masiva"
+                                    : "Activar transferencia masiva"),
                               ],
                             ),
                           ),

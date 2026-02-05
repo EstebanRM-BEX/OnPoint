@@ -13,16 +13,17 @@ class GetInfoRapida extends InfoRapidaEvent {
 
 class UpdateScannedValueEvent extends InfoRapidaEvent {
   final String scannedValue;
-  UpdateScannedValueEvent(this.scannedValue);
+  final String scan;
+  UpdateScannedValueEvent(this.scannedValue, this.scan);
 }
 
 class ClearScannedValueEvent extends InfoRapidaEvent {
-  ClearScannedValueEvent();
+  final String scan;
+  ClearScannedValueEvent(this.scan);
 }
 
 class SearchLocationEvent extends InfoRapidaEvent {
   final String query;
-
   SearchLocationEvent(
     this.query,
   );
@@ -109,3 +110,44 @@ class RemoveProductFromMassTransferEvent extends InfoRapidaEvent {
 }
 
 class ResetProductsFiltersMassTransferEvent extends InfoRapidaEvent {}
+
+class ChangeLocationIsOkEvent extends InfoRapidaEvent {
+  final ResultUbicaciones locationSelect;
+  final bool isLocationDest;
+  ChangeLocationIsOkEvent(this.locationSelect, this.isLocationDest);
+}
+
+class ValidateFieldsEvent extends InfoRapidaEvent {
+  final String field;
+  final bool isOk;
+  ValidateFieldsEvent({required this.field, required this.isOk});
+}
+
+class ClearScannedValueTransferEvent extends InfoRapidaEvent {
+  final String scan;
+  ClearScannedValueTransferEvent(this.scan);
+}
+
+class ChangeProductIsOkEvent extends InfoRapidaEvent {
+  final Producto productSelect;
+  final bool productIsOk;
+
+  ChangeProductIsOkEvent(this.productSelect, this.productIsOk);
+}
+
+class  CreateNewMassTransferEvent extends InfoRapidaEvent {
+  CreateNewMassTransferEvent();
+}
+
+
+class ActivateMassTransferEvent extends InfoRapidaEvent {
+  final bool activate;
+  ActivateMassTransferEvent(this.activate);
+}
+
+class ToggleProductMassTransferEvent extends InfoRapidaEvent {
+  final Producto product;
+  final bool isSelected;
+
+  ToggleProductMassTransferEvent(this.product, this.isSelected);
+}

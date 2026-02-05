@@ -9,7 +9,6 @@ import 'package:wms_app/src/core/constans/colors.dart';
 import 'package:wms_app/src/core/routes/app_router.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
 import 'package:wms_app/src/api/http_response_handler.dart';
-import 'package:wms_app/src/core/utils/performance/jank_monitor.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/core/utils/widgets/error_widget.dart';
 import 'package:wms_app/src/presentation/blocs/keyboard/keyboard_bloc.dart';
@@ -53,19 +52,20 @@ final connectionStatusCubit =
 
 final WebSocketService webSocketService = WebSocketService();
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+void main() {
+  runZonedGuarded<Future<void>>(() async { 
+    WidgetsFlutterBinding.ensureInitialized();
+    await Preferences.init();
+    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-  await Preferences.init();
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+    // Configuración de errores de Flutter hacia Crashlytics
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
 
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-
-  runZonedGuarded<Future<void>>(() async {
+    // Configuración de pantalla roja de error (Opcional)
     ErrorWidget.builder = (FlutterErrorDetails details) => ErrorMessageWidget(
           title: 'Algo salió mal',
           message: 'No se pudo cargar la información...',
@@ -75,10 +75,13 @@ void main() async {
           },
         );
 
-    // webSocketService.connect();
+    // 5. Iniciar WebSocket (Usando el Singleton)
+    WebSocketService().connect(); 
 
     runApp(const MyApp());
+    
   }, (error, stack) {
+    // Zona de captura de errores globales
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
   });
 }

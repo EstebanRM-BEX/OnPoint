@@ -39,19 +39,19 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
 
   void validateBarcode(String value) {
     final bloc = context.read<InfoRapidaBloc>();
-    
+
     // ✅ CORRECCIÓN 1: Manejo seguro del texto escaneado
     // Aseguramos que no se procesen espacios en blanco vacíos
     String scan = value.trim();
-    
+
     // Si el valor viene vacío, intentamos usar el del BLoC, pero también lo limpiamos
     if (bloc.scannedValue1.trim().isNotEmpty) {
       scan = bloc.scannedValue1.trim();
     }
-    
+
     // ✅ CORRECCIÓN CRÍTICA: Si después de limpiar, el texto está vacío, NO hacemos nada.
     // Esto evita buscar "" en la base de datos, lo cual causa el error 'No element'.
-    if (scan.isEmpty) return; 
+    if (scan.isEmpty) return;
 
     _controllerSearch.text = '';
     bloc.add(GetInfoRapida(scan.toUpperCase(), false, false, false));
@@ -78,8 +78,7 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
             middleTextStyle: TextStyle(color: black, fontSize: 14),
             backgroundColor: Colors.white,
             radius: 10,
-            barrierDismissible:
-                false,
+            barrierDismissible: false,
             onWillPop: () async => false,
           );
         } else if (state is NeedUpdateVersionState) {
@@ -117,7 +116,7 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
           // ✅ CORRECCIÓN 2: Validación de Nulidad
           // Si el resultado es nulo, detenemos la ejecución para evitar el crash.
           if (state.infoRapidaResult == null) {
-             return;
+            return;
           }
 
           Future.microtask(() {
@@ -133,11 +132,11 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
             );
 
             // Guardamos el resultado en una variable local segura
-            final result = state.infoRapidaResult; 
-            
+            final result = state.infoRapidaResult;
+
             // Navegación segura (asumiendo que result no es nulo gracias al chequeo anterior)
             if (result!.type == 'product') {
-               Navigator.pushReplacementNamed(context, 'product-info');
+              Navigator.pushReplacementNamed(context, 'product-info');
             } else if (result.type == 'ubicacion') {
               Navigator.pushReplacementNamed(
                 context,
@@ -216,18 +215,23 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
                               if (event is RawKeyDownEvent) {
                                 if (event.logicalKey ==
                                     LogicalKeyboardKey.enter) {
-                                  
                                   // ✅ CORRECCIÓN 3: Evitar disparar validación si el escáner está vacío
                                   // Esto previene que al presionar Enter accidentalmente crashee la app.
-                                  if (context.read<InfoRapidaBloc>().scannedValue1.trim().isNotEmpty) {
-                                     validateBarcode(context.read<InfoRapidaBloc>().scannedValue1);
+                                  if (context
+                                      .read<InfoRapidaBloc>()
+                                      .scannedValue1
+                                      .trim()
+                                      .isNotEmpty) {
+                                    validateBarcode(context
+                                        .read<InfoRapidaBloc>()
+                                        .scannedValue1);
                                   }
-                                  
+
                                   return KeyEventResult.handled;
                                 } else {
                                   context.read<InfoRapidaBloc>().add(
                                       UpdateScannedValueEvent(
-                                          event.data.keyLabel));
+                                          event.data.keyLabel, 'info'));
                                   return KeyEventResult.handled;
                                 }
                               }

@@ -261,7 +261,7 @@ class Producto {
   String? producto;
   dynamic cantidad;
   dynamic codigoBarras;
-  dynamic lotId;
+  dynamic loteId;
   String? lote;
   String? unidadMedida;
   String? pedido;
@@ -270,13 +270,14 @@ class Producto {
   String? numeroCaja;
   String? nombreAlmacen;
   dynamic? operador;
+  String? fechaVencimiento;
 
   Producto({
     this.id,
     this.producto,
     this.cantidad,
     this.codigoBarras,
-    this.lotId,
+    this.loteId,
     this.lote,
     this.unidadMedida,
     this.pedido,
@@ -285,6 +286,7 @@ class Producto {
     this.numeroCaja,
     this.nombreAlmacen,
     this.operador,
+    this.fechaVencimiento,
   });
 
   factory Producto.fromMap(Map<String, dynamic> json) => Producto(
@@ -292,7 +294,7 @@ class Producto {
         producto: json["producto"],
         cantidad: json["cantidad"],
         codigoBarras: json["codigo_barras"],
-        lotId: json["lot_id"],
+        loteId: json["lote_id"],
         lote: json["lote"],
         unidadMedida: json["unidad_medida"],
         pedido: json["pedido"],
@@ -301,6 +303,7 @@ class Producto {
         numeroCaja: json["numero_caja"],
         nombreAlmacen: json["nombre_almacen"],
         operador: json["operador"],
+        fechaVencimiento: json["fecha_vencimiento"],
       );
 
   Map<String, dynamic> toMap() => {
@@ -308,7 +311,7 @@ class Producto {
         "producto": producto,
         "cantidad": cantidad,
         "codigo_barras": codigoBarras,
-        "lot_id": lotId,
+        "lote_id": loteId,
         "lote": lote,
         "unidad_medida": unidadMedida,
         "pedido": pedido,
@@ -317,5 +320,6 @@ class Producto {
         "numero_caja": numeroCaja,
         "nombre_almacen": nombreAlmacen,
         "operador": operador,
+        "fecha_vencimiento": fechaVencimiento,
       };
 }

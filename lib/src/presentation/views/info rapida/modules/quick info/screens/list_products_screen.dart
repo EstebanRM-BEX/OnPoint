@@ -170,6 +170,7 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
                           },
                         ),
                 ),
+
                 if (selectedIndex != null)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10),
