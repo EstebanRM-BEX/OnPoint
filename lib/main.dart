@@ -1,7 +1,7 @@
 // ignore_for_file: use_build_context_synchronously, depend_on_referenced_packages, avoid_print
 
 import 'dart:io';
-import 'dart:async'; // <--- AÑADIR ESTA IMPORTACIÓN
+import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'package:wms_app/firebase_options.dart';
@@ -9,6 +9,7 @@ import 'package:wms_app/src/core/constans/colors.dart';
 import 'package:wms_app/src/core/routes/app_router.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
 import 'package:wms_app/src/api/http_response_handler.dart';
+import 'package:wms_app/src/core/utils/WebSocketDataHandler.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/core/utils/widgets/error_widget.dart';
 import 'package:wms_app/src/presentation/blocs/keyboard/keyboard_bloc.dart';
@@ -53,7 +54,7 @@ final connectionStatusCubit =
 final WebSocketService webSocketService = WebSocketService();
 
 void main() {
-  runZonedGuarded<Future<void>>(() async { 
+  runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
     await Preferences.init();
     await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -76,10 +77,9 @@ void main() {
         );
 
     // 5. Iniciar WebSocket (Usando el Singleton)
-    WebSocketService().connect(); 
-
+    await WebSocketService().connect();
+    WebSocketDataHandler().initialize();
     runApp(const MyApp());
-    
   }, (error, stack) {
     // Zona de captura de errores globales
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
@@ -126,13 +126,10 @@ class MyApp extends StatelessWidget {
         ),
       ),
       builder: (context, navigator) {
-        // ⚡️ Inicialización corregida:
-        // Ya no necesitamos pasarle un 'context' porque usará el navigatorKey
         apiRequestService.initialize(
           unencodePath: '/api',
-          httpHandler: HttpResponseHandler(), 
+          httpHandler: HttpResponseHandler(),
         );
-
         return MultiBlocProvider(
           providers: [
             BlocProvider.value(value: connectionStatusCubit),
@@ -158,7 +155,6 @@ class MyApp extends StatelessWidget {
           child: SessionTimeoutManager(
             duration: const Duration(hours: 1),
             onSessionExpired: logOut,
-            // ⚠️ Protección extra: Si navigator es nulo, mostramos un contenedor vacío
             child: navigator ?? const SizedBox.shrink(),
           ),
         );

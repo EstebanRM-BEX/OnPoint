@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:io'; // Para exit(0)
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Para SystemNavigator
+
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/services/webSocket_service.dart';
@@ -22,13 +22,12 @@ class SessionTimeoutManager extends StatefulWidget {
   State<SessionTimeoutManager> createState() => _SessionTimeoutManagerState();
 }
 
-class _SessionTimeoutManagerState extends State<SessionTimeoutManager> with WidgetsBindingObserver {
-
-  
+class _SessionTimeoutManagerState extends State<SessionTimeoutManager>
+    with WidgetsBindingObserver {
   Timer? _timer;
   DateTime? _lastTimePaused;
-  bool _isChecking = false; 
-  String _loadingMessage = "Validando sesión..."; 
+  bool _isChecking = false;
+  String _loadingMessage = "Validando sesión...";
 
   @override
   void initState() {
@@ -52,14 +51,14 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager> with Widg
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       // Solo guardamos la hora de pausa si NO la hemos guardado ya
       if (_lastTimePaused == null) {
         _lastTimePaused = DateTime.now();
         _timer?.cancel();
       }
-    } 
-    else if (state == AppLifecycleState.resumed) {
+    } else if (state == AppLifecycleState.resumed) {
       _handleResume();
     }
   }
@@ -70,7 +69,7 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager> with Widg
     bool isLoggedIn = await PrefUtils.getIsLoggedIn();
     if (!isLoggedIn) {
       _lastTimePaused = null;
-      return; 
+      return;
     }
 
     // 2. Mostramos "Validando..." inmediatamente
@@ -105,8 +104,8 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager> with Widg
         await _performLogoutAndExit("Cerrando aplicación por seguridad...");
       } else {
         // --- CASO: NO EXPIRÓ ---
-        _lastTimePaused = null; 
-        _startTimer(); 
+        _lastTimePaused = null;
+        _startTimer();
         if (mounted) setState(() => _isChecking = false);
       }
     } else {
@@ -121,14 +120,19 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager> with Widg
   // ------------------------------------------------------------------------
   void _startTimer() async {
     _timer?.cancel();
-    
+
     // Si no hay sesión, no iniciamos nada.
-    if (!await PrefUtils.getIsLoggedIn()) return; 
+    if (!await PrefUtils.getIsLoggedIn()) return;
+
+    // Calculamos y mostramos cuándo expirará la sesión si no hay más actividad
+    final expirationTime = DateTime.now().add(widget.duration);
+    print(
+        "🔄 Interacción detectada. La sesión expirará a las: ${expirationTime.hour}:${expirationTime.minute}:${expirationTime.second}");
 
     _timer = Timer(widget.duration, () async {
       // Al terminar el tiempo, validamos de nuevo por seguridad
       if (!await PrefUtils.getIsLoggedIn()) return;
-      
+
       // --- CASO: EXPIRADO EN PANTALLA ---
       await _performLogoutAndExit("Cerrando aplicación por inactividad...");
     });
@@ -137,7 +141,7 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager> with Widg
   void _resetTimer() {
     if (!_isChecking) {
       _checkLoginAndSave(); // Guarda la hora para casos de muerte súbita
-      _startTimer(); 
+      _startTimer();
     }
   }
 
@@ -151,7 +155,7 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager> with Widg
   // ------------------------------------------------------------------------
   // LÓGICA DE CIERRE Y LIMPIEZA
   // ------------------------------------------------------------------------
-  
+
   /// Ejecuta el proceso de cierre visual y lógico
   Future<void> _performLogoutAndExit(String message) async {
     if (mounted) {
@@ -161,12 +165,11 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager> with Widg
       });
     }
 
-
     // 1. 🔌 CERRAR WEBSOCKET
     // Llamamos al método disconnect() que creamos en el paso anterior.
     // Esto cierra el canal, resetea la suscripción y libera recursos.
     try {
-      WebSocketService().disconnect(); 
+      WebSocketService().disconnect();
       print("🔌 WebSocket cerrado por inactividad.");
     } catch (e) {
       print("⚠️ Error al cerrar socket: $e");
@@ -174,15 +177,22 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager> with Widg
 
     // Ejecutamos tareas en paralelo para optimizar tiempo
     await Future.wait([
-        PrefUtils.clearSession(), // Borra datos de usuario
-        _clearMemoryCache(),      // Borra imágenes de RAM
-        Future.delayed(const Duration(seconds: 2)), // Tiempo de lectura UX
+      // PrefUtils.clearSession() se llamará en onSessionExpired (main.dart)
+      _clearMemoryCache(), // Borra imágenes de RAM
+      Future.delayed(const Duration(seconds: 2)), // Tiempo de lectura UX
     ]);
 
     _lastTimePaused = null;
-    
-    // Procedemos a matar la app
-    _closeApp();
+
+    // Procedemos a usar el callback para navegar al login
+    widget.onSessionExpired();
+
+    // Ocultar loading si seguimos montados (aunque probablemente navegamos)
+    if (mounted) {
+      setState(() {
+        _isChecking = false;
+      });
+    }
   }
 
   /// 🧹 Limpieza profunda de recursos visuales
@@ -192,26 +202,6 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager> with Widg
       PaintingBinding.instance.imageCache.clearLiveImages();
     } catch (e) {
       debugPrint("Error limpiando memoria: $e");
-    }
-  }
-
-  /// 💀 Cierre "Nuclear" para liberar RAM del dispositivo
-  void _closeApp() {
-    if (Platform.isAndroid) {
-      try {
-        // Cierre visual suave
-        SystemNavigator.pop(animated: true);
-        
-        // ⚠️ Forzar liberación de RAM matando el proceso después de la animación
-        Future.delayed(const Duration(milliseconds: 200), () {
-          exit(0); 
-        });
-      } catch (e) {
-        exit(0);
-      }
-    } else {
-      // iOS no permite cierre programático elegante, usamos exit(0)
-      exit(0); 
     }
   }
 
