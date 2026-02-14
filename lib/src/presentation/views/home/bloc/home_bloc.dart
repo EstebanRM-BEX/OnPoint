@@ -8,7 +8,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/home/data/home_repository.dart';
-import 'package:wms_app/src/presentation/views/home/domain/models/app_version_model.dart';
+import 'package:wms_app/src/presentation/views/home/data/models/app_version_model.dart';
 import 'package:wms_app/src/presentation/views/user/models/configuration.dart';
 import 'package:wms_app/src/services/webSocket_service.dart';
 part 'home_event.dart';

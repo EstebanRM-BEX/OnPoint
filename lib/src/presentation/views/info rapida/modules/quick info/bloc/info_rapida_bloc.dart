@@ -685,8 +685,14 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
         emit(InfoRapidaError(
             error: infoRapida.result?.msg ?? 'Error desconocido'));
       }
+      if (infoRapida.result?.code == 404) {
+        emit(InfoRapidaError(
+            error: infoRapida.result?.msg ?? 'Error desconocido'));
 
-      add(ClearScannedValueEvent('info'));
+        add(ClearScannedValueTransferEvent('info'));
+      }
+
+      add(ClearScannedValueTransferEvent('info'));
     } catch (e) {
       emit(InfoRapidaError());
     }

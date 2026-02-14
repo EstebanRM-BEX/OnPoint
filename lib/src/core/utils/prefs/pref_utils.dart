@@ -177,7 +177,7 @@ class PrefUtils {
 
   static Future<void> clearSession() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
-    
+
     // 1. Borramos la hora de actividad (CRÍTICO para que no haga loop infinito de logout)
     await preferences.remove('last_active_time');
 
@@ -191,9 +191,8 @@ class PrefUtils {
     await preferences.remove(PrefKeys.userId);
     await preferences.remove(PrefKeys.email);
     await preferences.remove(PrefKeys.rol);
-    
-    // NOTA: No borramos Enterprise ni datos de la PDA (Mac, Imei) 
+
+    // NOTA: No borramos Enterprise ni datos de la PDA (Mac, Imei)
     // porque esos deben persistir aunque el usuario cierre sesión.
   }
-
 }

@@ -753,7 +753,10 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       if (response.result?.code == 200) {
         add(FetchBatchWithProductsEvent(
             event.productsSeparate[0].batchId ?? 0, event.type));
-        emit(SubMuelleEditSusses('Submuelle asignado correctamente'));
+        emit(SubMuelleEditSusses(
+            '(${response.result?.result?.length ?? 0}) productos agregados al submuelle:\n' // Doble salto o dos puntos
+            '${event.muelle.completeName}\n' // Nombre en su propia línea
+            'correctamente'));
       } else {
         emit(SubMuelleEditFail('Error al asignar el submuelle'));
       }

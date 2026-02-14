@@ -159,15 +159,14 @@ class _SelectSubMuelleBottomSheetState
                                   isOccupied == null)
                               ? null
                               : () {
-                                  // Podrías guardar isOccupied en el bloc aquí si es necesario
                                   print(
                                       'Estado del submuelle: ${isOccupied == true ? "Ocupado" : "Libre"}');
 
                                   context.read<PickingPickBloc>().add(AssignSubmuelleEvent(
                                     context.read<PickingPickBloc>().filteredProducts.where((e) {
                                      return (e.isSeparate == 1) &&
-                                    (e.idLocationDest ==
-                                        context.read<PickingPickBloc>().pickWithProducts.pick?.idMuellePadre);
+                                    (e.locationDestId ==
+                                        context.read<PickingPickBloc>().pickWithProducts.pick?.muelle);
                                       }).toList(),
                                     context.read<PickingPickBloc>().subMuelleSelected,
                                     isOccupied == null ? false : isOccupied!,

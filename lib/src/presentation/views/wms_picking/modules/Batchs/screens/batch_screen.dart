@@ -418,11 +418,12 @@ class _BatchDetailScreenState extends State<BatchScreen>
                       //*estado cuando el muelle fue editado
                       if (state is SubMuelleEditSusses) {
                         //mostramos alerta
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          duration: const Duration(milliseconds: 1000),
-                          content: Text(state.message),
-                          backgroundColor: Colors.green[200],
-                        ));
+                        Get.snackbar("360 Software Informa", state.message,
+                            backgroundColor: white,
+                            colorText: primaryColorApp,
+                            duration: const Duration(seconds: 3),
+                            icon:
+                                Icon(Icons.check_circle, color: Colors.green));
                       }
 
                       if (state is SubMuelleEditFail) {
@@ -691,9 +692,9 @@ class _BatchDetailScreenState extends State<BatchScreen>
                                   productsOk:
                                       batchBloc.filteredProducts.where((e) {
                                 return (e.isSeparate == 1) &&
-                                    (e.idLocationDest ==
-                                        batchBloc.batchWithProducts.batch
-                                            ?.idMuellePadre);
+                                    (e.locationDestId ==
+                                        batchBloc
+                                            .batchWithProducts.batch?.muelle);
                               }).toList()),
                               const Spacer(),
                               Padding(
@@ -703,11 +704,11 @@ class _BatchDetailScreenState extends State<BatchScreen>
                                     onPressed: batchBloc.filteredProducts
                                             .where((e) {
                                               return (e.isSeparate == 1) &&
-                                                  (e.idLocationDest ==
+                                                  (e.locationDestId ==
                                                       batchBloc
                                                           .batchWithProducts
                                                           .batch
-                                                          ?.idMuellePadre);
+                                                          ?.muelle);
                                             })
                                             .toList()
                                             .isEmpty

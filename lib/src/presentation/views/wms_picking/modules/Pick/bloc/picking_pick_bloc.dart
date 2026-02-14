@@ -271,7 +271,6 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
           default:
             return 0;
         }
-
       });
 
       this.listOfPickFiltered = sortedList;
@@ -1324,7 +1323,10 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       );
       if (response.result?.code == 200) {
         add(FetchPickWithProductsEvent(event.productsSeparate[0].batchId ?? 0));
-        emit(SubMuelleEditSusses('Submuelle asignado correctamente'));
+        emit(SubMuelleEditSusses(
+            '(${response.result?.result?.length ?? 0}) productos agregados al submuelle:\n' // Doble salto o dos puntos
+            '${event.muelle.completeName}\n' // Nombre en su propia línea
+            'correctamente'));
       } else {
         emit(SubMuelleEditFail('Error al asignar el submuelle'));
       }

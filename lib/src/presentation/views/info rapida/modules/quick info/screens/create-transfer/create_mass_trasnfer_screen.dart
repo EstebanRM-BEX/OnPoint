@@ -405,99 +405,20 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Row(
-                                children: [
-                                  Text('Nombre: ',
-                                      style: TextStyle(
-                                          color: primaryColorApp,
-                                          fontSize: 14)),
-                                  Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        context
-                                                .read<InfoRapidaBloc>()
-                                                .infoRapidaResult
-                                                .result
-                                                ?.nombre ??
-                                            '',
-                                        style: TextStyle(
-                                            color: black, fontSize: 14),
-                                      )),
-                                ],
-                              ),
+                              child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    context
+                                            .read<InfoRapidaBloc>()
+                                            .infoRapidaResult
+                                            .result
+                                            ?.nombreCompleto ??
+                                        'Sin nombre ',
+                                    style: TextStyle(
+                                        color: black, fontSize: 14),
+                                  )),
                             ),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Row(
-                                children: [
-                                  Text('Ubicación padre: ',
-                                      style: TextStyle(
-                                          color: primaryColorApp,
-                                          fontSize: 14)),
-                                  Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        context
-                                                .read<InfoRapidaBloc>()
-                                                .infoRapidaResult
-                                                .result
-                                                ?.ubicacionPadre ??
-                                            '',
-                                        style: TextStyle(
-                                            color: black, fontSize: 14),
-                                      )),
-                                ],
-                              ),
-                            ),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Row(
-                                children: [
-                                  Text('Barcode: ',
-                                      style: TextStyle(
-                                          color: primaryColorApp,
-                                          fontSize: 14)),
-                                  Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        context
-                                                .read<InfoRapidaBloc>()
-                                                .infoRapidaResult
-                                                .result
-                                                ?.codigoBarras ??
-                                            '',
-                                        style: TextStyle(
-                                            color: black, fontSize: 14),
-                                      )),
-                                ],
-                              ),
-                            ),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Row(
-                                children: [
-                                  Text('Tipo de ubicación: ',
-                                      style: TextStyle(
-                                          color: primaryColorApp,
-                                          fontSize: 14)),
-                                  Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        context
-                                                .read<InfoRapidaBloc>()
-                                                .infoRapidaResult
-                                                .result
-                                                ?.tipoUbicacion ??
-                                            '',
-                                        style: TextStyle(
-                                            color: black, fontSize: 14),
-                                      )),
-                                ],
-                              ),
-                            ),
+                          
                             const SizedBox(height: 5),
                           ],
                         )),

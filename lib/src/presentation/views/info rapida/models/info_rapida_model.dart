@@ -97,6 +97,7 @@ class InfoResult {
   dynamic? numeroProductos;
 
   String? nombreAlmacen;
+  String? nombreCompleto;
 
   InfoResult({
     this.id,
@@ -122,6 +123,7 @@ class InfoResult {
     this.totalProductos,
     this.numeroProductos,
     this.nombreAlmacen,
+    this.nombreCompleto,
   });
 
   factory InfoResult.fromMap(Map<String, dynamic> json) => InfoResult(
@@ -156,6 +158,7 @@ class InfoResult {
         totalProductos: json["total_productos"],
         numeroProductos: json["numero_productos"],
         nombreAlmacen: json["nombre_almacen"],
+        nombreCompleto: json["nombre_completo"],
       );
 
   Map<String, dynamic> toMap() => {
@@ -185,6 +188,7 @@ class InfoResult {
         "total_productos": totalProductos,
         "numero_productos": numeroProductos,
         "nombre_almacen": nombreAlmacen,
+        "nombre_completo": nombreCompleto,
       };
 }
 
@@ -203,6 +207,7 @@ class Ubicacion {
   String? fechaCaducidad;
   String? fechaEntrada;
   String? unidadMedida;
+  
 
   Ubicacion({
     this.idMove,

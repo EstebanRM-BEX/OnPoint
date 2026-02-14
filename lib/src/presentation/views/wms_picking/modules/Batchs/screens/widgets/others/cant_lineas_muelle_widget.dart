@@ -30,7 +30,7 @@ class CantLineasMuelle extends StatelessWidget {
                     )),
                     content: SizedBox(
                       width: size.width * 0.8, // Ancho máximo fijo (opcional)
-                      height: size.height * 0.3,
+                      height: size.height * 0.4,
                       child: ListView.builder(
                         itemCount: productsOk.length,
                         itemBuilder: (context, index) {
@@ -50,14 +50,14 @@ class CantLineasMuelle extends StatelessWidget {
                                   Row(
                                     children: [
                                       Text(
-                                        "Cantidad: ${productsOk[index].quantity}",
+                                        "Cant: ${productsOk[index].quantity}",
                                         style: TextStyle(
                                             fontSize: 12,
                                             color: primaryColorApp),
                                       ),
                                       const Spacer(),
                                       Text(
-                                        "Separada: ${productsOk[index].quantitySeparate}",
+                                        "Sepa: ${productsOk[index].quantitySeparate}",
                                         style: TextStyle(
                                             fontSize: 12,
                                             color: primaryColorApp),

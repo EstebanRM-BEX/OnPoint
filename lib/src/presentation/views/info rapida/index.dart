@@ -54,9 +54,10 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
     if (scan.isEmpty) return;
 
     _controllerSearch.text = '';
+    print('Valor escaneado para validar: "$scan"');
     bloc.add(GetInfoRapida(scan.toUpperCase(), false, false, false));
-  }
 
+  }
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<InfoRapidaBloc, InfoRapidaState>(

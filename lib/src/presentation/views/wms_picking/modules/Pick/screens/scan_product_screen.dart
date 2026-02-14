@@ -703,12 +703,12 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                         }
                         //*estado cuando el muelle fue editado
                         if (state is SubMuelleEditSusses) {
-                          //mostramos alerta
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            duration: const Duration(milliseconds: 1000),
-                            content: Text(state.message),
-                            backgroundColor: Colors.green[200],
-                          ));
+                      
+                           Get.snackbar("360 Software Informa", state.message,
+                              backgroundColor: white,
+                              colorText: primaryColorApp,
+                              duration: const Duration(seconds: 3),
+                              icon: Icon(Icons.check_circle, color: Colors.green));
                         }
 
                         if (state is SubMuelleEditFail) {
@@ -1599,6 +1599,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                   ),
                 ),
                 //todo muelle multiple
+          
                 Visibility(
                   visible:
                       batchBloc.configurations.result?.result?.muelleOption ==
@@ -1623,7 +1624,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                   return (e.isSeparate == 1) &&
                                       (e.locationDestId ==
                                           batchBloc.pickWithProducts.pick
-                                              ?.idMuellePadre);
+                                              ?.muelle);
                                 }).toList()),
                                 const Spacer(),
                                 Padding(
@@ -1637,7 +1638,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                                         batchBloc
                                                             .pickWithProducts
                                                             .pick
-                                                            ?.idMuellePadre);
+                                                            ?.muelle);
                                               })
                                               .toList()
                                               .isEmpty
@@ -1732,7 +1733,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                                             batchBloc
                                                                 .quantitySelected ??
                                                         0.0)
-                                                     .toStringAsFixed(2)
+                                                    .toStringAsFixed(2)
                                                 : '0.0'),
                                             style: TextStyle(
                                               color: _getColorForDifference(

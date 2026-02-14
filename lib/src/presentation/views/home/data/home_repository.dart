@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
 import 'package:wms_app/src/core/constans/colors.dart';
-import 'package:wms_app/src/presentation/views/home/domain/models/app_version_model.dart';
+import 'package:wms_app/src/presentation/views/home/data/models/app_version_model.dart';
 
 class HomeRepository {
   Future<AppVersion> getAppVersion() async {
@@ -31,9 +31,9 @@ class HomeRepository {
         // Decodifica la respuesta JSON a un mapa
         if (jsonResponse.containsKey('result')) {
           if (jsonResponse['result']['code'] == 400) {
-             return AppVersion(
+            return AppVersion(
               message: jsonResponse['result']['msg'] ?? 'Error desconocido',
-             );
+            );
           } else if (jsonResponse['result']['code'] == 200) {
             return AppVersion.fromMap(jsonDecode(response.body));
           }

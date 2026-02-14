@@ -13,8 +13,7 @@ import 'package:wms_app/src/presentation/views/user/models/configuration.dart';
 import 'package:wms_app/src/presentation/views/user/models/response_pda_register_model.dart';
 
 class UserRepository {
-  Future<Configurations> configurations(
-  ) async {
+  Future<Configurations> configurations() async {
     try {
       var connectivityResult = await Connectivity().checkConnectivity();
 
@@ -78,6 +77,7 @@ class UserRepository {
     }
     return Configurations();
   }
+
   Future<List<ResultUbicaciones>> ubicaciones() async {
     try {
       var connectivityResult = await Connectivity().checkConnectivity();
@@ -134,15 +134,15 @@ class UserRepository {
             return [];
           }
         }
-      } 
+      }
     } catch (e, s) {
       print('Error en ubicaciones USER: $e $s');
     }
     return [];
   }
 
-  Future<ResponsePdaRegister> sendIdPda(
-      String deviceId, String deviceName, String deviceModel, String versionApp) async {
+  Future<ResponsePdaRegister> sendIdPda(String deviceId, String deviceName,
+      String deviceModel, String versionApp) async {
     try {
       var connectivityResult = await Connectivity().checkConnectivity();
 
@@ -160,7 +160,7 @@ class UserRepository {
             "device_id": deviceId,
             "device_name": deviceName,
             "device_model": deviceModel,
-            "version_app" : versionApp, // Cambia esto según tu versión de la app
+            "version_app": versionApp, // Cambia esto según tu versión de la app
           }
         },
         isunecodePath: true,
@@ -172,7 +172,6 @@ class UserRepository {
 
         if (jsonResponse.containsKey('result')) {
           if (jsonResponse['result']['code'] == 200) {
-
             if (jsonResponse['result'].containsKey('data')) {
               return ResponsePdaRegister.fromMap(jsonResponse);
             } else {
