@@ -78,3 +78,23 @@ class UserLocationsError extends UserState {
   @override
   List<Object?> get props => [message];
 }
+
+class DeviceInfoLoaded extends UserState {
+  final DeviceInfo deviceInfo;
+
+  const DeviceInfoLoaded({required this.deviceInfo});
+
+  @override
+  List<Object?> get props => [deviceInfo];
+}
+
+class DeviceInfoLoading extends UserState {}
+
+class DeviceInfoError extends UserState {
+  final String message;
+
+  const DeviceInfoError(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}

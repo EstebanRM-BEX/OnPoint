@@ -108,12 +108,13 @@ class ConfigurationsRepository {
       );
 
       if (maps.isNotEmpty) {
-        return UserConfigurationModel.fromJson(maps.first);
+        // ✅ Usar _mapFromDB para convertir correctamente los datos de SQLite
+        return _mapFromDB(maps.first);
       } else {
         return null;
       }
     } catch (e, s) {
-      print("Error fetching configuration: $e => $s");
+      print("❌ Error fetching configuration: $e => $s");
       return null;
     }
   }
@@ -208,8 +209,8 @@ class ConfigurationsRepository {
   }
 
   // Maps DB Map -> Object
-  UserConfiguration _mapFromDB(Map<String, dynamic> map) {
-    return UserConfiguration(
+  UserConfigurationModel _mapFromDB(Map<String, dynamic> map) {
+    return UserConfigurationModel(
       result: UserConfigurationResultModel(
         code: 200,
         result: UserProfileModel(

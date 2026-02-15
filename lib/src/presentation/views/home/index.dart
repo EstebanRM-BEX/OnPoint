@@ -5,7 +5,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/src/core/constans/colors.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/src/core/utils/widgets/dialog_dispositivo_no_autorizado_widget.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
 import 'package:wms_app/src/presentation/views/home/widgets/background.dart';
@@ -96,8 +95,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           },
         );
 
-        // // 2. Disparar evento de carga
-        // context.read<UserBloc>().add(LoadInfoDeviceEventUser());
+        // 2. Disparar evento de carga
+        context.read<UserBloc>().add(LoadInfoDeviceEventUser());
 
         // 3. Cierre asíncrono seguro
         Future.delayed(const Duration(seconds: 1), () {
@@ -126,6 +125,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         return false;
       },
 
+      // 1. Segundo Listener: HomeBloc (Hijo del primero)
       child: BlocListener<HomeBloc, HomeState>(
         listener: (context, state) {
           print(" ❤️‍🔥 STATE: $state");
@@ -151,8 +151,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         // 3. Child Visual: RefreshIndicator y Scaffold
         child: RefreshIndicator(
           onRefresh: () async {
+            // 1. Validar si el widget sigue montado antes de hacer nada
             if (!context.mounted) return;
 
+            // mostramos dialogo
             showDialog(
               context: context,
               barrierDismissible: false,
@@ -168,6 +170,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             // pero aquí está bien si validamos el contexto.
             context.read<WMSPickingBloc>().add(LoadAllNovedades(context));
             context.read<UserBloc>().add(LoadUserLocationsEvent());
+            context.read<UserBloc>().add(LoadInfoDeviceEventUser());
 
             // esperamos 2 segundos
             await Future.delayed(const Duration(seconds: 2));
@@ -426,6 +429,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     children: [
                                       GestureDetector(
                                         onTap: () async {
+                                          context
+                                              .read<UserBloc>()
+                                              .add(LoadInfoDeviceEventUser());
                                           final String rol =
                                               await PrefUtils.getUserRol();
 
@@ -468,6 +474,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       ),
                                       GestureDetector(
                                         onTap: () async {
+                                          context
+                                              .read<UserBloc>()
+                                              .add(LoadInfoDeviceEventUser());
                                           final String rol =
                                               await PrefUtils.getUserRol();
 
@@ -511,6 +520,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       ),
                                       GestureDetector(
                                         onTap: () async {
+                                          context
+                                              .read<UserBloc>()
+                                              .add(LoadInfoDeviceEventUser());
                                           final rol = context
                                               .read<HomeBloc>()
                                               .userRol; // Obtenemos el rol
@@ -548,6 +560,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     children: [
                                       GestureDetector(
                                         onTap: () async {
+                                          context
+                                              .read<UserBloc>()
+                                              .add(LoadInfoDeviceEventUser());
                                           final rol = context
                                               .read<HomeBloc>()
                                               .userRol; // Obtenemos el rol
@@ -762,6 +777,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       ),
                                       GestureDetector(
                                         onTap: () async {
+                                          context
+                                              .read<UserBloc>()
+                                              .add(LoadInfoDeviceEventUser());
                                           //cargamos las ubicaciones
                                           context
                                               .read<InfoRapidaBloc>()

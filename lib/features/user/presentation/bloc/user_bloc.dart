@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
+import 'package:wms_app/src/core/utils/get_mac_utils.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../domain/entities/device_info.dart';
 import '../../domain/entities/user_configuration.dart';
@@ -10,6 +11,10 @@ import '../../domain/usecases/get_user_locations.dart';
 import '../../domain/usecases/register_device.dart';
 import 'user_event.dart';
 import 'user_state.dart';
+import '../../../../src/core/utils/prefs/pref_utils.dart';
+import '../../../../src/presentation/providers/db/database.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 export 'user_event.dart';
 export 'user_state.dart';
@@ -30,6 +35,41 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     on<LoadUserInfoEvent>(_onLoadUserInfo);
     on<RegisterDeviceEvent>(_onRegisterDevice);
     on<LoadUserLocationsEvent>(_onLoadUserLocations);
+    on<LoadInfoDeviceEventUser>(_onLoadInfoDeviceUser);
+  }
+
+  Future<void> _onLoadInfoDeviceUser(
+    LoadInfoDeviceEventUser event,
+    Emitter<UserState> emit,
+  ) async {
+    emit(UserLoading());
+    //cargamos la informacion del dispositivo
+    DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
+    AndroidDeviceInfo androidInfo = await deviceInfoPlugin.androidInfo;
+    String modelo = androidInfo.model;
+    String fabricante = androidInfo.manufacturer;
+    String mac =
+        (await DeviceInfoCustom.getMacAddress()) ?? ''; // mac del dispositivo
+    String imei =
+        (await DeviceInfoCustom.getImei()) ?? ''; // imei del dispositivo
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+
+    //REGISTRAMOS LOS DATOS DEL DISPOSITIVO
+    await PrefUtils.setMacPDA(mac == 'unknown' ? '' : mac);
+    await PrefUtils.setImeiPDA(imei == 'unknown' ? '' : imei);
+    await PrefUtils.setModeloPDA(modelo);
+    await PrefUtils.setFabricantePDA(fabricante);
+
+    emit(DeviceInfoLoaded(
+        deviceInfo: DeviceInfo(
+      model: modelo,
+      version: androidInfo.version.release,
+      manufacturer: fabricante,
+      mac: mac,
+      imei: imei,
+      appVersion: packageInfo.version,
+      deviceId: androidInfo.id,
+    )));
   }
 
   Future<void> _onLoadUserInfo(
@@ -65,6 +105,21 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     if (errorMessage != null) {
       emit(UserError(errorMessage!));
       return;
+    }
+
+    // 2.1. Save Configuration to Local Database
+    if (config != null) {
+      try {
+        final userId = config!.result?.result?.id;
+        if (userId != null) {
+          await DataBaseSqlite()
+              .configurationsRepository
+              .insertConfiguration(config!, userId);
+          print('✅ Configuraciones guardadas en BD local');
+        }
+      } catch (e) {
+        print('⚠️ Error guardando configuraciones en BD: $e');
+      }
     }
 
     // 3. Get Locations
