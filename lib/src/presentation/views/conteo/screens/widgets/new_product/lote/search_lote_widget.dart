@@ -14,7 +14,7 @@ import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_mod
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart';
 
-import 'package:wms_app/src/presentation/views/user/screens/bloc/user_bloc.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';

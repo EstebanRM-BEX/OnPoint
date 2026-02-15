@@ -9,8 +9,8 @@ import 'package:wms_app/src/core/utils/vibrate_utils.dart';
 import 'package:wms_app/src/presentation/providers/network/check_internet_connection.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
-import 'package:wms_app/src/presentation/views/user/screens/bloc/user_bloc.dart';
-import 'package:wms_app/src/presentation/views/user/screens/widgets/dialog_info_widget.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
+import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/response_pick_model.dart';
@@ -281,8 +281,7 @@ class IndexListPickDoneScreen extends StatelessWidget {
 
                                     Navigator.pushReplacementNamed(
                                         context, 'detail-pick-done',
-                                        arguments: [isFromPick]
-                                        );
+                                        arguments: [isFromPick]);
                                   },
                                   child: Card(
                                     color: batch.isSeparate == 1

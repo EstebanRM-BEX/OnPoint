@@ -19,7 +19,7 @@ import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-i
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/screens/widgets/location/location_card_widget.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/screens/widgets/others/dropdowbutton_widget.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/screens/widgets/product/product_widget.dart';
-import 'package:wms_app/src/presentation/views/user/screens/bloc/user_bloc.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';

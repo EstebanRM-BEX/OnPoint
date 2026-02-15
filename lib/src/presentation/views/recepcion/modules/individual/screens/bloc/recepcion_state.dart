@@ -7,7 +7,9 @@ final class RecepcionInitial extends RecepcionState {}
 
 //estados para obtener todas las orndes de compras
 class FetchOrdenesCompraLoading extends RecepcionState {}
+
 class NeedUpdateVersionState extends RecepcionState {}
+
 class FetchOrdenesCompraSuccess extends RecepcionState {
   final List<ResultEntrada> ordenesCompra;
   FetchOrdenesCompraSuccess(this.ordenesCompra);
@@ -138,7 +140,7 @@ class ChangeLoteOrderIsOkState extends RecepcionState {
 }
 
 class ConfigurationLoadedOrder extends RecepcionState {
-  final Configurations configurations;
+  final UserConfigurationModel configurations;
 
   ConfigurationLoadedOrder(this.configurations);
 }
@@ -391,9 +393,8 @@ class ProductExpansionToggled extends RecepcionState {
   ProductExpansionToggled(this.isExpanded);
 }
 
-
-
 class ViewProductImageLoading extends RecepcionState {}
+
 class ViewProductImageSuccess extends RecepcionState {
   final String imageUrl;
   ViewProductImageSuccess(this.imageUrl);

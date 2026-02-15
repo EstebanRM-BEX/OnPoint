@@ -75,7 +75,7 @@ class ClearScannedValueState extends ConteoState {}
 class ConfigurationLoading extends ConteoState {}
 
 class ConfigurationPickingLoaded extends ConteoState {
-  final Configurations configurations;
+  final UserConfigurationModel configurations;
 
   ConfigurationPickingLoaded(this.configurations);
 }

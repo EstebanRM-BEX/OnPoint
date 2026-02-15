@@ -132,7 +132,7 @@ class PickingOkLoading extends BatchState {}
 class ConfigurationLoading extends BatchState {}
 
 class ConfigurationPickingLoaded extends BatchState {
-  final Configurations configurations;
+  final UserConfigurationModel configurations;
 
   ConfigurationPickingLoaded(this.configurations);
 }
@@ -176,6 +176,7 @@ class SubMuelleEditSusses extends BatchState {
   final String message;
   SubMuelleEditSusses(this.message);
 }
+
 class SubMuelleOcupadoError extends BatchState {
   final String error;
   SubMuelleOcupadoError(this.error);
@@ -248,7 +249,6 @@ class TimeSeparateError extends BatchState {
   TimeSeparateError(this.msg);
 }
 
-
 class MuellesLoadingState extends BatchState {}
 
 class MuellesLoadedState extends BatchState {
@@ -267,6 +267,7 @@ class LoadSelectedProductState extends BatchState {
 }
 
 class ViewProductImageLoading extends BatchState {}
+
 class ViewProductImageSuccess extends BatchState {
   final String imageUrl;
   ViewProductImageSuccess(this.imageUrl);

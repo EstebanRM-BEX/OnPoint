@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
-import 'package:wms_app/src/presentation/views/user/screens/bloc/user_bloc.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 
 class BuildBarcodeInputField extends StatelessWidget {
   final DevolucionesBloc devolucionesBloc;

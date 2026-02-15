@@ -13,7 +13,7 @@ import 'package:wms_app/src/presentation/providers/network/check_internet_connec
 import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_start_picking_widget.dart';
-import 'package:wms_app/src/presentation/views/user/screens/widgets/dialog_info_widget.dart';
+import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/response_packing_pedido_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
@@ -282,247 +282,235 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                                     },
                                     itemBuilder: (BuildContext context) {
                                       final currentKey = bloc.currentFilterKey;
-                                  // 2. Definimos el color de resaltado (Naranja o tu PrimaryColor)
-                                        final Color activeColor = primaryColorApp; // O usa primaryColorApp
-                                        final Color inactiveColor =
-                                            Colors.black;
+                                      // 2. Definimos el color de resaltado (Naranja o tu PrimaryColor)
+                                      final Color activeColor =
+                                          primaryColorApp; // O usa primaryColorApp
+                                      final Color inactiveColor = Colors.black;
 
-                                     TextStyle getStyle(String key) {
-                                          final isSelected = currentKey == key;
-                                          return TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: isSelected
-                                                ? FontWeight.bold
-                                                : FontWeight.normal,
-                                            color: isSelected
-                                                ? activeColor
-                                                : inactiveColor,
-                                          );
-                                        }
-
-                                        // 4. Icono seleccionado vs normal
-                                        Color getIconColor(String key) {
-                                          return currentKey == key
+                                      TextStyle getStyle(String key) {
+                                        final isSelected = currentKey == key;
+                                        return TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                          color: isSelected
                                               ? activeColor
-                                              : Colors.grey;
-                                        }
+                                              : inactiveColor,
+                                        );
+                                      }
 
-                                    return <PopupMenuEntry<String>>[
-                                          // --- SECCIÓN PRIORIDAD ---
-                                          const PopupMenuItem<String>(
-                                            enabled: false,
-                                            height: 30,
-                                            child: Text('PRIORIDAD',
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 12,
-                                                    color: Colors.grey)),
-                                          ),
-                                          PopupMenuItem<String>(
-                                            value: 'priority_high',
-                                            height: 40,
-                                            child: Row(children: [
-                                              Icon(Icons.warning,
-                                                  size: 16,
-                                                  color: currentKey ==
-                                                          'priority_high'
-                                                      ? Colors.red
-                                                      : Colors
-                                                          .grey), // Rojo si está seleccionado, o siempre rojo si prefieres
-                                              SizedBox(width: 8),
-                                              Text('Alta primero',
-                                                  style: getStyle(
-                                                      'priority_high')),
-                                              if (currentKey ==
-                                                  'priority_high') ...[
-                                                Spacer(),
-                                                Icon(Icons.check,
-                                                    size: 15,
-                                                    color: activeColor)
-                                              ] // Check visual
-                                            ]),
-                                          ),
-                                          PopupMenuItem<String>(
-                                            value: 'priority_normal',
-                                            height: 40,
-                                            child: Row(children: [
-                                              Icon(Icons.check_circle,
-                                                  size: 16,
-                                                  color: getIconColor(
-                                                      'priority_normal')),
-                                              SizedBox(width: 8),
-                                              Text('Normal primero',
-                                                  style: getStyle(
-                                                      'priority_normal')),
-                                              if (currentKey ==
-                                                  'priority_normal') ...[
-                                                Spacer(),
-                                                Icon(Icons.check,
-                                                    size: 15,
-                                                    color: activeColor)
-                                              ]
-                                            ]),
-                                          ),
-                                          const PopupMenuDivider(),
+                                      // 4. Icono seleccionado vs normal
+                                      Color getIconColor(String key) {
+                                        return currentKey == key
+                                            ? activeColor
+                                            : Colors.grey;
+                                      }
 
-                                          // --- SECCIÓN FECHA ---
-                                          const PopupMenuItem<String>(
-                                            enabled: false,
-                                            height: 30,
-                                            child: Text('FECHA',
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 12,
-                                                    color: Colors.grey)),
-                                          ),
-                                          PopupMenuItem<String>(
-                                            value: 'date_asc',
-                                            height: 40,
-                                            child: Row(children: [
-                                              Icon(
-                                                  Icons.calendar_month_outlined,
-                                                  size: 16,
-                                                  color:
-                                                      getIconColor('date_asc')),
-                                              SizedBox(width: 8),
-                                              Text('Más Antiguas',
-                                                  style: getStyle('date_asc')),
-                                              if (currentKey == 'date_asc') ...[
-                                                Spacer(),
-                                                Icon(Icons.check,
-                                                    size: 15,
-                                                    color: activeColor)
-                                              ]
-                                            ]),
-                                          ),
-                                          PopupMenuItem<String>(
-                                            value: 'date_desc',
-                                            height: 40,
-                                            child: Row(children: [
-                                              Icon(
-                                                  Icons.calendar_month_outlined,
-                                                  size: 16,
-                                                  color: getIconColor(
-                                                      'date_desc')),
-                                              SizedBox(width: 8),
-                                              Text('Más Recientes',
-                                                  style: getStyle('date_desc')),
-                                              if (currentKey ==
-                                                  'date_desc') ...[
-                                                Spacer(),
-                                                Icon(Icons.check,
-                                                    size: 15,
-                                                    color: activeColor)
-                                              ]
-                                            ]),
-                                          ),
-                                          const PopupMenuDivider(),
+                                      return <PopupMenuEntry<String>>[
+                                        // --- SECCIÓN PRIORIDAD ---
+                                        const PopupMenuItem<String>(
+                                          enabled: false,
+                                          height: 30,
+                                          child: Text('PRIORIDAD',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                  color: Colors.grey)),
+                                        ),
+                                        PopupMenuItem<String>(
+                                          value: 'priority_high',
+                                          height: 40,
+                                          child: Row(children: [
+                                            Icon(Icons.warning,
+                                                size: 16,
+                                                color: currentKey ==
+                                                        'priority_high'
+                                                    ? Colors.red
+                                                    : Colors
+                                                        .grey), // Rojo si está seleccionado, o siempre rojo si prefieres
+                                            SizedBox(width: 8),
+                                            Text('Alta primero',
+                                                style:
+                                                    getStyle('priority_high')),
+                                            if (currentKey ==
+                                                'priority_high') ...[
+                                              Spacer(),
+                                              Icon(Icons.check,
+                                                  size: 15, color: activeColor)
+                                            ] // Check visual
+                                          ]),
+                                        ),
+                                        PopupMenuItem<String>(
+                                          value: 'priority_normal',
+                                          height: 40,
+                                          child: Row(children: [
+                                            Icon(Icons.check_circle,
+                                                size: 16,
+                                                color: getIconColor(
+                                                    'priority_normal')),
+                                            SizedBox(width: 8),
+                                            Text('Normal primero',
+                                                style: getStyle(
+                                                    'priority_normal')),
+                                            if (currentKey ==
+                                                'priority_normal') ...[
+                                              Spacer(),
+                                              Icon(Icons.check,
+                                                  size: 15, color: activeColor)
+                                            ]
+                                          ]),
+                                        ),
+                                        const PopupMenuDivider(),
 
-                                          // --- SECCIÓN CONSECUTIVO ---
-                                          const PopupMenuItem<String>(
-                                            enabled: false,
-                                            height: 30,
-                                            child: Text('CONSECUTIVO',
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 12,
-                                                    color: Colors.grey)),
-                                          ),
-                                          PopupMenuItem<String>(
-                                            value: 'name_asc',
-                                            height: 40,
-                                            child: Row(children: [
-                                              Icon(Icons.arrow_upward,
-                                                  size: 16,
-                                                  color:
-                                                      getIconColor('name_asc')),
-                                              SizedBox(width: 8),
-                                              Text('Consecutivo (A-Z)',
-                                                  style: getStyle('name_asc')),
-                                              if (currentKey == 'name_asc') ...[
-                                                Spacer(),
-                                                Icon(Icons.check,
-                                                    size: 15,
-                                                    color: activeColor)
-                                              ]
-                                            ]),
-                                          ),
-                                          PopupMenuItem<String>(
-                                            value: 'name_desc',
-                                            height: 40,
-                                            child: Row(children: [
-                                              Icon(Icons.arrow_downward,
-                                                  size: 16,
-                                                  color: getIconColor(
-                                                      'name_desc')),
-                                              SizedBox(width: 8),
-                                              Text('Consecutivo (Z-A)',
-                                                  style: getStyle('name_desc')),
-                                              if (currentKey ==
-                                                  'name_desc') ...[
-                                                Spacer(),
-                                                Icon(Icons.check,
-                                                    size: 15,
-                                                    color: activeColor)
-                                              ]
-                                            ]),
-                                          ),
-                                          const PopupMenuDivider(),
+                                        // --- SECCIÓN FECHA ---
+                                        const PopupMenuItem<String>(
+                                          enabled: false,
+                                          height: 30,
+                                          child: Text('FECHA',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                  color: Colors.grey)),
+                                        ),
+                                        PopupMenuItem<String>(
+                                          value: 'date_asc',
+                                          height: 40,
+                                          child: Row(children: [
+                                            Icon(Icons.calendar_month_outlined,
+                                                size: 16,
+                                                color:
+                                                    getIconColor('date_asc')),
+                                            SizedBox(width: 8),
+                                            Text('Más Antiguas',
+                                                style: getStyle('date_asc')),
+                                            if (currentKey == 'date_asc') ...[
+                                              Spacer(),
+                                              Icon(Icons.check,
+                                                  size: 15, color: activeColor)
+                                            ]
+                                          ]),
+                                        ),
+                                        PopupMenuItem<String>(
+                                          value: 'date_desc',
+                                          height: 40,
+                                          child: Row(children: [
+                                            Icon(Icons.calendar_month_outlined,
+                                                size: 16,
+                                                color:
+                                                    getIconColor('date_desc')),
+                                            SizedBox(width: 8),
+                                            Text('Más Recientes',
+                                                style: getStyle('date_desc')),
+                                            if (currentKey == 'date_desc') ...[
+                                              Spacer(),
+                                              Icon(Icons.check,
+                                                  size: 15, color: activeColor)
+                                            ]
+                                          ]),
+                                        ),
+                                        const PopupMenuDivider(),
 
-                                          // --- SECCIÓN BACKORDER ---
-                                          const PopupMenuItem<String>(
-                                            enabled: false,
-                                            height: 30,
-                                            child: Text('BACKORDER',
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 12,
-                                                    color: Colors.grey)),
-                                          ),
-                                          PopupMenuItem<String>(
-                                            value: 'backorder_desc',
-                                            height: 40,
-                                            child: Row(children: [
-                                              Icon(Icons.file_copy,
-                                                  size: 16,
-                                                  color: getIconColor(
-                                                      'backorder_desc')),
-                                              SizedBox(width: 8),
-                                              Text('Con Backorder primero',
-                                                  style: getStyle(
-                                                      'backorder_desc')),
-                                              if (currentKey ==
-                                                  'backorder_desc') ...[
-                                                Spacer(),
-                                                Icon(Icons.check,
-                                                    size: 15,
-                                                    color: activeColor)
-                                              ]
-                                            ]),
-                                          ),
-                                          PopupMenuItem<String>(
-                                            value: 'backorder_asc',
-                                            height: 40,
-                                            child: Row(children: [
-                                              Icon(Icons.file_copy_outlined,
-                                                  size: 16,
-                                                  color: getIconColor(
-                                                      'backorder_asc')),
-                                              SizedBox(width: 8),
-                                              Text('Sin Backorder primero',
-                                                  style: getStyle(
-                                                      'backorder_asc')),
-                                              if (currentKey ==
-                                                  'backorder_asc') ...[
-                                                Spacer(),
-                                                Icon(Icons.check,
-                                                    size: 15,
-                                                    color: activeColor)
-                                              ]
-                                            ]),
-                                          ),
-                                        ];
-                                      },
+                                        // --- SECCIÓN CONSECUTIVO ---
+                                        const PopupMenuItem<String>(
+                                          enabled: false,
+                                          height: 30,
+                                          child: Text('CONSECUTIVO',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                  color: Colors.grey)),
+                                        ),
+                                        PopupMenuItem<String>(
+                                          value: 'name_asc',
+                                          height: 40,
+                                          child: Row(children: [
+                                            Icon(Icons.arrow_upward,
+                                                size: 16,
+                                                color:
+                                                    getIconColor('name_asc')),
+                                            SizedBox(width: 8),
+                                            Text('Consecutivo (A-Z)',
+                                                style: getStyle('name_asc')),
+                                            if (currentKey == 'name_asc') ...[
+                                              Spacer(),
+                                              Icon(Icons.check,
+                                                  size: 15, color: activeColor)
+                                            ]
+                                          ]),
+                                        ),
+                                        PopupMenuItem<String>(
+                                          value: 'name_desc',
+                                          height: 40,
+                                          child: Row(children: [
+                                            Icon(Icons.arrow_downward,
+                                                size: 16,
+                                                color:
+                                                    getIconColor('name_desc')),
+                                            SizedBox(width: 8),
+                                            Text('Consecutivo (Z-A)',
+                                                style: getStyle('name_desc')),
+                                            if (currentKey == 'name_desc') ...[
+                                              Spacer(),
+                                              Icon(Icons.check,
+                                                  size: 15, color: activeColor)
+                                            ]
+                                          ]),
+                                        ),
+                                        const PopupMenuDivider(),
+
+                                        // --- SECCIÓN BACKORDER ---
+                                        const PopupMenuItem<String>(
+                                          enabled: false,
+                                          height: 30,
+                                          child: Text('BACKORDER',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                  color: Colors.grey)),
+                                        ),
+                                        PopupMenuItem<String>(
+                                          value: 'backorder_desc',
+                                          height: 40,
+                                          child: Row(children: [
+                                            Icon(Icons.file_copy,
+                                                size: 16,
+                                                color: getIconColor(
+                                                    'backorder_desc')),
+                                            SizedBox(width: 8),
+                                            Text('Con Backorder primero',
+                                                style:
+                                                    getStyle('backorder_desc')),
+                                            if (currentKey ==
+                                                'backorder_desc') ...[
+                                              Spacer(),
+                                              Icon(Icons.check,
+                                                  size: 15, color: activeColor)
+                                            ]
+                                          ]),
+                                        ),
+                                        PopupMenuItem<String>(
+                                          value: 'backorder_asc',
+                                          height: 40,
+                                          child: Row(children: [
+                                            Icon(Icons.file_copy_outlined,
+                                                size: 16,
+                                                color: getIconColor(
+                                                    'backorder_asc')),
+                                            SizedBox(width: 8),
+                                            Text('Sin Backorder primero',
+                                                style:
+                                                    getStyle('backorder_asc')),
+                                            if (currentKey ==
+                                                'backorder_asc') ...[
+                                              Spacer(),
+                                              Icon(Icons.check,
+                                                  size: 15, color: activeColor)
+                                            ]
+                                          ]),
+                                        ),
+                                      ];
+                                    },
                                   ),
                                 ],
                               ),

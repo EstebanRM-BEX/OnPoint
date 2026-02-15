@@ -18,7 +18,7 @@ import 'package:wms_app/src/presentation/views/inventario/screens/bloc/inventari
 import 'package:wms_app/src/presentation/views/inventario/screens/widgets/LocationCardButton_widget.dart';
 import 'package:wms_app/src/presentation/views/inventario/screens/widgets/dialog_barcodes_widget.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
-import 'package:wms_app/src/presentation/views/user/screens/bloc/user_bloc.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
@@ -560,22 +560,12 @@ class _InventarioScreenState extends State<InventarioScreen>
                                   );
                                 },
                               ),
-                              GestureDetector(
-                                onTap: () {
-                                  bloc.add(GetProductsEvent());
-                                },
-                                child: Padding(
-                                  padding:
-                                      EdgeInsets.only(left: size.width * 0.15),
-                                  child: const Text("INVENTARIO RÁPIDO",
-                                      style: TextStyle(
-                                          color: white, fontSize: 14)),
-                                ),
-                              ),
-                              Icon(
-                                Icons.refresh,
-                                size: 20,
-                                color: white,
+                              Padding(
+                                padding:
+                                    EdgeInsets.only(left: size.width * 0.15),
+                                child: const Text("INVENTARIO RÁPIDO",
+                                    style:
+                                        TextStyle(color: white, fontSize: 14)),
                               ),
                               const Spacer(),
                               IconButton(

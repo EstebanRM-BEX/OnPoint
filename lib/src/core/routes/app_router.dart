@@ -40,6 +40,7 @@ import 'package:wms_app/src/presentation/views/recepcion/modules/individual/scre
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/locations_dest/locations_dest_widget.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart';
 import 'package:wms_app/src/presentation/views/pages.dart';
+import 'package:wms_app/features/enterprise/presentation/pages/enterprise_page.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/detail_create_tranfer_screen.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/scan_product_create_transfer_screen.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/location/location_search_widget.dart';
@@ -51,7 +52,7 @@ import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-i
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/screens/scan_product_transfer_screen.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/screens/transferencia_screen.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/screens/widgets/location_dest/locations_dest_widget.dart';
-import 'package:wms_app/src/presentation/views/user/screens/user_screen.dart';
+import 'package:wms_app/features/user/presentation/pages/user_page.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/packing_response_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/screens/packing.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/screens/packing_detail.dart';
@@ -240,7 +241,7 @@ class AppRoutes {
       },
 
       // todo Global
-      enterprice: (_) => const SelectEnterpricePage(),
+      enterprice: (_) => const EnterprisePage(),
       auth: (_) => const LoginPage(),
 
       // todo WMS Picking
@@ -361,7 +362,7 @@ class AppRoutes {
 
       //todo auth
       home: (_) => const HomePage(),
-      user: (_) => const UserScreen(),
+      user: (_) => const UserPage(),
 
       //todo  inventario
       inventario: (_) => const InventarioScreen(),

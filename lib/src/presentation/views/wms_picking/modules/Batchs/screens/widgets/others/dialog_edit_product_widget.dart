@@ -9,7 +9,7 @@ import 'package:wms_app/src/core/constans/colors.dart';
 import 'package:wms_app/src/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
-import 'package:wms_app/src/presentation/views/user/screens/bloc/user_bloc.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart';

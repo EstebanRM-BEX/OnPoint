@@ -5,7 +5,7 @@ import 'package:wms_app/src/core/constans/colors.dart';
 import 'package:wms_app/src/presentation/providers/network/check_internet_connection.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
-import 'package:wms_app/src/presentation/views/user/screens/widgets/dialog_info_widget.dart';
+import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart';
@@ -536,7 +536,7 @@ class DetailPickDoneScreen extends StatelessWidget {
                         child: ListView.builder(
                             padding: EdgeInsets.only(
                                 top: 10, bottom: size.height * 0.15),
-                           physics: const AlwaysScrollableScrollPhysics(),
+                            physics: const AlwaysScrollableScrollPhysics(),
                             itemCount:
                                 batch?.lineasTransferenciaEnviadas?.length ?? 0,
                             itemBuilder: (context, index) {

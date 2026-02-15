@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/src/core/utils/formats_utils.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
@@ -17,7 +18,6 @@ import 'package:wms_app/src/presentation/views/recepcion/models/repcion_requets_
 import 'package:wms_app/src/presentation/views/recepcion/models/response_image_send_novedad_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_temp_ia_model.dart';
-import 'package:wms_app/src/presentation/views/user/models/configuration.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 
 part 'recepcion_event.dart';
@@ -116,7 +116,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   DataBaseSqlite db = DataBaseSqlite();
 
   //*configuracion del usuario //permisos
-  Configurations configurations = Configurations();
+  UserConfigurationModel configurations = UserConfigurationModel();
 
   //repositorio de inventario
   InventarioRepository inventarioRepository = InventarioRepository();
@@ -1012,7 +1012,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
               currentProduct, pendingQuantity, currentProduct.type ?? "");
         }
 
-           await db.productEntradaRepository.setFieldTableProductSendEntrada(
+        await db.productEntradaRepository.setFieldTableProductSendEntrada(
             currentProduct.idRecepcion ?? 0,
             int.parse(currentProduct.productId),
             "quantity_done",
@@ -1026,9 +1026,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
             "id_move",
             responseSend.result?.result?.first.id ?? 0,
             currentProduct.idMove);
-     
 
-           
         //si el producto cuaenta con temperatura pedimos temperatura
         if (currentProduct.manejaTemperatura == 1 ||
             currentProduct.manejaTemperatura == true) {

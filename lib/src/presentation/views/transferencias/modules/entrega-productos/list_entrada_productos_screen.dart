@@ -13,8 +13,8 @@ import 'package:wms_app/src/presentation/views/recepcion/modules/individual/scre
 import 'package:wms_app/src/presentation/views/transferencias/models/response_transferencias.dart';
 // import 'package:wms_app/src/presentation/views/transferencias/transfer-externa/bloc/transfer_externa_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
-import 'package:wms_app/src/presentation/views/user/screens/bloc/user_bloc.dart';
-import 'package:wms_app/src/presentation/views/user/screens/widgets/dialog_info_widget.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
+import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';

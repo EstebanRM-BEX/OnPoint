@@ -3,6 +3,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/src/core/utils/formats_utils.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
@@ -13,7 +14,6 @@ import 'package:wms_app/src/presentation/views/recepcion/data/recepcion_reposito
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_batch_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/repcion_requets_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
-import 'package:wms_app/src/presentation/views/user/models/configuration.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 
 part 'recepcion_batch_event.dart';
@@ -24,7 +24,7 @@ class RecepcionBatchBloc
   //*base de datos
   DataBaseSqlite db = DataBaseSqlite();
   //*configuracion del usuario //permisos
-  Configurations configurations = Configurations();
+  UserConfigurationModel configurations = UserConfigurationModel();
   //*repository
   final RecepcionRepository _recepcionRepository = RecepcionRepository();
 

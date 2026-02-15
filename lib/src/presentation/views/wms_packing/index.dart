@@ -14,7 +14,7 @@ import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/network/check_internet_connection.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
-import 'package:wms_app/src/presentation/views/user/screens/widgets/dialog_info_widget.dart';
+import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/packing_response_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/bloc/wms_packing_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/screens/widgets/others/dialog_start_packing_widget.dart';
@@ -124,6 +124,7 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
             margin: const EdgeInsets.only(bottom: 10),
             width: size.width * 1,
             child:
+
                 ///*listado de bacths
                 Column(
               children: [
@@ -210,7 +211,6 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
 
                 //*barra de buscar
 
-
                 DynamicSearchBar(
                   // 1. CONTROLADOR Y FOCO
                   controller: context.read<WmsPackingBloc>().searchController,
@@ -274,7 +274,7 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
                           .isNotEmpty
                       ? ListView.builder(
                           padding: const EdgeInsets.only(top: 20, bottom: 20),
-                         physics: const AlwaysScrollableScrollPhysics(),
+                          physics: const AlwaysScrollableScrollPhysics(),
                           itemCount: context
                               .read<WmsPackingBloc>()
                               .listOfBatchsDB

@@ -7,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:wms_app/src/core/constans/colors.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
-import 'package:wms_app/src/presentation/views/home/bloc/home_bloc.dart';
+import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
 import 'package:wms_app/src/services/preferences.dart';
 
 class UpdateAppDialog extends StatefulWidget {
@@ -139,7 +139,7 @@ class _UpdateAppDialogState extends State<UpdateAppDialog> {
       children: [
         Expanded(
           child: ListView.builder(
-           physics: const AlwaysScrollableScrollPhysics(),
+            physics: const AlwaysScrollableScrollPhysics(),
             itemCount: context
                     .read<HomeBloc>()
                     .appVersion

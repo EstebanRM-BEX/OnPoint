@@ -10,7 +10,7 @@ final class PackingConsolidateInitial extends PackingConsolidateState {}
 class ConfigurationLoadingPack extends PackingConsolidateState {}
 
 class ConfigurationLoadedPack extends PackingConsolidateState {
-  final Configurations configurations;
+  final UserConfigurationModel configurations;
 
   ConfigurationLoadedPack(this.configurations);
 }
@@ -60,6 +60,7 @@ class TimeSeparatePackSuccess extends PackingConsolidateState {
   final String time;
   TimeSeparatePackSuccess(this.time);
 }
+
 class TimeEndSeparatePackSuccess extends PackingConsolidateState {
   final String time;
   TimeEndSeparatePackSuccess(this.time);
@@ -281,21 +282,19 @@ class ChangeIsOkState extends PackingConsolidateState {
   ChangeIsOkState(this.isOk);
 }
 
-
-
 class AssignUserToBatchLoading extends PackingConsolidateState {}
 
 class AssignUserToBatchLoaded extends PackingConsolidateState {
   final int batchId;
   final BatchPackingModel batchPackingModel;
-  AssignUserToBatchLoaded({required this.batchId, required this.batchPackingModel});
+  AssignUserToBatchLoaded(
+      {required this.batchId, required this.batchPackingModel});
 }
 
 class AssignUserToBatchError extends PackingConsolidateState {
   final String error;
   AssignUserToBatchError(this.error);
 }
-
 
 class ViewProductImageLoading extends PackingConsolidateState {}
 

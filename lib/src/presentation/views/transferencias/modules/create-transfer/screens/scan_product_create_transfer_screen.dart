@@ -19,7 +19,7 @@ import 'package:wms_app/src/presentation/views/transferencias/modules/create-tra
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/location/LocationCardButton_widget%20copy.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/others/popup_menu_widget.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/product/product_dropdown_widget.dart';
-import 'package:wms_app/src/presentation/views/user/screens/bloc/user_bloc.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/quantity/scanner_quantity_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';

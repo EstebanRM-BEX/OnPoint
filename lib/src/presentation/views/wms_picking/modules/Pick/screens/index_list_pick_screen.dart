@@ -13,7 +13,7 @@ import 'package:wms_app/src/presentation/providers/network/check_internet_connec
 import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_start_picking_widget.dart';
-import 'package:wms_app/src/presentation/views/user/screens/widgets/dialog_info_widget.dart';
+import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
@@ -283,7 +283,8 @@ class IndexListPickScreen extends StatelessWidget {
                                             bloc.currentFilterKey;
 
                                         // 2. Definimos el color de resaltado (Naranja o tu PrimaryColor)
-                                        final Color activeColor = primaryColorApp; // O usa primaryColorApp
+                                        final Color activeColor =
+                                            primaryColorApp; // O usa primaryColorApp
                                         final Color inactiveColor =
                                             Colors.black;
 

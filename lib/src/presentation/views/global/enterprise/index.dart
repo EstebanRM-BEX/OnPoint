@@ -8,12 +8,11 @@ import 'package:wms_app/src/core/utils/validator_utils.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/global/enterprise/bloc/entreprise_bloc.dart';
 import 'package:wms_app/src/presentation/views/global/login/widgets/list_database.dart';
-import 'package:wms_app/src/presentation/views/user/screens/bloc/user_bloc.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 
 class SelectEnterpricePage extends StatelessWidget {
   const SelectEnterpricePage({super.key});
@@ -25,13 +24,10 @@ class SelectEnterpricePage extends StatelessWidget {
       child: BlocConsumer<EntrepriseBloc, EntrepriseState>(
         listener: (context, state) {
           print('state $state');
-          if (state is EntrepriseInitial) {
-            context.read<UserBloc>().add(LoadInfoDeviceEventUser());
-          }
 
           //estado de error
           if (state is EntrepriseFailure) {
-            showScrollableErrorDialog( state.error);
+            showScrollableErrorDialog(state.error);
           }
 
           if (state is EntrepriseSuccess) {
@@ -260,7 +256,7 @@ class _loginForm extends StatelessWidget {
                   Get.defaultDialog(
                     title: '360 Software Informa',
                     titleStyle: TextStyle(color: Colors.red, fontSize: 18),
-                    middleText:'Error al procesar la solicitud',
+                    middleText: 'Error al procesar la solicitud',
                     middleTextStyle: TextStyle(color: black, fontSize: 14),
                     backgroundColor: Colors.white,
                     radius: 10,

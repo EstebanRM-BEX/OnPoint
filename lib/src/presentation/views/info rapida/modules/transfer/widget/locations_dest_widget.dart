@@ -9,7 +9,7 @@ import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_
 import 'package:wms_app/src/presentation/views/info%20rapida/models/info_rapida_model.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/transfer/bloc/transfer_info_bloc.dart';
 
-import 'package:wms_app/src/presentation/views/user/screens/bloc/user_bloc.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class LocationDestTransfInfoScreen extends StatefulWidget {

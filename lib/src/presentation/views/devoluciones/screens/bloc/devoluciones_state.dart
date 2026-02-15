@@ -215,7 +215,7 @@ class ChangeStateIsDialogVisibleState extends DevolucionesState {
 }
 
 class ConfigurationDevLoaded extends DevolucionesState {
-  final Configurations configurations;
+  final UserConfigurationModel configurations;
 
   ConfigurationDevLoaded(this.configurations);
 }

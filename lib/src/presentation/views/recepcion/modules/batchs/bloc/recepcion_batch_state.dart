@@ -6,7 +6,9 @@ sealed class RecepcionBatchState {}
 final class RecepcionBatchInitial extends RecepcionBatchState {}
 
 class FetchRecepcionBatchLoading extends RecepcionBatchState {}
+
 class NeedUpdateVersionState extends RecepcionBatchState {}
+
 class FetchRecepcionBatchFailure extends RecepcionBatchState {
   final String error;
   FetchRecepcionBatchFailure(this.error);
@@ -210,7 +212,7 @@ class LoadLocationsFailure extends RecepcionBatchState {
 }
 
 class ConfigurationLoadedOrder extends RecepcionBatchState {
-  final Configurations configurations;
+  final UserConfigurationModel configurations;
 
   ConfigurationLoadedOrder(this.configurations);
 }
@@ -266,6 +268,7 @@ class ChangeLoteOrderIsOkState extends RecepcionBatchState {
 final class DeviceNotAuthorized extends RecepcionBatchState {}
 
 class ViewProductImageLoading extends RecepcionBatchState {}
+
 class ViewProductImageSuccess extends RecepcionBatchState {
   final String imageUrl;
   ViewProductImageSuccess(this.imageUrl);

@@ -99,7 +99,7 @@ class NovedadesPackingErrorState extends WmsPackingState {
 class ConfigurationLoadingPack extends WmsPackingState {}
 
 class ConfigurationLoadedPack extends WmsPackingState {
-  final Configurations configurations;
+  final UserConfigurationModel configurations;
 
   ConfigurationLoadedPack(this.configurations);
 }

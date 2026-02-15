@@ -9,7 +9,7 @@ import 'package:wms_app/src/core/utils/sounds_utils.dart';
 import 'package:wms_app/src/core/utils/vibrate_utils.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
-import 'package:wms_app/src/presentation/views/user/screens/bloc/user_bloc.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';

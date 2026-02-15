@@ -73,7 +73,7 @@ class LoadDataInfoError extends PickingPickState {
 class ConfigurationLoading extends PickingPickState {}
 
 class ConfigurationPickingLoaded extends PickingPickState {
-  final Configurations configurations;
+  final UserConfigurationModel configurations;
 
   ConfigurationPickingLoaded(this.configurations);
 }
@@ -94,8 +94,9 @@ class CurrentProductChangedStateLoading extends PickingPickState {}
 //*estado para cambiar de producto
 final class CurrentProductChangedState extends PickingPickState {
   final ProductsBatch currentProduct;
-  CurrentProductChangedState(
-      {required this.currentProduct, });
+  CurrentProductChangedState({
+    required this.currentProduct,
+  });
 }
 
 class CurrentProductChangedStateError extends PickingPickState {
@@ -207,7 +208,9 @@ class SendProductPickOdooSuccess extends PickingPickState {}
 
 class SendProductPickOdooError extends PickingPickState {
   final String error;
-  SendProductPickOdooError(this.error,  );
+  SendProductPickOdooError(
+    this.error,
+  );
 }
 
 //*est
@@ -235,8 +238,7 @@ class StartOrStopTimeTransferFailure extends PickingPickState {
   StartOrStopTimeTransferFailure(this.error);
 }
 
-class LoadSearchPickingState extends PickingPickState {
-}
+class LoadSearchPickingState extends PickingPickState {}
 
 class AssignUserToPickLoading extends PickingPickState {}
 
@@ -278,8 +280,6 @@ class ValidateConfirmFailure extends PickingPickState {
   ValidateConfirmFailure(this.error);
 }
 
-
-
 class MuellesLoadingState extends PickingPickState {}
 
 class MuellesLoadedState extends PickingPickState {
@@ -292,8 +292,6 @@ class MuellesErrorState extends PickingPickState {
   MuellesErrorState(this.error);
 }
 
-
-
 class SubMuelleOcupadoError extends PickingPickState {
   final String error;
   SubMuelleOcupadoError(this.error);
@@ -302,10 +300,8 @@ class SubMuelleOcupadoError extends PickingPickState {
 class PickOkEventSuccess extends PickingPickState {
   final String message;
 
-  PickOkEventSuccess( this.message);
+  PickOkEventSuccess(this.message);
 }
-
-
 
 class LoadSelectedProductState extends PickingPickState {
   final ProductsBatch selectedProduct;
@@ -329,7 +325,6 @@ class BatchHistoryLoadedState extends PickingPickState {
   BatchHistoryLoadedState(this.historyBatchId);
 }
 
-
 class BatchsPickingErrorState extends PickingPickState {
   final String error;
   BatchsPickingErrorState(this.error);
@@ -337,8 +332,8 @@ class BatchsPickingErrorState extends PickingPickState {
 
 class NeedUpdateVersionState extends PickingPickState {}
 
-
 class ViewProductImageLoading extends PickingPickState {}
+
 class ViewProductImageSuccess extends PickingPickState {
   final String imageUrl;
   ViewProductImageSuccess(this.imageUrl);
@@ -352,12 +347,12 @@ class ViewProductImageFailure extends PickingPickState {
 // Estado para indicar que la lista de picks se cargó o actualizó (filtro/orden)
 class PickingPickSuccess extends PickingPickState {
   // Opcional: Puedes pasar la lista aquí para ser más puro en el patrón BLoC
-  final List<ResultPick> picks; 
+  final List<ResultPick> picks;
 
   PickingPickSuccess(this.picks);
 
   @override
-  List<Object> get props => [picks, DateTime.now()]; 
-  // Tip: Agregar DateTime.now() o UniqueKey() en props asegura que 
+  List<Object> get props => [picks, DateTime.now()];
+  // Tip: Agregar DateTime.now() o UniqueKey() en props asegura que
   // Flutter redibuje aunque la lista sea "técnicamente" la misma pero en diferente orden.
 }

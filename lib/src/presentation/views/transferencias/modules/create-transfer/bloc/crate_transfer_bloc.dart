@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
@@ -11,7 +12,6 @@ import 'package:wms_app/src/presentation/views/transferencias/data/transferencia
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/request_create_trasnfer_model.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/response_create_transfer_mode.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/response_validate_stock_model.dart';
-import 'package:wms_app/src/presentation/views/user/models/configuration.dart';
 
 part 'crate_transfer_event.dart';
 part 'crate_transfer_state.dart';
@@ -77,7 +77,7 @@ class CreateTransferBloc
   dynamic quantitySelected = 0;
 
   //*configuracion del usuario //permisos
-  Configurations configurations = Configurations();
+  UserConfigurationModel configurations = UserConfigurationModel();
 
   //*variables de modelos actuales
   ResultUbicaciones? currentUbication;
@@ -176,7 +176,8 @@ class CreateTransferBloc
         true,
       );
 
-      if (response.result?.code == 200 && response.result?.resumenStock?.esSuficiente == true) {
+      if (response.result?.code == 200 &&
+          response.result?.resumenStock?.esSuficiente == true) {
         emit(ValidateStockSuccess(response));
         add(AddProductCreateTransferEvent(
           event.quantity,
@@ -558,7 +559,7 @@ class CreateTransferBloc
     }
   }
 
-void _onCreateLoteProduct(
+  void _onCreateLoteProduct(
       CreateLoteProduct event, Emitter<CreateTransferState> emit) async {
     try {
       emit(CreateLoteProductLoading());
@@ -570,7 +571,6 @@ void _onCreateLoteProduct(
       );
 
       if (response.result?.code == 200) {
-        
         // 1. Capturamos el objeto del nuevo lote
         final newLote = response.result?.result ?? LotesProduct();
 
@@ -580,14 +580,14 @@ void _onCreateLoteProduct(
         // 3. Actualizamos la lista de FILTROS creando una copia fresca de la principal
         // Esto evita que se agregue dos veces si las listas compartían referencia en memoria
         listLotesProductFilters = List.from(listLotesProduct);
-        
+
         // 4. Actualizamos variables de estado y UI
         currentProductLote = newLote;
         loteIsOk = true;
-        
+
         dateLoteController.clear();
         newLoteController.clear();
-        
+
         add(SelectecLoteEvent(currentProductLote!));
         emit(CreateLoteProductSuccess());
       } else {

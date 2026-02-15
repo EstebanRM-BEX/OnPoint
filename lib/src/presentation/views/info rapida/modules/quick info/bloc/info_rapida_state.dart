@@ -113,7 +113,7 @@ class UpdateProductFailure extends InfoRapidaState {
 class UpdateProductSuccess extends InfoRapidaState {}
 
 class ConfigurationLoadedInfoRapida extends InfoRapidaState {
-  final Configurations configurations;
+  final UserConfigurationModel configurations;
 
   ConfigurationLoadedInfoRapida(this.configurations);
 }

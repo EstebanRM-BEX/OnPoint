@@ -1,7 +1,8 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:intl/intl.dart';
+import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
@@ -13,7 +14,6 @@ import 'package:wms_app/src/presentation/views/inventario/models/response_produc
 import 'package:wms_app/src/presentation/views/transferencias/data/transferencias_repository.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/request_create_trasnfer_model.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/response_create_transfer_mode.dart';
-import 'package:wms_app/src/presentation/views/user/models/configuration.dart';
 
 part 'info_rapida_event.dart';
 part 'info_rapida_state.dart';
@@ -23,6 +23,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   //*repositorio
   final TransferenciasRepository _transferenciasRepository =
       TransferenciasRepository();
+  final UserBloc userBloc;
   InfoRapidaResult infoRapidaResult = InfoRapidaResult();
 
   String scannedValue1 = '';
@@ -68,12 +69,12 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   bool locationDestIsOk = false;
 
   //*configuracion del usuario //permisos
-  Configurations configurations = Configurations();
+  UserConfigurationModel configurations = UserConfigurationModel();
 
   //repositorio de inventario
   InventarioRepository inventarioRepository = InventarioRepository();
 
-  InfoRapidaBloc() : super(InfoRapidaInitial()) {
+  InfoRapidaBloc({required this.userBloc}) : super(InfoRapidaInitial()) {
     on<InfoRapidaEvent>((event, emit) {});
 
     //*evento para actualizar el valor del scan
@@ -579,17 +580,54 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
       GetListLocationsEvent event, Emitter<InfoRapidaState> emit) async {
     try {
       emit(LoadLocationsLoading());
-      final response = await db.ubicacionesRepository.getAllUbicaciones();
+
+      // Verificar si las ubicaciones ya están cargadas en UserBloc
+      var userLocations = userBloc.ubicaciones;
+
+      // Si están vacías, cargar las ubicaciones desde UserBloc
+      if (userLocations.isEmpty) {
+        print('Ubicaciones vacías, cargando desde UserBloc...');
+        userBloc.add(LoadUserLocationsEvent());
+
+        // Esperar a que se carguen las ubicaciones
+        await for (final state in userBloc.stream) {
+          if (state is UserLocationsLoaded) {
+            userLocations = state.locations;
+            print(
+                'Ubicaciones cargadas desde UserBloc: ${userLocations.length}');
+            break;
+          } else if (state is UserLocationsError) {
+            print('Error al cargar ubicaciones: ${state.message}');
+            emit(LoadLocationsFailure(
+                'Error al cargar ubicaciones: ${state.message}'));
+            return;
+          }
+        }
+      }
+
+      // Convertir UserLocation a ResultUbicaciones
+      final List<ResultUbicaciones> convertedLocations =
+          userLocations.map((userLoc) {
+        return ResultUbicaciones(
+          id: userLoc.id,
+          name: userLoc.name,
+          idWarehouse: userLoc.idWarehouse,
+          barcode: userLoc.barcode,
+          warehouseName: userLoc.warehouseName,
+        );
+      }).toList();
+
       ubicaciones.clear();
       ubicacionesFilters.clear();
-      print('ubicaciones length: ${ubicaciones.length}');
-      if (response.isNotEmpty) {
-        ubicaciones = response;
+      print('ubicaciones length from UserBloc: ${convertedLocations.length}');
+
+      if (convertedLocations.isNotEmpty) {
+        ubicaciones = convertedLocations;
         ubicacionesFilters = ubicaciones;
-        print('ubicaciones length: ${ubicaciones.length}');
+        print('ubicaciones cargadas: ${ubicaciones.length}');
         emit(LoadLocationsSuccess(ubicaciones));
       } else {
-        print('No se encontraron ubicaciones');
+        print('No se encontraron ubicaciones en UserBloc');
         emit(LoadLocationsFailure('No se encontraron ubicaciones'));
       }
     } catch (e, s) {

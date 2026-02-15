@@ -65,7 +65,7 @@ class StartOrStopTimeTransferFailure extends PackingPedidoState {
 class ConfigurationLoading extends PackingPedidoState {}
 
 class ConfigurationPickingLoaded extends PackingPedidoState {
-  final Configurations configurations;
+  final UserConfigurationModel configurations;
 
   ConfigurationPickingLoaded(this.configurations);
 }
@@ -293,15 +293,14 @@ class ViewProductImageFailure extends PackingPedidoState {
   ViewProductImageFailure(this.error);
 }
 
-
 // Estado para indicar que la lista de picks se cargó o actualizó (filtro/orden)
 class PackingPackSuccess extends PackingPedidoState {
   // Opcional: Puedes pasar la lista aquí para ser más puro en el patrón BLoC
-  final List<PedidoPackingResult> picks; 
+  final List<PedidoPackingResult> picks;
 
   PackingPackSuccess(this.picks);
   @override
-  List<Object> get props => [picks, DateTime.now()]; 
-  // Tip: Agregar DateTime.now() o UniqueKey() en props asegura que 
+  List<Object> get props => [picks, DateTime.now()];
+  // Tip: Agregar DateTime.now() o UniqueKey() en props asegura que
   // Flutter redibuje aunque la lista sea "técnicamente" la misma pero en diferente orden.
 }

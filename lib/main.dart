@@ -17,7 +17,8 @@ import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/network/check_internet_connection.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
-import 'package:wms_app/src/presentation/views/home/bloc/home_bloc.dart';
+import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
+import 'package:wms_app/features/login/presentation/bloc/login_bloc.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/transfer/bloc/transfer_info_bloc.dart';
 import 'package:wms_app/src/presentation/views/inventario/screens/bloc/inventario_bloc.dart';
@@ -25,10 +26,11 @@ import 'package:wms_app/src/presentation/views/recepcion/modules/batchs/bloc/rec
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
-import 'package:wms_app/src/presentation/views/user/screens/bloc/user_bloc.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/bloc/wms_packing_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/bloc/packing_consolidade_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
+import 'package:wms_app/features/enterprise/presentation/bloc/enterprise_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
@@ -42,6 +44,7 @@ import 'package:wms_app/src/presentation/providers/network/cubit/connection_stat
 
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:wms_app/src/services/webSocket_service.dart';
+import 'package:wms_app/injection_container.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final ApiRequestService apiRequestService = ApiRequestService();
@@ -75,6 +78,9 @@ void main() {
             exit(0);
           },
         );
+
+    // Initialize Dependency Injection
+    await configureDependencies();
 
     // 5. Iniciar WebSocket (Usando el Singleton)
     await WebSocketService().connect();
@@ -133,16 +139,19 @@ class MyApp extends StatelessWidget {
         return MultiBlocProvider(
           providers: [
             BlocProvider.value(value: connectionStatusCubit),
-            BlocProvider(create: (_) => UserBloc()),
+            BlocProvider(create: (_) => getIt<UserBloc>()),
             BlocProvider(create: (_) => RecepcionBloc()),
             BlocProvider(create: (_) => TransferenciaBloc()),
-            BlocProvider(create: (_) => HomeBloc()),
+            BlocProvider(create: (_) => getIt<HomeBloc>()),
+            BlocProvider(create: (_) => getIt<LoginBloc>()),
             BlocProvider(create: (_) => WMSPickingBloc()),
             BlocProvider(create: (_) => BatchBloc()),
             BlocProvider(create: (_) => WmsPackingBloc()),
             BlocProvider(create: (_) => KeyboardBloc()),
             BlocProvider(create: (_) => TransferInfoBloc()),
-            BlocProvider(create: (_) => InfoRapidaBloc()),
+            BlocProvider(
+                create: (context) =>
+                    InfoRapidaBloc(userBloc: context.read<UserBloc>())),
             BlocProvider(create: (_) => InventarioBloc()),
             BlocProvider(create: (_) => PickingPickBloc()),
             BlocProvider(create: (_) => RecepcionBatchBloc()),
@@ -151,6 +160,7 @@ class MyApp extends StatelessWidget {
             BlocProvider(create: (_) => ConteoBloc()),
             BlocProvider(create: (_) => CreateTransferBloc()),
             BlocProvider(create: (_) => PackingConsolidateBloc()),
+            BlocProvider(create: (_) => getIt<EnterpriseBloc>()),
           ],
           child: SessionTimeoutManager(
             duration: const Duration(hours: 1),

@@ -1,7 +1,7 @@
 import 'package:sqflite/sqlite_api.dart';
+import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/others/tbl_warehouses/tbl_warehouse_table.dart';
-import 'package:wms_app/src/presentation/views/user/models/configuration.dart';
 
 class WarehouseRepository {
   Future<List<AllowedWarehouse>> getAllowedWarehouse() async {

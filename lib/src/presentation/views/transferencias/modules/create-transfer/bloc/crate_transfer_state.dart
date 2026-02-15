@@ -19,7 +19,7 @@ class ConfigurationError extends CreateTransferState {
 }
 
 class ConfigurationLoaded extends CreateTransferState {
-  final Configurations configurations;
+  final UserConfigurationModel configurations;
   ConfigurationLoaded(this.configurations);
 }
 
@@ -167,8 +167,8 @@ class FetchAllBarcodesFailure extends CreateTransferState {
   FetchAllBarcodesFailure(this.error);
 }
 
-
 class ProductAddingToTransferLoadingState extends CreateTransferState {}
+
 class ProductAddedToTransferState extends CreateTransferState {}
 
 class ProductAddToTransferErrorState extends CreateTransferState {
@@ -185,7 +185,6 @@ class ProductRemoveFromTransferErrorState extends CreateTransferState {
   ProductRemoveFromTransferErrorState(this.error);
 }
 
-
 class CreateTransferLoading extends CreateTransferState {}
 
 class CreateTransferFailure extends CreateTransferState {
@@ -197,7 +196,6 @@ class CreateTransferSuccess extends CreateTransferState {
   final RespondeCreateTransfer response;
   CreateTransferSuccess(this.response);
 }
-
 
 class ValidateStockLoading extends CreateTransferState {}
 

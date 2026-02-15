@@ -41,6 +41,12 @@ dependencies:
   talker_bloc_logger: ^4.6.12
 
   flutter_lints: ^5.0.0
+  equatable: ^2.0.5
+
+  # Clean Architecture
+  fpdart: ^1.1.0
+  injectable: ^2.3.2
+  crypto: ^3.0.3
 
   mobile_scanner: ^5.1.1
   permission_handler: ^11.2.0
@@ -111,6 +117,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  build_runner: ^2.4.8
+  injectable_generator: ^2.4.1
 dependency_overrides:
   rive: ^0.13.4
 

@@ -3,6 +3,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/src/core/utils/formats_utils.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
@@ -11,7 +12,6 @@ import 'package:wms_app/src/presentation/views/inventario/data/inventario_reposi
 import 'package:wms_app/src/presentation/views/transferencias/data/transferencias_repository.dart';
 import 'package:wms_app/src/presentation/views/transferencias/models/requets_transfer_model.dart';
 
-import 'package:wms_app/src/presentation/views/user/models/configuration.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/data/wms_picking_repository.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/submeuelle_model.dart';
@@ -92,7 +92,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   bool isQuantityOk = true;
 
   //configuracion del usuario //permisos
-  Configurations configurations = Configurations();
+  UserConfigurationModel configurations = UserConfigurationModel();
 
   TransferenciasRepository repository = TransferenciasRepository();
   WmsPickingRepository repositoryBatch = WmsPickingRepository();

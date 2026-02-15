@@ -14,7 +14,7 @@ import 'package:wms_app/src/presentation/providers/network/check_internet_connec
 import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/home/widgets/Dialog_ProductsNotSends.dart';
-import 'package:wms_app/src/presentation/views/user/screens/widgets/dialog_info_widget.dart';
+import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart';
@@ -31,7 +31,9 @@ class WMSPickingPage extends StatefulWidget {
 
   @override
   State<WMSPickingPage> createState() => _PickingPageState();
-}class _PickingPageState extends State<WMSPickingPage> {
+}
+
+class _PickingPageState extends State<WMSPickingPage> {
   final AudioService _audioService = AudioService();
   final VibrationService _vibrationService = VibrationService();
   FocusNode focusNodeBuscar = FocusNode();
@@ -91,7 +93,7 @@ class WMSPickingPage extends StatefulWidget {
       onWillPop: () async {
         return false;
       },
-      
+
       // 1. Primer Listener: WMSPickingBloc
       child: BlocListener<WMSPickingBloc, PickingState>(
         listener: (context, state) {
@@ -169,10 +171,12 @@ class WMSPickingPage extends StatefulWidget {
                                               final products =
                                                   await DataBaseSqlite()
                                                       .getProducts('batch');
-                                              final productsNoSendOdoo = products
-                                                  .where((element) =>
-                                                      element.isSendOdoo == 0)
-                                                  .toList();
+                                              final productsNoSendOdoo =
+                                                  products
+                                                      .where((element) =>
+                                                          element.isSendOdoo ==
+                                                          0)
+                                                      .toList();
                                               if (productsNoSendOdoo.isEmpty) {
                                                 await DataBaseSqlite()
                                                     .delePicking('batch');
@@ -217,14 +221,16 @@ class WMSPickingPage extends StatefulWidget {
                                           ),
                                           const Spacer(),
                                           IconButton(
-                                            icon: const Icon(Icons.calendar_month,
+                                            icon: const Icon(
+                                                Icons.calendar_month,
                                                 color: white),
                                             onPressed: () async {
                                               // Primero, asegúrate de que el FocusNode esté activo
                                               FocusScope.of(context).unfocus();
                                               var pickedDate = await DatePicker
                                                   .showSimpleDatePicker(
-                                                titleText: 'Seleccione una fecha',
+                                                titleText:
+                                                    'Seleccione una fecha',
                                                 context,
                                                 confirmText: 'Buscar',
                                                 cancelText: 'Cancelar',
@@ -232,7 +238,8 @@ class WMSPickingPage extends StatefulWidget {
                                                 firstDate:
                                                     //un mes atras
                                                     DateTime.now().subtract(
-                                                        const Duration(days: 30)),
+                                                        const Duration(
+                                                            days: 30)),
                                                 lastDate: DateTime.now(),
                                                 dateFormat: "dd-MMMM-yyyy",
                                                 locale: DateTimePickerLocale.es,
@@ -279,7 +286,8 @@ class WMSPickingPage extends StatefulWidget {
                           },
                           onKeyScanned: (keyLabel, type, context) {
                             return context.read<WMSPickingBloc>().add(
-                                  UpdateScannedValuePickingEvent(keyLabel, type),
+                                  UpdateScannedValuePickingEvent(
+                                      keyLabel, type),
                                 );
                           },
                         ),
@@ -296,11 +304,13 @@ class WMSPickingPage extends StatefulWidget {
                               ? ListView.builder(
                                   padding: EdgeInsets.only(
                                       top: 10, bottom: size.height * 0.15),
-                               physics: const AlwaysScrollableScrollPhysics(),
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
                                   itemCount: context
                                       .read<WMSPickingBloc>()
                                       .filteredBatchs
-                                      .where((batch) => batch.isSeparate == null)
+                                      .where(
+                                          (batch) => batch.isSeparate == null)
                                       .length,
                                   itemBuilder: (contextBuilder, index) {
                                     final batch = context
@@ -353,90 +363,93 @@ class WMSPickingPage extends StatefulWidget {
                                                     ));
                                                 showDialog(
                                                     context: context,
-                                                    builder: (context) =>
-                                                        BackdropFilter(
-                                                          filter:
-                                                              ImageFilter.blur(
-                                                                  sigmaX: 5,
-                                                                  sigmaY: 5),
-                                                          child: AlertDialog(
-                                                            actionsAlignment:
-                                                                MainAxisAlignment
-                                                                    .center,
-                                                            title: Center(
-                                                                child: Text(
-                                                              "Documentos de origen",
-                                                              textAlign: TextAlign
-                                                                  .center,
-                                                              style: TextStyle(
-                                                                  color:
-                                                                      primaryColorApp,
-                                                                  fontSize: 20),
-                                                            )),
-                                                            content:
-                                                                //lista de documentos
-                                                                SizedBox(
-                                                              height: 300,
-                                                              width: size.width *
-                                                                  0.9,
-                                                              child: ListView
-                                                                  .builder(
-                                                                itemCount: context
-                                                                    .read<
-                                                                        WMSPickingBloc>()
-                                                                    .listOfOrigins
-                                                                    .length,
-                                                                itemBuilder:
-                                                                    (context,
-                                                                        index) {
-                                                                  return Card(
-                                                                    color: white,
-                                                                    elevation: 2,
-                                                                    child:
-                                                                        ListTile(
-                                                                      title: Text(
-                                                                          context.read<WMSPickingBloc>().listOfOrigins[index].name ??
-                                                                              'Sin nombre',
-                                                                          style: const TextStyle(
-                                                                              fontSize:
-                                                                                  12,
-                                                                              color:
-                                                                                  black)),
-                                                                    ),
-                                                                  );
-                                                                },
-                                                              ),
-                                                            ),
-                                                            actions: [
-                                                              ElevatedButton(
-                                                                  onPressed: () {
-                                                                    Navigator.pop(
-                                                                        context);
-                                                                  },
-                                                                  style: ElevatedButton.styleFrom(
-                                                                      backgroundColor:
+                                                    builder:
+                                                        (context) =>
+                                                            BackdropFilter(
+                                                              filter: ImageFilter
+                                                                  .blur(
+                                                                      sigmaX: 5,
+                                                                      sigmaY:
+                                                                          5),
+                                                              child:
+                                                                  AlertDialog(
+                                                                actionsAlignment:
+                                                                    MainAxisAlignment
+                                                                        .center,
+                                                                title: Center(
+                                                                    child: Text(
+                                                                  "Documentos de origen",
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .center,
+                                                                  style: TextStyle(
+                                                                      color:
                                                                           primaryColorApp,
-                                                                      shape: RoundedRectangleBorder(
-                                                                          borderRadius:
-                                                                              BorderRadius.circular(
-                                                                                  10))),
-                                                                  child:
-                                                                      const Text(
-                                                                    'Aceptar',
-                                                                    style: TextStyle(
+                                                                      fontSize:
+                                                                          20),
+                                                                )),
+                                                                content:
+                                                                    //lista de documentos
+                                                                    SizedBox(
+                                                                  height: 300,
+                                                                  width:
+                                                                      size.width *
+                                                                          0.9,
+                                                                  child: ListView
+                                                                      .builder(
+                                                                    itemCount: context
+                                                                        .read<
+                                                                            WMSPickingBloc>()
+                                                                        .listOfOrigins
+                                                                        .length,
+                                                                    itemBuilder:
+                                                                        (context,
+                                                                            index) {
+                                                                      return Card(
                                                                         color:
-                                                                            white),
-                                                                  ))
-                                                            ],
-                                                          ),
-                                                        ));
+                                                                            white,
+                                                                        elevation:
+                                                                            2,
+                                                                        child:
+                                                                            ListTile(
+                                                                          title: Text(
+                                                                              context.read<WMSPickingBloc>().listOfOrigins[index].name ?? 'Sin nombre',
+                                                                              style: const TextStyle(fontSize: 12, color: black)),
+                                                                        ),
+                                                                      );
+                                                                    },
+                                                                  ),
+                                                                ),
+                                                                actions: [
+                                                                  ElevatedButton(
+                                                                      onPressed:
+                                                                          () {
+                                                                        Navigator.pop(
+                                                                            context);
+                                                                      },
+                                                                      style: ElevatedButton.styleFrom(
+                                                                          backgroundColor:
+                                                                              primaryColorApp,
+                                                                          shape:
+                                                                              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                                                                      child: const Text(
+                                                                        'Aceptar',
+                                                                        style: TextStyle(
+                                                                            color:
+                                                                                white),
+                                                                      ))
+                                                                ],
+                                                              ),
+                                                            ));
                                               },
                                               child: Container(
-                                                padding: const EdgeInsets.all(5),
+                                                padding:
+                                                    const EdgeInsets.all(5),
                                                 decoration: BoxDecoration(
                                                     color: Colors.white,
                                                     borderRadius:
-                                                        BorderRadius.circular(10),
+                                                        BorderRadius.circular(
+                                                            10),
 
                                                     //sombras
                                                     boxShadow: const [
@@ -460,7 +473,8 @@ class WMSPickingPage extends StatefulWidget {
                                                   MainAxisAlignment.start,
                                               children: [
                                                 Align(
-                                                  alignment: Alignment.centerLeft,
+                                                  alignment:
+                                                      Alignment.centerLeft,
                                                   child: Text(
                                                       batch.zonaEntrega ?? '',
                                                       style: const TextStyle(
@@ -505,7 +519,8 @@ class WMSPickingPage extends StatefulWidget {
                                                   ],
                                                 ),
                                                 Align(
-                                                  alignment: Alignment.centerLeft,
+                                                  alignment:
+                                                      Alignment.centerLeft,
                                                   child: Text(
                                                     batch.pickingTypeId
                                                         .toString(),
@@ -518,7 +533,8 @@ class WMSPickingPage extends StatefulWidget {
                                                   ),
                                                 ),
                                                 Align(
-                                                  alignment: Alignment.centerLeft,
+                                                  alignment:
+                                                      Alignment.centerLeft,
                                                   child: Row(
                                                     children: [
                                                       Icon(
@@ -544,7 +560,8 @@ class WMSPickingPage extends StatefulWidget {
                                                   ),
                                                 ),
                                                 Align(
-                                                  alignment: Alignment.centerLeft,
+                                                  alignment:
+                                                      Alignment.centerLeft,
                                                   child: Row(
                                                     children: [
                                                       Icon(
@@ -559,8 +576,8 @@ class WMSPickingPage extends StatefulWidget {
                                                             fontSize: 12,
                                                             color: black),
                                                         maxLines: 2,
-                                                        overflow:
-                                                            TextOverflow.ellipsis,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
                                                       ),
                                                       Expanded(
                                                         child: Text(
@@ -579,7 +596,8 @@ class WMSPickingPage extends StatefulWidget {
                                                   ),
                                                 ),
                                                 Align(
-                                                  alignment: Alignment.centerLeft,
+                                                  alignment:
+                                                      Alignment.centerLeft,
                                                   child: Row(
                                                     children: [
                                                       Icon(
@@ -594,12 +612,13 @@ class WMSPickingPage extends StatefulWidget {
                                                             fontSize: 12,
                                                             color: black),
                                                         maxLines: 2,
-                                                        overflow:
-                                                            TextOverflow.ellipsis,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
                                                       ),
                                                       Expanded(
                                                         child: Text(
-                                                          batch.totalQuantityItems
+                                                          batch
+                                                              .totalQuantityItems
                                                               .toString(),
                                                           style: TextStyle(
                                                               fontSize: 12,
@@ -614,7 +633,8 @@ class WMSPickingPage extends StatefulWidget {
                                                   ),
                                                 ),
                                                 Align(
-                                                  alignment: Alignment.centerLeft,
+                                                  alignment:
+                                                      Alignment.centerLeft,
                                                   child: Row(
                                                     children: [
                                                       Icon(
@@ -627,9 +647,10 @@ class WMSPickingPage extends StatefulWidget {
                                                         child: Text(
                                                           batch.userName ??
                                                               "Sin responsable",
-                                                          style: const TextStyle(
-                                                              fontSize: 12,
-                                                              color: black),
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: black),
                                                           maxLines: 2,
                                                           overflow: TextOverflow
                                                               .ellipsis,

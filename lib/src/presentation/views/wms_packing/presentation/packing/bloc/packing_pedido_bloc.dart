@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/src/core/utils/formats_utils.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
@@ -12,7 +13,6 @@ import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_image_send_novedad_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_temp_ia_model.dart';
-import 'package:wms_app/src/presentation/views/user/models/configuration.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/data/wms_packing_repository.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/lista_product_packing.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/packing_response_model.dart';
@@ -92,7 +92,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   ProductoPedido currentProduct = ProductoPedido();
 
   //configuracion del usuario //permisos
-  Configurations configurations = Configurations();
+  UserConfigurationModel configurations = UserConfigurationModel();
   String currentFilterKey = 'priority_high';
   //*lista de novedades
   List<Novedad> novedades = [];
@@ -194,9 +194,10 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     on<DeleteProductFromTemporaryPackageEvent>(
         _onDeleteProductFromTemporaryPackageEvent);
     on<ViewProductImageEvent>(_onViewProductImageEvent);
-  
+
     on<SortPackingListEvent>((event, emit) {
-      List<PedidoPackingResult> sortedList = List.from(this.listOfPedidosFilters);
+      List<PedidoPackingResult> sortedList =
+          List.from(this.listOfPedidosFilters);
       sortedList.sort((a, b) {
         switch (event.field) {
           case 'priority':
@@ -251,7 +252,6 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           default:
             return 0;
         }
-
       });
 
       this.listOfPedidosFilters = sortedList;

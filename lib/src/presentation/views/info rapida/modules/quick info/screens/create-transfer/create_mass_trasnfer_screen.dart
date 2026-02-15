@@ -15,7 +15,7 @@ import 'package:wms_app/src/presentation/views/conteo/screens/widgets/new_produc
 import 'package:wms_app/src/presentation/views/info%20rapida/models/info_rapida_model.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/screens/create-transfer/widgets/locationDest/LocationCardButton_massTransfer_widget.dart';
-import 'package:wms_app/src/presentation/views/user/screens/bloc/user_bloc.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 

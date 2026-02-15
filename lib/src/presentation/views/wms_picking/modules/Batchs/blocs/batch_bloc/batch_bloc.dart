@@ -4,12 +4,12 @@ import 'dart:math';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:intl/intl.dart';
+import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/src/core/utils/formats_utils.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
-import 'package:wms_app/src/presentation/views/user/models/configuration.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/data/wms_picking_repository.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/BatchWithProducts_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/item_picking_request.dart';
@@ -79,7 +79,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
   String selectedNovedad = '';
 
   //configuracion del usuario //permisos
-  Configurations configurations = Configurations();
+  UserConfigurationModel configurations = UserConfigurationModel();
 
   dynamic quantitySelected = 0;
 

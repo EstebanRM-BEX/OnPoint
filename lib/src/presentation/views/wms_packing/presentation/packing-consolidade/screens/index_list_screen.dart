@@ -14,7 +14,7 @@ import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/network/check_internet_connection.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_start_picking_widget.dart';
-import 'package:wms_app/src/presentation/views/user/screens/widgets/dialog_info_widget.dart';
+import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/packing_response_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/screens/widgets/others/dialog_start_packing_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/bloc/packing_consolidade_bloc.dart';
@@ -158,9 +158,8 @@ class _ListPackingConsolidadeScreenState
     }
   }
 
-void goBatchInfo(BuildContext context, PackingConsolidateBloc batchBloc,
+  void goBatchInfo(BuildContext context, PackingConsolidateBloc batchBloc,
       BatchPackingModel batch) async {
-    
     // 1. Variable para capturar el contexto ESPECÍFICO del diálogo
     BuildContext? dialogContext;
 
@@ -188,7 +187,7 @@ void goBatchInfo(BuildContext context, PackingConsolidateBloc batchBloc,
       // Fallback: Si el diálogo no se capturó correctamente, intentamos cerrar con el contexto padre
       // solo si es seguro hacerlo.
       if (Navigator.canPop(context)) {
-         Navigator.pop(context);
+        Navigator.pop(context);
       }
     }
 

@@ -3,6 +3,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
@@ -13,7 +14,6 @@ import 'package:wms_app/src/presentation/views/conteo/models/response_send_produ
 import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
 import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
-import 'package:wms_app/src/presentation/views/user/models/configuration.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:collection/collection.dart'; // Importa esta librería
 
@@ -40,7 +40,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   List<String> positionsOrigen = [];
 
   //configuracion del usuario //permisos
-  Configurations configurations = Configurations();
+  UserConfigurationModel configurations = UserConfigurationModel();
 
   TextEditingController newLoteController = TextEditingController();
   TextEditingController searchControllerLote = TextEditingController();
@@ -963,8 +963,6 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     }
   }
 
-
-
   void _onCreateLoteProduct(
       CreateLoteProduct event, Emitter<ConteoState> emit) async {
     try {
@@ -992,15 +990,13 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
 
         listLotesProductFilters = List.from(listLotesProduct);
 
-     
-        
         currentProductLote = response.result?.result;
         loteIsOk = true;
         dateLoteController.clear();
         newLoteController.clear();
-        
+
         // Limpiamos el controlador de búsqueda si reiniciamos la lista
-        searchControllerLote.clear(); 
+        searchControllerLote.clear();
 
         add(SelectecLoteEvent(currentProductLote!));
         emit(CreateLoteProductSuccess());

@@ -20,7 +20,7 @@ import 'package:wms_app/src/presentation/views/conteo/screens/widgets/new_produc
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/others/dialog_validate_product_send_widget.dart';
 import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
-import 'package:wms_app/src/presentation/views/user/screens/bloc/user_bloc.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/quantity/scanner_quantity_widget.dart';

@@ -2,9 +2,10 @@
 // ignore_for_file: avoid_print
 
 import 'package:sqflite/sqflite.dart';
+import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
+import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/others/tbl_configurations/configuration_table.dart';
-import 'package:wms_app/src/presentation/views/user/models/configuration.dart';
 
 class ConfigurationsRepository {
   static const int _batchSize = 500;
@@ -13,7 +14,7 @@ class ConfigurationsRepository {
   /// OPTIMIZED METHOD: syncConfigurations (Mark & Sweep)
   /// --------------------------------------------------------------------------
   /// Useful if you download a list of configurations (e.g. for multiple users).
-  Future<void> syncConfigurations(List<Configurations> configList) async {
+  Future<void> syncConfigurations(List<UserConfiguration> configList) async {
     if (configList.isEmpty) return;
 
     try {
@@ -73,7 +74,7 @@ class ConfigurationsRepository {
   /// SINGLE INSERT (Legacy Support / Single User Login)
   /// --------------------------------------------------------------------------
   Future<void> insertConfiguration(
-      Configurations configuration, int userId) async {
+      UserConfiguration configuration, int userId) async {
     try {
       Database db = await DataBaseSqlite().getDatabaseInstance();
 
@@ -96,7 +97,7 @@ class ConfigurationsRepository {
   /// --------------------------------------------------------------------------
   /// READ METHOD
   /// --------------------------------------------------------------------------
-  Future<Configurations?> getConfiguration(int userId) async {
+  Future<UserConfigurationModel?> getConfiguration(int userId) async {
     try {
       Database db = await DataBaseSqlite().getDatabaseInstance();
 
@@ -107,7 +108,7 @@ class ConfigurationsRepository {
       );
 
       if (maps.isNotEmpty) {
-        return _mapFromDB(maps.first);
+        return UserConfigurationModel.fromJson(maps.first);
       } else {
         return null;
       }
@@ -122,7 +123,7 @@ class ConfigurationsRepository {
   /// --------------------------------------------------------------------------
 
   // Maps Object -> DB Map
-  Map<String, dynamic> _mapToDB(Configurations config) {
+  Map<String, dynamic> _mapToDB(UserConfiguration config) {
     final res = config.result?.result;
     return {
       // Note: ID is handled by the caller typically, but can be here too
@@ -207,13 +208,11 @@ class ConfigurationsRepository {
   }
 
   // Maps DB Map -> Object
-  Configurations _mapFromDB(Map<String, dynamic> map) {
-    return Configurations(
-      jsonrpc: '2.0',
-      id: 1, // Static or dynamic if needed
-      result: ConfigurationsResult(
+  UserConfiguration _mapFromDB(Map<String, dynamic> map) {
+    return UserConfiguration(
+      result: UserConfigurationResultModel(
         code: 200,
-        result: DataConfig(
+        result: UserProfileModel(
           id: map[ConfigurationsTable.columnId],
           name: map[ConfigurationsTable.columnName],
           lastName: map[ConfigurationsTable.columnLastName],

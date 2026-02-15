@@ -85,7 +85,7 @@ class IsHomeState extends TransferenciaState {
 }
 
 class ConfigurationLoadedOrder extends TransferenciaState {
-  final Configurations configurations;
+  final UserConfigurationModel configurations;
 
   ConfigurationLoadedOrder(this.configurations);
 }
@@ -359,9 +359,8 @@ class ProductExpansionToggled extends TransferenciaState {
   ProductExpansionToggled(this.isExpanded);
 }
 
-
-
 class ViewProductImageLoading extends TransferenciaState {}
+
 class ViewProductImageSuccess extends TransferenciaState {
   final String imageUrl;
   ViewProductImageSuccess(this.imageUrl);

@@ -2,6 +2,7 @@
 
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
@@ -9,7 +10,6 @@ import 'package:wms_app/src/presentation/views/inventario/data/inventario_reposi
 import 'package:wms_app/src/presentation/views/inventario/models/request_sendProducr_model.dart';
 import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
-import 'package:wms_app/src/presentation/views/user/models/configuration.dart';
 
 part 'inventario_event.dart';
 part 'inventario_state.dart';
@@ -81,7 +81,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
   LotesProduct? currentProductLote;
 
   //*configuracion del usuario //permisos
-  Configurations configurations = Configurations();
+  UserConfigurationModel configurations = UserConfigurationModel();
 
   InventarioBloc() : super(InventarioInitial()) {
     on<InventarioEvent>((event, emit) {});
@@ -231,7 +231,6 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       );
 
       if (response.result?.code == 200) {
-        
         // 1. Capturamos el nuevo lote de forma segura
         final newLote = response.result?.result ?? LotesProduct();
 
@@ -241,17 +240,17 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
         // 3. Reconstruimos la lista de FILTROS basada en la maestra
         // Esto rompe referencias y evita duplicados visuales
         listLotesProductFilters = List.from(listLotesProduct);
-        
+
         // 4. Actualizamos el estado actual
         currentProductLote = newLote;
         loteIsOk = true;
-        
+
         // 5. Limpieza
         dateLoteController.clear();
         newLoteController.clear();
-        
+
         // Opcional: Limpiar buscador si quieres reiniciar la vista
-        // searchControllerLote.clear(); 
+        // searchControllerLote.clear();
 
         add(SelectecLoteEvent(currentProductLote!));
         emit(CreateLoteProductSuccess());

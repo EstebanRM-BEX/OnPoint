@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/src/core/utils/formats_utils.dart';
 import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
@@ -13,7 +14,6 @@ import 'package:wms_app/src/presentation/views/inventario/data/inventario_reposi
 import 'package:wms_app/src/presentation/views/recepcion/data/recepcion_repository.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_image_send_novedad_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_temp_ia_model.dart';
-import 'package:wms_app/src/presentation/views/user/models/configuration.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/data/wms_packing_repository.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/lista_product_packing.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/packing_response_model.dart';
@@ -53,7 +53,7 @@ class PackingConsolidateBloc
   BatchWithProducts batchWithProducts = BatchWithProducts();
 
   //*configuracion del usuario //permisos
-  Configurations configurations = Configurations();
+  UserConfigurationModel configurations = UserConfigurationModel();
 
   //*lista de novedades
   List<Novedad> novedades = [];

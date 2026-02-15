@@ -25,6 +25,7 @@ class SearchLocationSuccess extends InventarioState {
   final List<ResultUbicaciones> locations;
   SearchLocationSuccess(this.locations);
 }
+
 class SearchLoteSuccess extends InventarioState {
   final List<LotesProduct> locations;
   SearchLoteSuccess(this.locations);
@@ -167,7 +168,7 @@ class CreateLoteProductFailure extends InventarioState {
 }
 
 class ConfigurationLoadedInventory extends InventarioState {
-  final Configurations configurations;
+  final UserConfigurationModel configurations;
 
   ConfigurationLoadedInventory(this.configurations);
 }
@@ -177,7 +178,6 @@ class ConfigurationErrorInventory extends InventarioState {
 
   ConfigurationErrorInventory(this.error);
 }
-
 
 class FilterUbicacionesLoading extends InventarioState {}
 

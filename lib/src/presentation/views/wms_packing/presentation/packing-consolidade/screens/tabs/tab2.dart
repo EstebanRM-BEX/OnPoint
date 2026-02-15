@@ -7,7 +7,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/src/core/constans/colors.dart';
 import 'package:wms_app/src/core/utils/sounds_utils.dart';
 import 'package:wms_app/src/core/utils/vibrate_utils.dart';
-import 'package:wms_app/src/presentation/views/user/screens/bloc/user_bloc.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/lista_product_packing.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/packing_response_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/screens/widgets/dialog_confirmated_packing_widget.dart';
