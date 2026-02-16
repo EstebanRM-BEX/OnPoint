@@ -3,9 +3,9 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
-import 'package:wms_app/src/core/utils/formats_utils.dart';
-import 'package:wms_app/src/core/utils/interable_extension_utils.dart';
-import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/utils/formats_utils.dart';
+import 'package:wms_app/core/utils/interable_extension_utils.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/data/devoluciones_repository.dart';

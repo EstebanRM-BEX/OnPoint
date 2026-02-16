@@ -7,7 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
+import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/response_ocupar_muelle_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/history/models/batch_history_id_model.dart';

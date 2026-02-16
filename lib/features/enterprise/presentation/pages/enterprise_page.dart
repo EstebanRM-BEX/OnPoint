@@ -2,15 +2,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
-import '../../../../src/core/constans/colors.dart';
-import '../../../../src/core/utils/validator_utils.dart';
+import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
+import 'package:wms_app/core/utils/validator_utils.dart';
+import 'package:wms_app/injection_container.dart';
 import '../../../../src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import '../../../../features/user/presentation/bloc/user_bloc.dart';
-import '../../../../features/user/presentation/bloc/user_state.dart';
-import '../../../../features/user/presentation/bloc/user_event.dart';
 import '../../../../src/presentation/widgets/dialog_error_widget.dart';
 import '../../../../src/presentation/widgets/keyboard_widget.dart';
-import '../../../../src/services/preferences.dart';
 import '../../domain/entities/recent_url.dart';
 import '../bloc/enterprise_bloc.dart';
 import '../bloc/enterprise_event.dart';
@@ -63,7 +62,7 @@ class _EnterprisePageState extends State<EnterprisePage> {
         }
 
         if (state is DatabaseSelectedState) {
-          Preferences.nameDatabase = state.database;
+          getIt<IStorageService>().nameDatabase = state.database;
           // Navigation logic after selection
           Navigator.pushReplacementNamed(context, 'auth');
         }
@@ -215,7 +214,7 @@ class _EnterprisePageState extends State<EnterprisePage> {
                   leading:
                       Icon(Icons.history, color: primaryColorApp, size: 20),
                   title: Text(item.url, style: const TextStyle(fontSize: 12)),
-                  subtitle: Text(item.date.toString().split(' ')[0],
+                  subtitle: Text(item.fecha.toString().split(' ')[0],
                       style: const TextStyle(fontSize: 10)),
                   trailing: IconButton(
                     icon: Icon(Icons.delete, size: 20, color: Colors.grey[400]),

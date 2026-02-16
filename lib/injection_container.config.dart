@@ -14,6 +14,17 @@ import 'package:http/http.dart' as _i519;
 import 'package:injectable/injectable.dart' as _i526;
 
 import 'core/network/network_info.dart' as _i75;
+import 'core/services/interfaces/i_notification_service.dart' as _i615;
+import 'core/services/interfaces/i_storage_service.dart' as _i206;
+import 'core/services/interfaces/i_websocket_service.dart' as _i1062;
+import 'core/services/notification_service.dart' as _i1011;
+import 'core/services/storage_service.dart' as _i243;
+import 'core/services/websocket_service.dart' as _i1020;
+import 'features/auth/data/datasources/auth_local_data_source.dart' as _i791;
+import 'features/auth/data/repositories/auth_repository_impl.dart' as _i111;
+import 'features/auth/domain/repositories/auth_repository.dart' as _i1015;
+import 'features/auth/domain/usecases/validate_session.dart' as _i52;
+import 'features/auth/presentation/bloc/auth_bloc.dart' as _i363;
 import 'features/enterprise/data/datasources/enterprise_local_data_source.dart'
     as _i854;
 import 'features/enterprise/data/datasources/enterprise_remote_data_source.dart'
@@ -53,16 +64,17 @@ import 'features/user/domain/usecases/register_device.dart' as _i902;
 import 'features/user/presentation/bloc/user_bloc.dart' as _i565;
 import 'features/websocket/presentation/bloc/websocket_bloc.dart' as _i676;
 import 'injection_container.dart' as _i809;
+import 'presentation/global/blocs/network/connection_status_cubit.dart'
+    as _i146;
 import 'src/api/api_request_service.dart' as _i319;
 import 'src/presentation/providers/db/database.dart' as _i552;
-import 'src/services/webSocket_service.dart' as _i876;
 
 extension GetItInjectableX on _i174.GetIt {
 // initializes the registration of main-scope dependencies inside of GetIt
-  _i174.GetIt init({
+  Future<_i174.GetIt> init({
     String? environment,
     _i526.EnvironmentFilter? environmentFilter,
-  }) {
+  }) async {
     final gh = _i526.GetItHelper(
       this,
       environment,
@@ -72,18 +84,26 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i519.Client>(() => registerModule.httpClient);
     gh.lazySingleton<_i895.Connectivity>(() => registerModule.connectivity);
     gh.lazySingleton<_i552.DataBaseSqlite>(() => registerModule.database);
-    gh.lazySingleton<_i876.WebSocketService>(
-        () => registerModule.webSocketService);
     gh.lazySingleton<_i319.ApiRequestService>(
         () => registerModule.apiRequestService);
     gh.lazySingleton<_i232.UserLocalDataSource>(
         () => _i232.UserLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()));
+    gh.lazySingleton<_i359.HomeRemoteDataSource>(
+        () => _i359.HomeRemoteDataSourceImpl(gh<_i319.ApiRequestService>()));
     gh.lazySingleton<_i75.NetworkInfo>(
-        () => _i75.NetworkInfoImpl(gh<_i895.Connectivity>()));
+      () => _i75.NetworkInfoImpl(gh<_i895.Connectivity>()),
+      dispose: (i) => i.dispose(),
+    );
+    gh.lazySingleton<_i791.AuthLocalDataSource>(
+        () => _i791.AuthLocalDataSourceImpl());
     gh.lazySingleton<_i544.LoginLocalDataSource>(
         () => _i544.LoginLocalDataSourceImpl());
+    gh.factory<_i146.ConnectionStatusCubit>(
+        () => _i146.ConnectionStatusCubit(networkInfo: gh<_i75.NetworkInfo>()));
     gh.lazySingleton<_i1071.UserRemoteDataSource>(
         () => _i1071.UserRemoteDataSourceImpl(gh<_i319.ApiRequestService>()));
+    gh.lazySingleton<_i615.INotificationService>(
+        () => _i1011.NotificationService());
     gh.lazySingleton<_i918.EnterpriseRemoteDataSource>(() =>
         _i918.EnterpriseRemoteDataSourceImpl(gh<_i319.ApiRequestService>()));
     gh.lazySingleton<_i18.LoginRemoteDataSource>(
@@ -92,10 +112,14 @@ extension GetItInjectableX on _i174.GetIt {
           remoteDataSource: gh<_i1071.UserRemoteDataSource>(),
           localDataSource: gh<_i232.UserLocalDataSource>(),
         ));
-    gh.factory<_i676.WebSocketBloc>(() =>
-        _i676.WebSocketBloc(webSocketService: gh<_i876.WebSocketService>()));
-    gh.lazySingleton<_i359.HomeRemoteDataSource>(
-        () => _i359.HomeRemoteDataSourceImpl(gh<_i519.Client>()));
+    await gh.lazySingletonAsync<_i206.IStorageService>(
+      () {
+        final i = _i243.StorageService();
+        return i.init().then((_) => i);
+      },
+      preResolve: true,
+    );
+    gh.lazySingleton<_i1062.IWebSocketService>(() => _i1020.WebSocketService());
     gh.lazySingleton<_i854.EnterpriseLocalDataSource>(
         () => _i854.EnterpriseLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()));
     gh.lazySingleton<_i309.EnterpriseRepository>(
@@ -126,6 +150,10 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i747.SaveRecentUrl(gh<_i309.EnterpriseRepository>()));
     gh.lazySingleton<_i552.DeleteRecentUrl>(
         () => _i552.DeleteRecentUrl(gh<_i309.EnterpriseRepository>()));
+    gh.factory<_i676.WebSocketBloc>(() =>
+        _i676.WebSocketBloc(webSocketService: gh<_i1062.IWebSocketService>()));
+    gh.lazySingleton<_i1015.AuthRepository>(() => _i111.AuthRepositoryImpl(
+        localDataSource: gh<_i791.AuthLocalDataSource>()));
     gh.lazySingleton<_i311.SaveUserSession>(
         () => _i311.SaveUserSession(gh<_i889.LoginRepository>()));
     gh.lazySingleton<_i792.AuthenticateUser>(
@@ -157,10 +185,14 @@ extension GetItInjectableX on _i174.GetIt {
           saveRecentUrlUseCase: gh<_i747.SaveRecentUrl>(),
           deleteRecentUrlUseCase: gh<_i552.DeleteRecentUrl>(),
         ));
+    gh.lazySingleton<_i52.ValidateSession>(
+        () => _i52.ValidateSession(gh<_i1015.AuthRepository>()));
     gh.factory<_i123.HomeBloc>(() => _i123.HomeBloc(
           getUserData: gh<_i485.GetUserData>(),
           getAppVersion: gh<_i312.GetAppVersion>(),
         ));
+    gh.factory<_i363.AuthBloc>(
+        () => _i363.AuthBloc(validateSession: gh<_i52.ValidateSession>()));
     return this;
   }
 }

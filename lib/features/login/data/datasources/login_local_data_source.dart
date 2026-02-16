@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/error/exceptions.dart';
-import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/login/domain/entities/user.dart';
 
 /// Local data source for login operations.

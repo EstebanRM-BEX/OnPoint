@@ -14,9 +14,9 @@ import 'package:wms_app/src/api/http_response_handler.dart';
 
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
-import 'package:wms_app/src/core/constans/colors.dart';
-import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/src/core/utils/widgets/dialog_loading_widget.dart'; // Para extraer la extensión del filename
+import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/utils/widgets/dialog_loading_widget.dart'; // Para extraer la extensión del filename
 
 class ApiRequestService {
   static final ApiRequestService _instance = ApiRequestService._internal();

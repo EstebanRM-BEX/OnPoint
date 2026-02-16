@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
+import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/blocs/keyboard/keyboard_bloc.dart';
 import 'package:wms_app/src/presentation/blocs/keyboard/keyboard_event.dart';
 import 'package:wms_app/src/presentation/blocs/keyboard/keyboard_state.dart';
@@ -52,13 +52,13 @@ class _CustomKeyboardState extends State<CustomKeyboard> {
     return [
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: _buildLetterRow(
-            ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p']),
+        children:
+            _buildLetterRow(['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p']),
       ),
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: _buildLetterRow(
-            ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ñ']),
+        children:
+            _buildLetterRow(['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ñ']),
       ),
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -238,8 +238,7 @@ class _CustomKeyboardState extends State<CustomKeyboard> {
             borderRadius: BorderRadius.circular(5),
             color: white,
           ),
-          child: const Center(
-              child: Text(' ', style: TextStyle(fontSize: 16))),
+          child: const Center(child: Text(' ', style: TextStyle(fontSize: 16))),
         ),
       ),
     );
@@ -263,8 +262,8 @@ class _CustomKeyboardState extends State<CustomKeyboard> {
             borderRadius: BorderRadius.circular(5),
           ),
           child: const Center(
-            child:
-                Text('.com', style: TextStyle(color: Colors.white, fontSize: 16)),
+            child: Text('.com',
+                style: TextStyle(color: Colors.white, fontSize: 16)),
           ),
         ),
       ),

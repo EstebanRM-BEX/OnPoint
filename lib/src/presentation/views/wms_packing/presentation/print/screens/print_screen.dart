@@ -7,8 +7,8 @@ import 'package:flutter_esc_pos_utils/flutter_esc_pos_utils.dart';
 import 'package:image/image.dart' as img;
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
-import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/print/models/mode_print_model.dart';
 import 'dart:ui' as ui;
 

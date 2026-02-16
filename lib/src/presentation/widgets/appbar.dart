@@ -1,6 +1,6 @@
 // ignore_for_file: must_be_immutable
 
-import 'package:wms_app/src/core/constans/colors.dart';
+import 'package:wms_app/core/constants/colors.dart';
 import 'package:flutter/material.dart';
 
 class AppBarGlobal extends StatelessWidget implements PreferredSizeWidget {
@@ -11,7 +11,6 @@ class AppBarGlobal extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-
       centerTitle: true,
       title: Text(tittle, style: const TextStyle(color: white, fontSize: 18)),
       leading: IconButton(

@@ -3,8 +3,8 @@
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
-import 'package:wms_app/src/core/utils/formats_utils.dart';
-import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/utils/formats_utils.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';

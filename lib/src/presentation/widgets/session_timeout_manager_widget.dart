@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
-import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/src/services/webSocket_service.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/services/websocket_service.dart';
 
 class SessionTimeoutManager extends StatefulWidget {
   final Widget child;

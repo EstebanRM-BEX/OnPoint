@@ -1,9 +1,9 @@
 // urls_recientes_repository.dart
 
 import 'package:sqflite/sqflite.dart';
+import 'package:wms_app/features/enterprise/domain/entities/recent_url.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/others/tbl_urlrecientes/urlrecientes_table.dart';
-import 'package:wms_app/src/presentation/views/global/enterprise/models/recent_url_model.dart';
 
 class UrlsRecientesRepository {
   UrlsRecientesRepository();
@@ -72,7 +72,7 @@ class UrlsRecientesRepository {
   // Método para eliminar una URL reciente
   Future<void> deleteUrlReciente(String url) async {
     try {
-       Database db = await DataBaseSqlite().getDatabaseInstance();
+      Database db = await DataBaseSqlite().getDatabaseInstance();
       await db.delete(
         UrlsRecientesTable.tableName,
         where: '${UrlsRecientesTable.columnUrl} = ?',

@@ -26,7 +26,7 @@ class EnterpriseRepositoryImpl implements EnterpriseRepository {
       await localDataSource.cacheEnterpriseUrl(url);
       await localDataSource.saveRecentUrl(RecentUrlModel(
         url: url,
-        date: DateTime.now(),
+        fecha: DateTime.now(),
       ));
       return Right(enterpriseInfo as EnterpriseInfo);
     } catch (e) {

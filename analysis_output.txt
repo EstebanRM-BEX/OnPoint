@@ -1,0 +1,425 @@
+Analyzing appwms...                                             
+
+   info • Convert 'message' to a super parameter • lib/core/error/failures.dart:10:9 • use_super_parameters
+   info • Convert 'message' to a super parameter • lib/core/error/failures.dart:14:9 • use_super_parameters
+   info • Convert 'message' to a super parameter • lib/core/error/failures.dart:18:9 • use_super_parameters
+   info • Convert 'message' to a super parameter • lib/core/error/failures.dart:22:9 • use_super_parameters
+   info • Convert 'message' to a super parameter • lib/core/error/failures.dart:26:9 • use_super_parameters
+   info • Convert 'message' to a super parameter • lib/core/error/failures.dart:30:9 • use_super_parameters
+warning • The left operand can't be null, so the right operand is never executed • lib/core/utils/vibrate_utils.dart:18:42 • dead_null_aware_expression
+   info • Convert 'isLoggedIn', 'lastActiveTime', and 'userId' to super parameters • lib/features/auth/data/models/session_model.dart:5:9 • use_super_parameters
+   info • The declaration 'SessionValidationResult._' isn't referenced • lib/features/auth/domain/entities/session_validation_result.dart:7:33 • unused_element
+   info • Don't use 'BuildContext's across async gaps • lib/features/enterprise/presentation/pages/enterprise_page.dart:249:13 • use_build_context_synchronously
+   info • Convert 'jsonrpc', 'id', and 'message' to super parameters • lib/features/home/data/models/app_version_model.dart:7:9 • use_super_parameters
+   info • Convert 'code' to a super parameter • lib/features/home/data/models/app_version_model.dart:42:9 • use_super_parameters
+   info • Convert 'id', 'version', 'releaseDate', 'notes', and 'urlDownload' to super parameters • lib/features/home/data/models/app_version_model.dart:67:9 • use_super_parameters
+   info • The declaration '_formatDate' isn't referenced • lib/features/home/presentation/widgets/update_app_dialog_widget.dart:191:10 • unused_element
+   info • Convert 'uid', 'name', and 'username' to super parameters • lib/features/login/data/models/user_model.dart:11:9 • use_super_parameters
+warning • Duplicate import • lib/features/user/data/datasources/user_local_data_source.dart:7:8 • duplicate_import
+   info • The type of the right operand ('ConnectivityResult') isn't a subtype or a supertype of the left operand ('List<ConnectivityResult>') • lib/features/user/data/repositories/user_repository_impl.dart:90:19 • unrelated_type_equality_checks
+warning • The getter doesn't override an inherited getter • lib/features/user/domain/entities/user_configuration.dart:7:21 • override_on_non_overriding_member
+warning • The getter doesn't override an inherited getter • lib/features/user/domain/entities/user_configuration.dart:114:21 • override_on_non_overriding_member
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/features/user/presentation/bloc/user_state.dart:65:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/features/user/presentation/bloc/user_state.dart:76:3 • prefer_const_constructors_in_immutables
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/user/presentation/pages/user_page.dart:318:28 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/user/presentation/pages/user_page.dart:327:40 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/user/presentation/pages/user_page.dart:334:28 • use_build_context_synchronously
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:27:31 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:27:60 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:47:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:71:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:94:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:117:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:140:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:163:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:187:42 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:213:31 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:213:60 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:234:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:258:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:282:42 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:305:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:329:42 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:352:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:378:31 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:378:62 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:398:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:421:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:444:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:467:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:491:42 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:515:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:540:31 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:540:61 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:560:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:584:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:609:42 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:632:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:656:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:681:31 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:681:62 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:701:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:724:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:748:45 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:791:43 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:814:43 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/user/presentation/widgets/permissions_widget.dart:855:34 • invalid_null_aware_operator
+  error • The method 'dispose' isn't defined for the type 'NetworkInfo' • lib/injection_container.config.dart:95:25 • undefined_method
+warning • The value of the local variable 'subtype' isn't used • lib/src/api/api_request_service.dart:240:14 • unused_local_variable
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/providers/db/conteo/tbl_ordenes/orden_repository.dart:39:73 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/providers/db/conteo/tbl_ordenes/orden_repository.dart:40:71 • dead_null_aware_expression
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/database.dart:639:53 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/database.dart:654:53 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/database.dart:664:60 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/database.dart:888:31 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/database.dart:905:20 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/database.dart:919:27 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/database.dart:944:20 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/database.dart:957:20 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/database.dart:970:20 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/database.dart:983:20 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/database.dart:1001:20 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/database.dart:1015:20 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/database.dart:1043:20 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/database.dart:1084:20 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/database.dart:1099:20 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/others/tbl_ubicaciones/ubicaciones_repository.dart:96:15 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/others/tbl_ubicaciones/ubicaciones_repository.dart:124:54 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/others/tbl_ubicaciones/ubicaciones_repository.dart:146:55 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/others/tbl_ubicaciones/ubicaciones_repository.dart:171:13 • unnecessary_non_null_assertion
+   info • Unnecessary empty statement • lib/src/presentation/providers/db/packing/tbl_products_pedido/productos_pedido_pack_repository.dart:771:7 • empty_statements
+warning • Dead code • lib/src/presentation/providers/db/packing/tbl_products_pedido/productos_pedido_pack_repository.dart:771:7 • dead_code
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/picking/tbl_pick_products/pick_products_repository.dart:294:31 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/picking/tbl_pick_products/pick_products_repository.dart:303:31 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/picking/tbl_pick_products/pick_products_repository.dart:312:31 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/providers/db/picking/tbl_pick_products/pick_products_repository.dart:322:27 • unnecessary_non_null_assertion
+   info • Unnecessary use of string interpolation • lib/src/presentation/providers/db/picking/tbl_pick_products/pick_products_repository.dart:326:39 • unnecessary_string_interpolations
+   info • Unnecessary braces in a string interpolation • lib/src/presentation/providers/db/picking/tbl_pick_products/pick_products_repository.dart:326:40 • unnecessary_brace_in_string_interps
+warning • The value of the local variable 'keysToInsert' isn't used • lib/src/presentation/providers/db/recepcion/entradas/tbl_product_entrada/product_entrada_repository.dart:21:27 • unused_local_variable
+warning • The value of the local variable 'keysToInsert' isn't used • lib/src/presentation/providers/db/recepcion/entradas/tbl_product_entrada_batch/product_entrada_repository.dart:20:27 • unused_local_variable
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/conteo/data/conteo_repository.dart:116:46 • dead_null_aware_expression
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/conteo/models/conteo_response_model.dart:307:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/conteo/models/response_delete_product_model.dart:62:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/conteo/models/response_delete_product_model.dart:64:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/conteo/models/response_send_product_model.dart:90:18 • unnecessary_question_mark
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart:972:23 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart:1066:32 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart:1268:35 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart:1524:33 • invalid_null_aware_operator
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart:1596:72 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart:1601:60 • dead_null_aware_expression
+warning • Unnecessary type check; the result is always 'true' • lib/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart:1607:39 • unnecessary_type_check
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart:1619:59 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart:1623:58 • dead_null_aware_expression
+   info • The declaration '_groupByLocation' isn't referenced • lib/src/presentation/views/conteo/screens/conteo_screen.dart:58:42 • unused_element
+   info • Convert 'key' to a super parameter • lib/src/presentation/views/conteo/screens/list_conteo_screen.dart:13:9 • use_super_parameters
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/conteo/screens/list_conteo_screen.dart:150:62 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/conteo/screens/list_conteo_screen.dart:178:35 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?[' is unnecessary • lib/src/presentation/views/conteo/screens/list_conteo_screen.dart:183:53 • invalid_null_aware_operator
+   info • Convert 'key' to a super parameter • lib/src/presentation/views/conteo/screens/new_product_screen.dart:31:9 • use_super_parameters
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/conteo/screens/new_product_screen.dart:245:31 • invalid_null_aware_operator
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/conteo/screens/new_product_screen.dart:251:35 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/conteo/screens/tabs/tab1.dart:112:47 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/conteo/screens/tabs/tab2.dart:68:56 • dead_null_aware_expression
+warning • Unused import: 'package:get/get.dart' • lib/src/presentation/views/conteo/screens/tabs/tab3.dart:7:8 • unused_import
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/conteo/screens/widgets/lote/new_lote_widget.dart:410:64 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/conteo/screens/widgets/lote/new_lote_widget.dart:416:68 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/conteo/screens/widgets/lote/new_lote_widget.dart:427:70 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/conteo/screens/widgets/lote/new_lote_widget.dart:437:70 • unnecessary_non_null_assertion
+   info • A value for optional parameter 'key' isn't ever given • lib/src/presentation/views/conteo/screens/widgets/new_product/location/location_search_widget.dart:277:11 • unused_element
+   info • Convert 'key' to a super parameter • lib/src/presentation/views/conteo/screens/widgets/new_product/lote/lote_scannear_widget.dart:23:9 • use_super_parameters
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/conteo/screens/widgets/new_product/lote/search_lote_widget.dart:413:60 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/conteo/screens/widgets/new_product/lote/search_lote_widget.dart:419:64 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/conteo/screens/widgets/new_product/lote/search_lote_widget.dart:430:66 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/conteo/screens/widgets/new_product/lote/search_lote_widget.dart:440:66 • unnecessary_non_null_assertion
+   info • Convert 'key' to a super parameter • lib/src/presentation/views/conteo/screens/widgets/new_product/product/product_dropdown_widget.dart:10:9 • use_super_parameters
+   info • The type of the right operand ('bool') isn't a subtype or a supertype of the left operand ('String') • lib/src/presentation/views/conteo/screens/widgets/new_product/product/product_search_widget.dart:214:61 • unrelated_type_equality_checks
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/conteo/screens/widgets/new_product/product/product_search_widget.dart:221:40 • unnecessary_non_null_assertion
+   info • A value for optional parameter 'key' isn't ever given • lib/src/presentation/views/conteo/screens/widgets/new_product/product/product_search_widget.dart:282:28 • unused_element
+   info • Unnecessary use of string interpolation • lib/src/presentation/views/conteo/screens/widgets/others/dialog_validate_product_send_widget.dart:97:31 • unnecessary_string_interpolations
+   info • The local variable '_audioService' starts with an underscore • lib/src/presentation/views/conteo/screens/widgets/product/product_dropdown_widget.dart:27:24 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_vibrationService' starts with an underscore • lib/src/presentation/views/conteo/screens/widgets/product/product_dropdown_widget.dart:28:28 • no_leading_underscores_for_local_identifiers
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/devoluciones/data/devoluciones_repository.dart:176:42 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/devoluciones/data/devoluciones_repository.dart:177:48 • dead_null_aware_expression
+warning • The value of the local variable 'resultData' isn't used • lib/src/presentation/views/devoluciones/data/devoluciones_repository.dart:303:13 • unused_local_variable
+warning • Unused import: 'dart:convert' • lib/src/presentation/views/devoluciones/models/product_devolucion_model.dart:1:8 • unused_import
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/devoluciones/models/product_devolucion_model.dart:8:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/devoluciones/models/product_devolucion_model.dart:9:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/devoluciones/models/product_devolucion_model.dart:10:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/devoluciones/models/product_devolucion_model.dart:15:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/devoluciones/models/product_devolucion_model.dart:17:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/devoluciones/models/product_devolucion_model.dart:18:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/devoluciones/models/product_devolucion_model.dart:19:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/devoluciones/models/product_devolucion_model.dart:20:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/devoluciones/models/product_devolucion_model.dart:21:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/devoluciones/models/product_devolucion_model.dart:22:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/devoluciones/models/response_devolucion_model.dart:44:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/devoluciones/models/response_devolucion_model.dart:45:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/devoluciones/models/response_devolucion_model.dart:110:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/devoluciones/models/response_devolucion_model.dart:111:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/devoluciones/models/response_devolucion_model.dart:113:18 • unnecessary_question_mark
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart:346:27 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart:347:33 • dead_null_aware_expression
+   info • Use a 'SizedBox' to add whitespace to a layout • lib/src/presentation/views/devoluciones/screens/index.dart:513:53 • sized_box_for_whitespace
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/devoluciones/screens/lote_screen.dart:157:35 • invalid_null_aware_operator
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/devoluciones/screens/lote_screen.dart:388:60 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/devoluciones/screens/lote_screen.dart:394:64 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/devoluciones/screens/lote_screen.dart:405:66 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/devoluciones/screens/lote_screen.dart:415:66 • unnecessary_non_null_assertion
+   info • Convert 'key' to a super parameter • lib/src/presentation/views/devoluciones/screens/widgets/product_search_widget.dart:14:9 • use_super_parameters
+   info • A value for optional parameter 'key' isn't ever given • lib/src/presentation/views/devoluciones/screens/widgets/product_search_widget.dart:202:28 • unused_element
+   info • A value for optional parameter 'key' isn't ever given • lib/src/presentation/views/devoluciones/screens/widgets/product_search_widget.dart:253:27 • unused_element
+   info • A value for optional parameter 'key' isn't ever given • lib/src/presentation/views/devoluciones/screens/widgets/product_search_widget.dart:300:35 • unused_element
+   info • The type of the right operand ('ConnectivityResult') isn't a subtype or a supertype of the left operand ('List<ConnectivityResult>') • lib/src/presentation/views/info rapida/data/info_rapida_repository.dart:21:28 • unrelated_type_equality_checks
+   info • The type of the right operand ('ConnectivityResult') isn't a subtype or a supertype of the left operand ('List<ConnectivityResult>') • lib/src/presentation/views/info rapida/data/info_rapida_repository.dart:154:28 • unrelated_type_equality_checks
+   info • The type of the right operand ('ConnectivityResult') isn't a subtype or a supertype of the left operand ('List<ConnectivityResult>') • lib/src/presentation/views/info rapida/data/info_rapida_repository.dart:269:28 • unrelated_type_equality_checks
+   info • The type of the right operand ('ConnectivityResult') isn't a subtype or a supertype of the left operand ('List<ConnectivityResult>') • lib/src/presentation/views/info rapida/data/info_rapida_repository.dart:335:28 • unrelated_type_equality_checks
+   info • The type of the right operand ('ConnectivityResult') isn't a subtype or a supertype of the left operand ('List<ConnectivityResult>') • lib/src/presentation/views/info rapida/data/info_rapida_repository.dart:415:28 • unrelated_type_equality_checks
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/info rapida/index.dart:139:23 • unnecessary_non_null_assertion
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/info_rapida_model.dart:87:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/info_rapida_model.dart:88:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/info_rapida_model.dart:95:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/info_rapida_model.dart:96:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/info_rapida_model.dart:97:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/info_rapida_model.dart:277:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/response_sen_transfer_info_model.dart:38:12 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/response_sen_transfer_info_model.dart:40:12 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/response_sen_transfer_info_model.dart:41:12 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/response_sen_transfer_info_model.dart:42:12 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/response_sen_transfer_info_model.dart:48:12 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/response_sen_transfer_info_model.dart:49:12 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/response_sen_transfer_info_model.dart:51:12 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/response_update_product_model.dart:38:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/response_update_product_model.dart:39:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/response_update_product_model.dart:40:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/response_update_product_model.dart:42:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/response_update_product_model.dart:43:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/response_update_product_model.dart:44:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/info rapida/models/transfer_info_request.dart:8:16 • unnecessary_question_mark
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/info rapida/modules/quick info/screens/create-transfer/create_mass_trasnfer_screen.dart:135:53 • invalid_null_aware_operator
+warning • Dead code • lib/src/presentation/views/info rapida/modules/quick info/screens/create-transfer/widgets/locationDest/LocationCardButton_massTransfer_widget.dart:45:15 • dead_code
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/info rapida/modules/quick info/screens/create-transfer/widgets/locationDest/location_search_widget.dart:229:54 • invalid_null_aware_operator
+   info • Don't use 'BuildContext's across async gaps • lib/src/presentation/views/info rapida/modules/quick info/screens/list_locations_screen.dart:139:43 • use_build_context_synchronously
+   info • A value for optional parameter 'key' isn't ever given • lib/src/presentation/views/info rapida/modules/quick info/screens/list_locations_screen.dart:341:11 • unused_element
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/info rapida/modules/quick info/screens/list_products_screen.dart:102:49 • unnecessary_non_null_assertion
+   info • A value for optional parameter 'key' isn't ever given • lib/src/presentation/views/info rapida/modules/quick info/screens/list_products_screen.dart:309:28 • unused_element
+   info • A value for optional parameter 'key' isn't ever given • lib/src/presentation/views/info rapida/modules/quick info/screens/list_products_screen.dart:363:35 • unused_element
+   info • Convert 'key' to a super parameter • lib/src/presentation/views/info rapida/modules/quick info/screens/locations_info_screen.dart:21:9 • use_super_parameters
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/info rapida/modules/quick info/screens/product_info_screen.dart:157:52 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/info rapida/modules/quick info/screens/product_info_screen.dart:269:49 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/info rapida/modules/quick info/screens/product_info_screen.dart:279:49 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/info rapida/modules/quick info/screens/product_info_screen.dart:289:49 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/info rapida/modules/quick info/screens/product_info_screen.dart:319:59 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/info rapida/modules/quick info/screens/product_info_screen.dart:563:39 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/info rapida/modules/quick info/screens/product_info_screen.dart:566:34 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/info rapida/modules/quick info/screens/product_info_screen.dart:567:44 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/info rapida/modules/quick info/screens/product_info_screen.dart:571:48 • invalid_null_aware_operator
+warning • Unused import: 'package:wms_app/src/presentation/widgets/keyboard_widget.dart' • lib/src/presentation/views/info rapida/modules/quick info/widgets/dialog_info_widget.dart:11:8 • unused_import
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/info rapida/modules/transfer/screens/transfer_info_screen.dart:667:65 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/info rapida/modules/transfer/screens/transfer_info_screen.dart:670:65 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/info rapida/modules/transfer/screens/transfer_info_screen.dart:674:57 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/info rapida/modules/transfer/screens/transfer_info_screen.dart:749:65 • invalid_null_aware_operator
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/inventario/models/response_products_model.dart:60:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/inventario/models/response_products_model.dart:61:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/inventario/models/response_products_model.dart:62:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/inventario/models/response_products_model.dart:68:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/inventario/models/response_products_model.dart:70:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/inventario/models/response_products_model.dart:71:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/inventario/models/response_products_model.dart:72:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/inventario/models/response_products_model.dart:73:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/inventario/models/response_products_model.dart:74:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/inventario/models/response_products_model.dart:75:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/inventario/models/response_senProduct_mode.dart:13:12 • unnecessary_question_mark
+   info • A value for optional parameter 'key' isn't ever given • lib/src/presentation/views/inventario/screens/widgets/location/location_search_widget.dart:226:11 • unused_element
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/inventario/screens/widgets/new_lote_widget.dart:389:64 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/inventario/screens/widgets/new_lote_widget.dart:395:68 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/inventario/screens/widgets/new_lote_widget.dart:406:70 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/inventario/screens/widgets/new_lote_widget.dart:416:70 • unnecessary_non_null_assertion
+   info • Convert 'key' to a super parameter • lib/src/presentation/views/inventario/screens/widgets/product/product_search_widget.dart:14:9 • use_super_parameters
+   info • Don't use 'BuildContext's across async gaps • lib/src/presentation/views/inventario/screens/widgets/product/product_search_widget.dart:52:39 • use_build_context_synchronously
+   info • The type of the right operand ('bool') isn't a subtype or a supertype of the left operand ('String') • lib/src/presentation/views/inventario/screens/widgets/product/product_search_widget.dart:193:61 • unrelated_type_equality_checks
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/inventario/screens/widgets/product/product_search_widget.dart:200:40 • unnecessary_non_null_assertion
+   info • A value for optional parameter 'key' isn't ever given • lib/src/presentation/views/inventario/screens/widgets/product/product_search_widget.dart:261:28 • unused_element
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/recepcion_response_batch_model.dart:259:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/recepcion_response_batch_model.dart:273:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/recepcion_response_batch_model.dart:283:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/recepcion_response_model.dart:80:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/recepcion_response_model.dart:81:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/recepcion_response_model.dart:89:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/recepcion_response_model.dart:90:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/recepcion_response_model.dart:102:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/recepcion_response_model.dart:258:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/recepcion_response_model.dart:259:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/recepcion_response_model.dart:260:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/recepcion_response_model.dart:267:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/recepcion_response_model.dart:270:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/recepcion_response_model.dart:271:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/recepcion_response_model.dart:272:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/recepcion_response_model.dart:307:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/response_deleted_product_model.dart:64:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/response_send_recepcion_model.dart:63:12 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/response_send_recepcion_model.dart:68:12 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/recepcion/models/response_send_recepcion_model.dart:69:12 • unnecessary_question_mark
+warning • The stack trace variable 's' isn't used and can be removed • lib/src/presentation/views/recepcion/modules/batchs/bloc/recepcion_batch_bloc.dart:1284:17 • unused_catch_stack
+   info • The argument type 'int?' isn't related to 'LineasRecepcionBatch' • lib/src/presentation/views/recepcion/modules/batchs/bloc/recepcion_batch_bloc.dart:1304:42 • collection_methods_unrelated_type
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/recepcion/modules/batchs/widgets/new_lote_widget.dart:381:62 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/recepcion/modules/batchs/widgets/new_lote_widget.dart:387:66 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/recepcion/modules/batchs/widgets/new_lote_widget.dart:398:68 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/recepcion/modules/batchs/widgets/new_lote_widget.dart:408:68 • unnecessary_non_null_assertion
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: CurrentOrdenesCompra.resultEntrada • lib/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_event.dart:20:7 • must_be_immutable
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/recepcion/modules/individual/screens/scan_product_screen.dart:895:53 • invalid_null_aware_operator
+warning • Unused import: 'package:get/get.dart' • lib/src/presentation/views/recepcion/modules/individual/screens/tabs/tab2.dart:6:8 • unused_import
+   info • A value for optional parameter 'key' isn't ever given • lib/src/presentation/views/recepcion/modules/individual/screens/widgets/locations_dest/locations_dest_widget.dart:302:11 • unused_element
+warning • Unused import: 'package:wms_app/core/utils/comprimir_image_utils.dart' • lib/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_temperature_widget.dart:8:8 • unused_import
+warning • The value of the field '_preguntando' isn't used • lib/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_temperature_widget.dart:24:8 • unused_field
+warning • The value of the field '_cargandoFoto' isn't used • lib/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_temperature_widget.dart:25:8 • unused_field
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart:376:62 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart:382:66 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart:393:68 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart:403:68 • unnecessary_non_null_assertion
+   info • The local variable '_audioService' starts with an underscore • lib/src/presentation/views/recepcion/modules/individual/screens/widgets/product/product_card_widget.dart:28:24 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_vibrationService' starts with an underscore • lib/src/presentation/views/recepcion/modules/individual/screens/widgets/product/product_card_widget.dart:29:28 • no_leading_underscores_for_local_identifiers
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/transferencias/models/response_delete_line_model.dart:66:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/transferencias/models/response_delete_line_model.dart:74:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/transferencias/models/response_delete_line_model.dart:75:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/transferencias/models/response_delete_line_model.dart:76:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/transferencias/models/response_delete_line_model.dart:77:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/transferencias/models/response_transfer_send_model.dart:64:12 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/transferencias/models/response_transfer_send_model.dart:66:12 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/transferencias/models/response_transfer_send_model.dart:68:12 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/transferencias/modules/create-transfer/models/response_create_transfer_mode.dart:39:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/transferencias/modules/create-transfer/models/response_create_transfer_mode.dart:91:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/transferencias/modules/create-transfer/models/response_validate_stock_model.dart:80:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/transferencias/modules/create-transfer/models/response_validate_stock_model.dart:127:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/transferencias/modules/create-transfer/models/response_validate_stock_model.dart:128:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/transferencias/modules/create-transfer/models/response_validate_stock_model.dart:129:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/transferencias/modules/create-transfer/models/response_validate_stock_model.dart:172:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/transferencias/modules/create-transfer/models/response_validate_stock_model.dart:173:18 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/transferencias/modules/create-transfer/models/response_validate_stock_model.dart:174:18 • unnecessary_question_mark
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/lote/search_lote_widget.dart:404:60 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/lote/search_lote_widget.dart:410:64 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/lote/search_lote_widget.dart:421:66 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/lote/search_lote_widget.dart:431:66 • unnecessary_non_null_assertion
+   info • The type of the right operand ('bool') isn't a subtype or a supertype of the left operand ('String') • lib/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/product/product_search_widget.dart:215:61 • unrelated_type_equality_checks
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/product/product_search_widget.dart:222:40 • unnecessary_non_null_assertion
+   info • A value for optional parameter 'key' isn't ever given • lib/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/product/product_search_widget.dart:282:28 • unused_element
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/transferencias/modules/transfer-interna/screens/scan_product_transfer_screen.dart:760:54 • invalid_null_aware_operator
+   info • The local variable '_audioService' starts with an underscore • lib/src/presentation/views/transferencias/modules/transfer-interna/screens/widgets/location/location_card_widget.dart:30:24 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_vibrationService' starts with an underscore • lib/src/presentation/views/transferencias/modules/transfer-interna/screens/widgets/location/location_card_widget.dart:31:28 • no_leading_underscores_for_local_identifiers
+   info • A value for optional parameter 'key' isn't ever given • lib/src/presentation/views/transferencias/modules/transfer-interna/screens/widgets/location_dest/locations_dest_widget.dart:339:11 • unused_element
+   info • The local variable '_audioService' starts with an underscore • lib/src/presentation/views/transferencias/modules/transfer-interna/screens/widgets/product/product_widget.dart:29:24 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_vibrationService' starts with an underscore • lib/src/presentation/views/transferencias/modules/transfer-interna/screens/widgets/product/product_widget.dart:30:28 • no_leading_underscores_for_local_identifiers
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_packing/models/packing_response_model.dart:105:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_packing/models/packing_response_model.dart:106:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_packing/models/packing_response_model.dart:108:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_packing/models/packing_response_model.dart:110:10 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_packing/models/packing_response_model.dart:229:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_packing/models/packing_response_model.dart:329:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_packing/models/packing_response_model.dart:334:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_packing/models/response_packing_pedido_model.dart:81:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_packing/models/response_packing_pedido_model.dart:116:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_packing/models/response_send_pack_model.dart:76:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_packing/models/response_send_pack_model.dart:130:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_packing/models/response_send_pack_model.dart:136:16 • unnecessary_question_mark
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/wms_packing/presentation/packing-batch/bloc/wms_packing_bloc.dart:429:39 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/wms_packing/presentation/packing-batch/bloc/wms_packing_bloc.dart:442:41 • dead_null_aware_expression
+   info • The type of the right operand ('bool') isn't a subtype or a supertype of the left operand ('int?') • lib/src/presentation/views/wms_packing/presentation/packing-batch/bloc/wms_packing_bloc.dart:1380:36 • unrelated_type_equality_checks
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_packing/presentation/packing-batch/screens/packing.dart:637:65 • invalid_null_aware_operator
+   info • The local variable '_audioService' starts with an underscore • lib/src/presentation/views/wms_packing/presentation/packing-batch/screens/widgets/location/location_card_packing_widget.dart:28:24 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_vibrationService' starts with an underscore • lib/src/presentation/views/wms_packing/presentation/packing-batch/screens/widgets/location/location_card_packing_widget.dart:29:28 • no_leading_underscores_for_local_identifiers
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/wms_packing/presentation/packing-batch/screens/widgets/others/dialog_temperature_widget.dart:190:29 • dead_null_aware_expression
+   info • The local variable '_audioService' starts with an underscore • lib/src/presentation/views/wms_packing/presentation/packing-batch/screens/widgets/product/product_packing_widget.dart:29:24 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_vibrationService' starts with an underscore • lib/src/presentation/views/wms_packing/presentation/packing-batch/screens/widgets/product/product_packing_widget.dart:30:28 • no_leading_underscores_for_local_identifiers
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/bloc/packing_consolidade_bloc.dart:632:39 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/bloc/packing_consolidade_bloc.dart:645:41 • dead_null_aware_expression
+   info • The argument type 'int?' isn't related to 'ProductoPedido' • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/bloc/packing_consolidade_bloc.dart:1327:42 • collection_methods_unrelated_type
+   info • The declaration '_extractAllOrigins' isn't referenced • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/bloc/packing_consolidade_bloc.dart:1786:20 • unused_element
+   info • The type of the right operand ('bool') isn't a subtype or a supertype of the left operand ('String?') • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/packing_consolidate_list_screen.dart:212:65 • unrelated_type_equality_checks
+   info • Don't use 'BuildContext's across async gaps • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/scan_product_screen.dart:359:31 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/scan_product_screen.dart:368:31 • use_build_context_synchronously
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/scan_product_screen.dart:611:63 • invalid_null_aware_operator
+   info • Don't use 'BuildContext's across async gaps • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/scan_product_screen.dart:782:69 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/scan_product_screen.dart:850:55 • use_build_context_synchronously
+warning • Unused import: 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/progressIndicatos_widget.dart' • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/tabs/tab1.dart:17:8 • unused_import
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/tabs/tab1.dart:185:55 • invalid_null_aware_operator
+warning • Unused import: 'package:get/get.dart' • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/tabs/tab4.dart:5:8 • unused_import
+   info • The local variable '_audioService' starts with an underscore • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/widgets/location/location_card_packing_widget.dart:28:24 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_vibrationService' starts with an underscore • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/widgets/location/location_card_packing_widget.dart:29:28 • no_leading_underscores_for_local_identifiers
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/widgets/others/dialog_temperature_widget.dart:189:29 • dead_null_aware_expression
+   info • The local variable '_audioService' starts with an underscore • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/widgets/product/product_packing_widget.dart:29:24 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_vibrationService' starts with an underscore • lib/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/widgets/product/product_packing_widget.dart:30:28 • no_leading_underscores_for_local_identifiers
+   info • Unnecessary 'this.' qualifier • lib/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart:200:21 • unnecessary_this
+   info • Unnecessary 'this.' qualifier • lib/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart:257:7 • unnecessary_this
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart:1114:43 • dead_null_aware_expression
+warning • Unnecessary type check; the result is always 'true' • lib/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart:1500:41 • unnecessary_type_check
+   info • The type of the right operand ('bool') isn't a subtype or a supertype of the left operand ('int?') • lib/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart:1513:38 • unrelated_type_equality_checks
+warning • Unnecessary type check; the result is always 'true' • lib/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart:1538:43 • unnecessary_type_check
+warning • The getter doesn't override an inherited getter • lib/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_state.dart:303:20 • override_on_non_overriding_member
+warning • Unused import: 'package:get/get.dart' • lib/src/presentation/views/wms_packing/presentation/packing/screens/packing_detail.dart:5:8 • unused_import
+warning • Unused import: 'package:wms_app/src/presentation/widgets/expiredate_widget.dart' • lib/src/presentation/views/wms_packing/presentation/packing/screens/sacn_screen.dart:30:8 • unused_import
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_packing/presentation/packing/screens/sacn_screen.dart:613:65 • invalid_null_aware_operator
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/wms_packing/presentation/packing/screens/tabs/tab1.dart:693:61 • dead_null_aware_expression
+   info • The local variable '_audioService' starts with an underscore • lib/src/presentation/views/wms_packing/presentation/packing/screens/widgets/location/location_card_packing_widget.dart:28:24 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_vibrationService' starts with an underscore • lib/src/presentation/views/wms_packing/presentation/packing/screens/widgets/location/location_card_packing_widget.dart:29:28 • no_leading_underscores_for_local_identifiers
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/wms_packing/presentation/packing/screens/widgets/others/dialog_temperature_widget.dart:200:31 • dead_null_aware_expression
+   info • The local variable '_audioService' starts with an underscore • lib/src/presentation/views/wms_packing/presentation/packing/screens/widgets/product/product_pack_widget.dart:26:24 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_vibrationService' starts with an underscore • lib/src/presentation/views/wms_packing/presentation/packing/screens/widgets/product/product_pack_widget.dart:27:28 • no_leading_underscores_for_local_identifiers
+warning • Unused import: 'dart:math' • lib/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart:3:8 • unused_import
+   info • The type of the right operand ('int') isn't a subtype or a supertype of the left operand ('bool?') • lib/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart:1011:68 • unrelated_type_equality_checks
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_picking/modules/Batchs/screens/batch_screen.dart:615:57 • invalid_null_aware_operator
+warning • The '!' will have no effect because the receiver can't be null • lib/src/presentation/views/wms_picking/modules/Batchs/screens/batch_screen.dart:883:19 • unnecessary_non_null_assertion
+   info • The local variable '_audioService' starts with an underscore • lib/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/location/location_dropdown_widget.dart:33:24 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_vibrationService' starts with an underscore • lib/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/location/location_dropdown_widget.dart:34:28 • no_leading_underscores_for_local_identifiers
+   info • The type of the right operand ('int') isn't a subtype or a supertype of the left operand ('bool?') • lib/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_edit_product_widget.dart:46:76 • unrelated_type_equality_checks
+   info • The local variable '_vibrationService' starts with an underscore • lib/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/product/product_dropdown_widget.dart:27:28 • no_leading_underscores_for_local_identifiers
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: QuantityScannerWidget.isViewCant • lib/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/quantity/scanner_quantity_widget.dart:8:7 • must_be_immutable
+   info • Unnecessary 'this.' qualifier • lib/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart:219:47 • unnecessary_this
+   info • Unnecessary 'this.' qualifier • lib/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart:276:7 • unnecessary_this
+warning • Unnecessary type check; the result is always 'true' • lib/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart:317:31 • unnecessary_type_check
+warning • Unnecessary type check; the result is always 'true' • lib/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart:344:31 • unnecessary_type_check
+warning • Unnecessary type check; the result is always 'true' • lib/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart:370:31 • unnecessary_type_check
+warning • The value of the local variable 'fechaFormateada' isn't used • lib/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart:1044:16 • unused_local_variable
+warning • The value of the local variable 'fechaFormateada' isn't used • lib/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart:1074:14 • unused_local_variable
+   info • Unnecessary 'this.' qualifier • lib/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart:2090:9 • unnecessary_this
+warning • The getter doesn't override an inherited getter • lib/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_state.dart:355:20 • override_on_non_overriding_member
+   info • The type of the right operand ('ConnectivityResult') isn't a subtype or a supertype of the left operand ('List<ConnectivityResult>') • lib/src/presentation/views/wms_picking/modules/Pick/data/picking_pick_repository.dart:19:28 • unrelated_type_equality_checks
+   info • The type of the right operand ('ConnectivityResult') isn't a subtype or a supertype of the left operand ('List<ConnectivityResult>') • lib/src/presentation/views/wms_picking/modules/Pick/data/picking_pick_repository.dart:152:28 • unrelated_type_equality_checks
+   info • The type of the right operand ('ConnectivityResult') isn't a subtype or a supertype of the left operand ('List<ConnectivityResult>') • lib/src/presentation/views/wms_picking/modules/Pick/data/picking_pick_repository.dart:259:28 • unrelated_type_equality_checks
+   info • The type of the right operand ('ConnectivityResult') isn't a subtype or a supertype of the left operand ('List<ConnectivityResult>') • lib/src/presentation/views/wms_picking/modules/Pick/data/picking_pick_repository.dart:366:28 • unrelated_type_equality_checks
+   info • The type of the right operand ('ConnectivityResult') isn't a subtype or a supertype of the left operand ('List<ConnectivityResult>') • lib/src/presentation/views/wms_picking/modules/Pick/data/picking_pick_repository.dart:510:28 • unrelated_type_equality_checks
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart:66:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart:75:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart:76:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart:86:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart:87:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart:104:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart:274:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart:275:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart:276:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart:277:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart:285:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart:294:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart:296:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart:299:16 • unnecessary_question_mark
+warning • The '?' is unnecessary because 'dynamic' is nullable without it • lib/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart:475:16 • unnecessary_question_mark
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_picking/modules/Pick/screens/history_pick/detail_pick_donde_screen.dart:76:41 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_picking/modules/Pick/screens/history_pick/index_list_pick__done_screen.dart:379:56 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_picking/modules/Pick/screens/history_pick/index_list_pick__done_screen.dart:381:62 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_picking/modules/Pick/screens/history_pick/index_list_pick__done_screen.dart:383:66 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_picking/modules/Pick/screens/history_pick/index_list_pick__done_screen.dart:386:70 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_picking/modules/Pick/screens/history_pick/index_list_pick__done_screen.dart:389:74 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_picking/modules/Pick/screens/history_pick/index_list_pick__done_screen.dart:395:65 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_picking/modules/Pick/screens/history_pick/index_list_pick__done_screen.dart:398:64 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_picking/modules/Pick/screens/history_pick/index_list_pick__done_screen.dart:401:68 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_picking/modules/Pick/screens/history_pick/index_list_pick__done_screen.dart:404:72 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_picking/modules/Pick/screens/history_pick/index_list_pick__done_screen.dart:407:76 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_picking/modules/Pick/screens/scan_product_screen.dart:1080:67 • invalid_null_aware_operator
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/src/presentation/views/wms_picking/modules/Pick/screens/scan_product_screen.dart:1467:67 • invalid_null_aware_operator
+   info • The local variable '_updateDatabaseFields' starts with an underscore • lib/src/presentation/views/wms_picking/modules/Pick/screens/scan_product_screen.dart:2092:20 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_moveToNextProduct' starts with an underscore • lib/src/presentation/views/wms_picking/modules/Pick/screens/scan_product_screen.dart:2103:20 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_audioService' starts with an underscore • lib/src/presentation/views/wms_picking/modules/Pick/widgets/location/location_card_widget.dart:27:24 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_vibrationService' starts with an underscore • lib/src/presentation/views/wms_picking/modules/Pick/widgets/location/location_card_widget.dart:28:28 • no_leading_underscores_for_local_identifiers
+warning • The left operand can't be null, so the right operand is never executed • lib/src/presentation/views/wms_picking/modules/Pick/widgets/others/dialog_edit_product_widget.dart:146:57 • dead_null_aware_expression
+   info • The local variable '_audioService' starts with an underscore • lib/src/presentation/views/wms_picking/modules/Pick/widgets/product/product_widget.dart:28:24 • no_leading_underscores_for_local_identifiers
+   info • The local variable '_vibrationService' starts with an underscore • lib/src/presentation/views/wms_picking/modules/Pick/widgets/product/product_widget.dart:29:28 • no_leading_underscores_for_local_identifiers
+

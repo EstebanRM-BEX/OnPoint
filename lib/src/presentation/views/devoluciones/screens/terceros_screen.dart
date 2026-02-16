@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
-import 'package:wms_app/src/presentation/providers/network/check_internet_connection.dart';
-import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
+import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 
@@ -93,7 +93,6 @@ class _TerceroscreenState extends State<Terceroscreen> {
                                           ),
                                         ),
                                         const Spacer()
-                                     
                                       ],
                                     ),
                                   ),
@@ -106,8 +105,7 @@ class _TerceroscreenState extends State<Terceroscreen> {
                     ),
                     const SizedBox(
                       height: 5,
-                    ), 
-                    
+                    ),
                     SizedBox(
                         height: 55,
                         width: size.width * 1,
@@ -133,8 +131,7 @@ class _TerceroscreenState extends State<Terceroscreen> {
                                         ? true
                                         : false,
                                     textAlignVertical: TextAlignVertical.center,
-                                    controller:
-                                        bloc.searchControllerTerceros,
+                                    controller: bloc.searchControllerTerceros,
                                     decoration: InputDecoration(
                                       prefixIcon: const Icon(
                                         Icons.search,

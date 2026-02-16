@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
-import 'package:wms_app/src/core/utils/comprimir_image_utils.dart';
+import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/utils/comprimir_image_utils.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/bloc/wms_packing_bloc.dart';
 
 class DialogCapturaTemperatura extends StatefulWidget {

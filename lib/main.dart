@@ -5,16 +5,16 @@ import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'package:wms_app/firebase_options.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
-import 'package:wms_app/src/core/routes/app_router.dart';
+import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
 import 'package:wms_app/src/api/http_response_handler.dart';
-import 'package:wms_app/src/core/utils/WebSocketDataHandler.dart';
-import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/src/core/utils/widgets/error_widget.dart';
+import 'package:wms_app/core/utils/WebSocketDataHandler.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/utils/widgets/error_widget.dart';
 import 'package:wms_app/src/presentation/blocs/keyboard/keyboard_bloc.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
-import 'package:wms_app/src/presentation/providers/network/check_internet_connection.dart';
+
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
@@ -35,31 +35,23 @@ import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
 import 'package:wms_app/src/presentation/widgets/session_timeout_manager_widget.dart';
-import 'package:wms_app/src/services/preferences.dart';
+import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
+import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
-import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
+import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:wms_app/src/services/webSocket_service.dart';
 import 'package:wms_app/injection_container.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final ApiRequestService apiRequestService = ApiRequestService();
 
-// Instancias únicas
-final internetChecker = CheckInternetConnection();
-final connectionStatusCubit =
-    ConnectionStatusCubit(internetChecker: internetChecker);
-
-final WebSocketService webSocketService = WebSocketService();
-
 void main() {
   runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
-    await Preferences.init();
     await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
     await Firebase.initializeApp(
@@ -82,8 +74,8 @@ void main() {
     // Initialize Dependency Injection
     await configureDependencies();
 
-    // 5. Iniciar WebSocket (Usando el Singleton)
-    await WebSocketService().connect();
+    // 5. Iniciar WebSocket (Usando DI)
+    await getIt<IWebSocketService>().connect();
     WebSocketDataHandler().initialize();
     runApp(const MyApp());
   }, (error, stack) {
@@ -102,7 +94,7 @@ class MyApp extends StatelessWidget {
       final contextWithProviders = navigatorKey.currentContext;
       if (contextWithProviders != null) {
         PrefUtils.clearPrefs();
-        Preferences.removeUrlWebsite();
+        getIt<IStorageService>().removeUrlWebsite();
         await DataBaseSqlite().deleteBDCloseSession();
         await Future.delayed(const Duration(seconds: 1));
         PrefUtils.setIsLoggedIn(false);
@@ -138,7 +130,7 @@ class MyApp extends StatelessWidget {
         );
         return MultiBlocProvider(
           providers: [
-            BlocProvider.value(value: connectionStatusCubit),
+            BlocProvider(create: (_) => getIt<ConnectionStatusCubit>()),
             BlocProvider(create: (_) => getIt<UserBloc>()),
             BlocProvider(create: (_) => RecepcionBloc()),
             BlocProvider(create: (_) => TransferenciaBloc()),

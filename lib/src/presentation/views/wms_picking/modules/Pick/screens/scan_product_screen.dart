@@ -5,13 +5,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
-import 'package:wms_app/src/core/utils/sounds_utils.dart';
-import 'package:wms_app/src/core/utils/theme/input_decoration.dart';
-import 'package:wms_app/src/core/utils/vibrate_utils.dart';
+import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/core/utils/sounds_utils.dart';
+import 'package:wms_app/core/utils/theme/input_decoration.dart';
+import 'package:wms_app/core/utils/vibrate_utils.dart';
+import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
-import 'package:wms_app/src/presentation/providers/network/check_internet_connection.dart';
-import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
@@ -22,7 +22,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
-import 'package:wms_app/src/presentation/widgets/expiredate_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/progressIndicatos_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/widgets/location/location_card_widget.dart';
@@ -703,12 +702,12 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                         }
                         //*estado cuando el muelle fue editado
                         if (state is SubMuelleEditSusses) {
-                      
-                           Get.snackbar("360 Software Informa", state.message,
+                          Get.snackbar("360 Software Informa", state.message,
                               backgroundColor: white,
                               colorText: primaryColorApp,
                               duration: const Duration(seconds: 3),
-                              icon: Icon(Icons.check_circle, color: Colors.green));
+                              icon: Icon(Icons.check_circle,
+                                  color: Colors.green));
                         }
 
                         if (state is SubMuelleEditFail) {
@@ -1599,7 +1598,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                   ),
                 ),
                 //todo muelle multiple
-          
+
                 Visibility(
                   visible:
                       batchBloc.configurations.result?.result?.muelleOption ==
@@ -1623,8 +1622,8 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                         batchBloc.filteredProducts.where((e) {
                                   return (e.isSeparate == 1) &&
                                       (e.locationDestId ==
-                                          batchBloc.pickWithProducts.pick
-                                              ?.muelle);
+                                          batchBloc
+                                              .pickWithProducts.pick?.muelle);
                                 }).toList()),
                                 const Spacer(),
                                 Padding(

@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
-import 'package:wms_app/src/presentation/providers/network/check_internet_connection.dart';
-import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
+import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
@@ -27,7 +27,7 @@ class _SearchProductDevScreenState extends State<SearchProductDevScreen> {
     return BlocConsumer<DevolucionesBloc, DevolucionesState>(
       listener: (context, state) {},
       builder: (context, state) {
-    final bloc = context.read<DevolucionesBloc>();
+        final bloc = context.read<DevolucionesBloc>();
         return WillPopScope(
           onWillPop: () async => false,
           child: Scaffold(
@@ -61,14 +61,15 @@ class _SearchProductDevScreenState extends State<SearchProductDevScreen> {
                             bloc.productosFilters[selectedIndex!];
                         bloc.add(ShowKeyboardEvent(false));
                         FocusScope.of(context).unfocus();
-                         bloc.add(ChangeStateIsDialogVisibleEvent(false));
+                        bloc.add(ChangeStateIsDialogVisibleEvent(false));
                         bloc.add(GetProductEvent(
                           selectedProduct.barcode ?? '',
                           true,
                           selectedProduct.productId ?? 0,
                         ));
                         Navigator.pop(context);
-                        print('producto seleccionado ${bloc.productosFilters[selectedIndex!].toMap()}');
+                        print(
+                            'producto seleccionado ${bloc.productosFilters[selectedIndex!].toMap()}');
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColorApp,
@@ -114,7 +115,6 @@ class ProductListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: GestureDetector(
@@ -127,12 +127,45 @@ class ProductListTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildProductRow('Nombre', context.read<DevolucionesBloc>().productosFilters[index].name, isError: false),
-                _buildProductRow('Barcode', context.read<DevolucionesBloc>().productosFilters[index].barcode,
-                    isError:
-                        context.read<DevolucionesBloc>().productosFilters[index].barcode == null || context.read<DevolucionesBloc>().productosFilters[index].barcode!.isEmpty),
-                _buildProductRow('Code', context.read<DevolucionesBloc>().productosFilters[index].code,
-                    isError: context.read<DevolucionesBloc>().productosFilters[index].code == null || context.read<DevolucionesBloc>().productosFilters[index].code!.isEmpty),
+                _buildProductRow(
+                    'Nombre',
+                    context
+                        .read<DevolucionesBloc>()
+                        .productosFilters[index]
+                        .name,
+                    isError: false),
+                _buildProductRow(
+                    'Barcode',
+                    context
+                        .read<DevolucionesBloc>()
+                        .productosFilters[index]
+                        .barcode,
+                    isError: context
+                                .read<DevolucionesBloc>()
+                                .productosFilters[index]
+                                .barcode ==
+                            null ||
+                        context
+                            .read<DevolucionesBloc>()
+                            .productosFilters[index]
+                            .barcode!
+                            .isEmpty),
+                _buildProductRow(
+                    'Code',
+                    context
+                        .read<DevolucionesBloc>()
+                        .productosFilters[index]
+                        .code,
+                    isError: context
+                                .read<DevolucionesBloc>()
+                                .productosFilters[index]
+                                .code ==
+                            null ||
+                        context
+                            .read<DevolucionesBloc>()
+                            .productosFilters[index]
+                            .code!
+                            .isEmpty),
               ],
             ),
           ),
@@ -223,8 +256,6 @@ class _SearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Card(
@@ -240,7 +271,10 @@ class _SearchBar extends StatelessWidget {
             suffixIcon: IconButton(
               icon: const Icon(Icons.close, color: grey, size: 20),
               onPressed: () {
-                context.read<DevolucionesBloc>().searchControllerProducts.clear();
+                context
+                    .read<DevolucionesBloc>()
+                    .searchControllerProducts
+                    .clear();
                 context.read<DevolucionesBloc>().add(SearchProductEvent(''));
                 context.read<DevolucionesBloc>().add(ShowKeyboardEvent(false));
                 FocusScope.of(context).unfocus();
@@ -250,8 +284,12 @@ class _SearchBar extends StatelessWidget {
             hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
             border: InputBorder.none,
           ),
-          onChanged: (value) => context.read<DevolucionesBloc>().add(SearchProductEvent(value)),
-          onTap: context.read<UserBloc>().fabricante.contains("Zebra") ? () => context.read<DevolucionesBloc>().add(ShowKeyboardEvent(true)) : null,
+          onChanged: (value) =>
+              context.read<DevolucionesBloc>().add(SearchProductEvent(value)),
+          onTap: context.read<UserBloc>().fabricante.contains("Zebra")
+              ? () =>
+                  context.read<DevolucionesBloc>().add(ShowKeyboardEvent(true))
+              : null,
         ),
       ),
     );

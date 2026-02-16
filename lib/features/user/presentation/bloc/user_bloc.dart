@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:wms_app/src/core/utils/get_mac_utils.dart';
+import 'package:wms_app/core/utils/get_mac_utils.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../domain/entities/device_info.dart';
 import '../../domain/entities/user_configuration.dart';
@@ -11,7 +11,7 @@ import '../../domain/usecases/get_user_locations.dart';
 import '../../domain/usecases/register_device.dart';
 import 'user_event.dart';
 import 'user_state.dart';
-import '../../../../src/core/utils/prefs/pref_utils.dart';
+import '../../../../core/utils/prefs/pref_utils.dart';
 import '../../../../src/presentation/providers/db/database.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';

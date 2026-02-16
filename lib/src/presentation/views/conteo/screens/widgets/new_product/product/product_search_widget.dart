@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
-import 'package:wms_app/src/presentation/providers/network/check_internet_connection.dart';
-import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
+import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
@@ -18,12 +18,6 @@ class SearchProductConteoScreen extends StatefulWidget {
 
 class _SearchProductScreenState extends State<SearchProductConteoScreen> {
   String? selectedProductKey;
-
-
-
-
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -197,7 +191,7 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildInfoRow("Nombre:", product.name, highlight: true),
-                _buildInfoRow("Categoria:", product.category, 
+                _buildInfoRow("Categoria:", product.category,
                     emptyText: 'Sin categoría'),
                 _buildInfoRow("Barcode:", product.barcode,
                     emptyText: 'Sin barcode'),
@@ -209,7 +203,7 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
                 _buildInfoRow("Lote:", product.lotName, emptyText: 'Sin lote'),
               ],
             ),
-          ), 
+          ),
         ),
       ),
     );
@@ -256,7 +250,6 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
           bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
           bloc.add(
               ChangeProductIsOkEvent(true, selectedProduct, 0, true, 0, 0, 0));
-
 
           setState(() => selectedProductKey = null);
 

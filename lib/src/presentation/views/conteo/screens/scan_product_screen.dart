@@ -5,11 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
-import 'package:wms_app/src/core/utils/sounds_utils.dart';
-import 'package:wms_app/src/core/utils/vibrate_utils.dart';
+import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/core/utils/sounds_utils.dart';
+import 'package:wms_app/core/utils/vibrate_utils.dart';
+import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
-import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
@@ -29,8 +30,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
 import 'package:wms_app/src/presentation/widgets/keyboard_numbers_widget.dart';
-
-import '../../../providers/network/check_internet_connection.dart';
 
 class ScanProductConteoScreen extends StatefulWidget {
   const ScanProductConteoScreen({super.key});
@@ -914,7 +913,8 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                                                       ),
 
                                                 ExpirationBadgeWidget(
-                                                  expirationDate: context.read<ConteoBloc>()
+                                                  expirationDate: context
+                                                      .read<ConteoBloc>()
                                                       .currentProductLote
                                                       ?.expirationDate,
                                                 ),

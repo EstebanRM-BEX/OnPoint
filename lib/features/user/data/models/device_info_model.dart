@@ -1,6 +1,6 @@
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import '../../../../src/core/utils/get_mac_utils.dart';
+import '../../../../core/utils/get_mac_utils.dart';
 import '../../domain/entities/device_info.dart';
 
 class DeviceInfoModel extends DeviceInfo {

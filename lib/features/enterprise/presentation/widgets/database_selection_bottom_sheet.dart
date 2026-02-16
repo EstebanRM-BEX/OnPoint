@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:slide_to_act/slide_to_act.dart';
-import '../../../../src/core/constans/colors.dart';
+import 'package:wms_app/core/constants/colors.dart';
 import '../bloc/enterprise_bloc.dart';
 import '../bloc/enterprise_event.dart';
 

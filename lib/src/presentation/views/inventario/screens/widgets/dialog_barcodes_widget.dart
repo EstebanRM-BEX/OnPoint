@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
+import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
 
 class DialogBarcodesInventario extends StatelessWidget {

@@ -6,9 +6,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_holo_date_picker/date_picker.dart';
 import 'package:flutter_holo_date_picker/i18n/date_picker_i18n.dart';
 import 'package:get/get.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
-import 'package:wms_app/src/presentation/providers/network/check_internet_connection.dart';
-import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
+import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
@@ -239,180 +239,185 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                       )),
                 ),
                 const SizedBox(height: 10),
-                if(viewList)
-                Expanded(
-                    child: ListView.builder(
-                        itemCount: bloc.listLotesProductFilters.length,
-                        itemBuilder: (context, index) {
-                          bool isSelected = selectedIndex == index;
-                          // 1. Obtener el dato crudo
-                          final rawDate =
-                              bloc.listLotesProductFilters[index].expirationDate;
-                          bool isExpired = false;
-                          int?
-                              daysLeft; // Variable para guardar los días restantes
-                    
-                          if (rawDate != null &&
-                              rawDate != false &&
-                              rawDate.toString().isNotEmpty) {
-                            DateTime? expiration =
-                                DateTime.tryParse(rawDate.toString());
-                    
-                            if (expiration != null) {
-                              final now = DateTime.now();
-                    
-                              // Normalizamos las fechas (Solo Año, Mes, Día) para que la hora no afecte
-                              final dateExpiration = DateTime(expiration.year,
-                                  expiration.month, expiration.day);
-                              final dateNow =
-                                  DateTime(now.year, now.month, now.day);
-                    
-                              // Calculamos la diferencia
-                              final difference =
-                                  dateExpiration.difference(dateNow).inDays;
-                    
-                              if (difference < 0) {
-                                isExpired = true; // Ya pasó la fecha
-                              } else {
-                                daysLeft =
-                                    difference; // Guardamos cuántos días faltan
+                if (viewList)
+                  Expanded(
+                      child: ListView.builder(
+                          itemCount: bloc.listLotesProductFilters.length,
+                          itemBuilder: (context, index) {
+                            bool isSelected = selectedIndex == index;
+                            // 1. Obtener el dato crudo
+                            final rawDate = bloc
+                                .listLotesProductFilters[index].expirationDate;
+                            bool isExpired = false;
+                            int?
+                                daysLeft; // Variable para guardar los días restantes
+
+                            if (rawDate != null &&
+                                rawDate != false &&
+                                rawDate.toString().isNotEmpty) {
+                              DateTime? expiration =
+                                  DateTime.tryParse(rawDate.toString());
+
+                              if (expiration != null) {
+                                final now = DateTime.now();
+
+                                // Normalizamos las fechas (Solo Año, Mes, Día) para que la hora no afecte
+                                final dateExpiration = DateTime(expiration.year,
+                                    expiration.month, expiration.day);
+                                final dateNow =
+                                    DateTime(now.year, now.month, now.day);
+
+                                // Calculamos la diferencia
+                                final difference =
+                                    dateExpiration.difference(dateNow).inDays;
+
+                                if (difference < 0) {
+                                  isExpired = true; // Ya pasó la fecha
+                                } else {
+                                  daysLeft =
+                                      difference; // Guardamos cuántos días faltan
+                                }
                               }
                             }
-                          }
-                    
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 0),
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  selectedIndex = isSelected ? null : index;
-                                });
-                              },
-                              child: Card(
-                                elevation: 3,
-                                color:
-                                    isSelected ? Colors.green[100] : Colors.white,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 5),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Lote: ${bloc.listLotesProductFilters[index].name}',
-                                        style: TextStyle(
-                                            color: primaryColorApp, fontSize: 12),
-                                      ),
-                                      if (bloc.listLotesProductFilters[index]
-                                              .expirationDate !=
-                                          "") ...[
-                                        Row(
-                                          children: [
-                                            const Text('Fecha de caducidad: ',
-                                                style: TextStyle(
-                                                    color: Colors.black,
-                                                    fontSize: 12)),
-                                            Text(
-                                              '${rawDate == false ? 'Sin fecha' : rawDate}',
-                                              style: TextStyle(
-                                                color: (rawDate == false ||
-                                                        isExpired)
-                                                    ? Colors.red
-                                                    : Colors.black,
-                                                fontSize: 12,
-                                                fontWeight: isExpired
-                                                    ? FontWeight.bold
-                                                    : FontWeight.normal,
-                                              ),
-                                            ),
-                                          ],
+
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 0),
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    selectedIndex = isSelected ? null : index;
+                                  });
+                                },
+                                child: Card(
+                                  elevation: 3,
+                                  color: isSelected
+                                      ? Colors.green[100]
+                                      : Colors.white,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 5),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Lote: ${bloc.listLotesProductFilters[index].name}',
+                                          style: TextStyle(
+                                              color: primaryColorApp,
+                                              fontSize: 12),
                                         ),
-                                      ],
-                    
-                                      // --- SECCIÓN DE ESTADO DEL LOTE ---
-                    
-                                      // CASO 1: LOTE VENCIDO
-                                      if (isExpired) ...[
-                                        const SizedBox(height: 5),
-                                        Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.red[50],
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                            border: Border.all(
-                                                color: Colors.red.shade200),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: const [
-                                              Icon(Icons.warning_amber_rounded,
-                                                  color: Colors.red, size: 16),
-                                              SizedBox(width: 5),
-                                              Text("¡LOTE VENCIDO!",
-                                                  style: TextStyle(
-                                                      color: Colors.red,
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.bold)),
-                                            ],
-                                          ),
-                                        ),
-                                      ]
-                                      // CASO 2: POR VENCER (Mostrar días restantes)
-                                      else if (daysLeft != null) ...[
-                                        const SizedBox(height: 5),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            // Si faltan menos de 15 días: Fondo Naranja suave, sino Azul suave
-                                            color: daysLeft! < 15
-                                                ? Colors.orange[50]
-                                                : Colors.blue[50],
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                            border: Border.all(
-                                                color: daysLeft! < 15
-                                                    ? Colors.orange.shade300
-                                                    : Colors.blue.shade200),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
+                                        if (bloc.listLotesProductFilters[index]
+                                                .expirationDate !=
+                                            "") ...[
+                                          Row(
                                             children: [
-                                              Icon(
-                                                  Icons
-                                                      .av_timer, // Icono de cronómetro
-                                                  // Si faltan menos de 15 días: Naranja, sino Azul
-                                                  color: daysLeft! < 15
-                                                      ? Colors.orange[800]
-                                                      : Colors.blue[700],
-                                                  size: 16),
-                                              const SizedBox(width: 5),
+                                              const Text('Fecha de caducidad: ',
+                                                  style: TextStyle(
+                                                      color: Colors.black,
+                                                      fontSize: 12)),
                                               Text(
-                                                daysLeft == 0
-                                                    ? "Vence hoy"
-                                                    : "Vence en $daysLeft días",
+                                                '${rawDate == false ? 'Sin fecha' : rawDate}',
                                                 style: TextStyle(
-                                                  color: daysLeft! < 15
-                                                      ? Colors.orange[900]
-                                                      : Colors.blue[900],
+                                                  color: (rawDate == false ||
+                                                          isExpired)
+                                                      ? Colors.red
+                                                      : Colors.black,
                                                   fontSize: 12,
-                                                  fontWeight: FontWeight.w600,
+                                                  fontWeight: isExpired
+                                                      ? FontWeight.bold
+                                                      : FontWeight.normal,
                                                 ),
                                               ),
                                             ],
                                           ),
-                                        ),
+                                        ],
+
+                                        // --- SECCIÓN DE ESTADO DEL LOTE ---
+
+                                        // CASO 1: LOTE VENCIDO
+                                        if (isExpired) ...[
+                                          const SizedBox(height: 5),
+                                          Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red[50],
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              border: Border.all(
+                                                  color: Colors.red.shade200),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: const [
+                                                Icon(
+                                                    Icons.warning_amber_rounded,
+                                                    color: Colors.red,
+                                                    size: 16),
+                                                SizedBox(width: 5),
+                                                Text("¡LOTE VENCIDO!",
+                                                    style: TextStyle(
+                                                        color: Colors.red,
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.bold)),
+                                              ],
+                                            ),
+                                          ),
+                                        ]
+                                        // CASO 2: POR VENCER (Mostrar días restantes)
+                                        else if (daysLeft != null) ...[
+                                          const SizedBox(height: 5),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              // Si faltan menos de 15 días: Fondo Naranja suave, sino Azul suave
+                                              color: daysLeft! < 15
+                                                  ? Colors.orange[50]
+                                                  : Colors.blue[50],
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              border: Border.all(
+                                                  color: daysLeft! < 15
+                                                      ? Colors.orange.shade300
+                                                      : Colors.blue.shade200),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                    Icons
+                                                        .av_timer, // Icono de cronómetro
+                                                    // Si faltan menos de 15 días: Naranja, sino Azul
+                                                    color: daysLeft! < 15
+                                                        ? Colors.orange[800]
+                                                        : Colors.blue[700],
+                                                    size: 16),
+                                                const SizedBox(width: 5),
+                                                Text(
+                                                  daysLeft == 0
+                                                      ? "Vence hoy"
+                                                      : "Vence en $daysLeft días",
+                                                  style: TextStyle(
+                                                    color: daysLeft! < 15
+                                                        ? Colors.orange[900]
+                                                        : Colors.blue[900],
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ],
-                                    ],
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          );
-                        })),
+                            );
+                          })),
                 //todo crear lote
                 Visibility(
                   visible: !viewList,
@@ -422,7 +427,7 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         const SizedBox(height: 10),
-                
+
                         // ---------------------------------------------------------
                         // 1. CAMPO: NOMBRE DEL LOTE (Mayúsculas y Sin Espacios)
                         // ---------------------------------------------------------
@@ -431,16 +436,16 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                           child: TextFormField(
                             controller: bloc.newLoteController,
                             style: TextStyle(color: black, fontSize: 14),
-                
+
                             // UX: Abre el teclado en mayúsculas
                             textCapitalization: TextCapitalization.characters,
-                
+
                             // LÓGICA: Fuerza mayúsculas y bloquea espacio
                             inputFormatters: [
                               UpperCaseTextFormatter(), // Clase auxiliar (ver abajo)
                               FilteringTextInputFormatter.deny(RegExp(r'\s')),
                             ],
-                
+
                             decoration: InputDecoration(
                               labelText: 'Nombre del lote',
                               labelStyle: TextStyle(color: primaryColorApp),
@@ -457,9 +462,9 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                             ),
                           ),
                         ),
-                
+
                         const SizedBox(height: 10),
-                
+
                         // ---------------------------------------------------------
                         // 2. CAMPO: FECHA DE CADUCIDAD
                         // ---------------------------------------------------------
@@ -472,8 +477,7 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                               SizedBox(
                                 height: 40,
                                 child: TextFormField(
-                                  style:
-                                      TextStyle(color: black, fontSize: 14),
+                                  style: TextStyle(color: black, fontSize: 14),
                                   controller: bloc.dateLoteController,
                                   readOnly:
                                       true, // Para evitar escritura manual
@@ -487,8 +491,8 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                                         });
                                         FocusScope.of(context).unfocus();
                                       },
-                                      icon: const Icon(Icons.close,
-                                          color: grey),
+                                      icon:
+                                          const Icon(Icons.close, color: grey),
                                     ),
                                     labelText: 'Fecha de caducidad',
                                     labelStyle:
@@ -499,7 +503,7 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                                   ),
                                   onTap: () async {
                                     FocusScope.of(context).unfocus();
-                
+
                                     // Tu selector de fecha actual
                                     var pickedDate =
                                         await DatePicker.showSimpleDatePicker(
@@ -515,12 +519,12 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                                       locale: DateTimePickerLocale.es,
                                       looping: false,
                                     );
-                
+
                                     if (pickedDate != null) {
                                       final formattedDate =
                                           DateFormat('yyyy-MM-dd hh:mm')
                                               .format(pickedDate);
-                
+
                                       // ✅ Actualizamos el estado para mostrar los días restantes
                                       setState(() {
                                         selectedDate = pickedDate;
@@ -531,7 +535,7 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                                   },
                                 ),
                               ),
-                
+
                               // ---------------------------------------------------------
                               // 3. INDICADOR VISUAL: DÍAS POR VENCER
                               // ---------------------------------------------------------
@@ -545,19 +549,19 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                                         selectedDate!.year,
                                         selectedDate!.month,
                                         selectedDate!.day);
-                                    final dateNow = DateTime(
-                                        now.year, now.month, now.day);
-                
+                                    final dateNow =
+                                        DateTime(now.year, now.month, now.day);
+
                                     final daysLeft = dateExpiration
                                         .difference(dateNow)
                                         .inDays;
-                
+
                                     // B. Definición de estilos según urgencia
                                     Color bgColor;
                                     Color textColor;
                                     IconData icon;
                                     String text;
-                
+
                                     if (daysLeft < 0) {
                                       // CASO: Vencido
                                       bgColor = Colors.red[50]!;
@@ -581,7 +585,7 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                                       text =
                                           "La fecha ingresada vence en $daysLeft días";
                                     }
-                
+
                                     // C. Widget Visual
                                     return Container(
                                       width: double.infinity,
@@ -589,11 +593,9 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                                           horizontal: 10, vertical: 8),
                                       decoration: BoxDecoration(
                                         color: bgColor,
-                                        borderRadius:
-                                            BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(8),
                                         border: Border.all(
-                                            color:
-                                                textColor.withOpacity(0.3)),
+                                            color: textColor.withOpacity(0.3)),
                                       ),
                                       child: Row(
                                         mainAxisAlignment:

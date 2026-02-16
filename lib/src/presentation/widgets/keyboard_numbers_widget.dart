@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
+import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/blocs/keyboard/keyboard_bloc.dart';
 import 'package:wms_app/src/presentation/blocs/keyboard/keyboard_event.dart';
 import 'package:wms_app/src/presentation/blocs/keyboard/keyboard_state.dart';
@@ -37,8 +37,8 @@ class _CustomKeyboardNumberState extends State<CustomKeyboardNumber> {
           color: lightGrey,
           borderRadius: BorderRadius.circular(10),
         ),
-        padding:  EdgeInsets.symmetric(horizontal: 
-        widget.isDialog ? 10 : 20.0, vertical:  5.0),
+        padding: EdgeInsets.symmetric(
+            horizontal: widget.isDialog ? 10 : 20.0, vertical: 5.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -76,9 +76,7 @@ class _CustomKeyboardNumberState extends State<CustomKeyboardNumber> {
             .add(KeyPressedEvent(key, widget.controller));
       },
       child: Container(
-        width:
-        widget.isDialog ? 64 :
-         100, // Tamaño ajustado
+        width: widget.isDialog ? 64 : 100, // Tamaño ajustado
         height: 30, // Tamaño 5justado
         margin: const EdgeInsets.symmetric(vertical: 2, horizontal: 3),
         decoration: BoxDecoration(
@@ -95,6 +93,7 @@ class _CustomKeyboardNumberState extends State<CustomKeyboardNumber> {
       ),
     );
   }
+
   Widget _buildNumberButton(String key) {
     return GestureDetector(
       onTap: () {
@@ -103,9 +102,7 @@ class _CustomKeyboardNumberState extends State<CustomKeyboardNumber> {
             .add(KeyPressedEvent(key, widget.controller));
       },
       child: Container(
-        width:
-        widget.isDialog ? 64 :
-         100, // Tamaño ajustado
+        width: widget.isDialog ? 64 : 100, // Tamaño ajustado
         height: 30, // Tamaño 5justado
         margin: const EdgeInsets.symmetric(vertical: 2, horizontal: 3),
         decoration: BoxDecoration(
@@ -132,9 +129,7 @@ class _CustomKeyboardNumberState extends State<CustomKeyboardNumber> {
             .add(BackspacePressedEvent(widget.controller));
       },
       child: Container(
-        width: 
-        widget.isDialog ? 64 :
-        100, // Tamaño ajustado
+        width: widget.isDialog ? 64 : 100, // Tamaño ajustado
         height: 30,
         decoration: BoxDecoration(
           color: primaryColorApp,

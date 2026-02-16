@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
+import 'package:wms_app/core/constants/colors.dart';
 
 Future<void> showScrollableErrorDialog(String errorMessage) async {
   Get.defaultDialog(
@@ -24,7 +24,6 @@ Future<void> showScrollableErrorDialog(String errorMessage) async {
         ),
       ),
     ),
-
     backgroundColor: Colors.white,
     radius: 10,
     actions: [

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
-import 'package:wms_app/src/presentation/providers/network/check_internet_connection.dart';
-import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
+import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
@@ -42,7 +42,7 @@ class ListConteoScreen extends StatelessWidget {
                   Container(
                     decoration: const BoxDecoration(
                       color: primaryColorApp,
-                      borderRadius:  BorderRadius.only(
+                      borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(20),
                         bottomRight: Radius.circular(20),
                       ),
@@ -220,35 +220,44 @@ class ListConteoScreen extends StatelessWidget {
                                                 alignment: Alignment.centerLeft,
                                                 child: Row(
                                                   children: [
-                                                   const  Text(
+                                                    const Text(
                                                       'Estado:',
                                                       style: TextStyle(
                                                           fontSize: 12,
                                                           color: black),
                                                     ),
                                                     const SizedBox(width: 5),
-                                                  Text(
-  // LÓGICA DEL TEXTO
-  (conteo?.numeroLineas == 0) 
-      ? 'En progreso' // 1. Nueva validación: Si no hay líneas definidas
-      : (conteo?.numeroLineas == conteo?.numeroItemsContados)
-          ? 'Completado' // 2. Si son iguales (y no son cero ambos)
-          : (conteo?.numeroItemsContados == 0)
-              ? 'Pendiente' // 3. Si no ha contado nada
-              : 'En progreso', // 4. Cualquier otro caso (está contando)
-  
-  style: TextStyle(
-    fontSize: 12,
-    // LÓGICA DEL COLOR (Debe seguir el mismo orden)
-    color: (conteo?.numeroLineas == 0)
-        ? yellow // Color para nueva validación
-        : (conteo?.numeroLineas == conteo?.numeroItemsContados)
-            ? green
-            : (conteo?.numeroItemsContados == 0)
-                ? red
-                : yellow,
-  ),
-),
+                                                    Text(
+                                                      // LÓGICA DEL TEXTO
+                                                      (conteo?.numeroLineas ==
+                                                              0)
+                                                          ? 'En progreso' // 1. Nueva validación: Si no hay líneas definidas
+                                                          : (conteo?.numeroLineas ==
+                                                                  conteo
+                                                                      ?.numeroItemsContados)
+                                                              ? 'Completado' // 2. Si son iguales (y no son cero ambos)
+                                                              : (conteo?.numeroItemsContados ==
+                                                                      0)
+                                                                  ? 'Pendiente' // 3. Si no ha contado nada
+                                                                  : 'En progreso', // 4. Cualquier otro caso (está contando)
+
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        // LÓGICA DEL COLOR (Debe seguir el mismo orden)
+                                                        color: (conteo
+                                                                    ?.numeroLineas ==
+                                                                0)
+                                                            ? yellow // Color para nueva validación
+                                                            : (conteo?.numeroLineas ==
+                                                                    conteo
+                                                                        ?.numeroItemsContados)
+                                                                ? green
+                                                                : (conteo?.numeroItemsContados ==
+                                                                        0)
+                                                                    ? red
+                                                                    : yellow,
+                                                      ),
+                                                    ),
                                                   ],
                                                 ),
                                               ),
@@ -267,7 +276,7 @@ class ListConteoScreen extends StatelessWidget {
                                                       Text(
                                                         conteo?.countType ??
                                                             'Sin tipo',
-                                                        style:const TextStyle(
+                                                        style: const TextStyle(
                                                             fontSize: 12,
                                                             color:
                                                                 primaryColorApp),
@@ -278,7 +287,7 @@ class ListConteoScreen extends StatelessWidget {
                                                 alignment: Alignment.centerLeft,
                                                 child: Row(
                                                   children: [
-                                                   const Icon(
+                                                    const Icon(
                                                       Icons
                                                           .calendar_month_sharp,
                                                       color: primaryColorApp,
@@ -309,7 +318,7 @@ class ListConteoScreen extends StatelessWidget {
                                                 alignment: Alignment.centerLeft,
                                                 child: Row(
                                                   children: [
-                                                   const Icon(
+                                                    const Icon(
                                                       Icons.add,
                                                       color: primaryColorApp,
                                                       size: 15,

@@ -1,6 +1,6 @@
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/error/exceptions.dart';
-import 'package:wms_app/src/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/home/domain/entities/user_data.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';

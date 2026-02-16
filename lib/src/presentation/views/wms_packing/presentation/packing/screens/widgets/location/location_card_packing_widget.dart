@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
-import 'package:wms_app/src/core/utils/sounds_utils.dart';
-import 'package:wms_app/src/core/utils/vibrate_utils.dart';
+import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/utils/sounds_utils.dart';
+import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/lista_product_packing.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
 

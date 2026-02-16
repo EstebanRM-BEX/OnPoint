@@ -3,14 +3,14 @@ import 'package:equatable/equatable.dart';
 class RecentUrl extends Equatable {
   final int? id;
   final String url;
-  final DateTime date;
+  final DateTime fecha;
 
   const RecentUrl({
     this.id,
     required this.url,
-    required this.date,
+    required this.fecha,
   });
 
   @override
-  List<Object?> get props => [id, url, date];
+  List<Object?> get props => [id, url, fecha];
 }

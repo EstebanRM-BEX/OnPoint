@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
+import 'package:wms_app/core/constants/colors.dart';
 // Asegúrate de importar tus colores si usas constantes personalizadas
-// import 'package:wms_app/src/core/constans/colors.dart';
+// import 'package:wms_app/src/core/constants/colors.dart';
 
 class ExpirationBadgeWidget extends StatelessWidget {
   final dynamic expirationDate;
-  
+
   // Colores por defecto (por si no tienes el archivo de constantes a mano)
   // Si ya tienes tu archivo colors.dart importado, puedes borrar estas líneas.
 
   const ExpirationBadgeWidget({
-    super.key, 
+    super.key,
     required this.expirationDate,
   });
 
@@ -26,7 +26,10 @@ class ExpirationBadgeWidget extends StatelessWidget {
     String dateStr = expirationDate?.toString() ?? "";
 
     // Validamos si la fecha es válida (no es null, ni "", ni "false")
-    if (expirationDate != null && dateStr.isNotEmpty && expirationDate != false && dateStr != "false") {
+    if (expirationDate != null &&
+        dateStr.isNotEmpty &&
+        expirationDate != false &&
+        dateStr != "false") {
       final dateParsed = DateTime.tryParse(dateStr);
 
       if (dateParsed != null) {
@@ -34,7 +37,8 @@ class ExpirationBadgeWidget extends StatelessWidget {
         final now = DateTime.now();
 
         // Normalizamos fechas (quitamos horas/minutos)
-        final expiration = DateTime(dateParsed.year, dateParsed.month, dateParsed.day);
+        final expiration =
+            DateTime(dateParsed.year, dateParsed.month, dateParsed.day);
         final today = DateTime(now.year, now.month, now.day);
 
         // Calculamos la diferencia
@@ -74,7 +78,6 @@ class ExpirationBadgeWidget extends StatelessWidget {
               ),
             ],
           ),
-          
           if (hasValidDate)
             Builder(
               builder: (context) {
@@ -116,7 +119,8 @@ class ExpirationBadgeWidget extends StatelessWidget {
 
                 return Container(
                   margin: const EdgeInsets.only(top: 5),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: bgColor,
                     borderRadius: BorderRadius.circular(4),

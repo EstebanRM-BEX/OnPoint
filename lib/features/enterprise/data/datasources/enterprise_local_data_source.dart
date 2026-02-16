@@ -1,7 +1,7 @@
 import 'package:injectable/injectable.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import '../../../../src/presentation/providers/db/database.dart';
 import '../../../../src/presentation/providers/db/others/tbl_urlrecientes/urlrecientes_table.dart';
-import '../../../../src/core/utils/prefs/pref_utils.dart';
 import '../models/recent_url_model.dart';
 import 'package:sqflite/sqflite.dart';
 

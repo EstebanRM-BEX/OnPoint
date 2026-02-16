@@ -7,7 +7,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
+import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_validate_model.dart';
 import 'package:wms_app/src/presentation/views/transferencias/models/requets_transfer_model.dart';
 import 'package:wms_app/src/presentation/views/transferencias/models/response_check_availability_model.dart';

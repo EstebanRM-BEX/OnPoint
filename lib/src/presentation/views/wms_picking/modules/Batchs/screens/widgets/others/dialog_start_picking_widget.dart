@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
+import 'package:wms_app/core/constants/colors.dart';
 
 class DialogStartTimeWidget extends StatelessWidget {
   final VoidCallback onAccepted; // Callback para la acción a ejecutar

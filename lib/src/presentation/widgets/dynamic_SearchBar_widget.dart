@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
+import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 
 // Definición de las funciones de callback
@@ -13,12 +13,12 @@ class DynamicSearchBar extends StatefulWidget {
   final TextEditingController controller;
   final SearchCallback onSearchChanged;
   final ClearCallback onSearchCleared;
-  final VoidCallback? onTap; 
+  final VoidCallback? onTap;
   final String hintText;
   final double width;
-  
+
   // Si la lógica de tu BLoC necesita un índice para saber qué lista filtrar (controller.index)
-  final dynamic filterIndex; 
+  final dynamic filterIndex;
 
   const DynamicSearchBar({
     super.key,
@@ -36,14 +36,10 @@ class DynamicSearchBar extends StatefulWidget {
 }
 
 class _DynamicSearchBarState extends State<DynamicSearchBar> {
-  
-
   // Lógica para manejar la limpieza y enfoque
   void _handleClear() {
     widget.controller.clear();
     widget.onSearchCleared();
-    
-   
   }
 
   @override
@@ -63,18 +59,24 @@ class _DynamicSearchBarState extends State<DynamicSearchBar> {
                 color: Colors.white,
                 elevation: 3,
                 child: TextFormField(
-                  readOnly: context.select((UserBloc bloc) => bloc.fabricante).contains("Zebra"), // Habilitar readOnly para Zebra
+                  readOnly: context
+                      .select((UserBloc bloc) => bloc.fabricante)
+                      .contains("Zebra"), // Habilitar readOnly para Zebra
                   showCursor: true,
                   textAlignVertical: TextAlignVertical.center,
                   controller: widget.controller,
-                  
+
                   // 💥 onChanged: Llama al callback de búsqueda
                   onChanged: (value) {
                     widget.onSearchChanged(value);
                   },
-                  
+
                   // 💥 onTap: Activa el teclado para Zebra si está desactivado
-                  onTap: context.select((UserBloc bloc) => bloc.fabricante).contains("Zebra") ? widget.onTap : null, // ✅ Se usa la propiedad
+                  onTap: context
+                          .select((UserBloc bloc) => bloc.fabricante)
+                          .contains("Zebra")
+                      ? widget.onTap
+                      : null, // ✅ Se usa la propiedad
 
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.search, color: grey),
@@ -84,7 +86,8 @@ class _DynamicSearchBarState extends State<DynamicSearchBar> {
                     ),
                     disabledBorder: const OutlineInputBorder(),
                     hintText: widget.hintText,
-                    hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+                    hintStyle:
+                        const TextStyle(color: Colors.grey, fontSize: 14),
                     border: InputBorder.none,
                   ),
                 ),

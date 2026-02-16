@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:wms_app/src/services/webSocket_service.dart';
+import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
 
 part 'websocket_event.dart';
 part 'websocket_state.dart';
@@ -11,7 +11,7 @@ part 'websocket_state.dart';
 /// Manages WebSocket connections and real-time message handling.
 @injectable
 class WebSocketBloc extends Bloc<WebSocketEvent, WebSocketState> {
-  final WebSocketService webSocketService;
+  final IWebSocketService webSocketService;
   late StreamSubscription _webSocketSubscription;
 
   WebSocketBloc({required this.webSocketService}) : super(WebSocketInitial()) {

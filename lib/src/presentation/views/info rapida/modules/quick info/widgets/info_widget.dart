@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
+import 'package:wms_app/core/constants/colors.dart';
 
 // Widget reutilizable para mostrar las filas con título y valor
 class ProductInfoRow extends StatelessWidget {

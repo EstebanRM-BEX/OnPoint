@@ -3,7 +3,7 @@ import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
-import 'package:wms_app/src/services/webSocket_service.dart';
+
 import 'package:wms_app/src/api/api_request_service.dart';
 
 import 'injection_container.config.dart';
@@ -31,9 +31,6 @@ abstract class RegisterModule {
 
   @lazySingleton
   DataBaseSqlite get database => DataBaseSqlite();
-
-  @lazySingleton
-  WebSocketService get webSocketService => WebSocketService();
 
   @lazySingleton
   ApiRequestService get apiRequestService => ApiRequestService();

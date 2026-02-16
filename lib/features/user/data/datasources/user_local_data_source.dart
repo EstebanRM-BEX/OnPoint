@@ -1,7 +1,7 @@
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
-import '../../../../src/core/utils/prefs/pref_utils.dart';
+import '../../../../core/utils/prefs/pref_utils.dart';
 import '../../../../src/presentation/models/response_ubicaciones_model.dart';
 import '../../../../src/presentation/providers/db/database.dart';
 import '../models/user_configuration_model.dart';

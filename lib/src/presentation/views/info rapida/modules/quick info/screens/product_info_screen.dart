@@ -3,9 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
-import 'package:wms_app/src/presentation/providers/network/check_internet_connection.dart';
-import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
+import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/models/update_product_request.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
@@ -361,7 +361,7 @@ class ProductInfoScreen extends StatelessWidget {
                   ),
                 ),
 
-               Padding(
+                Padding(
                   padding: const EdgeInsets.only(top: 10, left: 20, right: 10),
                   child: Row(
                     children: [
@@ -420,74 +420,131 @@ class ProductInfoScreen extends StatelessWidget {
                               bloc.add(SortLocationsEvent('entrada', false));
                           }
                         },
-                        itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                        itemBuilder: (BuildContext context) =>
+                            <PopupMenuEntry<String>>[
                           // Sección UBICACIÓN
                           const PopupMenuItem<String>(
                             enabled: false,
                             height: 30,
-                            child: Text('UBICACIÓN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+                            child: Text('UBICACIÓN',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: Colors.grey)),
                           ),
                           const PopupMenuItem<String>(
                             value: 'location_asc',
                             height: 40,
-                            child: Row(children: [Icon(Icons.arrow_upward, size: 16), SizedBox(width: 8), Text('Nombre (A-Z)', style: TextStyle(fontSize: 13))]),
+                            child: Row(children: [
+                              Icon(Icons.arrow_upward, size: 16),
+                              SizedBox(width: 8),
+                              Text('Nombre (A-Z)',
+                                  style: TextStyle(fontSize: 13))
+                            ]),
                           ),
                           const PopupMenuItem<String>(
                             value: 'location_desc',
                             height: 40,
-                            child: Row(children: [Icon(Icons.arrow_downward, size: 16), SizedBox(width: 8), Text('Nombre (Z-A)', style: TextStyle(fontSize: 13))]),
+                            child: Row(children: [
+                              Icon(Icons.arrow_downward, size: 16),
+                              SizedBox(width: 8),
+                              Text('Nombre (Z-A)',
+                                  style: TextStyle(fontSize: 13))
+                            ]),
                           ),
                           const PopupMenuDivider(),
-                          
+
                           // Sección LOTE
                           const PopupMenuItem<String>(
                             enabled: false,
                             height: 30,
-                            child: Text('LOTE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+                            child: Text('LOTE',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: Colors.grey)),
                           ),
                           const PopupMenuItem<String>(
                             value: 'lote_asc',
                             height: 40,
-                            child: Row(children: [Icon(Icons.arrow_upward, size: 16), SizedBox(width: 8), Text('Ascendente (A-Z)', style: TextStyle(fontSize: 13))]),
+                            child: Row(children: [
+                              Icon(Icons.arrow_upward, size: 16),
+                              SizedBox(width: 8),
+                              Text('Ascendente (A-Z)',
+                                  style: TextStyle(fontSize: 13))
+                            ]),
                           ),
                           const PopupMenuItem<String>(
                             value: 'lote_desc',
                             height: 40,
-                            child: Row(children: [Icon(Icons.arrow_downward, size: 16), SizedBox(width: 8), Text('Descendente (Z-A)', style: TextStyle(fontSize: 13))]),
+                            child: Row(children: [
+                              Icon(Icons.arrow_downward, size: 16),
+                              SizedBox(width: 8),
+                              Text('Descendente (Z-A)',
+                                  style: TextStyle(fontSize: 13))
+                            ]),
                           ),
                           const PopupMenuDivider(),
-                          
+
                           // Sección FECHA DE CADUCIDAD
                           const PopupMenuItem<String>(
                             enabled: false,
                             height: 30,
-                            child: Text('FECHA CADUCIDAD', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+                            child: Text('FECHA CADUCIDAD',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: Colors.grey)),
                           ),
                           const PopupMenuItem<String>(
                             value: 'date_asc',
                             height: 40,
-                            child: Row(children: [Icon(Icons.calendar_month, size: 16), SizedBox(width: 8), Text('Más Próximas', style: TextStyle(fontSize: 13))]),
+                            child: Row(children: [
+                              Icon(Icons.calendar_month, size: 16),
+                              SizedBox(width: 8),
+                              Text('Más Próximas',
+                                  style: TextStyle(fontSize: 13))
+                            ]),
                           ),
                           const PopupMenuItem<String>(
                             value: 'date_desc',
                             height: 40,
-                            child: Row(children: [Icon(Icons.calendar_month, size: 16), SizedBox(width: 8), Text('Más Lejanas', style: TextStyle(fontSize: 13))]),
+                            child: Row(children: [
+                              Icon(Icons.calendar_month, size: 16),
+                              SizedBox(width: 8),
+                              Text('Más Lejanas',
+                                  style: TextStyle(fontSize: 13))
+                            ]),
                           ),
                           //Seccion FECHA DE ENTRADA
                           const PopupMenuItem<String>(
                             enabled: false,
                             height: 30,
-                            child: Text('FECHA ENTRADA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+                            child: Text('FECHA ENTRADA',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: Colors.grey)),
                           ),
                           const PopupMenuItem<String>(
                             value: 'date_asc_entrada',
                             height: 40,
-                            child: Row(children: [Icon(Icons.calendar_month, size: 16), SizedBox(width: 8), Text('Más Antiguas', style: TextStyle(fontSize: 13))]),
+                            child: Row(children: [
+                              Icon(Icons.calendar_month, size: 16),
+                              SizedBox(width: 8),
+                              Text('Más Antiguas',
+                                  style: TextStyle(fontSize: 13))
+                            ]),
                           ),
                           const PopupMenuItem<String>(
                             value: 'date_desc_entrada',
                             height: 40,
-                            child: Row(children: [Icon(Icons.calendar_month, size: 16), SizedBox(width: 8), Text('Más Recientes', style: TextStyle(fontSize: 13))]),
+                            child: Row(children: [
+                              Icon(Icons.calendar_month, size: 16),
+                              SizedBox(width: 8),
+                              Text('Más Recientes',
+                                  style: TextStyle(fontSize: 13))
+                            ]),
                           ),
                         ],
                       ),
@@ -665,8 +722,9 @@ class AppBar extends StatelessWidget {
     try {
       final configurations = context.read<InfoRapidaBloc>().configurations;
       // Verificamos si configurations tiene datos antes de intentar acceder a sus hijos
-      if (configurations.result != null) { 
-         showEditIcon = configurations.result?.result?.updateItemInventory == true;
+      if (configurations.result != null) {
+        showEditIcon =
+            configurations.result?.result?.updateItemInventory == true;
       }
     } catch (e) {
       // Si ocurre el error "No element", simplemente ocultamos el icono
@@ -722,7 +780,8 @@ class AppBar extends StatelessWidget {
                   const Spacer(),
                   // 2. Usamos la variable segura aquí
                   Visibility(
-                    visible: showEditIcon, // Usamos el booleano calculado arriba
+                    visible:
+                        showEditIcon, // Usamos el booleano calculado arriba
                     child: GestureDetector(
                       onTap: () {
                         context.read<InfoRapidaBloc>().add(IsEditEvent(

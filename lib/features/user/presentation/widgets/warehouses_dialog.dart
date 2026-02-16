@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
+import 'package:wms_app/core/constants/colors.dart';
 
 class WarehousesDialog extends StatelessWidget {
   final List<AllowedWarehouse>

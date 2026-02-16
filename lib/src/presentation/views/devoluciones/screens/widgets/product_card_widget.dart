@@ -1,7 +1,7 @@
 // lib/src/presentation/views/devoluciones/screens/widgets/product_devolucion_card.dart (Nuevo archivo)
 
 import 'package:flutter/material.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
+import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/models/product_devolucion_model.dart';
 
 class ProductDevolucionCard extends StatelessWidget {

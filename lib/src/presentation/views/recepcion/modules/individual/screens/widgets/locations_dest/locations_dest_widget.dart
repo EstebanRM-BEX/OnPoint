@@ -2,15 +2,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
-import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
+import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
-
-import '../../../../../../../providers/network/check_internet_connection.dart';
 
 class LocationDestRecepScreen extends StatefulWidget {
   const LocationDestRecepScreen(
@@ -312,7 +311,7 @@ class _AppBarInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return  BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
+    return BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
       builder: (context, status) {
         return Container(
           padding: const EdgeInsets.only(top: 20),

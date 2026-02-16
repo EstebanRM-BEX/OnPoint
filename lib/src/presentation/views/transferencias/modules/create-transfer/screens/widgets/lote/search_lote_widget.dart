@@ -6,9 +6,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_holo_date_picker/date_picker.dart';
 import 'package:flutter_holo_date_picker/i18n/date_picker_i18n.dart';
 import 'package:get/get.dart';
-import 'package:wms_app/src/core/constans/colors.dart';
-import 'package:wms_app/src/presentation/providers/network/check_internet_connection.dart';
-import 'package:wms_app/src/presentation/providers/network/cubit/connection_status_cubit.dart';
+import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart';
@@ -450,13 +450,13 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                   //todo crear lote
                   Expanded(
                     child: Visibility(
-                        visible: !viewList,
+                      visible: !viewList,
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Column(
                           children: [
                             const SizedBox(height: 10),
-                                        
+
                             // ---------------------------------------------------------
                             // 1. CAMPO: NOMBRE DEL LOTE (Mayúsculas y Sin Espacios)
                             // ---------------------------------------------------------
@@ -465,18 +465,18 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                               child: TextFormField(
                                 controller: bloc.newLoteController,
                                 style: TextStyle(color: black, fontSize: 14),
-                                        
+
                                 // UX: Abre el teclado en mayúsculas
                                 textCapitalization:
                                     TextCapitalization.characters,
-                                        
+
                                 // LÓGICA: Fuerza mayúsculas y bloquea espacio
                                 inputFormatters: [
                                   UpperCaseTextFormatter(), // Clase auxiliar (ver abajo)
                                   FilteringTextInputFormatter.deny(
                                       RegExp(r'\s')),
                                 ],
-                                        
+
                                 decoration: InputDecoration(
                                   labelText: 'Nombre del lote',
                                   labelStyle: TextStyle(color: primaryColorApp),
@@ -493,9 +493,9 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                                 ),
                               ),
                             ),
-                                        
+
                             const SizedBox(height: 10),
-                                        
+
                             // ---------------------------------------------------------
                             // 2. CAMPO: FECHA DE CADUCIDAD
                             // ---------------------------------------------------------
@@ -536,7 +536,7 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                                       ),
                                       onTap: () async {
                                         FocusScope.of(context).unfocus();
-                                        
+
                                         // Tu selector de fecha actual
                                         var pickedDate = await DatePicker
                                             .showSimpleDatePicker(
@@ -552,12 +552,12 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                                           locale: DateTimePickerLocale.es,
                                           looping: false,
                                         );
-                                        
+
                                         if (pickedDate != null) {
                                           final formattedDate =
                                               DateFormat('yyyy-MM-dd hh:mm')
                                                   .format(pickedDate);
-                                        
+
                                           // ✅ Actualizamos el estado para mostrar los días restantes
                                           setState(() {
                                             selectedDate = pickedDate;
@@ -568,7 +568,7 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                                       },
                                     ),
                                   ),
-                                        
+
                                   // ---------------------------------------------------------
                                   // 3. INDICADOR VISUAL: DÍAS POR VENCER
                                   // ---------------------------------------------------------
@@ -584,17 +584,17 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                                             selectedDate!.day);
                                         final dateNow = DateTime(
                                             now.year, now.month, now.day);
-                                        
+
                                         final daysLeft = dateExpiration
                                             .difference(dateNow)
                                             .inDays;
-                                        
+
                                         // B. Definición de estilos según urgencia
                                         Color bgColor;
                                         Color textColor;
                                         IconData icon;
                                         String text;
-                                        
+
                                         if (daysLeft < 0) {
                                           // CASO: Vencido
                                           bgColor = Colors.red[50]!;
@@ -618,7 +618,7 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                                           text =
                                               "La fecha ingresada vence en $daysLeft días";
                                         }
-                                        
+
                                         // C. Widget Visual
                                         return Container(
                                           width: double.infinity,

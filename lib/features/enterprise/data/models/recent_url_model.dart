@@ -4,14 +4,14 @@ class RecentUrlModel extends RecentUrl {
   const RecentUrlModel({
     super.id,
     required super.url,
-    required super.date,
+    required super.fecha,
   });
 
   factory RecentUrlModel.fromEntity(RecentUrl entity) {
     return RecentUrlModel(
       id: entity.id,
       url: entity.url,
-      date: entity.date,
+      fecha: entity.fecha,
     );
   }
 
@@ -19,7 +19,7 @@ class RecentUrlModel extends RecentUrl {
     return RecentUrlModel(
       id: json['id'],
       url: json['url'],
-      date: DateTime.parse(
+      fecha: DateTime.parse(
           json['fecha'] ?? json['date']), // Handle both for safety
     );
   }
@@ -28,7 +28,7 @@ class RecentUrlModel extends RecentUrl {
     return {
       'id': id,
       'url': url,
-      'fecha': date.toIso8601String(),
+      'fecha': fecha.toIso8601String(),
     };
   }
 }
