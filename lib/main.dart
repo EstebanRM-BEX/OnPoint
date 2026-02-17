@@ -9,7 +9,6 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
 import 'package:wms_app/src/api/http_response_handler.dart';
-import 'package:wms_app/core/utils/WebSocketDataHandler.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/core/utils/widgets/error_widget.dart';
 import 'package:wms_app/src/presentation/blocs/keyboard/keyboard_bloc.dart';
@@ -76,7 +75,6 @@ void main() {
 
     // 5. Iniciar WebSocket (Usando DI)
     await getIt<IWebSocketService>().connect();
-    WebSocketDataHandler().initialize();
     runApp(const MyApp());
   }, (error, stack) {
     // Zona de captura de errores globales

@@ -6,7 +6,6 @@ import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
 import 'package:wms_app/injection_container.dart';
-import 'package:wms_app/core/services/websocket_service.dart';
 import 'package:wms_app/core/utils/validator_utils.dart';
 import 'package:wms_app/core/utils/widgets/dialog_loading_widget.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
@@ -64,7 +63,6 @@ class LoginPage extends StatelessWidget {
           }
 
           if (state is UserLoaded) {
-            WebSocketService().connect();
             context
                 .read<WMSPickingBloc>()
                 .add(LoadAllNovedades(context)); //novedades
@@ -120,11 +118,20 @@ class LoginPage extends StatelessWidget {
                                   color: Colors.white, fontSize: 22),
                             )),
                             Center(
-                              child: Text(
-                                  "Version: ${context.read<UserBloc>().versionApp}",
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 10)),
-                            )
+                              child: BlocBuilder<UserBloc, UserState>(
+                                builder: (context, state) {
+                                  String version = '';
+                                  if (state is DeviceInfoLoaded) {
+                                    version = state.deviceInfo.appVersion;
+                                  }
+                                  return Text(
+                                    "Version: $version",
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 10),
+                                  );
+                                },
+                              ),
+                            ),
                           ],
                         ),
                       ),

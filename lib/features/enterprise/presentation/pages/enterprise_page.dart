@@ -31,7 +31,7 @@ class _EnterprisePageState extends State<EnterprisePage> {
   void initState() {
     super.initState();
     context.read<EnterpriseBloc>().add(const GetRecentUrlsEvent());
-    context.read<UserBloc>().add(LoadUserInfoEvent());
+    context.read<UserBloc>().add(LoadInfoDeviceEventUser());
   }
 
   @override
@@ -129,7 +129,7 @@ class _EnterprisePageState extends State<EnterprisePage> {
             child: BlocBuilder<UserBloc, UserState>(
               builder: (context, state) {
                 String version = '';
-                if (state is UserLoaded) {
+                if (state is DeviceInfoLoaded) {
                   version = state.deviceInfo.appVersion;
                 }
                 return Text(

@@ -2,7 +2,6 @@ import 'package:bloc/bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/usecases/usecase.dart';
 import 'package:wms_app/features/auth/domain/usecases/validate_session.dart';
-import 'package:wms_app/core/services/websocket_service.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
@@ -28,8 +27,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       (failure) => emit(AuthError(failure.message)),
       (validationResult) {
         if (validationResult.isValid) {
-          // Reconectar WebSocket cuando la sesión es válida
-          WebSocketService().connect();
+          // WebSocket ya está conectado desde main.dart
+          // No es necesario reconectar aquí
           emit(AuthValid());
         } else if (validationResult.isExpired) {
           emit(AuthExpired());

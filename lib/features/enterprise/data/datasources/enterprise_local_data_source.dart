@@ -57,6 +57,19 @@ class EnterpriseLocalDataSourceImpl implements EnterpriseLocalDataSource {
   @override
   Future<void> saveRecentUrl(RecentUrlModel recentUrl) async {
     final db = await database.getDatabaseInstance();
+
+    // Check if the URL already exists
+    final List<Map<String, dynamic>> maps = await db.query(
+      UrlsRecientesTable.tableName,
+      where: '${UrlsRecientesTable.columnUrl} = ?',
+      whereArgs: [recentUrl.url],
+    );
+
+    // If it exists, we do nothing (per requirement "si esta url ya esta agregada en l bd omitir")
+    if (maps.isNotEmpty) {
+      return;
+    }
+
     await db.insert(
       UrlsRecientesTable.tableName,
       recentUrl.toJson(),

@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/core/services/websocket_service.dart';
+import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
+import 'package:wms_app/injection_container.dart';
 
 class SessionTimeoutManager extends StatefulWidget {
   final Widget child;
@@ -166,10 +167,9 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager>
     }
 
     // 1. 🔌 CERRAR WEBSOCKET
-    // Llamamos al método disconnect() que creamos en el paso anterior.
-    // Esto cierra el canal, resetea la suscripción y libera recursos.
+    // Usamos la instancia singleton del servicio a través de DI
     try {
-      WebSocketService().disconnect();
+      getIt<IWebSocketService>().disconnect();
       print("🔌 WebSocket cerrado por inactividad.");
     } catch (e) {
       print("⚠️ Error al cerrar socket: $e");
