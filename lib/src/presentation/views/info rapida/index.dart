@@ -95,7 +95,10 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
         } else if (state is InfoRapidaError) {
           _vibrationService.vibrate();
           _audioService.playErrorSound();
-          Navigator.pop(context); // Cierra el loader si hubo error
+          //verficamos que tenemos algo abierto para cerrarlo
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context); // Cierra el loader si hubo error
+          }
           Get.snackbar(
             '360 Software Informa',
             state.error ??

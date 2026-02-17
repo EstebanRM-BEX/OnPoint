@@ -76,6 +76,7 @@ class UserRepositoryImpl implements UserRepository {
       try {
         await remoteDataSource.registerDevice(
             deviceId, deviceName, deviceModel, versionApp);
+        print('✅ Dispositivo registrado correctamente');
         return const Right(null);
       } catch (e) {
         return Left(ServerFailure(e.toString()));

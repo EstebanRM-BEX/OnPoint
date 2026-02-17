@@ -65,7 +65,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       model: modelo,
       version: androidInfo.version.release,
       manufacturer: fabricante,
-      mac: mac,
+      mac: mac == "02:00:00:00:00:00" ? imei : mac,
       imei: imei,
       appVersion: packageInfo.version,
       deviceId: androidInfo.id,
@@ -161,7 +161,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     } else {
       final deviceInfoResult = await getDeviceInfo(NoParams());
       deviceInfoResult.fold((failure) => null, (info) {
-        deviceId = info.deviceId;
+        deviceId = info.mac;
         deviceModel = info.model;
         deviceName = '${info.model} ${info.manufacturer}';
         versionApp = info.appVersion;
@@ -179,7 +179,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
       result.fold(
         (failure) => emit(DeviceRegistrationFailure(failure.message)),
-        (_) => emit(DeviceRegistrationSuccess()),
+        (_) {
+          emit(DeviceRegistrationSuccess());
+        },
       );
 
       // Reload info after registration?
