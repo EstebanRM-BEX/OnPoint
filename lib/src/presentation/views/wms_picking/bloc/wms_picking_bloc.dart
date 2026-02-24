@@ -314,7 +314,6 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
           ));
         }
 
-        
         emit(LoadBatchsSuccesState(listOfBatchs: listOfBatchsByComponents));
       } else {
         print('Error resBatchs: response is null');

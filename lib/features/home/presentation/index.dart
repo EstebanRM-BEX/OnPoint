@@ -706,13 +706,32 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     children: [
                                       GestureDetector(
                                         onTap: () async {
-                                          if (context
-                                                  .read<HomeBloc>()
-                                                  .configurations
-                                                  .result
-                                                  ?.result
-                                                  ?.accessProductionModule ==
-                                              true) {
+                                          // Check configurations from HomeBloc first, fallback to UserBloc
+                                          final homeConfig = context
+                                              .read<HomeBloc>()
+                                              .configurations
+                                              .result
+                                              ?.result;
+                                          final userConfig = context
+                                              .read<UserBloc>()
+                                              .configurations;
+
+                                          final hasAccess = homeConfig
+                                                  ?.accessProductionModule ??
+                                              userConfig
+                                                  ?.accessProductionModule ??
+                                              false;
+
+                                          print(
+                                              '🔍 Checking production module access (Picking Componentes):');
+                                          print(
+                                              '   HomeBloc: ${homeConfig?.accessProductionModule}');
+                                          print(
+                                              '   UserBloc: ${userConfig?.accessProductionModule}');
+                                          print(
+                                              '   Final decision: $hasAccess');
+
+                                          if (hasAccess) {
                                             showDialog(
                                               context: context,
                                               builder: (context) {
@@ -739,13 +758,32 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       ),
                                       GestureDetector(
                                         onTap: () async {
-                                          if (context
-                                                  .read<HomeBloc>()
-                                                  .configurations
-                                                  .result
-                                                  ?.result
-                                                  ?.accessProductionModule ==
-                                              true) {
+                                          // Check configurations from HomeBloc first, fallback to UserBloc
+                                          final homeConfig = context
+                                              .read<HomeBloc>()
+                                              .configurations
+                                              .result
+                                              ?.result;
+                                          final userConfig = context
+                                              .read<UserBloc>()
+                                              .configurations;
+
+                                          final hasAccess = homeConfig
+                                                  ?.accessProductionModule ??
+                                              userConfig
+                                                  ?.accessProductionModule ??
+                                              false;
+
+                                          print(
+                                              '🔍 Production module access check:');
+                                          print(
+                                              '   HomeBloc: ${homeConfig?.accessProductionModule}');
+                                          print(
+                                              '   UserBloc: ${userConfig?.accessProductionModule}');
+                                          print(
+                                              '   Final decision: $hasAccess');
+
+                                          if (hasAccess) {
                                             showDialog(
                                                 context: context,
                                                 builder: (context) {
@@ -779,9 +817,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       ),
                                       GestureDetector(
                                         onTap: () async {
-                                          context
-                                              .read<UserBloc>()
-                                              .add(LoadInfoDeviceEventUser());
+                                          // context
+                                          //     .read<UserBloc>()
+                                          //     .add(LoadInfoDeviceEventUser());
                                           //cargamos las ubicaciones
                                           context
                                               .read<InfoRapidaBloc>()

@@ -8,3 +8,5 @@ class HomeLoadData extends HomeEvent {}
 class AppVersionEvent extends HomeEvent {}
 
 class ClearDataEvent extends HomeEvent {}
+
+class LoadConfigurationsEvent extends HomeEvent {}

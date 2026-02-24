@@ -68,6 +68,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
+        print('🔴 Error de red en [POST]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -118,6 +119,7 @@ class ApiRequestService {
 
           return response;
         } else {
+          print('🔴 Error de red en [POST]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -136,6 +138,7 @@ class ApiRequestService {
     } on SocketException catch (e) {
       // Manejo de error de red
       print('Error de red: $e');
+      print('🔴 Error de red en [POST]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',
@@ -167,6 +170,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
+        print('🔴 Error de red en [searchEnterprice]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -209,6 +213,7 @@ class ApiRequestService {
       // 1) Verificar conexión de red
       final connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
+        print('🔴 Error de red en [postMultipartImage]: No hay conexión');
         Get.snackbar(
           'Error de red',
           'No se pudo conectar al servidor',
@@ -296,6 +301,7 @@ class ApiRequestService {
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
+        print('🔴 Error de red en [postMultipart]: No hay conexión');
         Get.snackbar(
           'Error de red',
           'No se pudo conectar al servidor',
@@ -375,6 +381,7 @@ class ApiRequestService {
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
+        print('🔴 Error de red en [postMultipartManual]: No hay conexión');
         Get.snackbar(
           'Error de red',
           'No se pudo conectar al servidor',
@@ -446,6 +453,7 @@ class ApiRequestService {
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
+        print('🔴 Error de red en [postMultipartDynamic]: No hay conexión');
         Get.snackbar(
           'Error de red',
           'No se pudo conectar al servidor',
@@ -542,6 +550,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
+        print('🔴 Error de red en [postPicking]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -589,6 +598,7 @@ class ApiRequestService {
 
           return http.Response.fromStream(response);
         } else {
+          print('🔴 Error de red en [postPicking]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -610,6 +620,7 @@ class ApiRequestService {
     } on SocketException catch (e) {
       // Manejo de error de red
       print('Error de red: $e');
+      print('🔴 Error de red en [postPicking]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',
@@ -663,6 +674,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
+        print('🔴 Error de red en [postPacking]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -715,6 +727,7 @@ class ApiRequestService {
 
           return http.Response.fromStream(response);
         } else {
+          print('🔴 Error de red en [postPacking]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -733,6 +746,7 @@ class ApiRequestService {
     } on SocketException catch (e) {
       // Manejo de error de red
       print('Error de red: $e');
+      print('🔴 Error de red en [postPacking]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',
@@ -758,6 +772,7 @@ class ApiRequestService {
   }
 
   void _showNetworkErrorSnackbar() {
+    print('🔴 EJECUTANDO SNACKBAR EN: _showNetworkErrorSnackbar');
     Get.snackbar(
       'Error de red',
       'No se pudo conectar al servidor',
@@ -796,6 +811,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
+        print('🔴 Error de red en [getInfo]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -841,6 +857,7 @@ class ApiRequestService {
 
           return http.Response.fromStream(response);
         } else {
+          print('🔴 Error de red en [getInfo]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -859,6 +876,7 @@ class ApiRequestService {
     } on SocketException catch (e) {
       // Manejo de error de red
       print('Error de red: $e');
+      print('🔴 Error de red en [getInfo]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',
@@ -902,15 +920,16 @@ class ApiRequestService {
     }
 
     if (sessionId == "" || sessionId == null) {
-      Get.snackbar('Error de red', 'No se pudo conectar al servidor',
-          backgroundColor: white,
-          colorText: primaryColorApp,
-          duration: const Duration(seconds: 5),
-          leftBarIndicatorColor: yellow,
-          icon: Icon(
-            Icons.error,
-            color: primaryColorApp,
-          ));
+      print('🔴 Error de red en [GET]: Session ID vacio/nulo');
+      // Get.snackbar('Error de red', 'No se pudo conectar al servidor',
+      //     backgroundColor: white,
+      //     colorText: primaryColorApp,
+      //     duration: const Duration(seconds: 5),
+      //     leftBarIndicatorColor: yellow,
+      //     icon: Icon(
+      //       Icons.error,
+      //       color: primaryColorApp,
+      //     ));
       return http.Response('Error de red', 404);
     }
 
@@ -923,6 +942,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
+        print('🔴 Error de red en [GET]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -964,6 +984,7 @@ class ApiRequestService {
 
           return http.Response.fromStream(response);
         } else {
+          print('🔴 Error de red en [GET]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -982,6 +1003,7 @@ class ApiRequestService {
     } on SocketException catch (e) {
       // Manejo de error de red
       print('Error de red: $e');
+      print('🔴 Error de red en [GET]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',
@@ -1026,6 +1048,7 @@ class ApiRequestService {
     }
 
     if (sessionId == "" || sessionId == null) {
+      print('🔴 Error de red en [getValidation]: Session ID vacio/nulo');
       Get.snackbar('Error de red', 'No se pudo conectar al servidor',
           backgroundColor: white,
           colorText: primaryColorApp,
@@ -1047,6 +1070,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
+        print('🔴 Error de red en [getValidation]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -1061,7 +1085,7 @@ class ApiRequestService {
         if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
           if (isLoadinDialog) {
             // Mostrar el diálogo de carga con Get.dialog
-            Get.dialog( 
+            Get.dialog(
               DialogLoadingNetwork(titel: endpoint),
               barrierDismissible:
                   false, // No permitir cerrar tocando fuera del diálogo
@@ -1099,6 +1123,7 @@ class ApiRequestService {
 
           return http.Response.fromStream(response);
         } else {
+          print('🔴 Error de red en [getValidation]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -1117,6 +1142,7 @@ class ApiRequestService {
     } on SocketException catch (e) {
       // Manejo de error de red
       print('Error de red: $e');
+      print('🔴 Error de red en [getValidation]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',
@@ -1267,6 +1293,7 @@ class ApiRequestService {
     }
 
     if (sessionId == "" || sessionId == null) {
+      print('🔴 Error de red en [getInventario]: Session ID vacio/nulo');
       Get.snackbar('Error de red', 'No se pudo conectar al servidor',
           backgroundColor: white,
           colorText: primaryColorApp,
@@ -1288,6 +1315,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
+        print('🔴 Error de red en [getInventario]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -1335,6 +1363,7 @@ class ApiRequestService {
 
           return http.Response.fromStream(response);
         } else {
+          print('🔴 Error de red en [getInventario]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -1353,6 +1382,7 @@ class ApiRequestService {
     } on SocketException catch (e) {
       // Manejo de error de red
       print('Error de red: $e');
+      print('🔴 Error de red en [getInventario]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',
@@ -1397,6 +1427,7 @@ class ApiRequestService {
     }
 
     if (sessionId == "" || sessionId == null) {
+      print('🔴 Error de red en [postInventario]: Session ID vacio/nulo');
       Get.snackbar('Error de red', 'No se pudo conectar al servidor',
           backgroundColor: white,
           colorText: primaryColorApp,
@@ -1418,6 +1449,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
+        print('🔴 Error de red en [postInventario]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -1461,6 +1493,7 @@ class ApiRequestService {
 
           return http.Response.fromStream(response);
         } else {
+          print('🔴 Error de red en [postInventario]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -1479,6 +1512,7 @@ class ApiRequestService {
     } on SocketException catch (e) {
       // Manejo de error de red
       print('Error de red: $e');
+      print('🔴 Error de red en [postInventario]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',
@@ -1524,6 +1558,7 @@ class ApiRequestService {
     }
 
     if (sessionId == "" || sessionId == null) {
+      print('🔴 Error de red en [getHistory]: Session ID vacio/nulo');
       Get.snackbar('Error de red', 'No se pudo conectar al servidor',
           backgroundColor: white,
           colorText: primaryColorApp,
@@ -1545,6 +1580,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
+        print('🔴 Error de red en [getHistory]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -1595,6 +1631,7 @@ class ApiRequestService {
           print("--------------------------------------------");
           return http.Response.fromStream(response);
         } else {
+          print('🔴 Error de red en [getHistory]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -1613,6 +1650,7 @@ class ApiRequestService {
     } on SocketException catch (e) {
       // Manejo de error de red
       print('Error de red: $e');
+      print('🔴 Error de red en [getHistory]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',

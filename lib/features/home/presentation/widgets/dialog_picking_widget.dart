@@ -65,6 +65,27 @@ class DialogPicking extends StatelessWidget {
                     ))),
             ElevatedButton(
                 onPressed: () {
+                  Navigator.pop(context);
+
+                  Navigator.pushReplacementNamed(
+                    contextHome,
+                    'picking-cluster',
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(200, 40),
+                  backgroundColor: primaryColorApp,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text('POR CLUSTER',
+                    style: TextStyle(
+                      color: white,
+                      fontSize: 12,
+                    ))),
+            ElevatedButton(
+                onPressed: () {
                   //cerramos el dialogo
                   Navigator.pop(context);
                   Navigator.pushReplacementNamed(

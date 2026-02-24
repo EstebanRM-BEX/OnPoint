@@ -1,6 +1,7 @@
 // app_routes.dart
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/features/picking/presentation/screens/picking_cluster/index_screen.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/conteo_screen.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/list_conteo_screen.dart';
@@ -88,6 +89,10 @@ class AppRoutes {
   static const String batchDetail = 'batch-detail';
   static const String historyLits = 'history-list';
   static const String historyDetail = 'history-detail';
+
+  //todo picking cluster
+  static const String pickingCluster = 'picking-cluster';
+
   //todo pick
   static const String pick = 'pick';
   static const String pickDone = 'pick-done';
@@ -272,6 +277,9 @@ class AppRoutes {
       pickingComponentesBatch: (context) {
         return PickingCompoBatchScreen();
       },
+
+      //todo picking cluster
+      pickingCluster: (_) => const PickingClusterScreen(),
 
       // todo WMS Packing
       wmsPacking: (_) => const WmsPackingScreen(),

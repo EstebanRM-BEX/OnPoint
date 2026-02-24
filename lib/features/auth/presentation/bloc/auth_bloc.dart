@@ -27,8 +27,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       (failure) => emit(AuthError(failure.message)),
       (validationResult) {
         if (validationResult.isValid) {
-          // WebSocket ya está conectado desde main.dart
-          // No es necesario reconectar aquí
           emit(AuthValid());
         } else if (validationResult.isExpired) {
           emit(AuthExpired());

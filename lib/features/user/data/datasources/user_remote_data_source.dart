@@ -19,6 +19,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
 
   @override
   Future<UserConfigurationModel> getUserConfiguration() async {
+    print("📍getUserConfiguration");
     final response = await apiService.get(
       endpoint: 'configurations',
       isunecodePath: true,
@@ -35,6 +36,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
 
   @override
   Future<List<UserLocationModel>> getUserLocations() async {
+    print("📍getUserLocations");
     final response = await apiService.get(
       endpoint: 'ubicaciones',
       isunecodePath: true,
@@ -55,6 +57,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   @override
   Future<void> registerDevice(String deviceId, String deviceName,
       String deviceModel, String versionApp) async {
+    print("📍registerDevice");
     final response = await apiService.postPicking(
       endpoint: 'pda/register',
       body: {

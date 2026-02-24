@@ -49,6 +49,7 @@ class EnterpriseBloc extends Bloc<EnterpriseEvent, EnterpriseState> {
     GetRecentUrlsEvent event,
     Emitter<EnterpriseState> emit,
   ) async {
+    print('EVENT GetRecentUrlsEvent ');
     emit(EnterpriseLoading());
     final result = await getRecentUrlsUseCase(NoParams());
 

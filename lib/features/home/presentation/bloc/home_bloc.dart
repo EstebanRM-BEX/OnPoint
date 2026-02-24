@@ -11,6 +11,8 @@ import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/features/home/domain/entities/app_version.dart';
 import 'package:wms_app/features/home/domain/usecases/get_app_version.dart';
 import 'package:wms_app/features/home/domain/usecases/get_user_data.dart';
+import 'package:wms_app/features/home/domain/usecases/get_user_configurations.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 
 part 'home_event.dart';
 part 'home_state.dart';
@@ -23,6 +25,7 @@ part 'home_state.dart';
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final GetUserData getUserData;
   final GetAppVersion getAppVersion;
+  final GetUserConfigurations getUserConfigurations;
 
   String userName = "";
   String userEmail = "";
@@ -37,10 +40,12 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   HomeBloc({
     required this.getUserData,
     required this.getAppVersion,
+    required this.getUserConfigurations,
   }) : super(HomeInitial()) {
     on<HomeLoadData>(_onHomeLoadData);
     on<AppVersionEvent>(_onAppVersionEvent);
     on<ClearDataEvent>(_onClearDataEvent);
+    on<LoadConfigurationsEvent>(_onLoadConfigurations);
 
     // Auto-load user data on initialization
     add(HomeLoadData());
@@ -64,6 +69,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         userEmail = userData.email;
         userRol = userData.rol;
         emit(HomeLoadedState());
+
+        // Also load configurations after user data is loaded
+        add(LoadConfigurationsEvent());
       },
     );
   }
@@ -117,6 +125,42 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         }
       },
     );
+  }
+
+  Future<void> _onLoadConfigurations(
+    LoadConfigurationsEvent event,
+    Emitter<HomeState> emit,
+  ) async {
+    try {
+      // Get user ID from preferences
+      final userId = await PrefUtils.getUserId();
+
+      if (userId == null || userId == 0) {
+        print('⚠️ No user ID found, cannot load configurations');
+        return;
+      }
+
+      print('🔄 Loading configurations for user ID: $userId');
+
+      final result = await getUserConfigurations(userId);
+
+      result.fold(
+        (failure) {
+          print('❌ Error loading configurations: ${failure.message}');
+          emit(ConfigurationErrorHomeState(failure.message));
+        },
+        (config) {
+          configurations = config;
+          print('✅ Configurations loaded successfully');
+          print(
+              '   accessProductionModule: ${config.result?.result?.accessProductionModule}');
+          emit(ConfigurationLoadedHomeState(config));
+        },
+      );
+    } catch (e) {
+      print('❌ Exception loading configurations: $e');
+      emit(ConfigurationErrorHomeState(e.toString()));
+    }
   }
 
   void _onClearDataEvent(

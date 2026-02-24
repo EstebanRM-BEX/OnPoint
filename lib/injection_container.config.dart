@@ -190,6 +190,7 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i123.HomeBloc>(() => _i123.HomeBloc(
           getUserData: gh<_i485.GetUserData>(),
           getAppVersion: gh<_i312.GetAppVersion>(),
+          getUserConfigurations: gh<_i698.GetUserConfigurations>(),
         ));
     gh.factory<_i363.AuthBloc>(
         () => _i363.AuthBloc(validateSession: gh<_i52.ValidateSession>()));

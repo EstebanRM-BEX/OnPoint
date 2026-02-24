@@ -385,6 +385,8 @@ class _LocationDestScreenState extends State<LocationDestDevolucionesScreen> {
                               'devoluciones-create',
                             );
                           }
+                          print(
+                              "selectedUbication: ${bloc.ubicacionesFilters[selectedIndex!].toMap()}");
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryColorApp,

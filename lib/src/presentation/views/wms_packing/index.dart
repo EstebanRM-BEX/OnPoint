@@ -8,18 +8,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/vibrate_utils.dart';
-import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
-import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
+import 'package:wms_app/shared/widgets/custom_header_widget.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/packing_response_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/bloc/wms_packing_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/screens/widgets/others/dialog_start_packing_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
-import 'package:wms_app/src/presentation/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
@@ -128,85 +126,21 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
                 ///*listado de bacths
                 Column(
               children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: primaryColorApp,
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(20),
-                      bottomRight: Radius.circular(20),
-                    ),
-                  ),
-                  child: BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
-                      builder: (context, status) {
-                    return Column(
-                      children: [
-                        const WarningWidgetCubit(),
-                        Padding(
-                          padding: EdgeInsets.only(
-                              left: 10,
-                              right: 10,
-                              top: status != ConnectionStatus.online ? 0 : 25,
-                              bottom: 0),
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.arrow_back,
-                                        color: white),
-                                    onPressed: () {
-                                      context
-                                          .read<WmsPackingBloc>()
-                                          .add(ShowKeyboardEvent(false));
-                                      Navigator.pushReplacementNamed(
-                                        context,
-                                        '/home',
-                                      );
-                                    },
-                                  ),
-                                  Padding(
-                                    padding: EdgeInsets.only(
-                                        left: size.width * 0.22),
-                                    child: GestureDetector(
-                                      onTap: () async {
-                                        await DataBaseSqlite()
-                                            .delePacking('packing-batch');
-                                        context
-                                            .read<WmsPackingBloc>()
-                                            .add(LoadAllPackingEvent(
-                                              true,
-                                            ));
-                                      },
-                                      child: Row(
-                                        children: [
-                                          const Text(
-                                            'PACKING',
-                                            style: TextStyle(
-                                                color: white,
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          const SizedBox(width: 5),
-                                          Icon(
-                                            Icons.refresh,
-                                            color: white,
-                                            size: 20,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  }),
+                CustomHeaderWidget(
+                  title: 'PACKING',
+                  onBack: () {
+                    context
+                        .read<WmsPackingBloc>()
+                        .add(ShowKeyboardEvent(false));
+                    Navigator.pushReplacementNamed(context, '/home');
+                  },
+                  onRefresh: () async {
+                    await DataBaseSqlite().delePacking('packing-batch');
+                    context
+                        .read<WmsPackingBloc>()
+                        .add(LoadAllPackingEvent(true));
+                  },
+                  showCalendar: false,
                 ),
 
                 //*barra de buscar

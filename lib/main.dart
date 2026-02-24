@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
+import 'package:wms_app/features/picking/presentation/bloc/cluster_picking_bloc.dart';
 import 'package:wms_app/firebase_options.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/routes/app_router.dart';
@@ -151,6 +152,7 @@ class MyApp extends StatelessWidget {
             BlocProvider(create: (_) => CreateTransferBloc()),
             BlocProvider(create: (_) => PackingConsolidateBloc()),
             BlocProvider(create: (_) => getIt<EnterpriseBloc>()),
+            BlocProvider(create: (_) => ClusterPickingBloc()),
           ],
           child: SessionTimeoutManager(
             duration: const Duration(hours: 1),

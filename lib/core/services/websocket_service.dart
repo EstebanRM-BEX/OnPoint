@@ -147,10 +147,10 @@ class WebSocketService implements IWebSocketService {
 
   /// Procesa cada mensaje que llega del servidor
   void _handleMessage(dynamic data) {
-    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    print("📥 MENSAJE RECIBIDO DEL SERVIDOR:");
-    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    print("⏰ Timestamp: ${DateTime.now().toIso8601String()}");
+    // print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    // print("📥 MENSAJE RECIBIDO DEL SERVIDOR:");
+    // print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    // print("⏰ Timestamp: ${DateTime.now().toIso8601String()}");
 
     try {
       // Intentamos decodificar para ver si es la confirmación de suscripción
@@ -165,9 +165,9 @@ class WebSocketService implements IWebSocketService {
       if (decodedData['event_name'] == 'subscription_succeeded' ||
           decodedData['event_name'] == 'subscribe_success') {
         _isSubscribed = true;
-        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        print("✅ ¡SUSCRIPCIÓN CONFIRMADA POR EL SERVIDOR!");
-        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        // print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        // print("✅ ¡SUSCRIPCIÓN CONFIRMADA POR EL SERVIDOR!");
+        // print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
       }
     } catch (e) {
       // Si falla el jsonDecode es porque llegó un dato plano o corrupto
@@ -175,7 +175,7 @@ class WebSocketService implements IWebSocketService {
       print(data.toString());
     }
 
-    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    // print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
     // Pasamos el mensaje a la UI (Bloc/Cubit)
     if (!_messageController.isClosed) {
@@ -187,22 +187,22 @@ class WebSocketService implements IWebSocketService {
   @override
   void sendMessage(dynamic data) {
     if (_isConnected && _channel != null) {
-      print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-      print("📤 ENVIANDO MENSAJE AL SERVIDOR:");
-      print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-      print("⏰ Timestamp: ${DateTime.now().toIso8601String()}");
+      // print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      // print("📤 ENVIANDO MENSAJE AL SERVIDOR:");
+      // print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      // print("⏰ Timestamp: ${DateTime.now().toIso8601String()}");
 
       // Intentar mostrar como JSON formateado si es posible
       try {
         final decoded = jsonDecode(data);
-        print("📦 Contenido JSON:");
-        print(const JsonEncoder.withIndent('  ').convert(decoded));
+        // print("📦 Contenido JSON:");
+        // print(const JsonEncoder.withIndent('  ').convert(decoded));
       } catch (e) {
-        print("📦 Contenido RAW:");
+        // print("📦 Contenido RAW:");
         print(data.toString());
       }
 
-      print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      // print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
       _channel!.sink.add(data);
     } else {

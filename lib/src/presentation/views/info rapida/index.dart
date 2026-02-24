@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,10 +10,10 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/vibrate_utils.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/widgets/dialog_info_widget.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import '../../providers/network/cubit/warning_widget_cubit.dart';
 
@@ -29,33 +30,42 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
 
   final TextEditingController _controllerSearch = TextEditingController();
   final FocusNode focusNode1 = FocusNode();
+  Timer? _debounce;
 
   @override
   void dispose() {
+    _debounce?.cancel();
     focusNode1.dispose();
     _controllerSearch.dispose();
     super.dispose();
   }
 
   void validateBarcode(String value) {
-    final bloc = context.read<InfoRapidaBloc>();
+    // Si hay un timer activo, lo cancelamos
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
 
-    // ✅ CORRECCIÓN 1: Manejo seguro del texto escaneado
-    // Aseguramos que no se procesen espacios en blanco vacíos
-    String scan = value.trim();
+    // Iniciamos un nuevo timer de 200ms para esperar a que el escaneo termine
+    _debounce = Timer(const Duration(milliseconds: 200), () {
+      if (!mounted) return;
 
-    // Si el valor viene vacío, intentamos usar el del BLoC, pero también lo limpiamos
-    if (bloc.scannedValue1.trim().isNotEmpty) {
-      scan = bloc.scannedValue1.trim();
-    }
+      print("✅ validateBarcode ejecutado tras debouncing: $value");
+      final bloc = context.read<InfoRapidaBloc>();
 
-    // ✅ CORRECCIÓN CRÍTICA: Si después de limpiar, el texto está vacío, NO hacemos nada.
-    // Esto evita buscar "" en la base de datos, lo cual causa el error 'No element'.
-    if (scan.isEmpty) return;
+      // ✅ CORRECCIÓN 1: Manejo seguro del texto escaneado
+      String scan = value.trim();
 
-    _controllerSearch.text = '';
-    print('Valor escaneado para validar: "$scan"');
-    bloc.add(GetInfoRapida(scan.toUpperCase(), false, false, false));
+      // Si el valor viene vacío, intentamos usar el del BLoC, pero también lo limpiamos
+      if (bloc.scannedValue1.trim().isNotEmpty) {
+        scan = bloc.scannedValue1.trim();
+      }
+
+      // ✅ CORRECCIÓN CRÍTICA: Evitar búsqueda vacía
+      if (scan.isEmpty) return;
+
+      _controllerSearch.text = '';
+      print('✅ Valor escaneado para validar: "$scan"');
+      bloc.add(GetInfoRapida(scan.toUpperCase(), false, false, false));
+    });
   }
 
   @override
@@ -95,10 +105,7 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
         } else if (state is InfoRapidaError) {
           _vibrationService.vibrate();
           _audioService.playErrorSound();
-          //verficamos que tenemos algo abierto para cerrarlo
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context); // Cierra el loader si hubo error
-          }
+          Navigator.pop(context); // Cierra el loader si hubo error
           Get.snackbar(
             '360 Software Informa',
             state.error ??
@@ -163,12 +170,14 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
           backgroundColor: white,
           floatingActionButton: FloatingActionButton(
             backgroundColor: primaryColorApp,
-            onPressed: () => showDialog(
-              context: context,
-              builder: (_) => DialogInfoQuick(
-                contextScreen: context,
-              ),
-            ),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (_) => DialogInfoQuick(
+                  contextScreen: context,
+                ),
+              );
+            },
             child: const Icon(Icons.search, color: white),
           ),
           body: Column(

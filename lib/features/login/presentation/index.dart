@@ -27,7 +27,6 @@ class LoginPage extends StatelessWidget {
     // 1. Primer Listener: LoginBloc
     return BlocListener<LoginBloc, LoginState>(
       listener: (context, state) {
-        print('STATE LOGIN: $state');
         if (state is LoginLoading) {
           Get.dialog(
             DialogLoadingNetwork(
@@ -49,8 +48,6 @@ class LoginPage extends StatelessWidget {
       // 2. Segundo Listener (Hijo del primero): UserBloc
       child: BlocListener<UserBloc, UserState>(
         listener: (context, state) async {
-          print('STATE USER: $state');
-
           if (state is DeviceRegistrationFailure) {
             Get.back();
             showScrollableErrorDialog(state.message);

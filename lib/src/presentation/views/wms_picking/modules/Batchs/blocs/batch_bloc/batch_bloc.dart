@@ -439,7 +439,8 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
                 : event.product.timeSeparate.toDouble(),
             muelle: event.product.muelleId ?? 0,
             idOperario: userid,
-            fechaTransaccion: event.product.fechaTransaccion ?? '',
+            fechaTransaccion:
+                event.product.fechaTransaccion ?? dateTimeActuality.toString(),
           ),
         ],
       );
@@ -1035,20 +1036,23 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
           cantItemsSeparados: batchWithProducts.batch?.productSeparateQty ?? 0,
           listItem: [
             Item(
-                idMove: product?.idMove ?? 0,
-                productId: product?.idProduct ?? 0,
-                lote: product?.lotId ?? '',
-                // ✅ USAMOS LA VARIABLE YA CALCULADA
-                cantidad: cantidadFinal,
-                novedad: product?.observation == ""
-                    ? 'Sin novedad'
-                    : product?.observation ?? '',
-                timeLine: product?.timeSeparate == null
-                    ? 30.0
-                    : product?.timeSeparate.toDouble(),
-                muelle: product?.muelleId ?? 0,
-                idOperario: userid,
-                fechaTransaccion: product?.fechaTransaccion ?? ''),
+              idMove: product?.idMove ?? 0,
+              productId: product?.idProduct ?? 0,
+              lote: product?.lotId ?? '',
+              // ✅ USAMOS LA VARIABLE YA CALCULADA
+              cantidad: cantidadFinal,
+              novedad: product?.observation == ""
+                  ? 'Sin novedad'
+                  : product?.observation ?? '',
+              timeLine: product?.timeSeparate == null
+                  ? 30.0
+                  : product?.timeSeparate.toDouble(),
+              muelle: product?.muelleId ?? 0,
+              idOperario: userid,
+
+              fechaTransaccion:
+                  product?.fechaTransaccion ?? DateTime.now().toString(),
+            ),
           ]);
 
       // --- MANEJO DE RESPUESTA ---

@@ -16,6 +16,7 @@ class CheckAuthPage extends StatelessWidget {
       create: (_) => getIt<AuthBloc>()..add(ValidateSessionEvent()),
       child: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
+          print('STATE AUTH: $state');
           if (state is AuthValid) {
             // Sesión válida - ir al home
             Navigator.pushReplacementNamed(context, '/home');

@@ -56,8 +56,10 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
       return ResultUbicaciones(
         id: e.id,
         name: e.name,
-        idWarehouse: e.idWarehouse,
         barcode: e.barcode,
+        locationId: e.locationId,
+        locationName: e.locationName,
+        idWarehouse: e.idWarehouse,
         warehouseName: e.warehouseName,
       );
     }).toList();

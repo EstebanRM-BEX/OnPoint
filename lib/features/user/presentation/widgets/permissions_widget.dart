@@ -22,6 +22,54 @@ class PermissionsWidget extends StatelessWidget {
                   style: TextStyle(fontSize: 14, color: primaryColorApp)),
             ),
 
+            Row(
+              children: [
+                const Text("Acceso al modulo de produccion: ",
+                    style: TextStyle(fontSize: 14, color: black)),
+                const Spacer(),
+                Checkbox(
+                    value: profile?.accessProductionModule ?? false,
+                    onChanged: null),
+                IconButton(
+                    onPressed: () {
+                      showDialog(
+                          context: context,
+                          builder: (context) {
+                            return const DialogInfo(
+                              title: "Acceso al modulo de produccion",
+                              body:
+                                  "Acceso al modulo de produccion en la aplicacion",
+                            );
+                          });
+                    },
+                    icon: Icon(Icons.help, color: primaryColorApp))
+              ],
+            ),
+
+            Row(
+              children: [
+                const Text("Mover más de lo planteado : ",
+                    style: TextStyle(fontSize: 14, color: black)),
+                const Spacer(),
+                Checkbox(
+                    value: profile?.allowMoveExcessProduction ?? false,
+                    onChanged: null),
+                IconButton(
+                    onPressed: () {
+                      showDialog(
+                          context: context,
+                          builder: (context) {
+                            return const DialogInfo(
+                              title: "Mover más de lo planteado (Producción)",
+                              body:
+                                  "Permite al usuario mover más de lo planteado en picking por batch componentes (Producción)",
+                            );
+                          });
+                    },
+                    icon: Icon(Icons.help, color: primaryColorApp))
+              ],
+            ),
+
             //todo: permisos de picking
             Visibility(
               visible: profile?.rol == 'picking' || profile?.rol == 'admin',
@@ -868,6 +916,30 @@ class PermissionsWidget extends StatelessWidget {
                                       title: "Ubicacion destino devolucion",
                                       body:
                                           "Permite seleccionar la ubicacion destino en el proceso de devolucion si se encuentra en modo dinamica",
+                                    );
+                                  });
+                            },
+                            icon: Icon(Icons.help, color: primaryColorApp))
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        const Text("Mover más de lo planteado : ",
+                            style: TextStyle(fontSize: 14, color: black)),
+                        const Spacer(),
+                        Checkbox(
+                            value: profile?.allowMoveExcessProduction ?? false,
+                            onChanged: null),
+                        IconButton(
+                            onPressed: () {
+                              showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return const DialogInfo(
+                                      title:
+                                          "Mover más de lo planteado (Producción)",
+                                      body:
+                                          "Permite al usuario mover más de lo planteado en picking por batch componentes (Producción)",
                                     );
                                   });
                             },

@@ -66,6 +66,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
   final TextEditingController _controllerMuelle = TextEditingController();
   final TextEditingController _controllerSubMuelle = TextEditingController();
   final TextEditingController cantidadController = TextEditingController();
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -176,105 +177,132 @@ class _BatchDetailScreenState extends State<BatchScreen>
   }
 
   void validateLocation(String value) async {
-    final bloc = context.read<BatchBloc>();
-    final scan = _getScannedOrManual(bloc.scannedValue1, value);
-    final product = bloc.currentProduct;
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
 
-    _controllerLocation.clear();
+    _debounce = Timer(const Duration(milliseconds: 200), () async {
+      if (!mounted) return;
 
-    if (scan == product.barcodeLocation?.toLowerCase()) {
-      bloc.add(ValidateFieldsEvent(field: "location", isOk: true));
-      bloc.add(ChangeLocationIsOkEvent(
-          product.idProduct ?? 0,
-          bloc.batchWithProducts.batch?.id ?? 0,
-          product.idMove ?? 0,
-          bloc.typePicking));
-      bloc.oldLocation = product.locationId.toString();
-    } else {
-      _vibrationService.vibrate();
-      _audioService.playErrorSound();
+      final bloc = context.read<BatchBloc>();
+      final scan = _getScannedOrManual(bloc.scannedValue1, value);
+      final product = bloc.currentProduct;
 
-      bloc.add(ValidateFieldsEvent(field: "location", isOk: false));
-    }
+      print("scan location: $scan");
 
-    bloc.add(ClearScannedValueEvent('location'));
+      _controllerLocation.clear();
+
+      if (scan == product.barcodeLocation?.toLowerCase()) {
+        bloc.add(ValidateFieldsEvent(field: "location", isOk: true));
+        bloc.add(ChangeLocationIsOkEvent(
+            product.idProduct ?? 0,
+            bloc.batchWithProducts.batch?.id ?? 0,
+            product.idMove ?? 0,
+            bloc.typePicking));
+        bloc.oldLocation = product.locationId.toString();
+      } else {
+        _vibrationService.vibrate();
+        _audioService.playErrorSound();
+
+        bloc.add(ValidateFieldsEvent(field: "location", isOk: false));
+      }
+
+      bloc.add(ClearScannedValueEvent('location'));
+    });
   }
 
   void validateProduct(String value) async {
-    final bloc = context.read<BatchBloc>();
-    final scan = _getScannedOrManual(bloc.scannedValue2, value);
-    final product = bloc.currentProduct;
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
 
-    debugPrint('scan product: $scan');
-    _controllerProduct.clear();
+    _debounce = Timer(const Duration(milliseconds: 200), () async {
+      if (!mounted) return;
 
-    if (scan == product.barcode?.toLowerCase()) {
-      bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
-      bloc.add(ChangeProductIsOkEvent(
-          true,
-          product.idProduct ?? 0,
-          bloc.batchWithProducts.batch?.id ?? 0,
-          0,
-          product.idMove ?? 0,
-          bloc.typePicking));
-    } else {
-      final isOk = await validateScannedBarcode(scan, product, bloc, true);
-      if (!isOk) {
-        _vibrationService.vibrate();
-        _audioService.playErrorSound();
-        bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
+      final bloc = context.read<BatchBloc>();
+      final scan = _getScannedOrManual(bloc.scannedValue2, value);
+      final product = bloc.currentProduct;
+
+      debugPrint('scan product: $scan');
+      _controllerProduct.clear();
+
+      if (scan == product.barcode?.toLowerCase()) {
+        bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
+        bloc.add(ChangeProductIsOkEvent(
+            true,
+            product.idProduct ?? 0,
+            bloc.batchWithProducts.batch?.id ?? 0,
+            0,
+            product.idMove ?? 0,
+            bloc.typePicking));
+      } else {
+        final isOk = await validateScannedBarcode(scan, product, bloc, true);
+        if (!isOk) {
+          _vibrationService.vibrate();
+          _audioService.playErrorSound();
+          bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
+        }
       }
-    }
 
-    bloc.add(ClearScannedValueEvent('product'));
+      bloc.add(ClearScannedValueEvent('product'));
+    });
   }
 
   void validateQuantity(String value) async {
-    print("Validando cantidad: $value");
-    final bloc = context.read<BatchBloc>();
-    final scan = _getScannedOrManual(bloc.scannedValue3, value);
-    final product = bloc.currentProduct;
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
 
-    _controllerQuantity.clear();
+    _debounce = Timer(const Duration(milliseconds: 200), () async {
+      if (!mounted) return;
 
-    if (bloc.quantitySelected == product.quantity) return;
+      print("Validando cantidad: $value");
+      final bloc = context.read<BatchBloc>();
+      final scan = _getScannedOrManual(bloc.scannedValue3, value);
+      final product = bloc.currentProduct;
 
-    if (scan == product.barcode?.toLowerCase()) {
-      bloc.add(AddQuantitySeparate(product.idProduct ?? 0, product.idMove ?? 0,
-          1, false, bloc.typePicking));
-    } else {
-      await validateScannedBarcode(scan, product, bloc, false);
-    }
+      _controllerQuantity.clear();
 
-    bloc.add(ClearScannedValueEvent('quantity'));
+      if (bloc.quantitySelected == product.quantity) return;
+
+      if (scan == product.barcode?.toLowerCase()) {
+        bloc.add(AddQuantitySeparate(product.idProduct ?? 0,
+            product.idMove ?? 0, 1, false, bloc.typePicking));
+      } else {
+        await validateScannedBarcode(scan, product, bloc, false);
+      }
+
+      bloc.add(ClearScannedValueEvent('quantity'));
+    });
   }
 
   void validateMuelle(String value) async {
-    final bloc = context.read<BatchBloc>();
-    final scan = _getScannedOrManual(bloc.scannedValue4, value);
-    final product = bloc.currentProduct;
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
 
-    _controllerMuelle.clear();
+    _debounce = Timer(const Duration(milliseconds: 200), () async {
+      if (!mounted) return;
 
-    final expected =
-        bloc.configurations.result?.result?.muelleOption == "multiple"
-            ? product.barcodeLocationDest?.toLowerCase()
-            : bloc.batchWithProducts.batch?.barcodeMuelle?.toLowerCase();
+      final bloc = context.read<BatchBloc>();
+      final scan = _getScannedOrManual(bloc.scannedValue4, value);
+      final product = bloc.currentProduct;
 
-    if (scan == expected) {
-      validatePicking(bloc, context, product);
-    } else {
-      _vibrationService.vibrate();
-      _audioService.playErrorSound();
+      _controllerMuelle.clear();
 
-      bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: false));
-    }
+      final expected =
+          bloc.configurations.result?.result?.muelleOption == "multiple"
+              ? product.barcodeLocationDest?.toLowerCase()
+              : bloc.batchWithProducts.batch?.barcodeMuelle?.toLowerCase();
 
-    bloc.add(ClearScannedValueEvent('muelle'));
+      if (scan == expected) {
+        validatePicking(bloc, context, product);
+      } else {
+        _vibrationService.vibrate();
+        _audioService.playErrorSound();
+
+        bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: false));
+      }
+
+      bloc.add(ClearScannedValueEvent('muelle'));
+    });
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     for (final node in [
       focusNode1,
       focusNode2,
@@ -329,7 +357,6 @@ class _BatchDetailScreenState extends State<BatchScreen>
                       }
                       return true;
                     }, listener: (context, state) {
-                      print("❤️‍🔥 state : $state");
                       if (state is ViewProductImageSuccess) {
                         showImageDialog(context, state.imageUrl);
                       } else if (state is ViewProductImageFailure) {
