@@ -6,9 +6,7 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/inventario/screens/bloc/inventario_bloc.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class SearchProductScreen extends StatefulWidget {
   const SearchProductScreen({Key? key}) : super(key: key);
@@ -46,31 +44,17 @@ class _SearchProductScreenState extends State<SearchProductScreen> {
                     final searchBloc = bloc; // Usa la instancia del BLoC actual
                     searchBloc.searchControllerProducts.clear();
                     searchBloc.add(SearchProductEvent(''));
-                    searchBloc.add(ShowKeyboardEvent(false));
                     Future.microtask(() {
                       if (mounted) {
                         FocusScope.of(context).unfocus();
                       }
                     });
                   },
-                  onTap: () {
-                    bloc.add(ShowKeyboardEvent(true));
-                  },
                 ),
                 Expanded(child: _buildProductList(context, bloc)),
                 const SizedBox(height: 20),
                 _buildSelectButton(bloc, size),
                 const SizedBox(height: 10),
-                if (bloc.isKeyboardVisible &&
-                    context.read<UserBloc>().fabricante.contains("Zebra"))
-                  CustomKeyboard(
-                    isLogin: false,
-                    controller: bloc.searchControllerProducts,
-                    onchanged: () {
-                      bloc.add(SearchProductEvent(
-                          bloc.searchControllerProducts.text));
-                    },
-                  )
               ],
             ),
           ),
@@ -223,7 +207,6 @@ class _SearchProductScreenState extends State<SearchProductScreen> {
             (p) => p.productId == selectedProductId && p.lotId == selectedLotId,
           );
 
-          bloc.add(ShowKeyboardEvent(false));
           FocusScope.of(context).unfocus();
 
           bloc.add(ValidateFieldsEvent(field: "product", isOk: true));

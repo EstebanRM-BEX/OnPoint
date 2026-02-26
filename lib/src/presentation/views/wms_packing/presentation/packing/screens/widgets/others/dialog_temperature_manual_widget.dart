@@ -6,8 +6,6 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
 
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_temp_widget.dart';
-
 class DialogTemperaturaManualPack extends StatefulWidget {
   final int moveLineId;
 
@@ -18,10 +16,10 @@ class DialogTemperaturaManualPack extends StatefulWidget {
       _DialogCapturaTemperaturaState();
 }
 
-class _DialogCapturaTemperaturaState extends State<DialogTemperaturaManualPack> {
+class _DialogCapturaTemperaturaState
+    extends State<DialogTemperaturaManualPack> {
   @override
   Widget build(BuildContext context) {
-
     return BlocConsumer<PackingPedidoBloc, PackingPedidoState>(
       listener: (context, state) {
         if (state is GetTemperatureFailure) {
@@ -32,7 +30,7 @@ class _DialogCapturaTemperaturaState extends State<DialogTemperaturaManualPack> 
         }
       },
       builder: (context, state) {
-    final bloc = context.read<PackingPedidoBloc>();
+        final bloc = context.read<PackingPedidoBloc>();
 
         return BackdropFilter(
           filter: ImageFilter.blur(
@@ -61,7 +59,6 @@ class _DialogCapturaTemperaturaState extends State<DialogTemperaturaManualPack> 
 
                   TextFormField(
                     showCursor: false,
-                    readOnly: true,
                     controller: bloc.temperatureController,
                     keyboardType: TextInputType.number,
                     style: const TextStyle(
@@ -144,13 +141,6 @@ class _DialogCapturaTemperaturaState extends State<DialogTemperaturaManualPack> 
           child: const Text("Enviar",
               style: TextStyle(fontSize: 14, color: white)),
         ),
-        //mostramos el teclado de temperatura
-        const SizedBox(height: 10),
-        CustomKeyboardTempNumber(
-          controller: bloc.temperatureController,
-          isDialog: true,
-          onchanged: () {},
-        )
       ],
     );
   }

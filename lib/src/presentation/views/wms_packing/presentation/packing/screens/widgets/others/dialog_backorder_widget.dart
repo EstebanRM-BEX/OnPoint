@@ -64,7 +64,6 @@ class DialogBackorderPack extends StatelessWidget {
                     : true,
             child: ElevatedButton(
               onPressed: () {
-                context.read<PackingPedidoBloc>().add(ShowKeyboardEvent(false));
                 context.read<PackingPedidoBloc>().add(CreateBackPackOrNot(
                     context.read<PackingPedidoBloc>().currentPedidoPack.id ?? 0,
                     true));
@@ -85,7 +84,6 @@ class DialogBackorderPack extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              context.read<PackingPedidoBloc>().add(ShowKeyboardEvent(false));
               context.read<PackingPedidoBloc>().add(CreateBackPackOrNot(
                   context.read<PackingPedidoBloc>().currentPedidoPack.id ?? 0,
                   createBackorder == "never"

@@ -25,7 +25,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/quantity/scanner_quantity_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_widget.dart';
 
 class NewProductConteoScreen extends StatefulWidget {
   const NewProductConteoScreen({Key? key}) : super(key: key);
@@ -142,9 +141,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
 
   void validateLocation(String value) {
     final bloc = context.read<ConteoBloc>();
-    final scan = bloc.scannedValue1.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : bloc.scannedValue1.trim().toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     print('scan location: $scan');
     _controllerLocation.clear();
@@ -165,8 +162,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
       print('Ubicacion no encontrada');
       bloc.add(ValidateFieldsEvent(field: "location", isOk: false));
     }
-
-    bloc.add(ClearScannedValueEvent('location'));
+    Future.microtask(() => focusNode1.requestFocus());
   }
 
   void validateProduct(String value) {
@@ -203,9 +199,8 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
       print('❌ Producto no encontrado en barcodes');
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      bloc
-        ..add(ValidateFieldsEvent(field: "product", isOk: false))
-        ..add(ClearScannedValueEvent('product'));
+      bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
+      Future.microtask(() => focusNode2.requestFocus());
       return;
     }
 
@@ -225,9 +220,8 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
       print('❌ Producto no encontrado por ID');
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      bloc
-        ..add(ValidateFieldsEvent(field: "product", isOk: false))
-        ..add(ClearScannedValueEvent('product'));
+      bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
+      Future.microtask(() => focusNode2.requestFocus());
       return;
     }
   }
@@ -245,19 +239,16 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
     if (scan == currentProduct?.productBarcode?.toLowerCase()) {
       bloc.add(AddQuantitySeparate(currentProduct.productId ?? 0,
           currentProduct.orderId ?? 0, currentProduct.idMove ?? 0, 1, false));
-      bloc.add(ClearScannedValueEvent('quantity'));
     } else {
       validateScannedBarcode(
           scan, currentProduct ?? CountedLine(), bloc, false);
-      bloc.add(ClearScannedValueEvent('quantity'));
     }
+    Future.microtask(() => focusNode3.requestFocus());
   }
 
   void validateLote(String value) {
     final bloc = context.read<ConteoBloc>();
-    String scan = bloc.scannedValue4.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : bloc.scannedValue4.trim().toLowerCase();
+    final scan = value.trim().toLowerCase();
     print('scan lote: $scan');
     _controllerLote.clear();
     //tengo una lista de lotes el cual quiero validar si el scan es igual a alguno de los lotes
@@ -271,11 +262,13 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
       print('lote encontrado: ${matchedLote.name}');
       bloc.add(ValidateFieldsEvent(field: "lote", isOk: true));
       bloc.add(SelectecLoteEvent(matchedLote));
-      bloc.add(ClearScannedValueEvent('lote'));
+      Future.microtask(() => focusNode5.requestFocus());
     } else {
+      _vibrationService.vibrate();
+      _audioService.playErrorSound();
       print('lote no encontrado');
       bloc.add(ValidateFieldsEvent(field: "lote", isOk: false));
-      bloc.add(ClearScannedValueEvent('lote'));
+      Future.microtask(() => focusNode5.requestFocus());
     }
   }
 
@@ -409,10 +402,10 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
                         );
                       } else if (state is ChangeLoteIsOkState) {
                         //cambiamos el foco a cantidad cuando hemos seleccionado un lote
-                        Future.delayed(const Duration(seconds: 1), () {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
                           FocusScope.of(context).requestFocus(focusNode3);
+                          _handleDependencies();
                         });
-                        _handleDependencies();
                       } else if (state is ChangeQuantitySeparateStateError) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           duration: const Duration(milliseconds: 1000),
@@ -430,30 +423,31 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
                       //*estado cando la ubicacion de origen es cambiada
                       else if (state is ChangeLocationIsOkState) {
                         //cambiamos el foco
-                        Future.delayed(const Duration(seconds: 1), () {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
                           FocusScope.of(context).requestFocus(focusNode2);
+                          _handleDependencies();
                         });
-                        _handleDependencies();
                       }
 
                       //*estado cuando el producto es leido ok
                       else if (state is ChangeProductOrderIsOkState) {
-                        //validamos si el producto tiene lote, si es asi pasamos el foco al lote
-                        if (context
-                                .read<ConteoBloc>()
-                                .currentProduct
-                                .productTracking ==
-                            "lot") {
-                          Future.delayed(const Duration(seconds: 1), () {
-                            FocusScope.of(context).requestFocus(focusNode5);
-                          });
-                        } else {
-                          Future.delayed(const Duration(seconds: 1), () {
-                            FocusScope.of(context).requestFocus(focusNode3);
-                          });
-                        }
-
-                        _handleDependencies();
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (context
+                                  .read<ConteoBloc>()
+                                  .currentProduct
+                                  .productTracking ==
+                              "lot") {
+                            focusNode5.requestFocus();
+                          } else {
+                            focusNode3.requestFocus();
+                          }
+                          _handleDependencies();
+                        });
+                      } else if (state is GetLotesProductSuccess) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          focusNode5.requestFocus();
+                          _handleDependencies();
+                        });
                       }
                     }, builder: (context, status) {
                       return Column(
@@ -534,10 +528,6 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
                         onLocationScanned: (value) {
                           validateLocation(value);
                         },
-                        onKeyScanned: (keyLabel) {
-                          context.read<ConteoBloc>().add(
-                              UpdateScannedValueEvent(keyLabel, 'location'));
-                        },
                         focusNode: focusNode1,
                         controller: _controllerLocation,
                         locationDropdown: LocationCardButtonConteo(
@@ -566,11 +556,6 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
                         onValidateProduct: (value) {
                           validateProduct(value);
                         },
-                        onKeyScanned: (value) {
-                          context
-                              .read<ConteoBloc>()
-                              .add(UpdateScannedValueEvent(value, 'product'));
-                        },
                         productDropdown: ProductDropdowmnWidget(),
                       ),
 
@@ -598,11 +583,6 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
                               context.read<ConteoBloc>().currentProductLote,
                           onValidateLote: (value) {
                             validateLote(value);
-                          },
-                          onKeyScanned: (value) {
-                            context
-                                .read<ConteoBloc>()
-                                .add(UpdateScannedValueEvent(value, 'lote'));
                           },
                         ),
                       ),
@@ -633,11 +613,6 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
                   Future.delayed(const Duration(milliseconds: 100), () {
                     FocusScope.of(context).requestFocus(focusNode3);
                   });
-                },
-                onKeyScanned: (keyLabel) {
-                  context
-                      .read<ConteoBloc>()
-                      .add(UpdateScannedValueEvent(keyLabel, 'quantity'));
                 },
                 showKeyboard:
                     context.read<UserBloc>().fabricante.contains("Zebra"),
@@ -673,10 +648,6 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
                   context.read<ConteoBloc>().add(ShowQuantityEvent(
                       !context.read<ConteoBloc>().viewQuantity));
                 },
-                customKeyboard: CustomKeyboardNumber(
-                  controller: cantidadController,
-                  onchanged: _validatebuttonquantity,
-                ),
                 isViewCant: false,
               ),
             ],

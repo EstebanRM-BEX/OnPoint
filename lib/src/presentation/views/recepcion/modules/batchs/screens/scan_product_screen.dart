@@ -7,8 +7,12 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
+import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
+import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/shared/widgets/lote_scanner_widget.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_batch_model.dart';
@@ -18,17 +22,14 @@ import 'package:wms_app/src/presentation/views/recepcion/modules/batchs/widgets/
 import 'package:wms_app/src/presentation/views/recepcion/modules/batchs/widgets/product/product_card_widget.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
 
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/product/scanner_product_widget.dart';
+import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
-
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_widget.dart';
 
 class ScanProductRceptionBatchScreen extends StatefulWidget {
   const ScanProductRceptionBatchScreen({
@@ -47,6 +48,8 @@ class ScanProductRceptionBatchScreen extends StatefulWidget {
 
 class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
     with WidgetsBindingObserver {
+  final AudioService _audioService = AudioService();
+  final VibrationService _vibrationService = VibrationService();
   @override
   void initState() {
     super.initState();
@@ -199,9 +202,7 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
   void validateProduct(String value) {
     final bloc = context.read<RecepcionBatchBloc>();
 
-    String scan = bloc.scannedValue2.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : bloc.scannedValue2.trim().toLowerCase();
+    String scan = value.trim().toLowerCase();
 
     _controllerProduct.text = "";
     final currentProduct = bloc.currentProduct;
@@ -223,22 +224,22 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
         currentProduct.idMove ?? 0,
       ));
 
-      bloc.add(ClearScannedValueOrderEvent('product'));
+      Future.microtask(() => focusNode2.requestFocus());
     } else {
       final isok =
           validateScannedBarcode(scan.trim(), bloc.currentProduct, bloc, true);
       if (!isok) {
+        _audioService.playErrorSound();
+        _vibrationService.vibrate();
         bloc.add(ValidateFieldsOrderEvent(field: "product", isOk: false));
-        bloc.add(ClearScannedValueOrderEvent('product'));
+        Future.microtask(() => focusNode2.requestFocus());
       }
     }
   }
 
   void validateLote(String value) {
     final bloc = context.read<RecepcionBatchBloc>();
-    String scan = bloc.scannedValue4.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : bloc.scannedValue4.trim().toLowerCase();
+    final scan = value.trim().toLowerCase();
     print('scan lote: $scan');
     bloc.loteController.clear();
     //tengo una lista de lotes el cual quiero validar si el scan es igual a alguno de los lotes
@@ -252,20 +253,20 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
       print('lote encontrado: ${matchedLote.name}');
       bloc.add(ValidateFieldsOrderEvent(field: "lote", isOk: true));
       bloc.add(SelectecLoteEvent(matchedLote));
-      bloc.add(ClearScannedValueOrderEvent('lote'));
+      Future.microtask(() => focusNode6.requestFocus());
     } else {
+      _audioService.playErrorSound();
+      _vibrationService.vibrate();
       print('lote no encontrado');
       bloc.add(ValidateFieldsOrderEvent(field: "lote", isOk: false));
-      bloc.add(ClearScannedValueOrderEvent('lote'));
+      Future.microtask(() => focusNode6.requestFocus());
     }
   }
 
   void validateQuantity(String value) {
     final bloc = context.read<RecepcionBatchBloc>();
 
-    String scan = bloc.scannedValue3.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : bloc.scannedValue3.trim().toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     _controllerQuantity.text = "";
     final currentProduct = bloc.currentProduct;
@@ -280,19 +281,17 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
         currentProduct.idMove ?? 0,
         1,
       ));
-      bloc.add(ClearScannedValueOrderEvent('quantity'));
+      Future.microtask(() => focusNode3.requestFocus());
     } else {
       validateScannedBarcode(scan.trim(), currentProduct, bloc, false);
-      bloc.add(ClearScannedValueOrderEvent('quantity'));
+      Future.microtask(() => focusNode3.requestFocus());
     }
   }
 
   void validateLocationDest(String value) {
     final bloc = context.read<RecepcionBatchBloc>();
     final currentProduct = bloc.currentProduct;
-    String scan = bloc.scannedValue6.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : bloc.scannedValue6.trim().toLowerCase();
+    final scan = value.trim().toLowerCase();
     print('scan location: $scan');
     bloc.locationDestController.clear();
     ResultUbicaciones? matchedUbicacion = bloc.ubicaciones.firstWhere(
@@ -316,11 +315,13 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
         int.parse(currentProduct.productId),
         currentProduct.idMove ?? 0,
       ));
-      bloc.add(ClearScannedValueOrderEvent('locationDest'));
+      Future.microtask(() => focusNode5.requestFocus());
     } else {
+      _audioService.playErrorSound();
+      _vibrationService.vibrate();
       print('Ubicacion no encontrada');
       bloc.add(ValidateFieldsOrderEvent(field: "locationDest", isOk: false));
-      bloc.add(ClearScannedValueOrderEvent('locationDest'));
+      Future.microtask(() => focusNode5.requestFocus());
     }
   }
 
@@ -472,7 +473,7 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
                     child: SingleChildScrollView(
                       child: Column(
                         children: [
-                          //todo : ubicacion de origen
+                          //todo : ubicacion de origen FIJA
                           Row(
                             children: [
                               Padding(
@@ -557,10 +558,7 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
                             onValidateProduct: (value) {
                               validateProduct(value); // tu función actual
                             },
-                            onKeyScanned: (keyLabel) {
-                              recepcionBloc.add(UpdateScannedValueOrderEvent(
-                                  keyLabel, 'product'));
-                            },
+                            onKeyScanned: (keyLabel) {},
                             focusNode: focusNode2,
                             controller: _controllerProduct,
                             productDropdown:
@@ -673,146 +671,32 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
                                             mainAxisAlignment:
                                                 MainAxisAlignment.start,
                                             children: [
-                                              context
-                                                      .read<UserBloc>()
-                                                      .fabricante
-                                                      .contains("Zebra")
-                                                  ? Padding(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                          horizontal: 0,
-                                                          vertical: 5),
-                                                      child: Column(
-                                                        children: [
-                                                          Container(
-                                                            height: 20,
-                                                            margin:
-                                                                const EdgeInsets
-                                                                    .only(
-                                                                    bottom: 5,
-                                                                    top: 5),
-                                                            child:
-                                                                TextFormField(
-                                                              autofocus: true,
-                                                              showCursor: false,
-                                                              controller:
-                                                                  recepcionBloc
-                                                                      .loteController, // Asignamos el controlador
-                                                              enabled: recepcionBloc
-                                                                      .productIsOk && //true
-                                                                  !recepcionBloc
-                                                                      .loteIsOk && //false
-                                                                  !recepcionBloc
-                                                                      .quantityIsOk && //false
-                                                                  !recepcionBloc
-                                                                      .viewQuantity,
-
-                                                              focusNode:
-                                                                  focusNode6,
-                                                              onChanged:
-                                                                  (value) {
-                                                                // Llamamos a la validación al cambiar el texto
-                                                                validateLote(
-                                                                    value);
-                                                              },
-                                                              decoration:
-                                                                  InputDecoration(
-                                                                hintText: recepcionBloc.lotesProductCurrent.name ==
-                                                                            "" ||
-                                                                        recepcionBloc.lotesProductCurrent.name ==
-                                                                            null
-                                                                    ? 'Esperando escaneo'
-                                                                    : recepcionBloc
-                                                                            .lotesProductCurrent
-                                                                            .name ??
-                                                                        "",
-                                                                disabledBorder:
-                                                                    InputBorder
-                                                                        .none,
-                                                                hintStyle:
-                                                                    const TextStyle(
-                                                                        fontSize:
-                                                                            12,
-                                                                        color:
-                                                                            black),
-                                                                border:
-                                                                    InputBorder
-                                                                        .none,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    )
-                                                  : Focus(
-                                                      focusNode: focusNode6,
-                                                      onKey: (FocusNode node,
-                                                          RawKeyEvent event) {
-                                                        if (event
-                                                            is RawKeyDownEvent) {
-                                                          if (event
-                                                                  .logicalKey ==
-                                                              LogicalKeyboardKey
-                                                                  .enter) {
-                                                            validateLote(
-                                                                recepcionBloc
-                                                                    .scannedValue4);
-
-                                                            return KeyEventResult
-                                                                .handled;
-                                                          } else {
-                                                            recepcionBloc.add(
-                                                                UpdateScannedValueOrderEvent(
-                                                                    event.data
-                                                                        .keyLabel,
-                                                                    'lote'));
-
-                                                            return KeyEventResult
-                                                                .handled;
-                                                          }
-                                                        }
-                                                        return KeyEventResult
-                                                            .ignored;
-                                                      },
-                                                      child: Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                                horizontal: 0,
-                                                                vertical: 5),
-                                                        child: Column(
-                                                          children: [
-                                                            Align(
-                                                              alignment: Alignment
-                                                                  .centerLeft,
-                                                              child: Row(
-                                                                children: [
-                                                                  Text(
-                                                                    'Lote: ',
-                                                                    style: TextStyle(
-                                                                        fontSize:
-                                                                            14,
-                                                                        color:
-                                                                            black),
-                                                                  ),
-                                                                  Text(
-                                                                    recepcionBloc
-                                                                            .lotesProductCurrent
-                                                                            .name ??
-                                                                        "Esperando escaneo",
-                                                                    style: TextStyle(
-                                                                        fontSize:
-                                                                            14,
-                                                                        color:
-                                                                            black),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
+                                              LoteScannerWidget(
+                                                controller: recepcionBloc
+                                                    .loteController,
+                                                focusNode: focusNode6,
+                                                enabled: recepcionBloc
+                                                        .productIsOk && //true
+                                                    !recepcionBloc
+                                                        .loteIsOk && //false
+                                                    !recepcionBloc
+                                                        .quantityIsOk && //false
+                                                    !recepcionBloc.viewQuantity,
+                                                hintText: recepcionBloc
+                                                                .lotesProductCurrent
+                                                                .name ==
+                                                            "" ||
+                                                        recepcionBloc
+                                                                .lotesProductCurrent
+                                                                .name ==
+                                                            null
+                                                    ? 'Esperando escaneo'
+                                                    : recepcionBloc
+                                                            .lotesProductCurrent
+                                                            .name ??
+                                                        "",
+                                                onValidateLote: validateLote,
+                                              ),
                                               ExpirationBadgeWidget(
                                                   expirationDate: recepcionBloc
                                                           .lotesProductCurrent
@@ -827,7 +711,7 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
                             ),
                           ),
 
-                          //todo: ubicacion destino
+                          //todo: ubicacion destino. FIJA
 
                           (recepcionBloc.configurations.result?.result
                                       ?.scanDestinationLocationReception ==
@@ -916,7 +800,7 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
                                 )
                               :
 
-                              //todo : ubicacion destino
+                              //todo : ubicacion destino DYNAMIC
                               Row(
                                   children: [
                                     Padding(
@@ -941,217 +825,91 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
                                           : Colors.red[200],
                                       elevation: 5,
                                       child: Container(
-                                        // color: Colors.amber,
-                                        width: size.width * 0.85,
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 2),
-                                        child: context
-                                                .read<UserBloc>()
-                                                .fabricante
-                                                .contains("Zebra")
-                                            ? Padding(
-                                                padding:
-                                                    const EdgeInsets.all(8.0),
-                                                child: Column(
-                                                  children: [
-                                                    GestureDetector(
-                                                      onTap: !recepcionBloc
-                                                                  .locationsDestIsok && //false
-                                                              recepcionBloc
-                                                                  .productIsOk && //false
-                                                              !recepcionBloc
-                                                                  .quantityIsOk
-                                                          ? () {
-                                                              Navigator.pushReplacementNamed(
+                                          // color: Colors.amber,
+                                          width: size.width * 0.85,
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 2),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Column(
+                                              children: [
+                                                GestureDetector(
+                                                  onTap: !recepcionBloc
+                                                              .locationsDestIsok && //false
+                                                          recepcionBloc
+                                                              .productIsOk && //false
+                                                          !recepcionBloc
+                                                              .quantityIsOk
+                                                      ? () {
+                                                          Navigator
+                                                              .pushReplacementNamed(
                                                                   context,
                                                                   'search-location-recep-batch',
                                                                   arguments: [
-                                                                    widget
-                                                                        .ordenCompra,
-                                                                    widget
-                                                                        .currentProduct
-                                                                  ]);
-                                                            }
-                                                          : null,
-                                                      child: Row(
-                                                        children: [
-                                                          Align(
-                                                            alignment: Alignment
-                                                                .centerLeft,
-                                                            child: Text(
-                                                              'Ubicación destino',
-                                                              style: TextStyle(
-                                                                fontSize: 14,
-                                                                color:
-                                                                    primaryColorApp,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          const Spacer(),
-                                                          Image.asset(
-                                                            "assets/icons/ubicacion.png",
+                                                                widget
+                                                                    .ordenCompra,
+                                                                widget
+                                                                    .currentProduct
+                                                              ]);
+                                                        }
+                                                      : null,
+                                                  child: Row(
+                                                    children: [
+                                                      Align(
+                                                        alignment: Alignment
+                                                            .centerLeft,
+                                                        child: Text(
+                                                          'Ubicación destino',
+                                                          style: TextStyle(
+                                                            fontSize: 14,
                                                             color:
                                                                 primaryColorApp,
-                                                            width: 20,
                                                           ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                    Container(
-                                                      height: 20,
-                                                      margin:
-                                                          const EdgeInsets.only(
-                                                              bottom: 5,
-                                                              top: 5),
-                                                      child: TextFormField(
-                                                        autofocus: true,
-                                                        showCursor: false,
-                                                        controller: recepcionBloc
-                                                            .locationDestController, // Asignamos el controlador
-                                                        enabled: !recepcionBloc
-                                                                .locationsDestIsok && // false
-                                                            recepcionBloc
-                                                                .productIsOk && // false
-                                                            !recepcionBloc
-                                                                .quantityIsOk,
-
-                                                        focusNode: focusNode5,
-                                                        onChanged: (value) {
-                                                          // Llamamos a la validación al cambiar el texto
-                                                          validateLocationDest(
-                                                              value);
-                                                        },
-                                                        decoration:
-                                                            InputDecoration(
-                                                          hintText: recepcionBloc
-                                                                          .currentUbicationDest
-                                                                          ?.name ==
-                                                                      "" ||
-                                                                  recepcionBloc
-                                                                          .currentUbicationDest
-                                                                          ?.name ==
-                                                                      null
-                                                              ? 'Esperando escaneo'
-                                                              : recepcionBloc
-                                                                  .currentUbicationDest
-                                                                  ?.name,
-                                                          disabledBorder:
-                                                              InputBorder.none,
-                                                          hintStyle:
-                                                              const TextStyle(
-                                                                  fontSize: 14,
-                                                                  color: black),
-                                                          border:
-                                                              InputBorder.none,
                                                         ),
                                                       ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              )
-                                            : Focus(
-                                                focusNode: focusNode5,
-                                                onKey: (FocusNode node,
-                                                    RawKeyEvent event) {
-                                                  if (event
-                                                      is RawKeyDownEvent) {
-                                                    if (event.logicalKey ==
-                                                        LogicalKeyboardKey
-                                                            .enter) {
-                                                      validateLocationDest(
-                                                          //validamos la ubicacion
-                                                          recepcionBloc
-                                                              .scannedValue6);
-
-                                                      return KeyEventResult
-                                                          .handled;
-                                                    } else {
-                                                      recepcionBloc.add(
-                                                          UpdateScannedValueOrderEvent(
-                                                              event.data
-                                                                  .keyLabel,
-                                                              'locationDest'));
-
-                                                      return KeyEventResult
-                                                          .handled;
-                                                    }
-                                                  }
-                                                  return KeyEventResult.ignored;
-                                                },
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
-                                                  child: Column(
-                                                    children: [
-                                                      GestureDetector(
-                                                        onTap: !recepcionBloc
-                                                                    .locationsDestIsok && //false
-                                                                recepcionBloc
-                                                                    .productIsOk && //false
-                                                                !recepcionBloc
-                                                                    .quantityIsOk
-                                                            ? () {
-                                                                Navigator.pushReplacementNamed(
-                                                                    context,
-                                                                    'search-location-recep-batch',
-                                                                    arguments: [
-                                                                      widget
-                                                                          .ordenCompra,
-                                                                      widget
-                                                                          .currentProduct
-                                                                    ]);
-                                                              }
-                                                            : null,
-                                                        child: Row(
-                                                          children: [
-                                                            Align(
-                                                              alignment: Alignment
-                                                                  .centerLeft,
-                                                              child: Text(
-                                                                'Ubicación destino',
-                                                                style:
-                                                                    TextStyle(
-                                                                  fontSize: 15,
-                                                                  color:
-                                                                      primaryColorApp,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                            const Spacer(),
-                                                            Image.asset(
-                                                              "assets/icons/ubicacion.png",
-                                                              color:
-                                                                  primaryColorApp,
-                                                              width: 20,
-                                                            ),
-                                                          ],
-                                                        ),
+                                                      const Spacer(),
+                                                      Image.asset(
+                                                        "assets/icons/ubicacion.png",
+                                                        color: primaryColorApp,
+                                                        width: 20,
                                                       ),
-                                                      Align(
-                                                          alignment: Alignment
-                                                              .centerLeft,
-                                                          child: Text(
-                                                            recepcionBloc.currentUbicationDest
-                                                                            ?.name ==
-                                                                        "" ||
-                                                                    recepcionBloc
-                                                                            .currentUbicationDest
-                                                                            ?.name ==
-                                                                        null
-                                                                ? 'Esperando escaneo'
-                                                                : recepcionBloc
-                                                                        .currentUbicationDest
-                                                                        ?.name ??
-                                                                    "",
-                                                            style: TextStyle(
-                                                                color: black,
-                                                                fontSize: 14),
-                                                          ))
                                                     ],
                                                   ),
                                                 ),
-                                              ),
-                                      ),
+                                                BarcodeScannerField(
+                                                  controller: recepcionBloc
+                                                      .locationDestController,
+                                                  focusNode: focusNode5,
+                                                  onBarcodeScanned:
+                                                      (value, context) {
+                                                    return validateLocationDest(
+                                                      value,
+                                                    );
+                                                  },
+                                                ),
+                                                Align(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  child: Text(
+                                                      recepcionBloc.currentUbicationDest
+                                                                      ?.name ==
+                                                                  "" ||
+                                                              recepcionBloc
+                                                                      .currentUbicationDest
+                                                                      ?.name ==
+                                                                  null
+                                                          ? 'Esperando escaneo'
+                                                          : recepcionBloc
+                                                                  .currentUbicationDest
+                                                                  ?.name ??
+                                                              "",
+                                                      style: TextStyle(
+                                                          fontSize: 14,
+                                                          color: black)),
+                                                )
+                                              ],
+                                            ),
+                                          )),
                                     ),
                                   ],
                                 ),
@@ -1164,12 +922,7 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
                 //todo: cantidad
                 SizedBox(
                   width: size.width,
-                  height: recepcionBloc.viewQuantity == true &&
-                          context.read<UserBloc>().fabricante.contains("Zebra")
-                      ? 345
-                      : !recepcionBloc.viewQuantity
-                          ? 110
-                          : 150,
+                  height: !recepcionBloc.viewQuantity ? 110 : 150,
                   child: Column(
                     children: [
                       Padding(
@@ -1225,78 +978,34 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
                                   ),
 
                                   const Spacer(),
+
                                   Expanded(
                                     child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10),
+                                      alignment: Alignment.center,
+                                      child: Stack(
                                         alignment: Alignment.center,
-                                        child: context
-                                                .read<UserBloc>()
-                                                .fabricante
-                                                .contains("Zebra")
-                                            ? TextFormField(
-                                                showCursor: false,
-                                                textAlign: TextAlign.center,
-                                                enabled: recepcionBloc
-                                                        .productIsOk && //true
-                                                    recepcionBloc
-                                                        .quantityIsOk //true
-
-                                                ,
-                                                // showCursor: false,
-                                                controller:
-                                                    _controllerQuantity, // Controlador que maneja el texto
-                                                focusNode: focusNode3,
-                                                onChanged: (value) {
-                                                  validateQuantity(value);
-                                                },
-                                                decoration: InputDecoration(
-                                                  hintText: recepcionBloc
-                                                      .quantitySelected
-                                                      .toString(),
-                                                  disabledBorder:
-                                                      InputBorder.none,
-                                                  hintStyle: const TextStyle(
-                                                      fontSize: 14,
-                                                      color: black),
-                                                  border: InputBorder.none,
-                                                ),
-                                              )
-                                            : Focus(
-                                                focusNode: focusNode3,
-                                                onKey: (FocusNode node,
-                                                    RawKeyEvent event) {
-                                                  if (event
-                                                      is RawKeyDownEvent) {
-                                                    if (event.logicalKey ==
-                                                        LogicalKeyboardKey
-                                                            .enter) {
-                                                      validateQuantity(
-                                                          recepcionBloc
-                                                              .scannedValue3);
-
-                                                      return KeyEventResult
-                                                          .handled;
-                                                    } else {
-                                                      recepcionBloc.add(
-                                                          UpdateScannedValueOrderEvent(
-                                                              event.data
-                                                                  .keyLabel,
-                                                              'quantity'));
-                                                      return KeyEventResult
-                                                          .handled;
-                                                    }
-                                                  }
-                                                  return KeyEventResult.ignored;
-                                                },
-                                                child: Text(
-                                                    recepcionBloc
-                                                        .quantitySelected
-                                                        .toString(),
-                                                    style: const TextStyle(
-                                                        color: Colors.black,
-                                                        fontSize: 14)),
-                                              )),
+                                        children: [
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: BarcodeScannerField(
+                                              controller: _controllerQuantity,
+                                              focusNode: focusNode3,
+                                              onBarcodeScanned:
+                                                  (value, context) {
+                                                validateQuantity(value);
+                                              },
+                                            ),
+                                          ),
+                                          Text(
+                                              recepcionBloc.quantitySelected
+                                                  .toString(),
+                                              style: const TextStyle(
+                                                  color: black, fontSize: 14)),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                   IconButton(
                                       onPressed: recepcionBloc.quantityIsOk &&
@@ -1359,12 +1068,6 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
                               },
                               controller: _cantidadController,
                               keyboardType: TextInputType.number,
-                              readOnly: context
-                                      .read<UserBloc>()
-                                      .fabricante
-                                      .contains("Zebra")
-                                  ? true
-                                  : false,
                               decoration: InputDecorations.authInputDecoration(
                                 hintText: 'Cantidad',
                                 labelText: 'Cantidad',
@@ -1413,19 +1116,6 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
                                   TextStyle(color: Colors.white, fontSize: 14),
                             ),
                           )),
-                      Visibility(
-                        visible: recepcionBloc.viewQuantity &&
-                            context
-                                .read<UserBloc>()
-                                .fabricante
-                                .contains("Zebra"),
-                        child: CustomKeyboardNumber(
-                          controller: _cantidadController,
-                          onchanged: () {
-                            _validatebuttonquantity();
-                          },
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -1482,6 +1172,8 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
         //valisamos si la suma de la cantidad del paquete es correcta con lo que se pide
         if (matchedBarcode.cantidad + batchBloc.quantitySelected >
             currentProduct.cantidadFaltante!) {
+          _audioService.playErrorSound();
+          _vibrationService.vibrate();
           return false;
         }
 
@@ -1492,8 +1184,12 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
           matchedBarcode.cantidad,
         ));
       }
+      _audioService.playErrorSound();
+      _vibrationService.vibrate();
       return false;
     }
+    _audioService.playErrorSound();
+    _vibrationService.vibrate();
     return false;
   }
 
@@ -1505,6 +1201,8 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
 
     if (currentProduct.productTracking == 'lot') {
       if (context.read<RecepcionBatchBloc>().lotesProductCurrent.id == null) {
+        _audioService.playErrorSound();
+        _vibrationService.vibrate();
         Get.snackbar(
           'Error',
           "Seleccione un lote",
@@ -1520,6 +1218,8 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
             .configurations.result?.result?.scanDestinationLocationReception ==
         true) {
       if (context.read<RecepcionBatchBloc>().currentUbicationDest?.id == null) {
+        _audioService.playErrorSound();
+        _vibrationService.vibrate();
         Get.snackbar(
           'Error',
           "Seleccione o escanee una ubicacion",
@@ -1546,6 +1246,8 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
 
     // Validación de formato
     if (!isValid) {
+      _audioService.playErrorSound();
+      _vibrationService.vibrate();
       Get.snackbar(
         'Error',
         'Cantidad inválida',
@@ -1562,6 +1264,8 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
     // Intentar convertir a double
     double? cantidad = double.tryParse(input);
     if (cantidad == null) {
+      _audioService.playErrorSound();
+      _vibrationService.vibrate();
       Get.snackbar(
         'Error',
         'Cantidad inválida',
@@ -1627,6 +1331,8 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
 
           _finishSeprateProductOrder(context, cantidad);
         } else {
+          _audioService.playErrorSound();
+          _vibrationService.vibrate();
           Get.snackbar(
             'Error',
             "No tiene el permiso de mover mas de lo planteado",
@@ -1644,6 +1350,8 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
         "lot") {
       print(context.read<RecepcionBatchBloc>().lotesProductCurrent.toMap());
       if (context.read<RecepcionBatchBloc>().lotesProductCurrent.name == "") {
+        _audioService.playErrorSound();
+        _vibrationService.vibrate();
         Get.snackbar(
           'Error',
           "Seleccione un lote",
@@ -1670,6 +1378,8 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
     if (context.read<RecepcionBatchBloc>().currentProduct.productTracking ==
         "lot") {
       if (context.read<RecepcionBatchBloc>().currentProduct.lotId == "") {
+        _audioService.playErrorSound();
+        _vibrationService.vibrate();
         Get.snackbar(
           'Error',
           "Seleccione un lote",

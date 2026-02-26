@@ -7,8 +7,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class DialogInfoQuick extends StatelessWidget {
   final BuildContext contextScreen;
@@ -86,7 +84,6 @@ class SearchPackageDialog extends StatefulWidget {
   State<SearchPackageDialog> createState() => _SearchPackageDialogState();
 }
 
-
 class _SearchPackageDialogState extends State<SearchPackageDialog> {
   final TextEditingController _scanController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -130,7 +127,6 @@ class _SearchPackageDialogState extends State<SearchPackageDialog> {
             ),
             const SizedBox(height: 10),
             TextFormField(
-              readOnly: true,
               style: const TextStyle(fontSize: 14, color: Colors.black),
               controller: _scanController,
               // ✅ El cambio crucial: aplicamos el formatter aquí
@@ -163,11 +159,6 @@ class _SearchPackageDialogState extends State<SearchPackageDialog> {
         ),
       ),
       actions: <Widget>[
-        CustomKeyboardNumber(
-          controller: _scanController,
-          onchanged: () {},
-          isDialog: true,
-        ),
         Row(
           children: [
             Expanded(

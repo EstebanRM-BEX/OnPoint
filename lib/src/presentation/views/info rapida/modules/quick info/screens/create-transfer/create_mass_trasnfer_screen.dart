@@ -9,13 +9,13 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
+import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/new_product/location/LocationScanner_widget.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/models/info_rapida_model.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/screens/create-transfer/widgets/locationDest/LocationCardButton_massTransfer_widget.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 
@@ -118,9 +118,7 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
 
   void validateLocationDest(String value) {
     final bloc = context.read<InfoRapidaBloc>();
-    final scan = bloc.scannedValue2.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : bloc.scannedValue2.trim().toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     print('scan location dest: $scan');
     _controllerLocationDestino.clear();
@@ -137,7 +135,7 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
       _audioService.playErrorSound();
       print('La ubicacion de destino no puede ser la misma que la de origen');
       bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: false));
-      bloc.add(ClearScannedValueTransferEvent('locationDest'));
+      Future.microtask(() => focusNode1.requestFocus());
       return;
     }
 
@@ -152,15 +150,13 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
       bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: false));
     }
 
-    bloc.add(ClearScannedValueTransferEvent('locationDest'));
+    Future.microtask(() => focusNode1.requestFocus());
   }
 
   void validateProduct(String value) {
     final bloc = context.read<InfoRapidaBloc>();
 
-    final scan = (bloc.scannedValue2.isEmpty ? value : bloc.scannedValue2)
-        .trim()
-        .toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     _controllerProduct.clear();
     print('🔎 Scan barcode: $scan');
@@ -175,16 +171,15 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
       print('✅ producto encontrado directo: ${matchedProduct?.producto}');
       bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
       bloc.add(ChangeProductIsOkEvent(matchedProduct!, true));
-      bloc.add(ClearScannedValueTransferEvent('product'));
-
+      Future.microtask(() => focusNode2.requestFocus());
       return;
     }
     print('❌ Producto no encontrado por ID');
     _audioService.playErrorSound();
     _vibrationService.vibrate();
-    bloc
-      ..add(ValidateFieldsEvent(field: "product", isOk: false))
-      ..add(ClearScannedValueTransferEvent('product'));
+    bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
+    Future.microtask(() => focusNode2.requestFocus());
+
     return;
   }
 
@@ -371,7 +366,6 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
                         quantityIsOk: true,
                         currentLocationName: '_',
                         onLocationScanned: (value) {},
-                        onKeyScanned: (keyLabel) {},
                         focusNode: FocusNode(),
                         controller: TextEditingController(),
                         locationDropdown: Column(
@@ -433,10 +427,7 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
                       onLocationScanned: (value) {
                         validateLocationDest(value);
                       },
-                      onKeyScanned: (keyLabel) {
-                        context.read<InfoRapidaBloc>().add(
-                            UpdateScannedValueEvent(keyLabel, 'locationDest'));
-                      },
+
                       focusNode: focusNode1,
                       controller: _controllerLocationDestino,
                       locationDropdown: LocationCardButtonCreateMassTransfer(
@@ -467,51 +458,13 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
 
               //*espacio para escanear y buscar el producto
 
-              context.read<UserBloc>().fabricante.contains("Zebra")
-                  ? Container(
-                      height: 15,
-                      margin: const EdgeInsets.only(bottom: 5),
-                      child: TextFormField(
-                        autofocus: true,
-                        showCursor: false,
-                        controller: _controllerProduct,
-                        focusNode: focusNode2,
-                        onChanged: (value) {
-                          // Llamamos a la validación al cambiar el texto
-                          validateProduct(
-                            value,
-                          );
-                        },
-                        decoration: InputDecoration(
-                          disabledBorder: InputBorder.none,
-                          hintStyle:
-                              const TextStyle(fontSize: 14, color: black),
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    )
-                  :
-
-                  //*focus para leer los productos
-                  Focus(
-                      focusNode: focusNode2,
-                      autofocus: true,
-                      onKey: (FocusNode node, RawKeyEvent event) {
-                        if (event is RawKeyDownEvent) {
-                          if (event.logicalKey == LogicalKeyboardKey.enter) {
-                            validateProduct(
-                                context.read<InfoRapidaBloc>().scannedValue3);
-                            return KeyEventResult.handled;
-                          } else {
-                            context.read<InfoRapidaBloc>().add(
-                                UpdateScannedValueEvent(
-                                    event.data.keyLabel, 'product'));
-                            return KeyEventResult.handled;
-                          }
-                        }
-                        return KeyEventResult.ignored;
-                      },
-                      child: Container()),
+              BarcodeScannerField(
+                controller: _controllerProduct,
+                focusNode: focusNode2,
+                onBarcodeScanned: (value, context) {
+                  return validateProduct(value);
+                },
+              ),
 
               (context
                       .read<InfoRapidaBloc>()

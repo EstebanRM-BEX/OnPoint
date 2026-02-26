@@ -24,7 +24,6 @@ class CreateTransferBloc
   bool isProductOk = true;
   bool isLocationDestOk = true;
   bool isQuantityOk = true;
-  bool isKeyboardVisible = false;
   bool isLoteOk = true;
 
   //*variables para validar
@@ -97,9 +96,6 @@ class CreateTransferBloc
       TransferenciasRepository();
 
   CreateTransferBloc() : super(CrateTransferInitial()) {
-    //*evento para actualizar el valor del scan
-    on<UpdateScannedValueTransferEvent>(_onUpdateScannedValueEvent);
-    on<ClearScannedValueTransferEvent>(_onClearScannedValueEvent);
     on<LoadConfigurationsUserCreateTransferEvent>(
         _onLoadConfigurationsUserEvent);
 
@@ -109,9 +105,6 @@ class CreateTransferBloc
     on<GetLocationsEvent>(_onLoadLocations);
     //*metodo para obtener los productos de la bd
     on<GetProductsFromDBEvent>(_onGetProductsFromDBEvent);
-
-    //*metodo para mostrar el teclado
-    on<ShowKeyboardCreateTransferEvent>(_onShowKeyboardEvent);
 
     //metodo para buscar una ubicacion
     on<SearchLocationEvent>(_onSearchLocationEvent);
@@ -405,7 +398,6 @@ class CreateTransferBloc
         loteIsOk = false;
         isProductOk = true;
         isQuantityOk = true;
-        isKeyboardVisible = false;
         isLoteOk = true;
 
         //*variables para validar
@@ -443,7 +435,6 @@ class CreateTransferBloc
         loteIsOk = false;
         isProductOk = true;
         isQuantityOk = true;
-        isKeyboardVisible = false;
         isLoteOk = true;
 
         //*variables para validar
@@ -756,12 +747,6 @@ class CreateTransferBloc
     }
   }
 
-  void _onShowKeyboardEvent(ShowKeyboardCreateTransferEvent event,
-      Emitter<CreateTransferState> emit) {
-    isKeyboardVisible = event.showKeyboard;
-    emit(ShowKeyboardState(showKeyboard: isKeyboardVisible));
-  }
-
   void _onLoadLocations(
       GetLocationsEvent event, Emitter<CreateTransferState> emit) async {
     try {
@@ -828,82 +813,6 @@ class CreateTransferBloc
       }
     } catch (e, s) {
       print('❌ Error en LoadConfigurationsUser $e =>$s');
-    }
-  }
-
-//*evento para limpiar el valor del scan
-  void _onClearScannedValueEvent(
-      ClearScannedValueTransferEvent event, Emitter<CreateTransferState> emit) {
-    try {
-      switch (event.scan) {
-        case 'location':
-          scannedValue1 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'product':
-          scannedValue2 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'quantity':
-          scannedValue3 = '';
-          emit(ClearScannedValueState());
-          break;
-
-        case 'locationDest':
-          scannedValue7 = '';
-          emit(ClearScannedValueState());
-          break;
-
-        case 'lote':
-          scannedValue4 = '';
-          emit(ClearScannedValueState());
-          break;
-
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-      emit(ClearScannedValueState());
-    } catch (e, s) {
-      print("❌ Error en _onClearScannedValueEvent: $e, $s");
-    }
-  }
-
-  //*evento para actualizar el valor del scan
-  void _onUpdateScannedValueEvent(UpdateScannedValueTransferEvent event,
-      Emitter<CreateTransferState> emit) {
-    try {
-      print('scannedValue: ${event.scannedValue}');
-      switch (event.scan) {
-        case 'location':
-          // Acumulador de valores escaneados
-          scannedValue1 += event.scannedValue.trim();
-          emit(UpdateScannedValueState(scannedValue1, event.scan));
-          break;
-        case 'product':
-          scannedValue2 += event.scannedValue.trim();
-          emit(UpdateScannedValueState(scannedValue2, event.scan));
-          break;
-        case 'quantity':
-          scannedValue3 += event.scannedValue.trim();
-          emit(UpdateScannedValueState(scannedValue3, event.scan));
-          break;
-
-        case 'lote':
-          scannedValue4 += event.scannedValue.trim();
-          print('scannedValue4: $scannedValue4');
-          emit(UpdateScannedValueState(scannedValue4, event.scan));
-          break;
-
-        case 'locationDest':
-          scannedValue7 += event.scannedValue.trim();
-          emit(UpdateScannedValueState(scannedValue7, event.scan));
-          break;
-
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-    } catch (e, s) {
-      print("❌ Error en _onUpdateScannedValueEvent: $e, $s");
     }
   }
 }

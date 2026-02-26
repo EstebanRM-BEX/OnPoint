@@ -11,6 +11,7 @@ import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
+import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
@@ -20,14 +21,13 @@ import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-i
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/screens/widgets/location/location_card_widget.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/screens/widgets/others/dropdowbutton_widget.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/screens/widgets/product/product_widget.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
+import 'package:wms_app/shared/widgets/scanner_location_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/product/scanner_product_widget.dart';
+import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_widget.dart';
 
 class ScanProductTrasnferScreen extends StatefulWidget {
   final LineasTransferenciaTrans? currentProduct;
@@ -92,11 +92,11 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
 
   @override
   void dispose() {
-    focusNode1.dispose(); //product
+    focusNode1.dispose(); //location
     focusNode2.dispose(); //product
-    focusNode3.dispose(); //quantity
-    focusNode4.dispose(); //quantity
-    focusNode5.dispose(); //quantity
+    focusNode3.dispose(); //cantidad por pda
+    focusNode4.dispose(); //cantidad textformfieldƒ
+    focusNode5.dispose(); //location dest
     super.dispose();
   }
 
@@ -165,18 +165,13 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
       focusNode4.unfocus();
     }
 
-    print('locationDestIsOk: ${bloc.locationDestIsOk}');
-    print('isLocationDestOk: ${bloc.isLocationDestOk}');
-
     setState(() {});
   }
 
   void validateLocation(String value) {
     final bloc = context.read<TransferenciaBloc>();
 
-    String scan = bloc.scannedValue1.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : bloc.scannedValue1.trim().toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     _controllerLocation.text = "";
     final currentProduct = bloc.currentProduct;
@@ -188,21 +183,21 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
           currentProduct.idMove ?? 0));
 
       bloc.oldLocation = currentProduct.locationId.toString();
-      bloc.add(ClearScannedValueEvent('location'));
+      // bloc.add(ClearScannedValueEvent('location'));
+      Future.microtask(() => focusNode1.requestFocus());
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       bloc.add(ValidateFieldsEvent(field: "location", isOk: false));
-      bloc.add(ClearScannedValueEvent('location'));
+      // bloc.add(ClearScannedValueEvent('location'));
+      Future.microtask(() => focusNode1.requestFocus());
     }
   }
 
   void validateProduct(String value) {
     final bloc = context.read<TransferenciaBloc>();
 
-    String scan = bloc.scannedValue2.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : bloc.scannedValue2.trim().toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     print('scan product: $scan');
     _controllerProduct.text = "";
@@ -211,7 +206,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
       bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
       bloc.add(ChangeProductIsOkEvent(true, int.parse(currentProduct.productId),
           currentProduct.idTransferencia ?? 0, 0, currentProduct.idMove ?? 0));
-      bloc.add(ClearScannedValueEvent('product'));
+      Future.microtask(() => focusNode2.requestFocus());
     } else {
       final isok =
           validateScannedBarcode(scan, bloc.currentProduct, bloc, true);
@@ -220,7 +215,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
         _audioService.playErrorSound();
         _vibrationService.vibrate();
         bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
-        bloc.add(ClearScannedValueEvent('product'));
+        Future.microtask(() => focusNode2.requestFocus());
       }
     }
   }
@@ -228,9 +223,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
   void validateQuantity(String value) {
     final bloc = context.read<TransferenciaBloc>();
 
-    String scan = bloc.scannedValue3.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : bloc.scannedValue3.trim().toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     _controllerQuantity.text = "";
     final currentProduct = bloc.currentProduct;
@@ -246,11 +239,11 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
           1,
           false,
           currentProduct.idTransferencia ?? 0));
-      bloc.add(ClearScannedValueEvent('quantity'));
+      Future.microtask(() => focusNode3.requestFocus());
     } else {
       validateScannedBarcode(scan, bloc.currentProduct, bloc, false);
 
-      bloc.add(ClearScannedValueEvent('quantity'));
+      Future.microtask(() => focusNode3.requestFocus());
     }
   }
 
@@ -366,7 +359,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
           '⚠️ Error: No hay un producto actual seleccionado para validar el muelle.');
       // Puedes añadir un SnackBar aquí para informar al usuario
       bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: false));
-      bloc.add(ClearScannedValueEvent('muelle'));
+      // bloc.add(ClearScannedValueEvent('muelle'));
       return;
     }
 
@@ -393,7 +386,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
             locationName: "",
           )));
 
-      bloc.add(ClearScannedValueEvent('muelle'));
+      // bloc.add(ClearScannedValueEvent('muelle'));
       return;
     }
 
@@ -418,14 +411,14 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
           matchedUbicacion,
         ));
 
-        bloc.add(ClearScannedValueEvent('muelle'));
+        // bloc.add(ClearScannedValueEvent('muelle'));
       } else {
         // Fallo final
         _audioService.playErrorSound();
         _vibrationService.vibrate();
         print('Ubicacion no encontrada');
         bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: false));
-        bloc.add(ClearScannedValueEvent('muelle'));
+        // bloc.add(ClearScannedValueEvent('muelle'));
       }
     }
   }
@@ -599,127 +592,30 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                       child: SingleChildScrollView(
                         child: Column(children: [
                           //todo : ubicacion de origen
-                          Row(
-                            children: [
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 10),
-                                child: Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: BoxDecoration(
-                                    color: bloc.locationIsOk ? green : yellow,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                              Card(
-                                color: bloc.isLocationOk
-                                    ? bloc.locationIsOk
-                                        ? Colors.green[100]
-                                        : Colors.grey[300]
-                                    : Colors.red[200],
-                                elevation: 5,
-                                child: Container(
-                                  // color: Colors.amber,
-                                  width: size.width * 0.85,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 2),
-                                  child: context
-                                          .read<UserBloc>()
-                                          .fabricante
-                                          .contains("Zebra")
-                                      ? Column(
-                                          children: [
-                                            LocationDropdownTransferWidget(
-                                              isPDA: false,
-                                              selectedLocation:
-                                                  selectedLocation,
-                                              positionsOrigen:
-                                                  bloc.positionsOrigen,
-                                              currentLocationId: bloc
-                                                      .currentProduct
-                                                      .locationName ??
-                                                  "",
-                                              batchBloc: bloc,
-                                              currentProduct:
-                                                  bloc.currentProduct,
-                                            ),
-                                            Container(
-                                              height: 15,
-                                              margin: const EdgeInsets.only(
-                                                  bottom: 5),
-                                              child: TextFormField(
-                                                autofocus: true,
-                                                showCursor: false,
-                                                controller:
-                                                    _controllerLocation, // Asignamos el controlador
-                                                enabled: !bloc
-                                                        .locationIsOk && // false
-                                                    !bloc
-                                                        .productIsOk && // false
-                                                    !bloc
-                                                        .quantityIsOk && // false
-                                                    !bloc.locationDestIsOk,
 
-                                                focusNode: focusNode1,
-                                                onChanged: (value) {
-                                                  // Llamamos a la validación al cambiar el texto
-                                                  validateLocation(value);
-                                                },
-                                                decoration: InputDecoration(
-                                                  hintText: bloc.currentProduct
-                                                      .locationName
-                                                      .toString(),
-                                                  disabledBorder:
-                                                      InputBorder.none,
-                                                  hintStyle: const TextStyle(
-                                                      fontSize: 14,
-                                                      color: black),
-                                                  border: InputBorder.none,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        )
-                                      : Focus(
-                                          focusNode: focusNode1,
-                                          onKey: (FocusNode node,
-                                              RawKeyEvent event) {
-                                            if (event is RawKeyDownEvent) {
-                                              if (event.logicalKey ==
-                                                  LogicalKeyboardKey.enter) {
-                                                validateLocation(
-                                                    //validamos la ubicacion
-                                                    bloc.scannedValue1);
-
-                                                return KeyEventResult.handled;
-                                              } else {
-                                                bloc.add(
-                                                    UpdateScannedValueEvent(
-                                                        event.data.keyLabel,
-                                                        'location'));
-
-                                                return KeyEventResult.handled;
-                                              }
-                                            }
-                                            return KeyEventResult.ignored;
-                                          },
-                                          child: LocationDropdownTransferWidget(
-                                            isPDA: true,
-                                            selectedLocation: selectedLocation,
-                                            positionsOrigen:
-                                                bloc.positionsOrigen,
-                                            currentLocationId: bloc
-                                                .currentProduct.locationName
-                                                .toString(),
-                                            batchBloc: bloc,
-                                            currentProduct: bloc.currentProduct,
-                                          ),
-                                        ),
-                                ),
-                              ),
-                            ],
+                          LocationScannerWidget(
+                            isLocationOk: bloc.isLocationOk,
+                            locationIsOk: bloc.locationIsOk,
+                            productIsOk: bloc.productIsOk,
+                            quantityIsOk: bloc.quantityIsOk,
+                            locationDestIsOk: bloc.locationDestIsOk,
+                            currentLocationId:
+                                bloc.currentProduct.locationName ?? "",
+                            onValidateLocation: (value) {
+                              validateLocation(value);
+                            },
+                            onKeyScanned: (keyLabel) {},
+                            focusNode: focusNode1,
+                            controller: _controllerLocation,
+                            locationDropdown: LocationDropdownTransferWidget(
+                              isPDA: true,
+                              selectedLocation: selectedLocation,
+                              positionsOrigen: bloc.positionsOrigen,
+                              currentLocationId:
+                                  bloc.currentProduct.locationName.toString(),
+                              batchBloc: bloc,
+                              currentProduct: bloc.currentProduct,
+                            ),
                           ),
 
                           //todo: producto
@@ -741,8 +637,8 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                               validateProduct(value); // tu función actual
                             },
                             onKeyScanned: (keyLabel) {
-                              bloc.add(
-                                  UpdateScannedValueEvent(keyLabel, 'product'));
+                              // bloc.add(
+                              //     UpdateScannedValueEvent(keyLabel, 'product'));
                             },
                             focusNode: focusNode2,
                             controller: _controllerProduct,
@@ -775,7 +671,8 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                             },
                           ),
 
-                          //todo: muelle
+                          //todo: ubicacion de destino
+
                           Row(
                             children: [
                               Padding(
@@ -799,158 +696,64 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                                     : Colors.red[200],
                                 elevation: 5,
                                 child: Container(
-                                  width: size.width * 0.85,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 10),
-                                  child: context
-                                          .read<UserBloc>()
-                                          .fabricante
-                                          .contains("Zebra")
-                                      ? Column(
-                                          children: [
-                                            GestureDetector(
-                                              onTap: bloc.locationIsOk &&
-                                                      bloc.productIsOk &&
-                                                      !bloc.quantityIsOk &&
-                                                      !bloc.locationDestIsOk
-                                                  ? () {
-                                                      Navigator
-                                                          .pushReplacementNamed(
-                                                              context,
-                                                              'seacrh-locationsDest-trans',
-                                                              arguments: [
-                                                            bloc.currentProduct
-                                                          ]);
-                                                    }
-                                                  : null,
-                                              child: Row(
-                                                children: [
-                                                  Text(
-                                                    'Ubicación de destino',
-                                                    style: TextStyle(
-                                                      fontSize: 14,
-                                                      color: primaryColorApp,
-                                                    ),
-                                                  ),
-                                                  const Spacer(),
-                                                  SizedBox(
-                                                    height: 20,
-                                                    width: 20,
-                                                    child: SvgPicture.asset(
-                                                      color: primaryColorApp,
-                                                      "assets/icons/packing.svg",
-                                                      height: 20,
-                                                      width: 20,
-                                                      fit: BoxFit.cover,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Container(
-                                              height: 15,
-                                              margin: const EdgeInsets.only(
-                                                  bottom: 5, top: 10),
-                                              child: TextFormField(
-                                                showCursor: false,
-                                                enabled: bloc.locationIsOk &&
-                                                    bloc.productIsOk &&
-                                                    !bloc.quantityIsOk &&
-                                                    !bloc.locationDestIsOk,
-                                                controller:
-                                                    _controllerLocationDest, // Controlador que maneja el texto
-                                                focusNode: focusNode5,
-                                                onChanged: (value) {
-                                                  validateMuelle(value);
-                                                },
-                                                decoration: InputDecoration(
-                                                  hintText:
-                                                      bloc.selectedLocation,
-                                                  disabledBorder:
-                                                      InputBorder.none,
-                                                  hintStyle: const TextStyle(
-                                                      fontSize: 14,
-                                                      color: black),
-                                                  border: InputBorder.none,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        )
-                                      : Focus(
-                                          focusNode: focusNode5,
-                                          onKey: (FocusNode node,
-                                              RawKeyEvent event) {
-                                            if (event is RawKeyDownEvent) {
-                                              if (event.logicalKey ==
-                                                  LogicalKeyboardKey.enter) {
-                                                validateMuelle(
-                                                    bloc.scannedValue4);
-                                                return KeyEventResult.handled;
-                                              } else {
-                                                bloc.add(
-                                                    UpdateScannedValueEvent(
-                                                        event.data.keyLabel,
-                                                        'muelle'));
-                                                return KeyEventResult.handled;
-                                              }
-                                            }
-                                            return KeyEventResult.ignored;
-                                          },
-                                          child: Column(
+                                    width: size.width * 0.85,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 10),
+                                    child: Column(
+                                      children: [
+                                        GestureDetector(
+                                          onTap: bloc.locationIsOk &&
+                                                  bloc.productIsOk &&
+                                                  !bloc.quantityIsOk &&
+                                                  !bloc.locationDestIsOk
+                                              ? () {
+                                                  Navigator.pushReplacementNamed(
+                                                      context,
+                                                      'seacrh-locationsDest-trans',
+                                                      arguments: [
+                                                        bloc.currentProduct
+                                                      ]);
+                                                }
+                                              : null,
+                                          child: Row(
                                             children: [
-                                              GestureDetector(
-                                                onTap: bloc.locationIsOk &&
-                                                        bloc.productIsOk &&
-                                                        !bloc.quantityIsOk &&
-                                                        !bloc.locationDestIsOk
-                                                    ? () {
-                                                        Navigator
-                                                            .pushReplacementNamed(
-                                                                context,
-                                                                'seacrh-locationsDest-trans',
-                                                                arguments: [
-                                                              bloc.currentProduct
-                                                            ]);
-                                                      }
-                                                    : null,
-                                                child: Row(
-                                                  children: [
-                                                    Text(
-                                                      'Ubicación de destino',
-                                                      style: TextStyle(
-                                                        fontSize: 14,
-                                                        color: primaryColorApp,
-                                                      ),
-                                                    ),
-                                                    const Spacer(),
-                                                    SizedBox(
-                                                      height: 20,
-                                                      width: 20,
-                                                      child: SvgPicture.asset(
-                                                        color: primaryColorApp,
-                                                        "assets/icons/packing.svg",
-                                                        height: 20,
-                                                        width: 20,
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                                    ),
-                                                  ],
+                                              Text(
+                                                'Ubicación de destino',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: primaryColorApp,
                                                 ),
                                               ),
-                                              const SizedBox(height: 10),
-                                              Align(
-                                                alignment: Alignment.centerLeft,
-                                                child: Text(
-                                                  bloc.selectedLocation,
-                                                  style: TextStyle(
-                                                      fontSize: 14,
-                                                      color: black),
+                                              const Spacer(),
+                                              SizedBox(
+                                                height: 20,
+                                                width: 20,
+                                                child: SvgPicture.asset(
+                                                  color: primaryColorApp,
+                                                  "assets/icons/packing.svg",
+                                                  height: 20,
+                                                  width: 20,
+                                                  fit: BoxFit.cover,
                                                 ),
                                               ),
                                             ],
-                                          )),
-                                ),
+                                          ),
+                                        ),
+                                        BarcodeScannerField(
+                                          controller: _controllerLocationDest,
+                                          focusNode: focusNode5,
+                                          onBarcodeScanned: (value, context) {
+                                            return validateMuelle(value);
+                                          },
+                                        ),
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(bloc.selectedLocation,
+                                              style: TextStyle(
+                                                  fontSize: 14, color: black)),
+                                        )
+                                      ],
+                                    )),
                               ),
                             ],
                           ),
@@ -963,15 +766,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
 
                   SizedBox(
                     width: size.width,
-                    height: bloc.viewQuantity == true &&
-                            context
-                                .read<UserBloc>()
-                                .fabricante
-                                .contains("Zebra")
-                        ? 300
-                        : !bloc.viewQuantity
-                            ? 110
-                            : 150,
+                    height: !bloc.viewQuantity ? 110 : 150,
                     child: Column(
                       children: [
                         Padding(
@@ -1061,93 +856,27 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                                             const EdgeInsets.only(bottom: 5),
                                         height: 30,
                                         alignment: Alignment.center,
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 10),
-                                          child: Container(
-                                              alignment: Alignment.center,
-                                              child: context
-                                                      .read<UserBloc>()
-                                                      .fabricante
-                                                      .contains("Zebra")
-                                                  ? Center(
-                                                      child: TextFormField(
-                                                        showCursor: false,
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        enabled: bloc
-                                                                .locationIsOk && //true
-                                                            bloc
-                                                                .productIsOk && //true
-                                                            bloc
-                                                                .quantityIsOk && //true
-
-                                                            !bloc
-                                                                .locationDestIsOk,
-                                                        // showCursor: false,
-                                                        controller:
-                                                            _controllerQuantity, // Controlador que maneja el texto
-                                                        focusNode: focusNode3,
-                                                        onChanged: (value) {
-                                                          validateQuantity(
-                                                              value);
-                                                        },
-                                                        decoration:
-                                                            InputDecoration(
-                                                          hintText: bloc
-                                                              .quantitySelected
-                                                              .toString(),
-                                                          disabledBorder:
-                                                              InputBorder.none,
-                                                          hintStyle:
-                                                              const TextStyle(
-                                                                  fontSize: 13,
-                                                                  color: black),
-                                                          border:
-                                                              InputBorder.none,
-                                                        ),
-                                                      ),
-                                                    )
-                                                  : Focus(
-                                                      focusNode: focusNode3,
-                                                      onKey: (FocusNode node,
-                                                          RawKeyEvent event) {
-                                                        if (event
-                                                            is RawKeyDownEvent) {
-                                                          if (event
-                                                                  .logicalKey ==
-                                                              LogicalKeyboardKey
-                                                                  .enter) {
-                                                            validateQuantity(bloc
-                                                                .scannedValue3);
-                                                            return KeyEventResult
-                                                                .handled;
-                                                          } else {
-                                                            bloc.add(
-                                                                UpdateScannedValueEvent(
-                                                                    event.data
-                                                                        .keyLabel,
-                                                                    'quantity'));
-
-                                                            return KeyEventResult
-                                                                .handled;
-                                                          }
-                                                        }
-                                                        return KeyEventResult
-                                                            .ignored;
-                                                      },
-                                                      child: Text(
-                                                          bloc.quantitySelected
-                                                              .toString(),
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          style:
-                                                              const TextStyle(
-                                                            color: Colors.black,
-                                                            fontSize: 14,
-                                                          )),
-                                                    )),
+                                        child: Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            SizedBox(
+                                                width: double.infinity,
+                                                child: BarcodeScannerField(
+                                                  controller:
+                                                      _controllerQuantity,
+                                                  focusNode: focusNode3,
+                                                  onBarcodeScanned:
+                                                      (value, context) {
+                                                    validateQuantity(value);
+                                                  },
+                                                )),
+                                            Text(
+                                                bloc.quantitySelected
+                                                    .toString(),
+                                                style: const TextStyle(
+                                                    color: black,
+                                                    fontSize: 14)),
+                                          ],
                                         ),
                                       ),
                                     ),
@@ -1267,20 +996,6 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                                     color: Colors.white, fontSize: 14),
                               ),
                             )),
-                        //teclado de la app
-                        Visibility(
-                          visible: bloc.viewQuantity &&
-                              context
-                                  .read<UserBloc>()
-                                  .fabricante
-                                  .contains("Zebra"),
-                          child: CustomKeyboardNumber(
-                            controller: _cantidadController,
-                            onchanged: () {
-                              _validatebuttonquantity2();
-                            },
-                          ),
-                        )
                       ],
                     ),
                   ),

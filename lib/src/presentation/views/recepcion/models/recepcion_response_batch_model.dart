@@ -356,7 +356,8 @@ class LineasRecepcionBatch {
         productCode: json["product_code"],
         productBarcode: json["product_barcode"],
         productTracking: json["product_tracking"],
-        fechaVencimiento: json["fecha_vencimiento"],
+        fechaVencimiento:
+            json["fecha_vencimiento"] == false ? "" : json["fecha_vencimiento"],
         diasVencimiento: json["dias_vencimiento"],
         otherBarcodes: json["other_barcodes"] == null
             ? []
@@ -380,7 +381,7 @@ class LineasRecepcionBatch {
         rimovalPriority: json["rimoval_priority"],
         lotId: json["lot_id"],
         lotName: json["lot_name"],
-        zonaEntrega: json["zona_entrega"],
+        zonaEntrega: json["zona_entrega"] == false ? "" : json["zona_entrega"],
         idZonaEntrega: json["id_zona_entrega"],
         pickingId: json["picking_id"],
         pickingName: json["picking_name"],
@@ -433,7 +434,7 @@ class LineasRecepcionBatch {
         "rimoval_priority": rimovalPriority,
         "lot_id": lotId,
         "lot_name": lotName,
-        "zona_entrega": zonaEntrega,
+        "zona_entrega": zonaEntrega == false ? "" : zonaEntrega,
         "id_zona_entrega": idZonaEntrega,
         "picking_id": pickingId,
         "picking_name": pickingName,

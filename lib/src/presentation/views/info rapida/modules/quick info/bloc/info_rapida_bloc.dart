@@ -77,16 +77,11 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   InfoRapidaBloc({required this.userBloc}) : super(InfoRapidaInitial()) {
     on<InfoRapidaEvent>((event, emit) {});
 
-    //*evento para actualizar el valor del scan
-    on<UpdateScannedValueEvent>(_onUpdateScannedValueEvent);
-
     on<GetInfoRapida>(_onGetInfoRapida);
 
     //metodo para buscar una ubicacion
     on<SearchLocationEvent>(_onSearchLocationEvent);
 
-    //*activar el teclado
-    on<ShowKeyboardInfoEvent>(_onShowKeyboardEvent);
     // *activar el edit
     on<IsEditEvent>(_onIsEditEvent);
 
@@ -132,7 +127,6 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     on<ChangeLocationIsOkEvent>(_onChangeLocationIsOkEvent);
 
     on<ValidateFieldsEvent>(_onValidateFields);
-    on<ClearScannedValueTransferEvent>(_onClearScannedValueEvent);
 
 //*metodo para validar el producto
     on<ChangeProductIsOkEvent>(_onChangeProductIsOkEvent);
@@ -257,34 +251,6 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
       emit(ChangeProductOrderIsOkState(
         productIsOk,
       ));
-    }
-  }
-
-//*evento para limpiar el valor del scan
-  void _onClearScannedValueEvent(
-      ClearScannedValueTransferEvent event, Emitter<InfoRapidaState> emit) {
-    try {
-      switch (event.scan) {
-        case 'info':
-          scannedValue1 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'product':
-          scannedValue3 = '';
-          emit(ClearScannedValueState());
-          break;
-
-        case 'locationDest':
-          scannedValue2 = '';
-          emit(ClearScannedValueState());
-          break;
-
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-      emit(ClearScannedValueState());
-    } catch (e, s) {
-      print("❌ Error en _onClearScannedValueEvent: $e, $s");
     }
   }
 
@@ -636,14 +602,6 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     }
   }
 
-  void _onShowKeyboardEvent(
-      ShowKeyboardInfoEvent event, Emitter<InfoRapidaState> emit) {
-    isKeyboardVisible = event.showKeyboard;
-    isNumericKeyboardType = event.isNumeric;
-    controllerActivo = event.controllerActivo;
-    emit(ShowKeyboardState(showKeyboard: isKeyboardVisible));
-  }
-
   void _onIsEditEvent(IsEditEvent event, Emitter<InfoRapidaState> emit) {
     isEdit = event.isEdit;
     print('isEdit: $isEdit');
@@ -681,9 +639,9 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
 
       InfoRapida infoRapida; // Defínelo fuera del if
 
-      print('manual: ${event.isManual}');
-      print('is product: ${event.isProduct}');
-      print('barcode: ${event.barcode.trim()}');
+      debugPrint('manual: ${event.isManual}');
+      debugPrint('is product: ${event.isProduct}');
+      debugPrint('barcode: ${event.barcode.trim()}');
 
       if (event.isManual) {
         infoRapida = await _infoRapidaRepository.getInfoQuickManual(
@@ -726,34 +684,10 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
       if (infoRapida.result?.code == 404) {
         emit(InfoRapidaError(
             error: infoRapida.result?.msg ?? 'Error desconocido'));
-
-        add(ClearScannedValueTransferEvent('info'));
       }
-
-      add(ClearScannedValueTransferEvent('info'));
     } catch (e) {
       emit(InfoRapidaError());
     }
-  }
-
-  void _onUpdateScannedValueEvent(
-      UpdateScannedValueEvent event, Emitter<InfoRapidaState> emit) {
-    switch (event.scan) {
-      case 'info':
-        scannedValue1 += event.scannedValue.trim();
-        print('scannedValue1: $scannedValue1');
-        break;
-      case 'locationDest':
-        scannedValue2 += event.scannedValue.trim();
-        print('scannedValue2: $scannedValue2');
-        break;
-
-      case 'product':
-        scannedValue3 += event.scannedValue.trim();
-        print('scannedValue3: $scannedValue3');
-        break;
-    }
-    emit(UpdateScannedValueState(scannedValue1));
   }
 
   void _onSortLocationsEvent(

@@ -102,9 +102,6 @@ class RecepcionBatchBloc
     //*cargar toddas las recepciones por batch desde la bd
     on<FetchRecepcionBatchEventFromBD>(_onFetchRecepcionBatchEventFromBD);
 
-    //*activar el teclado
-    on<ShowKeyboardEvent>(_onShowKeyboardEvent);
-
     //* buscar una orden de compra
     on<SearchReceptionEvent>(_onSearchOrderEvent);
 
@@ -131,11 +128,6 @@ class RecepcionBatchBloc
 
     //*cantidad
     on<ChangeIsOkQuantity>(_onChangeQuantityIsOkEvent);
-
-    //*evento para limpiar el valor escaneado
-    on<ClearScannedValueOrderEvent>(_onClearScannedValueEvent);
-    //*evento para actualizar el valor del scan
-    on<UpdateScannedValueOrderEvent>(_onUpdateScannedValueEvent);
 
     //*cambiar el estado de las variables
     on<ChangeLocationDestIsOkEvent>(_onChangeLocationIsOkEvent);
@@ -750,44 +742,6 @@ class RecepcionBatchBloc
     }
   }
 
-  //*evento para actualizar el valor del scan
-  void _onUpdateScannedValueEvent(
-      UpdateScannedValueOrderEvent event, Emitter<RecepcionBatchState> emit) {
-    try {
-      switch (event.scan) {
-        case 'product':
-          scannedValue2 += event.scannedValue.trim();
-          print('scannedValue2: $scannedValue2');
-          emit(UpdateScannedValueOrderState(scannedValue2, event.scan));
-          break;
-        case 'quantity':
-          scannedValue3 += event.scannedValue.trim();
-          print('scannedValue3: $scannedValue3');
-          emit(UpdateScannedValueOrderState(scannedValue3, event.scan));
-          break;
-        case 'lote':
-          print('scannedValue4: $scannedValue4');
-          scannedValue4 += event.scannedValue.trim();
-          emit(UpdateScannedValueOrderState(scannedValue4, event.scan));
-          break;
-        case 'toDo':
-          print('scannedValue5: $scannedValue5');
-          scannedValue5 += event.scannedValue.trim();
-          emit(UpdateScannedValueOrderState(scannedValue5, event.scan));
-          break;
-        case 'locationDest':
-          scannedValue6 += event.scannedValue.trim();
-          emit(UpdateScannedValueOrderState(scannedValue6, event.scan));
-          print('scannedValue6: $scannedValue6');
-
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-    } catch (e, s) {
-      print("❌ Error en _onUpdateScannedValueEvent: $e, $s");
-    }
-  }
-
   //*metodo para validar la ubicacion
   void _onChangeLocationIsOkEvent(ChangeLocationDestIsOkEvent event,
       Emitter<RecepcionBatchState> emit) async {
@@ -806,42 +760,6 @@ class RecepcionBatchBloc
       }
     } catch (e, s) {
       print("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
-    }
-  }
-
-//*evento para limpiar el valor del scan
-  void _onClearScannedValueEvent(
-      ClearScannedValueOrderEvent event, Emitter<RecepcionBatchState> emit) {
-    try {
-      switch (event.scan) {
-        case 'product':
-          scannedValue2 = '';
-          emit(ClearScannedValueOrderState());
-          break;
-        case 'quantity':
-          scannedValue3 = '';
-          emit(ClearScannedValueOrderState());
-          break;
-        case 'lote':
-          scannedValue4 = '';
-          emit(ClearScannedValueOrderState());
-          break;
-        case 'toDo':
-          scannedValue5 = '';
-          emit(ClearScannedValueOrderState());
-          break;
-
-        case 'locationDest':
-          scannedValue6 = '';
-          emit(ClearScannedValueOrderState());
-          break;
-
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-      emit(ClearScannedValueOrderState());
-    } catch (e, s) {
-      print("❌ Error en _onClearScannedValueEvent: $e, $s");
     }
   }
 
@@ -1153,13 +1071,6 @@ class RecepcionBatchBloc
       emit(SearchOrdenCompraFailure('Error al buscar la orden de compra'));
       print('Error en el _onSearchPedidoEvent: $e, $s');
     }
-  }
-
-  //*metodo para ocultar y mostrar el teclado
-  void _onShowKeyboardEvent(
-      ShowKeyboardEvent event, Emitter<RecepcionBatchState> emit) {
-    isKeyboardVisible = event.showKeyboard;
-    emit(ShowKeyboardState(showKeyboard: isKeyboardVisible));
   }
 
   //*metodo para obtener todas las recepciones por batch

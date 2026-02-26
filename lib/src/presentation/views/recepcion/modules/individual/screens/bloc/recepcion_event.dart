@@ -22,11 +22,6 @@ class CurrentOrdenesCompra extends RecepcionEvent {
   CurrentOrdenesCompra(this.resultEntrada);
 }
 
-class ShowKeyboardEvent extends RecepcionEvent {
-  final bool showKeyboard;
-  ShowKeyboardEvent(this.showKeyboard);
-}
-
 class SearchOrdenCompraEvent extends RecepcionEvent {
   final String query;
   SearchOrdenCompraEvent(this.query);
@@ -63,17 +58,6 @@ class ValidateFieldsOrderEvent extends RecepcionEvent {
   final String field;
   final bool isOk;
   ValidateFieldsOrderEvent({required this.field, required this.isOk});
-}
-
-class ClearScannedValueOrderEvent extends RecepcionEvent {
-  final String scan;
-  ClearScannedValueOrderEvent(this.scan);
-}
-
-class UpdateScannedValueOrderEvent extends RecepcionEvent {
-  final String scannedValue;
-  final String scan;
-  UpdateScannedValueOrderEvent(this.scannedValue, this.scan);
 }
 
 //* CAMBIAR VALORES DE VARIABLES

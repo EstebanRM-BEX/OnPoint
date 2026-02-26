@@ -21,7 +21,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class ListOrdenesCompraScreen extends StatefulWidget {
   const ListOrdenesCompraScreen({super.key});
@@ -42,8 +41,6 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
 
   void validateBarcode(String value, BuildContext context) {
     final bloc = context.read<RecepcionBloc>();
-
-    // ✅ PROTECCIÓN 1: Si la lista está vacía, no hagas nada
     if (bloc.listOrdenesCompra.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Espere a que carguen las órdenes...')),
@@ -51,14 +48,12 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
       return;
     }
 
-    final scan = (bloc.scannedValue5.isEmpty ? value : bloc.scannedValue5)
-        .trim()
-        .toLowerCase();
+    // El debounce del widget garantiza que 'value' es el barcode completo
+    final scan = value.trim().toLowerCase();
 
     _controllerToDo.clear();
     print('🔎 Scan barcode (batch picking): $scan');
 
-    // ✅ PROTECCIÓN 2: Uso seguro de firstWhere
     final ResultEntrada batchs = bloc.listOrdenesCompra.firstWhere(
       (b) =>
           (b.name?.toLowerCase() ?? '') == scan, // Evita error si name es null
@@ -67,17 +62,12 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
     );
 
     if (batchs.id != null) {
-      print('🔎 batch encontrado : ${batchs.id} ${batchs.name} ');
-      bloc.add(ClearScannedValueOrderEvent('toDo'));
-      try {
-        _handleOrderTap(context, batchs);
-      } catch (e) {
-        print("Error handleOrderTap: $e");
-      }
+      _handleOrderTap(context, batchs);
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      bloc.add(ClearScannedValueOrderEvent('toDo'));
+      // Re-enfocar el campo para que el escáner pueda volver a capturar entradas
+      Future.microtask(() => focusNodeBuscar.requestFocus());
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Orden no encontrada en la lista')),
@@ -184,25 +174,6 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
           },
           child: Scaffold(
               backgroundColor: white,
-              bottomNavigationBar: context
-                      .read<RecepcionBloc>()
-                      .isKeyboardVisible
-                  ? CustomKeyboard(
-                      isLogin: false,
-                      controller:
-                          context.read<RecepcionBloc>().searchControllerOrderC,
-                      onchanged: () {
-                        context
-                            .read<RecepcionBloc>()
-                            .add(SearchOrdenCompraEvent(
-                              context
-                                  .read<RecepcionBloc>()
-                                  .searchControllerOrderC
-                                  .text,
-                            ));
-                      },
-                    )
-                  : null,
               body: SizedBox(
                 width: size.width * 1,
                 height: size.height * 1,
@@ -225,30 +196,19 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
                         final recepcionBloc = context.read<RecepcionBloc>();
                         recepcionBloc.searchControllerOrderC.clear();
                         recepcionBloc.add(SearchOrdenCompraEvent(''));
-                        recepcionBloc.add(ShowKeyboardEvent(false));
                         Future.microtask(() {
                           FocusScope.of(context).requestFocus(focusNodeBuscar);
                         });
                       },
-                      onTap: () {
-                        context
-                            .read<RecepcionBloc>()
-                            .add(ShowKeyboardEvent(true));
-                      },
+                      onTap: () {},
                     ),
 
                     //*buscar por scan
                     BarcodeScannerField(
                       controller: _controllerToDo,
                       focusNode: focusNodeBuscar,
-                      scannedValue5: "",
                       onBarcodeScanned: (value, context) {
                         return validateBarcode(value, context);
-                      },
-                      onKeyScanned: (keyLabel, type, context) {
-                        return context.read<RecepcionBloc>().add(
-                              UpdateScannedValueOrderEvent(keyLabel, type),
-                            );
                       },
                     ),
 
@@ -678,7 +638,6 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
             // Lógica para asignar el usuario
             recepcionBloc.searchControllerOrderC.clear();
             recepcionBloc.add(SearchOrdenCompraEvent(''));
-            recepcionBloc.add(ShowKeyboardEvent(false));
             recepcionBloc.add(AssignUserToOrder(ordenCompra));
 
             Navigator.pop(dialogContext); // Cierra el diálogo de asignación
@@ -704,7 +663,6 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
           onAccepted: () async {
             recepcionBloc.searchControllerOrderC.clear();
             recepcionBloc.add(SearchOrdenCompraEvent(''));
-            recepcionBloc.add(ShowKeyboardEvent(false));
             recepcionBloc.add(StartOrStopTimeOrder(
                 ordenCompra.id ?? 0, "start_time_reception"));
             recepcionBloc
@@ -725,7 +683,6 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
     } else {
       recepcionBloc.searchControllerOrderC.clear();
       recepcionBloc.add(SearchOrdenCompraEvent(''));
-      recepcionBloc.add(ShowKeyboardEvent(false));
       recepcionBloc.add(GetPorductsToEntrada(ordenCompra.id ?? 0, 'reception'));
       recepcionBloc.add(CurrentOrdenesCompra(ordenCompra));
 
@@ -793,10 +750,6 @@ class AppBar extends StatelessWidget {
                             '',
                           ));
 
-                      context
-                          .read<RecepcionBloc>()
-                          .add(ShowKeyboardEvent(false));
-
                       Navigator.pushReplacementNamed(
                         context,
                         '/home',
@@ -817,10 +770,6 @@ class AppBar extends StatelessWidget {
                             .add(SearchOrdenCompraEvent(
                               '',
                             ));
-
-                        context
-                            .read<RecepcionBloc>()
-                            .add(ShowKeyboardEvent(false));
 
                         await DataBaseSqlite().deleRecepcion('reception');
                         context

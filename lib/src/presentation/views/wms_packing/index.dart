@@ -19,7 +19,6 @@ import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class WmsPackingScreen extends StatefulWidget {
   const WmsPackingScreen({super.key});
@@ -44,9 +43,7 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
 
   void validateBarcode(String value, BuildContext context) {
     final bloc = context.read<WmsPackingBloc>();
-    final scan = (bloc.scannedValue5.isEmpty ? value : bloc.scannedValue5)
-        .trim()
-        .toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     _controllerToDo.clear();
     print('🔎 Scan barcode (batch picking): $scan');
@@ -54,8 +51,6 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
     final listOfBatchs = bloc.listOfBatchs;
 
     void processBatch(BatchPackingModel batch) {
-      bloc.add(ClearScannedValuePackEvent('toDo'));
-
       print(batch.toMap());
       try {
         _handleBatchTap(context, batch, context);
@@ -84,7 +79,10 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      bloc.add(ClearScannedValuePackEvent('toDo'));
+      Future.microtask(() => focusNodeBuscar.requestFocus());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Packing no encontrado en la lista')),
+      );
     }
   }
 
@@ -107,17 +105,6 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
     }, builder: (context, state) {
       return Scaffold(
           backgroundColor: white,
-          bottomNavigationBar: context.read<WmsPackingBloc>().isKeyboardVisible
-              ? CustomKeyboard(
-                  isLogin: false,
-                  controller: context.read<WmsPackingBloc>().searchController,
-                  onchanged: () {
-                    context.read<WmsPackingBloc>().add(SearchBatchPackingEvent(
-                        context.read<WmsPackingBloc>().searchController.text,
-                        controller.index));
-                  },
-                )
-              : null,
           body: Container(
             margin: const EdgeInsets.only(bottom: 10),
             width: size.width * 1,
@@ -129,9 +116,6 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
                 CustomHeaderWidget(
                   title: 'PACKING',
                   onBack: () {
-                    context
-                        .read<WmsPackingBloc>()
-                        .add(ShowKeyboardEvent(false));
                     Navigator.pushReplacementNamed(context, '/home');
                   },
                   onRefresh: () async {
@@ -165,7 +149,6 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
                     // 1. Disparar el evento de búsqueda vacía y apagar el teclado
                     packingBloc
                         .add(SearchBatchPackingEvent('', controller.index));
-                    packingBloc.add(ShowKeyboardEvent(false));
 
                     // 2. Restaurar el foco después de un breve retraso (para asegurar la UI)
                     Future.delayed(const Duration(milliseconds: 100), () {
@@ -177,24 +160,14 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
                   },
 
                   // 4. LÓGICA DE ACTIVACIÓN DEL TECLADO (onTap)
-                  onTap: () {
-                    // El widget DynamicSearchBar internamente verifica si es Zebra.
-                    context.read<WmsPackingBloc>().add(ShowKeyboardEvent(true));
-                  },
                 ),
 
                 //*buscar por scan
                 BarcodeScannerField(
                   controller: _controllerToDo,
                   focusNode: focusNodeBuscar,
-                  scannedValue5: "",
                   onBarcodeScanned: (value, context) {
                     return validateBarcode(value, context);
-                  },
-                  onKeyScanned: (keyLabel, type, context) {
-                    return context.read<WmsPackingBloc>().add(
-                          UpdateScannedValuePackEvent(keyLabel, type),
-                        );
                   },
                 ),
 
@@ -564,7 +537,6 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
       context.read<WmsPackingBloc>().add(LoadAllPedidosFromBatchEvent(
             batch.id ?? 0,
           ));
-      context.read<WmsPackingBloc>().add(ShowKeyboardEvent(false));
       goBatchInfo(contextBuilder, context.read<WmsPackingBloc>(), batch);
     } else {
       showDialog(
@@ -577,7 +549,6 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
             context.read<WmsPackingBloc>().add(LoadAllPedidosFromBatchEvent(
                   batch.id ?? 0,
                 ));
-            context.read<WmsPackingBloc>().add(ShowKeyboardEvent(false));
             // viajamos a la vista de detalles del batch con sus pedidos
 
             context

@@ -22,10 +22,9 @@ import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/product/scanner_product_widget.dart';
+import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_widget.dart';
 
 class ScanProductPackingConsolidateScreen extends StatefulWidget {
   final PedidoPacking? packingModel;
@@ -829,12 +828,6 @@ class _ScanProductPackingConsolidateScreenState
                               },
                               controller: cantidadController,
                               keyboardType: TextInputType.number,
-                              readOnly: context
-                                      .read<UserBloc>()
-                                      .fabricante
-                                      .contains("Zebra")
-                                  ? true
-                                  : false,
                               decoration: InputDecorations.authInputDecoration(
                                 hintText: 'Cantidad',
                                 labelText: 'Cantidad',
@@ -885,19 +878,6 @@ class _ScanProductPackingConsolidateScreenState
                                   TextStyle(color: Colors.white, fontSize: 14),
                             ),
                           )),
-                      Visibility(
-                        visible: packingBloc.viewQuantity &&
-                            context
-                                .read<UserBloc>()
-                                .fabricante
-                                .contains("Zebra"),
-                        child: CustomKeyboardNumber(
-                          controller: cantidadController,
-                          onchanged: () {
-                            _validatebuttonquantity();
-                          },
-                        ),
-                      )
                     ],
                   ),
                 ),

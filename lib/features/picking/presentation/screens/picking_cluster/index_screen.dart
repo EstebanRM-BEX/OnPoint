@@ -59,12 +59,8 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                   BarcodeScannerField(
                     controller: _controllerToDo,
                     focusNode: focusNodeBuscar,
-                    scannedValue5: "",
                     onBarcodeScanned: (value, context) {
                       validateBarcode(value, context);
-                    },
-                    onKeyScanned: (keyLabel, type, context) {
-                      // Opcional: manejar entrada de teclado
                     },
                   ),
                   const Spacer(),

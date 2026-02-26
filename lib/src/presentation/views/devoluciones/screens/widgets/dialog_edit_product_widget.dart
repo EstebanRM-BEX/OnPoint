@@ -10,7 +10,6 @@ import 'package:wms_app/src/presentation/views/devoluciones/models/product_devol
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/lote_screen.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/widgets/buildBarcodeInputField_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_widget.dart';
 
 class DialogEditProduct extends StatelessWidget {
   const DialogEditProduct({
@@ -56,17 +55,11 @@ class DialogEditProduct extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min, // Ajusta el tamaño del diálogo
                 children: [
                   BuildBarcodeInputField(
-                      devolucionesBloc: context.read<DevolucionesBloc>(),
                       focusNode: focusNode,
                       functionValidate: (value) {
                         return functionValidate(value);
                       },
-                      controller: controller,
-                      functionUpdate: (keyLabel) {
-                        context
-                            .read<DevolucionesBloc>()
-                            .add(UpdateScannedValueEvent(keyLabel, 'quantity'));
-                      }),
+                      controller: controller),
                   Card(
                     elevation: 3,
                     shape: RoundedRectangleBorder(
@@ -180,8 +173,6 @@ class DialogEditProduct extends StatelessWidget {
                             SizedBox(
                               height: 35,
                               child: TextFormField(
-                                //que no pueda editar
-                                readOnly: true,
                                 focusNode: focusNodeQuantityManual,
                                 inputFormatters: [
                                   FilteringTextInputFormatter.allow(
@@ -225,23 +216,6 @@ class DialogEditProduct extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 10),
-                            CustomKeyboardNumber(
-                              isDialog: true,
-                              controller: controllerManualQuantity,
-                              onchanged: () {
-                                // Actualiza la cantidad seleccionada
-                                if (controllerManualQuantity.text.isNotEmpty) {
-                                  try {
-                                    bloc.quantitySelected = double.parse(
-                                        controllerManualQuantity.text);
-                                  } catch (e) {
-                                    print('❌ Error al convertir a número: $e');
-                                  }
-                                } else {
-                                  bloc.quantitySelected = 0;
-                                }
-                              },
-                            ),
                             if (isEdit) ...[
                               const SizedBox(height: 5),
                               Text(
@@ -382,7 +356,7 @@ class DialogEditProduct extends StatelessWidget {
 
                                     bloc.add(
                                         ChangeStateIsDialogVisibleEvent(false));
-                                    bloc.add(ClearScannedValueEvent('product'));
+                                    // bloc.add(ClearScannedValueEvent('product'));
                                     Navigator.pop(context);
                                     return;
                                   }
@@ -432,7 +406,7 @@ class DialogEditProduct extends StatelessWidget {
 
                                   bloc.add(
                                       ChangeStateIsDialogVisibleEvent(false));
-                                  bloc.add(ClearScannedValueEvent('product'));
+                                  // bloc.add(ClearScannedValueEvent('product'));
                                   Navigator.pop(context);
                                   return;
                                 }
@@ -505,7 +479,7 @@ class DialogEditProduct extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () {
                       bloc.add(ChangeStateIsDialogVisibleEvent(false));
-                      bloc.add(ClearScannedValueEvent('product'));
+                      // bloc.add(ClearScannedValueEvent('product'));
                       Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
@@ -633,7 +607,7 @@ class DialogEditProduct extends StatelessWidget {
                                 isIncrement: false, quantityManual: 0));
 
                             bloc.add(ChangeStateIsDialogVisibleEvent(false));
-                            bloc.add(ClearScannedValueEvent('product'));
+                            // bloc.add(ClearScannedValueEvent('product'));
                             Navigator.pop(context);
                             return;
                           }
@@ -642,7 +616,7 @@ class DialogEditProduct extends StatelessWidget {
                               isIncrement: false, quantityManual: 0));
 
                           bloc.add(ChangeStateIsDialogVisibleEvent(false));
-                          bloc.add(ClearScannedValueEvent('product'));
+                          // bloc.add(ClearScannedValueEvent('product'));
                           Navigator.pop(context);
                           return;
                         }

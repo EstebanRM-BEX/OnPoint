@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_temp_widget.dart';
 
 class DialogTemperature extends StatelessWidget {
   final VoidCallback onConfirm;
@@ -46,7 +45,6 @@ class DialogTemperature extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
-                  readOnly: true,
                   controller: controller,
                   keyboardType: TextInputType.number,
                   decoration: InputDecorations.authInputDecoration(
@@ -66,11 +64,6 @@ class DialogTemperature extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                CustomKeyboardTempNumber(
-                  controller: controller,
-                  onchanged: () {},
-                  isDialog: true,
-                ),
                 const SizedBox(height: 12),
                 ElevatedButton(
                   onPressed: () {
@@ -88,7 +81,7 @@ class DialogTemperature extends StatelessWidget {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColorApp,
-                    minimumSize:  Size(size.width*0.8, 40),
+                    minimumSize: Size(size.width * 0.8, 40),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -100,13 +93,13 @@ class DialogTemperature extends StatelessWidget {
                   onPressed: () {
                     //cerramos el dialog
                     //limpiamos el controller
-                    
+
                     controller.clear();
                     onCancel();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: grey,
-                    minimumSize:  Size(size.width*0.8, 40),
+                    minimumSize: Size(size.width * 0.8, 40),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),

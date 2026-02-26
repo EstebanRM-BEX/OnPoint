@@ -43,7 +43,7 @@ class IndexListPickDoneScreen extends StatelessWidget {
       final listOfBatchs = bloc.filtersHistoryPicks;
 
       void processBatch(ResultPick batch) {
-        bloc.add(ClearScannedValueEvent('toDo'));
+        // bloc.add(ClearScannedValueEvent('toDo'));
 
         print(batch.toMap());
         try {
@@ -78,7 +78,7 @@ class IndexListPickDoneScreen extends StatelessWidget {
       } else {
         _audioService.playErrorSound();
         _vibrationService.vibrate();
-        bloc.add(ClearScannedValueEvent('toDo'));
+        // bloc.add(ClearScannedValueEvent('toDo'));
       }
     }
 
@@ -93,19 +93,6 @@ class IndexListPickDoneScreen extends StatelessWidget {
 
           return Scaffold(
             backgroundColor: white,
-            bottomNavigationBar: bloc.isKeyboardVisible
-                ? Padding(
-                    padding: const EdgeInsets.only(bottom: 36),
-                    child: CustomKeyboard(
-                      isLogin: false,
-                      controller: bloc.searchPickController,
-                      onchanged: () {
-                        bloc.add(SearchPickEvent(
-                            bloc.searchPickController.text, false));
-                      },
-                    ),
-                  )
-                : null,
             body: Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Column(
@@ -191,54 +178,45 @@ class IndexListPickDoneScreen extends StatelessWidget {
                         color: Colors.white,
                         elevation: 3,
                         child: TextFormField(
-                            textAlignVertical: TextAlignVertical.center,
-                            controller: bloc.searchPickController,
-                            decoration: InputDecoration(
-                              prefixIcon: const Icon(Icons.search,
-                                  color: grey, size: 20),
-                              suffixIcon: IconButton(
+                          textAlignVertical: TextAlignVertical.center,
+                          controller: bloc.searchPickController,
+                          decoration: InputDecoration(
+                            prefixIcon:
+                                const Icon(Icons.search, color: grey, size: 20),
+                            suffixIcon: IconButton(
+                                onPressed: () {
+                                  bloc.searchPickController.clear();
+                                  bloc.add(SearchPickEvent('', false));
+                                  FocusScope.of(context).unfocus();
+                                },
+                                icon: IconButton(
                                   onPressed: () {
-                                    bloc.searchPickController.clear();
                                     bloc.add(SearchPickEvent('', false));
-                                    FocusScope.of(context).unfocus();
-                                  },
-                                  icon: IconButton(
-                                    onPressed: () {
-                                      bloc.add(ShowKeyboard(false));
-                                      bloc.add(SearchPickEvent('', false));
-                                      bloc.searchPickController.clear();
+                                    bloc.searchPickController.clear();
 
-                                      //pasamos el foco a focusNodeBuscar
-                                      Future.delayed(const Duration(seconds: 1),
-                                          () {
-                                        // _handleDependencies();
-                                        FocusScope.of(context)
-                                            .requestFocus(focusNodeBuscar);
-                                      });
-                                    },
-                                    icon: const Icon(Icons.close,
-                                        color: grey, size: 20),
-                                  )),
-                              disabledBorder: const OutlineInputBorder(),
-                              hintText: "Buscar pick",
-                              hintStyle: const TextStyle(
-                                  color: Colors.grey, fontSize: 12),
-                              border: InputBorder.none,
-                            ),
-                            onChanged: (value) {
-                              bloc.add(SearchPickEvent(value, false));
-                            },
-                            style: const TextStyle(
-                                color: Colors.black, fontSize: 14),
-                            onTap: !context
-                                    .read<UserBloc>()
-                                    .fabricante
-                                    .contains("Zebra")
-                                ? null
-                                : () {
-                                    //pasamos el foco a
-                                    bloc.add(ShowKeyboard(true));
-                                  }),
+                                    //pasamos el foco a focusNodeBuscar
+                                    Future.delayed(const Duration(seconds: 1),
+                                        () {
+                                      // _handleDependencies();
+                                      FocusScope.of(context)
+                                          .requestFocus(focusNodeBuscar);
+                                    });
+                                  },
+                                  icon: const Icon(Icons.close,
+                                      color: grey, size: 20),
+                                )),
+                            disabledBorder: const OutlineInputBorder(),
+                            hintText: "Buscar pick",
+                            hintStyle: const TextStyle(
+                                color: Colors.grey, fontSize: 12),
+                            border: InputBorder.none,
+                          ),
+                          onChanged: (value) {
+                            bloc.add(SearchPickEvent(value, false));
+                          },
+                          style: const TextStyle(
+                              color: Colors.black, fontSize: 14),
+                        ),
                       ),
                     ),
                   ),
@@ -247,15 +225,14 @@ class IndexListPickDoneScreen extends StatelessWidget {
                   BarcodeScannerField(
                     controller: _controllerToDo,
                     focusNode: focusNodeBuscar,
-                    scannedValue5: "",
                     onBarcodeScanned: (value, context) {
                       return validateBarcode(value, context);
                     },
-                    onKeyScanned: (keyLabel, type, context) {
-                      return context.read<PickingPickBloc>().add(
-                            UpdateScannedValueEvent(keyLabel, type),
-                          );
-                    },
+                    // onKeyScanned: (keyLabel, type, context) {
+                    //   return context.read<PickingPickBloc>().add(
+                    //         UpdateScannedValueEvent(keyLabel, type),
+                    //       );
+                    // },
                   ),
 
                   Expanded(
@@ -736,7 +713,6 @@ class IndexListPickDoneScreen extends StatelessWidget {
     Navigator.pop(context);
     // Si batch.isSeparate es 1, entonces navegamos a "batch-detail"
     if (batch.isSeparate != 1) {
-      batchBloc.add(ShowKeyboard(false));
       batchBloc.searchPickController.clear();
       Navigator.pushReplacementNamed(context, 'scan-product-pick');
     }

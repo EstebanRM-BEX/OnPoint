@@ -117,9 +117,6 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     //metodo para cargar el producto actual
     on<LoadCurrentProductEvent>(_onLoadCurrentProductEvent);
 
-    //*evento para actualizar el valor del scan
-    on<UpdateScannedValueEvent>(_onUpdateScannedValueEvent);
-    on<ClearScannedValueEvent>(_onClearScannedValueEvent);
     on<LoadConfigurationsUserConteo>(_onLoadConfigurationsUserEvent);
 
     //*cambiar el estado de las variables
@@ -144,22 +141,12 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
 
     on<AddQuantitySeparate>(_onAddQuantitySeparateEvent);
 
-    //evento para limpiar las ubicaciones expandidas
-    on<ClearExpandedLocationEvent>((event, emit) {
-      ubicacionExpanded = '';
-      scannedValue6 = '';
-      emit(ClearExpandedLocationState());
-    });
-
     //*evento para obtener los barcodes de un producto por paquete
     on<FetchBarcodesProductEvent>(_onFetchBarcodesProductEvent);
 
     //*metodo para obtener todos los lotes de un producto
     on<GetLotesProduct>(_onGetLotesProduct);
     on<SelectecLoteEvent>(_onChangeLoteIsOkEvent);
-
-    //metodo para mostrar el teclado
-    on<ShowKeyboardEvent>(_onShowKeyboardEvent);
 
     //*metodo para crear un lote a un producto
     on<CreateLoteProduct>(_onCreateLoteProduct);
@@ -1031,12 +1018,6 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     }
   }
 
-  void _onShowKeyboardEvent(
-      ShowKeyboardEvent event, Emitter<ConteoState> emit) {
-    isKeyboardVisible = event.showKeyboard;
-    emit(ShowKeyboardState(showKeyboard: isKeyboardVisible));
-  }
-
   void _onChangeLoteIsOkEvent(
       SelectecLoteEvent event, Emitter<ConteoState> emit) async {
     try {
@@ -1405,86 +1386,6 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       positionsOrigen = positionsSet.toList();
     } catch (e, s) {
       print("❌ Error en getPosicions: $e -> $s");
-    }
-  }
-
-//*evento para limpiar el valor del scan
-  void _onClearScannedValueEvent(
-      ClearScannedValueEvent event, Emitter<ConteoState> emit) {
-    try {
-      switch (event.scan) {
-        case 'location':
-          scannedValue1 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'product':
-          scannedValue2 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'quantity':
-          scannedValue3 = '';
-          emit(ClearScannedValueState());
-          break;
-
-        case 'toProduct':
-          scannedValue5 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'toLocation':
-          scannedValue6 = '';
-          emit(ClearScannedValueState());
-          break;
-
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-      emit(ClearScannedValueState());
-    } catch (e, s) {
-      print("❌ Error en _onClearScannedValueEvent: $e, $s");
-    }
-  }
-
-  //*evento para actualizar el valor del scan
-  void _onUpdateScannedValueEvent(
-      UpdateScannedValueEvent event, Emitter<ConteoState> emit) {
-    try {
-      print('scannedValue: ${event.scannedValue}');
-      switch (event.scan) {
-        case 'location':
-          // Acumulador de valores escaneados
-          scannedValue1 += event.scannedValue.trim();
-          emit(UpdateScannedValueState(scannedValue1, event.scan));
-          break;
-        case 'product':
-          scannedValue2 += event.scannedValue.trim();
-          emit(UpdateScannedValueState(scannedValue2, event.scan));
-          break;
-        case 'quantity':
-          scannedValue3 += event.scannedValue.trim();
-          emit(UpdateScannedValueState(scannedValue3, event.scan));
-          break;
-
-        case 'toProduct':
-          scannedValue5 += event.scannedValue.trim();
-          emit(UpdateScannedValueState(scannedValue5, event.scan));
-          break;
-
-        case 'toLocation':
-          scannedValue6 += event.scannedValue.trim();
-          emit(UpdateScannedValueState(scannedValue6, event.scan));
-          break;
-
-        case 'lote':
-          scannedValue4 += event.scannedValue.trim();
-          print('scannedValue4: $scannedValue4');
-          emit(UpdateScannedValueState(scannedValue4, event.scan));
-          break;
-
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-    } catch (e, s) {
-      print("❌ Error en _onUpdateScannedValueEvent: $e, $s");
     }
   }
 

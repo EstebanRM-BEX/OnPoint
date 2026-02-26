@@ -78,12 +78,6 @@ class _LocationDestScreenState extends State<LocationDestRecepBatchScreen> {
                                   elevation: 3,
                                   child: TextFormField(
                                     showCursor: true,
-                                    readOnly: context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? true
-                                        : false,
                                     textAlignVertical: TextAlignVertical.center,
                                     controller:
                                         bloc.searchControllerLocationDest,
@@ -100,7 +94,6 @@ class _LocationDestScreenState extends State<LocationDestRecepBatchScreen> {
                                             bloc.add(SearchLocationEvent(
                                               '',
                                             ));
-                                            bloc.add(ShowKeyboardEvent(false));
                                             FocusScope.of(context).unfocus();
                                           },
                                           icon: const Icon(
@@ -120,14 +113,6 @@ class _LocationDestScreenState extends State<LocationDestRecepBatchScreen> {
                                         value,
                                       ));
                                     },
-                                    onTap: !context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? null
-                                        : () {
-                                            bloc.add(ShowKeyboardEvent(true));
-                                          },
                                   ),
                                 ),
                               ),
@@ -253,7 +238,6 @@ class _LocationDestScreenState extends State<LocationDestRecepBatchScreen> {
                               bloc.currentProduct.idMove ?? 0,
                             ));
 
-                            bloc.add(ShowKeyboardEvent(false));
                             FocusScope.of(context).unfocus();
 
                             setState(() {
@@ -284,19 +268,6 @@ class _LocationDestScreenState extends State<LocationDestRecepBatchScreen> {
                     const SizedBox(
                       height: 10,
                     ),
-                    Visibility(
-                      visible: bloc.isKeyboardVisible &&
-                          context.read<UserBloc>().fabricante.contains("Zebra"),
-                      child: CustomKeyboard(
-                        isLogin: false,
-                        controller: bloc.searchControllerLocationDest,
-                        onchanged: () {
-                          bloc.add(SearchLocationEvent(
-                            bloc.searchControllerLocationDest.text,
-                          ));
-                        },
-                      ),
-                    )
                   ],
                 )),
           ),
@@ -346,9 +317,7 @@ class _AppBarInfo extends StatelessWidget {
                           IconButton(
                             icon: const Icon(Icons.arrow_back, color: white),
                             onPressed: () {
-                              context
-                                  .read<RecepcionBatchBloc>()
-                                  .add(ShowKeyboardEvent(false));
+                          
 
                               Navigator.pushReplacementNamed(
                                   context, 'scan-product-reception-batch',

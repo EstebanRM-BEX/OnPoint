@@ -18,12 +18,6 @@ class SearchBatchPackingEvent extends PackingConsolidateEvent {
   SearchBatchPackingEvent(this.query, this.indexMenu);
 }
 
-class ShowKeyboardEvent extends PackingConsolidateEvent {
-  final bool showKeyboard;
-
-  ShowKeyboardEvent(this.showKeyboard);
-}
-
 class ClearScannedValuePackEvent extends PackingConsolidateEvent {
   final String scan;
   ClearScannedValuePackEvent(this.scan);
@@ -46,7 +40,6 @@ class StartTimePack extends PackingConsolidateEvent {
   StartTimePack(this.batchId, this.time);
 }
 
-
 class EndTimePack extends PackingConsolidateEvent {
   final int batchId;
   final DateTime time;
@@ -59,8 +52,6 @@ class LoadAllPedidosFromBatchEvent extends PackingConsolidateEvent {
     this.batchId,
   );
 }
-
-
 
 class ShowDetailvent extends PackingConsolidateEvent {
   final bool show;
@@ -249,9 +240,7 @@ class UnPackingEvent extends PackingConsolidateEvent {
   UnPackingEvent(this.request, this.pedidoId, this.consecutivoPackage);
 }
 
-
 class LoadAllNovedadesPackingConsolidateEvent extends PackingConsolidateEvent {}
-
 
 class AssignUserToBatch extends PackingConsolidateEvent {
   final int batchId;

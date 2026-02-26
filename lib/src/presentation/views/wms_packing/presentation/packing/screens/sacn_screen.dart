@@ -10,6 +10,8 @@ import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
+import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/shared/widgets/scanner_location_widget.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 
@@ -24,11 +26,9 @@ import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/product/scanner_product_widget.dart';
+import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
-import 'package:wms_app/src/presentation/widgets/expiredate_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_widget.dart';
 
 class ScanPackScreen extends StatefulWidget {
   const ScanPackScreen({
@@ -111,9 +111,7 @@ class _PackingScreenState extends State<ScanPackScreen> {
   void validateLocation(String value) {
     final batchBloc = context.read<PackingPedidoBloc>();
 
-    String scan = batchBloc.scannedValue1.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : batchBloc.scannedValue1.trim().toLowerCase();
+    String scan = value.trim().toLowerCase();
 
     _controllerLocation.text = "";
     final currentProduct = batchBloc.currentProduct;
@@ -121,21 +119,19 @@ class _PackingScreenState extends State<ScanPackScreen> {
       batchBloc.add(ValidateFieldsPackingEvent(field: "location", isOk: true));
       batchBloc.add(ChangeLocationIsOkEvent(currentProduct.idProduct ?? 0,
           currentProduct.pedidoId ?? 0, currentProduct.idMove ?? 0));
-      batchBloc.add(ClearScannedValuePackEvent('location'));
+      Future.microtask(() => focusNode1.requestFocus());
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       batchBloc.add(ValidateFieldsPackingEvent(field: "location", isOk: false));
-      batchBloc.add(ClearScannedValuePackEvent('location'));
+      Future.microtask(() => focusNode1.requestFocus());
     }
   }
 
   void validateProduct(String value) {
     final batchBloc = context.read<PackingPedidoBloc>();
 
-    String scan = batchBloc.scannedValue2.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : batchBloc.scannedValue2.trim().toLowerCase();
+    String scan = value.trim().toLowerCase();
 
     _controllerProduct.text = "";
     final currentProduct = batchBloc.currentProduct;
@@ -149,7 +145,7 @@ class _PackingScreenState extends State<ScanPackScreen> {
           currentProduct.pedidoId ?? 0, 0, currentProduct.idMove ?? 0));
       batchBloc.add(ChangeIsOkQuantity(true, currentProduct.idProduct ?? 0,
           currentProduct.pedidoId ?? 0, currentProduct.idMove ?? 0));
-      batchBloc.add(ClearScannedValuePackEvent('product'));
+      Future.microtask(() => focusNode2.requestFocus());
     } else {
       final isok = validateScannedBarcode(
           scan, batchBloc.currentProduct, batchBloc, true);
@@ -158,7 +154,7 @@ class _PackingScreenState extends State<ScanPackScreen> {
         _vibrationService.vibrate();
         batchBloc
             .add(ValidateFieldsPackingEvent(field: "product", isOk: false));
-        batchBloc.add(ClearScannedValuePackEvent('product'));
+        Future.microtask(() => focusNode2.requestFocus());
       }
     }
   }
@@ -166,19 +162,17 @@ class _PackingScreenState extends State<ScanPackScreen> {
   void validateQuantity(String value, PackingPedidoBloc batchBloc) {
     // Verificar que el widget esté montado antes de usar context
 
-    String scan = batchBloc.scannedValue3.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : batchBloc.scannedValue3.trim().toLowerCase();
+    String scan = value.trim().toLowerCase();
 
     _controllerQuantity.text = "";
     final currentProduct = batchBloc.currentProduct;
     if (scan == currentProduct.barcode?.toLowerCase()) {
       batchBloc.add(AddQuantitySeparate(1, currentProduct.idMove ?? 0,
           currentProduct.idProduct ?? 0, currentProduct.pedidoId ?? 0));
-      batchBloc.add(ClearScannedValuePackEvent('quantity'));
+      Future.microtask(() => focusNode3.requestFocus());
     } else {
       validateScannedBarcode(scan, batchBloc.currentProduct, batchBloc, false);
-      batchBloc.add(ClearScannedValuePackEvent('quantity'));
+      Future.microtask(() => focusNode3.requestFocus());
     }
   }
 
@@ -440,136 +434,33 @@ class _PackingScreenState extends State<ScanPackScreen> {
                           child: Column(
                             children: [
                               //todo : ubicacion de origen
-                              Row(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10),
-                                    child: Container(
-                                      width: 10,
-                                      height: 10,
-                                      decoration: BoxDecoration(
-                                        color: packingBloc.locationIsOk
-                                            ? green
-                                            : yellow,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ),
-                                  Card(
-                                    color: packingBloc.isLocationOk
-                                        ? packingBloc.locationIsOk
-                                            ? Colors.green[100]
-                                            : Colors.grey[300]
-                                        : Colors.red[200],
-                                    elevation: 5,
-                                    child: Container(
-                                      width: size.width * 0.85,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 2),
-                                      child: context
-                                              .read<UserBloc>()
-                                              .fabricante
-                                              .contains("Zebra")
-                                          ? Column(
-                                              children: [
-                                                LocationPackDropdownWidget(
-                                                  isPDA: false,
-                                                  selectedLocation:
-                                                      selectedLocation,
-                                                  positionsOrigen: packingBloc
-                                                      .currentProduct
-                                                      .locationId,
-                                                  currentLocationId: packingBloc
-                                                      .currentProduct.locationId
-                                                      .toString(),
-                                                  batchBloc: packingBloc,
-                                                  currentProduct: packingBloc
-                                                      .currentProduct,
-                                                ),
-                                                Container(
-                                                  height: 15,
-                                                  margin: const EdgeInsets.only(
-                                                      bottom: 5),
-                                                  child: TextFormField(
-                                                    showCursor: false,
-                                                    controller:
-                                                        _controllerLocation, // Asignamos el controlador
-                                                    enabled: !packingBloc
-                                                            .locationIsOk && // false
-                                                        !packingBloc
-                                                            .productIsOk && // false
-                                                        !packingBloc
-                                                            .quantityIsOk && // false
-                                                        !packingBloc
-                                                            .locationDestIsOk,
 
-                                                    focusNode: focusNode1,
-                                                    onChanged: (value) {
-                                                      // Llamamos a la validación al cambiar el texto
-                                                      validateLocation(
-                                                          _controllerLocation
-                                                              .text);
-                                                    },
-                                                    decoration: InputDecoration(
-                                                      hintText: packingBloc
-                                                          .currentProduct
-                                                          .locationId
-                                                          .toString(),
-                                                      disabledBorder:
-                                                          InputBorder.none,
-                                                      hintStyle:
-                                                          const TextStyle(
-                                                              fontSize: 14,
-                                                              color: black),
-                                                      border: InputBorder.none,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            )
-                                          : Focus(
-                                              focusNode: focusNode1,
-                                              onKey: (FocusNode node,
-                                                  RawKeyEvent event) {
-                                                if (event is RawKeyDownEvent) {
-                                                  if (event.logicalKey ==
-                                                      LogicalKeyboardKey
-                                                          .enter) {
-                                                    validateLocation(packingBloc
-                                                        .scannedValue1);
-                                                    return KeyEventResult
-                                                        .handled;
-                                                  } else {
-                                                    packingBloc.add(
-                                                        UpdateScannedValuePackEvent(
-                                                            event.data.keyLabel,
-                                                            'location'));
-                                                    return KeyEventResult
-                                                        .handled;
-                                                  }
-                                                }
-                                                return KeyEventResult.ignored;
-                                              },
-                                              child: LocationPackDropdownWidget(
-                                                isPDA: true,
-                                                selectedLocation:
-                                                    selectedLocation,
-                                                positionsOrigen: packingBloc
-                                                        .currentProduct
-                                                        .locationId ??
-                                                    "",
-                                                currentLocationId: packingBloc
-                                                    .currentProduct.locationId
-                                                    .toString(),
-                                                batchBloc: packingBloc,
-                                                currentProduct:
-                                                    packingBloc.currentProduct,
-                                              ),
-                                            ),
-                                    ),
-                                  ),
-                                ],
+                              LocationScannerWidget(
+                                isLocationOk: packingBloc.isLocationOk,
+                                locationIsOk: packingBloc.locationIsOk,
+                                productIsOk: packingBloc.productIsOk,
+                                quantityIsOk: packingBloc.quantityIsOk,
+                                locationDestIsOk: packingBloc.locationDestIsOk,
+                                currentLocationId: packingBloc
+                                    .currentProduct.locationId
+                                    .toString(),
+                                onValidateLocation: (value) {
+                                  validateLocation(value);
+                                },
+                                onKeyScanned: (keyLabel) {},
+                                focusNode: focusNode1,
+                                controller: _controllerLocation,
+                                locationDropdown: LocationPackDropdownWidget(
+                                  isPDA: false,
+                                  selectedLocation: selectedLocation,
+                                  positionsOrigen:
+                                      packingBloc.currentProduct.locationId,
+                                  currentLocationId: packingBloc
+                                      .currentProduct.locationId
+                                      .toString(),
+                                  batchBloc: packingBloc,
+                                  currentProduct: packingBloc.currentProduct,
+                                ),
                               ),
 
                               // todo: Producto
@@ -592,10 +483,7 @@ class _PackingScreenState extends State<ScanPackScreen> {
                                 onValidateProduct: (value) {
                                   validateProduct(value); // tu función actual
                                 },
-                                onKeyScanned: (keyLabel) {
-                                  packingBloc.add(UpdateScannedValuePackEvent(
-                                      keyLabel, 'product'));
-                                },
+                                onKeyScanned: (keyLabel) {},
                                 focusNode: focusNode2,
                                 controller: _controllerProduct,
                                 productDropdown: ProductDropdownPackWidget(
@@ -639,15 +527,7 @@ class _PackingScreenState extends State<ScanPackScreen> {
                   //todo: cantidad
                   SizedBox(
                     width: size.width,
-                    height: packingBloc.viewQuantity == true &&
-                            context
-                                .read<UserBloc>()
-                                .fabricante
-                                .contains("Zebra")
-                        ? 345
-                        : !packingBloc.viewQuantity
-                            ? 110
-                            : 150,
+                    height: !packingBloc.viewQuantity ? 110 : 150,
                     child: Column(
                       children: [
                         Padding(
@@ -692,82 +572,33 @@ class _PackingScreenState extends State<ScanPackScreen> {
                                     const Spacer(),
                                     Expanded(
                                       child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 10),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 10),
+                                        alignment: Alignment.center,
+                                        child: Stack(
                                           alignment: Alignment.center,
-                                          child: context
-                                                  .read<UserBloc>()
-                                                  .fabricante
-                                                  .contains("Zebra")
-                                              ? TextFormField(
-                                                  showCursor: false,
-                                                  textAlign: TextAlign.center,
-                                                  enabled: packingBloc
-                                                          .locationIsOk && //true
-                                                      packingBloc
-                                                          .productIsOk && //true
-                                                      packingBloc
-                                                          .quantityIsOk && //true
-
-                                                      !packingBloc
-                                                          .locationDestIsOk,
-                                                  // showCursor: false,
-                                                  controller:
-                                                      _controllerQuantity, // Controlador que maneja el texto
-                                                  focusNode: focusNode3,
-                                                  onChanged: (value) {
-                                                    validateQuantity(
-                                                        value, packingBloc);
-                                                  },
-                                                  decoration: InputDecoration(
-                                                    hintText: packingBloc
-                                                        .quantitySelected
-                                                        .toString(),
-                                                    disabledBorder:
-                                                        InputBorder.none,
-                                                    hintStyle: const TextStyle(
-                                                        fontSize: 14,
-                                                        color: black),
-                                                    border: InputBorder.none,
-                                                  ),
-                                                )
-                                              : Focus(
-                                                  focusNode: focusNode3,
-                                                  onKey: (FocusNode node,
-                                                      RawKeyEvent event) {
-                                                    if (event
-                                                        is RawKeyDownEvent) {
-                                                      if (event.logicalKey ==
-                                                          LogicalKeyboardKey
-                                                              .enter) {
-                                                        validateQuantity(
-                                                            packingBloc
-                                                                .scannedValue3,
-                                                            packingBloc);
-
-                                                        return KeyEventResult
-                                                            .handled;
-                                                      } else {
-                                                        packingBloc.add(
-                                                            UpdateScannedValuePackEvent(
-                                                                event.data
-                                                                    .keyLabel,
-                                                                'quantity'));
-                                                        return KeyEventResult
-                                                            .handled;
-                                                      }
-                                                    }
-                                                    return KeyEventResult
-                                                        .ignored;
-                                                  },
-                                                  child: Text(
-                                                      packingBloc
-                                                          .quantitySelected
-                                                          .toString(),
-                                                      style: const TextStyle(
-                                                          color: Colors.black,
-                                                          fontSize: 14)),
-                                                )),
+                                          children: [
+                                            SizedBox(
+                                              width: double.infinity,
+                                              child: BarcodeScannerField(
+                                                controller: _controllerQuantity,
+                                                focusNode: focusNode3,
+                                                onBarcodeScanned:
+                                                    (value, context) {
+                                                  validateQuantity(
+                                                      value, packingBloc);
+                                                },
+                                              ),
+                                            ),
+                                            Text(
+                                                packingBloc.quantitySelected
+                                                    .toString(),
+                                                style: const TextStyle(
+                                                    color: black,
+                                                    fontSize: 14)),
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                     IconButton(
                                         onPressed: packingBloc
@@ -839,12 +670,6 @@ class _PackingScreenState extends State<ScanPackScreen> {
                                 },
                                 controller: cantidadController,
                                 keyboardType: TextInputType.number,
-                                readOnly: context
-                                        .read<UserBloc>()
-                                        .fabricante
-                                        .contains("Zebra")
-                                    ? true
-                                    : false,
                                 decoration:
                                     InputDecorations.authInputDecoration(
                                   hintText: 'Cantidad',
@@ -895,19 +720,6 @@ class _PackingScreenState extends State<ScanPackScreen> {
                                     color: Colors.white, fontSize: 14),
                               ),
                             )),
-                        Visibility(
-                          visible: packingBloc.viewQuantity &&
-                              context
-                                  .read<UserBloc>()
-                                  .fabricante
-                                  .contains("Zebra"),
-                          child: CustomKeyboardNumber(
-                            controller: cantidadController,
-                            onchanged: () {
-                              _validatebuttonquantity();
-                            },
-                          ),
-                        )
                       ],
                     ),
                   ),

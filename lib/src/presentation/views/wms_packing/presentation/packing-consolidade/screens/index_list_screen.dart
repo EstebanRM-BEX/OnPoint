@@ -22,7 +22,6 @@ import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class ListPackingConsolidadeScreen extends StatefulWidget {
   const ListPackingConsolidadeScreen({super.key});
@@ -105,7 +104,6 @@ class _ListPackingConsolidadeScreenState
             // Lógica para asignar el usuario
             final packingBloc = context.read<PackingConsolidateBloc>();
             packingBloc.add(AssignUserToBatch(batch.id ?? 0, batch));
-            packingBloc.add(ShowKeyboardEvent(false));
             packingBloc.searchController.clear();
             packingBloc.add(LoadAllPedidosFromBatchEvent(
               batch.id ?? 0,
@@ -142,7 +140,6 @@ class _ListPackingConsolidadeScreenState
           onAccepted: () async {
             packingConsolidateBloc
                 .add(LoadAllPedidosFromBatchEvent(batch.id ?? 0));
-            packingConsolidateBloc.add(ShowKeyboardEvent(false));
             packingConsolidateBloc
                 .add(StartTimePack(batch.id ?? 0, DateTime.now()));
             Navigator.pop(context);
@@ -152,7 +149,6 @@ class _ListPackingConsolidadeScreenState
       );
     } else {
       packingConsolidateBloc.add(LoadAllPedidosFromBatchEvent(batch.id ?? 0));
-      packingConsolidateBloc.add(ShowKeyboardEvent(false));
       goBatchInfo(context, packingConsolidateBloc, batch);
     }
   }
@@ -256,24 +252,6 @@ class _ListPackingConsolidadeScreenState
       builder: (context, state) {
         return Scaffold(
             backgroundColor: white,
-            bottomNavigationBar: context
-                    .read<PackingConsolidateBloc>()
-                    .isKeyboardVisible
-                ? CustomKeyboard(
-                    isLogin: false,
-                    controller:
-                        context.read<PackingConsolidateBloc>().searchController,
-                    onchanged: () {
-                      context.read<PackingConsolidateBloc>().add(
-                          SearchBatchPackingEvent(
-                              context
-                                  .read<PackingConsolidateBloc>()
-                                  .searchController
-                                  .text,
-                              controller.index));
-                    },
-                  )
-                : null,
             body: Container(
               margin: const EdgeInsets.only(bottom: 10),
               width: size.width * 1,
@@ -308,9 +286,6 @@ class _ListPackingConsolidadeScreenState
                                       icon: const Icon(Icons.arrow_back,
                                           color: white),
                                       onPressed: () {
-                                        context
-                                            .read<PackingConsolidateBloc>()
-                                            .add(ShowKeyboardEvent(false));
                                         Navigator.pushReplacementNamed(
                                           context,
                                           '/home',
@@ -378,9 +353,6 @@ class _ListPackingConsolidadeScreenState
                       final packingBloc =
                           context.read<PackingConsolidateBloc>();
                       // 1. Disparar el evento de búsqueda vacía y apagar el teclado
-                      packingBloc
-                          .add(SearchBatchPackingEvent('', controller.index));
-                      packingBloc.add(ShowKeyboardEvent(false));
 
                       // 2. Restaurar el foco después de un breve retraso (para asegurar la UI)
                       Future.delayed(const Duration(milliseconds: 100), () {
@@ -391,28 +363,20 @@ class _ListPackingConsolidadeScreenState
                       });
                     },
                     // 4. LÓGICA DE ACTIVACIÓN DEL TECLADO (onTap)
-                    onTap: () {
-                      //todo
-                      // El widget DynamicSearchBar internamente verifica si es Zebra.
-                      context
-                          .read<PackingConsolidateBloc>()
-                          .add(ShowKeyboardEvent(true));
-                    },
                   ),
 
                   //*buscar por scan
                   BarcodeScannerField(
                     controller: _controllerToDo,
                     focusNode: focusNodeBuscar,
-                    scannedValue5: "",
                     onBarcodeScanned: (value, context) {
                       return validateBarcode(value, context);
                     },
-                    onKeyScanned: (keyLabel, type, context) {
-                      return context.read<PackingConsolidateBloc>().add(
-                            UpdateScannedValuePackEvent(keyLabel, type),
-                          );
-                    },
+                    // onKeyScanned: (keyLabel, type, context) {
+                    //   return context.read<PackingConsolidateBloc>().add(
+                    //         UpdateScannedValuePackEvent(keyLabel, type),
+                    //       );
+                    // },
                   ),
 
                   //*listado de batchs

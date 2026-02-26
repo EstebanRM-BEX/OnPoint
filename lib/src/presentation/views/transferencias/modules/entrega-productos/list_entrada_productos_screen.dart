@@ -11,7 +11,6 @@ import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/src/presentation/views/transferencias/models/response_transferencias.dart';
-// import 'package:wms_app/src/presentation/views/transferencias/transfer-externa/bloc/transfer_externa_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
@@ -19,7 +18,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class ListEntradaProductsScreen extends StatefulWidget {
   const ListEntradaProductsScreen({
@@ -119,25 +117,6 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
 
           return Scaffold(
             backgroundColor: white,
-            bottomNavigationBar: context
-                    .read<TransferenciaBloc>()
-                    .isKeyboardVisible
-                ? CustomKeyboard(
-                    isLogin: false,
-                    controller: context
-                        .read<TransferenciaBloc>()
-                        .searchControllerTransfer,
-                    onchanged: () {
-                      context.read<TransferenciaBloc>().add(SearchTransferEvent(
-                            context
-                                .read<TransferenciaBloc>()
-                                .searchControllerTransfer
-                                .text,
-                            "entrega",
-                          ));
-                    },
-                  )
-                : null,
             body: SizedBox(
               width: size.width,
               height: size.height,
@@ -170,9 +149,6 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
                                   icon: const Icon(Icons.arrow_back,
                                       color: white),
                                   onPressed: () {
-                                    context.read<TransferenciaBloc>().add(
-                                        ShowKeyboardEvent(showKeyboard: false));
-
                                     context
                                         .read<TransferenciaBloc>()
                                         .searchControllerTransfer
@@ -300,18 +276,12 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
                           context.read<TransferenciaBloc>();
                       transferenciaBloc.searchControllerTransfer.clear();
                       transferenciaBloc.add(SearchTransferEvent('', 'entrega'));
-                      transferenciaBloc
-                          .add(ShowKeyboardEvent(showKeyboard: false));
+
                       Future.microtask(() {
                         if (mounted) {
                           FocusScope.of(context).unfocus();
                         }
                       });
-                    },
-                    onTap: () {
-                      context
-                          .read<TransferenciaBloc>()
-                          .add(ShowKeyboardEvent(showKeyboard: true));
                     },
                   ),
                   (transferBloc.entregaProductosBDFilters
@@ -634,11 +604,6 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
                                               onAccepted: () async {
                                                 context
                                                     .read<TransferenciaBloc>()
-                                                    .add(ShowKeyboardEvent(
-                                                        showKeyboard: false));
-
-                                                context
-                                                    .read<TransferenciaBloc>()
                                                     .searchControllerTransfer
                                                     .clear();
 
@@ -687,7 +652,6 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
             false, // No permitir que el usuario cierre el diálogo manualmente
         builder: (dialogContext) => DialogStartTimeWidget(
           onAccepted: () async {
-            transferenciaBloc.add(ShowKeyboardEvent(showKeyboard: false));
             transferenciaBloc.searchControllerTransfer.clear();
             transferenciaBloc.add(SearchTransferEvent("", 'entrega'));
             transferenciaBloc.add(StartOrStopTimeTransfer(
@@ -709,7 +673,6 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
         ),
       );
     } else {
-      transferenciaBloc.add(ShowKeyboardEvent(showKeyboard: false));
       transferenciaBloc.searchControllerTransfer.clear();
       transferenciaBloc.add(SearchTransferEvent("", 'entrega'));
       transferenciaBloc.add(GetPorductsToTransfer(transfer.id ?? 0));

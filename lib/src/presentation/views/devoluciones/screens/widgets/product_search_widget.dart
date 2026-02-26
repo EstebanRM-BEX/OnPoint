@@ -8,7 +8,6 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class SearchProductDevScreen extends StatefulWidget {
   const SearchProductDevScreen({Key? key}) : super(key: key);
@@ -59,7 +58,6 @@ class _SearchProductDevScreenState extends State<SearchProductDevScreen> {
                       onPressed: () {
                         final selectedProduct =
                             bloc.productosFilters[selectedIndex!];
-                        bloc.add(ShowKeyboardEvent(false));
                         FocusScope.of(context).unfocus();
                         bloc.add(ChangeStateIsDialogVisibleEvent(false));
                         bloc.add(GetProductEvent(
@@ -81,16 +79,6 @@ class _SearchProductDevScreenState extends State<SearchProductDevScreen> {
                       child: const Text("Seleccionar",
                           style: TextStyle(color: white)),
                     ),
-                  ),
-                if (bloc.isKeyboardVisible &&
-                    context.read<UserBloc>().fabricante.contains("Zebra"))
-                  CustomKeyboard(
-                    isLogin: false,
-                    controller: bloc.searchControllerProducts,
-                    onchanged: () {
-                      bloc.add(SearchProductEvent(
-                          bloc.searchControllerProducts.text));
-                    },
                   ),
               ],
             ),
@@ -228,9 +216,7 @@ class _AppBarInfo extends StatelessWidget {
                         .read<DevolucionesBloc>()
                         .searchControllerProducts
                         .clear();
-                    context
-                        .read<DevolucionesBloc>()
-                        .add(ShowKeyboardEvent(false));
+
                     Navigator.pop(context);
                   },
                 ),
@@ -261,7 +247,6 @@ class _SearchBar extends StatelessWidget {
       child: Card(
         elevation: 3,
         child: TextFormField(
-          readOnly: context.read<UserBloc>().fabricante.contains("Zebra"),
           controller: context.read<DevolucionesBloc>().searchControllerProducts,
           textAlignVertical: TextAlignVertical.center,
           showCursor: true,
@@ -276,7 +261,6 @@ class _SearchBar extends StatelessWidget {
                     .searchControllerProducts
                     .clear();
                 context.read<DevolucionesBloc>().add(SearchProductEvent(''));
-                context.read<DevolucionesBloc>().add(ShowKeyboardEvent(false));
                 FocusScope.of(context).unfocus();
               },
             ),
@@ -286,10 +270,6 @@ class _SearchBar extends StatelessWidget {
           ),
           onChanged: (value) =>
               context.read<DevolucionesBloc>().add(SearchProductEvent(value)),
-          onTap: context.read<UserBloc>().fabricante.contains("Zebra")
-              ? () =>
-                  context.read<DevolucionesBloc>().add(ShowKeyboardEvent(true))
-              : null,
         ),
       ),
     );

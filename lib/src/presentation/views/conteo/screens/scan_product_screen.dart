@@ -10,6 +10,7 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
+import 'package:wms_app/shared/widgets/lote_scanner_widget.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
@@ -22,14 +23,13 @@ import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_p
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/location/scanner_location_widget.dart';
+import 'package:wms_app/shared/widgets/scanner_location_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/product/scanner_product_widget.dart';
+import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/quantity/scanner_quantity_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_widget.dart';
 
 class ScanProductConteoScreen extends StatefulWidget {
   const ScanProductConteoScreen({super.key});
@@ -182,9 +182,7 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
 
   void validateLote(String value) {
     final bloc = context.read<ConteoBloc>();
-    String scan = bloc.scannedValue4.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : bloc.scannedValue4.trim().toLowerCase();
+    final scan = value.trim().toLowerCase();
     print('scan lote: $scan');
     _controllerLote.clear();
     //tengo una lista de lotes el cual quiero validar si el scan es igual a alguno de los lotes
@@ -198,13 +196,13 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
       print('lote encontrado: ${matchedLote.name}');
       bloc.add(ValidateFieldsEvent(field: "lote", isOk: true));
       bloc.add(SelectecLoteEvent(matchedLote));
-      bloc.add(ClearScannedValueEvent('lote'));
+      Future.microtask(() => focusNode5.requestFocus());
     } else {
       _vibrationService.vibrate();
       _audioService.playErrorSound();
       print('lote no encontrado');
       bloc.add(ValidateFieldsEvent(field: "lote", isOk: false));
-      bloc.add(ClearScannedValueEvent('lote'));
+      Future.microtask(() => focusNode5.requestFocus());
     }
   }
 
@@ -220,13 +218,13 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
       bloc.add(ChangeLocationIsOkEvent(false, ResultUbicaciones(),
           product.productId ?? 0, product.orderId ?? 0, product.idMove ?? 0));
       bloc.oldLocation = product.locationId.toString();
+      Future.microtask(() => focusNode1.requestFocus());
     } else {
       _vibrationService.vibrate();
       _audioService.playErrorSound();
       bloc.add(ValidateFieldsEvent(field: "location", isOk: false));
+      Future.microtask(() => focusNode1.requestFocus());
     }
-
-    bloc.add(ClearScannedValueEvent('location'));
   }
 
   void validateProduct(String value) {
@@ -256,7 +254,7 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
       }
     }
 
-    bloc.add(ClearScannedValueEvent('product'));
+    Future.microtask(() => focusNode2.requestFocus());
   }
 
   bool validateScannedBarcode(String scannedBarcode, CountedLine currentProduct,
@@ -327,10 +325,10 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
     if (scan == currentProduct.productBarcode?.toLowerCase()) {
       bloc.add(AddQuantitySeparate(currentProduct.productId ?? 0,
           currentProduct.orderId ?? 0, currentProduct.idMove ?? 0, 1, false));
-      bloc.add(ClearScannedValueEvent('quantity'));
+      Future.microtask(() => focusNode3.requestFocus());
     } else {
       validateScannedBarcode(scan, currentProduct, bloc, false);
-      bloc.add(ClearScannedValueEvent('quantity'));
+      Future.microtask(() => focusNode3.requestFocus());
     }
   }
 
@@ -345,6 +343,12 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
       child: BlocBuilder<ConteoBloc, ConteoState>(
         builder: (context, state) {
           return Scaffold(
+              floatingActionButton: FloatingActionButton(
+                onPressed: () {
+                  print(context.read<ConteoBloc>().currentProduct.toMap());
+                },
+                child: const Icon(Icons.send),
+              ),
               backgroundColor: white,
               body: Column(
                 children: [
@@ -544,11 +548,7 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                               onValidateLocation: (value) {
                                 validateLocation(value);
                               },
-                              onKeyScanned: (keyLabel) {
-                                context.read<ConteoBloc>().add(
-                                    UpdateScannedValueEvent(
-                                        keyLabel, 'location'));
-                              },
+                              onKeyScanned: (keyLabel) {},
                               focusNode: focusNode1,
                               controller: _controllerLocation,
                               locationDropdown: LocationDropdownConteoWidget(
@@ -610,11 +610,7 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                               onValidateProduct: (value) {
                                 validateProduct(value); // tu función actual
                               },
-                              onKeyScanned: (keyLabel) {
-                                context.read<ConteoBloc>().add(
-                                    UpdateScannedValueEvent(
-                                        keyLabel, 'product'));
-                              },
+                              onKeyScanned: (keyLabel) {},
                               focusNode: focusNode2,
                               controller: _controllerProduct,
                               productDropdown: ProductDropdownConteoWidget(
@@ -753,165 +749,45 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                                               mainAxisAlignment:
                                                   MainAxisAlignment.start,
                                               children: [
-                                                //widget de scan
-                                                context
-                                                        .read<UserBloc>()
-                                                        .fabricante
-                                                        .contains("Zebra")
-                                                    ? Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                                horizontal: 0,
-                                                                vertical: 5),
-                                                        child: Column(
-                                                          children: [
-                                                            Container(
-                                                              height: 20,
-                                                              margin:
-                                                                  const EdgeInsets
-                                                                      .only(
-                                                                      bottom: 5,
-                                                                      top: 5),
-                                                              child:
-                                                                  TextFormField(
-                                                                autofocus: true,
-                                                                showCursor:
-                                                                    false,
-                                                                controller:
-                                                                    _controllerLote, // Asignamos el controlador
-                                                                enabled: context
-                                                                        .read<
-                                                                            ConteoBloc>()
-                                                                        .locationIsOk && //true
-                                                                    context
-                                                                        .read<
-                                                                            ConteoBloc>()
-                                                                        .productIsOk && //true
-                                                                    !context
-                                                                        .read<
-                                                                            ConteoBloc>()
-                                                                        .loteIsOk && //false
-                                                                    !context
-                                                                        .read<
-                                                                            ConteoBloc>()
-                                                                        .quantityIsOk && //false
-                                                                    !context
-                                                                        .read<
-                                                                            ConteoBloc>()
-                                                                        .viewQuantity,
-
-                                                                focusNode:
-                                                                    focusNode5,
-                                                                onChanged:
-                                                                    (value) {
-                                                                  // Llamamos a la validación al cambiar el texto
-                                                                  validateLote(
-                                                                      value);
-                                                                },
-                                                                decoration:
-                                                                    InputDecoration(
-                                                                  hintText: context.read<ConteoBloc>().currentProductLote?.name ==
-                                                                              "" ||
-                                                                          context.read<ConteoBloc>().currentProductLote?.name ==
-                                                                              null
-                                                                      ? 'Esperando escaneo'
-                                                                      : context
-                                                                              .read<ConteoBloc>()
-                                                                              .currentProductLote
-                                                                              ?.name ??
-                                                                          "",
-                                                                  disabledBorder:
-                                                                      InputBorder
-                                                                          .none,
-                                                                  hintStyle: const TextStyle(
-                                                                      fontSize:
-                                                                          12,
-                                                                      color:
-                                                                          black),
-                                                                  border:
-                                                                      InputBorder
-                                                                          .none,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      )
-                                                    : Focus(
-                                                        focusNode: focusNode5,
-                                                        onKey: (FocusNode node,
-                                                            RawKeyEvent event) {
-                                                          if (event
-                                                              is RawKeyDownEvent) {
-                                                            if (event
-                                                                    .logicalKey ==
-                                                                LogicalKeyboardKey
-                                                                    .enter) {
-                                                              validateLote(context
+                                                LoteScannerWidget(
+                                                  controller: _controllerLote,
+                                                  focusNode: focusNode5,
+                                                  enabled: context
+                                                          .read<ConteoBloc>()
+                                                          .locationIsOk && //true
+                                                      context
+                                                          .read<ConteoBloc>()
+                                                          .productIsOk && //true
+                                                      !context
+                                                          .read<ConteoBloc>()
+                                                          .loteIsOk && //false
+                                                      !context
+                                                          .read<ConteoBloc>()
+                                                          .quantityIsOk && //false
+                                                      !context
+                                                          .read<ConteoBloc>()
+                                                          .viewQuantity,
+                                                  onValidateLote: validateLote,
+                                                  hintText: context
                                                                   .read<
                                                                       ConteoBloc>()
-                                                                  .scannedValue4);
-
-                                                              return KeyEventResult
-                                                                  .handled;
-                                                            } else {
-                                                              context
+                                                                  .currentProductLote
+                                                                  ?.name ==
+                                                              "" ||
+                                                          context
                                                                   .read<
                                                                       ConteoBloc>()
-                                                                  .add(UpdateScannedValueEvent(
-                                                                      event.data
-                                                                          .keyLabel,
-                                                                      'lote'));
-
-                                                              return KeyEventResult
-                                                                  .handled;
-                                                            }
-                                                          }
-                                                          return KeyEventResult
-                                                              .ignored;
-                                                        },
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                                  horizontal: 0,
-                                                                  vertical: 5),
-                                                          child: Column(
-                                                            children: [
-                                                              Align(
-                                                                alignment: Alignment
-                                                                    .centerLeft,
-                                                                child: Row(
-                                                                  children: [
-                                                                    Text(
-                                                                      'Lote: ',
-                                                                      style: TextStyle(
-                                                                          fontSize:
-                                                                              14,
-                                                                          color:
-                                                                              black),
-                                                                    ),
-                                                                    Text(
-                                                                      context
-                                                                              .read<ConteoBloc>()
-                                                                              .currentProductLote
-                                                                              ?.name ??
-                                                                          "Esperando escaneo",
-                                                                      style: TextStyle(
-                                                                          fontSize:
-                                                                              14,
-                                                                          color:
-                                                                              black),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ),
-
+                                                                  .currentProductLote
+                                                                  ?.name ==
+                                                              null
+                                                      ? 'Esperando escaneo'
+                                                      : context
+                                                              .read<
+                                                                  ConteoBloc>()
+                                                              .currentProductLote
+                                                              ?.name ??
+                                                          "",
+                                                ),
                                                 ExpirationBadgeWidget(
                                                   expirationDate: context
                                                       .read<ConteoBloc>()
@@ -956,11 +832,6 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                         FocusScope.of(context).requestFocus(focusNode3);
                       });
                     },
-                    onKeyScanned: (keyLabel) {
-                      context
-                          .read<ConteoBloc>()
-                          .add(UpdateScannedValueEvent(keyLabel, 'quantity'));
-                    },
                     showKeyboard:
                         context.read<UserBloc>().fabricante.contains("Zebra"),
                     onToggleViewQuantity: () {
@@ -998,10 +869,6 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                       context.read<ConteoBloc>().add(ShowQuantityEvent(
                           !context.read<ConteoBloc>().viewQuantity));
                     },
-                    customKeyboard: CustomKeyboardNumber(
-                      controller: cantidadController,
-                      onchanged: _validatebuttonquantity,
-                    ),
                     isViewCant: context
                                 .read<ConteoBloc>()
                                 .ordenConteo
@@ -1069,17 +936,6 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
       );
       return;
     }
-
-    // if (bloc.currentUbication?.id == null) {
-    //   Get.snackbar(
-    //     '360 Software Informa',
-    //     "No se ha selecionado la ubicacion",
-    //     backgroundColor: white,
-    //     colorText: primaryColorApp,
-    //     icon: Icon(Icons.error, color: Colors.amber),
-    //   );
-    //   return;
-    // }
 
     if (bloc.currentProduct.productTracking == 'lot') {
       if (bloc.currentProductLote?.id == null) {

@@ -9,7 +9,6 @@ import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class LocationDestDevolucionesScreen extends StatefulWidget {
   const LocationDestDevolucionesScreen({super.key});
@@ -73,11 +72,6 @@ class _LocationDestScreenState extends State<LocationDestDevolucionesScreen> {
                                           icon: const Icon(Icons.arrow_back,
                                               color: white),
                                           onPressed: () {
-                                            context
-                                                .read<DevolucionesBloc>()
-                                                .add(
-                                                  ShowKeyboardEvent(false),
-                                                );
                                             Navigator.pushReplacementNamed(
                                               context,
                                               'devoluciones-create',
@@ -177,12 +171,6 @@ class _LocationDestScreenState extends State<LocationDestDevolucionesScreen> {
                                   elevation: 3,
                                   child: TextFormField(
                                     showCursor: true,
-                                    readOnly: context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? true
-                                        : false,
                                     textAlignVertical: TextAlignVertical.center,
                                     controller:
                                         bloc.searchControllerLocationDest,
@@ -199,7 +187,6 @@ class _LocationDestScreenState extends State<LocationDestDevolucionesScreen> {
                                             bloc.add(SearchLocationEvent(
                                               '',
                                             ));
-                                            bloc.add(ShowKeyboardEvent(false));
                                             FocusScope.of(context).unfocus();
                                           },
                                           icon: const Icon(
@@ -219,14 +206,6 @@ class _LocationDestScreenState extends State<LocationDestDevolucionesScreen> {
                                         value,
                                       ));
                                     },
-                                    onTap: !context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? null
-                                        : () {
-                                            bloc.add(ShowKeyboardEvent(true));
-                                          },
                                   ),
                                 ),
                               ),
@@ -373,7 +352,6 @@ class _LocationDestScreenState extends State<LocationDestDevolucionesScreen> {
                             // seleccionamos la ubicacion
                             bloc.add(SelectLocationEvent(selectedLocation));
 
-                            bloc.add(ShowKeyboardEvent(false));
                             FocusScope.of(context).unfocus();
 
                             setState(() {
@@ -404,19 +382,6 @@ class _LocationDestScreenState extends State<LocationDestDevolucionesScreen> {
                     const SizedBox(
                       height: 10,
                     ),
-                    Visibility(
-                      visible: bloc.isKeyboardVisible &&
-                          context.read<UserBloc>().fabricante.contains("Zebra"),
-                      child: CustomKeyboard(
-                        isLogin: false,
-                        controller: bloc.searchControllerLocationDest,
-                        onchanged: () {
-                          bloc.add(SearchLocationEvent(
-                            bloc.searchControllerLocationDest.text,
-                          ));
-                        },
-                      ),
-                    )
                   ],
                 )),
           ),

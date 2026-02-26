@@ -9,9 +9,6 @@ import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_
 import 'package:wms_app/src/presentation/views/info%20rapida/models/info_rapida_model.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/widgets/info_widget.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class PaqueteInfoScreen extends StatelessWidget {
   final InfoRapidaResult? infoRapidaResult;
@@ -35,21 +32,6 @@ class PaqueteInfoScreen extends StatelessWidget {
           },
           child: Scaffold(
             backgroundColor: white,
-            bottomNavigationBar: bloc.isKeyboardVisible &&
-                    context.read<UserBloc>().fabricante.contains("Zebra")
-                ? Padding(
-                    padding: const EdgeInsets.only(bottom: 30),
-                    child: bloc.isNumericKeyboardType
-                        ? CustomKeyboardNumber(
-                            controller: bloc.controllerActivo!,
-                            onchanged: () {},
-                          )
-                        : CustomKeyboard(
-                            isLogin: false,
-                            controller: bloc.controllerActivo!,
-                            onchanged: () {},
-                          ))
-                : null,
             body: SizedBox(
               width: size.width * 1,
               height: size.height * 1,
@@ -68,10 +50,6 @@ class PaqueteInfoScreen extends StatelessWidget {
                             padding: const EdgeInsets.all(8.0),
                             child: Column(
                               children: [
-                                // ProductInfoRow(
-                                //   title: 'Nombre: ',
-                                //   value: '${paquete?.nombre}',
-                                // ),
                                 Align(
                                   alignment: Alignment.centerLeft,
                                   child: Text(
@@ -442,8 +420,6 @@ class AppBar extends StatelessWidget {
                   GestureDetector(
                     onTap: () {
                       context.read<InfoRapidaBloc>().add(IsEditEvent(false));
-                      context.read<InfoRapidaBloc>().add(ShowKeyboardInfoEvent(
-                          false, TextEditingController()));
                       context
                           .read<InfoRapidaBloc>()
                           .add(GetListLocationsEvent());
@@ -476,9 +452,6 @@ class AppBar extends StatelessWidget {
                       onTap: () {
                         context.read<InfoRapidaBloc>().add(IsEditEvent(
                             !context.read<InfoRapidaBloc>().isEdit));
-                        context.read<InfoRapidaBloc>().add(
-                            ShowKeyboardInfoEvent(
-                                false, TextEditingController()));
                       },
                       child: Icon(
                         context.read<InfoRapidaBloc>().isEdit

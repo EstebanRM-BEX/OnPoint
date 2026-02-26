@@ -137,9 +137,6 @@ class PackingConsolidateBloc
     //*buscar un batch
     on<SearchBatchPackingEvent>(_onSearchBacthEvent);
 
-    //evento para mostrar el teclado
-    on<ShowKeyboardEvent>(_onShowKeyboardEvent);
-
     //*evento para actualizar el valor del scan
     on<UpdateScannedValuePackEvent>(_onUpdateScannedValueEvent);
     on<ClearScannedValuePackEvent>(_onClearScannedValueEvent);
@@ -1615,12 +1612,6 @@ class PackingConsolidateBloc
     } catch (e, s) {
       print("❌ Error en _onClearScannedValueEvent: $e, $s");
     }
-  }
-
-  void _onShowKeyboardEvent(
-      ShowKeyboardEvent event, Emitter<PackingConsolidateState> emit) {
-    isKeyboardVisible = event.showKeyboard;
-    emit(ShowKeyboardState(showKeyboard: isKeyboardVisible));
   }
 
   //metodo para buscar un batch de packing

@@ -1,17 +1,16 @@
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously, prefer_is_empty
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/vibrate_utils.dart';
+import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/others/products_empty_widget.dart';
 import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 
@@ -33,7 +32,6 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
   // Controlador del Scroll
   final ScrollController _scrollController = ScrollController();
 
-  final TextEditingController _controllerToProduct = TextEditingController();
   final TextEditingController _controllerToLocation = TextEditingController();
 
   final AudioService _audioService = AudioService();
@@ -56,16 +54,12 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
     final bloc = context.read<ConteoBloc>();
 
     // Normalizar el valor escaneado
-    final scan = (bloc.scannedValue5.isEmpty ? value : bloc.scannedValue5)
-        .trim()
-        .toLowerCase();
+    final scan = value.trim().toLowerCase();
 
-    _controllerToProduct.clear();
+    _controllerToLocation.clear();
     print('🔎 Scan barcode: $scan');
 
-    // Filtrar productos válidos dentro de la ubicación expandida
-    // Normalizar ubicación una sola vez
-    final ubicacionActual = (bloc.ubicacionExpanded ?? '').toLowerCase();
+    final ubicacionActual = bloc.ubicacionExpanded.toLowerCase();
 
 // Filtrar productos válidos dentro de la ubicación expandida
     final listOfProducts = bloc.lineasContadas.where((element) {
@@ -142,7 +136,9 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
 
     if (product.idMove != null) {
       processProduct(product);
-      bloc.add(ClearScannedValueEvent('toProduct'));
+      //limpiamos el valor escaneado
+      _controllerToLocation.clear();
+      Future.microtask(() => focusNode1.requestFocus());
       return;
     }
 
@@ -160,7 +156,9 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
 
       if (productByBarcode.productId != null) {
         processProduct(productByBarcode);
-        bloc.add(ClearScannedValueEvent('toProduct'));
+        //limpiamos el valor escaneado
+        _controllerToLocation.clear();
+        Future.microtask(() => focusNode1.requestFocus());
         return;
       }
     }
@@ -171,19 +169,17 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: const Text("El producto no se encuentra en esta ubicación"),
-      backgroundColor: Colors.red[200],
       duration: const Duration(milliseconds: 1000),
     ));
-    bloc.add(ClearScannedValueEvent('toProduct'));
+    _controllerToLocation.clear();
+    Future.microtask(() => focusNode1.requestFocus());
   }
 
   void validateLocation(String value, BuildContext context) {
     final bloc = context.read<ConteoBloc>();
 
     // Determinar cuál es el valor que vamos a validar (del escáner o del input)
-    String scan = bloc.scannedValue6.trim().toLowerCase().isEmpty
-        ? value.trim().toLowerCase()
-        : bloc.scannedValue6.trim().toLowerCase();
+    String scan = value.trim().toLowerCase();
 
     _controllerToLocation.text = "";
 
@@ -228,11 +224,13 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
         });
       }
 
-      bloc.add(ClearScannedValueEvent('toLocation'));
+      _controllerToLocation.clear();
+      Future.microtask(() => focusNode1.requestFocus());
     } else {
       _vibrationService.vibrate();
       _audioService.playErrorSound();
-      bloc.add(ClearScannedValueEvent('toLocation'));
+      _controllerToLocation.clear();
+      Future.microtask(() => focusNode1.requestFocus());
       print("Ubicación no válida (barcode): $scan");
     }
   }
@@ -255,11 +253,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
       child: BlocConsumer<ConteoBloc, ConteoState>(
         listener: (context, state) {},
         builder: (context, state) {
-
-
-
           final conteoBloc = context.read<ConteoBloc>();
-
 
           final productosPorContar = conteoBloc.lineasContadas
               .where((element) => element.isDoneItem != 1)
@@ -267,11 +261,10 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
 
           final productosPorUbicacion = _groupByLocation(productosPorContar);
 
-
           // -----------------------------------------------------------
           // 🚀 OPTIMIZACIÓN ANTI-JANK: PREPARAR DATOS ANTES DE LA LISTA
           // -----------------------------------------------------------
-          
+
           // A. Obtenemos las llaves y las ordenamos UNA SOLA VEZ
           List<String> sortedLocations = productosPorUbicacion.keys.toList();
           sortedLocations.sort(sortLocations);
@@ -305,80 +298,27 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
               height: size.height * 0.8,
               child: Column(
                 children: [
-                  context.read<UserBloc>().fabricante.contains("Zebra")
-                      ? Container(
-                          height: 15,
-                          margin: const EdgeInsets.only(bottom: 5),
-                          child: TextFormField(
-                            autofocus: true,
-                            showCursor: false,
-                            controller: focusNode1.hasFocus
-                                ? _controllerToLocation
-                                : _controllerToProduct,
-                            focusNode: focusNode1,
-                            onChanged: (value) {
-                              //Validacion segun el focus
-                              if (conteoBloc.ubicacionExpanded.isEmpty) {
-                                validateLocation(value, context);
-                              } else {
-                                validateBarcode(value, context);
-                              }
-                            },
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              hintStyle: TextStyle(fontSize: 14, color: black),
-                            ),
-                          ),
-                        )
-                      :
+                  // Barcode scanner field
+                  BarcodeScannerField(
+                    controller: _controllerToLocation,
+                    focusNode: focusNode1,
+                    onBarcodeScanned: (value, context) {
+                      if (conteoBloc.ubicacionExpanded.isEmpty) {
+                        validateLocation(value, context);
+                      } else {
+                        validateBarcode(value, context);
+                      }
+                    },
+                  ),
 
-                      //*focus para leer los productos
-                      Focus(
-                          focusNode: //validacion segun el focus
-                              focusNode1,
-                          autofocus: true,
-                          onKey: (FocusNode node, RawKeyEvent event) {
-                            if (event is RawKeyDownEvent) {
-                              if (event.logicalKey ==
-                                  LogicalKeyboardKey.enter) {
-                                //validacion segun el focus
-                                if (conteoBloc.ubicacionExpanded.isEmpty) {
-                                  validateLocation(
-                                      context.read<ConteoBloc>().scannedValue6,
-                                      context);
-                                } else {
-                                  validateBarcode(
-                                      context.read<ConteoBloc>().scannedValue5,
-                                      context);
-                                }
-                                return KeyEventResult.handled;
-                              } else {
-                                if (conteoBloc.ubicacionExpanded.isEmpty) {
-                                  context.read<ConteoBloc>().add(
-                                      UpdateScannedValueEvent(
-                                          event.data.keyLabel, 'toLocation'));
-                                  return KeyEventResult.handled;
-                                } else {
-                                  context.read<ConteoBloc>().add(
-                                      UpdateScannedValueEvent(
-                                          event.data.keyLabel, 'toProduct'));
-                                  return KeyEventResult.handled;
-                                }
-                              }
-                            }
-                            return KeyEventResult.ignored;
-                          },
-                          child: Container()),
                   productosPorUbicacion.isEmpty
                       ? ProductEmpty()
                       : Expanded(
                           child: ListView.builder(
                             controller: _scrollController,
                             // Obtener las claves y ordenar con el comparador personalizado
-                        itemCount: sortedLocations.length,
+                            itemCount: sortedLocations.length,
                             itemBuilder: (context, index) {
-                            
-
                               final ubicacion = sortedLocations[index];
                               final productos =
                                   productosPorUbicacion[ubicacion]!;
@@ -394,11 +334,14 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
                                   if (conteoBloc.ubicacionExpanded
                                           .toLowerCase() ==
                                       ubicacion.toLowerCase()) {
-                                    conteoBloc
-                                        .add(ClearExpandedLocationEvent());
+                                    conteoBloc.add(ExpandLocationEvent(''));
+                                    Future.microtask(
+                                        () => focusNode1.requestFocus());
                                   } else {
                                     conteoBloc
                                         .add(ExpandLocationEvent(ubicacion));
+                                    Future.microtask(
+                                        () => focusNode1.requestFocus());
                                   }
                                 },
                                 children: productos

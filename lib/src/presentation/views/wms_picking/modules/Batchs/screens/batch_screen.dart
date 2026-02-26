@@ -10,6 +10,7 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
+import 'package:wms_app/shared/widgets/scanner_locationDest_widget.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
@@ -18,7 +19,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/location/location_dropdown_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/muelle/Scanner_locationDest_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/muelle/muelle_dropdown_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/SelectSubMuelleBottomSheet_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/cant_lineas_muelle_widget.dart';
@@ -30,11 +30,10 @@ import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/popunButton_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/progressIndicatos_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/location/scanner_location_widget.dart';
+import 'package:wms_app/shared/widgets/scanner_location_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/product/product_dropdown_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/product/scanner_product_widget.dart';
+import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/quantity/scanner_quantity_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_widget.dart';
 
 class BatchScreen extends StatefulWidget {
   const BatchScreen({super.key});
@@ -201,11 +200,9 @@ class _BatchDetailScreenState extends State<BatchScreen>
       } else {
         _vibrationService.vibrate();
         _audioService.playErrorSound();
-
         bloc.add(ValidateFieldsEvent(field: "location", isOk: false));
       }
-
-      bloc.add(ClearScannedValueEvent('location'));
+      Future.microtask(() => focusNode1.requestFocus());
     });
   }
 
@@ -240,7 +237,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
         }
       }
 
-      bloc.add(ClearScannedValueEvent('product'));
+      Future.microtask(() => focusNode2.requestFocus());
     });
   }
 
@@ -266,7 +263,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
         await validateScannedBarcode(scan, product, bloc, false);
       }
 
-      bloc.add(ClearScannedValueEvent('quantity'));
+      Future.microtask(() => focusNode3.requestFocus());
     });
   }
 
@@ -296,7 +293,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
         bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: false));
       }
 
-      bloc.add(ClearScannedValueEvent('muelle'));
+      Future.microtask(() => focusNode5.requestFocus());
     });
   }
 
@@ -584,10 +581,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
                           onValidateLocation: (value) {
                             validateLocation(value);
                           },
-                          onKeyScanned: (keyLabel) {
-                            context.read<BatchBloc>().add(
-                                UpdateScannedValueEvent(keyLabel, 'location'));
-                          },
+                          onKeyScanned: (keyLabel) {},
                           focusNode: focusNode1,
                           controller: _controllerLocation,
                           locationDropdown: LocationDropdownWidget(
@@ -622,10 +616,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
                           onValidateProduct: (value) {
                             validateProduct(value); // tu función actual
                           },
-                          onKeyScanned: (keyLabel) {
-                            context.read<BatchBloc>().add(
-                                UpdateScannedValueEvent(keyLabel, 'product'));
-                          },
+                          onKeyScanned: (keyLabel) {},
                           focusNode: focusNode2,
                           controller: _controllerProduct,
                           productDropdown: ProductDropdownWidget(
@@ -679,10 +670,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
                               validateMuelle(
                                   value); // tu función actual de validación
                             },
-                            onKeyScanned: (keyLabel) {
-                              context.read<BatchBloc>().add(
-                                  UpdateScannedValueEvent(keyLabel, 'muelle'));
-                            },
+                            onKeyScanned: (keyLabel) {},
                             focusNode: focusNode5,
                             controller: _controllerMuelle,
                             dropdownWidget: MuelleDropdownWidget(
@@ -785,11 +773,6 @@ class _BatchDetailScreenState extends State<BatchScreen>
                     FocusScope.of(context).requestFocus(focusNode3);
                   });
                 },
-                onKeyScanned: (keyLabel) {
-                  context
-                      .read<BatchBloc>()
-                      .add(UpdateScannedValueEvent(keyLabel, 'quantity'));
-                },
                 showKeyboard:
                     context.read<UserBloc>().fabricante.contains("Zebra"),
                 onToggleViewQuantity: () {
@@ -863,10 +846,6 @@ class _BatchDetailScreenState extends State<BatchScreen>
                   }
                   batchBloc.add(ShowQuantityEvent(false));
                 },
-                customKeyboard: CustomKeyboardNumber(
-                  controller: cantidadController,
-                  onchanged: _validatebuttonquantity,
-                ),
               ),
             ],
           ),

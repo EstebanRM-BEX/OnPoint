@@ -178,11 +178,12 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
   void validateProducto(String value) {
     final bloc = context.read<DevolucionesBloc>();
     if (bloc.isDialogVisible) {
-      bloc.add(
-          ClearScannedValueEvent('product')); // Limpiamos el valor escaneado
+      Future.microtask(() => focusNode1.requestFocus());
+      _audioService.playErrorSound();
+      _vibrationService.vibrate();
       return; // Evita validar si el diálogo ya está visible
     }
-    final scan = _getScannedOrManual(bloc.scannedValue1, value);
+    final scan = value.trim();
 
     print('scan product: $scan');
     _controllerSearch.text = ''; // Limpia el campo de texto del producto
@@ -192,78 +193,72 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
       scan.toUpperCase(),
       false, // Asumiendo que false es para escaneo
     ));
-    bloc.add(ClearScannedValueEvent('product')); // Limpiamos el valor escaneado
+    Future.microtask(() => focusNode1.requestFocus());
   }
 
   void validateLocation(String value) {
     final bloc = context.read<DevolucionesBloc>();
-    final scan = _getScannedOrManual(bloc.scannedValue3, value);
+    final scan = value.trim().toLowerCase();
 
     print('scan location: $scan');
     _controllerLocation.text = ''; // Limpia el campo de texto del producto
     //buscamos si hay un producto con ese código de barras
 
     ResultUbicaciones? matchedUbicacion = bloc.ubicaciones.firstWhere(
-        (ubicacion) => ubicacion.barcode?.toLowerCase() == scan.trim(),
+        (ubicacion) => ubicacion.barcode?.toLowerCase() == scan,
         orElse: () =>
             ResultUbicaciones() // Si no se encuentra ningún match, devuelve null
         );
     if (matchedUbicacion.barcode != null) {
       print('Ubicacion encontrada: ${matchedUbicacion.name}');
       bloc.add(SelectLocationEvent(matchedUbicacion));
-      bloc.add(ClearScannedValueEvent('location'));
+      Future.microtask(() => focusNode2.requestFocus());
     } else {
       print('Ubicacion no encontrada');
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      bloc.add(ClearScannedValueEvent('location'));
+      Future.microtask(() => focusNode2.requestFocus());
     }
   }
 
   void validateContacto(String value) {
     final bloc = context.read<DevolucionesBloc>();
-    final scan = _getScannedOrManual(bloc.scannedValue4, value);
+    final scan = value.trim().toLowerCase();
 
     print('scan contacto: $scan');
     _controllerContacto.text = ''; // Limpia el campo de texto del producto
     //buscamos si hay un producto con ese código de barras
 
     Terceros? matchedTercero = bloc.terceros.firstWhere(
-        (tercero) => tercero.document?.toLowerCase() == scan.trim(),
+        (tercero) => tercero.document?.toLowerCase() == scan,
         orElse: () =>
             Terceros() // Si no se encuentra ningún match, devuelve null
         );
     if (matchedTercero.document != null) {
       print('contacto encontrado: ${matchedTercero.name}');
       bloc.add(SelectTerceroEvent(matchedTercero));
-      bloc.add(ClearScannedValueEvent('contacto'));
+      Future.microtask(() => focusNode3.requestFocus());
     } else {
       print('contacto no encontrada');
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      bloc.add(ClearScannedValueEvent('contacto'));
+      Future.microtask(() => focusNode3.requestFocus());
     }
   }
 
   void validateQuantity(String value) {
     print("Validando cantidad: $value");
     final bloc = context.read<DevolucionesBloc>();
-    final scan = _getScannedOrManual(bloc.scannedValue2, value);
+    final scan = value.trim().toLowerCase();
     _controllerQuantity.text = ''; // Limpia el campo de texto
     if (scan == bloc.currentProduct.barcode?.toLowerCase()) {
       bloc.add(SetQuantityEvent(1));
-      bloc.add(ClearScannedValueEvent('quantity'));
+      Future.microtask(() => focusNode4.requestFocus());
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      bloc.add(ClearScannedValueEvent('quantity'));
+      Future.microtask(() => focusNode4.requestFocus());
     }
-  }
-
-  String _getScannedOrManual(String scanned, String manual) {
-    print("Scanned: $scanned, Manual: $manual");
-    final scan = scanned.trim().toLowerCase();
-    return scan.isEmpty ? manual.trim().toLowerCase() : scan;
   }
 
   @override
@@ -273,7 +268,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
         print('Estado actual ❤️‍🔥: $state');
 
         if (state is AddProductFailure) {
-           showScrollableErrorDialog( state.error);
+          showScrollableErrorDialog(state.error);
         } else if (state is DeviceNotAuthorized) {
           Get.defaultDialog(
             title: 'Dispositivo no autorizado',
@@ -294,12 +289,10 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
           Future.delayed(const Duration(seconds: 1), () {
             FocusScope.of(context).requestFocus(focusNode3);
           });
-          _handleFocusAccordingToState();
         } else if (state is SelectTerceroState) {
           Future.delayed(const Duration(seconds: 1), () {
             FocusScope.of(context).requestFocus(focusNode1);
           });
-          _handleFocusAccordingToState();
         } else if (state is GetProductLoading) {
           showDialog(
             context: context, // Usa el context del listener
@@ -352,7 +345,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
             bloc.add(ChangeStateIsDialogVisibleEvent(false));
           });
         } else if (state is SendDevolucionFailure) {
-          showScrollableErrorDialog( state.error);
+          showScrollableErrorDialog(state.error);
         } else if (state is SendDevolucionSuccess) {
 //dialogo para mostrar la devolucion creada
           showDialog(
@@ -499,6 +492,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
 
                                           //LISTA DE PRODUCTOS RELACIONADOS
                                           ListView.builder(
+                                        shrinkWrap: true,
                                         itemBuilder: (context, index) => Card(
                                           elevation: 2,
                                           color: white,
@@ -749,8 +743,8 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                                         ),
                                         itemCount:
                                             state.productosRelacionados.length,
-                                        
-                                       physics: const AlwaysScrollableScrollPhysics(),
+                                        physics:
+                                            const NeverScrollableScrollPhysics(),
                                       ),
                                     ),
                                   ],
@@ -974,7 +968,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                         ElevatedButton(
                           onPressed: () {
                             bloc.add(ChangeStateIsDialogVisibleEvent(false));
-                            bloc.add(ClearScannedValueEvent('product'));
+                            // bloc.add(ClearScannedValueEvent('product'));
                             Navigator.pop(context); // Cierra el diálogo
                           },
                           style: ElevatedButton.styleFrom(
@@ -1084,7 +1078,6 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                 child: Column(
                   children: [
                     BuildBarcodeInputField(
-                      devolucionesBloc: devolucionesBloc,
                       focusNode: currentStep == 'location'
                           ? focusNode2
                           : currentStep == 'contacto'
@@ -1106,11 +1099,6 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                           default:
                             return;
                         }
-                      },
-                      functionUpdate: (keyLabel) {
-                        context.read<DevolucionesBloc>().add(
-                              UpdateScannedValueEvent(keyLabel, currentStep),
-                            );
                       },
                     ),
 

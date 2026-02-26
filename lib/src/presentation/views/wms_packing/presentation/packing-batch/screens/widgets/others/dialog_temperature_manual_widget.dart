@@ -6,8 +6,6 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/bloc/wms_packing_bloc.dart';
 
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_temp_widget.dart';
-
 class DialogTemperaturaManualPacking extends StatefulWidget {
   final int moveLineId;
 
@@ -22,7 +20,6 @@ class _DialogCapturaTemperaturaState
     extends State<DialogTemperaturaManualPacking> {
   @override
   Widget build(BuildContext context) {
-
     return BlocConsumer<WmsPackingBloc, WmsPackingState>(
       listener: (context, state) {
         if (state is GetTemperatureFailure) {
@@ -33,7 +30,7 @@ class _DialogCapturaTemperaturaState
         }
       },
       builder: (context, state) {
-    final bloc = context.read<WmsPackingBloc>();
+        final bloc = context.read<WmsPackingBloc>();
         return BackdropFilter(
           filter: ImageFilter.blur(
             sigmaX: 5,
@@ -61,7 +58,6 @@ class _DialogCapturaTemperaturaState
 
                   TextFormField(
                     showCursor: false,
-                    readOnly: true,
                     controller: bloc.temperatureController,
                     keyboardType: TextInputType.number,
                     style: const TextStyle(
@@ -146,11 +142,6 @@ class _DialogCapturaTemperaturaState
         ),
         //mostramos el teclado de temperatura
         const SizedBox(height: 10),
-        CustomKeyboardTempNumber(
-          controller: bloc.temperatureController,
-          isDialog: true,
-          onchanged: () {},
-        )
       ],
     );
   }

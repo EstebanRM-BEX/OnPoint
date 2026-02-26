@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/vibrate_utils.dart';
+import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/views/transferencias/models/response_transferencias.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
@@ -29,19 +30,19 @@ class Tab2ScreenTrans extends StatefulWidget {
 class _Tab2ScreenTransState extends State<Tab2ScreenTrans> {
   final AudioService _audioService = AudioService();
   final VibrationService _vibrationService = VibrationService();
-  FocusNode focusNode1 = FocusNode(); //cantidad textformfield
+  FocusNode focusNodeBuscar = FocusNode(); //cantidad textformfield
 
   final TextEditingController _controllerToDo = TextEditingController();
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    FocusScope.of(context).requestFocus(focusNode1);
+    FocusScope.of(context).requestFocus(focusNodeBuscar);
   }
 
   @override
   void dispose() {
-    focusNode1.dispose();
+    focusNodeBuscar.dispose();
     super.dispose();
   }
 
@@ -49,9 +50,7 @@ class _Tab2ScreenTransState extends State<Tab2ScreenTrans> {
     final bloc = context.read<TransferenciaBloc>();
 
     // Normalizamos el valor escaneado
-    final scan = (bloc.scannedValue5.isEmpty ? value : bloc.scannedValue5)
-        .trim()
-        .toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     _controllerToDo.clear();
     print('🔎 Scan barcode: $scan');
@@ -80,8 +79,8 @@ class _Tab2ScreenTransState extends State<Tab2ScreenTrans> {
           int.parse(product.productId),
           product.idTransferencia ?? 0,
           product.idMove ?? 0,
-        ))
-        ..add(ClearScannedValueEvent('location'));
+        ));
+      // ..add(ClearScannedValueEvent('location'));
 
       bloc.oldLocation = product.locationId.toString();
 
@@ -95,7 +94,7 @@ class _Tab2ScreenTransState extends State<Tab2ScreenTrans> {
           0,
           product.idMove ?? 0,
         ))
-        ..add(ClearScannedValueEvent('product'))
+        // ..add(ClearScannedValueEvent('product'))
         ..add(ChangeQuantitySeparate(
           0,
           int.parse(product.productId),
@@ -108,8 +107,8 @@ class _Tab2ScreenTransState extends State<Tab2ScreenTrans> {
           product.idTransferencia ?? 0,
           product.idMove ?? 0,
         ))
-        ..add(FetchPorductTransfer(product))
-        ..add(ClearScannedValueEvent('toDo'));
+        ..add(FetchPorductTransfer(product));
+      Future.microtask(() => focusNodeBuscar.requestFocus());
 
       Future.delayed(const Duration(milliseconds: 1000), () {
         Navigator.pop(context);
@@ -158,12 +157,10 @@ class _Tab2ScreenTransState extends State<Tab2ScreenTrans> {
     _vibrationService.vibrate();
 
     // 3️⃣ Si no se encuentra nada → mostrar error
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: const Text("Código erróneo"),
-      backgroundColor: Colors.red[200],
-      duration: const Duration(milliseconds: 500),
-    ));
-    bloc.add(ClearScannedValueEvent('toDo'));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Código no encontrado en la lista')),
+    );
+    Future.microtask(() => focusNodeBuscar.requestFocus());
   }
 
   @override
@@ -202,49 +199,56 @@ class _Tab2ScreenTransState extends State<Tab2ScreenTrans> {
               child: Column(
                 children: [
                   //*espacio para escanear y buscar el producto
+                  BarcodeScannerField(
+                    controller: _controllerToDo,
+                    focusNode: focusNodeBuscar,
+                    onBarcodeScanned: (value, context) {
+                      return validateBarcode(value, context);
+                    },
+                  ),
 
-                  context.read<UserBloc>().fabricante.contains("Zebra")
-                      ? Container(
-                          height: 15,
-                          margin: const EdgeInsets.only(bottom: 5),
-                          child: TextFormField(
-                            autofocus: true,
-                            showCursor: false,
-                            controller: _controllerToDo,
-                            focusNode: focusNode1,
-                            onChanged: (value) {
-                              // Llamamos a la validación al cambiar el texto
-                              validateBarcode(value, context);
-                            },
-                            decoration: InputDecoration(
-                              disabledBorder: InputBorder.none,
-                              hintStyle:
-                                  const TextStyle(fontSize: 14, color: black),
-                              border: InputBorder.none,
-                            ),
-                          ),
-                        )
-                      :
+                  // context.read<UserBloc>().fabricante.contains("Zebra")
+                  //     ? Container(
+                  //         height: 15,
+                  //         margin: const EdgeInsets.only(bottom: 5),
+                  //         child: TextFormField(
+                  //           autofocus: true,
+                  //           showCursor: false,
+                  //           controller: _controllerToDo,
+                  //           focusNode: focusNode1,
+                  //           onChanged: (value) {
+                  //             // Llamamos a la validación al cambiar el texto
+                  //             validateBarcode(value, context);
+                  //           },
+                  //           decoration: InputDecoration(
+                  //             disabledBorder: InputBorder.none,
+                  //             hintStyle:
+                  //                 const TextStyle(fontSize: 14, color: black),
+                  //             border: InputBorder.none,
+                  //           ),
+                  //         ),
+                  //       )
+                  //     :
 
-                      //*focus para leer los productos
-                      Focus(
-                          focusNode: focusNode1,
-                          autofocus: true,
-                          onKey: (FocusNode node, RawKeyEvent event) {
-                            if (event is RawKeyDownEvent) {
-                              if (event.logicalKey ==
-                                  LogicalKeyboardKey.enter) {
-                                validateBarcode(bloc.scannedValue5, context);
-                                return KeyEventResult.handled;
-                              } else {
-                                bloc.add(UpdateScannedValueEvent(
-                                    event.data.keyLabel, 'toDo'));
-                                return KeyEventResult.handled;
-                              }
-                            }
-                            return KeyEventResult.ignored;
-                          },
-                          child: Container()),
+                  //     //*focus para leer los productos
+                  //     Focus(
+                  //         focusNode: focusNode1,
+                  //         autofocus: true,
+                  //         onKey: (FocusNode node, RawKeyEvent event) {
+                  //           if (event is RawKeyDownEvent) {
+                  //             if (event.logicalKey ==
+                  //                 LogicalKeyboardKey.enter) {
+                  //               validateBarcode(bloc.scannedValue5, context);
+                  //               return KeyEventResult.handled;
+                  //             } else {
+                  //               // bloc.add(UpdateScannedValueEvent(
+                  //               //     event.data.keyLabel, 'toDo'));
+                  //               return KeyEventResult.handled;
+                  //             }
+                  //           }
+                  //           return KeyEventResult.ignored;
+                  //         },
+                  //         child: Container()),
 
                   (bloc.listProductsTransfer.where((element) {
                             return (element.isSeparate == 0 ||

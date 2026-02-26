@@ -77,8 +77,8 @@ class ChangeLocationDestIsOkEvent extends BatchEvent {
   final int batchId;
   final int idMove;
   final String type;
-  ChangeLocationDestIsOkEvent(
-      this.locationDestIsOk, this.productId, this.batchId, this.idMove, this.type);
+  ChangeLocationDestIsOkEvent(this.locationDestIsOk, this.productId,
+      this.batchId, this.idMove, this.type);
 }
 
 class ChangeProductIsOkEvent extends BatchEvent {
@@ -98,7 +98,8 @@ class ChangeIsOkQuantity extends BatchEvent {
   final int batchId;
   final int idMove;
   final String type;
-  ChangeIsOkQuantity(this.isOk, this.productId, this.batchId, this.idMove, this.type);
+  ChangeIsOkQuantity(
+      this.isOk, this.productId, this.batchId, this.idMove, this.type);
 }
 
 class ChangeCurrentProduct extends BatchEvent {
@@ -143,7 +144,8 @@ class AddQuantitySeparate extends BatchEvent {
   final dynamic quantity;
   final bool isOk;
   final String type;
-  AddQuantitySeparate(this.productId, this.idMove, this.quantity, this.isOk, this.type);
+  AddQuantitySeparate(
+      this.productId, this.idMove, this.quantity, this.isOk, this.type);
 }
 
 class PickingOkEvent extends BatchEvent {
@@ -197,12 +199,6 @@ class ScanBarcodeEvent extends BatchEvent {}
 
 class LoadInfoDeviceEvent extends BatchEvent {}
 
-class ShowKeyboard extends BatchEvent {
-  final bool showKeyboard;
-
-  ShowKeyboard(this.showKeyboard);
-}
-
 class LoadAllNovedadesEvent extends BatchEvent {}
 
 class SelectedSubMuelleEvent extends BatchEvent {
@@ -226,17 +222,6 @@ class SendProductOdooEvent extends BatchEvent {
     this.product,
     this.type,
   );
-}
-
-class UpdateScannedValueEvent extends BatchEvent {
-  final String scannedValue;
-  final String scan;
-  UpdateScannedValueEvent(this.scannedValue, this.scan);
-}
-
-class ClearScannedValueEvent extends BatchEvent {
-  final String scan;
-  ClearScannedValueEvent(this.scan);
 }
 
 class ShowQuantityEvent extends BatchEvent {

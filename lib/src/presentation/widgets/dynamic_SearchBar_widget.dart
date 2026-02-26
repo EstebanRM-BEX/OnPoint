@@ -59,9 +59,6 @@ class _DynamicSearchBarState extends State<DynamicSearchBar> {
                 color: Colors.white,
                 elevation: 3,
                 child: TextFormField(
-                  readOnly: context
-                      .select((UserBloc bloc) => bloc.fabricante)
-                      .contains("Zebra"), // Habilitar readOnly para Zebra
                   showCursor: true,
                   textAlignVertical: TextAlignVertical.center,
                   controller: widget.controller,

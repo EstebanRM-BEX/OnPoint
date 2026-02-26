@@ -50,15 +50,11 @@ class _SearchLocationScreenState extends State<SearchLocationScreen> {
                       onSearchCleared: () {
                         bloc.searchControllerLocation.clear();
                         bloc.add(SearchLocationEvent(''));
-                        bloc.add(ShowKeyboardEvent(false));
                         Future.microtask(() {
                           if (mounted) {
                             FocusScope.of(context).unfocus();
                           }
                         });
-                      },
-                      onTap: () {
-                        bloc.add(ShowKeyboardEvent(true));
                       },
                     ),
 
@@ -169,7 +165,6 @@ class _SearchLocationScreenState extends State<SearchLocationScreen> {
                                 field: "location", isOk: true));
                             bloc.add(ChangeLocationIsOkEvent(selectedLocation));
 
-                            bloc.add(ShowKeyboardEvent(false));
                             FocusScope.of(context).unfocus();
 
                             setState(() {
@@ -199,19 +194,6 @@ class _SearchLocationScreenState extends State<SearchLocationScreen> {
                     const SizedBox(
                       height: 10,
                     ),
-                    Visibility(
-                      visible: bloc.isKeyboardVisible &&
-                          context.read<UserBloc>().fabricante.contains("Zebra"),
-                      child: CustomKeyboard(
-                        isLogin: false,
-                        controller: bloc.searchControllerLocation,
-                        onchanged: () {
-                          bloc.add(SearchLocationEvent(
-                            bloc.searchControllerLocation.text,
-                          ));
-                        },
-                      ),
-                    )
                   ],
                 )),
           ),
@@ -257,9 +239,6 @@ class _AppBarInfo extends StatelessWidget {
                         IconButton(
                           icon: const Icon(Icons.arrow_back, color: white),
                           onPressed: () {
-                            context.read<InventarioBloc>().add(
-                                  ShowKeyboardEvent(false),
-                                );
                             Navigator.pushReplacementNamed(
                               context,
                               'inventario',

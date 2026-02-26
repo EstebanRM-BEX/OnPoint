@@ -18,7 +18,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class ListDevolutionsScreen extends StatefulWidget {
   const ListDevolutionsScreen({super.key});
@@ -126,23 +125,6 @@ class _ListDevolutionsScreenState extends State<ListDevolutionsScreen> {
           },
           child: Scaffold(
               backgroundColor: white,
-              bottomNavigationBar: context
-                      .read<RecepcionBloc>()
-                      .isKeyboardVisible
-                  ? CustomKeyboard(
-                      isLogin: false,
-                      controller:
-                          context.read<RecepcionBloc>().searchControllerDev,
-                      onchanged: () {
-                        context.read<RecepcionBloc>().add(SearchDevolucionEvent(
-                              context
-                                  .read<RecepcionBloc>()
-                                  .searchControllerDev
-                                  .text,
-                            ));
-                      },
-                    )
-                  : null,
               body: SizedBox(
                 width: size.width * 1,
                 height: size.height * 1,
@@ -165,16 +147,10 @@ class _ListDevolutionsScreenState extends State<ListDevolutionsScreen> {
                         recepcionBloc.searchControllerDev
                             .clear(); // Limpiamos el controlador
                         recepcionBloc.add(SearchDevolucionEvent(''));
-                        recepcionBloc.add(ShowKeyboardEvent(false));
                         Future.microtask(() {
                           FocusScope.of(context)
                               .unfocus(); // Desenfocamos primero
                         });
-                      },
-                      onTap: () {
-                        context
-                            .read<RecepcionBloc>()
-                            .add(ShowKeyboardEvent(true));
                       },
                     ),
                     (ordenCompra.isEmpty)
@@ -571,11 +547,6 @@ class _ListDevolutionsScreenState extends State<ListDevolutionsScreen> {
                                                         '',
                                                       ));
 
-                                                  context
-                                                      .read<RecepcionBloc>()
-                                                      .add(ShowKeyboardEvent(
-                                                          false));
-
                                                   //asignamos el responsable a esa orden de entrada
                                                   context
                                                       .read<RecepcionBloc>()
@@ -617,7 +588,6 @@ class _ListDevolutionsScreenState extends State<ListDevolutionsScreen> {
           onAccepted: () async {
             recepcionBloc.searchControllerDev.clear();
             recepcionBloc.add(SearchDevolucionEvent(''));
-            recepcionBloc.add(ShowKeyboardEvent(false));
             recepcionBloc.add(StartOrStopTimeOrder(
                 ordenCompra.id ?? 0, "start_time_reception"));
             recepcionBloc.add(GetPorductsToEntrada(ordenCompra.id ?? 0, 'dev'));
@@ -637,7 +607,6 @@ class _ListDevolutionsScreenState extends State<ListDevolutionsScreen> {
     } else {
       recepcionBloc.searchControllerDev.clear();
       recepcionBloc.add(SearchDevolucionEvent(''));
-      recepcionBloc.add(ShowKeyboardEvent(false));
       recepcionBloc.add(GetPorductsToEntrada(ordenCompra.id ?? 0, 'dev'));
       //traemos la orden de entrada actual desde la bd actualizada
       recepcionBloc.add(CurrentOrdenesCompra(ordenCompra));
@@ -689,10 +658,6 @@ class AppBar extends StatelessWidget {
                             '',
                           ));
 
-                      context
-                          .read<RecepcionBloc>()
-                          .add(ShowKeyboardEvent(false));
-
                       Navigator.pushReplacementNamed(
                         context,
                         '/home',
@@ -711,10 +676,6 @@ class AppBar extends StatelessWidget {
                         context.read<RecepcionBloc>().add(SearchDevolucionEvent(
                               '',
                             ));
-
-                        context
-                            .read<RecepcionBloc>()
-                            .add(ShowKeyboardEvent(false));
 
                         await DataBaseSqlite().deleRecepcion('dev');
                         context

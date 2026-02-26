@@ -5,13 +5,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class ListLocationsScreen extends StatefulWidget {
   const ListLocationsScreen({super.key});
@@ -132,18 +131,14 @@ class _ListLocationsScreenState extends State<ListLocationsScreen> {
                       onSearchCleared: () {
                         bloc.searchControllerLocation.clear();
                         bloc.add(SearchLocationEvent(''));
-                        bloc.add(ShowKeyboardInfoEvent(
-                            false, TextEditingController()));
+
                         Future.microtask(() {
                           if (mounted) {
                             FocusScope.of(context).unfocus();
                           }
                         });
                       },
-                      onTap: () {
-                        bloc.add(ShowKeyboardInfoEvent(
-                            true, TextEditingController()));
-                      },
+                      onTap: () {},
                     ),
 
                     Expanded(
@@ -283,8 +278,6 @@ class _ListLocationsScreenState extends State<ListLocationsScreen> {
                             final selectedLocation =
                                 bloc.ubicacionesFilters[selectedIndex!];
 
-                            bloc.add(ShowKeyboardInfoEvent(
-                                false, TextEditingController()));
                             FocusScope.of(context).unfocus();
 
                             setState(() {
@@ -314,19 +307,6 @@ class _ListLocationsScreenState extends State<ListLocationsScreen> {
                     const SizedBox(
                       height: 10,
                     ),
-                    Visibility(
-                      visible: bloc.isKeyboardVisible &&
-                          context.read<UserBloc>().fabricante.contains("Zebra"),
-                      child: CustomKeyboard(
-                        isLogin: false,
-                        controller: bloc.searchControllerLocation,
-                        onchanged: () {
-                          bloc.add(SearchLocationEvent(
-                            bloc.searchControllerLocation.text,
-                          ));
-                        },
-                      ),
-                    )
                   ],
                 )),
           ),
@@ -376,9 +356,6 @@ class _AppBarInfo extends StatelessWidget {
                             .read<InfoRapidaBloc>()
                             .searchControllerLocation
                             .clear();
-                        context.read<InfoRapidaBloc>().add(
-                            ShowKeyboardInfoEvent(
-                                false, TextEditingController()));
 
                         Navigator.pushReplacementNamed(
                           context,

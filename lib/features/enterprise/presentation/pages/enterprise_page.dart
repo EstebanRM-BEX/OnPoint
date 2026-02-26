@@ -9,7 +9,6 @@ import 'package:wms_app/injection_container.dart';
 import '../../../../src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import '../../../../features/user/presentation/bloc/user_bloc.dart';
 import '../../../../src/presentation/widgets/dialog_error_widget.dart';
-import '../../../../src/presentation/widgets/keyboard_widget.dart';
 import '../../domain/entities/recent_url.dart';
 import '../bloc/enterprise_bloc.dart';
 import '../bloc/enterprise_event.dart';
@@ -94,14 +93,9 @@ class _EnterprisePageState extends State<EnterprisePage> {
                     ),
                   ),
                   child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 30),
-                          child: _buildForm(context),
-                        ),
-                        _buildKeyboard(context),
-                      ],
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 30),
+                      child: _buildForm(context),
                     ),
                   ),
                 ),
@@ -274,25 +268,6 @@ class _EnterprisePageState extends State<EnterprisePage> {
           return const Text("Consultar", style: TextStyle(color: Colors.white));
         },
       ),
-    );
-  }
-
-  Widget _buildKeyboard(BuildContext context) {
-    return BlocBuilder<UserBloc, UserState>(
-      builder: (context, state) {
-        bool isZebra = false;
-        if (state is UserLoaded) {
-          isZebra = state.deviceInfo.manufacturer.contains("Zebra");
-        }
-        return Visibility(
-          visible: isZebra,
-          child: CustomKeyboard(
-            isLogin: true,
-            controller: _urlController,
-            onchanged: () {},
-          ),
-        );
-      },
     );
   }
 }

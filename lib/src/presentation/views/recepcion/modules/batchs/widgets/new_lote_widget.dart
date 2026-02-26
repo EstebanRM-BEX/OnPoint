@@ -16,7 +16,6 @@ import 'package:wms_app/src/presentation/views/recepcion/modules/individual/scre
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 import 'package:intl/intl.dart'; // Importamos el paquete intl
 
@@ -49,23 +48,6 @@ class _NewLoteScreenState extends State<NewLoteRecepBatchScreen> {
     final size = MediaQuery.sizeOf(context);
     return Scaffold(
       backgroundColor: white,
-      bottomNavigationBar: !viewList &&
-              context.read<UserBloc>().fabricante.contains("Zebra")
-          ? Padding(
-              padding: const EdgeInsets.only(
-                bottom: 35,
-              ),
-              child: CustomKeyboard(
-                isLogin: false,
-                controller:
-                    context.read<RecepcionBatchBloc>().newLoteController,
-                onchanged: () {
-                  context.read<RecepcionBatchBloc>().newLoteController.text =
-                      context.read<RecepcionBatchBloc>().newLoteController.text;
-                },
-              ),
-            )
-          : null,
       body: BlocBuilder<RecepcionBatchBloc, RecepcionBatchState>(
         builder: (context, state) {
           final bloc = context.read<RecepcionBatchBloc>();
@@ -188,12 +170,6 @@ class _NewLoteScreenState extends State<NewLoteRecepBatchScreen> {
                                 elevation: 3,
                                 child: TextFormField(
                                   style: TextStyle(color: black, fontSize: 14),
-                                  readOnly: context
-                                          .read<UserBloc>()
-                                          .fabricante
-                                          .contains("Zebra")
-                                      ? true
-                                      : false,
                                   textAlignVertical: TextAlignVertical.center,
                                   controller: bloc.searchControllerLote,
                                   showCursor: true,
@@ -209,7 +185,6 @@ class _NewLoteScreenState extends State<NewLoteRecepBatchScreen> {
                                           bloc.add(SearchLotevent(
                                             '',
                                           ));
-                                          bloc.add(ShowKeyboardEvent(false));
                                           FocusScope.of(context).unfocus();
                                         },
                                         icon: const Icon(
@@ -228,14 +203,6 @@ class _NewLoteScreenState extends State<NewLoteRecepBatchScreen> {
                                       value,
                                     ));
                                   },
-                                  onTap: !context
-                                          .read<UserBloc>()
-                                          .fabricante
-                                          .contains("Zebra")
-                                      ? null
-                                      : () {
-                                          bloc.add(ShowKeyboardEvent(true));
-                                        },
                                 ),
                               ),
                             ),
@@ -808,20 +775,6 @@ class _NewLoteScreenState extends State<NewLoteRecepBatchScreen> {
                   ),
                 ),
                 const SizedBox(height: 5),
-                Visibility(
-                  visible: bloc.isKeyboardVisible &&
-                      context.read<UserBloc>().fabricante.contains("Zebra"),
-                  child: CustomKeyboard(
-                    isLogin: false,
-                    controller: bloc.searchControllerLote,
-                    onchanged: () {
-                      bloc.add(SearchLotevent(
-                        bloc.searchControllerLote.text,
-                      ));
-                    },
-                  ),
-                ),
-                const SizedBox(height: 10),
               ],
             ),
           );

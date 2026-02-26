@@ -76,12 +76,6 @@ class _LocationDestScreenState extends State<LocationDestTransScreen> {
                                   elevation: 3,
                                   child: TextFormField(
                                     showCursor: true,
-                                    readOnly: context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? true
-                                        : false,
                                     textAlignVertical: TextAlignVertical.center,
                                     controller:
                                         bloc.searchControllerLocationDest,
@@ -98,8 +92,7 @@ class _LocationDestScreenState extends State<LocationDestTransScreen> {
                                             bloc.add(SearchLocationEvent(
                                               '',
                                             ));
-                                            bloc.add(ShowKeyboardEvent(
-                                                showKeyboard: false));
+
                                             FocusScope.of(context).unfocus();
                                           },
                                           icon: const Icon(
@@ -119,15 +112,6 @@ class _LocationDestScreenState extends State<LocationDestTransScreen> {
                                         value,
                                       ));
                                     },
-                                    onTap: !context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? null
-                                        : () {
-                                            bloc.add(ShowKeyboardEvent(
-                                                showKeyboard: mounted));
-                                          },
                                   ),
                                 ),
                               ),
@@ -282,7 +266,6 @@ class _LocationDestScreenState extends State<LocationDestTransScreen> {
                               selectedLocation,
                             ));
 
-                            bloc.add(ShowKeyboardEvent(showKeyboard: false));
                             FocusScope.of(context).unfocus();
 
                             setState(() {
@@ -312,19 +295,6 @@ class _LocationDestScreenState extends State<LocationDestTransScreen> {
                     const SizedBox(
                       height: 10,
                     ),
-                    Visibility(
-                      visible: bloc.isKeyboardVisible &&
-                          context.read<UserBloc>().fabricante.contains("Zebra"),
-                      child: CustomKeyboard(
-                        isLogin: false,
-                        controller: bloc.searchControllerLocationDest,
-                        onchanged: () {
-                          bloc.add(SearchLocationEvent(
-                            bloc.searchControllerLocationDest.text,
-                          ));
-                        },
-                      ),
-                    )
                   ],
                 )),
           ),
@@ -373,10 +343,6 @@ class _AppBarInfo extends StatelessWidget {
                           IconButton(
                             icon: const Icon(Icons.arrow_back, color: white),
                             onPressed: () {
-                              context
-                                  .read<TransferenciaBloc>()
-                                  .add(ShowKeyboardEvent(showKeyboard: false));
-
                               Navigator.pushReplacementNamed(
                                   context, 'scan-product-transfer',
                                   arguments: [currentProduct]);

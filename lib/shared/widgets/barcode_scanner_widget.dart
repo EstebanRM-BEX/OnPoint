@@ -9,21 +9,16 @@ import 'package:wms_app/core/constants/colors.dart';
 ///   interno de 300ms para evitar múltiples disparos por carácter.
 /// - **Otros**: usa un [Focus] que acumula teclas character a character con
 ///   [onKeyScanned] y dispara [onBarcodeScanned] al presionar Enter,
-///   usando el valor acumulado en [scannedValue5].
 class BarcodeScannerField extends StatefulWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final Function(String, BuildContext) onBarcodeScanned;
-  final Function(String, String, BuildContext) onKeyScanned;
-  final String scannedValue5;
 
   const BarcodeScannerField({
     super.key,
     required this.controller,
     required this.focusNode,
     required this.onBarcodeScanned,
-    required this.onKeyScanned,
-    required this.scannedValue5,
   });
 
   @override
@@ -53,7 +48,7 @@ class _BarcodeScannerFieldState extends State<BarcodeScannerField> {
     return _buildInput(context);
   }
 
-  /// Modo Zebra: campo invisible con teclado oculto y debounce.
+  /// Modo scanner: campo invisible con teclado oculto y debounce.
   Widget _buildInput(BuildContext context) {
     return Container(
       height: 15,

@@ -38,9 +38,8 @@ class _PickingPageState extends State<WMSPickingPage> {
 
   void validateBarcode(String value, BuildContext context) {
     final bloc = context.read<WMSPickingBloc>();
-    final scan = (bloc.scannedToDo.isEmpty ? value : bloc.scannedToDo)
-        .trim()
-        .toLowerCase();
+    // El debounce del widget garantiza que 'value' es el barcode completo
+    final scan = value.trim().toLowerCase();
 
     _controllerToDo.clear();
     print('🔎 Scan barcode (batch picking): $scan');
@@ -48,9 +47,6 @@ class _PickingPageState extends State<WMSPickingPage> {
     final listOfBatchs = bloc.listOfBatchs;
 
     void processBatch(BatchsModel batch) {
-      bloc.add(ClearScannedValuePickingEvent('toDo'));
-
-      print(batch.toMap());
       try {
         _handleBatchSelection(context, context, batch);
       } catch (e) {
@@ -63,13 +59,12 @@ class _PickingPageState extends State<WMSPickingPage> {
       }
     }
 
-    // Buscar el producto usando el código de barras principal o el código de producto
+    // Buscar el batch usando el código de barras principal o el código de zona de entrega, name
     final batchs = listOfBatchs.firstWhere(
       (b) =>
           b.name?.toLowerCase() == scan || b.zonaEntrega?.toLowerCase() == scan,
       orElse: () => BatchsModel(),
     );
-
     if (batchs.id != null) {
       print(
           '🔎 batch encontrado : ${batchs.id} ${batchs.name} - ${batchs.zonaEntrega}');
@@ -78,7 +73,11 @@ class _PickingPageState extends State<WMSPickingPage> {
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      bloc.add(ClearScannedValuePickingEvent('toDo'));
+      // Re-enfocar el campo para que el escáner pueda volver a capturar entradas
+      Future.microtask(() => focusNodeBuscar.requestFocus());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Batch no encontrado en la lista')),
+      );
     }
   }
 
@@ -193,15 +192,8 @@ class _PickingPageState extends State<WMSPickingPage> {
                         BarcodeScannerField(
                           controller: _controllerToDo,
                           focusNode: focusNodeBuscar,
-                          scannedValue5: "",
                           onBarcodeScanned: (value, context) {
                             return validateBarcode(value, context);
-                          },
-                          onKeyScanned: (keyLabel, type, context) {
-                            return context.read<WMSPickingBloc>().add(
-                                  UpdateScannedValuePickingEvent(
-                                      keyLabel, type),
-                                );
                           },
                         ),
 

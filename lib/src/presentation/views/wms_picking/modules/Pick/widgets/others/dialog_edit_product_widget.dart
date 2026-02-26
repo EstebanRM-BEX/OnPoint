@@ -9,10 +9,8 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_widget.dart';
 
 class DialogEditProductPickWidget extends StatefulWidget {
   final ProductsBatch productsBatch;
@@ -182,7 +180,6 @@ class _DialogEditProductWidgetState extends State<DialogEditProductPickWidget> {
                     height: 35,
                     child: TextFormField(
                       showCursor: false,
-                      readOnly: true, // Siempre true si usas CustomKeyboard
                       controller:
                           _quantityController, // ✅ Usar el controller local
                       keyboardType: TextInputType.number,
@@ -206,10 +203,7 @@ class _DialogEditProductWidgetState extends State<DialogEditProductPickWidget> {
                         ),
                       ),
                       // El onChanged ya no necesita el controlador del BLoC
-                      onChanged:
-                          context.read<UserBloc>().fabricante.contains("Zebra")
-                              ? null
-                              : _validateAndSetAlert,
+                      onChanged: _validateAndSetAlert,
                     ),
                   ),
                   const SizedBox(height: 5),
@@ -302,15 +296,6 @@ class _DialogEditProductWidgetState extends State<DialogEditProductPickWidget> {
                       ),
                     ),
                   ),
-
-                  // Teclado Virtual
-                  CustomKeyboardNumber(
-                    controller:
-                        _quantityController, // ✅ Usar el controller local
-                    onchanged: () =>
-                        _validateAndSetAlert(_quantityController.text),
-                    isDialog: true,
-                  )
                 ],
               ),
             ),

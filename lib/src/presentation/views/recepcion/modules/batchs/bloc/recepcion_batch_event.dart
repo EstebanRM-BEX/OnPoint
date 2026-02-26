@@ -11,11 +11,6 @@ class FetchRecepcionBatchEvent extends RecepcionBatchEvent {
 
 class FetchRecepcionBatchEventFromBD extends RecepcionBatchEvent {}
 
-class ShowKeyboardEvent extends RecepcionBatchEvent {
-  final bool showKeyboard;
-  ShowKeyboardEvent(this.showKeyboard);
-}
-
 class SearchReceptionEvent extends RecepcionBatchEvent {
   final String query;
   SearchReceptionEvent(this.query);
@@ -94,17 +89,6 @@ class ChangeIsOkQuantity extends RecepcionBatchEvent {
   ChangeIsOkQuantity(this.idEntrada, this.isOk, this.productId, this.idMove);
 }
 
-class ClearScannedValueOrderEvent extends RecepcionBatchEvent {
-  final String scan;
-  ClearScannedValueOrderEvent(this.scan);
-}
-
-class UpdateScannedValueOrderEvent extends RecepcionBatchEvent {
-  final String scannedValue;
-  final String scan;
-  UpdateScannedValueOrderEvent(this.scannedValue, this.scan);
-}
-
 class ChangeLocationDestIsOkEvent extends RecepcionBatchEvent {
   final int idEntrada;
   final bool isOk;
@@ -120,15 +104,12 @@ class ChangeLocationDestIsOkEvent extends RecepcionBatchEvent {
   );
 }
 
-
 class ShowQuantityOrderEvent extends RecepcionBatchEvent {
   final bool showQuantity;
   ShowQuantityOrderEvent(this.showQuantity);
 }
 
-
 class LoadAllNovedadesReceptionEvent extends RecepcionBatchEvent {}
-
 
 class FetchPorductOrder extends RecepcionBatchEvent {
   final LineasRecepcionBatch product;
@@ -138,8 +119,6 @@ class FetchPorductOrder extends RecepcionBatchEvent {
 }
 
 class GetLotesProduct extends RecepcionBatchEvent {}
-
-
 
 class FilterUbicacionesAlmacenEvent extends RecepcionBatchEvent {
   final String almacen;
@@ -154,17 +133,11 @@ class SearchLocationEvent extends RecepcionBatchEvent {
   );
 }
 
-
 class GetLocationsDestReceptionBatchEvent extends RecepcionBatchEvent {}
 
+class LoadConfigurationsUserReception extends RecepcionBatchEvent {}
 
-class LoadConfigurationsUserReception extends RecepcionBatchEvent {
-}
-
-
-class CleanFieldsEvent extends RecepcionBatchEvent {
-}
-
+class CleanFieldsEvent extends RecepcionBatchEvent {}
 
 class SendProductToOrder extends RecepcionBatchEvent {
   final bool isSplit;
@@ -172,7 +145,6 @@ class SendProductToOrder extends RecepcionBatchEvent {
 
   SendProductToOrder(this.isSplit, this.quantity);
 }
-
 
 class FinalizarRecepcionProducto extends RecepcionBatchEvent {}
 
@@ -182,13 +154,11 @@ class FinalizarRecepcionProductoSplit extends RecepcionBatchEvent {
   FinalizarRecepcionProductoSplit(this.quantity);
 }
 
-
 class CreateLoteProduct extends RecepcionBatchEvent {
   final String nameLote;
   final String fechaCaducidad;
   CreateLoteProduct(this.nameLote, this.fechaCaducidad);
 }
-
 
 class SearchLotevent extends RecepcionBatchEvent {
   final String query;
@@ -198,12 +168,10 @@ class SearchLotevent extends RecepcionBatchEvent {
   );
 }
 
-
 class SelectecLoteEvent extends RecepcionBatchEvent {
   final LotesProduct lote;
   SelectecLoteEvent(this.lote);
 }
-
 
 class ViewProductImageEvent extends RecepcionBatchEvent {
   final int idProduct;

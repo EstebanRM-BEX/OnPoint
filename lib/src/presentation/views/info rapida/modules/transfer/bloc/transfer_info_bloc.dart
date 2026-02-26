@@ -38,12 +38,8 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
   bool isKeyboardVisible = false;
 
   TransferInfoBloc() : super(TransferInfoInitial()) {
-    on<TransferInfoEvent>((event, emit) {
-    });
+    on<TransferInfoEvent>((event, emit) {});
 
-    //*evento para actualizar el valor del scan
-    on<UpdateScannedValueEventTransfer>(_onUpdateScannedValueEvent);
-    on<ClearScannedValueEventTransfer>(_onClearScannedValueEvent);
     //*metodo para cargar las ubicaciones
     on<LoadLocationsTransfer>(_onLoadLocations);
     on<ValidateFieldsEventTransfer>(_onValidateFields);
@@ -52,7 +48,6 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
     on<SendTransferInfo>(_onSetQuantity);
     add(LoadLocationsTransfer());
     //*activar el teclado
-    on<ShowKeyboardEvent>(_onShowKeyboardEvent);
     //*metodo para buscar una ubicacion
     on<SearchLocationEvent>(_onSearchLocationEvent);
     //metodo para filtrar las ubicaciones por almacen
@@ -120,12 +115,6 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
     }
   }
 
-  //*metodo para ocultar y mostrar el teclado
-  void _onShowKeyboardEvent(
-      ShowKeyboardEvent event, Emitter<TransferInfoState> emit) {
-    isKeyboardVisible = event.showKeyboard;
-    emit(ShowKeyboardState(showKeyboard: isKeyboardVisible));
-  }
 
   void _onSetQuantity(
       SendTransferInfo event, Emitter<TransferInfoState> emit) async {
@@ -197,41 +186,6 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
       ));
     } catch (e, s) {
       print("❌ Error en el ChangeLocationDestIsOkEvent $e ->$s");
-    }
-  }
-
-  //*evento para actualizar el valor del scan
-  void _onUpdateScannedValueEvent(
-      UpdateScannedValueEventTransfer event, Emitter<TransferInfoState> emit) {
-    try {
-      switch (event.scan) {
-        case 'muelle':
-          scannedValue1 += event.scannedValue;
-          emit(UpdateScannedValueStateTransfer(scannedValue1, event.scan));
-          break;
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-    } catch (e, s) {
-      print("❌ Error en _onUpdateScannedValueEvent: $e, $s");
-    }
-  }
-
-//*evento para limpiar el valor del scan
-  void _onClearScannedValueEvent(
-      ClearScannedValueEventTransfer event, Emitter<TransferInfoState> emit) {
-    try {
-      switch (event.scan) {
-        case 'muelle':
-          scannedValue1 = '';
-          emit(ClearScannedValueStateTransfer());
-          break;
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-      emit(ClearScannedValueStateTransfer());
-    } catch (e, s) {
-      print("❌ Error en _onClearScannedValueEvent: $e, $s");
     }
   }
 

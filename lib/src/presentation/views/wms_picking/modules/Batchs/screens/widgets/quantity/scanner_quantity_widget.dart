@@ -1,11 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 
-class QuantityScannerWidget extends StatelessWidget {
+class QuantityScannerWidget extends StatefulWidget {
   final Size size;
   final bool isQuantityOk;
   final bool quantityIsOk;
@@ -27,8 +27,6 @@ class QuantityScannerWidget extends StatelessWidget {
   final Function(String) onValidateScannerInput;
   final Function(String) onManualQuantityChanged;
   final Function(String) onManualQuantitySubmitted;
-  final Function(String) onKeyScanned;
-  final Widget? customKeyboard;
 
   bool isViewCant;
 
@@ -54,11 +52,33 @@ class QuantityScannerWidget extends StatelessWidget {
     required this.onValidateScannerInput,
     required this.onManualQuantityChanged,
     required this.onManualQuantitySubmitted,
-    required this.onKeyScanned,
     required this.onIconButtonPressed,
-    this.customKeyboard,
     this.isViewCant = true,
   });
+
+  @override
+  State<QuantityScannerWidget> createState() => _QuantityScannerWidgetState();
+}
+
+class _QuantityScannerWidgetState extends State<QuantityScannerWidget> {
+  Timer? _debounce;
+  late String _cachedLocationId;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onZebraChanged(String value, BuildContext context) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 200), () {});
+  }
 
   Color _getColorForDifference(dynamic difference) {
     if (difference == 0) {
@@ -77,22 +97,19 @@ class QuantityScannerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dynamic difference = (totalQuantity ?? 0) - quantitySelected;
+    final dynamic difference =
+        (widget.totalQuantity ?? 0) - widget.quantitySelected;
 
     return SizedBox(
-      width: size.width,
-      height: viewQuantity && showKeyboard
-          ? 300
-          : !viewQuantity
-              ? 110
-              : 150,
+      width: widget.size.width,
+      height: !widget.viewQuantity ? 110 : 150,
       child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Card(
-              color: isQuantityOk
-                  ? quantityIsOk
+              color: widget.isQuantityOk
+                  ? widget.quantityIsOk
                       ? Colors.white
                       : Colors.grey[300]
                   : Colors.red[200],
@@ -101,13 +118,13 @@ class QuantityScannerWidget extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: Row(
                   children: [
-                    if (isViewCant) ...[
+                    if (widget.isViewCant) ...[
                       const Text('Cant:',
                           style: TextStyle(color: black, fontSize: 13)),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 5),
                         child: Text(
-                          (totalQuantity ?? 0.0).toString(),
+                          (widget.totalQuantity ?? 0.0).toString(),
                           style:
                               TextStyle(color: primaryColorApp, fontSize: 13),
                         ),
@@ -133,7 +150,7 @@ class QuantityScannerWidget extends StatelessWidget {
                               ),
                       ),
                     ],
-                    Text(unidades,
+                    Text(widget.unidades,
                         style:
                             const TextStyle(color: Colors.black, fontSize: 13)),
                     Expanded(
@@ -142,59 +159,49 @@ class QuantityScannerWidget extends StatelessWidget {
                         height: 30,
                         alignment: Alignment.center,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: context
-                                  .read<UserBloc>()
-                                  .fabricante
-                                  .contains("Zebra")
-                              ? TextFormField(
-                                  showCursor: false,
-                                  textAlign: TextAlign.center,
-                                  enabled: locationIsOk &&
-                                      productIsOk &&
-                                      quantityIsOk &&
-                                      !locationDestIsOk,
-                                  controller: controller,
-                                  focusNode: scannerFocusNode,
-                                  onChanged: onValidateScannerInput,
-                                  decoration: InputDecoration(
-                                    hintText: quantitySelected.toString(),
-                                    disabledBorder: InputBorder.none,
-                                    hintStyle: const TextStyle(
-                                        fontSize: 13, color: black),
-                                    border: InputBorder.none,
-                                  ),
-                                )
-                              : Focus(
-                                  focusNode: scannerFocusNode,
-                                  onKey: (node, event) {
-                                    if (event is RawKeyDownEvent) {
-                                      if (event.logicalKey ==
-                                          LogicalKeyboardKey.enter) {
-                                        onValidateScannerInput(controller.text);
-                                        return KeyEventResult.handled;
-                                      } else {
-                                        onKeyScanned(event.data.keyLabel);
-                                      }
-                                      return KeyEventResult.handled;
-                                    }
-                                    return KeyEventResult.ignored;
-                                  },
-                                  child: Text(
-                                    quantitySelected.toString(),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                        color: black, fontSize: 14),
-                                  ),
-                                ),
-                        ),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: TextFormField(
+                              showCursor: false,
+                              textAlign: TextAlign.center,
+                              enabled: widget.locationIsOk &&
+                                  widget.productIsOk &&
+                                  widget.quantityIsOk &&
+                                  !widget.locationDestIsOk,
+                              controller: widget.controller,
+                              focusNode: widget.scannerFocusNode,
+                              keyboardType: TextInputType.none,
+                              enableInteractiveSelection: false,
+                              style: const TextStyle(color: Colors.transparent),
+                              textInputAction: TextInputAction.done,
+                              onChanged: (value) {
+                                _onZebraChanged(value, context);
+                              },
+                              onFieldSubmitted: (value) {
+                                // Disparo inmediato en Enter: cancela el debounce pendiente
+                                _debounce?.cancel();
+                                if (value.trim().isNotEmpty) {
+                                  widget.onValidateScannerInput(value);
+                                }
+                                // Limpiar el controller después del submit
+                                widget.controller.clear();
+                              },
+                              decoration: InputDecoration(
+                                hintText: widget.quantitySelected.toString(),
+                                disabledBorder: InputBorder.none,
+                                hintStyle:
+                                    const TextStyle(fontSize: 13, color: black),
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                              ),
+                            )),
                       ),
                     ),
                     IconButton(
-                      onPressed: quantityIsOk && quantitySelected >= 0
-                          ? onToggleViewQuantity
-                          : null,
+                      onPressed:
+                          widget.quantityIsOk && widget.quantitySelected >= 0
+                              ? widget.onToggleViewQuantity
+                              : null,
                       icon: Icon(Icons.edit_note_rounded,
                           color: primaryColorApp, size: 25),
                     )
@@ -203,26 +210,26 @@ class QuantityScannerWidget extends StatelessWidget {
               ),
             ),
           ),
-          if (viewQuantity)
+          if (widget.viewQuantity)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
               child: SizedBox(
                 height: 35,
                 child: TextFormField(
-                  focusNode: manualFocusNode,
+                  focusNode: widget.manualFocusNode,
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))
                   ],
-                  controller: manualController,
+                  controller: widget.manualController,
                   keyboardType: TextInputType.number,
                   maxLines: 1,
-                  onChanged: onManualQuantityChanged,
-                  onFieldSubmitted: onManualQuantitySubmitted,
+                  onChanged: widget.onManualQuantityChanged,
+                  onFieldSubmitted: widget.onManualQuantitySubmitted,
                   decoration: InputDecorations.authInputDecoration(
                     hintText: 'Cantidad',
                     labelText: 'Cantidad',
                     suffixIconButton: IconButton(
-                      onPressed: onIconButtonPressed,
+                      onPressed: widget.onIconButtonPressed,
                       icon: const Icon(Icons.clear),
                     ),
                   ),
@@ -232,12 +239,12 @@ class QuantityScannerWidget extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: ElevatedButton(
-              onPressed: quantityIsOk && quantitySelected >= 0
-                  ? onValidateButton
+              onPressed: widget.quantityIsOk && widget.quantitySelected >= 0
+                  ? widget.onValidateButton
                   : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColorApp,
-                minimumSize: Size(size.width * 0.93, 30),
+                minimumSize: Size(widget.size.width * 0.93, 30),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
               ),
@@ -245,8 +252,6 @@ class QuantityScannerWidget extends StatelessWidget {
                   style: TextStyle(color: Colors.white, fontSize: 14)),
             ),
           ),
-          if (viewQuantity && showKeyboard && customKeyboard != null)
-            customKeyboard!,
         ],
       ),
     );

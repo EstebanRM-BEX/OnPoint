@@ -12,7 +12,6 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
@@ -47,22 +46,6 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
     final size = MediaQuery.sizeOf(context);
     return Scaffold(
       backgroundColor: white,
-      bottomNavigationBar:
-          !viewList && context.read<UserBloc>().fabricante.contains("Zebra")
-              ? Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: 35,
-                  ),
-                  child: CustomKeyboard(
-                    isLogin: false,
-                    controller: context.read<RecepcionBloc>().newLoteController,
-                    onchanged: () {
-                      context.read<RecepcionBloc>().newLoteController.text =
-                          context.read<RecepcionBloc>().newLoteController.text;
-                    },
-                  ),
-                )
-              : null,
       body: BlocBuilder<RecepcionBloc, RecepcionState>(
         builder: (context, state) {
           final bloc = context.read<RecepcionBloc>();
@@ -183,12 +166,6 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                                 elevation: 3,
                                 child: TextFormField(
                                   style: TextStyle(color: black, fontSize: 14),
-                                  readOnly: context
-                                          .read<UserBloc>()
-                                          .fabricante
-                                          .contains("Zebra")
-                                      ? true
-                                      : false,
                                   textAlignVertical: TextAlignVertical.center,
                                   controller: bloc.searchControllerLote,
                                   showCursor: true,
@@ -204,7 +181,6 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                                           bloc.add(SearchLotevent(
                                             '',
                                           ));
-                                          bloc.add(ShowKeyboardEvent(false));
                                           FocusScope.of(context).unfocus();
                                         },
                                         icon: const Icon(
@@ -223,14 +199,6 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                                       value,
                                     ));
                                   },
-                                  onTap: !context
-                                          .read<UserBloc>()
-                                          .fabricante
-                                          .contains("Zebra")
-                                      ? null
-                                      : () {
-                                          bloc.add(ShowKeyboardEvent(true));
-                                        },
                                 ),
                               ),
                             ),
@@ -819,19 +787,7 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                   ),
                 ),
                 const SizedBox(height: 5),
-                Visibility(
-                  visible: bloc.isKeyboardVisible &&
-                      context.read<UserBloc>().fabricante.contains("Zebra"),
-                  child: CustomKeyboard(
-                    isLogin: false,
-                    controller: bloc.searchControllerLote,
-                    onchanged: () {
-                      bloc.add(SearchLotevent(
-                        bloc.searchControllerLote.text,
-                      ));
-                    },
-                  ),
-                ),
+
                 const SizedBox(height: 10),
               ],
             ),

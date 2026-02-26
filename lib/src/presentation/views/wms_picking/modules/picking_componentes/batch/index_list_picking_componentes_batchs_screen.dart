@@ -40,9 +40,7 @@ class _PickingCompoBatchScreenState extends State<PickingCompoBatchScreen> {
 
   void validateBarcode(String value, BuildContext context) {
     final bloc = context.read<WMSPickingBloc>();
-    final scan = (bloc.scannedToDo.isEmpty ? value : bloc.scannedToDo)
-        .trim()
-        .toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     _controllerToDo.clear();
     print('🔎 Scan barcode (batch picking): $scan');
@@ -50,8 +48,7 @@ class _PickingCompoBatchScreenState extends State<PickingCompoBatchScreen> {
     final listOfBatchs = bloc.listOfBatchsByComponents;
 
     void processBatch(BatchsModel batch) {
-      bloc.add(ClearScannedValuePickingEvent('toDo'));
-
+      Future.microtask(() => focusNodeBuscar.requestFocus());
       print(batch.toMap());
       try {
         _handleBatchSelection(context, context, batch);
@@ -80,7 +77,7 @@ class _PickingCompoBatchScreenState extends State<PickingCompoBatchScreen> {
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      bloc.add(ClearScannedValuePickingEvent('toDo'));
+      Future.microtask(() => focusNodeBuscar.requestFocus());
     }
   }
 
@@ -232,15 +229,8 @@ class _PickingCompoBatchScreenState extends State<PickingCompoBatchScreen> {
                           BarcodeScannerField(
                             controller: _controllerToDo,
                             focusNode: focusNodeBuscar,
-                            scannedValue5: "",
                             onBarcodeScanned: (value, context) {
                               return validateBarcode(value, context);
-                            },
-                            onKeyScanned: (keyLabel, type, context) {
-                              return context.read<WMSPickingBloc>().add(
-                                    UpdateScannedValuePickingEvent(
-                                        keyLabel, type),
-                                  );
                             },
                           ),
 

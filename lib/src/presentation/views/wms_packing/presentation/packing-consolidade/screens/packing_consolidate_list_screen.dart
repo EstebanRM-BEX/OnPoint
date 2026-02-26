@@ -10,7 +10,6 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 import 'package:wms_app/src/presentation/views/wms_packing/models/packing_response_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/bloc/packing_consolidade_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 import '../../../../../providers/network/cubit/warning_widget_cubit.dart';
 
@@ -91,25 +90,6 @@ class _PackingConsolidateListScreenState
             return false;
           },
           child: Scaffold(
-            bottomNavigationBar:
-                context.read<PackingConsolidateBloc>().isKeyboardVisible &&
-                        context.read<UserBloc>().fabricante.contains("Zebra")
-                    ? CustomKeyboard(
-                        isLogin: false,
-                        controller: context
-                            .read<PackingConsolidateBloc>()
-                            .searchControllerPedido,
-                        onchanged: () {
-                          context.read<PackingConsolidateBloc>().add(
-                              SearchPedidoPackingEvent(
-                                  context
-                                      .read<PackingConsolidateBloc>()
-                                      .searchControllerPedido
-                                      .text,
-                                  widget.batchModel?.id ?? 0));
-                        },
-                      )
-                    : null,
             backgroundColor: Colors.white,
             body: Column(
               children: [
@@ -149,9 +129,6 @@ class _PackingConsolidateListScreenState
                                   context
                                       .read<PackingConsolidateBloc>()
                                       .add(LoadBatchPackingFromDBEvent());
-                                  context
-                                      .read<PackingConsolidateBloc>()
-                                      .add(ShowKeyboardEvent(false));
 
                                   context
                                       .read<PackingConsolidateBloc>()

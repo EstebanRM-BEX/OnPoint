@@ -1,10 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 
-class ProductScannerAll extends StatelessWidget {
+class ProductScannerAll extends StatefulWidget {
   final FocusNode focusNode;
   final TextEditingController controller;
   final bool locationIsOk;
@@ -13,7 +14,6 @@ class ProductScannerAll extends StatelessWidget {
   final bool isProductOk;
   final dynamic currentProduct;
   final Function(String) onValidateProduct;
-  final Function(String) onKeyScanned;
   final Widget? productDropdown;
   final bool? isCreateTransfer;
 
@@ -27,17 +27,41 @@ class ProductScannerAll extends StatelessWidget {
     required this.isProductOk,
     this.currentProduct,
     required this.onValidateProduct,
-    required this.onKeyScanned,
     required this.productDropdown,
     this.isCreateTransfer = false,
   });
 
   @override
+  State<ProductScannerAll> createState() => _ProductScannerAllState();
+}
+
+class _ProductScannerAllState extends State<ProductScannerAll> {
+  Timer? _debounce;
+  late String _cachedLocationId;
+
+  @override
+  void initState() {
+    super.initState();
+    // Cachear el ID del producto para evitar parpadeo durante el escaneo
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onZebraChanged(String value, BuildContext context) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 200), () {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final statusColor = productIsOk ? green : yellow;
-    final cardColor = isProductOk
-        ? productIsOk
+    final statusColor = widget.productIsOk ? green : yellow;
+    final cardColor = widget.isProductOk
+        ? widget.productIsOk
             ? Colors.green[100]
             : Colors.grey[300]
         : Colors.red[200];
@@ -59,12 +83,9 @@ class ProductScannerAll extends StatelessWidget {
           color: cardColor,
           elevation: 5,
           child: Container(
-            width: size.width * 0.85,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            child: context.read<UserBloc>().fabricante.contains("Zebra")
-                ? _buildZebraLayout(context)
-                : _buildNonZebraLayout(context),
-          ),
+              width: size.width * 0.85,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+              child: _buildZebraLayout(context)),
         ),
       ],
     );
@@ -75,57 +96,44 @@ class ProductScannerAll extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 5),
       child: Column(
         children: [
-          if (productDropdown != null) productDropdown!,
+          if (widget.productDropdown != null) widget.productDropdown!,
           Container(
-            height: 20,
+            height: 1,
             margin: const EdgeInsets.only(bottom: 5, top: 5),
             child: TextFormField(
               autofocus: true,
               showCursor: false,
-              controller: controller,
-              enabled: locationIsOk && !productIsOk && !quantityIsOk,
-              focusNode: focusNode,
-              onChanged: onValidateProduct,
+              controller: widget.controller,
+              enabled: widget.locationIsOk &&
+                  !widget.productIsOk &&
+                  !widget.quantityIsOk,
+              focusNode: widget.focusNode,
+              keyboardType: TextInputType.none,
+              enableInteractiveSelection: false,
+              style: const TextStyle(color: Colors.transparent),
+              textInputAction: TextInputAction.done,
+              onChanged: (value) {
+                _onZebraChanged(value, context);
+              },
+              onFieldSubmitted: (value) {
+                // Disparo inmediato en Enter: cancela el debounce pendiente
+                _debounce?.cancel();
+                if (value.trim().isNotEmpty) {
+                  widget.onValidateProduct(value);
+                }
+                // Limpiar el controller después del submit
+                widget.controller.clear();
+              },
               decoration: InputDecoration(
-                hintText: 
-                // isCreateTransfer == true
-                //     ? currentProduct?.name == "" || currentProduct?.name == null
-                //         ? 'Esperando escaneo'
-                //         : currentProduct?.name
-                //     : 
-                    currentProduct?.productName == "" ||
-                            currentProduct?.productName == null
-                        ? 'Esperando escaneo'
-                        : currentProduct?.productName,
                 disabledBorder: InputBorder.none,
-                hintStyle: const TextStyle(fontSize: 12, color: black),
+                hintStyle: const TextStyle(fontSize: 1, color: black),
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildNonZebraLayout(BuildContext context) {
-    return Focus(
-      focusNode: focusNode,
-      onKey: (FocusNode node, RawKeyEvent event) {
-        if (event is RawKeyDownEvent) {
-          if (event.logicalKey == LogicalKeyboardKey.enter) {
-            onValidateProduct(controller.text);
-            return KeyEventResult.handled;
-          } else {
-            onKeyScanned(event.data.keyLabel);
-            return KeyEventResult.handled;
-          }
-        }
-        return KeyEventResult.ignored;
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 5),
-        child: productDropdown ?? const SizedBox(),
       ),
     );
   }

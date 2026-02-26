@@ -138,12 +138,6 @@ class SearchProductPackingEvent extends WmsPackingEvent {
   );
 }
 
-class ShowKeyboardEvent extends WmsPackingEvent {
-  final bool showKeyboard;
-
-  ShowKeyboardEvent(this.showKeyboard);
-}
-
 class SelectProductPackingEvent extends WmsPackingEvent {
   final ProductoPedido producto;
   SelectProductPackingEvent(this.producto);
@@ -184,17 +178,6 @@ class UnPackingEvent extends WmsPackingEvent {
   final dynamic consecutivoPackage;
 
   UnPackingEvent(this.request, this.pedidoId, this.consecutivoPackage);
-}
-
-class ClearScannedValuePackEvent extends WmsPackingEvent {
-  final String scan;
-  ClearScannedValuePackEvent(this.scan);
-}
-
-class UpdateScannedValuePackEvent extends WmsPackingEvent {
-  final String scannedValue;
-  final String scan;
-  UpdateScannedValuePackEvent(this.scannedValue, this.scan);
 }
 
 class ShowQuantityPackEvent extends WmsPackingEvent {

@@ -14,7 +14,6 @@ import 'package:wms_app/src/presentation/views/inventario/screens/bloc/inventari
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -427,14 +426,6 @@ class _LoginFormState extends State<_LoginForm> {
                 ),
               ),
               const SizedBox(height: 20),
-              Visibility(
-                visible: context.read<UserBloc>().fabricante.contains("Zebra"),
-                child: CustomKeyboard(
-                  isLogin: true,
-                  controller: activeController,
-                  onchanged: () {},
-                ),
-              ),
               const SizedBox(height: 20),
             ],
           ),

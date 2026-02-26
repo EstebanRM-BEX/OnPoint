@@ -73,7 +73,6 @@ class DialogBackorderPick extends StatelessWidget {
                         : true,
             child: ElevatedButton(
               onPressed: () {
-                context.read<PickingPickBloc>().add(ShowKeyboard(false));
                 context.read<PickingPickBloc>().add(CreateBackOrderOrNot(
                     context.read<PickingPickBloc>().pickWithProducts.pick?.id ??
                         0,
@@ -96,7 +95,6 @@ class DialogBackorderPick extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              context.read<PickingPickBloc>().add(ShowKeyboard(false));
               context.read<PickingPickBloc>().add(CreateBackOrderOrNot(
                   isHistory
                       ? idPick

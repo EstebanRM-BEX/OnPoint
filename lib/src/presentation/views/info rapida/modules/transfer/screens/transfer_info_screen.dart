@@ -10,6 +10,7 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
+import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/models/info_rapida_model.dart';
@@ -17,9 +18,7 @@ import 'package:wms_app/src/presentation/views/info%20rapida/models/transfer_inf
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
 // import 'package:wms_app/src/presentation/views/info%20rapida/screens/quick%20info/bloc/info_rapida_bloc.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/transfer/bloc/transfer_info_bloc.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_widget.dart';
 
 class TransferInfoScreen extends StatefulWidget {
   final InfoResult? infoRapidaResult;
@@ -103,12 +102,7 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
       return;
     }
 
-    String scan = bloc.scannedValue1.toLowerCase() == ""
-        ? value.toLowerCase()
-        : bloc.scannedValue1.toLowerCase();
-
-    _controllerLocationDest.text = "";
-
+    final scan = value.trim().toLowerCase();
     // ✅ PROTECCIÓN 2: Uso seguro de firstWhere con manejo de nulos
     // (Aseguramos que name/barcode no sean nulos antes de comparar)
     ResultUbicaciones matchedUbicacion = bloc.ubicaciones.firstWhere(
@@ -125,7 +119,7 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
         matchedUbicacion,
       ));
 
-      bloc.add(ClearScannedValueEventTransfer('muelle'));
+      Future.microtask(() => focusNode1.requestFocus());
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
@@ -137,7 +131,8 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
       );
 
       bloc.add(ValidateFieldsEventTransfer(field: "muelle", isOk: false));
-      bloc.add(ClearScannedValueEventTransfer('muelle'));
+      // bloc.add(ClearScannedValueEventTransfer('muelle'));
+      Future.microtask(() => focusNode1.requestFocus());
     }
   }
 
@@ -345,40 +340,32 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                         return Column(
                           children: [
                             const WarningWidgetCubit(),
-                            Padding(
-                              padding: EdgeInsets.only(
-                                  // bottom: 5,
-                                  top: status != ConnectionStatus.online
-                                      ? 0
-                                      : 35),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.arrow_back,
-                                        color: white),
-                                    onPressed: () {
-                                      context
-                                          .read<TransferInfoBloc>()
-                                          .clearFields();
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_back,
+                                      color: white),
+                                  onPressed: () {
+                                    context
+                                        .read<TransferInfoBloc>()
+                                        .clearFields();
 
-                                      Navigator.pushReplacementNamed(
-                                        context,
-                                        'product-info',
-                                      );
-                                    },
-                                  ),
-                                  Padding(
-                                    padding:
-                                        EdgeInsets.only(left: size.width * 0.2),
-                                    child: Text('TRANSFERENCIA',
-                                        style: TextStyle(
-                                            color: white, fontSize: 18)),
-                                  ),
-                                  const Spacer(),
-                                ],
-                              ),
+                                    Navigator.pushReplacementNamed(
+                                      context,
+                                      'product-info',
+                                    );
+                                  },
+                                ),
+                                Padding(
+                                  padding:
+                                      EdgeInsets.only(left: size.width * 0.2),
+                                  child: Text('TRANSFERENCIA',
+                                      style: TextStyle(
+                                          color: white, fontSize: 18)),
+                                ),
+                                const Spacer(),
+                              ],
                             ),
                           ],
                         );
@@ -604,161 +591,71 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                                   : Colors.red[200],
                               elevation: 5,
                               child: Container(
-                                width: size.width * 0.85,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 10),
-                                child: context
-                                        .read<UserBloc>()
-                                        .fabricante
-                                        .contains("Zebra")
-                                    ? Column(
-                                        children: [
-                                          GestureDetector(
-                                            onTap: () {
-                                              Navigator.pushReplacementNamed(
-                                                  context,
-                                                  'search-locations-dest-trans-info',
-                                                  arguments: [
-                                                    widget.infoRapidaResult,
-                                                    widget.ubicacion
-                                                  ]);
-                                            },
-                                            child: Row(
-                                              children: [
-                                                Text(
-                                                  'Ubicación de destino',
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    color: primaryColorApp,
-                                                  ),
-                                                ),
-                                                const Spacer(),
-                                                SizedBox(
-                                                  height: 20,
-                                                  width: 20,
-                                                  child: SvgPicture.asset(
-                                                    color: primaryColorApp,
-                                                    "assets/icons/packing.svg",
-                                                    height: 20,
-                                                    width: 20,
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Container(
-                                            height: 15,
-                                            margin: const EdgeInsets.only(
-                                                bottom: 5, top: 10),
-                                            child: TextFormField(
-                                              autofocus: true,
-                                              showCursor: false,
-                                              // enabled: false,
-                                              controller:
-                                                  _controllerLocationDest, // Controlador que maneja el texto
-                                              focusNode: focusNode1,
-                                              onChanged: (value) {
-                                                validateMuelle(value);
-                                              },
-                                              decoration: InputDecoration(
-                                                // hintText: bloc.selectedLocation,
-                                                hintText: bloc.selectedLocationDest
-                                                                ?.name ==
-                                                            "" ||
-                                                        bloc.selectedLocationDest
-                                                                ?.name ==
-                                                            null
-                                                    ? 'Esperando escaneo'
-                                                    : bloc.selectedLocationDest
-                                                        ?.name,
-                                                disabledBorder:
-                                                    InputBorder.none,
-                                                hintStyle: const TextStyle(
-                                                    fontSize: 14, color: black),
-                                                border: InputBorder.none,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : Focus(
-                                        focusNode: focusNode1,
-                                        onKey: (FocusNode node,
-                                            RawKeyEvent event) {
-                                          if (event is RawKeyDownEvent) {
-                                            if (event.logicalKey ==
-                                                LogicalKeyboardKey.enter) {
-                                              validateMuelle(
-                                                  bloc.scannedValue1);
-                                              return KeyEventResult.handled;
-                                            } else {
-                                              bloc.add(
-                                                  UpdateScannedValueEventTransfer(
-                                                      event.data.keyLabel,
-                                                      'muelle'));
-                                              return KeyEventResult.handled;
-                                            }
-                                          }
-                                          return KeyEventResult.ignored;
+                                  width: size.width * 0.85,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 10),
+                                  child: Column(
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () {
+                                          Navigator.pushReplacementNamed(
+                                              context,
+                                              'search-locations-dest-trans-info',
+                                              arguments: [
+                                                widget.infoRapidaResult,
+                                                widget.ubicacion
+                                              ]);
                                         },
-                                        child: Column(
+                                        child: Row(
                                           children: [
-                                            GestureDetector(
-                                              onTap: () {
-                                                Navigator.pushReplacementNamed(
-                                                    context,
-                                                    'search-locations-dest-trans-info',
-                                                    arguments: [
-                                                      widget.infoRapidaResult,
-                                                      widget.ubicacion
-                                                    ]);
-                                              },
-                                              child: Row(
-                                                children: [
-                                                  Text(
-                                                    'Ubicación de destino',
-                                                    style: TextStyle(
-                                                      fontSize: 14,
-                                                      color: primaryColorApp,
-                                                    ),
-                                                  ),
-                                                  const Spacer(),
-                                                  SizedBox(
-                                                    height: 20,
-                                                    width: 20,
-                                                    child: SvgPicture.asset(
-                                                      color: primaryColorApp,
-                                                      "assets/icons/packing.svg",
-                                                      height: 20,
-                                                      width: 20,
-                                                      fit: BoxFit.cover,
-                                                    ),
-                                                  ),
-                                                ],
+                                            Text(
+                                              'Ubicación de destino',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: primaryColorApp,
                                               ),
                                             ),
-                                            const SizedBox(height: 10),
-                                            Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Text(
-                                                bloc.selectedLocationDest
-                                                                .name ==
-                                                            "" ||
-                                                        bloc.selectedLocationDest
-                                                                ?.name ==
-                                                            null
-                                                    ? 'Esperando escaneo'
-                                                    : bloc.selectedLocationDest
-                                                            .name ??
-                                                        "",
-                                                style: TextStyle(
-                                                    fontSize: 14, color: black),
+                                            const Spacer(),
+                                            SizedBox(
+                                              height: 20,
+                                              width: 20,
+                                              child: SvgPicture.asset(
+                                                color: primaryColorApp,
+                                                "assets/icons/packing.svg",
+                                                height: 20,
+                                                width: 20,
+                                                fit: BoxFit.cover,
                                               ),
                                             ),
                                           ],
-                                        )),
-                              ),
+                                        ),
+                                      ),
+                                      BarcodeScannerField(
+                                        controller: _controllerLocationDest,
+                                        focusNode: focusNode1,
+                                        onBarcodeScanned: (value, context) {
+                                          return validateMuelle(
+                                            value,
+                                          );
+                                        },
+                                      ),
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                            bloc.selectedLocationDest.name ==
+                                                        "" ||
+                                                    bloc.selectedLocationDest
+                                                            .name ==
+                                                        null
+                                                ? 'Esperando escaneo'
+                                                : bloc.selectedLocationDest
+                                                        .name ??
+                                                    "",
+                                            style: TextStyle(
+                                                fontSize: 14, color: black)),
+                                      )
+                                    ],
+                                  )),
                             ),
                           ],
                         ),
@@ -811,7 +708,6 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                                           alignment: Alignment.center,
                                           child: TextFormField(
                                               enabled: false,
-                                              readOnly: false,
                                               inputFormatters: [
                                                 FilteringTextInputFormatter
                                                     .allow(RegExp(r'[0-9.,]')),
@@ -887,17 +783,6 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                             ),
                           )),
                       //teclado de la app
-                      CustomKeyboardNumber(
-                        controller: _cantidadController,
-                        onchanged: () {
-                          validateQuantity(
-                              _cantidadController.text == "" ||
-                                      _cantidadController.text.isEmpty
-                                  ? 0
-                                  : int.parse(_cantidadController.text),
-                              context);
-                        },
-                      )
                     ],
                   ),
                 ),

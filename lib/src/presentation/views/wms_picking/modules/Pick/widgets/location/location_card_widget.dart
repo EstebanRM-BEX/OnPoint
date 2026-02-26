@@ -77,29 +77,40 @@ class LocationDropdownWidget extends StatelessWidget {
                 ),
               );
             }).toList(),
-            onChanged: context.read<PickingPickBloc>()
-                        .configurations.result?.result?.locationPickingManual ==
+            onChanged: context
+                        .read<PickingPickBloc>()
+                        .configurations
+                        .result
+                        ?.result
+                        ?.locationPickingManual ==
                     false
                 ? null
                 : context.read<PickingPickBloc>().locationIsOk
                     ? null
                     : (String? newValue) {
                         if (newValue == currentProduct.locationId.toString()) {
-                          context.read<PickingPickBloc>().add(ValidateFieldsEvent(
-                              field: "location", isOk: true));
-                          context.read<PickingPickBloc>().add(ChangeLocationIsOkEvent(
-                              currentProduct.idProduct ?? 0,
-                              context.read<PickingPickBloc>().pickWithProducts.pick?.id ?? 0,
-                              currentProduct.idMove ?? 0));
+                          context.read<PickingPickBloc>().add(
+                              ValidateFieldsEvent(
+                                  field: "location", isOk: true));
+                          context.read<PickingPickBloc>().add(
+                              ChangeLocationIsOkEvent(
+                                  currentProduct.idProduct ?? 0,
+                                  context
+                                          .read<PickingPickBloc>()
+                                          .pickWithProducts
+                                          .pick
+                                          ?.id ??
+                                      0,
+                                  currentProduct.idMove ?? 0));
 
                           context.read<PickingPickBloc>().oldLocation =
                               currentProduct.locationId.toString();
                         } else {
                           _vibrationService.vibrate();
                           _audioService.playErrorSound();
-                          context.read<PickingPickBloc>().add(ValidateFieldsEvent(
-                              field: "location", isOk: false));
-                          
+                          context.read<PickingPickBloc>().add(
+                              ValidateFieldsEvent(
+                                  field: "location", isOk: false));
                         }
                       },
           ),
@@ -120,18 +131,15 @@ class LocationDropdownWidget extends StatelessWidget {
 
           // Mostrar ubicación actual
 
-          Visibility(
-            visible: isPDA,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Row(
-                children: [
-                  Text(
-                    currentLocationId,
-                    style: const TextStyle(fontSize: 14, color: black),
-                  ),
-                ],
-              ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Row(
+              children: [
+                Text(
+                  currentLocationId,
+                  style: const TextStyle(fontSize: 14, color: black),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 5),

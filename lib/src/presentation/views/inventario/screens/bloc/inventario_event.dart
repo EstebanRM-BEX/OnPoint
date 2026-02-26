@@ -29,23 +29,6 @@ class SearchProductEvent extends InventarioEvent {
   );
 }
 
-class ShowKeyboardEvent extends InventarioEvent {
-  final bool showKeyboard;
-
-  ShowKeyboardEvent(this.showKeyboard);
-}
-
-class ClearScannedValueEvent extends InventarioEvent {
-  final String scan;
-  ClearScannedValueEvent(this.scan);
-}
-
-class UpdateScannedValueEvent extends InventarioEvent {
-  final String scannedValue;
-  final String scan;
-  UpdateScannedValueEvent(this.scannedValue, this.scan);
-}
-
 class ValidateFieldsEvent extends InventarioEvent {
   final String field;
   final bool isOk;
@@ -145,7 +128,6 @@ class SetUbicacionFijaEvent extends InventarioEvent {
     this.ubicacionFija,
   );
 }
-
 
 class FetchAllBarcodesInventarioEvent extends InventarioEvent {
   FetchAllBarcodesInventarioEvent();

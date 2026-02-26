@@ -14,7 +14,6 @@ import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/src/presentation/views/transferencias/models/response_transferencias.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
-// import 'package:wms_app/src/presentation/views/transferencias/transfer-externa/bloc/transfer_externa_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
@@ -23,7 +22,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class ListTransferenciasScreen extends StatefulWidget {
   const ListTransferenciasScreen({
@@ -55,9 +53,7 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
       return;
     }
 
-    final scan = (bloc.scannedValue5.isEmpty ? value : bloc.scannedValue5)
-        .trim()
-        .toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     _controllerToDo.clear();
     print('🔎 Scan barcode (batch picking): $scan');
@@ -65,7 +61,7 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
     final listOfBatchs = bloc.transferenciasDB;
 
     void processBatch(ResultTransFerencias batch) {
-      bloc.add(ClearScannedValueEvent('toDo'));
+      Future.microtask(() => focusNodeBuscar.requestFocus());
 
       print(batch.toMap());
       try {
@@ -97,7 +93,11 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      bloc.add(ClearScannedValueEvent('toDo'));
+      Future.microtask(() => focusNodeBuscar.requestFocus());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Transferencia no encontrada en la lista')),
+      );
     }
   }
 
@@ -190,24 +190,6 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
 
           return Scaffold(
             backgroundColor: white,
-            bottomNavigationBar: context
-                    .read<TransferenciaBloc>()
-                    .isKeyboardVisible
-                ? CustomKeyboard(
-                    isLogin: false,
-                    controller: context
-                        .read<TransferenciaBloc>()
-                        .searchControllerTransfer,
-                    onchanged: () {
-                      context.read<TransferenciaBloc>().add(SearchTransferEvent(
-                          context
-                              .read<TransferenciaBloc>()
-                              .searchControllerTransfer
-                              .text,
-                          'transfer'));
-                    },
-                  )
-                : null,
             floatingActionButton: FloatingActionButton(
               backgroundColor: primaryColorApp,
               onPressed: () async {
@@ -253,9 +235,6 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
                                   icon: const Icon(Icons.arrow_back,
                                       color: white),
                                   onPressed: () {
-                                    context.read<TransferenciaBloc>().add(
-                                        ShowKeyboardEvent(showKeyboard: false));
-
                                     context
                                         .read<TransferenciaBloc>()
                                         .searchControllerTransfer
@@ -363,6 +342,7 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
                       );
                     }),
                   ),
+
                   //*barra debuscar
                   DynamicSearchBar(
                     controller: context
@@ -380,18 +360,12 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
                       transferenciaBloc.searchControllerTransfer.clear();
                       transferenciaBloc
                           .add(SearchTransferEvent('', 'transfer'));
-                      transferenciaBloc
-                          .add(ShowKeyboardEvent(showKeyboard: false));
+
                       Future.microtask(() {
                         if (mounted) {
                           FocusScope.of(context).requestFocus(focusNodeBuscar);
                         }
                       });
-                    },
-                    onTap: () {
-                      context
-                          .read<TransferenciaBloc>()
-                          .add(ShowKeyboardEvent(showKeyboard: true));
                     },
                   ),
 
@@ -399,14 +373,8 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
                   BarcodeScannerField(
                     controller: _controllerToDo,
                     focusNode: focusNodeBuscar,
-                    scannedValue5: "",
                     onBarcodeScanned: (value, context) {
                       return validateBarcode(value, context);
-                    },
-                    onKeyScanned: (keyLabel, type, context) {
-                      return context.read<TransferenciaBloc>().add(
-                            UpdateScannedValueEvent(keyLabel, type),
-                          );
                     },
                   ),
 
@@ -810,7 +778,6 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
           onAccepted: () async {
             // ✅ Usamos la variable 'transferenciaBloc' capturada.
             // NO usamos context.read aquí adentro para evitar el error de Provider.
-            transferenciaBloc.add(ShowKeyboardEvent(showKeyboard: false));
             transferenciaBloc.searchControllerTransfer.clear();
             transferenciaBloc.add(SearchTransferEvent("", 'transfer'));
             transferenciaBloc.add(StartOrStopTimeTransfer(
@@ -833,7 +800,6 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
         ),
       );
     } else {
-      transferenciaBloc.add(ShowKeyboardEvent(showKeyboard: false));
       transferenciaBloc.searchControllerTransfer.clear();
       transferenciaBloc.add(SearchTransferEvent("", 'transfer'));
       transferenciaBloc.add(GetPorductsToTransfer(transfer.id ?? 0));
@@ -880,7 +846,6 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
               'Esta seguro de tomar esta orden, una vez aceptada no podrá ser cancelada desde la app, una vez asignada se registrará el tiempo de inicio de la operación.',
           onAccepted: () async {
             // Lógica para asignar el usuario
-            transferenciaBloc.add(ShowKeyboardEvent(showKeyboard: false));
             transferenciaBloc.searchControllerTransfer.clear();
             transferenciaBloc.add(SearchTransferEvent("", 'transfer'));
             transferenciaBloc.add(AssignUserToTransfer(transferenciaDetail));

@@ -1,13 +1,13 @@
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously, unnecessary_null_comparison
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
+import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/lista_product_packing.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/packing_response_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/bloc/wms_packing_bloc.dart';
@@ -29,19 +29,19 @@ class _Tab2ScreenState extends State<Tab2Screen> {
   final AudioService _audioService = AudioService();
   final VibrationService _vibrationService = VibrationService();
 
-  FocusNode focusNode1 = FocusNode(); //cantidad textformfield
+  FocusNode focusNodeBuscar = FocusNode(); //cantidad textformfield
 
   final TextEditingController _controllerToDo = TextEditingController();
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    FocusScope.of(context).requestFocus(focusNode1);
+    FocusScope.of(context).requestFocus(focusNodeBuscar);
   }
 
   @override
   void dispose() {
-    focusNode1.dispose();
+    focusNodeBuscar.dispose();
     super.dispose();
   }
 
@@ -49,9 +49,7 @@ class _Tab2ScreenState extends State<Tab2Screen> {
     final bloc = context.read<WmsPackingBloc>();
 
     // Normalizamos el valor escaneado
-    final scan = (bloc.scannedValue5.isEmpty ? value : bloc.scannedValue5)
-        .trim()
-        .toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     _controllerToDo.clear();
     print('🔎 Scan barcode (packing batch): $scan');
@@ -80,8 +78,8 @@ class _Tab2ScreenState extends State<Tab2Screen> {
           product.idProduct ?? 0,
           product.pedidoId ?? 0,
           product.idMove ?? 0,
-        ))
-        ..add(ClearScannedValuePackEvent('toDo'));
+        ));
+      Future.microtask(() => focusNodeBuscar.requestFocus());
 
       // 1. Eliminamos la variable 'dialogContext' y su captura manual.
 
@@ -148,14 +146,12 @@ class _Tab2ScreenState extends State<Tab2Screen> {
 
     _audioService.playErrorSound();
     _vibrationService.vibrate();
+    Future.microtask(() => focusNodeBuscar.requestFocus());
 
     // 3️⃣ Si no se encuentra nada → mostrar error
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: const Text("Código erróneo"),
-      backgroundColor: Colors.red[200],
-      duration: const Duration(milliseconds: 500),
-    ));
-    bloc.add(ClearScannedValuePackEvent('toDo'));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Código no encontrado en la lista')),
+    );
   }
 
   @override
@@ -278,56 +274,14 @@ class _Tab2ScreenState extends State<Tab2Screen> {
                   height: size.height * 0.8,
                   child: Column(
                     children: [
-                      //*espacio para escanear y buscar el producto
-                      context.read<UserBloc>().fabricante.contains("Zebra")
-                          ? Container(
-                              height: 15,
-                              margin: const EdgeInsets.only(bottom: 5),
-                              child: TextFormField(
-                                autofocus: true,
-                                showCursor: false,
-                                controller: _controllerToDo,
-                                focusNode: focusNode1,
-                                onChanged: (value) {
-                                  // Llamamos a la validación al cambiar el texto
-                                  validateBarcode(value, context);
-                                },
-                                decoration: InputDecoration(
-                                  // hintText:
-                                  //     batchBloc.currentProduct.locationId.toString(),
-                                  disabledBorder: InputBorder.none,
-                                  hintStyle: const TextStyle(
-                                      fontSize: 14, color: black),
-                                  border: InputBorder.none,
-                                ),
-                              ),
-                            )
-                          :
-
-                          //*focus para leer los productos
-                          Focus(
-                              focusNode: focusNode1,
-                              autofocus: true,
-                              onKey: (FocusNode node, RawKeyEvent event) {
-                                if (event is RawKeyDownEvent) {
-                                  if (event.logicalKey ==
-                                      LogicalKeyboardKey.enter) {
-                                    validateBarcode(
-                                        context
-                                            .read<WmsPackingBloc>()
-                                            .scannedValue5,
-                                        context);
-                                    return KeyEventResult.handled;
-                                  } else {
-                                    context.read<WmsPackingBloc>().add(
-                                        UpdateScannedValuePackEvent(
-                                            event.data.keyLabel, 'toDo'));
-                                    return KeyEventResult.handled;
-                                  }
-                                }
-                                return KeyEventResult.ignored;
-                              },
-                              child: Container()),
+                      // //*espacio para escanear y buscar el producto
+                      BarcodeScannerField(
+                        controller: _controllerToDo,
+                        focusNode: focusNodeBuscar,
+                        onBarcodeScanned: (value, context) {
+                          return validateBarcode(value, context);
+                        },
+                      ),
 
                       (context
                               .read<WmsPackingBloc>()

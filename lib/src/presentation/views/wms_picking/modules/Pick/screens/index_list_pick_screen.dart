@@ -46,7 +46,7 @@ class IndexListPickScreen extends StatelessWidget {
       final listOfBatchs = bloc.listOfPick;
 
       void processBatch(ResultPick batch) {
-        bloc.add(ClearScannedValueEvent('toDo'));
+        // bloc.add(ClearScannedValueEvent('toDo'));
 
         print(batch.toMap());
         try {
@@ -77,7 +77,7 @@ class IndexListPickScreen extends StatelessWidget {
       } else {
         _audioService.playErrorSound();
         _vibrationService.vibrate();
-        bloc.add(ClearScannedValueEvent('toDo'));
+        // bloc.add(ClearScannedValueEvent('toDo'));
       }
     }
 
@@ -141,19 +141,6 @@ class IndexListPickScreen extends StatelessWidget {
 
           return Scaffold(
             backgroundColor: white,
-            bottomNavigationBar: bloc.isKeyboardVisible
-                ? Padding(
-                    padding: const EdgeInsets.only(bottom: 36),
-                    child: CustomKeyboard(
-                      isLogin: false,
-                      controller: bloc.searchPickController,
-                      onchanged: () {
-                        bloc.add(SearchPickEvent(
-                            bloc.searchPickController.text, false));
-                      },
-                    ),
-                  )
-                : null,
             body: Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Column(
@@ -548,15 +535,10 @@ class IndexListPickScreen extends StatelessWidget {
                         onSearchCleared: () {
                           bloc.searchPickController.clear();
                           bloc.add(SearchPickEvent('', false));
-                          bloc.add(ShowKeyboard(
-                              false)); // Asumo que ShowKeyboard es el evento de tu BLoC
                           Future.delayed(const Duration(milliseconds: 100), () {
                             FocusScope.of(context)
                                 .requestFocus(focusNodeBuscar);
                           });
-                        },
-                        onTap: () {
-                          bloc.add(ShowKeyboard(true));
                         },
                       ),
 
@@ -620,15 +602,14 @@ class IndexListPickScreen extends StatelessWidget {
                   BarcodeScannerField(
                     controller: _controllerToDo,
                     focusNode: focusNodeBuscar,
-                    scannedValue5: "",
                     onBarcodeScanned: (value, context) {
                       return validateBarcode(value, context);
                     },
-                    onKeyScanned: (keyLabel, type, context) {
-                      return context.read<PickingPickBloc>().add(
-                            UpdateScannedValueEvent(keyLabel, type),
-                          );
-                    },
+                    // onKeyScanned: (keyLabel, type, context) {
+                    //   return context.read<PickingPickBloc>().add(
+                    //         UpdateScannedValueEvent(keyLabel, type),
+                    //       );
+                    // },
                   ),
 
                   Expanded(
@@ -1045,7 +1026,6 @@ class IndexListPickScreen extends StatelessWidget {
     Navigator.pop(context);
     // Si batch.isSeparate es 1, entonces navegamos a "batch-detail"
     if (batch.isSeparate != 1) {
-      batchBloc.add(ShowKeyboard(false));
       batchBloc.searchPickController.clear();
       Navigator.pushReplacementNamed(context, 'scan-product-pick',
           arguments: [true]);
@@ -1075,7 +1055,6 @@ class IndexListPickScreen extends StatelessWidget {
           ),
         );
         // El resto del código se ejecuta después de que el diálogo se cierre.
-        bloc.add(ShowKeyboard(false));
         bloc.searchPickController.clear();
         return; // Salimos de la función si solo se asignó el responsable
       }
@@ -1099,7 +1078,6 @@ class IndexListPickScreen extends StatelessWidget {
       }
 
       // Lógica de carga y navegación que es común en ambos flujos
-      bloc.add(ShowKeyboard(false));
       bloc.searchPickController.clear();
       bloc.add(FetchPickWithProductsEvent(batch.id ?? 0));
       bloc.add(LoadConfigurationsUser());

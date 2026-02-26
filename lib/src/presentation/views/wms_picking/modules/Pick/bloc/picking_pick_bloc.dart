@@ -105,7 +105,6 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   //*indice del producto actual
   bool _isProcessing = false; // Bandera para controlar el estado del proceso
   bool isProcessing = false; // Bandera para controlar el estado del proceso
-  bool isKeyboardVisible = false;
   bool viewQuantity = false;
 
   String currentFilterKey = 'priority_high';
@@ -127,9 +126,6 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     on<LoadDataInfoEvent>(_onLoadDataInfoEvent);
     //*evento para obtener la configuracion del usuario
     on<LoadConfigurationsUser>(_onLoadConfigurationsUserEvent);
-    //*evento para mostrar el teclado
-    on<ShowKeyboard>(_onShowKeyboardEvent);
-
     //*obtener todos los pick desde el historial de odoo
     on<LoadHistoryPickEvent>(_onLoadHistoryPickEvent);
 
@@ -146,9 +142,6 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
     on<ValidateFieldsEvent>(_onValidateFields);
 
-    //*evento para actualizar el valor del scan
-    on<UpdateScannedValueEvent>(_onUpdateScannedValueEvent);
-    on<ClearScannedValueEvent>(_onClearScannedValueEvent);
     //*evento para cambiar la cantidad seleccionada
     on<ChangeQuantitySeparate>(_onChangeQuantitySelectedEvent);
     on<AddQuantitySeparate>(_onAddQuantitySeparateEvent);
@@ -1400,48 +1393,6 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     }
   }
 
-  //*evento para actualizar el valor del scan
-  void _onUpdateScannedValueEvent(
-      UpdateScannedValueEvent event, Emitter<PickingPickState> emit) {
-    try {
-      print('scannedValue: ${event.scannedValue}');
-      switch (event.scan) {
-        case 'location':
-          // Acumulador de valores escaneados
-          scannedValue1 += event.scannedValue.trim();
-          print('scannedValue1: $scannedValue1.');
-          emit(UpdateScannedValueState(scannedValue1, event.scan));
-          break;
-        case 'product':
-          scannedValue2 += event.scannedValue.trim();
-          print('scannedValue2: $scannedValue2');
-          emit(UpdateScannedValueState(scannedValue2, event.scan));
-          break;
-        case 'quantity':
-          scannedValue3 += event.scannedValue.trim();
-          print('scannedValue3: $scannedValue3');
-          emit(UpdateScannedValueState(scannedValue3, event.scan));
-          break;
-        case 'muelle':
-          print('scannedValue4: $scannedValue4');
-          scannedValue4 += event.scannedValue.trim();
-          emit(UpdateScannedValueState(scannedValue4, event.scan));
-          break;
-
-        case 'toDo':
-          scannedValue5 += event.scannedValue.trim();
-          print('scannedValue5: $scannedValue5');
-          emit(UpdateScannedValueState(scannedValue5, event.scan));
-          break;
-
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-    } catch (e, s) {
-      print("❌ Error en _onUpdateScannedValueEvent: $e, $s");
-    }
-  }
-
   void _onValidateFields(
       ValidateFieldsEvent event, Emitter<PickingPickState> emit) {
     try {
@@ -1463,39 +1414,6 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     } catch (e, s) {
       emit(ValidateFieldsStateError('Error al validar campos'));
       print("❌ Error en el ValidateFieldsEvent $e ->$s");
-    }
-  }
-
-  void _onClearScannedValueEvent(
-      ClearScannedValueEvent event, Emitter<PickingPickState> emit) {
-    try {
-      switch (event.scan) {
-        case 'location':
-          scannedValue1 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'product':
-          scannedValue2 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'quantity':
-          scannedValue3 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'muelle':
-          scannedValue4 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'toDo':
-          scannedValue5 = '';
-          emit(ClearScannedValueState());
-          break;
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-      emit(ClearScannedValueState());
-    } catch (e, s) {
-      print("❌ Error en _onClearScannedValueEvent: $e, $s");
     }
   }
 
@@ -1813,17 +1731,6 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     }
   }
 
-  //*metodo para mostrar el teclado
-  void _onShowKeyboardEvent(
-      ShowKeyboard event, Emitter<PickingPickState> emit) {
-    try {
-      isKeyboardVisible = event.showKeyboard;
-      emit(ShowKeyboardState(showKeyboard: isKeyboardVisible));
-    } catch (e, s) {
-      print("❌ Error en _onShowKeyboardEvent: $e, $s");
-    }
-  }
-
   //* metodo para cargar la configuracion del usuario
   void _onLoadConfigurationsUserEvent(
       LoadConfigurationsUser event, Emitter<PickingPickState> emit) async {
@@ -1893,8 +1800,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         "pick",
       );
       //mostrmaos los datos del producto
-      print(
-          "Producto ID: ${currentProduct.idProduct}, Move ID: ${currentProduct.idMove}, pick ID: ${pickWithProducts.pick?.id}");
+      print("Producto ID: ${currentProduct.toMap()}");
       print("listOfBarcodes: ${listOfBarcodes.length}");
       emit(BarcodesProductLoadedState(listOfBarcodes: listOfBarcodes));
     } catch (e, s) {

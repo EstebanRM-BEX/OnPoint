@@ -14,10 +14,8 @@ import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_mod
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart';
 
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 import 'package:intl/intl.dart'; // Importamos el paquete intl
 
@@ -52,22 +50,6 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
       },
       child: Scaffold(
         backgroundColor: white,
-        bottomNavigationBar:
-            !viewList && context.read<UserBloc>().fabricante.contains("Zebra")
-                ? Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: 35,
-                    ),
-                    child: CustomKeyboard(
-                      isLogin: false,
-                      controller: context.read<ConteoBloc>().newLoteController,
-                      onchanged: () {
-                        context.read<ConteoBloc>().newLoteController.text =
-                            context.read<ConteoBloc>().newLoteController.text;
-                      },
-                    ),
-                  )
-                : null,
         body: BlocBuilder<ConteoBloc, ConteoState>(
           builder: (context, state) {
             final bloc = context.read<ConteoBloc>();
@@ -132,9 +114,6 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                                         icon: const Icon(Icons.arrow_back,
                                             color: white),
                                         onPressed: () {
-                                          context.read<ConteoBloc>().add(
-                                                ShowKeyboardEvent(false),
-                                              );
                                           Navigator.pushReplacementNamed(
                                               context, 'scan-product-conteo');
                                         },
@@ -193,12 +172,6 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                                   child: TextFormField(
                                     style:
                                         TextStyle(color: black, fontSize: 14),
-                                    readOnly: context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? true
-                                        : false,
                                     textAlignVertical: TextAlignVertical.center,
                                     controller: context
                                         .read<ConteoBloc>()
@@ -221,9 +194,7 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                                                 .add(SearchLotevent(
                                                   '',
                                                 ));
-                                            context
-                                                .read<ConteoBloc>()
-                                                .add(ShowKeyboardEvent(false));
+
                                             FocusScope.of(context).unfocus();
                                           },
                                           icon: const Icon(
@@ -245,16 +216,6 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                                             value,
                                           ));
                                     },
-                                    onTap: !context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? null
-                                        : () {
-                                            context
-                                                .read<ConteoBloc>()
-                                                .add(ShowKeyboardEvent(true));
-                                          },
                                   ),
                                 ),
                               ),
@@ -886,26 +847,6 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                       ],
                     ),
                   ),
-
-                  Visibility(
-                    visible: context.read<ConteoBloc>().isKeyboardVisible &&
-                        context.read<UserBloc>().fabricante.contains("Zebra"),
-                    child: CustomKeyboard(
-                      isLogin: false,
-                      controller:
-                          context.read<ConteoBloc>().searchControllerLote,
-                      onchanged: () {
-                        context.read<ConteoBloc>().add(SearchLotevent(
-                              context
-                                  .read<ConteoBloc>()
-                                  .searchControllerLote
-                                  .text,
-                            ));
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
                 ],
               ),
             );

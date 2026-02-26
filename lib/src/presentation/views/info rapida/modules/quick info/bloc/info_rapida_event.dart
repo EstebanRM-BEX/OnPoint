@@ -11,30 +11,11 @@ class GetInfoRapida extends InfoRapidaEvent {
   GetInfoRapida(this.barcode, this.isManual, this.isProduct, this.isTransfer);
 }
 
-class UpdateScannedValueEvent extends InfoRapidaEvent {
-  final String scannedValue;
-  final String scan;
-  UpdateScannedValueEvent(this.scannedValue, this.scan);
-}
-
-class ClearScannedValueEvent extends InfoRapidaEvent {
-  final String scan;
-  ClearScannedValueEvent(this.scan);
-}
-
 class SearchLocationEvent extends InfoRapidaEvent {
   final String query;
   SearchLocationEvent(
     this.query,
   );
-}
-
-class ShowKeyboardInfoEvent extends InfoRapidaEvent {
-  final bool showKeyboard;
-  final bool isNumeric;
-  final TextEditingController controllerActivo;
-  ShowKeyboardInfoEvent(this.showKeyboard, this.controllerActivo,
-      {this.isNumeric = false});
 }
 
 class IsEditEvent extends InfoRapidaEvent {
@@ -123,11 +104,6 @@ class ValidateFieldsEvent extends InfoRapidaEvent {
   ValidateFieldsEvent({required this.field, required this.isOk});
 }
 
-class ClearScannedValueTransferEvent extends InfoRapidaEvent {
-  final String scan;
-  ClearScannedValueTransferEvent(this.scan);
-}
-
 class ChangeProductIsOkEvent extends InfoRapidaEvent {
   final Producto productSelect;
   final bool productIsOk;
@@ -135,10 +111,9 @@ class ChangeProductIsOkEvent extends InfoRapidaEvent {
   ChangeProductIsOkEvent(this.productSelect, this.productIsOk);
 }
 
-class  CreateNewMassTransferEvent extends InfoRapidaEvent {
+class CreateNewMassTransferEvent extends InfoRapidaEvent {
   CreateNewMassTransferEvent();
 }
-
 
 class ActivateMassTransferEvent extends InfoRapidaEvent {
   final bool activate;

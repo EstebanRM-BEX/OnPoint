@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_batch_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/batchs/bloc/recepcion_batch_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
@@ -23,19 +24,19 @@ class Tab2ScreenRecepBatch extends StatefulWidget {
 }
 
 class _Tab2ScreenRecepState extends State<Tab2ScreenRecepBatch> {
-  FocusNode focusNode1 = FocusNode(); //cantidad textformfield
+  FocusNode focusNodeBuscar = FocusNode(); //cantidad textformfield
 
   final TextEditingController _controllerToDo = TextEditingController();
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    FocusScope.of(context).requestFocus(focusNode1);
+    FocusScope.of(context).requestFocus(focusNodeBuscar);
   }
 
   @override
   void dispose() {
-    focusNode1.dispose();
+    focusNodeBuscar.dispose();
     super.dispose();
   }
 
@@ -43,9 +44,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecepBatch> {
     final bloc = context.read<RecepcionBatchBloc>();
 
     // Normalizar el valor escaneado
-    final scan = (bloc.scannedValue5.isEmpty ? value : bloc.scannedValue5)
-        .trim()
-        .toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     _controllerToDo.clear();
     print('🔎 Scan barcode: $scan');
@@ -99,14 +98,16 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecepBatch> {
 
     // 1️⃣ Buscar producto por código de barras principal
     final product = listOfProducts.firstWhere(
-      (p) => p.productBarcode?.toLowerCase() == scan
-      || p.productCode?.toLowerCase() == scan,
+      (p) =>
+          p.productBarcode?.toLowerCase() == scan ||
+          p.productCode?.toLowerCase() == scan,
       orElse: () => LineasRecepcionBatch(),
     );
 
     if (product.idMove != null) {
       processProduct(product);
-      bloc.add(ClearScannedValueOrderEvent('toDo'));
+      Future.microtask(() => focusNodeBuscar.requestFocus());
+
       return;
     }
 
@@ -124,18 +125,16 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecepBatch> {
 
       if (productByBarcode.productId != null) {
         processProduct(productByBarcode);
-        bloc.add(ClearScannedValueOrderEvent('toDo'));
+        Future.microtask(() => focusNodeBuscar.requestFocus());
         return;
       }
     }
 
     // 3️⃣ Si no se encuentra nada → mostrar error
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: const Text("Código erróneo"),
-      backgroundColor: Colors.red[200],
-      duration: const Duration(milliseconds: 500),
-    ));
-    bloc.add(ClearScannedValueOrderEvent('toDo'));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Código no encontrado en la lista')),
+    );
+    Future.microtask(() => focusNodeBuscar.requestFocus());
   }
 
   @override
@@ -159,55 +158,14 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecepBatch> {
                 children: [
                   //*espacio para escanear y buscar el producto
 
-                  context.read<UserBloc>().fabricante.contains("Zebra")
-                      ? Container(
-                          height: 15,
-                          margin: const EdgeInsets.only(bottom: 5),
-                          child: TextFormField(
-                            autofocus: true,
-                            showCursor: false,
-                            controller: _controllerToDo,
-                            focusNode: focusNode1,
-                            onChanged: (value) {
-                              // Llamamos a la validación al cambiar el texto
-                              validateBarcode(value, context);
-                            },
-                            decoration: InputDecoration(
-                              // hintText:
-                              //     batchBloc.currentProduct.locationId.toString(),
-                              disabledBorder: InputBorder.none,
-                              hintStyle:
-                                  const TextStyle(fontSize: 14, color: black),
-                              border: InputBorder.none,
-                            ),
-                          ),
-                        )
-                      :
-
-                      //*focus para leer los productos
-                      Focus(
-                          focusNode: focusNode1,
-                          autofocus: true,
-                          onKey: (FocusNode node, RawKeyEvent event) {
-                            if (event is RawKeyDownEvent) {
-                              if (event.logicalKey ==
-                                  LogicalKeyboardKey.enter) {
-                                validateBarcode(
-                                    context
-                                        .read<RecepcionBatchBloc>()
-                                        .scannedValue5,
-                                    context);
-                                return KeyEventResult.handled;
-                              } else {
-                                context.read<RecepcionBatchBloc>().add(
-                                    UpdateScannedValueOrderEvent(
-                                        event.data.keyLabel, 'toDo'));
-                                return KeyEventResult.handled;
-                              }
-                            }
-                            return KeyEventResult.ignored;
-                          },
-                          child: Container()),
+                  //*espacio para escanear y buscar el producto
+                  BarcodeScannerField(
+                    controller: _controllerToDo,
+                    focusNode: focusNodeBuscar,
+                    onBarcodeScanned: (value, context) {
+                      return validateBarcode(value, context);
+                    },
+                  ),
 
                   (recepcionBloc.listProductsEntrada.where((element) {
                             return (element.isSeparate == 0 ||

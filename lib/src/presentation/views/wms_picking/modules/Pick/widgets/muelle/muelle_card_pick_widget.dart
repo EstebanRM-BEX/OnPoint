@@ -14,13 +14,11 @@ import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_
 class MuellePickDropdownWidget extends StatefulWidget {
   final String? selectedMuelle;
   final ProductsBatch currentProduct;
-  final bool isPda;
 
   const MuellePickDropdownWidget({
     super.key,
     required this.selectedMuelle,
     required this.currentProduct,
-    required this.isPda,
   });
 
   @override
@@ -159,33 +157,6 @@ class _MuelleDropdownWidgetState extends State<MuellePickDropdownWidget> {
                     : null,
           ),
 
-          Visibility(
-            visible: widget.isPda,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                context
-                            .read<PickingPickBloc>()
-                            .configurations
-                            .result
-                            ?.result
-                            ?.muelleOption ==
-                        "multiple"
-                    ? context
-                            .read<PickingPickBloc>()
-                            .currentProduct
-                            .locationDestId ??
-                        ""
-                    : context
-                            .read<PickingPickBloc>()
-                            .pickWithProducts
-                            .pick
-                            ?.muelle ??
-                        "",
-                style: const TextStyle(fontSize: 14, color: black),
-              ),
-            ),
-          ),
           Align(
             alignment: Alignment.centerLeft,
             child: Visibility(
@@ -355,7 +326,6 @@ class _MuelleDropdownWidgetState extends State<MuellePickDropdownWidget> {
                     true) {
                   //cerramos el focus
                   batchBloc.isSearch = false;
-                  batchBloc.add(ShowKeyboard(false));
                   batchBloc.add(LoadProductEditEvent());
                   Navigator.pushReplacementNamed(
                     context,

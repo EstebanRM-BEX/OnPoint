@@ -16,7 +16,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/progressIndicatos_widget.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class PakingListScreen extends StatefulWidget {
   const PakingListScreen({Key? key, required this.batchModel})
@@ -72,7 +71,7 @@ class _PakingListScreenState extends State<PakingListScreen>
     final listOfPedidos = sortedListOfPedidos;
 
     void processBatch(PedidoPacking pedido) {
-      bloc.add(ClearScannedValuePackEvent('toDo'));
+      Future.microtask(() => focusNodeBuscar.requestFocus());
       print(pedido.toMap());
       try {
         _handlePedidoTap(context, pedido, context);
@@ -101,7 +100,10 @@ class _PakingListScreenState extends State<PakingListScreen>
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      bloc.add(ClearScannedValuePackEvent('toDo'));
+      Future.microtask(() => focusNodeBuscar.requestFocus());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pedido no encontrado en la lista')),
+      );
     }
   }
 
@@ -164,28 +166,7 @@ class _PakingListScreenState extends State<PakingListScreen>
       child: BlocConsumer<WmsPackingBloc, WmsPackingState>(
         listener: (context, state) {},
         builder: (context, state) {
-          print(
-              'isKeyboardVisible: ${context.read<WmsPackingBloc>().isKeyboardVisible}');
           return Scaffold(
-            bottomNavigationBar: context
-                        .read<WmsPackingBloc>()
-                        .isKeyboardVisible &&
-                    context.read<UserBloc>().fabricante.contains("Zebra")
-                ? CustomKeyboard(
-                    isLogin: false,
-                    controller:
-                        context.read<WmsPackingBloc>().searchControllerPedido,
-                    onchanged: () {
-                      context.read<WmsPackingBloc>().add(
-                          SearchPedidoPackingEvent(
-                              context
-                                  .read<WmsPackingBloc>()
-                                  .searchControllerPedido
-                                  .text,
-                              widget.batchModel?.id ?? 0));
-                    },
-                  )
-                : null,
             backgroundColor: Colors.white,
             body: BlocBuilder<WmsPackingBloc, WmsPackingState>(
               builder: (context, state) {
@@ -226,9 +207,6 @@ class _PakingListScreenState extends State<PakingListScreen>
                                         onPressed: () {
                                           context.read<WmsPackingBloc>().add(
                                               LoadBatchPackingFromDBEvent());
-                                          context
-                                              .read<WmsPackingBloc>()
-                                              .add(ShowKeyboardEvent(false));
 
                                           context
                                               .read<WmsPackingBloc>()
@@ -262,196 +240,193 @@ class _PakingListScreenState extends State<PakingListScreen>
                             child: Column(
                               children: [
                                 //*card informativa
-                                GestureDetector(
-                                  onTap: () {
-                                    print(widget.batchModel?.toMap());
-                                  },
-                                  child: Visibility(
-                                    visible: !context
-                                        .read<WmsPackingBloc>()
-                                        .isKeyboardVisible,
-                                    child: Card(
-                                      elevation: 5,
-                                      color: Colors.grey[200],
-                                      child: Container(
-                                        padding: const EdgeInsets.only(
-                                            left: 10, right: 10, bottom: 10),
-                                        margin: const EdgeInsets.only(top: 10),
-                                        width: size.width * 0.9,
-                                        child: Column(
-                                          children: [
-                                            Align(
-                                                alignment: Alignment.centerLeft,
-                                                child: Text(
-                                                  widget.batchModel?.name ?? '',
-                                                  style: TextStyle(
-                                                      fontSize: 16,
-                                                      color: primaryColorApp,
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                )),
-                                            Row(
-                                              children: [
-                                                const Align(
-                                                    alignment:
-                                                        Alignment.centerLeft,
-                                                    child: Text(
-                                                      'Responsable: ',
-                                                      style: TextStyle(
-                                                          fontSize: 12,
-                                                          color: black),
-                                                    )),
-                                                Align(
-                                                    alignment:
-                                                        Alignment.centerLeft,
-                                                    child: Text(
+                                Visibility(
+                                  visible: !context
+                                          .read<WmsPackingBloc>()
+                                          .isKeyboardVisible &&
+                                      context
+                                          .read<WmsPackingBloc>()
+                                          .searchControllerPedido
+                                          .text
+                                          .isEmpty,
+                                  child: Card(
+                                    elevation: 5,
+                                    color: Colors.grey[200],
+                                    child: Container(
+                                      padding: const EdgeInsets.only(
+                                          left: 10, right: 10, bottom: 10),
+                                      margin: const EdgeInsets.only(top: 10),
+                                      width: size.width * 0.9,
+                                      child: Column(
+                                        children: [
+                                          Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text(
+                                                widget.batchModel?.name ?? '',
+                                                style: TextStyle(
+                                                    fontSize: 16,
+                                                    color: primaryColorApp,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              )),
+                                          Row(
+                                            children: [
+                                              const Align(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  child: Text(
+                                                    'Responsable: ',
+                                                    style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: black),
+                                                  )),
+                                              Align(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  child: Text(
+                                                    widget.batchModel
+                                                                    ?.userName ==
+                                                                false ||
+                                                            widget.batchModel
+                                                                    ?.userName ==
+                                                                ""
+                                                        ? 'Sin responsable'
+                                                        : "${widget.batchModel?.userName}",
+                                                    style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: primaryColorApp),
+                                                  )),
+                                            ],
+                                          ),
+                                          const Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text(
+                                                "Tipo de operación: ",
+                                                style: TextStyle(
+                                                    fontSize: 12, color: black),
+                                              )),
+                                          SizedBox(
+                                            width: size.width * 0.9,
+                                            child: Text(
+                                              widget.batchModel
+                                                          ?.pickingTypeId ==
+                                                      false
+                                                  ? 'Sin tipo de operación'
+                                                  : "${widget.batchModel?.pickingTypeId}",
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: primaryColorApp),
+                                            ),
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
+                                            children: [
+                                              const Align(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  child: Text(
+                                                    "Fecha programada:",
+                                                    style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: black),
+                                                  )),
+                                              const SizedBox(width: 10),
+                                              Builder(
+                                                builder: (context) {
+                                                  // Verifica si `scheduledDate` es false o null
+                                                  String displayDate;
+                                                  if (widget.batchModel
+                                                              ?.scheduleddate ==
+                                                          false ||
                                                       widget.batchModel
-                                                                      ?.userName ==
-                                                                  false ||
-                                                              widget.batchModel
-                                                                      ?.userName ==
-                                                                  ""
-                                                          ? 'Sin responsable'
-                                                          : "${widget.batchModel?.userName}",
+                                                              ?.scheduleddate ==
+                                                          null) {
+                                                    displayDate = 'sin fecha';
+                                                  } else {
+                                                    try {
+                                                      DateTime dateTime =
+                                                          DateTime.parse(widget
+                                                                  .batchModel
+                                                                  ?.scheduleddate
+                                                                  .toString() ??
+                                                              ""); // Parsear la fecha
+                                                      // Formatear la fecha usando Intl
+                                                      displayDate = DateFormat(
+                                                              'dd MMMM yyyy',
+                                                              'es_ES')
+                                                          .format(dateTime);
+                                                    } catch (e) {
+                                                      displayDate =
+                                                          'sin fecha'; // Si ocurre un error al parsear
+                                                    }
+                                                  }
+
+                                                  return Container(
+                                                    alignment:
+                                                        Alignment.centerLeft,
+                                                    child: Text(
+                                                      displayDate,
+                                                      maxLines: 2,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                       style: TextStyle(
                                                           fontSize: 12,
                                                           color:
                                                               primaryColorApp),
-                                                    )),
-                                              ],
-                                            ),
-                                            const Align(
-                                                alignment: Alignment.centerLeft,
-                                                child: Text(
-                                                  "Tipo de operación: ",
-                                                  style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: black),
-                                                )),
-                                            SizedBox(
-                                              width: size.width * 0.9,
-                                              child: Text(
-                                                widget.batchModel
-                                                            ?.pickingTypeId ==
-                                                        false
-                                                    ? 'Sin tipo de operación'
-                                                    : "${widget.batchModel?.pickingTypeId}",
-                                                style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: primaryColorApp),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 5),
+                                          Card(
+                                            elevation: 3,
+                                            color: primaryColorApp,
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(
+                                                  left: 10,
+                                                  right: 10,
+                                                  top: 10,
+                                                  bottom: 5),
+                                              child: ProgressIndicatorWidget(
+                                                progress: context
+                                                        .read<WmsPackingBloc>()
+                                                        .listOfPedidos
+                                                        .isNotEmpty
+                                                    ? context
+                                                            .read<
+                                                                WmsPackingBloc>()
+                                                            .listOfPedidos
+                                                            .where((element) =>
+                                                                element
+                                                                    .isTerminate ==
+                                                                1)
+                                                            .length /
+                                                        context
+                                                            .read<
+                                                                WmsPackingBloc>()
+                                                            .listOfPedidos
+                                                            .length
+                                                    : 0.0,
+                                                completed: context
+                                                    .read<WmsPackingBloc>()
+                                                    .listOfPedidos
+                                                    .where((element) =>
+                                                        element.isTerminate ==
+                                                        1)
+                                                    .length,
+                                                total: context
+                                                    .read<WmsPackingBloc>()
+                                                    .listOfPedidos
+                                                    .length,
                                               ),
                                             ),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.start,
-                                              children: [
-                                                const Align(
-                                                    alignment:
-                                                        Alignment.centerLeft,
-                                                    child: Text(
-                                                      "Fecha programada:",
-                                                      style: TextStyle(
-                                                          fontSize: 12,
-                                                          color: black),
-                                                    )),
-                                                const SizedBox(width: 10),
-                                                Builder(
-                                                  builder: (context) {
-                                                    // Verifica si `scheduledDate` es false o null
-                                                    String displayDate;
-                                                    if (widget.batchModel
-                                                                ?.scheduleddate ==
-                                                            false ||
-                                                        widget.batchModel
-                                                                ?.scheduleddate ==
-                                                            null) {
-                                                      displayDate = 'sin fecha';
-                                                    } else {
-                                                      try {
-                                                        DateTime dateTime =
-                                                            DateTime.parse(widget
-                                                                    .batchModel
-                                                                    ?.scheduleddate
-                                                                    .toString() ??
-                                                                ""); // Parsear la fecha
-                                                        // Formatear la fecha usando Intl
-                                                        displayDate = DateFormat(
-                                                                'dd MMMM yyyy',
-                                                                'es_ES')
-                                                            .format(dateTime);
-                                                      } catch (e) {
-                                                        displayDate =
-                                                            'sin fecha'; // Si ocurre un error al parsear
-                                                      }
-                                                    }
-
-                                                    return Container(
-                                                      alignment:
-                                                          Alignment.centerLeft,
-                                                      child: Text(
-                                                        displayDate,
-                                                        maxLines: 2,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        style: TextStyle(
-                                                            fontSize: 12,
-                                                            color:
-                                                                primaryColorApp),
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                      ),
-                                                    );
-                                                  },
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 5),
-                                            Card(
-                                              elevation: 3,
-                                              color: primaryColorApp,
-                                              child: Padding(
-                                                padding: const EdgeInsets.only(
-                                                    left: 10,
-                                                    right: 10,
-                                                    top: 10,
-                                                    bottom: 5),
-                                                child: ProgressIndicatorWidget(
-                                                  progress: context
-                                                          .read<
-                                                              WmsPackingBloc>()
-                                                          .listOfPedidos
-                                                          .isNotEmpty
-                                                      ? context
-                                                              .read<
-                                                                  WmsPackingBloc>()
-                                                              .listOfPedidos
-                                                              .where((element) =>
-                                                                  element
-                                                                      .isTerminate ==
-                                                                  1)
-                                                              .length /
-                                                          context
-                                                              .read<
-                                                                  WmsPackingBloc>()
-                                                              .listOfPedidos
-                                                              .length
-                                                      : 0.0,
-                                                  completed: context
-                                                      .read<WmsPackingBloc>()
-                                                      .listOfPedidos
-                                                      .where((element) =>
-                                                          element.isTerminate ==
-                                                          1)
-                                                      .length,
-                                                  total: context
-                                                      .read<WmsPackingBloc>()
-                                                      .listOfPedidos
-                                                      .length,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
@@ -483,7 +458,6 @@ class _PakingListScreenState extends State<PakingListScreen>
                                         '', widget.batchModel?.id ?? 0));
 
                                     // 3.2 Apagar el teclado y limpiar
-                                    packingBloc.add(ShowKeyboardEvent(false));
 
                                     // 3.3 Restaurar el foco (con chequeo de seguridad asíncrono)
                                     Future.delayed(
@@ -497,30 +471,16 @@ class _PakingListScreenState extends State<PakingListScreen>
                                   },
 
                                   // 4. LÓGICA DE ACTIVACIÓN DEL TECLADO (onTap)
-                                  onTap: () {
-                                    // La función onTap se ejecuta SÓLO si es un dispositivo Zebra (lógica interna del DynamicSearchBar)
-                                    context
-                                        .read<WmsPackingBloc>()
-                                        .add(ShowKeyboardEvent(true));
-                                  },
 
                                   // 5. Propiedades específicas del diseño (ajustadas al DynamicSearchBar)
-                                  // El DynamicSearchBar maneja internamente la lógica de UserBloc para el readOnly
                                 ),
                                 //*buscar por scan
 
                                 BarcodeScannerField(
                                   controller: _controllerToDo,
                                   focusNode: focusNodeBuscar,
-                                  scannedValue5: "",
                                   onBarcodeScanned: (value, context) {
                                     return validateBarcode(value, context);
-                                  },
-                                  onKeyScanned: (keyLabel, type, context) {
-                                    return context.read<WmsPackingBloc>().add(
-                                          UpdateScannedValuePackEvent(
-                                              keyLabel, type),
-                                        );
                                   },
                                 ),
 

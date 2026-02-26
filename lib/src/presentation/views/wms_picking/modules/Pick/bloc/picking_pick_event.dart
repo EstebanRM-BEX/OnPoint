@@ -41,12 +41,6 @@ class LoadDataInfoEvent extends PickingPickEvent {}
 
 class LoadConfigurationsUser extends PickingPickEvent {}
 
-class ShowKeyboard extends PickingPickEvent {
-  final bool showKeyboard;
-
-  ShowKeyboard(this.showKeyboard);
-}
-
 class ChangeLocationIsOkEvent extends PickingPickEvent {
   final int productId;
   final int batchId;
@@ -103,17 +97,6 @@ class ValidateFieldsEvent extends PickingPickEvent {
   final String field;
   final bool isOk;
   ValidateFieldsEvent({required this.field, required this.isOk});
-}
-
-class UpdateScannedValueEvent extends PickingPickEvent {
-  final String scannedValue;
-  final String scan;
-  UpdateScannedValueEvent(this.scannedValue, this.scan);
-}
-
-class ClearScannedValueEvent extends PickingPickEvent {
-  final String scan;
-  ClearScannedValueEvent(this.scan);
 }
 
 class ChangeQuantitySeparate extends PickingPickEvent {

@@ -153,8 +153,6 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
 
     //*evento para obtener la informacion del dispositivo
     on<LoadInfoDeviceEvent>(_onLoadInfoDevicesEvent);
-    //*evento para mostrar el teclado
-    on<ShowKeyboard>(_onShowKeyboardEvent);
     //*evento para obtener todas las novedades
     on<LoadAllNovedadesEvent>(_onLoadAllNovedadesEvent);
     add(LoadAllNovedadesEvent());
@@ -166,9 +164,6 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
     on<ResetValuesEvent>(_onResetValuesEvent);
     //*evento para enviar un producto a odoo
     on<SendProductOdooEvent>(_onSendProductOdooEvent);
-    //*evento para actualizar el valor del scan
-    on<UpdateScannedValueEvent>(_onUpdateScannedValueEvent);
-    on<ClearScannedValueEvent>(_onClearScannedValueEvent);
     //*metodo para establecer un proceso en ejecucion
     on<SetIsProcessingEvent>(_onSetIsProcessingEvent);
 
@@ -327,71 +322,6 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       emit(ShowQuantityState(viewQuantity));
     } catch (e, s) {
       print("❌ Error en _onShowQuantityEvent: $e, $s");
-    }
-  }
-
-//*evento para limpiar el valor del scan
-  void _onClearScannedValueEvent(
-      ClearScannedValueEvent event, Emitter<BatchState> emit) {
-    try {
-      switch (event.scan) {
-        case 'location':
-          scannedValue1 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'product':
-          scannedValue2 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'quantity':
-          scannedValue3 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'muelle':
-          scannedValue4 = '';
-          emit(ClearScannedValueState());
-          break;
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-      emit(ClearScannedValueState());
-    } catch (e, s) {
-      print("❌ Error en _onClearScannedValueEvent: $e, $s");
-    }
-  }
-
-  //*evento para actualizar el valor del scan
-  void _onUpdateScannedValueEvent(
-      UpdateScannedValueEvent event, Emitter<BatchState> emit) {
-    try {
-      print('scannedValue: ${event.scannedValue}');
-      switch (event.scan) {
-        case 'location':
-          // Acumulador de valores escaneados
-          scannedValue1 += event.scannedValue.trim();
-          print('scannedValue1: $scannedValue1.');
-          emit(UpdateScannedValueState(scannedValue1, event.scan));
-          break;
-        case 'product':
-          scannedValue2 += event.scannedValue.trim();
-          print('scannedValue2: $scannedValue2');
-          emit(UpdateScannedValueState(scannedValue2, event.scan));
-          break;
-        case 'quantity':
-          scannedValue3 += event.scannedValue.trim();
-          print('scannedValue3: $scannedValue3');
-          emit(UpdateScannedValueState(scannedValue3, event.scan));
-          break;
-        case 'muelle':
-          print('scannedValue4: $scannedValue4');
-          scannedValue4 += event.scannedValue.trim();
-          emit(UpdateScannedValueState(scannedValue4, event.scan));
-          break;
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-    } catch (e, s) {
-      print("❌ Error en _onUpdateScannedValueEvent: $e, $s");
     }
   }
 
@@ -600,16 +530,6 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       emit(NovedadesLoadedState(listOfNovedades: novedades));
     } catch (e, s) {
       print("❌ Error en __onLoadAllNovedadesEvent: $e, $s");
-    }
-  }
-
-//*evento para mostrar el teclado
-  void _onShowKeyboardEvent(ShowKeyboard event, Emitter<BatchState> emit) {
-    try {
-      isKeyboardVisible = event.showKeyboard;
-      emit(ShowKeyboardState(showKeyboard: isKeyboardVisible));
-    } catch (e, s) {
-      print("❌ Error en _onShowKeyboardEvent: $e, $s");
     }
   }
 

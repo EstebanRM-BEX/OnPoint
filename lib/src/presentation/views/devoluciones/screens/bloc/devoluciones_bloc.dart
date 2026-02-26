@@ -82,9 +82,6 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   DevolucionesBloc() : super(DevolucionesInitial()) {
     on<DevolucionesEvent>((event, emit) {});
 
-    //*evento para actualizar el valor del scan
-    on<UpdateScannedValueEvent>(_onUpdateScannedValueEvent);
-    on<ClearScannedValueEvent>(_onClearScannedValueEvent);
     on<GetProductEvent>(_onGetProductEvent);
     on<GetProductsList>(_onGetProductsBD);
     //evento para añadir un producto a la lista de devoluciones
@@ -104,7 +101,6 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     //evento para cargar todos los terceros
     on<LoadTercerosEvent>(_onLoadTercerosEvent);
     //*activar el teclado
-    on<ShowKeyboardEvent>(_onShowKeyboardEvent);
     //evento para seleccionar un tercero
     on<SelectTerceroEvent>(_onSelectTerceroEvent);
     //evento para buscar un tercero
@@ -538,13 +534,6 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     }
   }
 
-  //*metodo para ocultar y mostrar el teclado
-  void _onShowKeyboardEvent(
-      ShowKeyboardEvent event, Emitter<DevolucionesState> emit) {
-    isKeyboardVisible = event.showKeyboard;
-    emit(ShowKeyboardState(showKeyboard: isKeyboardVisible));
-  }
-
   void _onLoadTercerosEvent(
       LoadTercerosEvent event, Emitter<DevolucionesState> emit) async {
     try {
@@ -869,63 +858,6 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     } catch (e, s) {
       emit(GetProductsFailure('Error al cargar los productos'));
       print('Error en el fetch de productos: $e=>$s');
-    }
-  }
-
-  void _onUpdateScannedValueEvent(
-      UpdateScannedValueEvent event, Emitter<DevolucionesState> emit) {
-    print('scannedValue1: $scannedValue1');
-    switch (event.scan) {
-      case 'product':
-        scannedValue1 += event.scannedValue.trim();
-        print('scannedValue1: $scannedValue1');
-        emit(UpdateScannedValueState(scannedValue1, event.scan));
-        break;
-      case 'quantity':
-        scannedValue2 += event.scannedValue.trim();
-        print('scannedValue2: $scannedValue2');
-        emit(UpdateScannedValueState(scannedValue2, event.scan));
-        break;
-      case 'location':
-        scannedValue3 += event.scannedValue.trim();
-        print('scannedValue3: $scannedValue3');
-        emit(UpdateScannedValueState(scannedValue2, event.scan));
-        break;
-      case 'contacto':
-        scannedValue4 += event.scannedValue.trim();
-        print('scannedValue4: $scannedValue4');
-        emit(UpdateScannedValueState(scannedValue2, event.scan));
-        break;
-      default:
-        print('Scan type not recognized: ${event.scan}');
-    }
-  }
-
-  void _onClearScannedValueEvent(
-      ClearScannedValueEvent event, Emitter<DevolucionesState> emit) {
-    try {
-      switch (event.scan) {
-        case 'product':
-          scannedValue1 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'quantity':
-          scannedValue2 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'location':
-          scannedValue3 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'contacto':
-          scannedValue4 = '';
-          emit(ClearScannedValueState());
-          break;
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-    } catch (e, s) {
-      print("❌ Error en _onClearScannedValueEvent: $e, $s");
     }
   }
 }

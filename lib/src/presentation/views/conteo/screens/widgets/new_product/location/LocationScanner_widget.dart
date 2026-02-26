@@ -1,17 +1,15 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
+import 'dart:async';
 
-class LocationScannerAll extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:wms_app/core/constants/colors.dart';
+
+class LocationScannerAll extends StatefulWidget {
   final bool isLocationOk;
   final bool locationIsOk;
   final bool productIsOk;
   final bool quantityIsOk;
   final String? currentLocationName;
   final Function(String) onLocationScanned;
-  final Function(String keyLabel)? onKeyScanned;
   final FocusNode focusNode;
   final TextEditingController controller;
   final Widget? locationDropdown;
@@ -24,21 +22,41 @@ class LocationScannerAll extends StatelessWidget {
     required this.quantityIsOk,
     this.currentLocationName,
     required this.onLocationScanned,
-    this.onKeyScanned,
     required this.focusNode,
     required this.controller,
     this.locationDropdown,
   });
 
   @override
-  Widget build(BuildContext context) {
-    // Lectura del BLoC una sola vez para determinar el tipo de dispositivo
-    final isZebraDevice = context.read<UserBloc>().fabricante.contains("Zebra");
+  State<LocationScannerAll> createState() => _LocationScannerAllState();
+}
 
+class _LocationScannerAllState extends State<LocationScannerAll> {
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    // Cachear el ID del producto para evitar parpadeo durante el escaneo
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onZebraChanged(String value, BuildContext context) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 200), () {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Lógica para los colores
-    final statusColor = locationIsOk ? green : yellow;
-    final cardColor = isLocationOk
-        ? locationIsOk
+    final statusColor = widget.locationIsOk ? green : yellow;
+    final cardColor = widget.isLocationOk
+        ? widget.locationIsOk
             ? Colors.green[100]
             : Colors.grey[300]
         : Colors.red[200];
@@ -61,10 +79,8 @@ class LocationScannerAll extends StatelessWidget {
           elevation: 5,
           child: Container(
             width: MediaQuery.of(context).size.width * 0.85,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            child: isZebraDevice
-                ? _buildZebraInput(context)
-                : _buildNonZebraInput(context),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+            child: _buildZebraInput(context),
           ),
         ),
       ],
@@ -74,47 +90,44 @@ class LocationScannerAll extends StatelessWidget {
   Widget _buildZebraInput(BuildContext context) {
     return Column(
       children: [
-        if (locationDropdown != null) locationDropdown!,
+        if (widget.locationDropdown != null) widget.locationDropdown!,
         Container(
-          height: 15,
-          margin: const EdgeInsets.only(bottom: 5),
+          height: 1,
+          margin: const EdgeInsets.only(bottom: 3),
           child: TextFormField(
             autofocus: true,
             showCursor: false,
-            controller: controller,
-            enabled: !locationIsOk && !productIsOk && !quantityIsOk,
-            focusNode: focusNode,
-            onChanged: (value) => onLocationScanned(value),
+            controller: widget.controller,
+            enabled: !widget.locationIsOk &&
+                !widget.productIsOk &&
+                !widget.quantityIsOk,
+            focusNode: widget.focusNode,
+            keyboardType: TextInputType.none,
+            enableInteractiveSelection: false,
+            style: const TextStyle(color: Colors.transparent),
+            textInputAction: TextInputAction.done,
+            onChanged: (value) {
+              _onZebraChanged(value, context);
+            },
+            onFieldSubmitted: (value) {
+              // Disparo inmediato en Enter: cancela el debounce pendiente
+              _debounce?.cancel();
+              if (value.trim().isNotEmpty) {
+                widget.onLocationScanned(value);
+              }
+              // Limpiar el controller después del submit
+              widget.controller.clear();
+            },
             decoration: InputDecoration(
-              hintText: currentLocationName ?? 'Esperando escaneo',
               disabledBorder: InputBorder.none,
-              hintStyle: const TextStyle(fontSize: 14, color: black),
+              hintStyle: const TextStyle(fontSize: 1, color: black),
               border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
             ),
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildNonZebraInput(BuildContext context) {
-    return Focus(
-      focusNode: focusNode,
-      onKey: (node, event) {
-        if (event is RawKeyDownEvent) {
-          if (event.logicalKey == LogicalKeyboardKey.enter) {
-            onLocationScanned(controller.text);
-            return KeyEventResult.handled;
-          } else {
-            if (onKeyScanned != null) {
-              onKeyScanned!(event.data.keyLabel);
-            }
-            return KeyEventResult.handled;
-          }
-        }
-        return KeyEventResult.ignored;
-      },
-      child: locationDropdown ?? const SizedBox(),
     );
   }
 }

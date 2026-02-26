@@ -8,10 +8,8 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class ListProductsScreen extends StatefulWidget {
   const ListProductsScreen({super.key});
@@ -141,18 +139,14 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
                   onSearchCleared: () {
                     bloc.searchControllerProducts.clear();
                     bloc.add(SearchProductEvent(''));
-                    bloc.add(
-                        ShowKeyboardInfoEvent(false, TextEditingController()));
+
                     Future.microtask(() {
                       if (mounted) {
                         FocusScope.of(context).unfocus();
                       }
                     });
                   },
-                  onTap: () {
-                    bloc.add(
-                        ShowKeyboardInfoEvent(true, TextEditingController()));
-                  },
+                  onTap: () {},
                 ),
                 Expanded(
                   child: bloc.productosFilters.isEmpty
@@ -178,8 +172,7 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
                       onPressed: () {
                         final selectedProduct =
                             bloc.productosFilters[selectedIndex!];
-                        bloc.add(ShowKeyboardInfoEvent(
-                            false, TextEditingController()));
+
                         FocusScope.of(context).unfocus();
                         bloc.add(GetInfoRapida(
                           selectedProduct.productId.toString(),
@@ -198,14 +191,6 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
                       child: const Text("Seleccionar",
                           style: TextStyle(color: white)),
                     ),
-                  ),
-                if (bloc.isKeyboardVisible &&
-                    context.read<UserBloc>().fabricante.contains("Zebra"))
-                  CustomKeyboard(
-                    isLogin: false,
-                    controller: bloc.searchControllerProducts,
-                    onchanged: () => bloc.add(
-                        SearchProductEvent(bloc.searchControllerProducts.text)),
                   ),
               ],
             ),
@@ -338,8 +323,6 @@ class _AppBarInfo extends StatelessWidget {
                           .read<InfoRapidaBloc>()
                           .searchControllerProducts
                           .clear();
-                      context.read<InfoRapidaBloc>().add(ShowKeyboardInfoEvent(
-                          false, TextEditingController()));
                       Navigator.pushReplacementNamed(context, 'info-rapida');
                     },
                   ),

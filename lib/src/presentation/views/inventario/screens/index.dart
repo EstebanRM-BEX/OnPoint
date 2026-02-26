@@ -11,6 +11,7 @@ import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
+import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
@@ -163,10 +164,7 @@ class _InventarioScreenState extends State<InventarioScreen>
 
   void validateLocation(String value) {
     final bloc = context.read<InventarioBloc>();
-    String scan = bloc.scannedValue1.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : bloc.scannedValue1.trim().toLowerCase();
-
+    final scan = value.trim().toLowerCase();
     print('scan location: $scan');
 
     bloc.controllerLocation.clear();
@@ -181,21 +179,20 @@ class _InventarioScreenState extends State<InventarioScreen>
       print('Ubicacion encontrada: ${matchedUbicacion.name}');
       bloc.add(ValidateFieldsEvent(field: "location", isOk: true));
       bloc.add(ChangeLocationIsOkEvent(matchedUbicacion));
-      bloc.add(ClearScannedValueEvent('location'));
+      Future.microtask(() => focusNode1.requestFocus());
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       print('Ubicacion no encontrada');
       bloc.add(ValidateFieldsEvent(field: "location", isOk: false));
-      bloc.add(ClearScannedValueEvent('location'));
+      Future.microtask(() => focusNode1.requestFocus());
     }
   }
 
   void validateLote(String value) {
     final bloc = context.read<InventarioBloc>();
-    String scan = bloc.scannedValue4.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : bloc.scannedValue4.trim().toLowerCase();
+    final scan = value.trim().toLowerCase();
+
     print('scan lote: $scan');
     bloc.controllerLote.clear();
     //tengo una lista de lotes el cual quiero validar si el scan es igual a alguno de los lotes
@@ -209,13 +206,13 @@ class _InventarioScreenState extends State<InventarioScreen>
       print('lote encontrado: ${matchedLote.name}');
       bloc.add(ValidateFieldsEvent(field: "lote", isOk: true));
       bloc.add(SelectecLoteEvent(matchedLote));
-      bloc.add(ClearScannedValueEvent('lote'));
+      Future.microtask(() => focusNode5.requestFocus());
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       print('Ubicacion no encontrada');
       bloc.add(ValidateFieldsEvent(field: "lote", isOk: false));
-      bloc.add(ClearScannedValueEvent('lote'));
+      Future.microtask(() => focusNode5.requestFocus());
     }
   }
 
@@ -223,10 +220,7 @@ class _InventarioScreenState extends State<InventarioScreen>
     final bloc = context.read<InventarioBloc>();
 
     // Normalizamos el valor escaneado
-    final scan = (bloc.scannedValue2.isEmpty ? value : bloc.scannedValue2)
-        .trim()
-        .toLowerCase();
-
+    final scan = value.trim().toLowerCase();
     bloc.controllerProduct.clear();
     print('🔎 Scan product: $scan');
 
@@ -240,8 +234,8 @@ class _InventarioScreenState extends State<InventarioScreen>
       print('✅ Producto encontrado directo: ${matchedProduct.name}');
       bloc
         ..add(ValidateFieldsEvent(field: "product", isOk: true))
-        ..add(ChangeProductIsOkEvent(matchedProduct))
-        ..add(ClearScannedValueEvent('product'));
+        ..add(ChangeProductIsOkEvent(matchedProduct));
+      Future.microtask(() => focusNode2.requestFocus());
       return;
     }
 
@@ -255,9 +249,8 @@ class _InventarioScreenState extends State<InventarioScreen>
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       print('❌ Producto no encontrado en barcodes');
-      bloc
-        ..add(ValidateFieldsEvent(field: "product", isOk: false))
-        ..add(ClearScannedValueEvent('product'));
+      bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
+      Future.microtask(() => focusNode2.requestFocus());
       return;
     }
 
@@ -276,29 +269,24 @@ class _InventarioScreenState extends State<InventarioScreen>
       print('❌ Producto no encontrado por ID');
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      bloc
-        ..add(ValidateFieldsEvent(field: "product", isOk: false))
-        ..add(ClearScannedValueEvent('product'));
+      bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
+      Future.microtask(() => focusNode2.requestFocus());
     }
   }
 
   void validateQuantity(String value) {
     final bloc = context.read<InventarioBloc>();
-
-    String scan = bloc.scannedValue3.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : bloc.scannedValue3.trim().toLowerCase();
+    final scan = value.trim().toLowerCase();
     print('scan quantity: $scan');
     bloc.controllerQuantity.clear();
     final currentProduct = bloc.currentProduct;
 
     if (scan == currentProduct?.barcode?.toLowerCase()) {
       bloc.add(AddQuantitySeparate(1, false));
-      bloc.add(ClearScannedValueEvent('quantity'));
+      Future.microtask(() => focusNode3.requestFocus());
     } else {
       validateScannedBarcode(scan, currentProduct ?? Product(), bloc, false);
-
-      bloc.add(ClearScannedValueEvent('quantity'));
+      Future.microtask(() => focusNode3.requestFocus());
     }
   }
 
@@ -613,150 +601,61 @@ class _InventarioScreenState extends State<InventarioScreen>
                               child: Row(
                                 children: [
                                   Container(
-                                    // color: Colors.amber,
-                                    width: size.width * 0.85,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 0, vertical: 5),
-                                    child: context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Column(
-                                              children: [
-                                                LocationCardButton(
-                                                  bloc:
-                                                      bloc, // Tu instancia de BLoC/Controlador
-                                                  cardColor:
-                                                      white, // Asegúrate que 'white' esté definido en tus colores
-                                                  textAndIconColor:
-                                                      primaryColorApp, // Usa tu color primario
-                                                  title:
-                                                      'Ubicación de existencias',
-                                                  iconPath:
-                                                      "assets/icons/ubicacion.png",
-                                                  dialogTitle:
-                                                      '360 Software Informa',
-                                                  dialogMessage:
-                                                      "No hay ubicaciones cargadas, por favor cargues las ubicaciones",
-                                                  routeName: 'search-location',
-                                                  ubicacionFija: true,
-                                                ),
-                                                Container(
-                                                  height: 20,
-                                                  margin: const EdgeInsets.only(
-                                                      bottom: 5, top: 5),
-                                                  child: TextFormField(
-                                                    autofocus: true,
-                                                    showCursor: false,
-                                                    controller: bloc
-                                                        .controllerLocation, // Asignamos el controlador
-                                                    enabled: !bloc
-                                                            .locationIsOk && // false
-                                                        !bloc
-                                                            .productIsOk && // false
-                                                        !bloc.quantityIsOk,
-
-                                                    focusNode: focusNode1,
-                                                    onChanged: (value) {
-                                                      // Llamamos a la validación al cambiar el texto
-                                                      validateLocation(value);
-                                                    },
-                                                    decoration: InputDecoration(
-                                                      hintText: bloc.currentUbication
-                                                                      ?.name ==
-                                                                  "" ||
-                                                              bloc.currentUbication
-                                                                      ?.name ==
-                                                                  null
-                                                          ? 'Esperando escaneo'
-                                                          : bloc
-                                                              .currentUbication
-                                                              ?.name,
-                                                      disabledBorder:
-                                                          InputBorder.none,
-                                                      hintStyle:
-                                                          const TextStyle(
-                                                              fontSize: 12,
-                                                              color: black),
-                                                      border: InputBorder.none,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
+                                      // color: Colors.amber,
+                                      width: size.width * 0.85,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 0, vertical: 2),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Column(
+                                          children: [
+                                            LocationCardButton(
+                                              bloc:
+                                                  bloc, // Tu instancia de BLoC/Controlador
+                                              cardColor:
+                                                  white, // Asegúrate que 'white' esté definido en tus colores
+                                              textAndIconColor:
+                                                  primaryColorApp, // Usa tu color primario
+                                              title: 'Ubicación de existencias',
+                                              iconPath:
+                                                  "assets/icons/ubicacion.png",
+                                              dialogTitle:
+                                                  '360 Software Informa',
+                                              dialogMessage:
+                                                  "No hay ubicaciones cargadas, por favor cargues las ubicaciones",
+                                              routeName: 'search-location',
+                                              ubicacionFija: true,
                                             ),
-                                          )
-                                        : Focus(
-                                            focusNode: focusNode1,
-                                            onKey: (FocusNode node,
-                                                RawKeyEvent event) {
-                                              if (event is RawKeyDownEvent) {
-                                                if (event.logicalKey ==
-                                                    LogicalKeyboardKey.enter) {
-                                                  validateLocation(
-                                                      //validamos la ubicacion
-                                                      bloc.scannedValue1);
-
-                                                  return KeyEventResult.handled;
-                                                } else {
-                                                  bloc.add(
-                                                      UpdateScannedValueEvent(
-                                                          event.data.keyLabel,
-                                                          'location'));
-
-                                                  return KeyEventResult.handled;
-                                                }
-                                              }
-                                              return KeyEventResult.ignored;
-                                            },
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
-                                              child: Column(
-                                                children: [
-                                                  LocationCardButton(
-                                                    bloc:
-                                                        bloc, // Tu instancia de BLoC/Controlador
-                                                    cardColor:
-                                                        white, // Asegúrate que 'white' esté definido en tus colores
-                                                    textAndIconColor:
-                                                        primaryColorApp, // Usa tu color primario
-                                                    title:
-                                                        'Ubicación de existencias',
-                                                    iconPath:
-                                                        "assets/icons/ubicacion.png",
-                                                    dialogTitle:
-                                                        '360 Software Informa',
-                                                    dialogMessage:
-                                                        "No hay ubicaciones cargadas, por favor cargues las ubicaciones",
-                                                    routeName:
-                                                        'search-location',
-                                                    ubicacionFija: true,
-                                                  ),
-                                                  Align(
-                                                      alignment:
-                                                          Alignment.centerLeft,
-                                                      child: Text(
-                                                        bloc.currentUbication
-                                                                        ?.name ==
-                                                                    "" ||
-                                                                bloc.currentUbication
-                                                                        ?.name ==
-                                                                    null
-                                                            ? 'Esperando escaneo'
-                                                            : bloc.currentUbication
-                                                                    ?.name ??
-                                                                "",
-                                                        style: TextStyle(
-                                                            color: black,
-                                                            fontSize: 14),
-                                                      ))
-                                                ],
-                                              ),
+                                            BarcodeScannerField(
+                                              controller:
+                                                  bloc.controllerLocation,
+                                              focusNode: focusNode1,
+                                              onBarcodeScanned:
+                                                  (value, context) {
+                                                return validateLocation(
+                                                  value,
+                                                );
+                                              },
                                             ),
-                                          ),
-                                  ),
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text(
+                                                  bloc.currentUbication?.name ==
+                                                              "" ||
+                                                          bloc.currentUbication
+                                                                  ?.name ==
+                                                              null
+                                                      ? 'Esperando escaneo'
+                                                      : bloc.currentUbication
+                                                              ?.name ??
+                                                          "",
+                                                  style: TextStyle(
+                                                      fontSize: 14,
+                                                      color: black)),
+                                            )
+                                          ],
+                                        ),
+                                      )),
                                 ],
                               ),
                             ),
@@ -787,160 +686,188 @@ class _InventarioScreenState extends State<InventarioScreen>
                                   : Colors.red[200],
                               elevation: 5,
                               child: Container(
-                                // color: Colors.amber,
-                                width: size.width * 0.85,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 2),
-                                child: context
-                                        .read<UserBloc>()
-                                        .fabricante
-                                        .contains("Zebra")
-                                    ? Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 0, vertical: 5),
-                                        child: Column(
-                                          children: [
-                                            GestureDetector(
-                                              onTap: (bloc
-                                                          .locationIsOk && //true
-                                                      !bloc
-                                                          .productIsOk && //false
-                                                      !bloc
-                                                          .quantityIsOk) //false
+                                  // color: Colors.amber,
+                                  width: size.width * 0.85,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 0),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 0, vertical: 5),
+                                    child: Column(
+                                      children: [
+                                        GestureDetector(
+                                          onTap: (bloc.locationIsOk && //true
+                                                  !bloc.productIsOk && //false
+                                                  !bloc.quantityIsOk) //false
 
-                                                  ? () {
-                                                      if (bloc
-                                                          .productos.isEmpty) {
-                                                        Get.defaultDialog(
-                                                          title:
-                                                              '360 Software Informa',
-                                                          titleStyle: TextStyle(
-                                                              color: Colors.red,
-                                                              fontSize: 18),
-                                                          middleText:
-                                                              "No hay productos cargadoss, por favor cargues las productos",
-                                                          middleTextStyle:
-                                                              TextStyle(
-                                                                  color: black,
-                                                                  fontSize: 14),
-                                                          backgroundColor:
-                                                              Colors.white,
-                                                          radius: 10,
-                                                          actions: [
-                                                            ElevatedButton(
-                                                              onPressed: () {
-                                                                context
-                                                                    .read<
-                                                                        InventarioBloc>()
-                                                                    .add(
-                                                                        GetProductsEvent());
-                                                                //esperamos 1 segundo para que se vea el dialogo
-                                                                Get.back();
-                                                              },
-                                                              style:
-                                                                  ElevatedButton
-                                                                      .styleFrom(
-                                                                backgroundColor:
-                                                                    primaryColorApp,
-                                                                shape:
-                                                                    RoundedRectangleBorder(
-                                                                  borderRadius:
-                                                                      BorderRadius
-                                                                          .circular(
-                                                                              10),
-                                                                ),
-                                                              ),
-                                                              child: Text(
-                                                                  'Cargar productos',
-                                                                  style: TextStyle(
-                                                                      color:
-                                                                          white)),
+                                              ? () {
+                                                  if (bloc.productos.isEmpty) {
+                                                    Get.defaultDialog(
+                                                      title:
+                                                          '360 Software Informa',
+                                                      titleStyle: TextStyle(
+                                                          color: Colors.red,
+                                                          fontSize: 18),
+                                                      middleText:
+                                                          "No hay productos cargadoss, por favor cargues las productos",
+                                                      middleTextStyle:
+                                                          TextStyle(
+                                                              color: black,
+                                                              fontSize: 14),
+                                                      backgroundColor:
+                                                          Colors.white,
+                                                      radius: 10,
+                                                      actions: [
+                                                        ElevatedButton(
+                                                          onPressed: () {
+                                                            context
+                                                                .read<
+                                                                    InventarioBloc>()
+                                                                .add(
+                                                                    GetProductsEvent());
+                                                            //esperamos 1 segundo para que se vea el dialogo
+                                                            Get.back();
+                                                          },
+                                                          style: ElevatedButton
+                                                              .styleFrom(
+                                                            backgroundColor:
+                                                                primaryColorApp,
+                                                            shape:
+                                                                RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          10),
                                                             ),
-                                                          ],
-                                                        );
-                                                      } else {
-                                                        Navigator
-                                                            .pushReplacementNamed(
-                                                          context,
-                                                          'search-product',
-                                                        );
-                                                      }
-                                                    }
-                                                  : null,
-                                              child: Card(
-                                                color: white,
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(6.0),
-                                                  child: Row(
-                                                    children: [
-                                                      Align(
-                                                        alignment: Alignment
-                                                            .centerLeft,
-                                                        child: Text(
-                                                          'Producto',
-                                                          style: TextStyle(
-                                                              fontSize: 14,
-                                                              color:
-                                                                  primaryColorApp),
+                                                          ),
+                                                          child: Text(
+                                                              'Cargar productos',
+                                                              style: TextStyle(
+                                                                  color:
+                                                                      white)),
                                                         ),
-                                                      ),
-                                                      const Spacer(),
-                                                      Image.asset(
-                                                        "assets/icons/producto.png",
-                                                        color: primaryColorApp,
-                                                        width: 20,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            Container(
-                                              height: 20,
-                                              margin: const EdgeInsets.only(
-                                                  bottom: 5, top: 5),
-                                              child: TextFormField(
-                                                autofocus: true,
-                                                showCursor: false,
-                                                controller: bloc
-                                                    .controllerProduct, // Asignamos el controlador
-                                                enabled: bloc
-                                                        .locationIsOk && // false
-                                                    !bloc
-                                                        .productIsOk && // false
-                                                    !bloc.quantityIsOk,
-
-                                                focusNode: focusNode2,
-                                                onChanged: (value) {
-                                                  // Llamamos a la validación al cambiar el texto
-                                                  validateProduct(value);
-                                                },
-                                                decoration: InputDecoration(
-                                                  hintText: bloc.currentProduct
-                                                                  ?.name ==
-                                                              "" ||
-                                                          bloc.currentProduct
-                                                                  ?.name ==
-                                                              null
-                                                      ? 'Esperando escaneo'
-                                                      : bloc.currentProduct
-                                                              ?.name ??
-                                                          "",
-                                                  disabledBorder:
-                                                      InputBorder.none,
-                                                  hintStyle: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: black),
-                                                  border: InputBorder.none,
-                                                ),
-                                              ),
-                                            ),
-                                            Align(
-                                              alignment: Alignment.centerLeft,
+                                                      ],
+                                                    );
+                                                  } else {
+                                                    Navigator
+                                                        .pushReplacementNamed(
+                                                      context,
+                                                      'search-product',
+                                                    );
+                                                  }
+                                                }
+                                              : null,
+                                          child: Card(
+                                            color: white,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(6.0),
                                               child: Row(
                                                 children: [
-                                                  SizedBox(
+                                                  Align(
+                                                    alignment:
+                                                        Alignment.centerLeft,
+                                                    child: Text(
+                                                      'Producto',
+                                                      style: TextStyle(
+                                                          fontSize: 14,
+                                                          color:
+                                                              primaryColorApp),
+                                                    ),
+                                                  ),
+                                                  const Spacer(),
+                                                  Image.asset(
+                                                    "assets/icons/producto.png",
+                                                    color: primaryColorApp,
+                                                    width: 20,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        BarcodeScannerField(
+                                          controller: bloc.controllerProduct,
+                                          focusNode: focusNode2,
+                                          onBarcodeScanned: (value, context) {
+                                            return validateProduct(
+                                              value,
+                                            );
+                                          },
+                                        ),
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                              bloc.currentProduct?.name == "" ||
+                                                      bloc.currentProduct
+                                                              ?.name ==
+                                                          null
+                                                  ? 'Esperando escaneo'
+                                                  : bloc.currentProduct?.name ??
+                                                      "",
+                                              style: TextStyle(
+                                                  fontSize: 14, color: black)),
+                                        ),
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Row(
+                                            children: [
+                                              SizedBox(
+                                                height: 20,
+                                                width: 20,
+                                                child: SvgPicture.asset(
+                                                  color: primaryColorApp,
+                                                  "assets/icons/barcode.svg",
+                                                  height: 20,
+                                                  width: 20,
+                                                  fit: BoxFit.cover,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                bloc.currentProduct
+                                                                ?.barcode ==
+                                                            false ||
+                                                        bloc.currentProduct
+                                                                ?.barcode ==
+                                                            null ||
+                                                        bloc.currentProduct
+                                                                ?.barcode ==
+                                                            ""
+                                                    ? "Sin codigo de barras"
+                                                    : bloc.currentProduct
+                                                            ?.barcode ??
+                                                        "",
+                                                textAlign: TextAlign.start,
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: bloc.currentProduct?.barcode ==
+                                                                false ||
+                                                            bloc.currentProduct
+                                                                    ?.barcode ==
+                                                                null ||
+                                                            bloc.currentProduct
+                                                                    ?.barcode ==
+                                                                ""
+                                                        ? red
+                                                        : black),
+                                              ),
+                                              const Spacer(),
+                                              GestureDetector(
+                                                onTap: () {
+                                                  showDialog(
+                                                      context: context,
+                                                      builder: (context) {
+                                                        return DialogBarcodesInventario(
+                                                            listOfBarcodes: bloc
+                                                                .barcodeInventario);
+                                                      });
+                                                },
+                                                child: Visibility(
+                                                  visible: bloc
+                                                      .barcodeInventario
+                                                      .isNotEmpty,
+                                                  child: SizedBox(
                                                     height: 20,
                                                     width: 20,
                                                     child: SvgPicture.asset(
@@ -951,375 +878,52 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                       fit: BoxFit.cover,
                                                     ),
                                                   ),
-                                                  const SizedBox(width: 10),
-                                                  Text(
-                                                    bloc.currentProduct
-                                                                    ?.barcode ==
-                                                                false ||
-                                                            bloc.currentProduct
-                                                                    ?.barcode ==
-                                                                null ||
-                                                            bloc.currentProduct
-                                                                    ?.barcode ==
-                                                                ""
-                                                        ? "Sin codigo de barras"
-                                                        : bloc.currentProduct
-                                                                ?.barcode ??
-                                                            "",
-                                                    textAlign: TextAlign.start,
-                                                    style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: bloc.currentProduct?.barcode ==
-                                                                    false ||
-                                                                bloc.currentProduct
-                                                                        ?.barcode ==
-                                                                    null ||
-                                                                bloc.currentProduct
-                                                                        ?.barcode ==
-                                                                    ""
-                                                            ? red
-                                                            : black),
-                                                  ),
-                                                  const Spacer(),
-                                                  GestureDetector(
-                                                    onTap: () {
-                                                      showDialog(
-                                                          context: context,
-                                                          builder: (context) {
-                                                            return DialogBarcodesInventario(
-                                                                listOfBarcodes:
-                                                                    bloc.barcodeInventario);
-                                                          });
-                                                    },
-                                                    child: Visibility(
-                                                      visible: bloc
-                                                          .barcodeInventario
-                                                          .isNotEmpty,
-                                                      child: SizedBox(
-                                                        height: 20,
-                                                        width: 20,
-                                                        child: SvgPicture.asset(
-                                                          color:
-                                                              primaryColorApp,
-                                                          "assets/icons/barcode.svg",
-                                                          height: 20,
-                                                          width: 20,
-                                                          fit: BoxFit.cover,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Row(
-                                                children: [
-                                                  Text('codigo: ',
-                                                      style: TextStyle(
-                                                          fontSize: 14,
-                                                          color: black)),
-                                                  Text(
-                                                    bloc.currentProduct?.code ==
-                                                                false ||
-                                                            bloc.currentProduct
-                                                                    ?.code ==
-                                                                null ||
-                                                            bloc.currentProduct
-                                                                    ?.code ==
-                                                                ""
-                                                        ? "Sin codigo "
-                                                        : bloc.currentProduct
-                                                                ?.code ??
-                                                            "",
-                                                    textAlign: TextAlign.start,
-                                                    style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: bloc.currentProduct?.code ==
-                                                                    false ||
-                                                                bloc.currentProduct
-                                                                        ?.code ==
-                                                                    null ||
-                                                                bloc.currentProduct
-                                                                        ?.code ==
-                                                                    ""
-                                                            ? red
-                                                            : primaryColorApp),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                    : Focus(
-                                        focusNode: focusNode2,
-                                        onKey: (FocusNode node,
-                                            RawKeyEvent event) {
-                                          if (event is RawKeyDownEvent) {
-                                            if (event.logicalKey ==
-                                                LogicalKeyboardKey.enter) {
-                                              validateProduct(
-                                                  bloc.scannedValue2);
-
-                                              return KeyEventResult.handled;
-                                            } else {
-                                              bloc.add(UpdateScannedValueEvent(
-                                                  event.data.keyLabel,
-                                                  'product'));
-
-                                              return KeyEventResult.handled;
-                                            }
-                                          }
-                                          return KeyEventResult.ignored;
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 0, vertical: 5),
-                                          child: Column(
-                                            children: [
-                                              GestureDetector(
-                                                onTap: bloc.locationIsOk && //true
-                                                        !bloc.productIsOk && //false
-                                                        !bloc.quantityIsOk
-                                                    ? () {
-                                                        if (bloc.productos
-                                                            .isEmpty) {
-                                                          Get.defaultDialog(
-                                                            title:
-                                                                '360 Software Informa',
-                                                            titleStyle:
-                                                                TextStyle(
-                                                                    color: Colors
-                                                                        .red,
-                                                                    fontSize:
-                                                                        18),
-                                                            middleText:
-                                                                "No hay productos cargadoss, por favor cargues las productos",
-                                                            middleTextStyle:
-                                                                TextStyle(
-                                                                    color:
-                                                                        black,
-                                                                    fontSize:
-                                                                        14),
-                                                            backgroundColor:
-                                                                Colors.white,
-                                                            radius: 10,
-                                                            actions: [
-                                                              ElevatedButton(
-                                                                onPressed: () {
-                                                                  context
-                                                                      .read<
-                                                                          InventarioBloc>()
-                                                                      .add(
-                                                                          GetProductsEvent());
-                                                                  //esperamos 1 segundo para que se vea el dialogo
-
-                                                                  Get.back();
-                                                                },
-                                                                style: ElevatedButton
-                                                                    .styleFrom(
-                                                                  backgroundColor:
-                                                                      primaryColorApp,
-                                                                  shape:
-                                                                      RoundedRectangleBorder(
-                                                                    borderRadius:
-                                                                        BorderRadius.circular(
-                                                                            10),
-                                                                  ),
-                                                                ),
-                                                                child: Text(
-                                                                    'Cargar productos',
-                                                                    style: TextStyle(
-                                                                        color:
-                                                                            white)),
-                                                              ),
-                                                            ],
-                                                          );
-                                                        } else {
-                                                          Navigator
-                                                              .pushReplacementNamed(
-                                                            context,
-                                                            'search-product',
-                                                          );
-                                                        }
-                                                      }
-                                                    : null,
-                                                child: Card(
-                                                  color: //transparente
-                                                      white,
-                                                  child: Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            6.0),
-                                                    child: Row(
-                                                      children: [
-                                                        Align(
-                                                          alignment: Alignment
-                                                              .centerLeft,
-                                                          child: Text(
-                                                            'Producto',
-                                                            style: TextStyle(
-                                                                fontSize: 14,
-                                                                color:
-                                                                    primaryColorApp),
-                                                          ),
-                                                        ),
-                                                        const Spacer(),
-                                                        Image.asset(
-                                                          "assets/icons/producto.png",
-                                                          color:
-                                                              primaryColorApp,
-                                                          width: 20,
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                              Align(
-                                                alignment: Alignment.centerLeft,
-                                                child: Text(
-                                                  bloc.currentProduct?.name ==
-                                                              "" ||
-                                                          bloc.currentProduct
-                                                                  ?.name ==
-                                                              null
-                                                      ? 'Esperando escaneo'
-                                                      : bloc.currentProduct
-                                                              ?.name ??
-                                                          "",
-                                                  style: TextStyle(
-                                                      color: black,
-                                                      fontSize: 14),
-                                                ),
-                                              ),
-                                              Align(
-                                                alignment: Alignment.centerLeft,
-                                                child: Row(
-                                                  children: [
-                                                    SizedBox(
-                                                      height: 20,
-                                                      width: 20,
-                                                      child: SvgPicture.asset(
-                                                        color: primaryColorApp,
-                                                        "assets/icons/barcode.svg",
-                                                        height: 20,
-                                                        width: 20,
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 10),
-                                                    Text(
-                                                      bloc.currentProduct
-                                                                      ?.barcode ==
-                                                                  false ||
-                                                              bloc.currentProduct
-                                                                      ?.barcode ==
-                                                                  null ||
-                                                              bloc.currentProduct
-                                                                      ?.barcode ==
-                                                                  ""
-                                                          ? "Sin codigo de barras"
-                                                          : bloc.currentProduct
-                                                                  ?.barcode ??
-                                                              "",
-                                                      textAlign:
-                                                          TextAlign.start,
-                                                      style: TextStyle(
-                                                          fontSize: 12,
-                                                          color: bloc.currentProduct
-                                                                          ?.barcode ==
-                                                                      false ||
-                                                                  bloc.currentProduct
-                                                                          ?.barcode ==
-                                                                      null ||
-                                                                  bloc.currentProduct
-                                                                          ?.barcode ==
-                                                                      ""
-                                                              ? red
-                                                              : black),
-                                                    ),
-                                                    const Spacer(),
-                                                    GestureDetector(
-                                                      onTap: () {
-                                                        showDialog(
-                                                            context: context,
-                                                            builder: (context) {
-                                                              return DialogBarcodesInventario(
-                                                                  listOfBarcodes:
-                                                                      bloc.barcodeInventario);
-                                                            });
-                                                      },
-                                                      child: Visibility(
-                                                        visible: bloc
-                                                            .barcodeInventario
-                                                            .isNotEmpty,
-                                                        child: SizedBox(
-                                                          height: 20,
-                                                          width: 20,
-                                                          child:
-                                                              SvgPicture.asset(
-                                                            color:
-                                                                primaryColorApp,
-                                                            "assets/icons/barcode.svg",
-                                                            height: 20,
-                                                            width: 20,
-                                                            fit: BoxFit.cover,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              Align(
-                                                alignment: Alignment.centerLeft,
-                                                child: Row(
-                                                  children: [
-                                                    Text('codigo: ',
-                                                        style: TextStyle(
-                                                            fontSize: 14,
-                                                            color: black)),
-                                                    Text(
-                                                      bloc.currentProduct
-                                                                      ?.code ==
-                                                                  false ||
-                                                              bloc.currentProduct
-                                                                      ?.code ==
-                                                                  null ||
-                                                              bloc.currentProduct
-                                                                      ?.code ==
-                                                                  ""
-                                                          ? "Sin codigo "
-                                                          : bloc.currentProduct
-                                                                  ?.code ??
-                                                              "",
-                                                      textAlign:
-                                                          TextAlign.start,
-                                                      style: TextStyle(
-                                                          fontSize: 12,
-                                                          color: bloc.currentProduct
-                                                                          ?.code ==
-                                                                      false ||
-                                                                  bloc.currentProduct
-                                                                          ?.code ==
-                                                                      null ||
-                                                                  bloc.currentProduct
-                                                                          ?.code ==
-                                                                      ""
-                                                              ? red
-                                                              : primaryColorApp),
-                                                    ),
-                                                  ],
                                                 ),
                                               ),
                                             ],
                                           ),
                                         ),
-                                      ),
-                              ),
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Row(
+                                            children: [
+                                              Text('codigo: ',
+                                                  style: TextStyle(
+                                                      fontSize: 14,
+                                                      color: black)),
+                                              Text(
+                                                bloc.currentProduct?.code ==
+                                                            false ||
+                                                        bloc.currentProduct
+                                                                ?.code ==
+                                                            null ||
+                                                        bloc.currentProduct
+                                                                ?.code ==
+                                                            ""
+                                                    ? "Sin codigo "
+                                                    : bloc.currentProduct
+                                                            ?.code ??
+                                                        "",
+                                                textAlign: TextAlign.start,
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: bloc.currentProduct?.code ==
+                                                                false ||
+                                                            bloc.currentProduct
+                                                                    ?.code ==
+                                                                null ||
+                                                            bloc.currentProduct
+                                                                    ?.code ==
+                                                                ""
+                                                        ? red
+                                                        : primaryColorApp),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )),
                             ),
                           ],
                         ),
@@ -1402,142 +1006,39 @@ class _InventarioScreenState extends State<InventarioScreen>
                                               MainAxisAlignment.start,
                                           children: [
                                             //widget de scan
-                                            context
-                                                    .read<UserBloc>()
-                                                    .fabricante
-                                                    .contains("Zebra")
-                                                ? Padding(
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                        horizontal: 0,
-                                                        vertical: 5),
-                                                    child: Column(
-                                                      children: [
-                                                        Container(
-                                                          height: 20,
-                                                          margin:
-                                                              const EdgeInsets
-                                                                  .only(
-                                                                  bottom: 5,
-                                                                  top: 5),
-                                                          child: TextFormField(
-                                                            autofocus: true,
-                                                            showCursor: false,
-                                                            controller: bloc
-                                                                .controllerLote, // Asignamos el controlador
-                                                            enabled: bloc
-                                                                    .locationIsOk && //true
-                                                                bloc
-                                                                    .productIsOk && //true
-                                                                !bloc
-                                                                    .loteIsOk && //false
-                                                                !bloc
-                                                                    .quantityIsOk && //false
-                                                                !bloc
-                                                                    .viewQuantity,
-
-                                                            focusNode:
-                                                                focusNode5,
-                                                            onChanged: (value) {
-                                                              // Llamamos a la validación al cambiar el texto
-                                                              validateLote(
-                                                                  value);
-                                                            },
-                                                            decoration:
-                                                                InputDecoration(
-                                                              hintText: bloc.currentProductLote
-                                                                              ?.name ==
-                                                                          "" ||
-                                                                      bloc.currentProductLote
-                                                                              ?.name ==
-                                                                          null
-                                                                  ? 'Esperando escaneo'
-                                                                  : bloc.currentProductLote
-                                                                          ?.name ??
-                                                                      "",
-                                                              disabledBorder:
-                                                                  InputBorder
-                                                                      .none,
-                                                              hintStyle:
-                                                                  const TextStyle(
-                                                                      fontSize:
-                                                                          12,
-                                                                      color:
-                                                                          black),
-                                                              border:
-                                                                  InputBorder
-                                                                      .none,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  )
-                                                : Focus(
-                                                    focusNode: focusNode5,
-                                                    onKey: (FocusNode node,
-                                                        RawKeyEvent event) {
-                                                      if (event
-                                                          is RawKeyDownEvent) {
-                                                        if (event.logicalKey ==
-                                                            LogicalKeyboardKey
-                                                                .enter) {
-                                                          validateLote(bloc
-                                                              .scannedValue4);
-
-                                                          return KeyEventResult
-                                                              .handled;
-                                                        } else {
-                                                          bloc.add(
-                                                              UpdateScannedValueEvent(
-                                                                  event.data
-                                                                      .keyLabel,
-                                                                  'lote'));
-
-                                                          return KeyEventResult
-                                                              .handled;
-                                                        }
-                                                      }
-                                                      return KeyEventResult
-                                                          .ignored;
-                                                    },
-                                                    child: Padding(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                          horizontal: 0,
-                                                          vertical: 5),
-                                                      child: Column(
-                                                        children: [
-                                                          Align(
-                                                            alignment: Alignment
-                                                                .centerLeft,
-                                                            child: Row(
-                                                              children: [
-                                                                Text(
-                                                                  'Lote: ',
-                                                                  style: TextStyle(
-                                                                      fontSize:
-                                                                          14,
-                                                                      color:
-                                                                          black),
-                                                                ),
-                                                                Text(
-                                                                  bloc.currentProductLote
-                                                                          ?.name ??
-                                                                      "Esperando escaneo",
-                                                                  style: TextStyle(
-                                                                      fontSize:
-                                                                          14,
-                                                                      color:
-                                                                          black),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
+                                            Column(
+                                              children: [
+                                                BarcodeScannerField(
+                                                  controller:
+                                                      bloc.controllerLote,
+                                                  focusNode: focusNode5,
+                                                  onBarcodeScanned:
+                                                      (value, context) {
+                                                    return validateLote(
+                                                      value,
+                                                    );
+                                                  },
+                                                ),
+                                                Align(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  child: Text(
+                                                      bloc.currentProductLote
+                                                                      ?.name ==
+                                                                  "" ||
+                                                              bloc.currentProductLote
+                                                                      ?.name ==
+                                                                  null
+                                                          ? 'Esperando escaneo'
+                                                          : bloc.currentProductLote
+                                                                  ?.name ??
+                                                              "",
+                                                      style: TextStyle(
+                                                          fontSize: 14,
+                                                          color: black)),
+                                                )
+                                              ],
+                                            ),
                                             ExpirationBadgeWidget(
                                               expirationDate: bloc
                                                   .currentProductLote
@@ -1617,72 +1118,30 @@ class _InventarioScreenState extends State<InventarioScreen>
                                   const Spacer(),
                                   Expanded(
                                     child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10),
+                                      alignment: Alignment.center,
+                                      child: Stack(
                                         alignment: Alignment.center,
-                                        child: context
-                                                .read<UserBloc>()
-                                                .fabricante
-                                                .contains("Zebra")
-                                            ? TextFormField(
-                                                showCursor: false,
-                                                textAlign: TextAlign.center,
-                                                enabled:
-                                                    bloc.productIsOk && //true
-                                                        bloc.quantityIsOk //true
-                                                ,
-                                                // showCursor: false,
-                                                controller: bloc
-                                                    .controllerQuantity, // Controlador que maneja el texto
-                                                focusNode: focusNode3,
-                                                onChanged: (value) {
-                                                  validateQuantity(value);
-                                                },
-                                                decoration: InputDecoration(
-                                                  hintText: bloc
-                                                      .quantitySelected
-                                                      .toString(),
-                                                  disabledBorder:
-                                                      InputBorder.none,
-                                                  hintStyle: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: black),
-                                                  border: InputBorder.none,
-                                                ),
-                                              )
-                                            : Focus(
-                                                focusNode: focusNode3,
-                                                onKey: (FocusNode node,
-                                                    RawKeyEvent event) {
-                                                  if (event
-                                                      is RawKeyDownEvent) {
-                                                    if (event.logicalKey ==
-                                                        LogicalKeyboardKey
-                                                            .enter) {
-                                                      validateQuantity(
-                                                          bloc.scannedValue3);
-
-                                                      return KeyEventResult
-                                                          .handled;
-                                                    } else {
-                                                      bloc.add(
-                                                          UpdateScannedValueEvent(
-                                                              event.data
-                                                                  .keyLabel,
-                                                              'quantity'));
-                                                      return KeyEventResult
-                                                          .handled;
-                                                    }
-                                                  }
-                                                  return KeyEventResult.ignored;
-                                                },
-                                                child: Text(
-                                                    bloc.quantitySelected
-                                                        .toString(),
-                                                    style: const TextStyle(
-                                                        color: Colors.black,
-                                                        fontSize: 14)),
-                                              )),
+                                        children: [
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: BarcodeScannerField(
+                                              controller:
+                                                  bloc.controllerQuantity,
+                                              focusNode: focusNode3,
+                                              onBarcodeScanned:
+                                                  (value, context) {
+                                                validateQuantity(value);
+                                              },
+                                            ),
+                                          ),
+                                          Text(bloc.quantitySelected.toString(),
+                                              style: const TextStyle(
+                                                  color: black, fontSize: 14)),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                   IconButton(
                                       onPressed: bloc.quantityIsOk &&
@@ -1740,12 +1199,6 @@ class _InventarioScreenState extends State<InventarioScreen>
                               },
                               controller: bloc.cantidadController,
                               keyboardType: TextInputType.number,
-                              readOnly: context
-                                      .read<UserBloc>()
-                                      .fabricante
-                                      .contains("Zebra")
-                                  ? true
-                                  : false,
                               decoration: InputDecorations.authInputDecoration(
                                 hintText: 'Cantidad',
                                 labelText: 'Cantidad',
@@ -1794,19 +1247,6 @@ class _InventarioScreenState extends State<InventarioScreen>
                                   TextStyle(color: Colors.white, fontSize: 14),
                             ),
                           )),
-                      Visibility(
-                        visible: bloc.viewQuantity &&
-                            context
-                                .read<UserBloc>()
-                                .fabricante
-                                .contains("Zebra"),
-                        child: CustomKeyboardNumber(
-                          controller: bloc.cantidadController,
-                          onchanged: () {
-                            _validatebuttonquantity();
-                          },
-                        ),
-                      )
                     ],
                   ),
                 ),

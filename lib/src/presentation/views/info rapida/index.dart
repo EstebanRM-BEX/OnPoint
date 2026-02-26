@@ -2,7 +2,6 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
@@ -10,8 +9,8 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/vibrate_utils.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
+import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/widgets/dialog_info_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
@@ -41,31 +40,23 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
   }
 
   void validateBarcode(String value) {
-    // Si hay un timer activo, lo cancelamos
-    if (_debounce?.isActive ?? false) _debounce?.cancel();
+    final bloc = context.read<InfoRapidaBloc>();
 
-    // Iniciamos un nuevo timer de 200ms para esperar a que el escaneo termine
-    _debounce = Timer(const Duration(milliseconds: 200), () {
-      if (!mounted) return;
+    String scan = value.trim();
 
-      print("✅ validateBarcode ejecutado tras debouncing: $value");
-      final bloc = context.read<InfoRapidaBloc>();
+    if (bloc.scannedValue1.trim().isNotEmpty) {
+      scan = bloc.scannedValue1.trim();
+    }
 
-      // ✅ CORRECCIÓN 1: Manejo seguro del texto escaneado
-      String scan = value.trim();
-
-      // Si el valor viene vacío, intentamos usar el del BLoC, pero también lo limpiamos
-      if (bloc.scannedValue1.trim().isNotEmpty) {
-        scan = bloc.scannedValue1.trim();
-      }
-
-      // ✅ CORRECCIÓN CRÍTICA: Evitar búsqueda vacía
-      if (scan.isEmpty) return;
-
+    if (scan.isEmpty) {
       _controllerSearch.text = '';
-      print('✅ Valor escaneado para validar: "$scan"');
-      bloc.add(GetInfoRapida(scan.toUpperCase(), false, false, false));
-    });
+      Future.microtask(() => focusNode1.requestFocus());
+      return;
+    }
+
+    _controllerSearch.text = '';
+    bloc.add(GetInfoRapida(scan.toUpperCase(), false, false, false));
+    Future.microtask(() => focusNode1.requestFocus());
   }
 
   @override
@@ -77,7 +68,9 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
       listener: (context, state) async {
         print('Estado actual: $state');
         if (state is DeviceNotAuthorized) {
-          Navigator.pop(context);
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context); // Cierra el loader si hubo error
+          }
           Get.defaultDialog(
             title: 'Dispositivo no autorizado',
             titleStyle: TextStyle(
@@ -103,17 +96,20 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
             duration: Duration(seconds: 5),
           );
         } else if (state is InfoRapidaError) {
-          _vibrationService.vibrate();
-          _audioService.playErrorSound();
-          Navigator.pop(context); // Cierra el loader si hubo error
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context); // Cierra el loader si hubo error
+          }
           Get.snackbar(
             '360 Software Informa',
-            state.error ??
-                'No se encontró producto, lote, paquete ni ubicación con ese código de barras',
+            'Información no encontrada',
             backgroundColor: white,
             colorText: primaryColorApp,
             icon: const Icon(Icons.error, color: Colors.red),
+            showProgressIndicator: true,
+            duration: Duration(seconds: 5),
           );
+          _vibrationService.vibrate();
+          _audioService.playErrorSound();
         } else if (state is InfoRapidaLoading) {
           showDialog(
             context: context,
@@ -122,7 +118,9 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
                 const DialogLoading(message: "Buscando información..."),
           );
         } else if (state is InfoRapidaLoaded) {
-          Navigator.pop(context); // Cierra el loader
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context); // Cierra el loader
+          }
 
           // ✅ CORRECCIÓN 2: Validación de Nulidad
           // Si el resultado es nulo, detenemos la ejecución para evitar el crash.
@@ -207,51 +205,13 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    context
-                            .select((UserBloc b) => b.fabricante)
-                            .contains("Zebra")
-                        ? TextFormField(
-                            controller: _controllerSearch,
-                            focusNode: focusNode1,
-                            autofocus: true,
-                            showCursor: false,
-                            onChanged: validateBarcode,
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              hintStyle: TextStyle(fontSize: 14, color: black),
-                            ),
-                          )
-                        : Focus(
-                            focusNode: focusNode1,
-                            autofocus: true,
-                            onKey: (node, event) {
-                              if (event is RawKeyDownEvent) {
-                                if (event.logicalKey ==
-                                    LogicalKeyboardKey.enter) {
-                                  // ✅ CORRECCIÓN 3: Evitar disparar validación si el escáner está vacío
-                                  // Esto previene que al presionar Enter accidentalmente crashee la app.
-                                  if (context
-                                      .read<InfoRapidaBloc>()
-                                      .scannedValue1
-                                      .trim()
-                                      .isNotEmpty) {
-                                    validateBarcode(context
-                                        .read<InfoRapidaBloc>()
-                                        .scannedValue1);
-                                  }
-
-                                  return KeyEventResult.handled;
-                                } else {
-                                  context.read<InfoRapidaBloc>().add(
-                                      UpdateScannedValueEvent(
-                                          event.data.keyLabel, 'info'));
-                                  return KeyEventResult.handled;
-                                }
-                              }
-                              return KeyEventResult.ignored;
-                            },
-                            child: const SizedBox(),
-                          ),
+                    BarcodeScannerField(
+                      controller: _controllerSearch,
+                      focusNode: focusNode1,
+                      onBarcodeScanned: (value, context) {
+                        return validateBarcode(value);
+                      },
+                    ),
                   ],
                 ),
               ),

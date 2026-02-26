@@ -21,7 +21,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/pic
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/response_pick_model.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class IndexListPickComponentsScreen extends StatelessWidget {
   IndexListPickComponentsScreen({super.key});
@@ -33,9 +32,7 @@ class IndexListPickComponentsScreen extends StatelessWidget {
 
   void validateBarcode(String value, BuildContext context) {
     final bloc = context.read<PickingPickBloc>();
-    final scan = (bloc.scannedValue5.isEmpty ? value : bloc.scannedValue5)
-        .trim()
-        .toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     _controllerToDo.clear();
     print('🔎 Scan barcode (batch picking): $scan');
@@ -43,7 +40,7 @@ class IndexListPickComponentsScreen extends StatelessWidget {
     final listOfBatchs = bloc.listOfPickCompo;
 
     void processBatch(ResultPick batch) {
-      bloc.add(ClearScannedValueEvent('toDo'));
+      // bloc.add(ClearScannedValueEvent('toDo'));
 
       print(batch.toMap());
       try {
@@ -67,11 +64,13 @@ class IndexListPickComponentsScreen extends StatelessWidget {
     if (batchs.id != null) {
       print('🔎 batch encontrado : ${batchs.id} ${batchs.name} ');
       processBatch(batchs);
+      Future.microtask(() => focusNodeBuscar.requestFocus());
       return;
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      bloc.add(ClearScannedValueEvent('toDo'));
+      // bloc.add(ClearScannedValueEvent('toDo'));
+      Future.microtask(() => focusNodeBuscar.requestFocus());
     }
   }
 
@@ -133,26 +132,6 @@ class IndexListPickComponentsScreen extends StatelessWidget {
         builder: (context, state) {
           return Scaffold(
             backgroundColor: white,
-            bottomNavigationBar: context
-                    .read<PickingPickBloc>()
-                    .isKeyboardVisible
-                ? Padding(
-                    padding: const EdgeInsets.only(bottom: 36),
-                    child: CustomKeyboard(
-                      isLogin: false,
-                      controller:
-                          context.read<PickingPickBloc>().searchPickController,
-                      onchanged: () {
-                        context.read<PickingPickBloc>().add(SearchPickEvent(
-                            context
-                                .read<PickingPickBloc>()
-                                .searchPickController
-                                .text,
-                            true));
-                      },
-                    ),
-                  )
-                : null,
             body: Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Column(
@@ -261,17 +240,10 @@ class IndexListPickComponentsScreen extends StatelessWidget {
                           context
                               .read<PickingPickBloc>()
                               .add(SearchPickEvent('', true));
-                          context.read<PickingPickBloc>().add(ShowKeyboard(
-                              false)); // Asumo que ShowKeyboard es el evento de tu BLoC
                           Future.microtask(() {
                             FocusScope.of(context)
                                 .requestFocus(focusNodeBuscar);
                           });
-                        },
-                        onTap: () {
-                          context
-                              .read<PickingPickBloc>()
-                              .add(ShowKeyboard(true));
                         },
                       ),
 
@@ -335,14 +307,8 @@ class IndexListPickComponentsScreen extends StatelessWidget {
                   BarcodeScannerField(
                     controller: _controllerToDo,
                     focusNode: focusNodeBuscar,
-                    scannedValue5: "",
                     onBarcodeScanned: (value, context) {
                       return validateBarcode(value, context);
-                    },
-                    onKeyScanned: (keyLabel, type, context) {
-                      return context.read<PickingPickBloc>().add(
-                            UpdateScannedValueEvent(keyLabel, type),
-                          );
                     },
                   ),
 
@@ -813,7 +779,6 @@ class IndexListPickComponentsScreen extends StatelessWidget {
     Navigator.pop(context);
     // Si batch.isSeparate es 1, entonces navegamos a "batch-detail"
     if (batch.isSeparate != 1) {
-      batchBloc.add(ShowKeyboard(false));
       batchBloc.searchPickController.clear();
       Navigator.pushReplacementNamed(context, 'scan-product-pick');
     } else {}
@@ -859,7 +824,6 @@ class IndexListPickComponentsScreen extends StatelessWidget {
       }
 
       // Acciones comunes que se ejecutan después de los diálogos
-      bloc.add(ShowKeyboard(false));
       bloc.searchPickController.clear();
       bloc.add(SearchPickEvent('', true));
       bloc.add(FetchPickWithProductsEvent(batch.id ?? 0));

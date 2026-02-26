@@ -173,8 +173,6 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
     //evento para buscar un producto en la lista de productos de pedidos
     on<SearchProductPackingEvent>(_onSearchProductPackingEvent);
 
-    //evento para mostrar el teclado
-    on<ShowKeyboardEvent>(_onShowKeyboardEvent);
     //*evento para seleccionar productos sin certificar
     on<SelectProductPackingEvent>(_onSelectProductPackingEvent);
     //*evento para desseleccionar productos sin certificar
@@ -189,8 +187,6 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
     //*metodo para desempacar productos
     on<UnPackingEvent>(_onUnPackingEvent);
     //*evento para actualizar el valor del scan
-    on<UpdateScannedValuePackEvent>(_onUpdateScannedValueEvent);
-    on<ClearScannedValuePackEvent>(_onClearScannedValueEvent);
     //*evento para ver la cantidad
     on<ShowQuantityPackEvent>(_onShowQuantityEvent);
     on<ShowDetailvent>(_onShowDetailEvent);
@@ -516,83 +512,6 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       emit(ShowQuantityPackState(viewQuantity));
     } catch (e, s) {
       print("❌ Error en _onShowQuantityEvent: $e, $s");
-    }
-  }
-
-//*evento para limpiar el valor del scan
-  void _onClearScannedValueEvent(
-      ClearScannedValuePackEvent event, Emitter<WmsPackingState> emit) {
-    try {
-      switch (event.scan) {
-        case 'location':
-          scannedValue1 = '';
-          emit(ClearScannedValuePackState());
-          break;
-        case 'product':
-          scannedValue2 = '';
-          emit(ClearScannedValuePackState());
-          break;
-        case 'quantity':
-          scannedValue3 = '';
-          emit(ClearScannedValuePackState());
-          break;
-        case 'muelle':
-          scannedValue4 = '';
-          emit(ClearScannedValuePackState());
-          break;
-
-        case 'toDo':
-          scannedValue5 = '';
-          emit(ClearScannedValuePackState());
-          break;
-
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-      emit(ClearScannedValuePackState());
-    } catch (e, s) {
-      print("❌ Error en _onClearScannedValueEvent: $e, $s");
-    }
-  }
-
-  //*evento para actualizar el valor del scan
-  void _onUpdateScannedValueEvent(
-      UpdateScannedValuePackEvent event, Emitter<WmsPackingState> emit) {
-    try {
-      switch (event.scan) {
-        case 'location':
-          // Acumulador de valores escaneados
-          scannedValue1 += event.scannedValue.trim();
-          print('scannedValue1: $scannedValue1');
-          emit(UpdateScannedValuePackState(scannedValue1, event.scan));
-          break;
-        case 'product':
-          scannedValue2 += event.scannedValue.trim();
-          print('scannedValue2: $scannedValue2');
-          emit(UpdateScannedValuePackState(scannedValue2, event.scan));
-          break;
-        case 'quantity':
-          scannedValue3 += event.scannedValue.trim();
-          print('scannedValue3: $scannedValue3');
-          emit(UpdateScannedValuePackState(scannedValue3, event.scan));
-          break;
-        case 'muelle':
-          print('scannedValue4: $scannedValue4');
-          scannedValue4 += event.scannedValue.trim();
-          emit(UpdateScannedValuePackState(scannedValue4, event.scan));
-          break;
-
-        case 'toDo':
-          print('scannedValue5: $scannedValue5');
-          scannedValue5 += event.scannedValue.trim();
-          emit(UpdateScannedValuePackState(scannedValue5, event.scan));
-          break;
-
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-    } catch (e, s) {
-      print("❌ Error en _onUpdateScannedValueEvent: $e, $s");
     }
   }
 
@@ -967,12 +886,6 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       print('Error en el _onUnSelectProductPackingEvent: $e, $s');
       emit(WmsPackingError(e.toString()));
     }
-  }
-
-  void _onShowKeyboardEvent(
-      ShowKeyboardEvent event, Emitter<WmsPackingState> emit) {
-    isKeyboardVisible = event.showKeyboard;
-    emit(ShowKeyboardState(showKeyboard: isKeyboardVisible));
   }
 
   //metodo para buscar un producto de un pedido

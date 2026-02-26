@@ -16,7 +16,7 @@ class Session extends Equatable {
   bool isExpired() {
     if (lastActiveTime == null) return false;
     final difference = DateTime.now().difference(lastActiveTime!);
-    return difference >= const Duration(hours: 1);
+    return difference >= const Duration(minutes: 240);
   }
 
   @override

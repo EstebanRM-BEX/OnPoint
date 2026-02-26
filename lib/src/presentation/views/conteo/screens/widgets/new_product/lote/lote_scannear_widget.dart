@@ -1,11 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 
-class LoteScannerWidget extends StatelessWidget {
+class LoteScannerWidget extends StatefulWidget {
   final bool isLoteOk;
   final bool loteIsOk;
   final bool locationIsOk;
@@ -15,7 +14,6 @@ class LoteScannerWidget extends StatelessWidget {
   final dynamic currentProduct;
   final dynamic currentProductLote;
   final Function(String) onValidateLote;
-  final Function(String keyLabel) onKeyScanned;
   final FocusNode focusNode;
   final TextEditingController controller;
   final String routeName;
@@ -31,22 +29,51 @@ class LoteScannerWidget extends StatelessWidget {
     required this.currentProduct,
     required this.currentProductLote,
     required this.onValidateLote,
-    required this.onKeyScanned,
     required this.focusNode,
     required this.controller,
     required this.routeName,
   }) : super(key: key);
 
   @override
+  State<LoteScannerWidget> createState() => _LoteScannerWidgetState();
+}
+
+class _LoteScannerWidgetState extends State<LoteScannerWidget> {
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    // Cachear el ID del producto para evitar parpadeo durante el escaneo
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onZebraChanged(String value, BuildContext context) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      if (value.trim().isNotEmpty) {
+        widget.onValidateLote(value);
+        widget.controller.clear();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final statusColor = loteIsOk ? green : yellow;
-    final cardColor = isLoteOk
-        ? loteIsOk
+    final statusColor = widget.loteIsOk ? green : yellow;
+    final cardColor = widget.isLoteOk
+        ? widget.loteIsOk
             ? Colors.green[100]
             : Colors.grey[300]
         : Colors.red[200];
-    final expirationDate = currentProductLote?.expirationDate?.toString() ?? "";
+    final expirationDate =
+        widget.currentProductLote?.expirationDate?.toString() ?? "";
 
     // La visibilidad del widget debe ser gestionada por el padre, por lo que la eliminamos de aquí
     return Row(
@@ -76,9 +103,7 @@ class LoteScannerWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    context.read<UserBloc>().fabricante.contains("Zebra")
-                        ? _buildZebraInput()
-                        : _buildNonZebraInput(),
+                    _buildZebraInput(),
                     _buildExpirationDate(expirationDate),
                   ],
                 )
@@ -113,8 +138,8 @@ class LoteScannerWidget extends StatelessWidget {
           onPressed: () {
             Navigator.pushReplacementNamed(
               context,
-              routeName,
-              arguments: [currentProduct],
+              widget.routeName,
+              arguments: [widget.currentProduct],
             );
           },
           icon: Icon(
@@ -129,62 +154,42 @@ class LoteScannerWidget extends StatelessWidget {
 
   Widget _buildZebraInput() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 5),
-      child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 1),
+      child: SizedBox(
         height: 20,
-        margin: const EdgeInsets.only(bottom: 5, top: 5),
         child: TextFormField(
           autofocus: true,
           showCursor: false,
-          controller: controller,
-          enabled: locationIsOk &&
-              productIsOk &&
-              !loteIsOk &&
-              !quantityIsOk &&
-              !viewQuantity,
-          focusNode: focusNode,
-          onChanged: onValidateLote,
+          controller: widget.controller,
+          enabled: widget.locationIsOk &&
+              widget.productIsOk &&
+              !widget.loteIsOk &&
+              !widget.quantityIsOk &&
+              !widget.viewQuantity,
+          focusNode: widget.focusNode,
+          keyboardType: TextInputType.none,
+          enableInteractiveSelection: false,
+          style: const TextStyle(color: Colors.transparent),
+          textInputAction: TextInputAction.done,
+          onChanged: (value) {
+            _onZebraChanged(value, context);
+          },
+          onFieldSubmitted: (value) {
+            // Disparo inmediato en Enter: cancela el debounce pendiente
+            _debounce?.cancel();
+            if (value.trim().isNotEmpty) {
+              widget.onValidateLote(value);
+            }
+            // Limpiar el controller después del submit
+            widget.controller.clear();
+          },
           decoration: InputDecoration(
-            hintText: currentProductLote?.name ?? 'Esperando escaneo',
+            hintText: widget.currentProductLote?.name ?? 'Esperando escaneo',
             disabledBorder: InputBorder.none,
             hintStyle: const TextStyle(fontSize: 12, color: black),
             border: InputBorder.none,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNonZebraInput() {
-    return Focus(
-      focusNode: focusNode,
-      onKey: (FocusNode node, RawKeyEvent event) {
-        if (event is RawKeyDownEvent) {
-          if (event.logicalKey == LogicalKeyboardKey.enter) {
-            onValidateLote(controller.text);
-            return KeyEventResult.handled;
-          } else {
-            onKeyScanned(event.data.keyLabel);
-            return KeyEventResult.handled;
-          }
-        }
-        return KeyEventResult.ignored;
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 5),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Row(
-            children: [
-              Text(
-                'Lote: ',
-                style: TextStyle(fontSize: 14, color: black),
-              ),
-              Text(
-                currentProductLote?.name ?? "Esperando escaneo",
-                style: TextStyle(fontSize: 14, color: black),
-              ),
-            ],
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
           ),
         ),
       ),

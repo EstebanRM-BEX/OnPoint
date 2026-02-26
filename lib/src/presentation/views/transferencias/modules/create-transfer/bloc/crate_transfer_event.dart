@@ -3,17 +3,6 @@ part of 'crate_transfer_bloc.dart';
 @immutable
 sealed class CreateTransferEvent {}
 
-class UpdateScannedValueTransferEvent extends CreateTransferEvent {
-  final String scannedValue;
-  final String scan;
-  UpdateScannedValueTransferEvent(this.scannedValue, this.scan);
-}
-
-class ClearScannedValueTransferEvent extends CreateTransferEvent {
-  final String scan;
-  ClearScannedValueTransferEvent(this.scan);
-}
-
 class LoadConfigurationsUserCreateTransferEvent extends CreateTransferEvent {
   LoadConfigurationsUserCreateTransferEvent();
 }
@@ -25,12 +14,6 @@ class ValidateFieldsEvent extends CreateTransferEvent {
 }
 
 class GetLocationsEvent extends CreateTransferEvent {}
-
-class ShowKeyboardCreateTransferEvent extends CreateTransferEvent {
-  final bool showKeyboard;
-
-  ShowKeyboardCreateTransferEvent(this.showKeyboard);
-}
 
 class GetProductsFromDBEvent extends CreateTransferEvent {}
 
@@ -144,12 +127,9 @@ class RemoveProductFromTransferEvent extends CreateTransferEvent {
   RemoveProductFromTransferEvent(this.product);
 }
 
-
-
 class GetProductsCreateTransferEvent extends CreateTransferEvent {}
 
-
-class  CreateNewTransferEvent extends CreateTransferEvent {
+class CreateNewTransferEvent extends CreateTransferEvent {
   CreateNewTransferEvent();
 }
 

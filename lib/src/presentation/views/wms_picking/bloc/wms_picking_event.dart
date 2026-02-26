@@ -25,14 +25,12 @@ class LoadAllBatchsEvent extends PickingEvent {
   LoadAllBatchsEvent(this.isLoadinDialog, this.type);
 }
 
-
 //*evento para cargar todos los batchs de picking por componentes
 class LoadAllBatchsByComponentsEvent extends PickingEvent {
   bool isLoadinDialog;
   String type;
   LoadAllBatchsByComponentsEvent(this.isLoadinDialog, this.type);
 }
-
 
 //*evento para cargar hisotural de  los batchs de odoo
 
@@ -98,7 +96,7 @@ class ClearSearchBacthEvent extends PickingEvent {
 
 class FilterBatchesBStatusEvent extends PickingEvent {
   final String status;
-   String type;
+  String type;
 
   FilterBatchesBStatusEvent(this.status, this.type);
 }
@@ -118,12 +116,6 @@ class FilterBatchesByTypeEvent extends PickingEvent {
   FilterBatchesByTypeEvent(this.isWave, this.indexMenu);
 }
 
-class ShowKeyboardEvent extends PickingEvent {
-  final bool showKeyboard;
-
-  ShowKeyboardEvent(this.showKeyboard);
-}
-
 class LoadAllNovedades extends PickingEvent {
   final BuildContext context;
   LoadAllNovedades(this.context);
@@ -132,15 +124,4 @@ class LoadAllNovedades extends PickingEvent {
 class LoadDocOriginsEvent extends PickingEvent {
   final int idBatch;
   LoadDocOriginsEvent(this.idBatch);
-}
-
-class UpdateScannedValuePickingEvent extends PickingEvent {
-  final String scannedValue;
-  final String scan;
-  UpdateScannedValuePickingEvent(this.scannedValue, this.scan);
-}
-
-class ClearScannedValuePickingEvent extends PickingEvent {
-  final String scan;
-  ClearScannedValuePickingEvent(this.scan);
 }

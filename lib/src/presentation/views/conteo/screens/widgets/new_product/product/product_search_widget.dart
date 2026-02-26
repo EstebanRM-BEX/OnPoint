@@ -7,7 +7,6 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class SearchProductConteoScreen extends StatefulWidget {
   const SearchProductConteoScreen({super.key});
@@ -39,16 +38,6 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
                 const SizedBox(height: 20),
                 _buildSelectButton(bloc, size),
                 const SizedBox(height: 10),
-                if (bloc.isKeyboardVisible &&
-                    context.read<UserBloc>().fabricante.contains("Zebra"))
-                  CustomKeyboard(
-                    isLogin: false,
-                    controller: bloc.searchControllerProducts,
-                    onchanged: () {
-                      bloc.add(SearchProductEvent(
-                          bloc.searchControllerProducts.text));
-                    },
-                  )
               ],
             ),
           ),
@@ -67,7 +56,6 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
           color: Colors.white,
           elevation: 3,
           child: TextFormField(
-            readOnly: context.read<UserBloc>().fabricante.contains("Zebra"),
             showCursor: true,
             textAlignVertical: TextAlignVertical.center,
             controller: bloc.searchControllerProducts,
@@ -77,7 +65,6 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
                 onPressed: () {
                   bloc.searchControllerProducts.clear();
                   bloc.add(SearchProductEvent(''));
-                  bloc.add(ShowKeyboardEvent(false));
                   FocusScope.of(context).unfocus();
                 },
                 icon: const Icon(Icons.close, color: grey, size: 20),
@@ -89,9 +76,6 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
             onChanged: (value) {
               bloc.add(SearchProductEvent(value));
             },
-            onTap: context.read<UserBloc>().fabricante.contains("Zebra")
-                ? () => bloc.add(ShowKeyboardEvent(true))
-                : null,
           ),
         ),
       ),
@@ -244,7 +228,6 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
             (p) => p.productId == selectedProductId && p.lotId == selectedLotId,
           );
 
-          bloc.add(ShowKeyboardEvent(false));
           FocusScope.of(context).unfocus();
 
           bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
@@ -310,10 +293,6 @@ class _AppBarInfo extends StatelessWidget {
                         IconButton(
                           icon: const Icon(Icons.arrow_back, color: white),
                           onPressed: () {
-                            context.read<ConteoBloc>().add(
-                                  ShowKeyboardEvent(false),
-                                );
-
                             Navigator.pushReplacementNamed(
                               context,
                               'new-product-conteo',

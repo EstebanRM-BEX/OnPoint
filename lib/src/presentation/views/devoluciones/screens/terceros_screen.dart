@@ -72,11 +72,6 @@ class _TerceroscreenState extends State<Terceroscreen> {
                                           icon: const Icon(Icons.arrow_back,
                                               color: white),
                                           onPressed: () {
-                                            context
-                                                .read<DevolucionesBloc>()
-                                                .add(
-                                                  ShowKeyboardEvent(false),
-                                                );
                                             Navigator.pushReplacementNamed(
                                               context,
                                               'devoluciones-create',
@@ -124,12 +119,6 @@ class _TerceroscreenState extends State<Terceroscreen> {
                                   elevation: 3,
                                   child: TextFormField(
                                     showCursor: true,
-                                    readOnly: context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? true
-                                        : false,
                                     textAlignVertical: TextAlignVertical.center,
                                     controller: bloc.searchControllerTerceros,
                                     decoration: InputDecoration(
@@ -145,7 +134,6 @@ class _TerceroscreenState extends State<Terceroscreen> {
                                             bloc.add(SearchTerceroEvent(
                                               '',
                                             ));
-                                            bloc.add(ShowKeyboardEvent(false));
                                             FocusScope.of(context).unfocus();
                                           },
                                           icon: const Icon(
@@ -165,14 +153,6 @@ class _TerceroscreenState extends State<Terceroscreen> {
                                         value,
                                       ));
                                     },
-                                    onTap: !context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? null
-                                        : () {
-                                            bloc.add(ShowKeyboardEvent(true));
-                                          },
                                   ),
                                 ),
                               ),
@@ -269,7 +249,6 @@ class _TerceroscreenState extends State<Terceroscreen> {
                             final selectedTercero =
                                 bloc.tercerosFilters[selectedIndex!];
                             bloc.add(SelectTerceroEvent(selectedTercero));
-                            bloc.add(ShowKeyboardEvent(false));
                             FocusScope.of(context).unfocus();
 
                             setState(() {
@@ -298,19 +277,6 @@ class _TerceroscreenState extends State<Terceroscreen> {
                     const SizedBox(
                       height: 10,
                     ),
-                    Visibility(
-                      visible: bloc.isKeyboardVisible &&
-                          context.read<UserBloc>().fabricante.contains("Zebra"),
-                      child: CustomKeyboard(
-                        isLogin: false,
-                        controller: bloc.searchControllerTerceros,
-                        onchanged: () {
-                          bloc.add(SearchTerceroEvent(
-                            bloc.searchControllerTerceros.text,
-                          ));
-                        },
-                      ),
-                    )
                   ],
                 )),
           ),

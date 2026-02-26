@@ -105,7 +105,7 @@ class MyApp extends StatelessWidget {
 
     return GetMaterialApp(
       navigatorKey: navigatorKey,
-      debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: true,
       initialRoute: AppRoutes.checkout,
       routes: AppRoutes.routes,
       supportedLocales: const [Locale('es', 'ES')],
@@ -155,7 +155,7 @@ class MyApp extends StatelessWidget {
             BlocProvider(create: (_) => ClusterPickingBloc()),
           ],
           child: SessionTimeoutManager(
-            duration: const Duration(hours: 1),
+            duration: const Duration(minutes: 240),
             onSessionExpired: logOut,
             child: navigator ?? const SizedBox.shrink(),
           ),

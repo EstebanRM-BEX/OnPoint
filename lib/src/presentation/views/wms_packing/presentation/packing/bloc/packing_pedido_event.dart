@@ -3,11 +3,6 @@ part of 'packing_pedido_bloc.dart';
 @immutable
 sealed class PackingPedidoEvent {}
 
-class ShowKeyboardEvent extends PackingPedidoEvent {
-  final bool showKeyboard;
-  ShowKeyboardEvent(this.showKeyboard);
-}
-
 class LoadAllPackingPedidoEvent extends PackingPedidoEvent {
   final bool isLoadinDialog;
   LoadAllPackingPedidoEvent(
@@ -63,17 +58,6 @@ class ChangeLocationIsOkEvent extends PackingPedidoEvent {
 class ChangeLocationDestIsOkEvent extends PackingPedidoEvent {
   final bool locationDestIsOk;
   ChangeLocationDestIsOkEvent(this.locationDestIsOk);
-}
-
-class ClearScannedValuePackEvent extends PackingPedidoEvent {
-  final String scan;
-  ClearScannedValuePackEvent(this.scan);
-}
-
-class UpdateScannedValuePackEvent extends PackingPedidoEvent {
-  final String scannedValue;
-  final String scan;
-  UpdateScannedValuePackEvent(this.scannedValue, this.scan);
 }
 
 class ChangeProductIsOkEvent extends PackingPedidoEvent {
@@ -256,7 +240,6 @@ class ViewProductImageEvent extends PackingPedidoEvent {
   final int idProduct;
   ViewProductImageEvent(this.idProduct);
 }
-
 
 class SortPackingListEvent extends PackingPedidoEvent {
   final String field;

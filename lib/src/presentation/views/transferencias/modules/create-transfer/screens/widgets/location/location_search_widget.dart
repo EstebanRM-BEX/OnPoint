@@ -7,8 +7,6 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class SearchLocationCreateTransfercreen extends StatefulWidget {
   const SearchLocationCreateTransfercreen(
@@ -61,12 +59,6 @@ class _SearchLocationScreenState
                                   elevation: 3,
                                   child: TextFormField(
                                     showCursor: true,
-                                    readOnly: context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? true
-                                        : false,
                                     textAlignVertical: TextAlignVertical.center,
                                     controller: bloc.searchControllerLocation,
                                     decoration: InputDecoration(
@@ -82,9 +74,7 @@ class _SearchLocationScreenState
                                             bloc.add(SearchLocationEvent(
                                               '',
                                             ));
-                                            bloc.add(
-                                                ShowKeyboardCreateTransferEvent(
-                                                    false));
+
                                             FocusScope.of(context).unfocus();
                                           },
                                           icon: const Icon(
@@ -104,16 +94,6 @@ class _SearchLocationScreenState
                                         value,
                                       ));
                                     },
-                                    onTap: !context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? null
-                                        : () {
-                                            bloc.add(
-                                                ShowKeyboardCreateTransferEvent(
-                                                    true));
-                                          },
                                   ),
                                 ),
                               ),
@@ -231,7 +211,6 @@ class _SearchLocationScreenState
                             bloc.add(ChangeLocationIsOkEvent(
                                 selectedLocation, widget.isLocationDest));
 
-                            bloc.add(ShowKeyboardCreateTransferEvent(false));
                             FocusScope.of(context).unfocus();
 
                             setState(() {
@@ -260,19 +239,6 @@ class _SearchLocationScreenState
                     const SizedBox(
                       height: 10,
                     ),
-                    Visibility(
-                      visible: bloc.isKeyboardVisible &&
-                          context.read<UserBloc>().fabricante.contains("Zebra"),
-                      child: CustomKeyboard(
-                        isLogin: false,
-                        controller: bloc.searchControllerLocation,
-                        onchanged: () {
-                          bloc.add(SearchLocationEvent(
-                            bloc.searchControllerLocation.text,
-                          ));
-                        },
-                      ),
-                    )
                   ],
                 )),
           ),
@@ -318,9 +284,6 @@ class _AppBarInfo extends StatelessWidget {
                         IconButton(
                           icon: const Icon(Icons.arrow_back, color: white),
                           onPressed: () {
-                            context.read<CreateTransferBloc>().add(
-                                  ShowKeyboardCreateTransferEvent(false),
-                                );
                             Navigator.pushReplacementNamed(
                               context,
                               'create-transfer',

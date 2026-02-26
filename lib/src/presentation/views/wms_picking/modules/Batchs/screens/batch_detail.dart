@@ -320,13 +320,6 @@ class BatchDetailScreen extends StatelessWidget {
                                   color: Colors.white,
                                   elevation: 2,
                                   child: TextFormField(
-                                    readOnly: context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? true
-                                        : false,
-                                    focusNode: FocusNode(),
                                     textAlignVertical: TextAlignVertical.center,
                                     onChanged: (value) {
                                       context.read<BatchBloc>().add(
@@ -336,16 +329,6 @@ class BatchDetailScreen extends StatelessWidget {
                                                   .read<BatchBloc>()
                                                   .typePicking));
                                     },
-                                    onTap: !context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? null
-                                        : () {
-                                            context
-                                                .read<BatchBloc>()
-                                                .add(ShowKeyboard(true));
-                                          },
                                     controller: context
                                         .read<BatchBloc>()
                                         .searchController,
@@ -361,9 +344,6 @@ class BatchDetailScreen extends StatelessWidget {
                                                         .typePicking));
                                             //cerramo el teclado
                                             FocusScope.of(context).unfocus();
-                                            context
-                                                .read<BatchBloc>()
-                                                .add(ShowKeyboard(false));
                                           },
                                           icon: const Icon(Icons.close,
                                               color: grey)),
@@ -1144,24 +1124,6 @@ class BatchDetailScreen extends StatelessWidget {
                               ),
                             ),
                     ),
-
-                    Visibility(
-                      visible: context.read<BatchBloc>().isKeyboardVisible &&
-                          context.read<UserBloc>().fabricante.contains("Zebra"),
-                      child: CustomKeyboard(
-                        isLogin: false,
-                        controller: context.read<BatchBloc>().searchController,
-                        onchanged: () {
-                          context.read<BatchBloc>().add(
-                              SearchProductsBatchEvent(
-                                  context
-                                      .read<BatchBloc>()
-                                      .searchController
-                                      .text,
-                                  context.read<BatchBloc>().typePicking));
-                        },
-                      ),
-                    )
                   ],
                 ),
               )),

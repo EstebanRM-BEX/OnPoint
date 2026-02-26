@@ -7,7 +7,6 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class SearchProductCreateTransferScreen extends StatefulWidget {
   const SearchProductCreateTransferScreen({super.key});
@@ -41,16 +40,6 @@ class _SearchProductScreenState
                 const SizedBox(height: 20),
                 _buildSelectButton(bloc, size),
                 const SizedBox(height: 10),
-                if (bloc.isKeyboardVisible &&
-                    context.read<UserBloc>().fabricante.contains("Zebra"))
-                  CustomKeyboard(
-                    isLogin: false,
-                    controller: bloc.searchControllerProducts,
-                    onchanged: () {
-                      bloc.add(SearchProductEvent(
-                          bloc.searchControllerProducts.text));
-                    },
-                  )
               ],
             ),
           ),
@@ -70,7 +59,6 @@ class _SearchProductScreenState
           color: Colors.white,
           elevation: 3,
           child: TextFormField(
-            readOnly: context.read<UserBloc>().fabricante.contains("Zebra"),
             showCursor: true,
             textAlignVertical: TextAlignVertical.center,
             controller: bloc.searchControllerProducts,
@@ -80,7 +68,6 @@ class _SearchProductScreenState
                 onPressed: () {
                   bloc.searchControllerProducts.clear();
                   bloc.add(SearchProductEvent(''));
-                  bloc.add(ShowKeyboardCreateTransferEvent(false));
                   FocusScope.of(context).unfocus();
                 },
                 icon: const Icon(Icons.close, color: grey, size: 20),
@@ -92,9 +79,6 @@ class _SearchProductScreenState
             onChanged: (value) {
               bloc.add(SearchProductEvent(value));
             },
-            onTap: context.read<UserBloc>().fabricante.contains("Zebra")
-                ? () => bloc.add(ShowKeyboardCreateTransferEvent(true))
-                : null,
           ),
         ),
       ),
@@ -245,7 +229,6 @@ class _SearchProductScreenState
             (p) => p.productId == selectedProductId && p.lotId == selectedLotId,
           );
 
-          bloc.add(ShowKeyboardCreateTransferEvent(false));
           FocusScope.of(context).unfocus();
 
           bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
@@ -310,10 +293,6 @@ class _AppBarInfo extends StatelessWidget {
                         IconButton(
                           icon: const Icon(Icons.arrow_back, color: white),
                           onPressed: () {
-                            context.read<CreateTransferBloc>().add(
-                                  ShowKeyboardCreateTransferEvent(false),
-                                );
-
                             Navigator.pushReplacementNamed(
                               context,
                               'create-transfer',

@@ -106,7 +106,6 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   PackingPedidoBloc() : super(PackingPedidoInitial()) {
     on<PackingPedidoEvent>((event, emit) {});
     //evento para mostrar el teclado
-    on<ShowKeyboardEvent>(_onShowKeyboardEvent);
     //*obtener todos los pedidos para packing de odoo
     on<LoadAllPackingPedidoEvent>(_onLoadAllPackingEvent);
     //*cargar los pedidos de packing desde la base de datos
@@ -133,10 +132,6 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     on<ChangeLocationIsOkEvent>(_onChangeLocationIsOkEvent);
     on<ChangeLocationDestIsOkEvent>(_onChangeLocationDestIsOkEvent);
     on<ChangeProductIsOkEvent>(_onChangeProductIsOkEvent);
-
-    //*evento para actualizar el valor del scan
-    on<UpdateScannedValuePackEvent>(_onUpdateScannedValueEvent);
-    on<ClearScannedValuePackEvent>(_onClearScannedValueEvent);
 
     //*evento para cambiar la cantidad seleccionada
     on<ChangeQuantitySeparate>(_onChangeQuantitySelectedEvent);
@@ -1298,83 +1293,6 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     emit(ChangeQuantitySeparateState(quantitySelected));
   }
 
-//*evento para limpiar el valor del scan
-  void _onClearScannedValueEvent(
-      ClearScannedValuePackEvent event, Emitter<PackingPedidoState> emit) {
-    try {
-      switch (event.scan) {
-        case 'location':
-          scannedValue1 = '';
-          emit(ClearScannedValuePackState());
-          break;
-        case 'product':
-          scannedValue2 = '';
-          emit(ClearScannedValuePackState());
-          break;
-        case 'quantity':
-          scannedValue3 = '';
-          emit(ClearScannedValuePackState());
-          break;
-        case 'muelle':
-          scannedValue4 = '';
-          emit(ClearScannedValuePackState());
-          break;
-
-        case 'toDo':
-          scannedValue5 = '';
-          emit(ClearScannedValuePackState());
-          break;
-
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-      emit(ClearScannedValuePackState());
-    } catch (e, s) {
-      print("❌ Error en _onClearScannedValueEvent: $e, $s");
-    }
-  }
-
-  //*evento para actualizar el valor del scan
-  void _onUpdateScannedValueEvent(
-      UpdateScannedValuePackEvent event, Emitter<PackingPedidoState> emit) {
-    try {
-      switch (event.scan) {
-        case 'location':
-          // Acumulador de valores escaneados
-          scannedValue1 += event.scannedValue.trim();
-          print('scannedValue1: $scannedValue1');
-          emit(UpdateScannedValuePackState(scannedValue1, event.scan));
-          break;
-        case 'product':
-          scannedValue2 += event.scannedValue.trim();
-          print('scannedValue2: $scannedValue2');
-          emit(UpdateScannedValuePackState(scannedValue2, event.scan));
-          break;
-        case 'quantity':
-          scannedValue3 += event.scannedValue.trim();
-          print('scannedValue3: $scannedValue3');
-          emit(UpdateScannedValuePackState(scannedValue3, event.scan));
-          break;
-        case 'muelle':
-          print('scannedValue4: $scannedValue4');
-          scannedValue4 += event.scannedValue.trim();
-          emit(UpdateScannedValuePackState(scannedValue4, event.scan));
-          break;
-
-        case 'toDo':
-          print('scannedValue5: $scannedValue5');
-          scannedValue5 += event.scannedValue.trim();
-          emit(UpdateScannedValuePackState(scannedValue5, event.scan));
-          break;
-
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-    } catch (e, s) {
-      print("❌ Error en _onUpdateScannedValueEvent: $e, $s");
-    }
-  }
-
   void _onChangeProductIsOkEvent(
       ChangeProductIsOkEvent event, Emitter<PackingPedidoState> emit) async {
     if (event.productIsOk) {
@@ -1754,12 +1672,6 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         .split('')
         .map((char) => accentMap[char] ?? char)
         .join();
-  }
-
-  void _onShowKeyboardEvent(
-      ShowKeyboardEvent event, Emitter<PackingPedidoState> emit) {
-    isKeyboardVisible = event.showKeyboard;
-    emit(ShowKeyboardState(showKeyboard: isKeyboardVisible));
   }
 
   void _onLoadAllPackingEvent(

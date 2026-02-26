@@ -7,7 +7,6 @@ import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/index.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/history/models/hisotry_done_model.dart';
@@ -34,7 +33,8 @@ class HistoryListScreen extends StatelessWidget {
       final listOfBatchs = bloc.filtersHistoryBatchs;
 
       void processBatch(HistoryBatch batch) {
-        bloc.add(ClearScannedValuePickingEvent('toDo'));
+        Future.microtask(() => focusNodeBuscar.requestFocus());
+
         context
             .read<WMSPickingBloc>()
             .add(LoadHistoryBatchIdEvent(true, batch.id ?? 0));
@@ -54,7 +54,7 @@ class HistoryListScreen extends StatelessWidget {
         }
       }
 
-      // // Buscar el producto usando el código de barras principal o el código de producto
+      // Buscar el producto usando el código de barras principal o el código de producto
       final batchs = listOfBatchs.firstWhere(
         (b) => b.name?.toLowerCase() == scan,
         orElse: () => HistoryBatch(),
@@ -67,7 +67,7 @@ class HistoryListScreen extends StatelessWidget {
       } else {
         audioService.playErrorSound();
         vibrationService.vibrate();
-        bloc.add(ClearScannedValuePickingEvent('toDo'));
+        Future.microtask(() => focusNodeBuscar.requestFocus());
       }
     }
 
@@ -157,64 +157,52 @@ class HistoryListScreen extends StatelessWidget {
                             color: Colors.white,
                             elevation: 3,
                             child: TextFormField(
-                                textAlignVertical: TextAlignVertical.center,
-                                controller: context
-                                    .read<WMSPickingBloc>()
-                                    .searchHistoryController,
-                                decoration: InputDecoration(
-                                  prefixIcon: const Icon(Icons.search,
-                                      color: grey, size: 20),
-                                  suffixIcon: IconButton(
-                                      onPressed: () {},
-                                      icon: IconButton(
-                                        onPressed: () {
-                                          context
-                                              .read<WMSPickingBloc>()
-                                              .add(ShowKeyboardEvent(false));
-                                          context
-                                              .read<WMSPickingBloc>()
-                                              .searchHistoryController
-                                              .clear();
-
-                                          context
-                                              .read<WMSPickingBloc>()
-                                              .add(SearchBatchHistoryEvent(''));
-
-                                          //pasamos el foco a focusNodeBuscar
-                                          Future.delayed(
-                                              const Duration(seconds: 1), () {
-                                            // _handleDependencies();
-                                            // ignore: use_build_context_synchronously
-                                            FocusScope.of(context)
-                                                .requestFocus(focusNodeBuscar);
-                                          });
-                                        },
-                                        icon: const Icon(Icons.close,
-                                            color: grey, size: 20),
-                                      )),
-                                  disabledBorder: const OutlineInputBorder(),
-                                  hintText: "Buscar batch",
-                                  hintStyle: const TextStyle(
-                                      color: Colors.grey, fontSize: 12),
-                                  border: InputBorder.none,
-                                ),
-                                onChanged: (value) {
-                                  context
-                                      .read<WMSPickingBloc>()
-                                      .add(SearchBatchHistoryEvent(value));
-                                },
-                                style: const TextStyle(
-                                    color: Colors.black, fontSize: 14),
-                                onTap: !context
-                                        .read<UserBloc>()
-                                        .fabricante
-                                        .contains("Zebra")
-                                    ? null
-                                    : () {
+                              textAlignVertical: TextAlignVertical.center,
+                              controller: context
+                                  .read<WMSPickingBloc>()
+                                  .searchHistoryController,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.search,
+                                    color: grey, size: 20),
+                                suffixIcon: IconButton(
+                                    onPressed: () {},
+                                    icon: IconButton(
+                                      onPressed: () {
                                         context
                                             .read<WMSPickingBloc>()
-                                            .add(ShowKeyboardEvent(true));
-                                      }),
+                                            .searchHistoryController
+                                            .clear();
+
+                                        context
+                                            .read<WMSPickingBloc>()
+                                            .add(SearchBatchHistoryEvent(''));
+
+                                        //pasamos el foco a focusNodeBuscar
+                                        Future.delayed(
+                                            const Duration(seconds: 1), () {
+                                          // _handleDependencies();
+                                          // ignore: use_build_context_synchronously
+                                          FocusScope.of(context)
+                                              .requestFocus(focusNodeBuscar);
+                                        });
+                                      },
+                                      icon: const Icon(Icons.close,
+                                          color: grey, size: 20),
+                                    )),
+                                disabledBorder: const OutlineInputBorder(),
+                                hintText: "Buscar batch",
+                                hintStyle: const TextStyle(
+                                    color: Colors.grey, fontSize: 12),
+                                border: InputBorder.none,
+                              ),
+                              onChanged: (value) {
+                                context
+                                    .read<WMSPickingBloc>()
+                                    .add(SearchBatchHistoryEvent(value));
+                              },
+                              style: const TextStyle(
+                                  color: Colors.black, fontSize: 14),
+                            ),
                           ),
                         ),
                       ),
@@ -226,14 +214,8 @@ class HistoryListScreen extends StatelessWidget {
                 controller:
                     context.read<WMSPickingBloc>().searchHistoryController,
                 focusNode: focusNodeBuscar,
-                scannedValue5: "",
                 onBarcodeScanned: (value, context) {
                   return validateBarcode(value, context);
-                },
-                onKeyScanned: (keyLabel, type, context) {
-                  return context.read<WMSPickingBloc>().add(
-                        UpdateScannedValuePickingEvent(keyLabel, 'toDo'),
-                      );
                 },
               ),
 

@@ -266,25 +266,10 @@ class PickDetailScreen extends StatelessWidget {
                                   elevation: 2,
                                   child: TextFormField(
                                     showCursor: true,
-                                    readOnly: context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? true
-                                        : false,
-                                    focusNode: FocusNode(),
                                     textAlignVertical: TextAlignVertical.center,
                                     onChanged: (value) {
                                       bloc.add(SearchProductsPickEvent(value));
                                     },
-                                    onTap: !context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? null
-                                        : () {
-                                            bloc.add(ShowKeyboard(true));
-                                          },
                                     controller: bloc.searchController,
                                     decoration: InputDecoration(
                                       prefixIcon:
@@ -295,7 +280,6 @@ class PickDetailScreen extends StatelessWidget {
                                                 ClearSearchProudctsPickEvent());
                                             //cerramo el teclado
                                             FocusScope.of(context).unfocus();
-                                            bloc.add(ShowKeyboard(false));
                                           },
                                           icon: const Icon(Icons.close,
                                               color: grey)),
@@ -1083,19 +1067,6 @@ class PickDetailScreen extends StatelessWidget {
                               ),
                             ),
                     ),
-
-                    Visibility(
-                      visible: bloc.isKeyboardVisible &&
-                          context.read<UserBloc>().fabricante.contains("Zebra"),
-                      child: CustomKeyboard(
-                        isLogin: false,
-                        controller: bloc.searchController,
-                        onchanged: () {
-                          bloc.add(SearchProductsPickEvent(
-                              bloc.searchController.text));
-                        },
-                      ),
-                    )
                   ],
                 ),
               )),

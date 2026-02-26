@@ -25,17 +25,6 @@ class LoadCurrentProductEvent extends ConteoEvent {
   LoadCurrentProductEvent({required this.currentProduct});
 }
 
-class UpdateScannedValueEvent extends ConteoEvent {
-  final String scannedValue;
-  final String scan;
-  UpdateScannedValueEvent(this.scannedValue, this.scan);
-}
-
-class ClearScannedValueEvent extends ConteoEvent {
-  final String scan;
-  ClearScannedValueEvent(this.scan);
-}
-
 class LoadConfigurationsUserConteo extends ConteoEvent {
   LoadConfigurationsUserConteo();
 }
@@ -91,10 +80,6 @@ class ExpandLocationState extends ConteoState {
   ExpandLocationState(this.ubicacion);
 }
 
-class ClearExpandedLocationEvent extends ConteoEvent {
-  ClearExpandedLocationEvent();
-}
-
 class ResetValuesEvent extends ConteoEvent {
   final bool resetAll;
   final bool isLoading;
@@ -131,12 +116,6 @@ class GetLotesProduct extends ConteoEvent {
 class SelectecLoteEvent extends ConteoEvent {
   final LotesProduct lote;
   SelectecLoteEvent(this.lote);
-}
-
-class ShowKeyboardEvent extends ConteoEvent {
-  final bool showKeyboard;
-
-  ShowKeyboardEvent(this.showKeyboard);
 }
 
 class SearchLotevent extends ConteoEvent {

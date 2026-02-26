@@ -127,12 +127,6 @@ class ListRecepctionBatchScreen extends StatelessWidget {
                         final recepcionBloc =
                             context.read<RecepcionBatchBloc>();
                         recepcionBloc.add(SearchReceptionEvent(''));
-                        recepcionBloc.add(ShowKeyboardEvent(false));
-                      },
-                      onTap: () {
-                        context
-                            .read<RecepcionBatchBloc>()
-                            .add(ShowKeyboardEvent(true));
                       },
                     ),
                     (recepcionBatch.isEmpty)
@@ -397,9 +391,6 @@ class ListRecepctionBatchScreen extends StatelessWidget {
                                                     '',
                                                   ));
 
-                                                  bloc.add(
-                                                      ShowKeyboardEvent(false));
-
                                                   //asignamos el responsable a esa orden de entrada
                                                   bloc.add(
                                                       AssignUserToReception(
@@ -486,10 +477,6 @@ class AppBar extends StatelessWidget {
                             '',
                           ));
 
-                      context
-                          .read<RecepcionBatchBloc>()
-                          .add(ShowKeyboardEvent(false));
-
                       Navigator.pushReplacementNamed(
                         context,
                         '/home',
@@ -510,10 +497,6 @@ class AppBar extends StatelessWidget {
                             .add(SearchReceptionEvent(
                               '',
                             ));
-
-                        context
-                            .read<RecepcionBatchBloc>()
-                            .add(ShowKeyboardEvent(false));
 
                         // await DataBaseSqlite().deleRecepcion();
                         context.read<RecepcionBatchBloc>().add(

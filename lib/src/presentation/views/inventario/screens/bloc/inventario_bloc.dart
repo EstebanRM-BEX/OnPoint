@@ -95,13 +95,6 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
     //*metodo para bucar un producto
     on<SearchProductEvent>(_onSearchProductEvent);
 
-    //metodo para mostrar el teclado
-    on<ShowKeyboardEvent>(_onShowKeyboardEvent);
-
-    //*evento para actualizar el valor del scan
-    on<UpdateScannedValueEvent>(_onUpdateScannedValueEvent);
-    on<ClearScannedValueEvent>(_onClearScannedValueEvent);
-
     on<ValidateFieldsEvent>(_onValidateFields);
 
     //*cambiar el estado de las variables
@@ -613,78 +606,6 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       emit(ValidateFieldsStateError('Error al validar campos'));
       print("❌ Error en el ValidateFieldsEvent $e ->$s");
     }
-  }
-
-  //*evento para actualizar el valor del scan
-  void _onUpdateScannedValueEvent(
-      UpdateScannedValueEvent event, Emitter<InventarioState> emit) {
-    try {
-      switch (event.scan) {
-        case 'location':
-          // Acumulador de valores escaneados
-          scannedValue1 += event.scannedValue.trim();
-          print('scannedValue1: $scannedValue1');
-          emit(UpdateScannedValueState(scannedValue1, event.scan));
-          break;
-        case 'product':
-          scannedValue2 += event.scannedValue.trim();
-          print('scannedValue2: $scannedValue2');
-          emit(UpdateScannedValueState(scannedValue2, event.scan));
-          break;
-        case 'quantity':
-          scannedValue3 += event.scannedValue.trim();
-          print('scannedValue3: $scannedValue3');
-          emit(UpdateScannedValueState(scannedValue3, event.scan));
-          break;
-
-        case 'lote':
-          scannedValue4 += event.scannedValue.trim();
-          print('scannedValue4: $scannedValue4');
-          emit(UpdateScannedValueState(scannedValue4, event.scan));
-          break;
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-    } catch (e, s) {
-      print("❌ Error en _onUpdateScannedValueEvent: $e, $s");
-    }
-  }
-
-//*evento para limpiar el valor del scan
-  void _onClearScannedValueEvent(
-      ClearScannedValueEvent event, Emitter<InventarioState> emit) {
-    try {
-      switch (event.scan) {
-        case 'location':
-          scannedValue1 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'product':
-          scannedValue2 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'quantity':
-          scannedValue3 = '';
-          emit(ClearScannedValueState());
-          break;
-        case 'lote':
-          scannedValue4 = '';
-          emit(ClearScannedValueState());
-          break;
-
-        default:
-          print('Scan type not recognized: ${event.scan}');
-      }
-      emit(ClearScannedValueState());
-    } catch (e, s) {
-      print("❌ Error en _onClearScannedValueEvent: $e, $s");
-    }
-  }
-
-  void _onShowKeyboardEvent(
-      ShowKeyboardEvent event, Emitter<InventarioState> emit) {
-    isKeyboardVisible = event.showKeyboard;
-    emit(ShowKeyboardState(showKeyboard: isKeyboardVisible));
   }
 
   void _onSearchLocationEvent(

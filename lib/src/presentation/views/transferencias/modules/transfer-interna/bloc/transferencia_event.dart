@@ -34,11 +34,6 @@ class SearchTransferEvent extends TransferenciaEvent {
   SearchTransferEvent(this.query, this.type);
 }
 
-class ShowKeyboardEvent extends TransferenciaEvent {
-  final bool showKeyboard;
-  ShowKeyboardEvent({required this.showKeyboard});
-}
-
 class LoadConfigurationsUserTransfer extends TransferenciaEvent {}
 
 class GetPorductsToTransfer extends TransferenciaEvent {
@@ -105,16 +100,16 @@ class ChangeIsOkQuantity extends TransferenciaEvent {
   ChangeIsOkQuantity(this.isOk, this.productId, this.idTransfer, this.idMove);
 }
 
-class UpdateScannedValueEvent extends TransferenciaEvent {
-  final String scannedValue;
-  final String scan;
-  UpdateScannedValueEvent(this.scannedValue, this.scan);
-}
+// class UpdateScannedValueEvent extends TransferenciaEvent {
+//   final String scannedValue;
+//   final String scan;
+//   UpdateScannedValueEvent(this.scannedValue, this.scan);
+// }
 
-class ClearScannedValueEvent extends TransferenciaEvent {
-  final String scan;
-  ClearScannedValueEvent(this.scan);
-}
+// class ClearScannedValueEvent extends TransferenciaEvent {
+//   final String scan;
+//   ClearScannedValueEvent(this.scan);
+// }
 
 class ChangeQuantitySeparate extends TransferenciaEvent {
   final dynamic quantity;
@@ -230,7 +225,6 @@ class ToggleProductExpansionEvent extends TransferenciaEvent {
 
   ToggleProductExpansionEvent(this.isExpanded);
 }
-
 
 class ViewProductImageEvent extends TransferenciaEvent {
   final int idProduct;

@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_temp_widget.dart';
 
 class DialogTemperaturaManual extends StatefulWidget {
   final int moveLineId;
@@ -20,7 +19,6 @@ class DialogTemperaturaManual extends StatefulWidget {
 class _DialogCapturaTemperaturaState extends State<DialogTemperaturaManual> {
   @override
   Widget build(BuildContext context) {
-
     return BlocConsumer<RecepcionBloc, RecepcionState>(
       listener: (context, state) {
         if (state is GetTemperatureFailure) {
@@ -31,7 +29,7 @@ class _DialogCapturaTemperaturaState extends State<DialogTemperaturaManual> {
         }
       },
       builder: (context, state) {
-    final bloc = context.read<RecepcionBloc>();
+        final bloc = context.read<RecepcionBloc>();
         return BackdropFilter(
           filter: ImageFilter.blur(
             sigmaX: 5,
@@ -59,7 +57,6 @@ class _DialogCapturaTemperaturaState extends State<DialogTemperaturaManual> {
 
                   TextFormField(
                     showCursor: false,
-                    readOnly: true,
                     controller: bloc.temperatureController,
                     keyboardType: TextInputType.number,
                     style: const TextStyle(
@@ -144,11 +141,6 @@ class _DialogCapturaTemperaturaState extends State<DialogTemperaturaManual> {
         ),
         //mostramos el teclado de temperatura
         const SizedBox(height: 10),
-        CustomKeyboardTempNumber(
-          controller: bloc.temperatureController,
-          isDialog: true,
-          onchanged: () {},
-        )
       ],
     );
   }

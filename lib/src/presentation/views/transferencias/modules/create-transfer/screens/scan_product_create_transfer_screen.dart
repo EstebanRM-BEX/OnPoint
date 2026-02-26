@@ -169,9 +169,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
 
   void validateLocation(String value) {
     final bloc = context.read<CreateTransferBloc>();
-    final scan = bloc.scannedValue1.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : bloc.scannedValue1.trim().toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     print('scan location: $scan');
     _controllerLocation.clear();
@@ -193,14 +191,12 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
       bloc.add(ValidateFieldsEvent(field: "location", isOk: false));
     }
 
-    bloc.add(ClearScannedValueTransferEvent('location'));
+    Future.microtask(() => focusNode1.requestFocus());
   }
 
   void validateLocationDest(String value) {
     final bloc = context.read<CreateTransferBloc>();
-    final scan = bloc.scannedValue7.trim().toLowerCase() == ""
-        ? value.trim().toLowerCase()
-        : bloc.scannedValue7.trim().toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     print('scan location dest: $scan');
     _controllerLocationDestino.clear();
@@ -222,15 +218,13 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
       bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: false));
     }
 
-    bloc.add(ClearScannedValueTransferEvent('locationDest'));
+    Future.microtask(() => focusNode6.requestFocus());
   }
 
   void validateProduct(String value) {
     final bloc = context.read<CreateTransferBloc>();
 
-    final scan = (bloc.scannedValue2.isEmpty ? value : bloc.scannedValue2)
-        .trim()
-        .toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     _controllerProduct.clear();
     print('🔎 Scan barcode: $scan');
@@ -258,9 +252,8 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
       print('❌ Producto no encontrado en barcodes');
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      bloc
-        ..add(ValidateFieldsEvent(field: "product", isOk: false))
-        ..add(ClearScannedValueTransferEvent('product'));
+      bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
+      Future.microtask(() => focusNode2.requestFocus());
       return;
     }
 
@@ -280,9 +273,8 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
       print('❌ Producto no encontrado por ID');
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      bloc
-        ..add(ValidateFieldsEvent(field: "product", isOk: false))
-        ..add(ClearScannedValueTransferEvent('product'));
+      bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
+      Future.microtask(() => focusNode2.requestFocus());
       return;
     }
   }
@@ -315,13 +307,13 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
       print('lote encontrado: ${matchedLote.name}');
       bloc.add(ValidateFieldsEvent(field: "lote", isOk: true));
       bloc.add(SelectecLoteEvent(matchedLote));
-      bloc.add(ClearScannedValueTransferEvent('lote'));
+      Future.microtask(() => focusNode5.requestFocus());
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       print('lote no encontrado');
       bloc.add(ValidateFieldsEvent(field: "lote", isOk: false));
-      bloc.add(ClearScannedValueTransferEvent('lote'));
+      Future.microtask(() => focusNode5.requestFocus());
     }
   }
 
@@ -337,14 +329,14 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
 
     if (scan == currentProduct?.barcode?.toLowerCase()) {
       bloc.add(AddQuantitySeparate(currentProduct?.productId ?? 0, 1, false));
-      bloc.add(ClearScannedValueTransferEvent('quantity'));
+      Future.microtask(() => focusNode3.requestFocus());
     } else {
       validateScannedBarcode(
         scan,
         currentProduct ?? Product(),
         bloc,
       );
-      bloc.add(ClearScannedValueTransferEvent('quantity'));
+      Future.microtask(() => focusNode3.requestFocus());
     }
   }
 
@@ -562,11 +554,6 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                           onLocationScanned: (value) {
                             validateLocation(value);
                           },
-                          onKeyScanned: (keyLabel) {
-                            context.read<CreateTransferBloc>().add(
-                                UpdateScannedValueTransferEvent(
-                                    keyLabel, 'location'));
-                          },
                           focusNode: focusNode1,
                           controller: _controllerLocation,
                           locationDropdown: LocationCardButtonCreateTransfer(
@@ -602,11 +589,6 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                           onLocationScanned: (value) {
                             validateLocationDest(value);
                           },
-                          onKeyScanned: (keyLabel) {
-                            context.read<CreateTransferBloc>().add(
-                                UpdateScannedValueTransferEvent(
-                                    keyLabel, 'locationDest'));
-                          },
                           focusNode: focusNode6,
                           controller: _controllerLocationDestino,
                           locationDropdown: LocationCardButtonCreateTransfer(
@@ -640,11 +622,6 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                               context.read<CreateTransferBloc>().currentProduct,
                           onValidateProduct: (value) {
                             validateProduct(value);
-                          },
-                          onKeyScanned: (value) {
-                            context.read<CreateTransferBloc>().add(
-                                UpdateScannedValueTransferEvent(
-                                    value, 'product'));
                           },
                           productDropdown:
                               ProductDropdownCreateTransferWidget(),
@@ -683,11 +660,6 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                             onValidateLote: (value) {
                               validateLote(value);
                             },
-                            onKeyScanned: (value) {
-                              context.read<CreateTransferBloc>().add(
-                                  UpdateScannedValueTransferEvent(
-                                      value, 'lote'));
-                            },
                           ),
                         ),
                       ]),
@@ -722,10 +694,6 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                     Future.delayed(const Duration(milliseconds: 100), () {
                       FocusScope.of(context).requestFocus(focusNode3);
                     });
-                  },
-                  onKeyScanned: (keyLabel) {
-                    context.read<CreateTransferBloc>().add(
-                        UpdateScannedValueTransferEvent(keyLabel, 'quantity'));
                   },
                   showKeyboard:
                       context.read<UserBloc>().fabricante.contains("Zebra"),
@@ -765,10 +733,6 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                     context.read<CreateTransferBloc>().add(ShowQuantityEvent(
                         !context.read<CreateTransferBloc>().viewQuantity));
                   },
-                  customKeyboard: CustomKeyboardNumber(
-                    controller: cantidadController,
-                    onchanged: _validatebuttonquantity,
-                  ),
                   isViewCant: false,
                 ),
               ],

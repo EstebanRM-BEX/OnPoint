@@ -20,7 +20,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class ListPackingScreen extends StatefulWidget {
   const ListPackingScreen({super.key});
@@ -48,7 +47,7 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
     final listOfBatchs = bloc.listOfPedidosBD;
 
     void processBatch(PedidoPackingResult batch) {
-      bloc.add(ClearScannedValuePackEvent('toDo'));
+      Future.microtask(() => focusNodeBuscar.requestFocus());
 
       print(batch.toMap());
       try {
@@ -78,7 +77,10 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      bloc.add(ClearScannedValuePackEvent('toDo'));
+      Future.microtask(() => focusNodeBuscar.requestFocus());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Packing no encontrado en la lista')),
+      );
     }
   }
 
@@ -149,15 +151,6 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
 
       return Scaffold(
           backgroundColor: white,
-          bottomNavigationBar:
-              context.read<PackingPedidoBloc>().isKeyboardVisible
-                  ? CustomKeyboard(
-                      isLogin: false,
-                      controller:
-                          context.read<PackingPedidoBloc>().searchController,
-                      onchanged: () {},
-                    )
-                  : null,
           body: Container(
             margin: const EdgeInsets.only(bottom: 10),
             width: size.width * 1,
@@ -196,9 +189,6 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                                     icon: const Icon(Icons.arrow_back,
                                         color: white),
                                     onPressed: () {
-                                      context
-                                          .read<PackingPedidoBloc>()
-                                          .add(ShowKeyboardEvent(false));
                                       Navigator.pushReplacementNamed(
                                         context,
                                         '/home',
@@ -537,17 +527,11 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                     final packingBloc = context.read<PackingPedidoBloc>();
                     packingBloc.searchController.clear();
                     packingBloc.add(SearchPedidoEvent(''));
-                    packingBloc.add(ShowKeyboardEvent(false));
                     Future.delayed(const Duration(milliseconds: 100), () {
                       if (mounted) {
                         FocusScope.of(context).requestFocus(focusNodeBuscar);
                       }
                     });
-                  },
-                  onTap: () {
-                    context
-                        .read<PackingPedidoBloc>()
-                        .add(ShowKeyboardEvent(true));
                   },
                 ),
 
@@ -555,14 +539,8 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                 BarcodeScannerField(
                   controller: _controllerToDo,
                   focusNode: focusNodeBuscar,
-                  scannedValue5: "",
                   onBarcodeScanned: (value, context) {
                     return validateBarcode(value, context);
-                  },
-                  onKeyScanned: (keyLabel, type, context) {
-                    return context.read<PackingPedidoBloc>().add(
-                          UpdateScannedValuePackEvent(keyLabel, type),
-                        );
                   },
                 ),
 
@@ -969,7 +947,6 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
           onAccepted: () async {
             packingPedidoBloc.searchControllerPedido.clear();
             packingPedidoBloc.add(SearchPedidoEvent(''));
-            packingPedidoBloc.add(ShowKeyboardEvent(false));
             packingPedidoBloc.add(
                 StartOrStopTimePack(pedido.id ?? 0, "start_time_transfer"));
             packingPedidoBloc.add(LoadPedidoAndProductsEvent(pedido.id ?? 0));
@@ -985,7 +962,6 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
     } else {
       packingPedidoBloc.searchControllerPedido.clear();
       packingPedidoBloc.add(SearchPedidoEvent(''));
-      packingPedidoBloc.add(ShowKeyboardEvent(false));
       packingPedidoBloc.add(
         LoadPedidoAndProductsEvent(pedido.id ?? 0),
       );
@@ -1012,7 +988,6 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
               // Lógica para asignar el usuario
               final packingBloc = context.read<PackingPedidoBloc>();
               packingBloc.add(AssignUserToPedido(batch.id ?? 0));
-              packingBloc.add(ShowKeyboardEvent(false));
               packingBloc.searchController.clear();
 
               Navigator.pop(dialogContext); // Cierra el diálogo de asignación

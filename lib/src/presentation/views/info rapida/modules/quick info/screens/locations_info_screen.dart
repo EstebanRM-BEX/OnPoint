@@ -10,10 +10,7 @@ import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_
 import 'package:wms_app/src/presentation/views/info%20rapida/models/info_rapida_model.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/widgets/info_widget.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class LocationInfoScreen extends StatelessWidget {
   final InfoRapidaResult? infoRapidaResult;
@@ -73,21 +70,6 @@ class LocationInfoScreen extends StatelessWidget {
           },
           child: Scaffold(
             backgroundColor: white,
-            bottomNavigationBar: bloc.isKeyboardVisible &&
-                    context.read<UserBloc>().fabricante.contains("Zebra")
-                ? Padding(
-                    padding: const EdgeInsets.only(bottom: 30),
-                    child: bloc.isNumericKeyboardType
-                        ? CustomKeyboardNumber(
-                            controller: bloc.controllerActivo!,
-                            onchanged: () {},
-                          )
-                        : CustomKeyboard(
-                            isLogin: false,
-                            controller: bloc.controllerActivo!,
-                            onchanged: () {},
-                          ))
-                : null,
             body: SizedBox(
               width: size.width * 1,
               height: size.height * 1,
@@ -122,10 +104,10 @@ class LocationInfoScreen extends StatelessWidget {
                                   title: 'Nombre: ',
                                   isEditMode: bloc.isEdit,
                                   onTap: () {
-                                    context.read<InfoRapidaBloc>().add(
-                                        ShowKeyboardInfoEvent(
-                                            true, nameController,
-                                            isNumeric: false));
+                                    // context.read<InfoRapidaBloc>().add(
+                                    //     ShowKeyboardInfoEvent(
+                                    //         true, nameController,
+                                    //         isNumeric: false));
                                   },
                                   controller: nameController,
                                   isNumber: false,
@@ -137,10 +119,10 @@ class LocationInfoScreen extends StatelessWidget {
                                   isEditMode: bloc.isEdit,
                                   isNumber: false,
                                   onTap: () {
-                                    context.read<InfoRapidaBloc>().add(
-                                        ShowKeyboardInfoEvent(
-                                            true, barcodeController,
-                                            isNumeric: false));
+                                    // context.read<InfoRapidaBloc>().add(
+                                    //     ShowKeyboardInfoEvent(
+                                    //         true, barcodeController,
+                                    //         isNumeric: false));
                                   },
                                   controller: barcodeController,
                                   isExpanded: true,
@@ -437,8 +419,7 @@ class AppBar extends StatelessWidget {
                   GestureDetector(
                     onTap: () {
                       context.read<InfoRapidaBloc>().add(IsEditEvent(false));
-                      context.read<InfoRapidaBloc>().add(ShowKeyboardInfoEvent(
-                          false, TextEditingController()));
+
                       context
                           .read<InfoRapidaBloc>()
                           .add(ResetProductsFiltersMassTransferEvent());
@@ -485,9 +466,6 @@ class AppBar extends StatelessWidget {
                           // Lógica original de Editar Ubicación
                           context.read<InfoRapidaBloc>().add(IsEditEvent(
                               !context.read<InfoRapidaBloc>().isEdit));
-                          context.read<InfoRapidaBloc>().add(
-                              ShowKeyboardInfoEvent(
-                                  false, TextEditingController()));
                         } else if (value == 'mass_transfer') {
                           context.read<InfoRapidaBloc>().add(
                               ActivateMassTransferEvent(!context

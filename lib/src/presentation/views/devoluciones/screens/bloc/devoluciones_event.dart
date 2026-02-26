@@ -3,17 +3,6 @@ part of 'devoluciones_bloc.dart';
 @immutable
 sealed class DevolucionesEvent {}
 
-class UpdateScannedValueEvent extends DevolucionesEvent {
-  final String scannedValue;
-  final String scan;
-  UpdateScannedValueEvent(this.scannedValue, this.scan);
-}
-
-class ClearScannedValueEvent extends DevolucionesEvent {
-  final String scan;
-  ClearScannedValueEvent(this.scan);
-}
-
 class GetProductEvent extends DevolucionesEvent {
   final String barcode;
   final bool isManual;
@@ -64,11 +53,6 @@ class UpdateProductInfoEvent extends DevolucionesEvent {
 }
 
 class LoadTercerosEvent extends DevolucionesEvent {}
-
-class ShowKeyboardEvent extends DevolucionesEvent {
-  final bool showKeyboard;
-  ShowKeyboardEvent(this.showKeyboard);
-}
 
 class SelectTerceroEvent extends DevolucionesEvent {
   final Terceros tercero;

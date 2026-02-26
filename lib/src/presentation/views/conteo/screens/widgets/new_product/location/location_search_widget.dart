@@ -58,12 +58,6 @@ class _SearchLocationScreenState extends State<SearchLocationConteoScreen> {
                                   elevation: 3,
                                   child: TextFormField(
                                     showCursor: true,
-                                    readOnly: context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? true
-                                        : false,
                                     textAlignVertical: TextAlignVertical.center,
                                     controller: bloc.searchControllerLocation,
                                     decoration: InputDecoration(
@@ -79,7 +73,6 @@ class _SearchLocationScreenState extends State<SearchLocationConteoScreen> {
                                             bloc.add(SearchLocationEvent(
                                               '',
                                             ));
-                                            bloc.add(ShowKeyboardEvent(false));
                                             FocusScope.of(context).unfocus();
                                           },
                                           icon: const Icon(
@@ -99,14 +92,6 @@ class _SearchLocationScreenState extends State<SearchLocationConteoScreen> {
                                         value,
                                       ));
                                     },
-                                    onTap: !context
-                                            .read<UserBloc>()
-                                            .fabricante
-                                            .contains("Zebra")
-                                        ? null
-                                        : () {
-                                            bloc.add(ShowKeyboardEvent(true));
-                                          },
                                   ),
                                 ),
                               ),
@@ -221,7 +206,6 @@ class _SearchLocationScreenState extends State<SearchLocationConteoScreen> {
                             bloc.add(ChangeLocationIsOkEvent(
                                 true, selectedLocation, 0, 0, 0));
 
-                            bloc.add(ShowKeyboardEvent(false));
                             FocusScope.of(context).unfocus();
 
                             setState(() {
@@ -250,19 +234,6 @@ class _SearchLocationScreenState extends State<SearchLocationConteoScreen> {
                     const SizedBox(
                       height: 10,
                     ),
-                    Visibility(
-                      visible: bloc.isKeyboardVisible &&
-                          context.read<UserBloc>().fabricante.contains("Zebra"),
-                      child: CustomKeyboard(
-                        isLogin: false,
-                        controller: bloc.searchControllerLocation,
-                        onchanged: () {
-                          bloc.add(SearchLocationEvent(
-                            bloc.searchControllerLocation.text,
-                          ));
-                        },
-                      ),
-                    )
                   ],
                 )),
           ),
@@ -309,9 +280,6 @@ class _AppBarInfo extends StatelessWidget {
                         IconButton(
                           icon: const Icon(Icons.arrow_back, color: white),
                           onPressed: () {
-                            context.read<ConteoBloc>().add(
-                                  ShowKeyboardEvent(false),
-                                );
                             Navigator.pushReplacementNamed(
                               context,
                               'new-product-conteo',

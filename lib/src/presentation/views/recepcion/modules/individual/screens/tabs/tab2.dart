@@ -1,12 +1,11 @@
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously, prefer_is_empty
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/vibrate_utils.dart';
+import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
@@ -30,19 +29,19 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
   final AudioService _audioService = AudioService();
   final VibrationService _vibrationService = VibrationService();
 
-  FocusNode focusNode1 = FocusNode(); //cantidad textformfield
+  FocusNode focusNodeBuscar = FocusNode(); //cantidad textformfield
 
   final TextEditingController _controllerToDo = TextEditingController();
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    FocusScope.of(context).requestFocus(focusNode1);
+    FocusScope.of(context).requestFocus(focusNodeBuscar);
   }
 
   @override
   void dispose() {
-    focusNode1.dispose();
+    focusNodeBuscar.dispose();
     super.dispose();
   }
 
@@ -50,9 +49,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
     final bloc = context.read<RecepcionBloc>();
 
     // Normalizar el valor escaneado
-    final scan = (bloc.scannedValue5.isEmpty ? value : bloc.scannedValue5)
-        .trim()
-        .toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     _controllerToDo.clear();
     print('🔎 Scan barcode: $scan');
@@ -66,7 +63,6 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
         )
         .toList();
 
-    /// Función auxiliar para procesar un producto encontrado
     /// Función auxiliar para procesar un producto encontrado
     void processProduct(LineasTransferencia product) {
       // Variable para almacenar el contexto creado por showDialog
@@ -88,8 +84,9 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
           0,
           product.idMove ?? 0,
         ))
-        ..add(FetchPorductOrder(product))
-        ..add(ClearScannedValueOrderEvent('toDo'));
+        ..add(FetchPorductOrder(product));
+
+      Future.microtask(() => focusNodeBuscar.requestFocus());
 
       // 1. ABRIR DIÁLOGO Y CAPTURAR SU CONTEXTO
       showDialog(
@@ -158,14 +155,12 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
 
     _vibrationService.vibrate();
     _audioService.playErrorSound();
+    Future.microtask(() => focusNodeBuscar.requestFocus());
 
     // 3️⃣ Si no se encuentra nada → mostrar error
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: const Text("Código erróneo"),
-      backgroundColor: Colors.red[200],
-      duration: const Duration(milliseconds: 500),
-    ));
-    bloc.add(ClearScannedValueOrderEvent('toDo'));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Código no encontrado en la lista')),
+    );
   }
 
   @override
@@ -192,54 +187,13 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
               child: Column(
                 children: [
                   //*espacio para escanear y buscar el producto
-
-                  context.read<UserBloc>().fabricante.contains("Zebra")
-                      ? Container(
-                          height: 15,
-                          margin: const EdgeInsets.only(bottom: 5),
-                          child: TextFormField(
-                            autofocus: true,
-                            showCursor: false,
-                            controller: _controllerToDo,
-                            focusNode: focusNode1,
-                            onChanged: (value) {
-                              // Llamamos a la validación al cambiar el texto
-                              validateBarcode(value, context);
-                            },
-                            decoration: InputDecoration(
-                              // hintText:
-                              //     batchBloc.currentProduct.locationId.toString(),
-                              disabledBorder: InputBorder.none,
-                              hintStyle:
-                                  const TextStyle(fontSize: 14, color: black),
-                              border: InputBorder.none,
-                            ),
-                          ),
-                        )
-                      :
-
-                      //*focus para leer los productos
-                      Focus(
-                          focusNode: focusNode1,
-                          autofocus: true,
-                          onKey: (FocusNode node, RawKeyEvent event) {
-                            if (event is RawKeyDownEvent) {
-                              if (event.logicalKey ==
-                                  LogicalKeyboardKey.enter) {
-                                validateBarcode(
-                                    context.read<RecepcionBloc>().scannedValue5,
-                                    context);
-                                return KeyEventResult.handled;
-                              } else {
-                                context.read<RecepcionBloc>().add(
-                                    UpdateScannedValueOrderEvent(
-                                        event.data.keyLabel, 'toDo'));
-                                return KeyEventResult.handled;
-                              }
-                            }
-                            return KeyEventResult.ignored;
-                          },
-                          child: Container()),
+                  BarcodeScannerField(
+                    controller: _controllerToDo,
+                    focusNode: focusNodeBuscar,
+                    onBarcodeScanned: (value, context) {
+                      return validateBarcode(value, context);
+                    },
+                  ),
 
                   (recepcionBloc.listProductsEntrada.where((element) {
                             return (element.isSeparate == 0 ||

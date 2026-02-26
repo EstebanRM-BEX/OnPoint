@@ -1,61 +1,69 @@
-
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
+import 'package:wms_app/core/constants/colors.dart';
 
-class BuildBarcodeInputField extends StatelessWidget {
-  final DevolucionesBloc devolucionesBloc;
+class BuildBarcodeInputField extends StatefulWidget {
   final FocusNode focusNode;
   final Function(String) functionValidate;
   final TextEditingController controller;
-  final Function(String keyLabel)? functionUpdate;
 
   const BuildBarcodeInputField({
     super.key,
-    required this.devolucionesBloc,
     required this.focusNode,
     required this.functionValidate,
     required this.controller,
-    required this.functionUpdate,
   });
+
+  @override
+  State<BuildBarcodeInputField> createState() => _BuildBarcodeInputFieldState();
+}
+
+class _BuildBarcodeInputFieldState extends State<BuildBarcodeInputField> {
+  Timer? _debounce;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 200), () {
+      if (value.trim().isNotEmpty) {
+        widget.functionValidate(value);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-        height: 0,
-        child: context.read<UserBloc>().fabricante.contains('Zebra')
-            ? TextFormField(
-                controller: controller,
-                focusNode: focusNode,
-                autofocus: true,
-                showCursor: false,
-                onChanged: (value) {
-                  functionValidate(value);
-                },
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                ),
-              )
-            : Focus(
-                focusNode: focusNode,
-                autofocus: true,
-                onKey: (node, event) {
-                  if (event is RawKeyDownEvent) {
-                    if (event.logicalKey == LogicalKeyboardKey.enter) {
-                      functionValidate(devolucionesBloc.scannedValue1);
-                      return KeyEventResult.handled;
-                    } else {
-                      if (functionUpdate != null) {
-                        functionUpdate!(event.data.keyLabel);
-                      }
-                      return KeyEventResult.handled;
-                    }
-                  }
-                  return KeyEventResult.ignored;
-                },
-                child: const SizedBox(),
-              ));
+      height: 0,
+      child: TextFormField(
+        autofocus: true,
+        showCursor: false,
+        controller: widget.controller,
+        keyboardType: TextInputType.none,
+        enableInteractiveSelection: false,
+        textInputAction: TextInputAction.done,
+        style: const TextStyle(color: Colors.transparent),
+        focusNode: widget.focusNode,
+        onChanged: _onChanged,
+        onFieldSubmitted: (value) {
+          _debounce?.cancel();
+          if (value.trim().isNotEmpty) {
+            widget.functionValidate(value);
+          }
+        },
+        decoration: const InputDecoration(
+          disabledBorder: InputBorder.none,
+          hintStyle: TextStyle(fontSize: 14, color: black),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+        ),
+      ),
+    );
   }
 }
