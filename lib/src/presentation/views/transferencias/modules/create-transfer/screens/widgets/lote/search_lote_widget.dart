@@ -63,7 +63,7 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                       return BlocConsumer<CreateTransferBloc,
                           CreateTransferState>(
                         listener: (context, state) {
-                          print('STATE ❤️‍🔥 $state');
+                          debugPrint('STATE ❤️‍🔥 $state');
 
                           if (state is CreateLoteProductSuccess) {
                             Navigator.pop(context);

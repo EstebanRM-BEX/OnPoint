@@ -1,5 +1,6 @@
 // pedidos_packing_repository.dart
 
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/packing/tbl_pedidos_pack/pedidos_pack_table.dart';
@@ -78,9 +79,9 @@ class PedidosPackingRepository {
         }
       });
 
-      print("Pedidos de packing insertados/actualizados con éxito.");
+      debugPrint("Pedidos de packing insertados/actualizados con éxito.");
     } catch (e, s) {
-      print("Error al insertar/actualizar pedidos: $e ==> $s");
+      debugPrint("Error al insertar/actualizar pedidos: $e ==> $s");
     }
   }
 
@@ -102,7 +103,7 @@ class PedidosPackingRepository {
 
       return pedidos;
     } catch (e) {
-      print("Error al obtener todos los pedidos del batch: $e");
+      debugPrint("Error al obtener todos los pedidos del batch: $e");
       return [];
     }
   }
@@ -121,7 +122,7 @@ class PedidosPackingRepository {
 
       return pedidos;
     } catch (e) {
-      print("Error al obtener todos los pedidos de packing: $e");
+      debugPrint("Error al obtener todos los pedidos de packing: $e");
       return [];
     }
   }
@@ -138,11 +139,11 @@ class PedidosPackingRepository {
       );
 
       // Devolver la cantidad de filas afectadas
-      print(
+      debugPrint(
           "update setFieldTablePedidosPacking  ($field)  pedido $pedidoId batch $batchId => $resUpdate");
       return resUpdate;
     } catch (e) {
-      print("Error al actualizar el campo $field: $e");
+      debugPrint("Error al actualizar el campo $field: $e");
       return null;
     }
   }

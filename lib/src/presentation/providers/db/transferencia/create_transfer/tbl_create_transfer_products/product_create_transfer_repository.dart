@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/transferencia/create_transfer/tbl_create_transfer_products/product_create_transfer_table.dart';
@@ -71,10 +72,10 @@ class ProductCreateTransferRepository {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
-      print("✅ Producto insertado con ID: $resInsert");
+      debugPrint("✅ Producto insertado con ID: $resInsert");
       return resInsert;
     } catch (e, s) {
-      print("❌ Error al insertar un solo producto: $e ==> $s");
+      debugPrint("❌ Error al insertar un solo producto: $e ==> $s");
       return null;
     }
   }
@@ -91,7 +92,7 @@ class ProductCreateTransferRepository {
         'WHERE ${ProductCreateTransferTable.columnProductId} = ?',
         [setValue, productId]);
 
-    print(
+    debugPrint(
         "update TableProductTransfer (idProduct ----($productId)) -------($field): $resUpdate");
 
     return resUpdate;
@@ -109,15 +110,16 @@ class ProductCreateTransferRepository {
       );
 
       if (rowsDeleted > 0) {
-        print(
+        debugPrint(
             "✅ Producto con ID $productId eliminado exitosamente. Filas: $rowsDeleted");
       } else {
-        print("⚠️ No se encontró el producto con ID $productId para eliminar.");
+        debugPrint(
+            "⚠️ No se encontró el producto con ID $productId para eliminar.");
       }
 
       return rowsDeleted;
     } catch (e, s) {
-      print('❌ Error al eliminar el producto: $e, $s');
+      debugPrint('❌ Error al eliminar el producto: $e, $s');
       return null;
     }
   }
@@ -162,14 +164,13 @@ class ProductCreateTransferRepository {
           dateEnd: maps[i][ProductCreateTransferTable.columnDateEnd],
           expirationDateLote: maps[i]
               [ProductCreateTransferTable.columnExpirationDateLote],
-
         );
       });
 
-      print("✅ Productos obtenidos: ${productos.length}");
+      debugPrint("✅ Productos obtenidos: ${productos.length}");
       return productos;
     } catch (e, s) {
-      print("❌ Error al obtener productos de transferencia: $e ==> $s");
+      debugPrint("❌ Error al obtener productos de transferencia: $e ==> $s");
       return [];
     }
   }
@@ -179,10 +180,10 @@ class ProductCreateTransferRepository {
     try {
       Database db = await DataBaseSqlite().getDatabaseInstance();
       final rowsDeleted = await db.delete(ProductCreateTransferTable.tableName);
-      print("✅ Todos los productos eliminados. Filas: $rowsDeleted");
+      debugPrint("✅ Todos los productos eliminados. Filas: $rowsDeleted");
       return rowsDeleted;
     } catch (e, s) {
-      print('❌ Error al eliminar todos los productos: $e, $s');
+      debugPrint('❌ Error al eliminar todos los productos: $e, $s');
       return null;
     }
   }

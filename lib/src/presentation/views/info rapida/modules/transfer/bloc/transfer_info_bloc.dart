@@ -21,6 +21,7 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
 
   String dateStartProduct = '';
   String dateStart = '';
+  bool viewQuantity = false;
 
   ResultUbicaciones selectedLocationDest = ResultUbicaciones();
 
@@ -56,6 +57,17 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
     on<SetDateStartEventTransfer>(_onSetDateStartEventTransfer);
   }
 
+  //*evento para ver la cantidad
+  void _onShowQuantityEvent(
+      ShowQuantityOrderEvent event, Emitter<TransferInfoState> emit) {
+    try {
+      viewQuantity = !viewQuantity;
+      emit(ShowQuantityTransferState(viewQuantity));
+    } catch (e, s) {
+      debugPrint("❌ Error en _onShowQuantityEvent: $e, $s");
+    }
+  }
+
   void _onSetDateStartEventTransfer(
       SetDateStartEventTransfer event, Emitter<TransferInfoState> emit) {
     try {
@@ -66,7 +78,7 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
       dateStart = formatoFecha(fechaActual);
       emit(SetDateStartStateTransfer(dateStart));
     } catch (e, s) {
-      print("❌ Error en el SetDateStartEventTransfer $e ->$s");
+      debugPrint("❌ Error en el SetDateStartEventTransfer $e ->$s");
     }
   }
 
@@ -88,7 +100,7 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
       }
       emit(FilterUbicacionesSuccess(ubicacionesFilters));
     } catch (e, s) {
-      print('Error en el FilterUbicacionesEvent: $e, $s');
+      debugPrint('Error en el FilterUbicacionesEvent: $e, $s');
       emit(FilterUbicacionesFailure(e.toString()));
     }
   }
@@ -110,11 +122,10 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
       }
       emit(SearchLocationSuccess(ubicacionesFilters));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
-
 
   void _onSetQuantity(
       SendTransferInfo event, Emitter<TransferInfoState> emit) async {
@@ -158,7 +169,7 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
         emit(SendTransferInfoFailureTransfer(responseSend.result?.msg ?? ""));
       }
     } catch (e, s) {
-      print("❌ Error en el SetQuantity $e ->$s");
+      debugPrint("❌ Error en el SetQuantity $e ->$s");
     }
   }
 
@@ -185,7 +196,7 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
         locationDestIsOk,
       ));
     } catch (e, s) {
-      print("❌ Error en el ChangeLocationDestIsOkEvent $e ->$s");
+      debugPrint("❌ Error en el ChangeLocationDestIsOkEvent $e ->$s");
     }
   }
 
@@ -199,14 +210,14 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
       if (response.isNotEmpty) {
         ubicaciones = response;
         ubicacionesFilters = response;
-        print('ubicaciones length: ${ubicaciones.length}');
+        debugPrint('ubicaciones length: ${ubicaciones.length}');
         emit(LoadLocationsSuccessTransfer(ubicaciones));
       } else {
         emit(LoadLocationsFailureTransfer('No se encontraron ubicaciones'));
       }
     } catch (e, s) {
       emit(LoadLocationsFailureTransfer('Error al cargar las ubicaciones'));
-      print('Error en el fetch de ubicaciones: $e=>$s');
+      debugPrint('Error en el fetch de ubicaciones: $e=>$s');
     }
   }
 
@@ -221,7 +232,7 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
       emit(ValidateFieldsStateSuccessTransfer(event.isOk));
     } catch (e, s) {
       emit(ValidateFieldsStateErrorTransfer('Error al validar campos'));
-      print("❌ Error en el ValidateFieldsEvent $e ->$s");
+      debugPrint("❌ Error en el ValidateFieldsEvent $e ->$s");
     }
   }
 }

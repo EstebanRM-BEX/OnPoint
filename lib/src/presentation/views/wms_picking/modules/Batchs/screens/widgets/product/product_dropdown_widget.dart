@@ -1,7 +1,8 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:flutter/material.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart';
 
@@ -23,8 +24,8 @@ class ProductDropdownWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AudioService audioService = AudioService();
-    final VibrationService _vibrationService = VibrationService();
+    final IAudioService audioService = getIt<IAudioService>();
+    final IVibrationService _vibrationService = getIt<IVibrationService>();
 
     final screenWidth = MediaQuery.of(context).size.width;
 

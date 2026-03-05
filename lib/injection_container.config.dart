@@ -13,12 +13,18 @@ import 'package:get_it/get_it.dart' as _i174;
 import 'package:http/http.dart' as _i519;
 import 'package:injectable/injectable.dart' as _i526;
 
+import 'core/interfaces/i_audio_service.dart' as _i688;
+import 'core/interfaces/i_device_info_service.dart' as _i311;
+import 'core/interfaces/i_vibration_service.dart' as _i537;
 import 'core/network/network_info.dart' as _i75;
+import 'core/services/audio_service_impl.dart' as _i927;
+import 'core/services/device_info_service_impl.dart' as _i910;
 import 'core/services/interfaces/i_notification_service.dart' as _i615;
 import 'core/services/interfaces/i_storage_service.dart' as _i206;
 import 'core/services/interfaces/i_websocket_service.dart' as _i1062;
 import 'core/services/notification_service.dart' as _i1011;
 import 'core/services/storage_service.dart' as _i243;
+import 'core/services/vibration_service_impl.dart' as _i869;
 import 'core/services/websocket_service.dart' as _i1020;
 import 'features/auth/data/datasources/auth_local_data_source.dart' as _i791;
 import 'features/auth/data/repositories/auth_repository_impl.dart' as _i111;
@@ -53,6 +59,46 @@ import 'features/login/domain/repositories/login_repository.dart' as _i889;
 import 'features/login/domain/usecases/authenticate_user.dart' as _i792;
 import 'features/login/domain/usecases/save_user_session.dart' as _i311;
 import 'features/login/presentation/bloc/login_bloc.dart' as _i1070;
+import 'features/picking_cluster/data/datasources/picking_cluster_local_data_source.dart'
+    as _i130;
+import 'features/picking_cluster/data/datasources/picking_remote_data_source.dart'
+    as _i681;
+import 'features/picking_cluster/data/repositories/picking_cluster_impl.dart'
+    as _i110;
+import 'features/picking_cluster/domain/repositories/picking_cluster_repository.dart'
+    as _i932;
+import 'features/picking_cluster/domain/usecases/crear_lote_producto_use_case.dart'
+    as _i975;
+import 'features/picking_cluster/domain/usecases/get_barcodes_product_use_case.dart'
+    as _i309;
+import 'features/picking_cluster/domain/usecases/get_field_table_products_use_case.dart'
+    as _i235;
+import 'features/picking_cluster/domain/usecases/get_local_batch_products_data.dart'
+    as _i61;
+import 'features/picking_cluster/domain/usecases/get_local_picking_cluster_data.dart'
+    as _i295;
+import 'features/picking_cluster/domain/usecases/get_lotes_producto_use_case.dart'
+    as _i799;
+import 'features/picking_cluster/domain/usecases/get_picking_cluster_data.dart'
+    as _i524;
+import 'features/picking_cluster/domain/usecases/get_product_batch_use_case.dart'
+    as _i410;
+import 'features/picking_cluster/domain/usecases/increment_product_separate_qty_use_case.dart'
+    as _i360;
+import 'features/picking_cluster/domain/usecases/increment_quantity_separate_use_case.dart'
+    as _i85;
+import 'features/picking_cluster/domain/usecases/send_product_odoo_use_case.dart'
+    as _i984;
+import 'features/picking_cluster/domain/usecases/set_cluster_batch_field_use_case.dart'
+    as _i956;
+import 'features/picking_cluster/domain/usecases/set_cluster_batch_product_field_use_case.dart'
+    as _i915;
+import 'features/picking_cluster/domain/usecases/view_product_image_usecase.dart'
+    as _i149;
+import 'features/picking_cluster/presentation/bloc/cluster_picking/cluster_picking_bloc.dart'
+    as _i545;
+import 'features/picking_cluster/presentation/bloc/lote_producto/lote_producto_bloc.dart'
+    as _i573;
 import 'features/user/data/datasources/user_local_data_source.dart' as _i232;
 import 'features/user/data/datasources/user_remote_data_source.dart' as _i1071;
 import 'features/user/data/repositories/user_repository_impl.dart' as _i39;
@@ -60,6 +106,7 @@ import 'features/user/domain/repositories/user_repository.dart' as _i180;
 import 'features/user/domain/usecases/get_device_info.dart' as _i932;
 import 'features/user/domain/usecases/get_user_configuration.dart' as _i280;
 import 'features/user/domain/usecases/get_user_locations.dart' as _i247;
+import 'features/user/domain/usecases/get_user_novelties.dart' as _i465;
 import 'features/user/domain/usecases/register_device.dart' as _i902;
 import 'features/user/presentation/bloc/user_bloc.dart' as _i565;
 import 'features/websocket/presentation/bloc/websocket_bloc.dart' as _i676;
@@ -88,8 +135,15 @@ extension GetItInjectableX on _i174.GetIt {
         () => registerModule.apiRequestService);
     gh.lazySingleton<_i232.UserLocalDataSource>(
         () => _i232.UserLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()));
+    gh.lazySingleton<_i688.IAudioService>(() => _i927.AudioServiceImpl());
+    gh.lazySingleton<_i130.PickingClusterLocalDataSource>(
+        () => _i130.PickingClusterLocalDataSourceImpl());
+    gh.lazySingleton<_i537.IVibrationService>(
+        () => _i869.VibrationServiceImpl());
     gh.lazySingleton<_i359.HomeRemoteDataSource>(
         () => _i359.HomeRemoteDataSourceImpl(gh<_i319.ApiRequestService>()));
+    gh.lazySingleton<_i311.IDeviceInfoService>(
+        () => _i910.DeviceInfoServiceImpl());
     gh.lazySingleton<_i75.NetworkInfo>(
       () => _i75.NetworkInfoImpl(gh<_i895.Connectivity>()),
       dispose: (i) => i.dispose(),
@@ -119,6 +173,9 @@ extension GetItInjectableX on _i174.GetIt {
       },
       preResolve: true,
     );
+    gh.lazySingleton<_i681.PickingClusterRemoteDataSource>(() =>
+        _i681.PickingClusterRemoteDataSourceImpl(
+            gh<_i319.ApiRequestService>()));
     gh.lazySingleton<_i1062.IWebSocketService>(() => _i1020.WebSocketService());
     gh.lazySingleton<_i854.EnterpriseLocalDataSource>(
         () => _i854.EnterpriseLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()));
@@ -135,11 +192,18 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i247.GetUserLocations(gh<_i180.UserRepository>()));
     gh.lazySingleton<_i932.GetDeviceInfo>(
         () => _i932.GetDeviceInfo(gh<_i180.UserRepository>()));
+    gh.lazySingleton<_i465.GetUserNovelties>(
+        () => _i465.GetUserNovelties(gh<_i180.UserRepository>()));
     gh.lazySingleton<_i889.LoginRepository>(() => _i1059.LoginRepositoryImpl(
           remoteDataSource: gh<_i18.LoginRemoteDataSource>(),
           localDataSource: gh<_i544.LoginLocalDataSource>(),
           networkInfo: gh<_i75.NetworkInfo>(),
         ));
+    gh.lazySingleton<_i932.IPickingClusterRepository>(
+        () => _i110.PickingClusterRepositoryImpl(
+              gh<_i681.PickingClusterRemoteDataSource>(),
+              gh<_i130.PickingClusterLocalDataSource>(),
+            ));
     gh.lazySingleton<_i205.HomeLocalDataSource>(
         () => _i205.HomeLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()));
     gh.lazySingleton<_i138.SearchEnterprise>(
@@ -158,12 +222,40 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i311.SaveUserSession(gh<_i889.LoginRepository>()));
     gh.lazySingleton<_i792.AuthenticateUser>(
         () => _i792.AuthenticateUser(gh<_i889.LoginRepository>()));
-    gh.factory<_i565.UserBloc>(() => _i565.UserBloc(
-          getUserConfiguration: gh<_i280.GetUserConfiguration>(),
-          getDeviceInfo: gh<_i932.GetDeviceInfo>(),
-          getUserLocations: gh<_i247.GetUserLocations>(),
-          registerDevice: gh<_i902.RegisterDevice>(),
-        ));
+    gh.lazySingleton<_i524.GetPickingClusterData>(() =>
+        _i524.GetPickingClusterData(gh<_i932.IPickingClusterRepository>()));
+    gh.lazySingleton<_i61.GetLocalBatchProductsData>(() =>
+        _i61.GetLocalBatchProductsData(gh<_i932.IPickingClusterRepository>()));
+    gh.lazySingleton<_i799.GetLotesProductoUseCase>(() =>
+        _i799.GetLotesProductoUseCase(gh<_i932.IPickingClusterRepository>()));
+    gh.lazySingleton<_i295.GetLocalPickingClusterData>(() =>
+        _i295.GetLocalPickingClusterData(
+            gh<_i932.IPickingClusterRepository>()));
+    gh.lazySingleton<_i975.CrearLoteProductoUseCase>(() =>
+        _i975.CrearLoteProductoUseCase(gh<_i932.IPickingClusterRepository>()));
+    gh.lazySingleton<_i915.SetClusterBatchProductFieldUseCase>(() =>
+        _i915.SetClusterBatchProductFieldUseCase(
+            gh<_i932.IPickingClusterRepository>()));
+    gh.lazySingleton<_i956.SetClusterBatchFieldUseCase>(() =>
+        _i956.SetClusterBatchFieldUseCase(
+            gh<_i932.IPickingClusterRepository>()));
+    gh.lazySingleton<_i309.GetBarcodesProductUseCase>(() =>
+        _i309.GetBarcodesProductUseCase(gh<_i932.IPickingClusterRepository>()));
+    gh.lazySingleton<_i85.IncrementQuantitySeparateUseCase>(() =>
+        _i85.IncrementQuantitySeparateUseCase(
+            gh<_i932.IPickingClusterRepository>()));
+    gh.lazySingleton<_i360.IncrementProductSeparateQtyUseCase>(() =>
+        _i360.IncrementProductSeparateQtyUseCase(
+            gh<_i932.IPickingClusterRepository>()));
+    gh.lazySingleton<_i235.GetFieldTableProductsUseCase>(() =>
+        _i235.GetFieldTableProductsUseCase(
+            gh<_i932.IPickingClusterRepository>()));
+    gh.lazySingleton<_i410.GetProductBatchUseCase>(() =>
+        _i410.GetProductBatchUseCase(gh<_i932.IPickingClusterRepository>()));
+    gh.lazySingleton<_i984.SendProductOdooUseCase>(() =>
+        _i984.SendProductOdooUseCase(gh<_i932.IPickingClusterRepository>()));
+    gh.lazySingleton<_i149.ViewProductImageUseCase>(() =>
+        _i149.ViewProductImageUseCase(gh<_i932.IPickingClusterRepository>()));
     gh.factory<_i1070.LoginBloc>(() => _i1070.LoginBloc(
           authenticateUser: gh<_i792.AuthenticateUser>(),
           saveUserSession: gh<_i311.SaveUserSession>(),
@@ -173,12 +265,44 @@ extension GetItInjectableX on _i174.GetIt {
           localDataSource: gh<_i205.HomeLocalDataSource>(),
           networkInfo: gh<_i75.NetworkInfo>(),
         ));
+    gh.factory<_i573.LoteProductoBloc>(() => _i573.LoteProductoBloc(
+          getLotesProductoUseCase: gh<_i799.GetLotesProductoUseCase>(),
+          crearLoteProductoUseCase: gh<_i975.CrearLoteProductoUseCase>(),
+        ));
     gh.lazySingleton<_i312.GetAppVersion>(
         () => _i312.GetAppVersion(gh<_i649.HomeRepository>()));
     gh.lazySingleton<_i485.GetUserData>(
         () => _i485.GetUserData(gh<_i649.HomeRepository>()));
     gh.lazySingleton<_i698.GetUserConfigurations>(
         () => _i698.GetUserConfigurations(gh<_i649.HomeRepository>()));
+    gh.factory<_i565.UserBloc>(() => _i565.UserBloc(
+          getUserConfiguration: gh<_i280.GetUserConfiguration>(),
+          getDeviceInfo: gh<_i932.GetDeviceInfo>(),
+          getUserLocations: gh<_i247.GetUserLocations>(),
+          getUserNovelties: gh<_i465.GetUserNovelties>(),
+          registerDevice: gh<_i902.RegisterDevice>(),
+        ));
+    gh.factory<_i545.ClusterPickingBloc>(() => _i545.ClusterPickingBloc(
+          getPickingClusterData: gh<_i524.GetPickingClusterData>(),
+          getLocalPickingClusterData: gh<_i295.GetLocalPickingClusterData>(),
+          getLocalBatchProductsData: gh<_i61.GetLocalBatchProductsData>(),
+          getLotesProductoUseCase: gh<_i799.GetLotesProductoUseCase>(),
+          getUserConfiguration: gh<_i280.GetUserConfiguration>(),
+          setClusterBatchFieldUseCase: gh<_i956.SetClusterBatchFieldUseCase>(),
+          setClusterBatchProductFieldUseCase:
+              gh<_i915.SetClusterBatchProductFieldUseCase>(),
+          getBarcodesProductUseCase: gh<_i309.GetBarcodesProductUseCase>(),
+          incrementQuantitySeparateUseCase:
+              gh<_i85.IncrementQuantitySeparateUseCase>(),
+          incrementProductSeparateQtyUseCase:
+              gh<_i360.IncrementProductSeparateQtyUseCase>(),
+          getFieldTableProductsUseCase:
+              gh<_i235.GetFieldTableProductsUseCase>(),
+          getProductBatchUseCase: gh<_i410.GetProductBatchUseCase>(),
+          sendProductOdooUseCase: gh<_i984.SendProductOdooUseCase>(),
+          viewProductImageUseCase: gh<_i149.ViewProductImageUseCase>(),
+          getUserNovelties: gh<_i465.GetUserNovelties>(),
+        ));
     gh.factory<_i20.EnterpriseBloc>(() => _i20.EnterpriseBloc(
           searchEnterpriseUseCase: gh<_i138.SearchEnterprise>(),
           getRecentUrlsUseCase: gh<_i91.GetRecentUrls>(),

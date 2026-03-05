@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
+import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
@@ -179,7 +179,7 @@ class RecepcionBatchBloc
   void _onViewProductImageEvent(
       ViewProductImageEvent event, Emitter<RecepcionBatchState> emit) async {
     try {
-      print('Obteniendo imagen del producto con ID: ${event.idProduct}');
+      debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
       final response =
@@ -197,7 +197,7 @@ class RecepcionBatchBloc
         emit(ViewProductImageFailure('Imagen no disponible'));
       }
     } catch (e, s) {
-      print('Error en el ViewProductImageEvent: $e, $s');
+      debugPrint('Error en el ViewProductImageEvent: $e, $s');
       emit(ViewProductImageFailure(e.toString()));
     }
   }
@@ -268,7 +268,7 @@ class RecepcionBatchBloc
       }
       emit(SearchLoteSuccess(listLotesProductFilters));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -331,7 +331,7 @@ class RecepcionBatchBloc
       }
     } catch (e, s) {
       emit(CreateLoteProductFailure('Error al crear el lote'));
-      print('Error en el _onCreateLoteProduct: $e, $s');
+      debugPrint('Error en el _onCreateLoteProduct: $e, $s');
     }
   }
 
@@ -368,7 +368,7 @@ class RecepcionBatchBloc
 
       emit(FinalizarRecepcionProductoSplitSuccess());
     } catch (e, s) {
-      print('Error al finalizar la recepcion del producto split: $e, $s');
+      debugPrint('Error al finalizar la recepcion del producto split: $e, $s');
     }
   }
 
@@ -396,7 +396,7 @@ class RecepcionBatchBloc
     } catch (e, s) {
       emit(FinalizarRecepcionProductoFailure(
           'Error al finalizar la recepcion del producto'));
-      print('Error en el _onFinalizarRecepcionProducto: $e, $s');
+      debugPrint('Error en el _onFinalizarRecepcionProducto: $e, $s');
     }
   }
 
@@ -408,7 +408,7 @@ class RecepcionBatchBloc
 
       final userid = await PrefUtils.getUserId();
 
-      print("loteeeeeee: ${lotesProductCurrent.toMap()}");
+      debugPrint("loteeeeeee: ${lotesProductCurrent.toMap()}");
 
       //calculamos la fecha de transaccion
       DateTime fechaTransaccion = DateTime.now();
@@ -480,7 +480,7 @@ class RecepcionBatchBloc
         false,
       );
 
-      print("loteeeeeee: ${lotesProductCurrent.toMap()}");
+      debugPrint("loteeeeeee: ${lotesProductCurrent.toMap()}");
 
       if (responseSend.result?.code == 200) {
         // marcamos tiempo final de sepfaracion
@@ -521,7 +521,7 @@ class RecepcionBatchBloc
       }
     } catch (e, s) {
       emit(SendProductToOrderFailure('Error al enviar el producto'));
-      print('Error en el _onSendProductToOrder: $e, $s');
+      debugPrint('Error en el _onSendProductToOrder: $e, $s');
     }
   }
 
@@ -563,7 +563,7 @@ class RecepcionBatchBloc
       }
     } catch (e, s) {
       emit(ConfigurationErrorOrder(e.toString()));
-      print('Error en LoadConfigurationsUserPack.dart: $e =>$s');
+      debugPrint('Error en LoadConfigurationsUserPack.dart: $e =>$s');
     }
   }
 
@@ -577,15 +577,15 @@ class RecepcionBatchBloc
       if (response.isNotEmpty) {
         ubicaciones = response;
         ubicacionesFilters = ubicaciones;
-        print('ubicaciones length: ${ubicaciones.length}');
+        debugPrint('ubicaciones length: ${ubicaciones.length}');
         emit(LoadLocationsSuccess(ubicaciones));
       } else {
-        print('No se encontraron ubicaciones');
+        debugPrint('No se encontraron ubicaciones');
         emit(LoadLocationsFailure('No se encontraron ubicaciones'));
       }
     } catch (e, s) {
       emit(LoadLocationsFailure('Error al cargar las ubicaciones'));
-      print('Error en el fetch de ubicaciones: $e=>$s');
+      debugPrint('Error en el fetch de ubicaciones: $e=>$s');
     }
   }
 
@@ -606,7 +606,7 @@ class RecepcionBatchBloc
       }
       emit(SearchLocationSuccess(ubicacionesFilters));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -629,7 +629,7 @@ class RecepcionBatchBloc
       }
       emit(FilterUbicacionesSuccess(ubicacionesFilters));
     } catch (e, s) {
-      print('Error en el FilterUbicacionesEvent: $e, $s');
+      debugPrint('Error en el FilterUbicacionesEvent: $e, $s');
       emit(FilterUbicacionesFailure(e.toString()));
     }
   }
@@ -651,7 +651,7 @@ class RecepcionBatchBloc
       }
     } catch (e, s) {
       emit(GetLotesProductFailure('Error al obtener los lotes del producto'));
-      print('Error en el _onGetLotesProduct: $e, $s');
+      debugPrint('Error en el _onGetLotesProduct: $e, $s');
     }
   }
 
@@ -709,7 +709,7 @@ class RecepcionBatchBloc
       emit(FetchPorductOrderSuccess(currentProduct));
     } catch (e, s) {
       emit(FetchPorductOrderFailure('Error al obtener el producto'));
-      print('Error en el _onFetchPorductOrder: $e, $s');
+      debugPrint('Error en el _onFetchPorductOrder: $e, $s');
     }
   }
 
@@ -722,11 +722,11 @@ class RecepcionBatchBloc
       if (response != null) {
         novedades.clear();
         novedades = response;
-        print("novedades: ${novedades.length}");
+        debugPrint("novedades: ${novedades.length}");
         emit(NovedadesOrderLoadedState(listOfNovedades: novedades));
       }
     } catch (e, s) {
-      print("Error en __onLoadAllNovedadesEvent: $e, $s");
+      debugPrint("Error en __onLoadAllNovedadesEvent: $e, $s");
       emit(NovedadesOrderErrorState(e.toString()));
     }
   }
@@ -738,7 +738,7 @@ class RecepcionBatchBloc
       viewQuantity = !viewQuantity;
       emit(ShowQuantityOrderState(viewQuantity));
     } catch (e, s) {
-      print("❌ Error en _onShowQuantityEvent: $e, $s");
+      debugPrint("❌ Error en _onShowQuantityEvent: $e, $s");
     }
   }
 
@@ -759,7 +759,7 @@ class RecepcionBatchBloc
         ));
       }
     } catch (e, s) {
-      print("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
+      debugPrint("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
     }
   }
 
@@ -855,7 +855,7 @@ class RecepcionBatchBloc
       }
     } catch (e, s) {
       emit(ChangeQuantitySeparateErrorOrder('Error al aumentar cantidad'));
-      print("❌ Error en el AddQuantitySeparate $e ->$s");
+      debugPrint("❌ Error en el AddQuantitySeparate $e ->$s");
     }
   }
 
@@ -870,7 +870,7 @@ class RecepcionBatchBloc
       }
       emit(ChangeQuantitySeparateState(quantitySelected));
     } catch (e, s) {
-      print('Error en _onChangeQuantitySelectedEvent: $e, $s');
+      debugPrint('Error en _onChangeQuantitySelectedEvent: $e, $s');
     }
   }
 
@@ -892,7 +892,8 @@ class RecepcionBatchBloc
         isLocationDestOk = event.isOk;
         break;
     }
-    print(' Product: $isProductOk, lote: $isLoteOk, Quantity: $isQuantityOk');
+    debugPrint(
+        ' Product: $isProductOk, lote: $isLoteOk, Quantity: $isQuantityOk');
     emit(ValidateFieldsOrderState(isOk: event.isOk));
   }
 
@@ -907,7 +908,7 @@ class RecepcionBatchBloc
 
       emit(CurrentOrdenesCompraState(resultEntrada));
     } catch (e, s) {
-      print('Error en _onCurrentOrdenesCompra: $e, $s');
+      debugPrint('Error en _onCurrentOrdenesCompra: $e, $s');
     }
   }
 
@@ -921,7 +922,7 @@ class RecepcionBatchBloc
 
       final response2 =
           await db.productsEntradaBatchRepository.getAllProductsEntradaBatch();
-      print('response2: ${response2.length}');
+      debugPrint('response2: ${response2.length}');
 
       if (response != null && response is List) {
         listProductsEntrada = [];
@@ -935,7 +936,7 @@ class RecepcionBatchBloc
           listAllOfBarcodes = responseBarcodes;
         }
 
-        print("List all barcodes: ${listAllOfBarcodes.length}");
+        debugPrint("List all barcodes: ${listAllOfBarcodes.length}");
 
         emit(GetProductsToEntradaSuccess(response));
       } else {
@@ -945,7 +946,7 @@ class RecepcionBatchBloc
     } catch (e, s) {
       emit(GetProductsToEntradaFailure(
           'Error al obtener los productos de la entrada'));
-      print('Error en el _onGetProductsToEntrada: $e, $s');
+      debugPrint('Error en el _onGetProductsToEntrada: $e, $s');
     }
   }
 
@@ -993,7 +994,7 @@ class RecepcionBatchBloc
         emit(StartOrStopTimeOrderFailure('Error al enviar el tiempo'));
       }
     } catch (e, s) {
-      print('Error en el _onStartOrStopTimeOrder: $e, $s');
+      debugPrint('Error en el _onStartOrStopTimeOrder: $e, $s');
     }
   }
 
@@ -1041,7 +1042,7 @@ class RecepcionBatchBloc
       }
     } catch (e, s) {
       emit(AssignUserToOrderFailure('Error al asignar el usuario'));
-      print('Error en el _onAssignUserToOrder: $e, $s');
+      debugPrint('Error en el _onAssignUserToOrder: $e, $s');
     }
   }
 
@@ -1069,7 +1070,7 @@ class RecepcionBatchBloc
       emit(SearchOrdenCompraSuccess(listReceptionBatchFilter));
     } catch (e, s) {
       emit(SearchOrdenCompraFailure('Error al buscar la orden de compra'));
-      print('Error en el _onSearchPedidoEvent: $e, $s');
+      debugPrint('Error en el _onSearchPedidoEvent: $e, $s');
     }
   }
 
@@ -1093,7 +1094,7 @@ class RecepcionBatchBloc
 
         if (response.result?.result?.isNotEmpty == true) {
           final listReceptionBatch = response.result?.result;
-          print('cantidad de recepciones: ${listReceptionBatch?.length}');
+          debugPrint('cantidad de recepciones: ${listReceptionBatch?.length}');
           //insertamos en la base de datos
 
           await db.deleRecepcion('reception-batch');
@@ -1122,9 +1123,9 @@ class RecepcionBatchBloc
           await db.barcodesPackagesRepository
               .insertOrUpdateBarcodes(allBarcodes, 'reception-batch');
 
-          print(
+          debugPrint(
               'cantidad de productos: ${productsToInsert.length} y ${productsSedToInsert.length}');
-          print('cantidad de codigos de barras: ${allBarcodes.length}');
+          debugPrint('cantidad de codigos de barras: ${allBarcodes.length}');
 
           add(FetchRecepcionBatchEventFromBD());
           emit(FetchRecepcionBatchSuccess(
@@ -1180,11 +1181,11 @@ class RecepcionBatchBloc
     try {
       listReceptionBatch.clear();
       listReceptionBatchFilter.clear();
-      print('listReceptionBatch: ${listReceptionBatch.length}');
+      debugPrint('listReceptionBatch: ${listReceptionBatch.length}');
 
       final response = await db.entradaBatchRepository.getAllEntradaBatch();
 
-      print('response: ${response.length}');
+      debugPrint('response: ${response.length}');
       if (response.isNotEmpty) {
         listReceptionBatch = response;
         listReceptionBatchFilter = response;

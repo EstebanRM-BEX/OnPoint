@@ -25,7 +25,6 @@ class _SelectSubMuelleBottomSheetState
 
   @override
   Widget build(BuildContext context) {
-
     return BlocBuilder<PickingPickBloc, PickingPickState>(
       builder: (context, state) {
         return Container(
@@ -43,8 +42,10 @@ class _SelectSubMuelleBottomSheetState
                 child: ListView.builder(
                   itemCount: context.read<PickingPickBloc>().submuelles.length,
                   itemBuilder: (context, index) {
-                    final muelle = context.read<PickingPickBloc>().submuelles[index];
-                    bool isSelected = muelle == context.read<PickingPickBloc>().subMuelleSelected;
+                    final muelle =
+                        context.read<PickingPickBloc>().submuelles[index];
+                    bool isSelected = muelle ==
+                        context.read<PickingPickBloc>().subMuelleSelected;
 
                     return GestureDetector(
                       onTap: () {
@@ -73,7 +74,6 @@ class _SelectSubMuelleBottomSheetState
                                   color: isSelected ? Colors.white : black,
                                 ),
                               ),
-                             
                             ],
                           ),
                         ),
@@ -83,6 +83,7 @@ class _SelectSubMuelleBottomSheetState
                 ),
               ),
               const SizedBox(height: 5),
+
               /// 🔵 Selección exclusiva: ocupado o libre
               Center(
                 child: Text('Estado del submuelle',
@@ -138,7 +139,8 @@ class _SelectSubMuelleBottomSheetState
                   children: [
                     ElevatedButton(
                       onPressed: () {
-                        context.read<PickingPickBloc>().subMuelleSelected = Muelles();
+                        context.read<PickingPickBloc>().subMuelleSelected =
+                            Muelles();
                         Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
@@ -154,26 +156,40 @@ class _SelectSubMuelleBottomSheetState
                     ),
                     const SizedBox(width: 10),
                     ElevatedButton(
-                      onPressed:
-                          (context.read<PickingPickBloc>().subMuelleSelected.completeName == null ||
-                                  isOccupied == null)
-                              ? null
-                              : () {
-                                  print(
-                                      'Estado del submuelle: ${isOccupied == true ? "Ocupado" : "Libre"}');
+                      onPressed: (context
+                                      .read<PickingPickBloc>()
+                                      .subMuelleSelected
+                                      .completeName ==
+                                  null ||
+                              isOccupied == null)
+                          ? null
+                          : () {
+                              debugPrint(
+                                  'Estado del submuelle: ${isOccupied == true ? "Ocupado" : "Libre"}');
 
-                                  context.read<PickingPickBloc>().add(AssignSubmuelleEvent(
-                                    context.read<PickingPickBloc>().filteredProducts.where((e) {
-                                     return (e.isSeparate == 1) &&
-                                    (e.locationDestId ==
-                                        context.read<PickingPickBloc>().pickWithProducts.pick?.muelle);
-                                      }).toList(),
-                                    context.read<PickingPickBloc>().subMuelleSelected,
+                              context
+                                  .read<PickingPickBloc>()
+                                  .add(AssignSubmuelleEvent(
+                                    context
+                                        .read<PickingPickBloc>()
+                                        .filteredProducts
+                                        .where((e) {
+                                      return (e.isSeparate == 1) &&
+                                          (e.locationDestId ==
+                                              context
+                                                  .read<PickingPickBloc>()
+                                                  .pickWithProducts
+                                                  .pick
+                                                  ?.muelle);
+                                    }).toList(),
+                                    context
+                                        .read<PickingPickBloc>()
+                                        .subMuelleSelected,
                                     isOccupied == null ? false : isOccupied!,
                                   ));
 
-                                  Navigator.pop(context);
-                                },
+                              Navigator.pop(context);
+                            },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColorApp,
                         shape: RoundedRectangleBorder(

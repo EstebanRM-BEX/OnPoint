@@ -1,15 +1,10 @@
- 
-
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/others/tbl_doc_origin/doc_origin_table.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 
 class DocOriginRepository {
-
-
-
-
   Future<void> insertAllDocsOrigins(
       List<Origin> listOfOrigins, String originType) async {
     final db = await DataBaseSqlite().getDatabaseInstance();
@@ -23,13 +18,14 @@ class DocOriginRepository {
             DocOriginTable.columnId: batchItem.id,
             DocOriginTable.columnName: batchItem.name ?? '',
             DocOriginTable.columnIdBatch: batchItem.idBatch,
-            DocOriginTable.columnOriginType: originType,  
+            DocOriginTable.columnOriginType: originType,
           };
 
           // Elimina si existe (por ID), y luego inserta
           batch.delete(
             DocOriginTable.tableName,
-            where: '${DocOriginTable.columnId} = ? AND ${DocOriginTable.columnIdBatch} = ?',
+            where:
+                '${DocOriginTable.columnId} = ? AND ${DocOriginTable.columnIdBatch} = ?',
             whereArgs: [batchItem.id, batchItem.idBatch],
           );
 
@@ -46,9 +42,8 @@ class DocOriginRepository {
     });
   }
 
-
-
-    Future<List<Origin>> getAllOriginsByIdBatch(int idBatch, String originType) async {
+  Future<List<Origin>> getAllOriginsByIdBatch(
+      int idBatch, String originType) async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
 
@@ -60,22 +55,16 @@ class DocOriginRepository {
           DocOriginTable.columnName,
           DocOriginTable.columnOriginType,
         ],
-        where: '${DocOriginTable.columnIdBatch} = ? AND ${DocOriginTable.columnOriginType} = ?',
+        where:
+            '${DocOriginTable.columnIdBatch} = ? AND ${DocOriginTable.columnOriginType} = ?',
         whereArgs: [idBatch, originType],
       );
 
       // Mapeo directo
       return maps.map((map) => Origin.fromMap(map)).toList();
     } catch (e, s) {
-      print("Error getAllOriginsByIdBatch: $e => $s");
+      debugPrint("Error getAllOriginsByIdBatch: $e => $s");
       return [];
     }
   }
-
-
-
-
-
-
-
 }

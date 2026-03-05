@@ -327,7 +327,7 @@ class DetailCreateTransferScreen extends StatelessWidget {
                                   left: 10, right: 10, top: 5),
                               child: GestureDetector(
                                 onTap: () {
-                                  print(
+                                  debugPrint(
                                       "Producto seleccionado: ${product.toMap()}");
                                 },
                                 child: Card(

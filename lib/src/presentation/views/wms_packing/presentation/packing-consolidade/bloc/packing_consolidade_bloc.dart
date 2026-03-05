@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
+import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
 import 'package:wms_app/src/presentation/views/recepcion/data/recepcion_repository.dart';
@@ -221,7 +221,7 @@ class PackingConsolidateBloc
   void _onViewProductImageEvent(ViewProductImageEvent event,
       Emitter<PackingConsolidateState> emit) async {
     try {
-      print('Obteniendo imagen del producto con ID: ${event.idProduct}');
+      debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
       final response =
@@ -239,7 +239,7 @@ class PackingConsolidateBloc
         emit(ViewProductImageFailure('Imagen no disponible'));
       }
     } catch (e, s) {
-      print('Error en el ViewProductImageEvent: $e, $s');
+      debugPrint('Error en el ViewProductImageEvent: $e, $s');
       emit(ViewProductImageFailure(e.toString()));
     }
   }
@@ -321,7 +321,7 @@ class PackingConsolidateBloc
       }
     } catch (e, s) {
       emit(AssignUserToBatchError('Error al asignar el usuario'));
-      print('Error en el _onAssignUserToOrder: $e, $s');
+      debugPrint('Error en el _onAssignUserToOrder: $e, $s');
     }
   }
 
@@ -346,7 +346,7 @@ class PackingConsolidateBloc
         emit(TimeSeparatePackError('Error al iniciar el tiempo de separacion'));
       }
     } catch (e, s) {
-      print("❌ Error en _onStartTimePickEvent: $e, $s");
+      debugPrint("❌ Error en _onStartTimePickEvent: $e, $s");
     }
   }
 
@@ -359,11 +359,11 @@ class PackingConsolidateBloc
       if (response != null) {
         novedades.clear();
         novedades = response;
-        print("novedades: ${novedades.length}");
+        debugPrint("novedades: ${novedades.length}");
         emit(NovedadesPackingLoadedState(listOfNovedades: novedades));
       }
     } catch (e, s) {
-      print("Error en __onLoadAllNovedadesEvent: $e, $s");
+      debugPrint("Error en __onLoadAllNovedadesEvent: $e, $s");
       emit(NovedadesPackingErrorState(e.toString()));
     }
   }
@@ -571,7 +571,7 @@ class PackingConsolidateBloc
         emit(UnPackignError('Error al desempacar los productos'));
       }
     } catch (e, s) {
-      print('Error en el  _onUnPackingEvent: $e, $s');
+      debugPrint('Error en el  _onUnPackingEvent: $e, $s');
       emit(UnPackignError(e.toString()));
     }
   }
@@ -622,7 +622,7 @@ class PackingConsolidateBloc
 
       //validamso que tengamos imagen y temperatura
 
-      print('currentProduct: ${currentProduct.toMap()}');
+      debugPrint('currentProduct: ${currentProduct.toMap()}');
 
       //enviamos la temperatura con la imagen
       final response = await wmsPackingRepository.sendTemperatureManual(
@@ -658,7 +658,7 @@ class PackingConsolidateBloc
         return;
       }
     } catch (e, s) {
-      print('Error en el _onSendTemperatureEvent: $e, $s');
+      debugPrint('Error en el _onSendTemperatureEvent: $e, $s');
       emit(SendTemperatureFailure(
           'Ocurrió un error al procesar la imagen y obtener la temperatura'));
     }
@@ -678,7 +678,7 @@ class PackingConsolidateBloc
         return;
       }
 
-      print('currentProduct: ${currentProduct.toMap()}');
+      debugPrint('currentProduct: ${currentProduct.toMap()}');
 
       //enviamos la temperatura con la imagen
       final response = await wmsPackingRepository.sendTemperature(
@@ -724,7 +724,7 @@ class PackingConsolidateBloc
         return;
       }
     } catch (e, s) {
-      print('Error en el _onSendTemperatureEvent: $e, $s');
+      debugPrint('Error en el _onSendTemperatureEvent: $e, $s');
       emit(SendTemperatureFailure(
           'Ocurrió un error al procesar la imagen y obtener la temperatura'));
     }
@@ -750,7 +750,7 @@ class PackingConsolidateBloc
         return;
       }
     } catch (e, s) {
-      print('Error en el _onGetTemperatureEvent: $e, $s');
+      debugPrint('Error en el _onGetTemperatureEvent: $e, $s');
       emit(GetTemperatureFailure(
           'Ocurrió un error al procesar la imagen y obtener la temperatura'));
     }
@@ -784,7 +784,7 @@ class PackingConsolidateBloc
       double secondsDifferenceProduct =
           differenceProduct.inMilliseconds / 1000.0;
 
-      print('secondsDifferenceProduct: $secondsDifferenceProduct');
+      debugPrint('secondsDifferenceProduct: $secondsDifferenceProduct');
 
       //actualizamos el dato de tiempoSeparado
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
@@ -844,7 +844,7 @@ class PackingConsolidateBloc
       ));
       emit(SetPickingPackingOkState());
     } catch (e, s) {
-      print('Error en el  _onSetPickingsSplitEvent: $e, $s');
+      debugPrint('Error en el  _onSetPickingsSplitEvent: $e, $s');
       emit(SplitProductError(e.toString()));
     }
   }
@@ -856,7 +856,7 @@ class PackingConsolidateBloc
       viewQuantity = !viewQuantity;
       emit(ShowQuantityPackState(viewQuantity));
     } catch (e, s) {
-      print("❌ Error en _onShowQuantityEvent: $e, $s");
+      debugPrint("❌ Error en _onShowQuantityEvent: $e, $s");
     }
   }
 
@@ -864,8 +864,8 @@ class PackingConsolidateBloc
   void _onSendImageNovedad(
       SendImageNovedad event, Emitter<PackingConsolidateState> emit) async {
     try {
-      print('------ Enviando imagen de novedad ---');
-      print(
+      debugPrint('------ Enviando imagen de novedad ---');
+      debugPrint(
           'pedidoId: ${event.pedidoId} moveLineId: ${event.moveLineId} productId: ${event.productId}');
       emit(SendImageNovedadLoading());
       final response = await wmsPackingRepository.sendImageNoved(
@@ -890,7 +890,7 @@ class PackingConsolidateBloc
             response.msg ?? 'Error al enviar la imagen'));
       }
     } catch (e, s) {
-      print('Error en el _onSendImageNovedad: $e, $s');
+      debugPrint('Error en el _onSendImageNovedad: $e, $s');
       emit(SendImageNovedadFailure('Ocurrió un error al enviar la imagen'));
     }
   }
@@ -931,7 +931,7 @@ class PackingConsolidateBloc
   //*metodo para cambiar la cantidad seleccionada
   void _onChangeQuantitySelectedEvent(ChangeQuantitySeparate event,
       Emitter<PackingConsolidateState> emit) async {
-    print('event.quantity: ${event.quantity}');
+    debugPrint('event.quantity: ${event.quantity}');
     if (event.quantity > 0) {
       quantitySelected = event.quantity;
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
@@ -961,7 +961,7 @@ class PackingConsolidateBloc
         isQuantityOk = event.isOk;
         break;
     }
-    print(
+    debugPrint(
         'Location: $isLocationOk, Product: $isProductOk, LocationDest: $isLocationDestOk, Quantity: $isQuantityOk');
     emit(ValidateFieldsPackingState(event.isOk));
   }
@@ -1055,7 +1055,7 @@ class PackingConsolidateBloc
 
       emit(SetPackingsOkState('Empaquetado exitoso'));
     } catch (e, s) {
-      print('Error en _onSetPackingsEvent: $e\n$s');
+      debugPrint('Error en _onSetPackingsEvent: $e\n$s');
       emit(SetPackingsErrorState('Ocurrió un error inesperado'));
     }
   }
@@ -1111,7 +1111,7 @@ class PackingConsolidateBloc
           .getProductoPedidoById(
               event.pedidoId, event.idMove, 'packing-batch-consolidate');
 
-      print('productUpdate :${productUpdate.toMap()}');
+      debugPrint('productUpdate :${productUpdate.toMap()}');
 
       // Calcular la diferencia del producto ya separado
       Duration differenceProduct = dateTimeNow
@@ -1121,7 +1121,7 @@ class PackingConsolidateBloc
       double secondsDifferenceProduct =
           differenceProduct.inMilliseconds / 1000.0;
 
-      print('secondsDifferenceProduct: $secondsDifferenceProduct');
+      debugPrint('secondsDifferenceProduct: $secondsDifferenceProduct');
       //actualizamos el dato de tiempoSeparado
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
           event.pedidoId,
@@ -1160,7 +1160,7 @@ class PackingConsolidateBloc
       add(LoadAllProductsFromPedidoEvent(event.pedidoId));
       emit(SetPickingPackingOkState());
     } catch (e, s) {
-      print('Error en el  _onSetPickingsEvent: $e, $s');
+      debugPrint('Error en el  _onSetPickingsEvent: $e, $s');
       emit(SetPickingPackingErrorState(e.toString()));
     }
   }
@@ -1194,7 +1194,8 @@ class PackingConsolidateBloc
 
       emit(DeleteProductFromTemporaryPackageOkState());
     } catch (e, s) {
-      print('Error en el  _onDeleteProductFromTemporaryPackageEvent: $e, $s');
+      debugPrint(
+          'Error en el  _onDeleteProductFromTemporaryPackageEvent: $e, $s');
       emit(DeleteProductFromTemporaryPackageError(e.toString()));
     }
   }
@@ -1212,7 +1213,7 @@ class PackingConsolidateBloc
             listOfProductsForPacking: listOfProductsForPacking));
       }
     } catch (e, s) {
-      print('Error en el _onSelectProductPackingEvent: $e, $s');
+      debugPrint('Error en el _onSelectProductPackingEvent: $e, $s');
       emit(SelectProductPackingErrorState(e.toString()));
     }
   }
@@ -1230,7 +1231,7 @@ class PackingConsolidateBloc
             listOfProductsForPacking: listOfProductsForPacking));
       }
     } catch (e, s) {
-      print('Error en el _onUnSelectProductPackingEvent: $e, $s');
+      debugPrint('Error en el _onUnSelectProductPackingEvent: $e, $s');
       emit(UnSelectProductPackingErrorState(e.toString()));
     }
   }
@@ -1293,7 +1294,7 @@ class PackingConsolidateBloc
           currentProduct.idProduct,
           currentProduct.idMove ?? 0,
           'packing-batch-consolidate');
-      print('listOfBarcodes: ${listOfBarcodes.length}');
+      debugPrint('listOfBarcodes: ${listOfBarcodes.length}');
       locationIsOk = currentProduct.isLocationIsOk == 1 ? true : false;
       productIsOk = currentProduct.productIsOk == 1 ? true : false;
       locationDestIsOk = currentProduct.locationDestIsOk == 1 ? true : false;
@@ -1305,7 +1306,7 @@ class PackingConsolidateBloc
 
       emit(ProductInfoLoaded());
     } catch (e, s) {
-      print('Error en el  _onFetchProductEvent: $e, $s');
+      debugPrint('Error en el  _onFetchProductEvent: $e, $s');
       emit(ProductInfoError(e.toString()));
     }
   }
@@ -1341,7 +1342,7 @@ class PackingConsolidateBloc
           .getProductosPedido(event.pedidoId, 'packing-batch-consolidate');
 
       if (response != null) {
-        print('response lista de productos: ${response.length}');
+        debugPrint('response lista de productos: ${response.length}');
         listOfProductos.clear();
         listOfProductos.addAll(response);
         productsDonePacking.clear();
@@ -1354,21 +1355,19 @@ class PackingConsolidateBloc
                 (product.isPackage == false || product.isPackage == 0))
             .toList();
 
-        print('productsDone: ${productsDone.length}');
+        debugPrint('productsDone: ${productsDone.length}');
 
         productsDonePacking = listOfProductos
             .where(
                 (product) => product.isSeparate == 1 && product.isPackage == 1)
             .toList();
 
-        print('productsDonePacking: ${productsDonePacking.length}');
+        debugPrint('productsDonePacking: ${productsDonePacking.length}');
 
         //filtramos y creamos la lista de productos listo a separar para empaque
         listOfProductosProgress = listOfProductos.where((product) {
           return product.isSeparate == null || product.isSeparate == 0;
         }).toList();
-
-        print(listOfProductosProgress);
 
         ordenarProducts();
 
@@ -1385,14 +1384,14 @@ class PackingConsolidateBloc
           }
         }
 
-        print('listAllOfBarcodes: ${listAllOfBarcodes.length}');
+        debugPrint('listAllOfBarcodes: ${listAllOfBarcodes.length}');
 
         //traemos todos los paquetes de la base de datos del pedido en cuesiton
         final packagesDB =
             await db.packagesRepository.getPackagesPedido(event.pedidoId);
         packages.clear();
         packages.addAll(packagesDB);
-        print('packagesDB: ${packagesDB.length}');
+        debugPrint('packagesDB: ${packagesDB.length}');
 
         //obtenemos las posiciones de los productos
         getPosicions();
@@ -1401,10 +1400,10 @@ class PackingConsolidateBloc
           listOfProducts: listOfProductos,
         ));
       } else {
-        print('Error _onLoadAllProductsFromPedidoEvent: response is null');
+        debugPrint('Error _onLoadAllProductsFromPedidoEvent: response is null');
       }
     } catch (e, s) {
-      print('Error en el  _onLoadAllProductsFromPedidoEvent: $e, $s');
+      debugPrint('Error en el  _onLoadAllProductsFromPedidoEvent: $e, $s');
       emit(ErrorLoadAllProductsFromPedido(e.toString()));
     }
   }
@@ -1420,7 +1419,7 @@ class PackingConsolidateBloc
         }
       }
     }
-    print('positions: ${positions.length}');
+    debugPrint('positions: ${positions.length}');
   }
 
   void ordenarProducts() {
@@ -1436,7 +1435,7 @@ class PackingConsolidateBloc
       viewDetail = !viewDetail;
       emit(ShowDetailState(viewDetail));
     } catch (e, s) {
-      print("❌ Error en _onShowQuantityEvent: $e, $s");
+      debugPrint("❌ Error en _onShowQuantityEvent: $e, $s");
     }
   }
 
@@ -1448,7 +1447,7 @@ class PackingConsolidateBloc
           .pedidosPackingConsolidateRepository
           .getAllPedidosBatch(event.batchId);
       if (response.isNotEmpty != null) {
-        print('response pedidos: ${response.length}');
+        debugPrint('response pedidos: ${response.length}');
         pedido = PedidoPacking();
         pedido = response[0];
 
@@ -1456,10 +1455,10 @@ class PackingConsolidateBloc
 
         emit(LoadAllPedidosFromBatchLoaded(listOfPedidos: response));
       } else {
-        print('Error resPedidos: response is null');
+        debugPrint('Error resPedidos: response is null');
       }
     } catch (e, s) {
-      print('Error en el  _onLoadAllPedidosFromBatchEvent: $e, $s');
+      debugPrint('Error en el  _onLoadAllPedidosFromBatchEvent: $e, $s');
       emit(PackingConsolidateError(e.toString()));
     }
   }
@@ -1517,7 +1516,7 @@ class PackingConsolidateBloc
         emit(TimeSeparatePackError('Error al iniciar el tiempo de separacion'));
       }
     } catch (e, s) {
-      print("❌ Error en _onStartTimePickEvent: $e, $s");
+      debugPrint("❌ Error en _onStartTimePickEvent: $e, $s");
     }
   }
 
@@ -1529,10 +1528,10 @@ class PackingConsolidateBloc
           await db.batchPackingConsolidateRepository.getAllBatchsPacking();
       listOfBatchsDB.clear();
       listOfBatchsDB = batchsFromDB;
-      print('listOfBatchsDB: ${listOfBatchsDB.length}');
+      debugPrint('listOfBatchsDB: ${listOfBatchsDB.length}');
       emit(WmsPackingLoadedBD());
     } catch (e, s) {
-      print('Error en el  _onLoadBatchsFromDBEvent: $e, $s');
+      debugPrint('Error en el  _onLoadBatchsFromDBEvent: $e, $s');
       emit(PackingConsolidateError(e.toString()));
     }
   }
@@ -1545,36 +1544,36 @@ class PackingConsolidateBloc
         case 'location':
           // Acumulador de valores escaneados
           scannedValue1 += event.scannedValue.trim();
-          print('scannedValue1: $scannedValue1');
+          debugPrint('scannedValue1: $scannedValue1');
           emit(UpdateScannedValuePackState(scannedValue1, event.scan));
           break;
         case 'product':
           scannedValue2 += event.scannedValue.trim();
-          print('scannedValue2: $scannedValue2');
+          debugPrint('scannedValue2: $scannedValue2');
           emit(UpdateScannedValuePackState(scannedValue2, event.scan));
           break;
         case 'quantity':
           scannedValue3 += event.scannedValue.trim();
-          print('scannedValue3: $scannedValue3');
+          debugPrint('scannedValue3: $scannedValue3');
           emit(UpdateScannedValuePackState(scannedValue3, event.scan));
           break;
         case 'muelle':
-          print('scannedValue4: $scannedValue4');
+          debugPrint('scannedValue4: $scannedValue4');
           scannedValue4 += event.scannedValue.trim();
           emit(UpdateScannedValuePackState(scannedValue4, event.scan));
           break;
 
         case 'toDo':
-          print('scannedValue5: $scannedValue5');
+          debugPrint('scannedValue5: $scannedValue5');
           scannedValue5 += event.scannedValue.trim();
           emit(UpdateScannedValuePackState(scannedValue5, event.scan));
           break;
 
         default:
-          print('Scan type not recognized: ${event.scan}');
+          debugPrint('Scan type not recognized: ${event.scan}');
       }
     } catch (e, s) {
-      print("❌ Error en _onUpdateScannedValueEvent: $e, $s");
+      debugPrint("❌ Error en _onUpdateScannedValueEvent: $e, $s");
     }
   }
 
@@ -1606,11 +1605,11 @@ class PackingConsolidateBloc
           break;
 
         default:
-          print('Scan type not recognized: ${event.scan}');
+          debugPrint('Scan type not recognized: ${event.scan}');
       }
       emit(ClearScannedValuePackState());
     } catch (e, s) {
-      print("❌ Error en _onClearScannedValueEvent: $e, $s");
+      debugPrint("❌ Error en _onClearScannedValueEvent: $e, $s");
     }
   }
 
@@ -1622,8 +1621,8 @@ class PackingConsolidateBloc
     if (query.isEmpty) {
       listOfBatchsDB = [];
       listOfBatchsDB = listOfBatchs;
-      print('listOfBatchsDB: ${listOfBatchsDB.length}');
-      print('listOfBatchs: ${listOfBatchs.length}');
+      debugPrint('listOfBatchsDB: ${listOfBatchsDB.length}');
+      debugPrint('listOfBatchs: ${listOfBatchs.length}');
     } else {
       listOfBatchsDB = listOfBatchs.where((batch) {
         return batch.name?.toLowerCase().contains(query) ?? false;
@@ -1717,14 +1716,15 @@ class PackingConsolidateBloc
               .expand((pedido) => pedido.listaPaquetes!)
               .toList();
 
-          print(
+          debugPrint(
               'productsPackagesToInsert Packing : ${productsPackagesToInsert.length}');
 
-          print('pedidosToInsert Packing : ${pedidosToInsert.length}');
-          print('productsToInsert Packing : ${productsToInsert.length}');
-          print('barcode product Packing : ${barcodesToInsert.length}');
-          print('otherBarcodes    Packing : ${otherBarcodesToInsert.length}');
-          print('packagesToInsert Packing : ${packagesToInsert.length}');
+          debugPrint('pedidosToInsert Packing : ${pedidosToInsert.length}');
+          debugPrint('productsToInsert Packing : ${productsToInsert.length}');
+          debugPrint('barcode product Packing : ${barcodesToInsert.length}');
+          debugPrint(
+              'otherBarcodes    Packing : ${otherBarcodesToInsert.length}');
+          debugPrint('packagesToInsert Packing : ${packagesToInsert.length}');
 
           // Enviar la lista agrupada de productos de un batch para packing
           await DataBaseSqlite()
@@ -1766,10 +1766,10 @@ class PackingConsolidateBloc
           listOfBatchs: listOfBatchs,
         ));
       } else {
-        print('Error resBatchs: response is null');
+        debugPrint('Error resBatchs: response is null');
       }
     } catch (e, s) {
-      print('Error en el  _onLoadAllPackingEvent: $e, $s');
+      debugPrint('Error en el  _onLoadAllPackingEvent: $e, $s');
       emit(PackingConsolidateError(e.toString()));
     }
   }
@@ -1801,7 +1801,7 @@ class PackingConsolidateBloc
       }
     } catch (e, s) {
       emit(ConfigurationErrorPack(e.toString()));
-      print('Error en LoadConfigurationsUserPack.dart: $e =>$s');
+      debugPrint('Error en LoadConfigurationsUserPack.dart: $e =>$s');
     }
   }
 
@@ -1822,7 +1822,7 @@ class PackingConsolidateBloc
 
       return formattedTime;
     } catch (e, s) {
-      print("❌ Error en el formatSecondsToHHMMSS $e ->$s");
+      debugPrint("❌ Error en el formatSecondsToHHMMSS $e ->$s");
       return "";
     }
   }

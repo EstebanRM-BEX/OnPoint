@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:ui';
@@ -6,8 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/models/product_devolucion_model.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/models/response_terceros_model.dart';
@@ -32,8 +33,8 @@ class DevolucionesScreen extends StatefulWidget {
 
 class _DevolucionesScreenState extends State<DevolucionesScreen>
     with WidgetsBindingObserver {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
 
   final TextEditingController _controllerSearch = TextEditingController();
   final TextEditingController _controllerLocation = TextEditingController();
@@ -87,7 +88,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
   }
 
   void _handleFocusAccordingToState() {
-    print('_handleFocusAccordingToState');
+    debugPrint('_handleFocusAccordingToState');
     final bloc = context.read<DevolucionesBloc>();
 
     // Validación adicional para location
@@ -185,7 +186,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
     }
     final scan = value.trim();
 
-    print('scan product: $scan');
+    debugPrint('scan product: $scan');
     _controllerSearch.text = ''; // Limpia el campo de texto del producto
     //buscamos si hay un producto con ese código de barras
 
@@ -200,7 +201,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
     final bloc = context.read<DevolucionesBloc>();
     final scan = value.trim().toLowerCase();
 
-    print('scan location: $scan');
+    debugPrint('scan location: $scan');
     _controllerLocation.text = ''; // Limpia el campo de texto del producto
     //buscamos si hay un producto con ese código de barras
 
@@ -210,11 +211,11 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
             ResultUbicaciones() // Si no se encuentra ningún match, devuelve null
         );
     if (matchedUbicacion.barcode != null) {
-      print('Ubicacion encontrada: ${matchedUbicacion.name}');
+      debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
       bloc.add(SelectLocationEvent(matchedUbicacion));
       Future.microtask(() => focusNode2.requestFocus());
     } else {
-      print('Ubicacion no encontrada');
+      debugPrint('Ubicacion no encontrada');
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       Future.microtask(() => focusNode2.requestFocus());
@@ -225,7 +226,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
     final bloc = context.read<DevolucionesBloc>();
     final scan = value.trim().toLowerCase();
 
-    print('scan contacto: $scan');
+    debugPrint('scan contacto: $scan');
     _controllerContacto.text = ''; // Limpia el campo de texto del producto
     //buscamos si hay un producto con ese código de barras
 
@@ -235,11 +236,11 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
             Terceros() // Si no se encuentra ningún match, devuelve null
         );
     if (matchedTercero.document != null) {
-      print('contacto encontrado: ${matchedTercero.name}');
+      debugPrint('contacto encontrado: ${matchedTercero.name}');
       bloc.add(SelectTerceroEvent(matchedTercero));
       Future.microtask(() => focusNode3.requestFocus());
     } else {
-      print('contacto no encontrada');
+      debugPrint('contacto no encontrada');
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       Future.microtask(() => focusNode3.requestFocus());
@@ -247,7 +248,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
   }
 
   void validateQuantity(String value) {
-    print("Validando cantidad: $value");
+    debugPrint("Validando cantidad: $value");
     final bloc = context.read<DevolucionesBloc>();
     final scan = value.trim().toLowerCase();
     _controllerQuantity.text = ''; // Limpia el campo de texto
@@ -265,7 +266,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
   Widget build(BuildContext context) {
     return BlocConsumer<DevolucionesBloc, DevolucionesState>(
       listener: (context, state) {
-        print('Estado actual ❤️‍🔥: $state');
+        debugPrint('Estado actual ❤️‍🔥: $state');
 
         if (state is AddProductFailure) {
           showScrollableErrorDialog(state.error);
@@ -1359,7 +1360,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                     );
                   },
                   onEdit: () {
-                    print('Editando producto: ${product.toMap()}');
+                    debugPrint('Editando producto: ${product.toMap()}');
                     context
                         .read<DevolucionesBloc>()
                         .add(ChangeStateIsDialogVisibleEvent(true));

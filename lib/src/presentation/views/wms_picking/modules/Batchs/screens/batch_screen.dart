@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously, deprecated_member_use, avoid_print, unrelated_type_equality_checks, unnecessary_null_comparison, unused_element, sort_child_properties_last, no_leading_underscores_for_local_identifiers
 
 import 'dart:async';
@@ -7,8 +10,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/scanner_locationDest_widget.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
@@ -25,7 +26,7 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_picking_incompleted_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dropdowbutton_widget.dart';
+import 'package:wms_app/features/picking_cluster/presentation/widgets/dropdowbutton_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/popunButton_widget.dart';
@@ -44,8 +45,8 @@ class BatchScreen extends StatefulWidget {
 
 class _BatchDetailScreenState extends State<BatchScreen>
     with WidgetsBindingObserver {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
 
   String scannedValue6 = '';
   String? selectedLocation;
@@ -170,7 +171,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
   }
 
   String _getScannedOrManual(String scanned, String manual) {
-    print("Scanned: $scanned, Manual: $manual");
+    debugPrint("Scanned: $scanned, Manual: $manual");
     final scan = scanned.trim().toLowerCase();
     return scan.isEmpty ? manual.trim().toLowerCase() : scan;
   }
@@ -185,7 +186,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
       final scan = _getScannedOrManual(bloc.scannedValue1, value);
       final product = bloc.currentProduct;
 
-      print("scan location: $scan");
+      debugPrint("scan location: $scan");
 
       _controllerLocation.clear();
 
@@ -247,7 +248,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
     _debounce = Timer(const Duration(milliseconds: 200), () async {
       if (!mounted) return;
 
-      print("Validando cantidad: $value");
+      debugPrint("Validando cantidad: $value");
       final bloc = context.read<BatchBloc>();
       final scan = _getScannedOrManual(bloc.scannedValue3, value);
       final product = bloc.currentProduct;
@@ -349,7 +350,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
                     child: BlocConsumer<BatchBloc, BatchState>(
                         listenWhen: (previous, current) {
                       if (current is LoadingFetchBatch) {
-                        print("------------entramos------------");
+                        debugPrint("------------entramos------------");
                         return true;
                       }
                       return true;
@@ -591,10 +592,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
                                 currentProduct.locationId.toString(),
                             batchBloc: batchBloc,
                             currentProduct: currentProduct,
-                            isPDA: !context
-                                .read<UserBloc>()
-                                .fabricante
-                                .contains("Zebra"),
+                            isPDA: true,
                           ),
                         ),
 
@@ -767,14 +765,12 @@ class _BatchDetailScreenState extends State<BatchScreen>
                 manualFocusNode: focusNode4,
                 viewQuantity: batchBloc.viewQuantity,
                 onIconButtonPressed: () {
-                  print('borrando');
+                  debugPrint('borrando');
                   batchBloc.add(ShowQuantityEvent(!batchBloc.viewQuantity));
                   Future.delayed(const Duration(milliseconds: 100), () {
                     FocusScope.of(context).requestFocus(focusNode3);
                   });
                 },
-                showKeyboard:
-                    context.read<UserBloc>().fabricante.contains("Zebra"),
                 onToggleViewQuantity: () {
                   batchBloc.add(ShowQuantityEvent(!batchBloc.viewQuantity));
                   cantidadController.clear();
@@ -794,7 +790,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
                     try {
                       batchBloc.quantitySelected = double.parse(value);
                     } catch (e) {
-                      print('❌ Error al convertir a número: $e');
+                      debugPrint('❌ Error al convertir a número: $e');
                     }
                   } else {
                     batchBloc.quantitySelected = 0;
@@ -826,11 +822,21 @@ class _BatchDetailScreenState extends State<BatchScreen>
                           context: context,
                           builder: (context) {
                             return DialogAdvetenciaCantidadScreen(
-                              currentProduct: currentProduct,
+                              productQuantity: currentProduct.quantity ?? 0,
                               cantidad: batchBloc.quantitySelected,
                               batchId:
                                   batchBloc.batchWithProducts.batch?.id ?? 0,
-                              onAccepted: () {
+                              novedades: batchBloc
+                                  .novedades, // injected nouveaties list
+                              onAccepted: (String selectedNovedad) async {
+                                DataBaseSqlite db = DataBaseSqlite();
+                                await db.updateNovedad(
+                                    batchBloc.batchWithProducts.batch?.id ?? 0,
+                                    currentProduct.idProduct ?? 0,
+                                    selectedNovedad,
+                                    currentProduct.idMove ?? 0,
+                                    batchBloc.typePicking);
+
                                 batchBloc.add(ChangeQuantitySeparate(
                                     intValue,
                                     currentProduct.idProduct ?? 0,
@@ -945,10 +951,19 @@ class _BatchDetailScreenState extends State<BatchScreen>
       context: context,
       builder: (context) {
         return DialogAdvetenciaCantidadScreen(
-          currentProduct: currentProduct,
+          productQuantity: currentProduct.quantity ?? 0,
           cantidad: cantidad,
           batchId: batchBloc.batchWithProducts.batch?.id ?? 0,
-          onAccepted: () async {
+          novedades: batchBloc.novedades,
+          onAccepted: (String selectedNovedad) async {
+            DataBaseSqlite db = DataBaseSqlite();
+            await db.updateNovedad(
+                batchBloc.batchWithProducts.batch?.id ?? 0,
+                currentProduct.idProduct ?? 0,
+                selectedNovedad,
+                currentProduct.idMove ?? 0,
+                batchBloc.typePicking);
+
             // Llamamos a la misma función auxiliar
             procesarTransaccion();
           },
@@ -997,7 +1012,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
       // Si no hay batch, termina la ejecución
       if (batch == null) return;
 
-      print("currentProduct ${currentProduct.productId}");
+      debugPrint("currentProduct ${currentProduct.productId}");
 
       // Función para actualizar la base de datos en varios campos a la vez
       Future<void> _updateDatabaseFields() async {
@@ -1078,7 +1093,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
       batchBloc.sortProductsByLocationId(batchBloc.typePicking);
       await _moveToNextProduct();
     } catch (e, s) {
-      print("❌ Error en _nextProduct: $e -> $s");
+      debugPrint("❌ Error en _nextProduct: $e -> $s");
       // Manejo de errores
     } finally {
       batchBloc.add(SetIsProcessingEvent(false));

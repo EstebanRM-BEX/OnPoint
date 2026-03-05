@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/conteo/tbl_ordenes/orden_table.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
@@ -78,9 +79,9 @@ class OrdenConteoRepository {
         await batch.commit(noResult: true);
       });
 
-      print('Órdenes de conteo insertadas/actualizadas correctamente');
+      debugPrint('Órdenes de conteo insertadas/actualizadas correctamente');
     } catch (e, s) {
-      print('Error en insertOrUpdateOrdenes: $e -> $s');
+      debugPrint('Error en insertOrUpdateOrdenes: $e -> $s');
       rethrow;
     }
   }
@@ -96,7 +97,7 @@ class OrdenConteoRepository {
         return DatumConteo.fromMap(maps[i]);
       });
     } catch (e, s) {
-      print('Error en getAllOrdenes: $e -> $s');
+      debugPrint('Error en getAllOrdenes: $e -> $s');
       rethrow;
     }
   }
@@ -117,7 +118,7 @@ class OrdenConteoRepository {
       }
       return null;
     } catch (e, s) {
-      print('Error en getOrdenById: $e -> $s');
+      debugPrint('Error en getOrdenById: $e -> $s');
       rethrow;
     }
   }
@@ -132,7 +133,7 @@ class OrdenConteoRepository {
         whereArgs: [id],
       );
     } catch (e, s) {
-      print('Error en deleteOrden: $e -> $s');
+      debugPrint('Error en deleteOrden: $e -> $s');
       rethrow;
     }
   }
@@ -148,7 +149,7 @@ class OrdenConteoRepository {
         whereArgs: [id],
       );
     } catch (e, s) {
-      print('Error en markAsSelected: $e -> $s');
+      debugPrint('Error en markAsSelected: $e -> $s');
       rethrow;
     }
   }
@@ -164,9 +165,10 @@ class OrdenConteoRepository {
         where: '${OrdenTable.columnId} = ?',
         whereArgs: [id],
       );
-      print('Campo $fieldName actualizado a $value para la orden con ID $id');
+      debugPrint(
+          'Campo $fieldName actualizado a $value para la orden con ID $id');
     } catch (e, s) {
-      print('Error en updateField: $e -> $s');
+      debugPrint('Error en updateField: $e -> $s');
       rethrow;
     }
   }
@@ -180,9 +182,9 @@ class OrdenConteoRepository {
         SET ${OrdenTable.columnNumeroItemsContados} = ${OrdenTable.columnNumeroItemsContados} + 1
         WHERE ${OrdenTable.columnId} = ?
       ''', [id]);
-      print('Incrementado numero_items_contados para la orden con ID $id');
+      debugPrint('Incrementado numero_items_contados para la orden con ID $id');
     } catch (e, s) {
-      print('Error en incrementNumeroItemsContados: $e -> $s');
+      debugPrint('Error en incrementNumeroItemsContados: $e -> $s');
       rethrow;
     }
   }
@@ -196,9 +198,9 @@ class OrdenConteoRepository {
         SET ${OrdenTable.columnNumeroLineas} = ${OrdenTable.columnNumeroLineas} + 1
         WHERE ${OrdenTable.columnId} = ?
       ''', [id]);
-      print('Incrementado numero_lineas para la orden con ID $id');
+      debugPrint('Incrementado numero_lineas para la orden con ID $id');
     } catch (e, s) {
-      print('Error en incrementNumeroLineas: $e -> $s');
+      debugPrint('Error en incrementNumeroLineas: $e -> $s');
       rethrow;
     }
   }

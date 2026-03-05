@@ -1,5 +1,6 @@
 // pedidos_packing_repository.dart
 
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/packing/packing_consolidade/tbl_pedidos_pack_consolidate/pedidos_pack_table.dart';
@@ -92,9 +93,9 @@ class PedidosPackingConsolidateRepository {
         }
       });
 
-      print("Pedidos de packing insertados/actualizados con éxito.");
+      debugPrint("Pedidos de packing insertados/actualizados con éxito.");
     } catch (e, s) {
-      print("Error al insertar/actualizar pedidos: $e ==> $s");
+      debugPrint("Error al insertar/actualizar pedidos: $e ==> $s");
     }
   }
 
@@ -116,7 +117,7 @@ class PedidosPackingConsolidateRepository {
 
       return pedidos;
     } catch (e) {
-      print("Error al obtener todos los pedidos del batch: $e");
+      debugPrint("Error al obtener todos los pedidos del batch: $e");
       return [];
     }
   }
@@ -135,7 +136,7 @@ class PedidosPackingConsolidateRepository {
 
       return pedidos;
     } catch (e) {
-      print("Error al obtener todos los pedidos de packing: $e");
+      debugPrint("Error al obtener todos los pedidos de packing: $e");
       return [];
     }
   }
@@ -152,11 +153,11 @@ class PedidosPackingConsolidateRepository {
       );
 
       // Devolver la cantidad de filas afectadas
-      print(
+      debugPrint(
           "update setFieldTablePedidosPacking  ($field)  pedido $pedidoId batch $batchId => $resUpdate");
       return resUpdate;
     } catch (e) {
-      print("Error al actualizar el campo $field: $e");
+      debugPrint("Error al actualizar el campo $field: $e");
       return null;
     }
   }
@@ -168,10 +169,10 @@ class PedidosPackingConsolidateRepository {
       final resDelete = await db.delete(
         PedidosPackingConsolidateTable.tableName,
       );
-      print("deleteAllPedidosPacking: $resDelete");
+      debugPrint("deleteAllPedidosPacking: $resDelete");
       return resDelete;
     } catch (e) {
-      print("Error al eliminar todos los pedidos de packing: $e");
+      debugPrint("Error al eliminar todos los pedidos de packing: $e");
       return null;
     }
   }

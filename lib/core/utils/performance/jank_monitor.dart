@@ -8,10 +8,10 @@ class JankMonitor {
   JankMonitor._internal();
 
   bool _isMonitoring = false;
-  
+
   // ✅ NUEVO: Variable para saber dónde estamos
   String _currentScreen = "Inicio / Desconocido";
-  
+
   // ✅ NUEVO: Setter para actualizar manualmente (si quieres trackear funciones)
   void setContext(String name) {
     _currentScreen = name;
@@ -33,7 +33,7 @@ class JankMonitor {
       final duration = timing.totalSpan.inMilliseconds;
 
       // Umbral: > 32ms es visible. > 100ms es grave.
-      if (duration > 100) { 
+      if (duration > 100) {
         _reportJank(duration, timing);
       }
     }
@@ -41,13 +41,9 @@ class JankMonitor {
 
   void _reportJank(int duration, FrameTiming timing) {
     // ✅ AHORA EL REPORTE INCLUYE LA PANTALLA
-    final message = "🚨 JANK en [$_currentScreen]: ${duration}ms";
-    
-    print(message);
 
     FirebaseCrashlytics.instance.log(
-      "JANK | Screen: $_currentScreen | Total: ${duration}ms | Build: ${timing.buildDuration.inMilliseconds}ms | Raster: ${timing.rasterDuration.inMilliseconds}ms"
-    );
+        "JANK | Screen: $_currentScreen | Total: ${duration}ms | Build: ${timing.buildDuration.inMilliseconds}ms | Raster: ${timing.rasterDuration.inMilliseconds}ms");
 
     if (duration > 200) {
       // Enviamos como error no fatal para ver la estadística agrupada por pantalla
@@ -65,12 +61,11 @@ class JankMonitor {
 // ✅ CLASE NUEVA: El Espía de Navegación
 // -----------------------------------------------------------------------------
 class JankRouteObserver extends NavigatorObserver {
-  
   void _updateScreenName(Route<dynamic>? route) {
     if (route is PageRoute && route.settings.name != null) {
       final screenName = route.settings.name!;
       JankMonitor().setContext(screenName);
-      print("👀 JankMonitor: Usuario navegó a -> $screenName");
+      debugPrint("👀 JankMonitor: Usuario navegó a -> $screenName");
     }
   }
 

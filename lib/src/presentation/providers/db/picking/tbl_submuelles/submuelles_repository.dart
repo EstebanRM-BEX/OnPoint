@@ -1,5 +1,6 @@
 // submuelles_repository.dart
 
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/submeuelle_model.dart';
@@ -35,9 +36,9 @@ class SubmuellesRepository {
         await batch.commit();
       });
 
-      print("Submuelles insertados/actualizados con éxito.");
+      debugPrint("Submuelles insertados/actualizados con éxito.");
     } catch (e) {
-      print("Error al insertar submuelles: $e");
+      debugPrint("Error al insertar submuelles: $e");
     }
   }
 
@@ -65,7 +66,7 @@ class SubmuellesRepository {
 
       return submuelles;
     } catch (e) {
-      print("Error al obtener submuelles por location_id: $e");
+      debugPrint("Error al obtener submuelles por location_id: $e");
       return []; // Devuelve una lista vacía en caso de error
     }
   }

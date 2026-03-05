@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
+import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_image_send_novedad_model.dart';
@@ -257,7 +257,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   void _onViewProductImageEvent(
       ViewProductImageEvent event, Emitter<PackingPedidoState> emit) async {
     try {
-      print('Obteniendo imagen del producto con ID: ${event.idProduct}');
+      debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
       final response =
@@ -275,7 +275,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         emit(ViewProductImageFailure('Imagen no disponible'));
       }
     } catch (e, s) {
-      print('Error en el ViewProductImageEvent: $e, $s');
+      debugPrint('Error en el ViewProductImageEvent: $e, $s');
       emit(ViewProductImageFailure(e.toString()));
     }
   }
@@ -307,7 +307,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         return;
       }
 
-      print('event.product.pedidoId: ${event.product.toMap()}');
+      debugPrint('event.product.pedidoId: ${event.product.toMap()}');
 
       // is_separate
       await db.productosPedidosRepository.revertProductFields(
@@ -321,7 +321,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
       emit(DeleteProductFromTemporaryPackageOkState());
     } catch (e, s) {
-      print('Error en el  _onDeleteProductFromTemporaryPackageEvent: $e, $s');
+      debugPrint(
+          'Error en el  _onDeleteProductFromTemporaryPackageEvent: $e, $s');
       emit(DeleteProductFromTemporaryPackageError(e.toString()));
     }
   }
@@ -341,7 +342,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       }
     } catch (e, s) {
       emit(ValidateConfirmFailure('Error al validar la confirmacion'));
-      print('Error en el _onValidateConfirmEvent: $e, $s');
+      debugPrint('Error en el _onValidateConfirmEvent: $e, $s');
     }
   }
 
@@ -381,7 +382,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         'Error al crear la backorder',
         event.isBackOrder,
       ));
-      print('Error en el _onCreateBackOrder: $e, $s');
+      debugPrint('Error en el _onCreateBackOrder: $e, $s');
     }
   }
 
@@ -390,7 +391,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     try {
       final time = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
-      print("time : $time");
+      debugPrint("time : $time");
 
       if (event.value == "start_time_transfer") {
         await db.pedidoPackRepository.updatePedidoPackField(
@@ -431,7 +432,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         emit(StartOrStopTimePackFailure('Error al enviar el tiempo'));
       }
     } catch (e, s) {
-      print('Error en el _onStartOrStopTimeOrder: $e, $s');
+      debugPrint('Error en el _onStartOrStopTimeOrder: $e, $s');
     }
   }
 
@@ -610,7 +611,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         emit(UnPackignError('Error al desempacar los productos'));
       }
     } catch (e, s) {
-      print('Error en el  _onUnPackingEvent: $e, $s');
+      debugPrint('Error en el  _onUnPackingEvent: $e, $s');
       emit(UnPackignError(e.toString()));
     }
   }
@@ -664,7 +665,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         emit(ListOfProductsForPackingState(listOfProductsForPacking));
       }
     } catch (e, s) {
-      print('Error en el _onSelectProductPackingEvent: $e, $s');
+      debugPrint('Error en el _onSelectProductPackingEvent: $e, $s');
       emit(WmsPackingErrorState(e.toString()));
     }
   }
@@ -681,7 +682,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         emit(ListOfProductsForPackingState(listOfProductsForPacking));
       }
     } catch (e, s) {
-      print('Error en el _onUnSelectProductPackingEvent: $e, $s');
+      debugPrint('Error en el _onUnSelectProductPackingEvent: $e, $s');
       emit(WmsPackingErrorState(e.toString()));
     }
   }
@@ -769,7 +770,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
       emit(WmsPackingSuccessState('Empaquetado exitoso'));
     } catch (e, s) {
-      print('Error en _onSetPackingsEvent: $e\n$s');
+      debugPrint('Error en _onSetPackingsEvent: $e\n$s');
       emit(WmsPackingErrorState('Ocurrió un error inesperado'));
     }
   }
@@ -820,7 +821,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       viewQuantity = !viewQuantity;
       emit(ShowQuantityPackState(viewQuantity));
     } catch (e, s) {
-      print("❌ Error en _onShowQuantityEvent: $e, $s");
+      debugPrint("❌ Error en _onShowQuantityEvent: $e, $s");
     }
   }
 
@@ -843,7 +844,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       final productUpdate = await db.productosPedidosRepository
           .getProductoPedidoById(event.pedidoId, event.idMove, 'packing-pack');
 
-      print('productUpdate :${productUpdate.toMap()}');
+      debugPrint('productUpdate :${productUpdate.toMap()}');
 
       // Calcular la diferencia del producto ya separado
       Duration differenceProduct = dateTimeNow
@@ -853,7 +854,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       double secondsDifferenceProduct =
           differenceProduct.inMilliseconds / 1000.0;
 
-      print('secondsDifferenceProduct: $secondsDifferenceProduct');
+      debugPrint('secondsDifferenceProduct: $secondsDifferenceProduct');
       //actualizamos el dato de tiempoSeparado
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
           event.pedidoId,
@@ -894,7 +895,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       add(LoadPedidoAndProductsEvent(event.pedidoId));
       emit(SetPickingPackingOkState());
     } catch (e, s) {
-      print('Error en el  _onSetPickingsEvent: $e, $s');
+      debugPrint('Error en el  _onSetPickingsEvent: $e, $s');
       emit(SetPickingPackingErrorState(e.toString()));
     }
   }
@@ -925,7 +926,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       final productUpdate = await db.productosPedidosRepository
           .getProductoPedidoById(event.pedidoId, event.idMove, 'packing-pack');
 
-      print('productUpdate :${productUpdate.toMap()}');
+      debugPrint('productUpdate :${productUpdate.toMap()}');
 
       // Calcular la diferencia del producto ya separado
       Duration differenceProduct = dateTimeNow
@@ -935,7 +936,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       double secondsDifferenceProduct =
           differenceProduct.inMilliseconds / 1000.0;
 
-      print('secondsDifferenceProduct: $secondsDifferenceProduct');
+      debugPrint('secondsDifferenceProduct: $secondsDifferenceProduct');
       //actualizamos el dato de tiempoSeparado
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
           event.pedidoId,
@@ -992,7 +993,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       add(LoadPedidoAndProductsEvent(event.pedidoId));
       emit(SetPickingPackingOkState());
     } catch (e, s) {
-      print('Error en el  _onSetPickingsSplitEvent: $e, $s');
+      debugPrint('Error en el  _onSetPickingsSplitEvent: $e, $s');
       emit(SplitProductError(e.toString()));
     }
   }
@@ -1006,11 +1007,11 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       if (response != null) {
         novedades.clear();
         novedades = response;
-        print("novedades: ${novedades.length}");
+        debugPrint("novedades: ${novedades.length}");
         emit(NovedadesPackingLoadedState(listOfNovedades: novedades));
       }
     } catch (e, s) {
-      print("Error en __onLoadAllNovedadesEvent: $e, $s");
+      debugPrint("Error en __onLoadAllNovedadesEvent: $e, $s");
       emit(NovedadesPackingErrorState(e.toString()));
     }
   }
@@ -1031,7 +1032,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         return;
       }
 
-      print('currentProduct: ${currentProduct.toMap()}');
+      debugPrint('currentProduct: ${currentProduct.toMap()}');
 
       //enviamos la temperatura con la imagen
       final response = await wmsPackingRepository.sendTemperature(
@@ -1075,7 +1076,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         return;
       }
     } catch (e, s) {
-      print('Error en el _onSendTemperatureEvent: $e, $s');
+      debugPrint('Error en el _onSendTemperatureEvent: $e, $s');
       emit(SendTemperatureFailure(
           'Ocurrió un error al procesar la imagen y obtener la temperatura'));
     }
@@ -1088,7 +1089,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     try {
       emit(SendTemperatureLoading());
 
-      print('currentProduct: ${currentProduct.toMap()}');
+      debugPrint('currentProduct: ${currentProduct.toMap()}');
 
       //enviamos la temperatura con la imagen
       final response = await wmsPackingRepository.sendTemperatureManual(
@@ -1123,7 +1124,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         return;
       }
     } catch (e, s) {
-      print('Error en el _onSendTemperatureEvent: $e, $s');
+      debugPrint('Error en el _onSendTemperatureEvent: $e, $s');
       emit(SendTemperatureFailure(
           'Ocurrió un error al procesar la imagen y obtener la temperatura'));
     }
@@ -1151,7 +1152,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         return;
       }
     } catch (e, s) {
-      print('Error en el _onGetTemperatureEvent: $e, $s');
+      debugPrint('Error en el _onGetTemperatureEvent: $e, $s');
       emit(GetTemperatureFailure(
           'Ocurrió un error al procesar la imagen y obtener la temperatura'));
     }
@@ -1161,8 +1162,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   void _onSendImageNovedad(
       SendImageNovedad event, Emitter<PackingPedidoState> emit) async {
     try {
-      print('------ Enviando imagen de novedad ---');
-      print(
+      debugPrint('------ Enviando imagen de novedad ---');
+      debugPrint(
           'pedidoId: ${event.pedidoId} moveLineId: ${event.moveLineId} productId: ${event.productId}');
       emit(SendImageNovedadLoading());
       final response = await wmsPackingRepository.sendImageNoved(
@@ -1187,7 +1188,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
             response.msg ?? 'Error al enviar la imagen'));
       }
     } catch (e, s) {
-      print('Error en el _onSendImageNovedad: $e, $s');
+      debugPrint('Error en el _onSendImageNovedad: $e, $s');
       emit(SendImageNovedadFailure('Ocurrió un error al enviar la imagen'));
     }
   }
@@ -1220,7 +1221,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
       emit(FetchProductLoadedState());
     } catch (e, s) {
-      print('Error en el  _onFetchProductEvent: $e, $s');
+      debugPrint('Error en el  _onFetchProductEvent: $e, $s');
       emit(FetchProductErrorState(e.toString()));
     }
   }
@@ -1279,7 +1280,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   //*metodo para cambiar la cantidad seleccionada
   void _onChangeQuantitySelectedEvent(
       ChangeQuantitySeparate event, Emitter<PackingPedidoState> emit) async {
-    print('event.quantity: ${event.quantity}');
+    debugPrint('event.quantity: ${event.quantity}');
     if (event.quantity > 0) {
       quantitySelected = event.quantity;
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
@@ -1383,7 +1384,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         isQuantityOk = event.isOk;
         break;
     }
-    print(
+    debugPrint(
         'Location: $isLocationOk, Product: $isProductOk, LocationDest: $isLocationDestOk, Quantity: $isQuantityOk');
     emit(ValidateFieldsPackingState(event.isOk));
   }
@@ -1395,7 +1396,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       viewDetail = !viewDetail;
       emit(ShowDetailPackState(viewDetail));
     } catch (e, s) {
-      print("❌ Error en _onShowQuantityEvent: $e, $s");
+      debugPrint("❌ Error en _onShowQuantityEvent: $e, $s");
     }
   }
 
@@ -1416,7 +1417,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         currentPedidoPack = response;
 
         if (responseProducts != null && responseProducts is List) {
-          print(
+          debugPrint(
               'responseProducts lista de productos: ${responseProducts.length}');
           listOfProductos.clear();
           listOfProductos = responseProducts;
@@ -1431,15 +1432,15 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
                   (product.isPackage == false || product.isPackage == 0))
               .toList();
 
-          print('productsDone: ${productsDone.length}');
-          print('listOfProductos: ${listOfProductos.length}');
+          debugPrint('productsDone: ${productsDone.length}');
+          debugPrint('listOfProductos: ${listOfProductos.length}');
 
           productsDonePacking = listOfProductos
               .where((product) =>
                   product.isSeparate == 1 && product.isPackage == 1)
               .toList();
 
-          print('productsDonePacking: ${productsDonePacking.length}');
+          debugPrint('productsDonePacking: ${productsDonePacking.length}');
 
           //filtramos y creamos la lista de productos listo a separar para empaque
           listOfProductosProgress = listOfProductos.where((product) {
@@ -1462,7 +1463,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
               await db.packagesRepository.getPackagesPedido(event.idPedido);
           packages.clear();
           packages.addAll(packagesDB);
-          print('packagesDB: ${packagesDB.length}');
+          debugPrint('packagesDB: ${packagesDB.length}');
 
           //obtenemos las posiciones de los productos
           getPosicions();
@@ -1475,7 +1476,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         emit(LoadPedidoAndProductsError('No se encontró el pedido'));
       }
     } catch (e, s) {
-      print('Error en el _onLoadPedidoAndProductsEvent: $e, $s');
+      debugPrint('Error en el _onLoadPedidoAndProductsEvent: $e, $s');
       emit(LoadPedidoAndProductsError(e.toString()));
     }
   }
@@ -1497,7 +1498,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         }
       }
     }
-    print('positions: ${positions.length}');
+    debugPrint('positions: ${positions.length}');
   }
 
   //* metodo para cargar la configuracion del usuario
@@ -1516,7 +1517,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         emit(ConfigurationError('Error al cargar LoadConfigurationsUser'));
       }
     } catch (e, s) {
-      print('❌ Error en LoadConfigurationsUser $e =>$s');
+      debugPrint('❌ Error en LoadConfigurationsUser $e =>$s');
     }
   }
 
@@ -1525,7 +1526,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       StartOrStopTimePedido event, Emitter<PackingPedidoState> emit) async {
     try {
       final time = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
-      print("time : $time");
+      debugPrint("time : $time");
       if (event.value == "start_time_transfer") {
         await db.pedidoPackRepository.updatePedidoPackField(
           event.id,
@@ -1558,7 +1559,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         emit(StartOrStopTimeTransferFailure('Error al enviar el tiempo'));
       }
     } catch (e, s) {
-      print('Error en el _onStartOrStopTimeOrder: $e, $s');
+      debugPrint('Error en el _onStartOrStopTimeOrder: $e, $s');
     }
   }
 
@@ -1609,7 +1610,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       }
     } catch (e, s) {
       emit(AssignUserToPedidoError('Error al asignar el usuario'));
-      print('Error en el _onAssignUserToOrder: $e, $s');
+      debugPrint('Error en el _onAssignUserToOrder: $e, $s');
     }
   }
 
@@ -1648,7 +1649,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       // Emite el nuevo estado con la lista filtrada
       emit(PackingPedidoLoadedFromDBState(listOfPedidos: listOfPedidosBD));
     } catch (e, s) {
-      print('Error en el _onSearchPedidoEvent: $e, $s');
+      debugPrint('Error en el _onSearchPedidoEvent: $e, $s');
       // Emite un estado de error si algo sale mal durante la búsqueda
       emit(PackingPedidoError(e.toString()));
     }
@@ -1715,7 +1716,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
               .expand((pedido) => pedido.listaPaquetes!)
               .expand((paquete) => paquete.listaProductosInPacking!)
               .toList();
-          print('productsPackagesToInsert :${productsPackagesToInsert.length}');
+          debugPrint(
+              'productsPackagesToInsert :${productsPackagesToInsert.length}');
 
           //covertir el mapa en una lista de los paquetes de un pedido
           List<Paquete> packagesToInsert =
@@ -1744,10 +1746,10 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
               .insertPackages(packagesToInsert, 'packing-pack');
 
           //creamos las cajas que ya estan creadas
-          print('productsToInsert pack : ${productsToInsert.length}');
-          print('barcode product pack : ${barcodesToInsert.length}');
-          print('otherBarcodes    pack : ${otherBarcodesToInsert.length}');
-          print('paquetes: pack: ${otherBarcodesToInsert.length}');
+          debugPrint('productsToInsert pack : ${productsToInsert.length}');
+          debugPrint('barcode product pack : ${barcodesToInsert.length}');
+          debugPrint('otherBarcodes    pack : ${otherBarcodesToInsert.length}');
+          debugPrint('paquetes: pack: ${otherBarcodesToInsert.length}');
 
           // //* Carga los batches desde la base de datos
           add(LoadPackingPedidoFromDBEvent());
@@ -1757,10 +1759,10 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           listOfPedidos: listOfPedidos,
         ));
       } else {
-        print('Error resBatchs: response is null');
+        debugPrint('Error resBatchs: response is null');
       }
     } catch (e, s) {
-      print('Error en el  _onLoadAllPackingEvent: $e, $s');
+      debugPrint('Error en el  _onLoadAllPackingEvent: $e, $s');
       emit(PackingPedidoError(e.toString()));
     }
   }
@@ -1776,7 +1778,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       listOfPedidosFilters = List.from(listOfPedidosBD);
       emit(PackingPedidoLoadedFromDBState(listOfPedidos: listOfPedidosBD));
     } catch (e, s) {
-      print('Error en el  _onLoadBatchsFromDBEvent: $e, $s');
+      debugPrint('Error en el  _onLoadBatchsFromDBEvent: $e, $s');
       emit(PackingPedidoError(e.toString()));
     }
   }
@@ -1798,7 +1800,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
       return formattedTime;
     } catch (e, s) {
-      print("❌ Error en el formatSecondsToHHMMSS $e ->$s");
+      debugPrint("❌ Error en el formatSecondsToHHMMSS $e ->$s");
       return "";
     }
   }
@@ -1821,7 +1823,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       final progress = (totalSeparadas / totalCantidades) * 100;
       return progress.toStringAsFixed(2);
     } catch (e, s) {
-      print("❌ Error en el calcularUnidadesSeparadas $e ->$s");
+      debugPrint("❌ Error en el calcularUnidadesSeparadas $e ->$s");
       return '';
     }
   }

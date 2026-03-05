@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/packing/packing_pedido/tbl_packing_pedido/packing_pedido_table.dart';
@@ -32,7 +33,7 @@ class PedidoPackRepository {
             .toSet();
 
         if (pedidoIdsToProcess.isEmpty) {
-           // Si todos los pedidos en la lista no tienen ID, significa que todos serán INSERTs.
+          // Si todos los pedidos en la lista no tienen ID, significa que todos serán INSERTs.
           // En este caso, podemos usar el `conflictAlgorithm: ConflictAlgorithm.abort` si no quieres autoincrement.
           // O `ConflictAlgorithm.ignore` si ya existe y no quieres actualizar.
           for (final pedido in pedidosList) {
@@ -86,7 +87,7 @@ class PedidoPackRepository {
                 );
               }
             } else {
-              print(
+              debugPrint(
                   "Advertencia: No se pudo mapear el pedido con ID ${pedido.id ?? 'N/A'} para inserción/actualización. Saltando.");
             }
           }
@@ -94,9 +95,10 @@ class PedidoPackRepository {
         // 5. Ejecutar todas las operaciones en el batch.
         await batch.commit(noResult: true);
       });
-      print("Pedidos de packing insertados/actualizados con éxito.");
+      debugPrint("Pedidos de packing insertados/actualizados con éxito.");
     } catch (e, s) {
-      print("Error al insertar/actualizar pedidos en tbl_pedido_pack: $e\n$s");
+      debugPrint(
+          "Error al insertar/actualizar pedidos en tbl_pedido_pack: $e\n$s");
       rethrow;
     }
   }
@@ -166,7 +168,7 @@ class PedidoPackRepository {
 
       return data;
     } catch (e, s) {
-      print(
+      debugPrint(
           "Error al mapear PedidoPackingResult a DB Map para Pedido ID ${pedido.id ?? 'N/A'}: $e\n$s");
       return null; // Retorna null si hay un error en el mapeo de un pedido específico.
     }
@@ -174,26 +176,28 @@ class PedidoPackRepository {
 
   /// Obtiene todos los pedidos de la tabla tbl_pedido_pack.
   /// Retorna una lista de objetos PedidoPack.
- Future<List<PedidoPackingResult>> getAllPedidosPack() async {
+  Future<List<PedidoPackingResult>> getAllPedidosPack() async {
     try {
       final Database db = await _databaseProvider.getDatabaseInstance();
       // Realiza la consulta a la base de datos para obtener todos los registros.
       // Opcional: ordenar los resultados para una consistencia visual.
       final List<Map<String, dynamic>> maps = await db.query(
         PedidoPackTable.tableName,
-        orderBy: '${PedidoPackTable.columnFechaCreacion} DESC', // Ordenar por fecha de creación descendente
+        orderBy:
+            '${PedidoPackTable.columnFechaCreacion} DESC', // Ordenar por fecha de creación descendente
       );
 
       // Mapea cada Map de la base de datos a un objeto PedidoPackingResult.
       // La robustez del mapeo recae en la implementación de PedidoPackingResult.fromMap.
       return List.generate(maps.length, (i) {
         // Agrega un print para depurar el map que llega de la DB si el error persiste.
-        // print('DEBUG: getAllPedidosPack - Map from DB: ${maps[i]}');
+        // debugPrint('DEBUG: getAllPedidosPack - Map from DB: ${maps[i]}');
         return PedidoPackingResult.fromMap(maps[i]);
       });
     } catch (e, s) {
       // Captura y registra cualquier error durante la obtención o mapeo de los pedidos.
-      print("Error al obtener todos los pedidos de tbl_pedido_pack: $e\n$s");
+      debugPrint(
+          "Error al obtener todos los pedidos de tbl_pedido_pack: $e\n$s");
       // Retorna una lista vacía para que la aplicación pueda continuar sin crashear.
       return [];
     }
@@ -215,7 +219,8 @@ class PedidoPackRepository {
       }
       return null; // Retorna null si no se encuentra el pedido
     } catch (e, s) {
-      print("Error al obtener pedido con ID $id de tbl_pedido_pack: $e\n$s");
+      debugPrint(
+          "Error al obtener pedido con ID $id de tbl_pedido_pack: $e\n$s");
       return null;
     }
   }
@@ -232,11 +237,11 @@ class PedidoPackRepository {
         where: '${PedidoPackTable.columnId} = ?',
         whereArgs: [pedidoId],
       );
-      print(
+      debugPrint(
           "Campo '$fieldName' del pedido $pedidoId actualizado. Filas afectadas: $rowsAffected");
       return rowsAffected;
     } catch (e, s) {
-      print(
+      debugPrint(
           "Error al actualizar el campo '$fieldName' del pedido $pedidoId: $e\n$s");
       return 0; // Retorna 0 filas afectadas en caso de error
     }
@@ -252,10 +257,11 @@ class PedidoPackRepository {
         where: '${PedidoPackTable.columnId} = ?',
         whereArgs: [id],
       );
-      print("Pedido con ID $id eliminado. Filas afectadas: $rowsAffected");
+      debugPrint("Pedido con ID $id eliminado. Filas afectadas: $rowsAffected");
       return rowsAffected;
     } catch (e, s) {
-      print("Error al eliminar pedido con ID $id de tbl_pedido_pack: $e\n$s");
+      debugPrint(
+          "Error al eliminar pedido con ID $id de tbl_pedido_pack: $e\n$s");
       return 0;
     }
   }
@@ -265,11 +271,12 @@ class PedidoPackRepository {
     try {
       final Database db = await _databaseProvider.getDatabaseInstance();
       final int rowsAffected = await db.delete(PedidoPackTable.tableName);
-      print(
+      debugPrint(
           "Todos los pedidos de tbl_pedido_pack eliminados. Filas afectadas: $rowsAffected");
       return rowsAffected;
     } catch (e, s) {
-      print("Error al eliminar todos los pedidos de tbl_pedido_pack: $e\n$s");
+      debugPrint(
+          "Error al eliminar todos los pedidos de tbl_pedido_pack: $e\n$s");
       return 0;
     }
   }

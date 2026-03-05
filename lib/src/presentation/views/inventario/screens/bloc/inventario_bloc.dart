@@ -146,13 +146,14 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       allBarcodeInventario.clear();
       if (response.isNotEmpty) {
         allBarcodeInventario = response;
-        print('Total de códigos de barras: ${allBarcodeInventario.length}');
+        debugPrint(
+            'Total de códigos de barras: ${allBarcodeInventario.length}');
         emit(FetchAllBarcodesSuccess(allBarcodeInventario));
       } else {
         emit(FetchAllBarcodesFailure('No se encontraron códigos de barras'));
       }
     } catch (e, s) {
-      print("❌ Error en _onFetchAllBarcodesInventarioEvent: $e, $s");
+      debugPrint("❌ Error en _onFetchAllBarcodesInventarioEvent: $e, $s");
       emit(FetchAllBarcodesFailure('Error al obtener los códigos de barras'));
     }
   }
@@ -163,7 +164,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       ubicacionFija = event.ubicacionFija;
       emit(ChangeLocationIsOkState(locationIsOk));
     } catch (e, s) {
-      print("❌ Error en SetUbicacionFijaEvent: $e, $s");
+      debugPrint("❌ Error en SetUbicacionFijaEvent: $e, $s");
       emit(ChangeLocationIsOkState(false));
     }
   }
@@ -186,7 +187,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       }
       emit(FilterUbicacionesSuccess(ubicacionesFilters));
     } catch (e, s) {
-      print('Error en el FilterUbicacionesEvent: $e, $s');
+      debugPrint('Error en el FilterUbicacionesEvent: $e, $s');
       emit(FilterUbicacionesFailure(e.toString()));
     }
   }
@@ -207,7 +208,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       }
     } catch (e, s) {
       emit(ConfigurationErrorInventory(e.toString()));
-      print('Error en LoadConfigurationsUserPack.dart: $e =>$s');
+      debugPrint('Error en LoadConfigurationsUserPack.dart: $e =>$s');
     }
   }
 
@@ -253,7 +254,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       }
     } catch (e, s) {
       emit(CreateLoteProductFailure('Error al crear el lote'));
-      print('Error en el _onCreateLoteProduct: $e, $s');
+      debugPrint('Error en el _onCreateLoteProduct: $e, $s');
     }
   }
 
@@ -284,7 +285,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       }
     } catch (e, s) {
       emit(SendProductFailure('Error al enviar el producto'));
-      print('Error en el _onSendProductInventarioEvent: $e, $s');
+      debugPrint('Error en el _onSendProductInventarioEvent: $e, $s');
     }
   }
 
@@ -335,7 +336,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       emit(ChangeQuantitySeparateStateSuccess(quantitySelected));
     } catch (e, s) {
       emit(ChangeQuantitySeparateStateError('Error al separar cantidad'));
-      print('❌ Error en ChangeQuantitySeparate: $e -> $s ');
+      debugPrint('❌ Error en ChangeQuantitySeparate: $e -> $s ');
     }
   }
 
@@ -347,7 +348,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       emit(ChangeQuantitySeparateStateSuccess(quantitySelected));
     } catch (e, s) {
       emit(ChangeQuantitySeparateStateError('Error al aumentar cantidad'));
-      print("❌ Error en el AddQuantitySeparate $e ->$s");
+      debugPrint("❌ Error en el AddQuantitySeparate $e ->$s");
     }
   }
 
@@ -369,7 +370,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
         return;
       }
     } catch (e, s) {
-      print("❌ Error en _onFetchBarcodesProductEvent: $e, $s");
+      debugPrint("❌ Error en _onFetchBarcodesProductEvent: $e, $s");
     }
     emit(BarcodesProductLoadedState(listOfBarcodes: barcodeInventario));
   }
@@ -381,14 +382,14 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       viewQuantity = !viewQuantity;
       emit(ShowQuantityState(viewQuantity));
     } catch (e, s) {
-      print("❌ Error en _onShowQuantityEvent: $e, $s");
+      debugPrint("❌ Error en _onShowQuantityEvent: $e, $s");
     }
   }
 
   void _onChangeQuantityIsOkEvent(
       ChangeIsOkQuantity event, Emitter<InventarioState> emit) async {
     try {
-      print('activando la cantidad ------');
+      debugPrint('activando la cantidad ------');
       if (event.isQuantity) {
         quantityIsOk = true;
       }
@@ -396,7 +397,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
         quantityIsOk,
       ));
     } catch (e, s) {
-      print("❌ Error en el ChangeIsOkQuantity $e ->$s");
+      debugPrint("❌ Error en el ChangeIsOkQuantity $e ->$s");
     }
   }
 
@@ -411,7 +412,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
         loteIsOk,
       ));
     } catch (e, s) {
-      print('Error en el SelectecLoteEvent de inventario $s ->$e');
+      debugPrint('Error en el SelectecLoteEvent de inventario $s ->$e');
     }
   }
 
@@ -458,7 +459,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       // Emit clean fields state
       emit(CleanFieldsState());
     } catch (e, s) {
-      print("❌ Error in _onCleanFields: $e -> $s");
+      debugPrint("❌ Error in _onCleanFields: $e -> $s");
     }
   }
 
@@ -490,7 +491,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
         ));
       }
     } catch (e, s) {
-      print("❌ Error en el ChangeProductIsOkEvent $e ->$s");
+      debugPrint("❌ Error en el ChangeProductIsOkEvent $e ->$s");
     }
   }
 
@@ -507,7 +508,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
         emit(ChangeLocationIsOkState(locationIsOk));
       }
     } catch (e, s) {
-      print("❌ Error en ChangeLocationIsOkEvent $e ->$s");
+      debugPrint("❌ Error en ChangeLocationIsOkEvent $e ->$s");
     }
   }
 
@@ -527,7 +528,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
         final allBarcodes =
             _extractAllBarcodes(response).toList(growable: false);
 
-        print('productos: ${response.length}');
+        debugPrint('productos: ${response.length}');
 
         await db.barcodesInventarioRepository
             .insertOrUpdateBarcodes(allBarcodes);
@@ -538,7 +539,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       }
     } catch (e, s) {
       emit(GetProductsFailureInventory('Error al cargar los productos'));
-      print('Error en el fetch de productos: $e=>$s');
+      debugPrint('Error en el fetch de productos: $e=>$s');
     }
   }
 
@@ -557,7 +558,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
 
   void getPordutsAllBD() async {
     final response = await db.productoInventarioRepository.getAllProducts();
-    print('response: ${response.length}');
+    debugPrint('response: ${response.length}');
   }
 
   void _onGetProductsBD(
@@ -567,7 +568,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       final response = await db.productoInventarioRepository.getAllProducts();
       productos.clear();
       productosFilters.clear();
-      print('productos: ${response.length}');
+      debugPrint('productos: ${response.length}');
       if (response.isNotEmpty) {
         productos = response;
         productosFilters = productos;
@@ -580,7 +581,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       }
     } catch (e, s) {
       emit(GetProductsFailureInventory('Error al cargar los productos'));
-      print('Error en el fetch de productos: $e=>$s');
+      debugPrint('Error en el fetch de productos: $e=>$s');
     }
   }
 
@@ -604,7 +605,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       emit(ValidateFieldsStateSuccess(event.isOk));
     } catch (e, s) {
       emit(ValidateFieldsStateError('Error al validar campos'));
-      print("❌ Error en el ValidateFieldsEvent $e ->$s");
+      debugPrint("❌ Error en el ValidateFieldsEvent $e ->$s");
     }
   }
 
@@ -625,7 +626,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       }
       emit(SearchLocationSuccess(ubicacionesFilters));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -646,7 +647,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       }
       emit(SearchLoteSuccess(listLotesProductFilters));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -656,7 +657,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
     Emitter<InventarioState> emit,
   ) async {
     try {
-      print('🔍 Buscando productos con query: "${event.query}"');
+      debugPrint('🔍 Buscando productos con query: "${event.query}"');
       emit(SearchLoading());
 
       final query = event.query.trim();
@@ -675,7 +676,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
 
       emit(SearchProductSuccess(filtrados));
     } catch (e, s) {
-      print('❌ Error en SearchProductEvent: $e\n$s');
+      debugPrint('❌ Error en SearchProductEvent: $e\n$s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -687,7 +688,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       final response = await db.ubicacionesRepository.getAllUbicaciones();
       ubicaciones.clear();
       ubicacionesFilters.clear();
-      print('ubicaciones: ${response.length}');
+      debugPrint('ubicaciones: ${response.length}');
       if (response.isNotEmpty) {
         ubicaciones = response;
         ubicacionesFilters = ubicaciones;
@@ -697,7 +698,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       }
     } catch (e, s) {
       emit(LoadLocationsFailure('Error al cargar las ubicaciones'));
-      print('Error en el fetch de ubicaciones: $e=>$s');
+      debugPrint('Error en el fetch de ubicaciones: $e=>$s');
     }
   }
 }

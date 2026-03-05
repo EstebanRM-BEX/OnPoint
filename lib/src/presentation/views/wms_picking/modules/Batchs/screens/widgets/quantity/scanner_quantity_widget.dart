@@ -20,7 +20,6 @@ class QuantityScannerWidget extends StatefulWidget {
   final FocusNode scannerFocusNode;
   final FocusNode manualFocusNode;
   final bool viewQuantity;
-  final bool showKeyboard;
   final VoidCallback onToggleViewQuantity;
   final VoidCallback onValidateButton;
   final VoidCallback onIconButtonPressed;
@@ -46,7 +45,6 @@ class QuantityScannerWidget extends StatefulWidget {
     required this.scannerFocusNode,
     required this.manualFocusNode,
     required this.viewQuantity,
-    required this.showKeyboard,
     required this.onToggleViewQuantity,
     required this.onValidateButton,
     required this.onValidateScannerInput,
@@ -62,7 +60,6 @@ class QuantityScannerWidget extends StatefulWidget {
 
 class _QuantityScannerWidgetState extends State<QuantityScannerWidget> {
   Timer? _debounce;
-  late String _cachedLocationId;
 
   @override
   void initState() {
@@ -77,7 +74,13 @@ class _QuantityScannerWidgetState extends State<QuantityScannerWidget> {
 
   void _onZebraChanged(String value, BuildContext context) {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 200), () {});
+    _debounce = Timer(const Duration(milliseconds: 200), () {
+      if (value.trim().isNotEmpty) {
+        widget.onValidateScannerInput(
+          value,
+        );
+      }
+    });
   }
 
   Color _getColorForDifference(dynamic difference) {
@@ -108,11 +111,12 @@ class _QuantityScannerWidgetState extends State<QuantityScannerWidget> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Card(
-              color: widget.isQuantityOk
-                  ? widget.quantityIsOk
-                      ? Colors.white
-                      : Colors.grey[300]
-                  : Colors.red[200],
+              // color: widget.isQuantityOk
+              //     ? widget.quantityIsOk
+              //         ? Colors.white
+              //         : Colors.grey[300]
+              //     : Colors.red[200],
+              color: Colors.white,
               elevation: 1,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),

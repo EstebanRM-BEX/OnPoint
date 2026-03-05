@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/conteo/tbl_products_ordenes_conteo/product_orden_conteo_table.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
@@ -88,11 +90,11 @@ class ProductoOrdenConteoRepository {
       });
 
       stopwatch.stop();
-      print(
+      debugPrint(
           '✅ ${productos.length} productos insertados/actualizados en ${stopwatch.elapsedMilliseconds}ms');
     } catch (e, s) {
-      print('❌ Error en upsertProductosOrdenConteo: $e');
-      print(s);
+      debugPrint('❌ Error en upsertProductosOrdenConteo: $e');
+      debugPrint(s.toString());
       rethrow;
     }
   }
@@ -108,8 +110,8 @@ class ProductoOrdenConteoRepository {
       );
       return List.generate(maps.length, (i) => CountedLine.fromMap(maps[i]));
     } catch (e, s) {
-      print('Error en getProductosByOrderId: $e');
-      print(s);
+      debugPrint('Error en getProductosByOrderId: $e');
+      debugPrint(s.toString());
       return [];
     }
   }
@@ -129,8 +131,8 @@ class ProductoOrdenConteoRepository {
 
       return List.generate(maps.length, (i) => CountedLine.fromMap(maps[i]));
     } catch (e, s) {
-      print('Error en getProductosByOrderId: $e');
-      print(s);
+      debugPrint('Error en getProductosByOrderId: $e');
+      debugPrint(s.toString());
       return [];
     }
   }
@@ -153,8 +155,8 @@ class ProductoOrdenConteoRepository {
         return null; // No se encontró el producto
       }
     } catch (e, s) {
-      print('Error en getProductoById: $e');
-      print(s);
+      debugPrint('Error en getProductoById: $e');
+      debugPrint(s.toString());
       return null; // Manejo de error, puedes lanzar una excepción si lo prefieres
     }
   }
@@ -183,8 +185,8 @@ class ProductoOrdenConteoRepository {
         whereArgs: [productId, orderId, idMove],
       );
     } catch (e, s) {
-      print('Error en updateCantidadContada: $e');
-      print(s);
+      debugPrint('Error en updateCantidadContada: $e');
+      debugPrint(s.toString());
       return 0;
     }
   }
@@ -218,7 +220,7 @@ class ProductoOrdenConteoRepository {
         'AND ${ProductosOrdenConteoTable.columnOrderId} = ?'
         'AND ${ProductosOrdenConteoTable.columnLocationId} = ?',
         [setValue, productId, idMove, idOrdenConteo, locationId]);
-    print(
+    debugPrint(
         "update TableProductOrdenConteo (idProduct ----($productId)). (idMove ----($idMove) -------($field): $resUpdate");
     return resUpdate;
   }
@@ -234,7 +236,7 @@ class ProductoOrdenConteoRepository {
       );
       return products.map((product) => CountedLine.fromMap(product)).toList();
     } catch (e, s) {
-      print('Error en getAllProductosOrdenConteo: $e, $s');
+      debugPrint('Error en getAllProductosOrdenConteo: $e, $s');
       return [];
     }
   }
@@ -266,11 +268,11 @@ class ProductoOrdenConteoRepository {
             '${ProductosOrdenConteoTable.columnProductId} = ? AND ${ProductosOrdenConteoTable.columnOrderId} = ? AND ${ProductosOrdenConteoTable.columnIdMove} = ?',
         whereArgs: [product.productId, product.orderId, product.idMove],
       );
-      print(
+      debugPrint(
           "update TableProductOrdenConteo (idProduct ----(${product.productId})) -------(${ProductosOrdenConteoTable.columnQuantityCounted}): $resUpdate");
       return resUpdate;
     } catch (e, s) {
-      print('Error en deleteProductConteo: $e, $s');
+      debugPrint('Error en deleteProductConteo: $e, $s');
       return 0;
     }
   }
@@ -287,11 +289,11 @@ class ProductoOrdenConteoRepository {
             '${ProductosOrdenConteoTable.columnProductId} = ? AND ${ProductosOrdenConteoTable.columnOrderId} = ? AND ${ProductosOrdenConteoTable.columnIdMove} = ?',
         whereArgs: [product.productId, product.orderId, product.idMove],
       );
-      print(
+      debugPrint(
           "delete TableProductOrdenConteo (idProduct ----(${product.productId})) -------: $resUpdate");
       return resUpdate;
     } catch (e, s) {
-      print('Error en deleteProductConteo: $e, $s');
+      debugPrint('Error en deleteProductConteo: $e, $s');
       return 0;
     }
   }
@@ -356,11 +358,11 @@ class ProductoOrdenConteoRepository {
         productoMap,
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
-      print(
+      debugPrint(
           "insert TableProductOrdenConteo (idProduct ----(${producto.productId})) -------(${ProductosOrdenConteoTable.columnQuantityCounted}): $resInsert");
       return resInsert;
     } catch (e, s) {
-      print('Error en addNewProductConteo: $e, $s');
+      debugPrint('Error en addNewProductConteo: $e, $s');
       return 0;
     }
   }

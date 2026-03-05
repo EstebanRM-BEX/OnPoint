@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously
 
 import 'dart:ui';
@@ -8,8 +11,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/shared/widgets/custom_header_widget.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
@@ -30,8 +31,8 @@ class WmsPackingScreen extends StatefulWidget {
 class _WmsPackingScreenState extends State<WmsPackingScreen> {
   NotchBottomBarController controller = NotchBottomBarController();
 
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
   FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
 
@@ -46,12 +47,11 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
     final scan = value.trim().toLowerCase();
 
     _controllerToDo.clear();
-    print('🔎 Scan barcode (batch picking): $scan');
+    debugPrint('🔎 Scan barcode (batch picking): $scan');
 
     final listOfBatchs = bloc.listOfBatchs;
 
     void processBatch(BatchPackingModel batch) {
-      print(batch.toMap());
       try {
         _handleBatchTap(context, batch, context);
       } catch (e) {
@@ -72,7 +72,7 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
     );
 
     if (batchs.id != null) {
-      print(
+      debugPrint(
           '🔎 batch encontrado : ${batchs.id} ${batchs.name} - ${batchs.zonaEntrega}');
       processBatch(batchs);
       return;
@@ -530,7 +530,7 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
 
   void _handleBatchTap(
       BuildContext context, dynamic batch, BuildContext contextBuilder) async {
-    print('Batch seleccionado: ${batch.toMap()}');
+    debugPrint('Batch seleccionado: ${batch.toMap()}');
     context.read<WmsPackingBloc>().add(LoadConfigurationsUserPack());
 
     if (batch.startTimePack != "") {

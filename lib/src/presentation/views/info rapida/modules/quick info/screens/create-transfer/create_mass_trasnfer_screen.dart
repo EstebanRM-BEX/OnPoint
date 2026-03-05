@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
@@ -6,8 +9,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
@@ -31,8 +32,8 @@ class CreateMassTrasferScreen extends StatefulWidget {
 
 class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
     with WidgetsBindingObserver {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
 
 //*focus
   FocusNode focusNode1 = FocusNode(); // ubicacion  destino
@@ -74,7 +75,7 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
   }
 
   void _focus(FocusNode node, String label) {
-    print("🚼 $label");
+    debugPrint("🚼 $label");
     FocusScope.of(context).requestFocus(node);
     _unfocusOthers(except: node);
   }
@@ -92,9 +93,9 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
     final bloc = context.read<InfoRapidaBloc>();
     // final hasLote = bloc.currentProduct?.tracking == "lot";
     //mostramos todas las variables de foco y sus condiciones
-    print('---------------- Manejo de dependencias ---------------');
-    print("ubicación: ${bloc.locationDestIsOk}");
-    print("producto: ${bloc.productIsOk}");
+    debugPrint('---------------- Manejo de dependencias ---------------');
+    debugPrint("ubicación: ${bloc.locationDestIsOk}");
+    debugPrint("producto: ${bloc.productIsOk}");
 
     final focusMap = {
       "locationDest": () => !bloc.locationDestIsOk && !bloc.productIsOk,
@@ -120,7 +121,7 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
     final bloc = context.read<InfoRapidaBloc>();
     final scan = value.trim().toLowerCase();
 
-    print('scan location dest: $scan');
+    debugPrint('scan location dest: $scan');
     _controllerLocationDestino.clear();
 
     ResultUbicaciones? matchedUbicacion = bloc.ubicacionesFilters.firstWhere(
@@ -133,20 +134,21 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
     if (matchedUbicacion.id == bloc.infoRapidaResult?.result?.id) {
       _vibrationService.vibrate();
       _audioService.playErrorSound();
-      print('La ubicacion de destino no puede ser la misma que la de origen');
+      debugPrint(
+          'La ubicacion de destino no puede ser la misma que la de origen');
       bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: false));
       Future.microtask(() => focusNode1.requestFocus());
       return;
     }
 
     if (matchedUbicacion.barcode != null) {
-      print('Ubicacion encontrada: ${matchedUbicacion.name}');
+      debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
       bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: true));
       bloc.add(ChangeLocationIsOkEvent(matchedUbicacion, true));
     } else {
       _vibrationService.vibrate();
       _audioService.playErrorSound();
-      print('Ubicacion no encontrada');
+      debugPrint('Ubicacion no encontrada');
       bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: false));
     }
 
@@ -159,7 +161,7 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
     final scan = value.trim().toLowerCase();
 
     _controllerProduct.clear();
-    print('🔎 Scan barcode: $scan');
+    debugPrint('🔎 Scan barcode: $scan');
 
     // Buscar coincidencia directa por barcode o code
     final matchedProduct = bloc.infoRapidaResult.result?.productos?.firstWhere(
@@ -168,13 +170,13 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
     );
 
     if (matchedProduct?.codigoBarras != null) {
-      print('✅ producto encontrado directo: ${matchedProduct?.producto}');
+      debugPrint('✅ producto encontrado directo: ${matchedProduct?.producto}');
       bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
       bloc.add(ChangeProductIsOkEvent(matchedProduct!, true));
       Future.microtask(() => focusNode2.requestFocus());
       return;
     }
-    print('❌ Producto no encontrado por ID');
+    debugPrint('❌ Producto no encontrado por ID');
     _audioService.playErrorSound();
     _vibrationService.vibrate();
     bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
@@ -190,7 +192,7 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
   // );
 
   // if (matchedBarcode.barcode == null) {
-  //   print('❌ Producto no encontrado en barcodes');
+  //   debugPrint('❌ Producto no encontrado en barcodes');
   //   _audioService.playErrorSound();
   //   _vibrationService.vibrate();
   //   bloc
@@ -206,13 +208,13 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
   // );
 
   // if (matchedById.productId != null) {
-  //   print('✅ Producto encontrado por ID: ${matchedById.name}');
+  //   debugPrint('✅ Producto encontrado por ID: ${matchedById.name}');
   //   bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
   //   bloc.add(ChangeProductIsOkEvent(matchedById, true));
 
   //   return;
   // } else {
-  //   print('❌ Producto no encontrado por ID');
+  //   debugPrint('❌ Producto no encontrado por ID');
   //   _audioService.playErrorSound();
   //   _vibrationService.vibrate();
   //   bloc
@@ -227,7 +229,7 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
 
     return BlocConsumer<InfoRapidaBloc, InfoRapidaState>(
       listener: (context, state) {
-        print('InfoRapidaBloc State: $state');
+        debugPrint('InfoRapidaBloc State: $state');
 
         //*estado cuando la ubicacion de origen es cambiada, pasamos a ubicacion de destino
         if (state is ChangeLocationIsOkState) {
@@ -498,7 +500,7 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
                           margin: const EdgeInsets.symmetric(vertical: 5),
                           child: GestureDetector(
                             onTap: () {
-                              print(product.toMap());
+                              debugPrint(product.toMap().toString());
                             },
                             child: Card(
                                 elevation: 3,

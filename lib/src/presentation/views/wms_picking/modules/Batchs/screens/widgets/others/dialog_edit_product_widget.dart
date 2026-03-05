@@ -7,7 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
-import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
+import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';

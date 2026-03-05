@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
+import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/data/wms_picking_repository.dart';
@@ -142,7 +142,6 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
     //*evento para dejar pendiente la separacion
     on<ProductPendingEvent>(_onPickingPendingEvent);
 
-    //*evento para actualizar los datos del producto desde odoo
     //*evento para editar un producto
     on<LoadProductEditEvent>(_onEditProductEvent);
     //*evento para enviar un producto a odoo editado
@@ -181,7 +180,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
   void _onViewProductImageEvent(
       ViewProductImageEvent event, Emitter<BatchState> emit) async {
     try {
-      print('Obteniendo imagen del producto con ID: ${event.idProduct}');
+      debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
       final response =
@@ -199,7 +198,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         emit(ViewProductImageFailure('Imagen no disponible'));
       }
     } catch (e, s) {
-      print('Error en el ViewProductImageEvent: $e, $s');
+      debugPrint('Error en el ViewProductImageEvent: $e, $s');
       emit(ViewProductImageFailure(e.toString()));
     }
   }
@@ -216,7 +215,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       add(FetchBarcodesProductEvent());
       emit(LoadSelectedProductState(currentProduct));
     } catch (e, s) {
-      print("❌ Error en _onLoadSelectedProductEvent: $e -> $s");
+      debugPrint("❌ Error en _onLoadSelectedProductEvent: $e -> $s");
     }
   }
 
@@ -234,14 +233,14 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
                 muelle.locationId == batchWithProducts.batch?.idMuelle)
             .toList();
 
-        print("submuelles: ${submuelles.length}");
+        debugPrint("submuelles: ${submuelles.length}");
         emit(MuellesLoadedState(listOfMuelles: submuelles));
       } else {
         emit(MuellesErrorState('No se encontraron muelles'));
       }
     } catch (e, s) {
       emit(MuellesErrorState('Error al cargar los muelles'));
-      print("❌ Error en __onLoadAllNovedadesEvent: $e, $s");
+      debugPrint("❌ Error en __onLoadAllNovedadesEvent: $e, $s");
     }
   }
 
@@ -271,7 +270,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         emit(TimeSeparateError('Error al iniciar el tiempo de separacion'));
       }
     } catch (e, s) {
-      print("❌ Error en _onStartTimePickEvent: $e, $s");
+      debugPrint("❌ Error en _onStartTimePickEvent: $e, $s");
     }
   }
 
@@ -300,7 +299,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         emit(TimeSeparateError('Error al terminar el tiempo de separacion'));
       }
     } catch (e, s) {
-      print("❌ Error en _onStartTimePickEvent: $e, $s");
+      debugPrint("❌ Error en _onStartTimePickEvent: $e, $s");
     }
   }
 
@@ -311,7 +310,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       isProcessing = event.isProcessing;
       emit(SetIsProcessingState(isProcessing));
     } catch (e, s) {
-      print("❌ Error en _onSetIsProcessingEvent: $e, $s");
+      debugPrint("❌ Error en _onSetIsProcessingEvent: $e, $s");
     }
   }
 
@@ -321,7 +320,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       viewQuantity = !viewQuantity;
       emit(ShowQuantityState(viewQuantity));
     } catch (e, s) {
-      print("❌ Error en _onShowQuantityEvent: $e, $s");
+      debugPrint("❌ Error en _onShowQuantityEvent: $e, $s");
     }
   }
 
@@ -343,9 +342,9 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         // Calcular la diferencia en segundos
         Duration difference = dateTimeActuality.difference(DateTime.now());
         secondsDifference = difference.inMilliseconds / 1000.0;
-        print("Diferencia en segundos: $secondsDifference");
+        debugPrint("Diferencia en segundos: $secondsDifference");
       } catch (e) {
-        print("❌ Error al parsear la fecha: $e");
+        debugPrint("❌ Error al parsear la fecha: $e");
       }
 
       final userid = await PrefUtils.getUserId();
@@ -435,7 +434,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       }
     } catch (e, s) {
       emit(SendProductOdooError(s.toString()));
-      print("❌ Error en el SendProductOdooEvent: $e ->$s");
+      debugPrint("❌ Error en el SendProductOdooEvent: $e ->$s");
     } finally {
       _isProcessing =
           false; // Resetear la bandera una vez que el proceso termine
@@ -484,22 +483,22 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
   void _onFetchBarcodesProductEvent(
       FetchBarcodesProductEvent event, Emitter<BatchState> emit) async {
     try {
-      print(
+      debugPrint(
           "🔍 Obteniendo códigos de barras para el producto ID: ${currentProduct.idProduct} en el batch ID: ${batchWithProducts.batch?.id}");
       listOfBarcodes.clear();
 
       final responseList = await db.barcodesPackagesRepository.getAllBarcodes();
 
-      print("responseList: ${responseList.length}");
+      debugPrint("responseList: ${responseList.length}");
 
       listOfBarcodes = await db.barcodesPackagesRepository.getBarcodesProduct(
           batchWithProducts.batch?.id ?? 0,
           currentProduct.idProduct ?? 0,
           currentProduct.idMove ?? 0,
-          'picking');
-      print("listOfBarcodes: ${listOfBarcodes.length}");
+          'batch');
+      debugPrint("listOfBarcodes: ${listOfBarcodes.length}");
     } catch (e, s) {
-      print("❌ Error en _onFetchBarcodesProductEvent: $e, $s");
+      debugPrint("❌ Error en _onFetchBarcodesProductEvent: $e, $s");
     }
     emit(BarcodesProductLoadedState(listOfBarcodes: listOfBarcodes));
   }
@@ -512,7 +511,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       subMuelleSelected = event.subMuelleSlected;
       emit(SelectSubMuelle(subMuelleSelected));
     } catch (e, s) {
-      print("❌ Error bloc selectedSubMuelle $e -> $s");
+      debugPrint("❌ Error bloc selectedSubMuelle $e -> $s");
     }
   }
 
@@ -525,11 +524,11 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       if (response != null) {
         novedades = response;
 
-        print("novedades: ${novedades.length}");
+        debugPrint("novedades: ${novedades.length}");
       }
       emit(NovedadesLoadedState(listOfNovedades: novedades));
     } catch (e, s) {
-      print("❌ Error en __onLoadAllNovedadesEvent: $e, $s");
+      debugPrint("❌ Error en __onLoadAllNovedadesEvent: $e, $s");
     }
   }
 
@@ -544,7 +543,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       isPdaZebra = androidInfo.manufacturer.contains('Zebra');
       emit(InfoDeviceLoadedState());
     } catch (e, s) {
-      print('❌ Error en LoadInfoDeviceEvent : $e =>$s');
+      debugPrint('❌ Error en LoadInfoDeviceEvent : $e =>$s');
     }
   }
 
@@ -563,7 +562,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         emit(ConfigurationError('Error al cargar LoadConfigurationsUser'));
       }
     } catch (e, s) {
-      print('❌ Error en LoadConfigurationsUser $e =>$s');
+      debugPrint('❌ Error en LoadConfigurationsUser $e =>$s');
     }
   }
 
@@ -681,7 +680,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       }
     } catch (e, s) {
       emit(SubMuelleEditFail('Error al asignar el submuelle'));
-      print("❌ Error en el AssignSubmuelleEvent :$s ->$s");
+      debugPrint("❌ Error en el AssignSubmuelleEvent :$s ->$s");
     }
   }
 
@@ -710,7 +709,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         emit(ProductEditError(errorMessage));
       }
     } catch (e, s) {
-      print("❌ Error en el SendProductEditOdooEvent :$e->$s");
+      debugPrint("❌ Error en el SendProductEditOdooEvent :$e->$s");
     }
   }
 
@@ -734,7 +733,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       emit(LoadProductsBatchSuccesStateBD(
           listOfProductsBatch: filteredProducts));
     } catch (e, s) {
-      print("❌ Error en el _onEditProductEvent: $e -> $s");
+      debugPrint("❌ Error en el _onEditProductEvent: $e -> $s");
     }
   }
 
@@ -800,7 +799,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       emit(ProductPendingSuccess());
     } catch (e, s) {
       emit(ProductPendingError());
-      print('❌ Error _onPickingPendingEvent: $e, $s');
+      debugPrint('❌ Error _onPickingPendingEvent: $e, $s');
     }
   }
 
@@ -814,7 +813,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       emit(PickingOkState());
     } catch (e, s) {
       emit(PickingOkError());
-      print("❌ Error en PickingOkEvent $e -> $s");
+      debugPrint("❌ Error en PickingOkEvent $e -> $s");
     }
   }
 
@@ -835,7 +834,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       emit(ChangeQuantitySeparateStateSuccess(quantitySelected));
     } catch (e, s) {
       emit(ChangeQuantitySeparateStateError('Error al separar cantidad'));
-      print('❌ Error en ChangeQuantitySeparate: $e -> $s ');
+      debugPrint('❌ Error en ChangeQuantitySeparate: $e -> $s ');
     }
   }
 
@@ -853,7 +852,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       }
     } catch (e, s) {
       emit(ChangeQuantitySeparateStateError('Error al aumentar cantidad'));
-      print("❌ Error en el AddQuantitySeparate $e ->$s");
+      debugPrint("❌ Error en el AddQuantitySeparate $e ->$s");
     }
   }
 
@@ -887,19 +886,19 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         _isProcessing = false;
       }
 
-      print('currentProduct: ${currentProduct.toMap()}');
+      debugPrint('currentProduct: ${currentProduct.toMap()}');
 
       emit(LoadDataInfoSuccess());
     } catch (e, s) {
       emit(LoadDataInfoError("Error al cargar las variables de estado"));
-      print("❌ Error en LoadDataInfoEvent $e -> $s");
+      debugPrint("❌ Error en LoadDataInfoEvent $e -> $s");
     }
   }
 
 //* Metodo para enviar al wms
   Future<(bool, String)> sendProuctOdoo(String type) async {
     try {
-      print("sendProuctOdoo ------------");
+      debugPrint("sendProuctOdoo ------------");
       DateTime dateTimeActuality = DateTime.now();
 
       // Traemos el producto actualizado de la BD local
@@ -915,7 +914,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         Duration difference = dateTimeActuality.difference(DateTime.now());
         secondsDifference = difference.inMilliseconds / 1000.0;
       } catch (e) {
-        print("❌ Error al calcular tiempo: $e");
+        debugPrint("❌ Error al calcular tiempo: $e");
       }
 
       // --- CÁLCULO DE CANTIDAD A ENVIAR ---
@@ -1030,14 +1029,14 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         return (false, response.result?.msg ?? 'Error al enviar a Odoo');
       }
     } catch (e, s) {
-      print("❌ Error en sendProuctOdoo: $e -> $s");
+      debugPrint("❌ Error en sendProuctOdoo: $e -> $s");
       return (false, 'Exception en sendProuctOdoo');
     }
   }
 
   Future<(bool, String)> sendProuctEditOdoo(
       ProductsBatch productEdit, dynamic cantidad, String type) async {
-    print("sendProuctEditOdoo ------------");
+    debugPrint("sendProuctEditOdoo ------------");
     DateTime dateTimeActuality = DateTime.parse(DateTime.now().toString());
     //traemos un producto de la base de datos  ya anteriormente guardado
     final product = await db.getProductBatch(productEdit.batchId ?? 0,
@@ -1138,8 +1137,9 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       //   type,
       // );
 
-      print("cantidad del producto separada : ${product?.quantitySeparate}");
-      print("cantidad del producto  : ${product?.quantity}");
+      debugPrint(
+          "cantidad del producto separada : ${product?.quantitySeparate}");
+      debugPrint("cantidad del producto  : ${product?.quantity}");
 
       return (false, response.result?.msg ?? 'Error al enviar a wms');
     }
@@ -1164,7 +1164,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       emit(ValidateFieldsStateSuccess(event.isOk));
     } catch (e, s) {
       emit(ValidateFieldsStateError('Error al validar campos'));
-      print("❌ Error en el ValidateFieldsEvent $e ->$s");
+      debugPrint("❌ Error en el ValidateFieldsEvent $e ->$s");
     }
   }
 
@@ -1175,7 +1175,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       emit(SelectNovedadStateSuccess(event.novedad));
     } catch (e, s) {
       emit(SelectNovedadStateError('Errror al seleccionar novedad'));
-      print('❌ Error en el SelectNovedadEvent $e ->$s');
+      debugPrint('❌ Error en el SelectNovedadEvent $e ->$s');
     }
   }
 
@@ -1195,7 +1195,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       // Convertimos el Set a lista si es necesario
       positionsOrigen = positionsSet.toList();
     } catch (e, s) {
-      print("❌ Error en getPosicions: $e -> $s");
+      debugPrint("❌ Error en getPosicions: $e -> $s");
     }
   }
 
@@ -1206,7 +1206,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         muelles.add(batchWithProducts.batch?.muelle ?? '');
       }
     } catch (e, s) {
-      print("❌ Error en el getMuelles $e ->$s");
+      debugPrint("❌ Error en el getMuelles $e ->$s");
     }
   }
 
@@ -1224,7 +1224,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       // Asignamos el Set a la lista, si es necesario
       listOfProductsName = productIdsSet.toList();
     } catch (e, s) {
-      print("❌ Error en el products $e ->$s");
+      debugPrint("❌ Error en el products $e ->$s");
     }
   }
 
@@ -1296,11 +1296,11 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
             .toList()
             .first;
         if (currentProduct.locationId == oldLocation) {
-          print('La ubicación es igual');
+          debugPrint('La ubicación es igual');
           locationIsOk = true;
         } else {
           locationIsOk = false;
-          print('La ubicación es diferente');
+          debugPrint('La ubicación es diferente');
         }
 
         await db.startStopwatch(
@@ -1323,7 +1323,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       // }
     } catch (e, s) {
       emit(CurrentProductChangedStateError('Error al cambiar de producto'));
-      print("❌ Error en el ChangeCurrentProduct $e ->$s");
+      debugPrint("❌ Error en el ChangeCurrentProduct $e ->$s");
     }
   }
 
@@ -1339,7 +1339,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         quantityIsOk,
       ));
     } catch (e, s) {
-      print("❌ Error en el ChangeIsOkQuantity $e ->$s");
+      debugPrint("❌ Error en el ChangeIsOkQuantity $e ->$s");
     }
   }
 
@@ -1365,7 +1365,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         ));
       }
     } catch (e, s) {
-      print("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
+      debugPrint("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
     }
   }
 
@@ -1381,7 +1381,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         locationDestIsOk,
       ));
     } catch (e, s) {
-      print("❌ Error en el ChangeLocationDestIsOkEvent $e ->$s");
+      debugPrint("❌ Error en el ChangeLocationDestIsOkEvent $e ->$s");
     }
   }
 
@@ -1424,7 +1424,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         productIsOk,
       ));
     } catch (e, s) {
-      print("❌ Error en el ChangeProductIsOkEvent $e ->$s");
+      debugPrint("❌ Error en el ChangeProductIsOkEvent $e ->$s");
     }
   }
 
@@ -1437,7 +1437,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       await sortProductsByLocationId(event.type);
       emit(LoadProductsBatchSuccesState(listOfProductsBatch: filteredProducts));
     } catch (e, s) {
-      print("❌ Error en el ClearSearchProudctsBatchEvent $e ->$s");
+      debugPrint("❌ Error en el ClearSearchProudctsBatchEvent $e ->$s");
     }
   }
 
@@ -1477,7 +1477,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         batchWithProducts = response;
 
         if (batchWithProducts.products!.isEmpty) {
-          print('No hay productos en el batch');
+          debugPrint('No hay productos en el batch');
           emit(EmptyroductsBatch());
           return;
         }
@@ -1497,10 +1497,10 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
             listOfProductsBatch: filteredProducts));
       } else {
         batchWithProducts = BatchWithProducts();
-        print('No se encontró el batch con ID: ${event.batchId}');
+        debugPrint('No se encontró el batch con ID: ${event.batchId}');
       }
     } catch (e, s) {
-      print("❌ Error en el FetchBatchWithProductsEvent $e ->$s");
+      debugPrint("❌ Error en el FetchBatchWithProductsEvent $e ->$s");
     }
   }
 
@@ -1572,7 +1572,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
 
       return filteredProducts;
     } catch (e, s) {
-      print("❌ Error en el sortProductsByLocationId $e ->$s");
+      debugPrint("❌ Error en el sortProductsByLocationId $e ->$s");
       return [];
     }
   }
@@ -1614,7 +1614,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       // Solo será 100% si todo está completo (incluso si hay excesos).
       return progress.toStringAsFixed(2);
     } catch (e) {
-      print("Error calculando progreso real: $e");
+      debugPrint("Error calculando progreso real: $e");
       return "0.00";
     }
   }
@@ -1661,7 +1661,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
 
       return formattedTime;
     } catch (e, s) {
-      print("❌ Error en el formatSecondsToHHMMSS $e ->$s");
+      debugPrint("❌ Error en el formatSecondsToHHMMSS $e ->$s");
       return "";
     }
   }

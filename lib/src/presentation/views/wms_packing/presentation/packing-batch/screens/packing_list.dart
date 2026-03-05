@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_super_parameters, unrelated_type_equality_checks, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
@@ -5,8 +8,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
@@ -33,8 +34,8 @@ class _PakingListScreenState extends State<PakingListScreen>
     with WidgetsBindingObserver {
   FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
 
   @override
   void initState() {
@@ -49,7 +50,7 @@ class _PakingListScreenState extends State<PakingListScreen>
         .toLowerCase();
 
     _controllerToDo.clear();
-    print('🔎 Scan barcode (batch picking): $scan');
+    debugPrint('🔎 Scan barcode (batch picking): $scan');
 
     // 1. Obtener la lista original del BLoC (es una referencia)
     final List<dynamic> rawPedidos = bloc.listOfPedidosFilters;
@@ -72,7 +73,6 @@ class _PakingListScreenState extends State<PakingListScreen>
 
     void processBatch(PedidoPacking pedido) {
       Future.microtask(() => focusNodeBuscar.requestFocus());
-      print(pedido.toMap());
       try {
         _handlePedidoTap(context, pedido, context);
       } catch (e) {
@@ -93,7 +93,7 @@ class _PakingListScreenState extends State<PakingListScreen>
     );
 
     if (batchs.id != null) {
-      print(
+      debugPrint(
           '🔎 pedido encontrado : ${batchs.id} ${batchs.name} - ${batchs.zonaEntrega}');
       processBatch(batchs);
       return;
@@ -147,7 +147,7 @@ class _PakingListScreenState extends State<PakingListScreen>
     // Viajamos a la vista de detalle de un pedido
     Navigator.pushReplacementNamed(context, 'packing-detail',
         arguments: [pedido, widget.batchModel, 0]);
-    print('Pedido seleccionado: ${pedido.toMap()}');
+    debugPrint('Pedido seleccionado: ${pedido.toMap()}');
   }
 
   @override

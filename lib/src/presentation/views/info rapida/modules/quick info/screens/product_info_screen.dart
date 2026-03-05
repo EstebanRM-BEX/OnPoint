@@ -79,7 +79,7 @@ class ProductInfoScreen extends StatelessWidget {
     final size = MediaQuery.sizeOf(context);
     return BlocConsumer<InfoRapidaBloc, InfoRapidaState>(
       listener: (context, state) {
-        print("state product info 👹 $state");
+        debugPrint("state product info 👹 $state");
         if (state is UpdateProductSuccess) {
           Get.snackbar(
             '360 Software Informa',

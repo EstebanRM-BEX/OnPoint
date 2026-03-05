@@ -68,7 +68,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
-        print('🔴 Error de red en [POST]: No hay conexión');
+        debugPrint('🔴 Error de red en [POST]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -106,20 +106,20 @@ class ApiRequestService {
             Get.back();
           }
           if (response.headers.containsKey('set-cookie')) {
-            print("set-cookie: ${response.headers['set-cookie']}");
+            debugPrint("set-cookie: ${response.headers['set-cookie']}");
             await PrefUtils.setCookie(response.headers['set-cookie']!);
           }
 
-          print("--------------------------------------------");
-          print('Petición POST a $endpoint');
-          print('Cuerpo de la solicitud: $url');
-          print('headers: $headers');
-          print('status code: ${response.statusCode}');
-          print("--------------------------------------------");
+          debugPrint("--------------------------------------------");
+          debugPrint('Petición POST a $endpoint');
+          debugPrint('Cuerpo de la solicitud: $url');
+          debugPrint('headers: $headers');
+          debugPrint('status code: ${response.statusCode}');
+          debugPrint("--------------------------------------------");
 
           return response;
         } else {
-          print('🔴 Error de red en [POST]: Fallo lookup');
+          debugPrint('🔴 Error de red en [POST]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -137,8 +137,8 @@ class ApiRequestService {
       return http.Response('Error de red', 404);
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
-      print('🔴 Error de red en [POST]: SocketException $e');
+      debugPrint('Error de red: $e');
+      debugPrint('🔴 Error de red en [POST]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',
@@ -156,7 +156,7 @@ class ApiRequestService {
       rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
     } catch (e) {
       // Manejo de otros errores
-      print('Error desconocido en la solicitud: $e');
+      debugPrint('Error desconocido en la solicitud: $e');
       // Cerrar el diálogo de carga incluso en caso de otros errores
       Get.back();
       rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
@@ -170,7 +170,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
-        print('🔴 Error de red en [searchEnterprice]: No hay conexión');
+        debugPrint('🔴 Error de red en [searchEnterprice]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -191,11 +191,11 @@ class ApiRequestService {
       );
       return response;
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       _showNetworkErrorSnackbar();
       rethrow;
     } catch (e, s) {
-      print('Error desconocido en la solicitud: $e - $s');
+      debugPrint('Error desconocido en la solicitud: $e - $s');
       _showNetworkErrorSnackbar();
       rethrow;
     }
@@ -213,7 +213,7 @@ class ApiRequestService {
       // 1) Verificar conexión de red
       final connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
-        print('🔴 Error de red en [postMultipartImage]: No hay conexión');
+        debugPrint('🔴 Error de red en [postMultipartImage]: No hay conexión');
         Get.snackbar(
           'Error de red',
           'No se pudo conectar al servidor',
@@ -272,17 +272,17 @@ class ApiRequestService {
       }
 
       // 8) Imprimir para debugging
-      print('--------------------------------------------');
-      print('Petición MULTIPART a $endpoint');
-      print('status code: ${response.statusCode}');
-      print('respuesta: ${response.body}');
-      print('--------------------------------------------');
+      debugPrint('--------------------------------------------');
+      debugPrint('Petición MULTIPART a $endpoint');
+      debugPrint('status code: ${response.statusCode}');
+      debugPrint('respuesta: ${response.body}');
+      debugPrint('--------------------------------------------');
 
       return response;
     } catch (e, s) {
       // 9) En caso de error, cerrar diálogo y loguear
       if (isLoadinDialog) Get.back();
-      print("Error en postMultipartImage: $e\n$s");
+      debugPrint("Error en postMultipartImage: $e\n$s");
       return http.Response('Error en la solicitud: $e', 500);
     }
   }
@@ -301,7 +301,7 @@ class ApiRequestService {
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
-        print('🔴 Error de red en [postMultipart]: No hay conexión');
+        debugPrint('🔴 Error de red en [postMultipart]: No hay conexión');
         Get.snackbar(
           'Error de red',
           'No se pudo conectar al servidor',
@@ -354,16 +354,16 @@ class ApiRequestService {
         Get.back();
       }
 
-      print('--------------------------------------------');
-      print('Petición MULTIPART a $endpoint');
-      print('status code: ${response.statusCode}');
-      print('respuesta: ${response.body}');
-      print('--------------------------------------------');
+      debugPrint('--------------------------------------------');
+      debugPrint('Petición MULTIPART a $endpoint');
+      debugPrint('status code: ${response.statusCode}');
+      debugPrint('respuesta: ${response.body}');
+      debugPrint('--------------------------------------------');
 
       return response;
     } catch (e, s) {
       if (isLoadinDialog) Get.back();
-      print("Error en postMultipart: $e\n$s");
+      debugPrint("Error en postMultipart: $e\n$s");
       return http.Response('Error en la solicitud: $e', 500);
     }
   }
@@ -381,7 +381,7 @@ class ApiRequestService {
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
-        print('🔴 Error de red en [postMultipartManual]: No hay conexión');
+        debugPrint('🔴 Error de red en [postMultipartManual]: No hay conexión');
         Get.snackbar(
           'Error de red',
           'No se pudo conectar al servidor',
@@ -426,16 +426,16 @@ class ApiRequestService {
         Get.back();
       }
 
-      print('--------------------------------------------');
-      print('Petición MULTIPART a $endpoint');
-      print('status code: ${response.statusCode}');
-      print('respuesta: ${response.body}');
-      print('--------------------------------------------');
+      debugPrint('--------------------------------------------');
+      debugPrint('Petición MULTIPART a $endpoint');
+      debugPrint('status code: ${response.statusCode}');
+      debugPrint('respuesta: ${response.body}');
+      debugPrint('--------------------------------------------');
 
       return response;
     } catch (e, s) {
       if (isLoadinDialog) Get.back();
-      print("Error en postMultipart: $e\n$s");
+      debugPrint("Error en postMultipart: $e\n$s");
       return http.Response('Error en la solicitud: $e', 500);
     }
   }
@@ -453,7 +453,8 @@ class ApiRequestService {
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
-        print('🔴 Error de red en [postMultipartDynamic]: No hay conexión');
+        debugPrint(
+            '🔴 Error de red en [postMultipartDynamic]: No hay conexión');
         Get.snackbar(
           'Error de red',
           'No se pudo conectar al servidor',
@@ -506,16 +507,16 @@ class ApiRequestService {
         Get.back();
       }
 
-      print('--------------------------------------------');
-      print('Petición MULTIPART a $endpoint');
-      print('status code: ${response.statusCode}');
-      print('respuesta: ${response.body}');
-      print('--------------------------------------------');
+      debugPrint('--------------------------------------------');
+      debugPrint('Petición MULTIPART a $endpoint');
+      debugPrint('status code: ${response.statusCode}');
+      debugPrint('respuesta: ${response.body}');
+      debugPrint('--------------------------------------------');
 
       return response;
     } catch (e, s) {
       if (isLoadingDialog) Get.back();
-      print("Error en postMultipartDynamic: $e\n$s");
+      debugPrint("Error en postMultipartDynamic: $e\n$s");
       return http.Response('Error en la solicitud: $e', 500);
     }
   }
@@ -539,7 +540,7 @@ class ApiRequestService {
       }
     }
 
-    print("body: $body");
+    debugPrint("body: $body");
 
     var headers = {
       'Content-Type': 'application/json',
@@ -550,7 +551,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
-        print('🔴 Error de red en [postPicking]: No hay conexión');
+        debugPrint('🔴 Error de red en [postPicking]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -588,17 +589,17 @@ class ApiRequestService {
             Get.back();
           }
 
-          print("--------------------------------------------");
-          print('Petición POST a $endpoint');
-          print('url: $url');
-          print('Cuerpo de la solicitud: ${jsonDecode(request.body)}');
-          print('headers: $headers');
-          print('status code: ${response.statusCode}');
-          print("--------------------------------------------");
+          debugPrint("--------------------------------------------");
+          debugPrint('Petición POST a $endpoint');
+          debugPrint('url: $url');
+          debugPrint('Cuerpo de la solicitud: ${jsonDecode(request.body)}');
+          debugPrint('headers: $headers');
+          debugPrint('status code: ${response.statusCode}');
+          debugPrint("--------------------------------------------");
 
           return http.Response.fromStream(response);
         } else {
-          print('🔴 Error de red en [postPicking]: Fallo lookup');
+          debugPrint('🔴 Error de red en [postPicking]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -615,12 +616,12 @@ class ApiRequestService {
       }
       return http.Response('Error de red', 404);
     } on TimeoutException catch (e, s) {
-      print('La solicitud superó el tiempo de espera: $e => $s');
+      debugPrint('La solicitud superó el tiempo de espera: $e => $s');
       return http.Response('La solicitud superó el tiempo de espera', 408);
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
-      print('🔴 Error de red en [postPicking]: SocketException $e');
+      debugPrint('Error de red: $e');
+      debugPrint('🔴 Error de red en [postPicking]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',
@@ -638,7 +639,7 @@ class ApiRequestService {
       rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error desconocido en la solicitud: $e \n $s');
+      debugPrint('Error desconocido en la solicitud: $e \n $s');
       // Cerrar el diálogo de carga incluso en caso de otros errores
       Get.back();
       rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
@@ -668,13 +669,13 @@ class ApiRequestService {
       'Cookie': '$sessionId',
     };
 
-    print(headers);
+    debugPrint(headers.toString());
 
     try {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
-        print('🔴 Error de red en [postPacking]: No hay conexión');
+        debugPrint('🔴 Error de red en [postPacking]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -703,12 +704,12 @@ class ApiRequestService {
           request.body = json.encode(body);
           request.headers.addAll(headers);
 
-          print("==== BODY ====");
-          print(jsonEncode(body));
-          print("==== URL ====");
-          print(url);
-          print("==== HEADERS ====");
-          print(headers);
+          debugPrint("==== BODY ====");
+          debugPrint(jsonEncode(body));
+          debugPrint("==== URL ====");
+          debugPrint(url);
+          debugPrint("==== HEADERS ====");
+          debugPrint(headers.toString());
 
           final response = await request.send();
 
@@ -717,17 +718,17 @@ class ApiRequestService {
             Get.back();
           }
 
-          print("--------------------------------------------");
-          print('Petición POST a $endpoint');
-          print('url: $url');
-          print('Cuerpo de la solicitud: ${jsonDecode(request.body)}');
-          print('headers: $headers');
-          print('status code: ${response.statusCode}');
-          print("--------------------------------------------");
+          debugPrint("--------------------------------------------");
+          debugPrint('Petición POST a $endpoint');
+          debugPrint('url: $url');
+          debugPrint('Cuerpo de la solicitud: ${jsonDecode(request.body)}');
+          debugPrint('headers: $headers');
+          debugPrint('status code: ${response.statusCode}');
+          debugPrint("--------------------------------------------");
 
           return http.Response.fromStream(response);
         } else {
-          print('🔴 Error de red en [postPacking]: Fallo lookup');
+          debugPrint('🔴 Error de red en [postPacking]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -745,8 +746,8 @@ class ApiRequestService {
       return http.Response('Error de red', 404);
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
-      print('🔴 Error de red en [postPacking]: SocketException $e');
+      debugPrint('Error de red: $e');
+      debugPrint('🔴 Error de red en [postPacking]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',
@@ -764,7 +765,7 @@ class ApiRequestService {
       rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
     } catch (e) {
       // Manejo de otros errores
-      print('Error desconocido en la solicitud: $e');
+      debugPrint('Error desconocido en la solicitud: $e');
       // Cerrar el diálogo de carga incluso en caso de otros errores
       Get.back();
       rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
@@ -772,7 +773,7 @@ class ApiRequestService {
   }
 
   void _showNetworkErrorSnackbar() {
-    print('🔴 EJECUTANDO SNACKBAR EN: _showNetworkErrorSnackbar');
+    debugPrint('🔴 EJECUTANDO SNACKBAR EN: _showNetworkErrorSnackbar');
     Get.snackbar(
       'Error de red',
       'No se pudo conectar al servidor',
@@ -811,7 +812,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
-        print('🔴 Error de red en [getInfo]: No hay conexión');
+        debugPrint('🔴 Error de red en [getInfo]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -847,17 +848,17 @@ class ApiRequestService {
             Get.back();
           }
 
-          print("--------------------------------------------");
-          print('Petición GET a $endpoint');
-          print('url: $url');
-          print('Cuerpo de la solicitud: ${jsonDecode(request.body)}');
-          print('headers: $headers');
-          print('status code: ${response.statusCode}');
-          print("--------------------------------------------");
+          debugPrint("--------------------------------------------");
+          debugPrint('Petición GET a $endpoint');
+          debugPrint('url: $url');
+          debugPrint('Cuerpo de la solicitud: ${jsonDecode(request.body)}');
+          debugPrint('headers: $headers');
+          debugPrint('status code: ${response.statusCode}');
+          debugPrint("--------------------------------------------");
 
           return http.Response.fromStream(response);
         } else {
-          print('🔴 Error de red en [getInfo]: Fallo lookup');
+          debugPrint('🔴 Error de red en [getInfo]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -875,8 +876,8 @@ class ApiRequestService {
       return http.Response('Error de red', 404);
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
-      print('🔴 Error de red en [getInfo]: SocketException $e');
+      debugPrint('Error de red: $e');
+      debugPrint('🔴 Error de red en [getInfo]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',
@@ -894,7 +895,7 @@ class ApiRequestService {
       rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
     } catch (e) {
       // Manejo de otros errores
-      print('Error desconocido en la solicitud: $e');
+      debugPrint('Error desconocido en la solicitud: $e');
       // Cerrar el diálogo de carga incluso en caso de otros errores
       Get.back();
       rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
@@ -920,7 +921,7 @@ class ApiRequestService {
     }
 
     if (sessionId == "" || sessionId == null) {
-      print('🔴 Error de red en [GET]: Session ID vacio/nulo');
+      debugPrint('🔴 Error de red en [GET]: Session ID vacio/nulo');
       // Get.snackbar('Error de red', 'No se pudo conectar al servidor',
       //     backgroundColor: white,
       //     colorText: primaryColorApp,
@@ -942,7 +943,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
-        print('🔴 Error de red en [GET]: No hay conexión');
+        debugPrint('🔴 Error de red en [GET]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -975,16 +976,16 @@ class ApiRequestService {
           if (isLoadinDialog) {
             Get.back();
           }
-          print("--------------------------------------------");
-          print('Petición GET a $endpoint');
-          print('Cuerpo de la solicitud: $url');
-          print('headers: $headers');
-          print('status code: ${response.statusCode}');
-          print("--------------------------------------------");
+          debugPrint("--------------------------------------------");
+          debugPrint('Petición GET a $endpoint');
+          debugPrint('Cuerpo de la solicitud: $url');
+          debugPrint('headers: $headers');
+          debugPrint('status code: ${response.statusCode}');
+          debugPrint("--------------------------------------------");
 
           return http.Response.fromStream(response);
         } else {
-          print('🔴 Error de red en [GET]: Fallo lookup');
+          debugPrint('🔴 Error de red en [GET]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -1002,8 +1003,8 @@ class ApiRequestService {
       return http.Response('Error de red', 404);
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
-      print('🔴 Error de red en [GET]: SocketException $e');
+      debugPrint('Error de red: $e');
+      debugPrint('🔴 Error de red en [GET]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',
@@ -1021,7 +1022,7 @@ class ApiRequestService {
       rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
     } catch (e) {
       // Manejo de otros errores
-      print('Error desconocido en la solicitud: $e');
+      debugPrint('Error desconocido en la solicitud: $e');
       // Cerrar el diálogo de carga incluso en caso de otros errores
       Get.back();
       rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
@@ -1048,7 +1049,7 @@ class ApiRequestService {
     }
 
     if (sessionId == "" || sessionId == null) {
-      print('🔴 Error de red en [getValidation]: Session ID vacio/nulo');
+      debugPrint('🔴 Error de red en [getValidation]: Session ID vacio/nulo');
       Get.snackbar('Error de red', 'No se pudo conectar al servidor',
           backgroundColor: white,
           colorText: primaryColorApp,
@@ -1070,7 +1071,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
-        print('🔴 Error de red en [getValidation]: No hay conexión');
+        debugPrint('🔴 Error de red en [getValidation]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -1113,17 +1114,17 @@ class ApiRequestService {
           if (isLoadinDialog) {
             Get.back();
           }
-          print("--------------------------------------------");
-          print('Petición GET Validation a $endpoint');
-          print('Cuerpo de la solicitud: $url');
-          print('headers: $headers');
-          print('Cuerpo de la solicitud: ${jsonDecode(request.body)}');
-          print('status code: ${response.statusCode}');
-          print("--------------------------------------------");
+          debugPrint("--------------------------------------------");
+          debugPrint('Petición GET Validation a $endpoint');
+          debugPrint('Cuerpo de la solicitud: $url');
+          debugPrint('headers: $headers');
+          debugPrint('Cuerpo de la solicitud: ${jsonDecode(request.body)}');
+          debugPrint('status code: ${response.statusCode}');
+          debugPrint("--------------------------------------------");
 
           return http.Response.fromStream(response);
         } else {
-          print('🔴 Error de red en [getValidation]: Fallo lookup');
+          debugPrint('🔴 Error de red en [getValidation]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -1141,8 +1142,8 @@ class ApiRequestService {
       return http.Response('Error de red', 404);
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
-      print('🔴 Error de red en [getValidation]: SocketException $e');
+      debugPrint('Error de red: $e');
+      debugPrint('🔴 Error de red en [getValidation]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',
@@ -1160,7 +1161,7 @@ class ApiRequestService {
       rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
     } catch (e) {
       // Manejo de otros errores
-      print('Error desconocido en la solicitud: $e');
+      debugPrint('Error desconocido en la solicitud: $e');
       // Cerrar el diálogo de carga incluso en caso de otros errores
       Get.back();
       rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
@@ -1249,7 +1250,7 @@ class ApiRequestService {
       if (response.statusCode == 200) {
         return await response.stream.toBytes();
       } else {
-        print('Error al obtener imagen: ${response.statusCode}');
+        debugPrint('Error al obtener imagen: ${response.statusCode}');
         Get.snackbar(
           'Error',
           'No se pudo cargar la imagen (${response.statusCode})',
@@ -1262,7 +1263,7 @@ class ApiRequestService {
       }
     } catch (e) {
       if (isLoadinDialog) Get.back();
-      print('Excepción al obtener la imagen: $e');
+      debugPrint('Excepción al obtener la imagen: $e');
       Get.snackbar(
         'Error inesperado',
         'Ocurrió un error al cargar la imagen',
@@ -1293,7 +1294,7 @@ class ApiRequestService {
     }
 
     if (sessionId == "" || sessionId == null) {
-      print('🔴 Error de red en [getInventario]: Session ID vacio/nulo');
+      debugPrint('🔴 Error de red en [getInventario]: Session ID vacio/nulo');
       Get.snackbar('Error de red', 'No se pudo conectar al servidor',
           backgroundColor: white,
           colorText: primaryColorApp,
@@ -1315,7 +1316,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
-        print('🔴 Error de red en [getInventario]: No hay conexión');
+        debugPrint('🔴 Error de red en [getInventario]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -1354,16 +1355,16 @@ class ApiRequestService {
           if (isLoadinDialog) {
             Get.back();
           }
-          print("--------------------------------------------");
-          print('Petición GET a $endpoint');
-          print('Cuerpo de la solicitud: $url');
-          print('headers: $headers');
-          print('status code: ${response.statusCode}');
-          print("--------------------------------------------");
+          debugPrint("--------------------------------------------");
+          debugPrint('Petición GET a $endpoint');
+          debugPrint('Cuerpo de la solicitud: $url');
+          debugPrint('headers: $headers');
+          debugPrint('status code: ${response.statusCode}');
+          debugPrint("--------------------------------------------");
 
           return http.Response.fromStream(response);
         } else {
-          print('🔴 Error de red en [getInventario]: Fallo lookup');
+          debugPrint('🔴 Error de red en [getInventario]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -1381,8 +1382,8 @@ class ApiRequestService {
       return http.Response('Error de red', 404);
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
-      print('🔴 Error de red en [getInventario]: SocketException $e');
+      debugPrint('Error de red: $e');
+      debugPrint('🔴 Error de red en [getInventario]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',
@@ -1400,7 +1401,7 @@ class ApiRequestService {
       rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
     } catch (e) {
       // Manejo de otros errores
-      print('Error desconocido en la solicitud: $e');
+      debugPrint('Error desconocido en la solicitud: $e');
       // Cerrar el diálogo de carga incluso en caso de otros errores
       Get.back();
       rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
@@ -1427,7 +1428,7 @@ class ApiRequestService {
     }
 
     if (sessionId == "" || sessionId == null) {
-      print('🔴 Error de red en [postInventario]: Session ID vacio/nulo');
+      debugPrint('🔴 Error de red en [postInventario]: Session ID vacio/nulo');
       Get.snackbar('Error de red', 'No se pudo conectar al servidor',
           backgroundColor: white,
           colorText: primaryColorApp,
@@ -1449,7 +1450,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
-        print('🔴 Error de red en [postInventario]: No hay conexión');
+        debugPrint('🔴 Error de red en [postInventario]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -1484,16 +1485,16 @@ class ApiRequestService {
           if (isLoadinDialog) {
             Get.back();
           }
-          print("--------------------------------------------");
-          print('Petición GET a $endpoint');
-          print('Cuerpo de la solicitud: $url');
-          print('headers: $headers');
-          print('status code: ${response.statusCode}');
-          print("--------------------------------------------");
+          debugPrint("--------------------------------------------");
+          debugPrint('Petición GET a $endpoint');
+          debugPrint('Cuerpo de la solicitud: $url');
+          debugPrint('headers: $headers');
+          debugPrint('status code: ${response.statusCode}');
+          debugPrint("--------------------------------------------");
 
           return http.Response.fromStream(response);
         } else {
-          print('🔴 Error de red en [postInventario]: Fallo lookup');
+          debugPrint('🔴 Error de red en [postInventario]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -1511,8 +1512,8 @@ class ApiRequestService {
       return http.Response('Error de red', 404);
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
-      print('🔴 Error de red en [postInventario]: SocketException $e');
+      debugPrint('Error de red: $e');
+      debugPrint('🔴 Error de red en [postInventario]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',
@@ -1530,7 +1531,7 @@ class ApiRequestService {
       rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
     } catch (e) {
       // Manejo de otros errores
-      print('Error desconocido en la solicitud: $e');
+      debugPrint('Error desconocido en la solicitud: $e');
       // Cerrar el diálogo de carga incluso en caso de otros errores
       Get.back();
       rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
@@ -1558,7 +1559,7 @@ class ApiRequestService {
     }
 
     if (sessionId == "" || sessionId == null) {
-      print('🔴 Error de red en [getHistory]: Session ID vacio/nulo');
+      debugPrint('🔴 Error de red en [getHistory]: Session ID vacio/nulo');
       Get.snackbar('Error de red', 'No se pudo conectar al servidor',
           backgroundColor: white,
           colorText: primaryColorApp,
@@ -1580,7 +1581,7 @@ class ApiRequestService {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         // Si no hay conexión, retornar una lista vacía
-        print('🔴 Error de red en [getHistory]: No hay conexión');
+        debugPrint('🔴 Error de red en [getHistory]: No hay conexión');
         Get.snackbar('Error de red', 'No se pudo conectar al servidor',
             backgroundColor: white,
             colorText: primaryColorApp,
@@ -1623,15 +1624,15 @@ class ApiRequestService {
             Get.back();
           }
 
-          print("--------------------------------------------");
-          print('Petición GET a $endpoint');
-          print('Cuerpo de la solicitud: $url');
-          print('headers: $headers');
-          print('status code: ${response.statusCode}');
-          print("--------------------------------------------");
+          debugPrint("--------------------------------------------");
+          debugPrint('Petición GET a $endpoint');
+          debugPrint('Cuerpo de la solicitud: $url');
+          debugPrint('headers: $headers');
+          debugPrint('status code: ${response.statusCode}');
+          debugPrint("--------------------------------------------");
           return http.Response.fromStream(response);
         } else {
-          print('🔴 Error de red en [getHistory]: Fallo lookup');
+          debugPrint('🔴 Error de red en [getHistory]: Fallo lookup');
           Get.snackbar(
             'Error de red',
             'No se pudo conectar al servidor',
@@ -1649,8 +1650,8 @@ class ApiRequestService {
       return http.Response('Error de red', 404);
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
-      print('🔴 Error de red en [getHistory]: SocketException $e');
+      debugPrint('Error de red: $e');
+      debugPrint('🔴 Error de red en [getHistory]: SocketException $e');
       Get.snackbar(
         'Error de red',
         'No se pudo conectar al servidor',
@@ -1668,7 +1669,7 @@ class ApiRequestService {
       rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
     } catch (e) {
       // Manejo de otros errores
-      print('Error desconocido en la solicitud: $e');
+      debugPrint('Error desconocido en la solicitud: $e');
       // Cerrar el diálogo de carga incluso en caso de otros errores
       Get.back();
       rethrow; // Re-lanzamos la excepción para manejarla en el repositorio

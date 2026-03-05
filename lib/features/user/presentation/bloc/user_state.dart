@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import '../../domain/entities/device_info.dart';
 import '../../domain/entities/user_configuration.dart';
 import '../../domain/entities/user_location.dart';
+import '../../domain/entities/user_novelty.dart';
 
 abstract class UserState extends Equatable {
   const UserState();
@@ -18,27 +19,31 @@ class UserLoaded extends UserState {
   final UserConfiguration configuration;
   final DeviceInfo deviceInfo;
   final List<UserLocation> locations;
+  final List<Novedad> novelties;
 
   const UserLoaded({
     required this.configuration,
     required this.deviceInfo,
     this.locations = const [],
+    this.novelties = const [],
   });
 
   UserLoaded copyWith({
     UserConfiguration? configuration,
     DeviceInfo? deviceInfo,
     List<UserLocation>? locations,
+    List<Novedad>? novelties,
   }) {
     return UserLoaded(
       configuration: configuration ?? this.configuration,
       deviceInfo: deviceInfo ?? this.deviceInfo,
       locations: locations ?? this.locations,
+      novelties: novelties ?? this.novelties,
     );
   }
 
   @override
-  List<Object?> get props => [configuration, deviceInfo, locations];
+  List<Object?> get props => [configuration, deviceInfo, locations, novelties];
 }
 
 class UserError extends UserState {
@@ -73,10 +78,26 @@ class UserLocationsLoading extends UserState {}
 class UserLocationsError extends UserState {
   final String message;
 
-  UserLocationsError(this.message);
+  const UserLocationsError(this.message);
 
   @override
   List<Object?> get props => [message];
+}
+
+class UserNoveltiesLoaded extends UserState {
+  final List<Novedad> novelties;
+
+  const UserNoveltiesLoaded({required this.novelties});
+
+  @override
+  List<Object?> get props => [novelties];
+}
+
+class UserNoveltiesLoading extends UserState {}
+
+class UserNoveltiesError extends UserState {
+  final String message;
+  const UserNoveltiesError(this.message);
 }
 
 class DeviceInfoLoaded extends UserState {

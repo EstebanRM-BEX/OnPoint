@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/transferencia/tbl_product_transferencia/product_transferencia_table.dart';
@@ -10,7 +11,7 @@ class ProductTransferenciaRepository {
     try {
       Database db = await DataBaseSqlite().getDatabaseInstance();
 
-      print('insertarProductoEntrada: ${products.length} productos');
+      debugPrint('insertarProductoEntrada: ${products.length} productos');
 
       await db.transaction((txn) async {
         Batch batch = txn.batch();
@@ -112,7 +113,7 @@ class ProductTransferenciaRepository {
         await batch.commit(noResult: true);
       });
     } catch (e, s) {
-      print('Error en el insertarProductoEntrada: $e, $s');
+      debugPrint('Error en el insertarProductoEntrada: $e, $s');
     }
   }
 
@@ -120,7 +121,7 @@ class ProductTransferenciaRepository {
   Future<LineasTransferenciaTrans?> getProductById(
       int idProduct, int idMove, int idTransferencia) async {
     try {
-      print(
+      debugPrint(
           'idProduct: $idProduct, idMove: $idMove, idTransferencia: $idTransferencia');
       // Obtener la instancia de la base de datos
       Database db = await DataBaseSqlite().getDatabaseInstance();
@@ -143,7 +144,7 @@ class ProductTransferenciaRepository {
           : null;
     } catch (e, s) {
       // Imprimir detalles del error para facilitar la depuración
-      print('Error en getProductById: $e, StackTrace: $s');
+      debugPrint('Error en getProductById: $e, StackTrace: $s');
       return null;
     }
   }
@@ -215,9 +216,9 @@ class ProductTransferenciaRepository {
         productCopy,
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
-      print("Producto duplicado insertado con éxito.");
+      debugPrint("Producto duplicado insertado con éxito.");
     } catch (e, s) {
-      print("Error al insertar producto duplicado: $e ==> $s");
+      debugPrint("Error al insertar producto duplicado: $e ==> $s");
     }
   }
 
@@ -227,7 +228,7 @@ class ProductTransferenciaRepository {
     try {
       Database db = await DataBaseSqlite().getDatabaseInstance();
 
-      print('idTransfer: $idTransfer');
+      debugPrint('idTransfer: $idTransfer');
 
       // Consulta para obtener los productos con el idRecepcion correspondiente
       final List<Map<String, dynamic>> products = await db.query(
@@ -242,7 +243,7 @@ class ProductTransferenciaRepository {
           .map((product) => LineasTransferenciaTrans.fromMap(product))
           .toList();
     } catch (e, s) {
-      print('Error en getProductsByTrasnferId: $e, $s');
+      debugPrint('Error en getProductsByTrasnferId: $e, $s');
       return [];
     }
   }
@@ -252,7 +253,7 @@ class ProductTransferenciaRepository {
   // Método: Actualizar un campo específico en la tabla productos_pedidos
   Future<int?> setFieldTableProductTransfer(int idEntrada, int productId,
       String field, dynamic setValue, int idMove) async {
-    print(
+    debugPrint(
         "datos de transfer: idTransfer: $idEntrada, productId: $productId, field: $field, setValue: $setValue, idMove: $idMove");
 
     Database db = await DataBaseSqlite().getDatabaseInstance();
@@ -267,14 +268,15 @@ class ProductTransferenciaRepository {
       [setValue, productId, idMove, idEntrada],
     );
 
-    print(
+    debugPrint(
         "update TableProductTransfer (idProduct ----($productId)) -------($field): $resUpdate");
 
     return resUpdate;
   }
+
   Future<int?> setFieldTableProductTransferDone(int idEntrada, int productId,
       String field, dynamic setValue, int idMove) async {
-    print(
+    debugPrint(
         "datos de transfer: idTransfer: $idEntrada, productId: $productId, field: $field, setValue: $setValue, idMove: $idMove");
 
     Database db = await DataBaseSqlite().getDatabaseInstance();
@@ -289,7 +291,7 @@ class ProductTransferenciaRepository {
       [setValue, productId, idMove, idEntrada],
     );
 
-    print(
+    debugPrint(
         "update setFieldTableProductTransferDone (idProduct ----($productId)) -------($field): $resUpdate");
 
     return resUpdate;
@@ -337,7 +339,7 @@ class ProductTransferenciaRepository {
         "UPDATE ${ProductTransferenciaTable.tableName} SET ${ProductTransferenciaTable.columnObservation} = ? WHERE ${ProductTransferenciaTable.columnProductId} = ? AND ${ProductTransferenciaTable.columnIdTransferencia} = ? AND ${ProductTransferenciaTable.columnIdMove} = ?",
         [novedad, productId, idRecepcion, idMove]);
 
-    print("updateNovedad: $resUpdate");
+    debugPrint("updateNovedad: $resUpdate");
     return resUpdate;
   }
 
@@ -351,15 +353,10 @@ class ProductTransferenciaRepository {
           .map((product) => LineasTransferenciaTrans.fromMap(product))
           .toList();
     } catch (e, s) {
-      print('Error en getAllProducts: $e, $s');
+      debugPrint('Error en getAllProducts: $e, $s');
       return [];
     }
   }
 
-
-
-
- //metodo para ejecutar todo esto en una sola
- 
-
+  //metodo para ejecutar todo esto en una sola
 }

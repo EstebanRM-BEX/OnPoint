@@ -141,8 +141,8 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
 
   void _onToggleProductMassTransferEvent(
       ToggleProductMassTransferEvent event, Emitter<InfoRapidaState> emit) {
-    print('isSelectedMassTransfer: ${event.isSelected}');
-    print('product id: ${event.product.id}');
+    debugPrint('isSelectedMassTransfer: ${event.isSelected}');
+    debugPrint('product id: ${event.product.id}');
 
     //agregamos esos productos a la lista de productos para transferencia masiva
     if (event.isSelected) {
@@ -224,7 +224,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
         emit(CreateTransferFailure(response.result?.msg ?? ""));
       }
     } catch (e, s) {
-      print("❌ Error en el CreateTransferEvent $e ->$s");
+      debugPrint("❌ Error en el CreateTransferEvent $e ->$s");
       emit(CreateTransferFailure(e.toString()));
     }
   }
@@ -269,7 +269,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
       emit(ValidateFieldsStateSuccess(event.isOk));
     } catch (e, s) {
       emit(ValidateFieldsStateError('Error al validar campos'));
-      print("❌ Error en el ValidateFieldsEvent $e ->$s");
+      debugPrint("❌ Error en el ValidateFieldsEvent $e ->$s");
     }
   }
 
@@ -290,7 +290,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
         }
       }
     } catch (e, s) {
-      print("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
+      debugPrint("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
     }
   }
 
@@ -299,7 +299,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
       ResetProductsFiltersMassTransferEvent event,
       Emitter<InfoRapidaState> emit) {
     try {
-      print('Reseteando la lista de productos filtrados');
+      debugPrint('Reseteando la lista de productos filtrados');
       emit(ResetProductsFiltersMassTransferLoading());
       productosFiltersMassTransfer.clear();
       isMassTransferActive = false;
@@ -314,7 +314,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
       emit(ResetProductsFiltersMassTransferSuccess(
           productosFiltersMassTransfer));
     } catch (e, s) {
-      print('Error en el ResetProductsFiltersMassTransferEvent: $e, $s');
+      debugPrint('Error en el ResetProductsFiltersMassTransferEvent: $e, $s');
       emit(ResetProductsFiltersMassTransferFailure(e.toString()));
     }
   }
@@ -323,13 +323,13 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   void _onRemoveProductFromMassTransferEvent(
       RemoveProductFromMassTransferEvent event, Emitter<InfoRapidaState> emit) {
     try {
-      print('Eliminando producto de la lista de transferencias masivas');
+      debugPrint('Eliminando producto de la lista de transferencias masivas');
       emit(RemoveProductFromMassTransferLoading());
       productosFiltersMassTransfer
           .removeWhere((element) => element.id == event.idProduct);
       emit(RemoveProductFromMassTransferSuccess(productosFiltersMassTransfer));
     } catch (e, s) {
-      print('Error en el RemoveProductFromMassTransferEvent: $e, $s');
+      debugPrint('Error en el RemoveProductFromMassTransferEvent: $e, $s');
       emit(RemoveProductFromMassTransferFailure(e.toString()));
     }
   }
@@ -337,7 +337,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   void _onViewProductImageEvent(
       ViewProductImageEvent event, Emitter<InfoRapidaState> emit) async {
     try {
-      print('Obteniendo imagen del producto con ID: ${event.idProduct}');
+      debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
       final response =
@@ -355,7 +355,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
         emit(ViewProductImageFailure('Imagen no disponible'));
       }
     } catch (e, s) {
-      print('Error en el ViewProductImageEvent: $e, $s');
+      debugPrint('Error en el ViewProductImageEvent: $e, $s');
       emit(ViewProductImageFailure(e.toString()));
     }
   }
@@ -363,7 +363,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   void _onSortProductsEvent(
       SortProductsEvent event, Emitter<InfoRapidaState> emit) {
     try {
-      print('Ordenando productos, ascending: ${event.ascending}');
+      debugPrint('Ordenando productos, ascending: ${event.ascending}');
       emit(SortProductsLoading());
       if (event.ascending) {
         isAscending = true;
@@ -376,14 +376,14 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
       }
       emit(SortProductsSuccess());
     } catch (e, s) {
-      print('Error en el SortProductsEvent: $e, $s');
+      debugPrint('Error en el SortProductsEvent: $e, $s');
       emit(SortProductsFailure(e.toString()));
     }
   }
 
   void _onToggleProductExpansionEvent(
       ToggleProductExpansionEvent event, Emitter<InfoRapidaState> emit) {
-    print('isExpanded: $isExpanded');
+    debugPrint('isExpanded: $isExpanded');
     isExpanded = event.isExpanded;
     emit(ProductExpansionToggled(isExpanded));
   }
@@ -418,7 +418,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
         ));
       }
     } catch (e, s) {
-      print('Error en el EditLocationEvent: $e, $s');
+      debugPrint('Error en el EditLocationEvent: $e, $s');
       emit(EditLocationFailure(e.toString()));
     }
   }
@@ -439,7 +439,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
       }
     } catch (e, s) {
       emit(ConfigurationError(e.toString()));
-      print('Error en LoadConfigurationsUserPack.dart: $e =>$s');
+      debugPrint('Error en LoadConfigurationsUserPack.dart: $e =>$s');
     }
   }
 
@@ -468,7 +468,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
         ));
       }
     } catch (e, s) {
-      print('Error en el UpdateProductEvent: $e, $s');
+      debugPrint('Error en el UpdateProductEvent: $e, $s');
       emit(UpdateProductFailure(e.toString()));
     }
   }
@@ -491,7 +491,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
       }
       emit(FilterUbicacionesSuccess(ubicacionesFilters));
     } catch (e, s) {
-      print('Error en el FilterUbicacionesEvent: $e, $s');
+      debugPrint('Error en el FilterUbicacionesEvent: $e, $s');
       emit(FilterUbicacionesFailure(e.toString()));
     }
   }
@@ -504,7 +504,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
           await db.productoInventarioRepository.getAllUniqueProducts();
       productos.clear();
       productosFilters.clear();
-      print('productos: ${response.length}');
+      debugPrint('productos: ${response.length}');
       if (response.isNotEmpty) {
         productos = response;
         productosFilters = productos;
@@ -515,7 +515,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
       }
     } catch (e, s) {
       emit(GetProductsFailure('Error al cargar los productos'));
-      print('Error en el fetch de productos: $e=>$s');
+      debugPrint('Error en el fetch de productos: $e=>$s');
     }
   }
 
@@ -537,7 +537,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
       }
       emit(SearchProductSuccess(productosFilters));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -552,18 +552,18 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
 
       // Si están vacías, cargar las ubicaciones desde UserBloc
       if (userLocations.isEmpty) {
-        print('Ubicaciones vacías, cargando desde UserBloc...');
+        debugPrint('Ubicaciones vacías, cargando desde UserBloc...');
         userBloc.add(LoadUserLocationsEvent());
 
         // Esperar a que se carguen las ubicaciones
         await for (final state in userBloc.stream) {
           if (state is UserLocationsLoaded) {
             userLocations = state.locations;
-            print(
+            debugPrint(
                 'Ubicaciones cargadas desde UserBloc: ${userLocations.length}');
             break;
           } else if (state is UserLocationsError) {
-            print('Error al cargar ubicaciones: ${state.message}');
+            debugPrint('Error al cargar ubicaciones: ${state.message}');
             emit(LoadLocationsFailure(
                 'Error al cargar ubicaciones: ${state.message}'));
             return;
@@ -585,26 +585,27 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
 
       ubicaciones.clear();
       ubicacionesFilters.clear();
-      print('ubicaciones length from UserBloc: ${convertedLocations.length}');
+      debugPrint(
+          'ubicaciones length from UserBloc: ${convertedLocations.length}');
 
       if (convertedLocations.isNotEmpty) {
         ubicaciones = convertedLocations;
         ubicacionesFilters = ubicaciones;
-        print('ubicaciones cargadas: ${ubicaciones.length}');
+        debugPrint('ubicaciones cargadas: ${ubicaciones.length}');
         emit(LoadLocationsSuccess(ubicaciones));
       } else {
-        print('No se encontraron ubicaciones en UserBloc');
+        debugPrint('No se encontraron ubicaciones en UserBloc');
         emit(LoadLocationsFailure('No se encontraron ubicaciones'));
       }
     } catch (e, s) {
       emit(LoadLocationsFailure('Error al cargar las ubicaciones'));
-      print('Error en el fetch de ubicaciones: $e=>$s');
+      debugPrint('Error en el fetch de ubicaciones: $e=>$s');
     }
   }
 
   void _onIsEditEvent(IsEditEvent event, Emitter<InfoRapidaState> emit) {
     isEdit = event.isEdit;
-    print('isEdit: $isEdit');
+    debugPrint('isEdit: $isEdit');
     emit(IsEditState(isEdit));
   }
 
@@ -625,7 +626,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
       }
       emit(SearchLocationSuccess(ubicacionesFilters));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -693,7 +694,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   void _onSortLocationsEvent(
       SortLocationsEvent event, Emitter<InfoRapidaState> emit) {
     try {
-      print(
+      debugPrint(
           'Ordenando ubicaciones por: ${event.criteria}, ascending: ${event.ascending}');
       emit(SortLocationsLoading());
 
@@ -745,7 +746,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
 
       emit(SortLocationsSuccess());
     } catch (e, s) {
-      print('Error en el SortLocationsEvent: $e, $s');
+      debugPrint('Error en el SortLocationsEvent: $e, $s');
       emit(SortLocationsFailure(e.toString()));
     }
   }

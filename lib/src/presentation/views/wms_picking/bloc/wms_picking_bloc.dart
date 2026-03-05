@@ -3,7 +3,7 @@
 import 'dart:math';
 
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
+import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/data/wms_picking_repository.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/history/models/batch_history_id_model.dart';
@@ -75,11 +75,11 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
       listOfOrigins.clear();
 
       listOfOrigins = batchsFromDB;
-      print('listOfOrigins: ${listOfOrigins.length}');
+      debugPrint('listOfOrigins: ${listOfOrigins.length}');
 
       emit(LoadDocOriginsState(listOfOrigins: listOfOrigins));
     } catch (e, s) {
-      print('Error LoadDocOriginsEvent: $e, $s');
+      debugPrint('Error LoadDocOriginsEvent: $e, $s');
     }
   }
 
@@ -88,27 +88,16 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
   void _onLoadAllNovedadesEvent(
       LoadAllNovedades event, Emitter<PickingState> emit) async {
     try {
-      final novedadeslist = await wmsPickingRepository.getnovedades(
-        false,
-      );
-      listOfNovedades.clear();
-      listOfNovedades.addAll(novedadeslist);
-
-      // Si hay novedades para insertar, ejecutar la inserción en batch
-      if (listOfNovedades.isNotEmpty) {
-        try {
-          await DataBaseSqlite()
-              .novedadesRepository
-              .syncNovedades(listOfNovedades);
-          print('Novedades insertadas con éxito.');
-        } catch (e) {
-          print('Error inserting batch of novedades: $e');
-        }
+      final response = await _databas.novedadesRepository.getAllNovedades();
+      if (response != null) {
+        listOfNovedades.clear();
+        listOfNovedades = response;
+        debugPrint("novedades: ${listOfNovedades.length}");
+        emit(LoadSuccessNovedadesState(listOfNovedades: listOfNovedades));
       }
-
-      emit(LoadSuccessNovedadesState(listOfNovedades: listOfNovedades));
     } catch (e, s) {
-      print('Error LoadAllNovedadesEvent: $e, $s');
+      debugPrint("Error en __onLoadAllNovedadesEvent: $e, $s");
+      emit(LoadSuccessNovedadesState(listOfNovedades: []));
     }
   }
 
@@ -138,6 +127,8 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
     try {
       emit(BatchsPickingLoadingState());
 
+      await DataBaseSqlite().delePicking('batch');
+
       final response = await wmsPickingRepository.resBatchs(
         event.isLoadinDialog,
       );
@@ -154,6 +145,8 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
         }
 
         if (listOfBatchs.isNotEmpty) {
+          //LIMPIAMOS LA BD
+
           await DataBaseSqlite()
               .batchPickingRepository
               .insertAllBatches(listOfBatchs, userId, 'batch');
@@ -168,23 +161,23 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
           final allBarcodes = _extractAllBarcodes(response.result ?? [])
               .toList(growable: false);
 
-          // print('response muelles: ${responseMuelles.length}');
-          print('productsToInsert: ${productsIterable.length}');
-          print('allBarcodes: ${allBarcodes.length}');
-          print('originsIterable: ${originsIterable.length}');
+          // debugPrint('response muelles: ${responseMuelles.length}');
+          debugPrint('productsToInsert: ${productsIterable.length}');
+          debugPrint('allBarcodes: ${allBarcodes.length}');
+          debugPrint('originsIterable: ${originsIterable.length}');
           // Enviar la lista agrupada a insertBatchProducts
           await DataBaseSqlite()
               .insertBatchProducts(productsIterable, event.type);
 
           await DataBaseSqlite()
               .docOriginRepository
-              .insertAllDocsOrigins(originsIterable, 'picking');
+              .insertAllDocsOrigins(originsIterable, 'batch');
 
           if (allBarcodes.isNotEmpty) {
             // Enviar la lista agrupada a insertBarcodesPackageProduct
             await DataBaseSqlite()
                 .barcodesPackagesRepository
-                .insertOrUpdateBarcodes(allBarcodes, 'picking');
+                .insertOrUpdateBarcodes(allBarcodes, 'batch');
           }
 
           // //* Carga los batches desde la base de datos
@@ -196,10 +189,10 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
 
         emit(LoadBatchsSuccesState(listOfBatchs: listOfBatchs));
       } else {
-        print('Error resBatchs: response is null');
+        debugPrint('Error resBatchs: response is null');
       }
     } catch (e, s) {
-      print('Error LoadAllBatchsEvent: $e, $s');
+      debugPrint('Error LoadAllBatchsEvent: $e, $s');
       emit(BatchsPickingErrorState(e.toString()));
     }
   }
@@ -238,10 +231,10 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
           final allBarcodes = _extractAllBarcodes(response.result ?? [])
               .toList(growable: false);
 
-          // print('response muelles: ${responseMuelles.length}');
-          print('productsToInsert: ${productsIterable.length}');
-          print('allBarcodes: ${allBarcodes.length}');
-          print('originsIterable: ${originsIterable.length}');
+          // debugPrint('response muelles: ${responseMuelles.length}');
+          debugPrint('productsToInsert: ${productsIterable.length}');
+          debugPrint('allBarcodes: ${allBarcodes.length}');
+          debugPrint('originsIterable: ${originsIterable.length}');
           // Enviar la lista agrupada a insertBatchProducts
           await DataBaseSqlite()
               .insertBatchProducts(productsIterable, 'components');
@@ -265,10 +258,10 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
 
         emit(LoadBatchsSuccesState(listOfBatchs: listOfBatchsByComponents));
       } else {
-        print('Error resBatchs: response is null');
+        debugPrint('Error resBatchs: response is null');
       }
     } catch (e, s) {
-      print('Error LoadAllBatchsEvent: $e, $s');
+      debugPrint('Error LoadAllBatchsEvent: $e, $s');
       emit(BatchsPickingErrorState(e.toString()));
     }
   }
@@ -308,7 +301,7 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
   void _onLoadHistoryBatchsEvent(
       LoadHistoryBatchsEvent event, Emitter<PickingState> emit) async {
     try {
-      print('date: ${event.date}');
+      debugPrint('date: ${event.date}');
       emit(BatchsPickingLoadingState());
 
       final response = await wmsPickingRepository.resBatchsHistory(
@@ -324,10 +317,10 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
 
         emit(LoadHistoryBatchState(listOfBatchs: filtersHistoryBatchs));
       } else {
-        print('Error resHistoryBatchs: response is null');
+        debugPrint('Error resHistoryBatchs: response is null');
       }
     } catch (e, s) {
-      print('Error LoadHistoryBatchsEvent: $e, $s');
+      debugPrint('Error LoadHistoryBatchsEvent: $e, $s');
       emit(BatchsPickingErrorState(e.toString()));
     }
   }
@@ -347,10 +340,10 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
         historyBatchId = response;
         emit(BatchHistoryLoadedState(historyBatchId));
       } else {
-        print('Error resHistoryBatchs: response is null');
+        debugPrint('Error resHistoryBatchs: response is null');
       }
     } catch (e, s) {
-      print('Error LoadHistoryBatchsEvent: $e, $s');
+      debugPrint('Error LoadHistoryBatchsEvent: $e, $s');
       emit(BatchsPickingErrorState(e.toString()));
     }
   }

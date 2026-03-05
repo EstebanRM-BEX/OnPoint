@@ -9,7 +9,6 @@ import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_batch_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/batchs/bloc/recepcion_batch_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class LocationDestRecepBatchScreen extends StatefulWidget {
   const LocationDestRecepBatchScreen(
@@ -317,8 +316,6 @@ class _AppBarInfo extends StatelessWidget {
                           IconButton(
                             icon: const Icon(Icons.arrow_back, color: white),
                             onPressed: () {
-                          
-
                               Navigator.pushReplacementNamed(
                                   context, 'scan-product-reception-batch',
                                   arguments: [ordenCompra, currentProduct]);

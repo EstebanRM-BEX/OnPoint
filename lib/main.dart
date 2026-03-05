@@ -4,7 +4,8 @@ import 'dart:io';
 import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
-import 'package:wms_app/features/picking/presentation/bloc/cluster_picking_bloc.dart';
+import 'package:wms_app/features/picking_cluster/presentation/bloc/cluster_picking/cluster_picking_bloc.dart';
+import 'package:wms_app/features/picking_cluster/presentation/bloc/lote_producto/lote_producto_bloc.dart';
 import 'package:wms_app/firebase_options.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/routes/app_router.dart';
@@ -12,9 +13,7 @@ import 'package:wms_app/src/api/api_request_service.dart';
 import 'package:wms_app/src/api/http_response_handler.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/core/utils/widgets/error_widget.dart';
-import 'package:wms_app/src/presentation/blocs/keyboard/keyboard_bloc.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
-
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
@@ -89,7 +88,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     void logOut() async {
-      print("⏳ Sesión expirada por inactividad.");
+      debugPrint("⏳ Sesión expirada por inactividad.");
       final contextWithProviders = navigatorKey.currentContext;
       if (contextWithProviders != null) {
         PrefUtils.clearPrefs();
@@ -105,7 +104,7 @@ class MyApp extends StatelessWidget {
 
     return GetMaterialApp(
       navigatorKey: navigatorKey,
-      debugShowCheckedModeBanner: true,
+      debugShowCheckedModeBanner: false,
       initialRoute: AppRoutes.checkout,
       routes: AppRoutes.routes,
       supportedLocales: const [Locale('es', 'ES')],
@@ -138,7 +137,6 @@ class MyApp extends StatelessWidget {
             BlocProvider(create: (_) => WMSPickingBloc()),
             BlocProvider(create: (_) => BatchBloc()),
             BlocProvider(create: (_) => WmsPackingBloc()),
-            BlocProvider(create: (_) => KeyboardBloc()),
             BlocProvider(create: (_) => TransferInfoBloc()),
             BlocProvider(
                 create: (context) =>
@@ -152,7 +150,8 @@ class MyApp extends StatelessWidget {
             BlocProvider(create: (_) => CreateTransferBloc()),
             BlocProvider(create: (_) => PackingConsolidateBloc()),
             BlocProvider(create: (_) => getIt<EnterpriseBloc>()),
-            BlocProvider(create: (_) => ClusterPickingBloc()),
+            BlocProvider(create: (_) => getIt<ClusterPickingBloc>()),
+            BlocProvider(create: (_) => getIt<LoteProductoBloc>()),
           ],
           child: SessionTimeoutManager(
             duration: const Duration(minutes: 240),

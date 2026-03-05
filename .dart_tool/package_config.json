@@ -80,6 +80,12 @@
       "languageVersion": "2.14"
     },
     {
+      "name": "bloc_test",
+      "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/bloc_test-10.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.14"
+    },
+    {
       "name": "boolean_selector",
       "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/boolean_selector-2.1.1",
       "packageUri": "lib/",
@@ -164,6 +170,12 @@
       "languageVersion": "2.19"
     },
     {
+      "name": "cli_config",
+      "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/cli_config-0.2.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "cli_util",
       "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/cli_util-0.4.2",
       "packageUri": "lib/",
@@ -202,6 +214,12 @@
     {
       "name": "convert",
       "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/convert-3.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "coverage",
+      "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/coverage-1.15.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
@@ -258,6 +276,12 @@
       "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/device_info_plus_platform_interface-7.0.2",
       "packageUri": "lib/",
       "languageVersion": "2.18"
+    },
+    {
+      "name": "diff_match_patch",
+      "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/diff_match_patch-0.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
     },
     {
       "name": "dots_indicator",
@@ -824,6 +848,12 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "mocktail",
+      "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/mocktail-1.0.4",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "nested",
       "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/nested-1.0.0",
       "packageUri": "lib/",
@@ -832,6 +862,12 @@
     {
       "name": "nm",
       "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/nm-0.5.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "node_preamble",
+      "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/node_preamble-2.0.2",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
@@ -1082,6 +1118,18 @@
       "languageVersion": "2.17"
     },
     {
+      "name": "shelf_packages_handler",
+      "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/shelf_packages_handler-3.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "shelf_static",
+      "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/shelf_static-1.1.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
       "name": "shelf_web_socket",
       "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/shelf_web_socket-2.0.1",
       "packageUri": "lib/",
@@ -1104,6 +1152,18 @@
       "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/source_gen-1.5.0",
       "packageUri": "lib/",
       "languageVersion": "3.0"
+    },
+    {
+      "name": "source_map_stack_trace",
+      "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/source_map_stack_trace-2.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "source_maps",
+      "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/source_maps-0.10.13",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
     },
     {
       "name": "source_span",
@@ -1202,8 +1262,20 @@
       "languageVersion": "2.12"
     },
     {
+      "name": "test",
+      "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/test-1.25.7",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
       "name": "test_api",
       "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/test_api-0.7.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "test_core",
+      "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/test_core-0.6.4",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
@@ -1382,6 +1454,12 @@
       "languageVersion": "2.15"
     },
     {
+      "name": "webkit_inspection_protocol",
+      "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/webkit_inspection_protocol-1.2.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "win32",
       "rootUri": "file:///Users/estebanrodriguezmarles/.pub-cache/hosted/pub.dev/win32-5.10.1",
       "packageUri": "lib/",
@@ -1430,7 +1508,7 @@
       "languageVersion": "3.5"
     }
   ],
-  "generated": "2026-02-15T17:48:19.898145Z",
+  "generated": "2026-02-26T12:56:12.878829Z",
   "generator": "pub",
   "generatorVersion": "3.5.4",
   "flutterRoot": "file:///Users/estebanrodriguezmarles/fvm/versions/3.24.4",

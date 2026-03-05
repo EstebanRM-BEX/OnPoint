@@ -16,3 +16,5 @@ class RegisterDeviceEvent extends UserEvent {
 class LoadUserLocationsEvent extends UserEvent {}
 
 class LoadInfoDeviceEventUser extends LoadUserInfoEvent {}
+
+class LoadUserNoveltiesEvent extends UserEvent {}

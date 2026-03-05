@@ -655,10 +655,11 @@ class Tab1Screen extends StatelessWidget {
                                                   filteredProducts[index];
                                               return GestureDetector(
                                                 onTap: () {
-                                                  print(
+                                                  debugPrint(
                                                       "info paquete: ${package.toMap()}");
-                                                  print("--------------------");
-                                                  print(
+                                                  debugPrint(
+                                                      "--------------------");
+                                                  debugPrint(
                                                       "Producto seleccionado: ${product.toMap()}");
                                                 },
                                                 child: Card(
@@ -947,8 +948,8 @@ class Tab1Screen extends StatelessWidget {
                                                                                 black)), // Parte del texto en color negro (o el color que prefieras)
 
                                                                     TextSpan(
-                                                                      text: (product
-                                                                          .quantity??0.0)
+                                                                      text: (product.quantity ??
+                                                                              0.0)
                                                                           .toString(), // La cantidad en color rojo
                                                                       style: TextStyle(
                                                                           color:

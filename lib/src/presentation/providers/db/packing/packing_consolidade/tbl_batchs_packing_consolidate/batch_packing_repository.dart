@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/packing/packing_consolidade/tbl_batchs_packing_consolidate/batch_table.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/packing_response_model.dart';
@@ -71,7 +72,7 @@ class BatchPackingConsolidateRepository {
         await batch.commit(noResult: true);
       });
     } catch (e) {
-      print("Error insertAllBatchPacking: $e");
+      debugPrint("Error insertAllBatchPacking: $e");
     }
   }
 
@@ -88,7 +89,7 @@ class BatchPackingConsolidateRepository {
 
       return batchs;
     } catch (e, s) {
-      print("Error tblbatchs_packing: $e => $s");
+      debugPrint("Error tblbatchs_packing: $e => $s");
     }
     return [];
   }
@@ -104,11 +105,12 @@ class BatchPackingConsolidateRepository {
           'UPDATE ${BatchPackingConsolidateTable.tableName} SET $field = ? WHERE ${BatchPackingConsolidateTable.columnId} = ?',
           [setValue, batchId]);
 
-      print(
+      debugPrint(
           "setFieldTableBatchPacking: $resUpdate, batchId: $batchId, field: $field, setValue: $setValue");
       return resUpdate;
     } catch (e) {
-      print("Error al actualizar el campo $field en tblbatchs_packing: $e");
+      debugPrint(
+          "Error al actualizar el campo $field en tblbatchs_packing: $e");
       return null;
     }
   }
@@ -122,10 +124,10 @@ class BatchPackingConsolidateRepository {
         where: '${BatchPackingConsolidateTable.columnId} = ?',
         whereArgs: [batchId],
       );
-      print("deleteBatchPackingById: $resDelete, batchId: $batchId");
+      debugPrint("deleteBatchPackingById: $resDelete, batchId: $batchId");
       return resDelete;
     } catch (e) {
-      print("Error al eliminar el batch de packing con id $batchId: $e");
+      debugPrint("Error al eliminar el batch de packing con id $batchId: $e");
       return null;
     }
   }
@@ -137,10 +139,10 @@ class BatchPackingConsolidateRepository {
       final resDelete = await db.delete(
         BatchPackingConsolidateTable.tableName,
       );
-      print("deleteAllBatchPacking: $resDelete");
+      debugPrint("deleteAllBatchPacking: $resDelete");
       return resDelete;
     } catch (e) {
-      print("Error al eliminar todos los batchs de packing: $e");
+      debugPrint("Error al eliminar todos los batchs de packing: $e");
       return null;
     }
   }
@@ -155,10 +157,10 @@ class BatchPackingConsolidateRepository {
           "UPDATE ${BatchPackingConsolidateTable.tableName} SET ${BatchPackingConsolidateTable.columnStartTimePack} = ? WHERE ${BatchPackingConsolidateTable.columnId} = ?",
           [date, batchId]);
 
-      print("startStopwatchBatchPack: $resUpdate");
+      debugPrint("startStopwatchBatchPack: $resUpdate");
       return resUpdate;
     } catch (e) {
-      print(
+      debugPrint(
           "Error al iniciar el cronómetro para el batch en pack: $batchId: $e");
       return null;
     }
@@ -174,10 +176,10 @@ class BatchPackingConsolidateRepository {
           "UPDATE ${BatchPackingConsolidateTable.tableName} SET ${BatchPackingConsolidateTable.columnEndTimePack} = ? WHERE ${BatchPackingConsolidateTable.columnId} = ?",
           [date, batchId]);
 
-      print("stopStopwatchBatchPack: $resUpdate");
+      debugPrint("stopStopwatchBatchPack: $resUpdate");
       return resUpdate;
     } catch (e) {
-      print(
+      debugPrint(
           "Error al detener el cronómetro para el batch en pack: $batchId: $e");
       return null;
     }

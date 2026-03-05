@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
@@ -33,9 +34,9 @@ Future<File?> comprimirImagen(File file, {int maxSizeInMB = 5}) async {
   final compressedFile = await File(targetPath).writeAsBytes(result);
 
   //mostramos el tamaño original del archivo y como quedo comprimido
-  print("Tamaño original: ${file.lengthSync() / (1024 * 1024)} MB");
-  print("Tamaño comprimido: ${compressedFile.lengthSync() / (1024 * 1024)} MB");
+  debugPrint("Tamaño original: ${file.lengthSync() / (1024 * 1024)} MB");
+  debugPrint(
+      "Tamaño comprimido: ${compressedFile.lengthSync() / (1024 * 1024)} MB");
 
   return compressedFile;
 }
-

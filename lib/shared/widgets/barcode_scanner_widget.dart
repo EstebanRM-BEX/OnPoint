@@ -8,7 +8,6 @@ import 'package:wms_app/core/constants/colors.dart';
 /// - **Zebra**: usa un [TextFormField] invisible con teclado oculto y debounce
 ///   interno de 300ms para evitar múltiples disparos por carácter.
 /// - **Otros**: usa un [Focus] que acumula teclas character a character con
-///   [onKeyScanned] y dispara [onBarcodeScanned] al presionar Enter,
 class BarcodeScannerField extends StatefulWidget {
   final TextEditingController controller;
   final FocusNode focusNode;

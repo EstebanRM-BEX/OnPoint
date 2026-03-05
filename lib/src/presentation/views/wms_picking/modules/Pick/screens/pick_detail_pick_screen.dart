@@ -19,7 +19,6 @@ import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiredate_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/widgets/others/dialog_edit_product_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class PickDetailScreen extends StatelessWidget {
   const PickDetailScreen({super.key});
@@ -310,7 +309,7 @@ class PickDetailScreen extends StatelessWidget {
                                 // ✅ SOLUCIÓN 1: Verificación de límites del índice
                                 if (index < 0 ||
                                     index >= bloc.filteredProducts.length) {
-                                  print(
+                                  debugPrint(
                                       '❌ Índice fuera de rango: $index de ${bloc.filteredProducts.length}');
                                   return _buildErrorWidget(
                                       index, bloc.filteredProducts.length);
@@ -322,7 +321,8 @@ class PickDetailScreen extends StatelessWidget {
 
                                 // Verificación adicional por si elementAtOrNull retorna null
                                 if (productsBatch == null) {
-                                  print('❌ Producto nulo en índice: $index');
+                                  debugPrint(
+                                      '❌ Producto nulo en índice: $index');
                                   return _buildErrorWidget(
                                       index, bloc.filteredProducts.length);
                                 }
@@ -332,10 +332,10 @@ class PickDetailScreen extends StatelessWidget {
                                       horizontal: 10, vertical: 5),
                                   child: GestureDetector(
                                     onTap: () async {
-                                      print("----------------");
-                                      print(
+                                      debugPrint("----------------");
+                                      debugPrint(
                                           "product detail info: ${productsBatch.toMap()}");
-                                      print("----------------");
+                                      debugPrint("----------------");
                                     },
                                     child: Card(
                                         elevation: 4,

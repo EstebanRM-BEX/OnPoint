@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously, unrelated_type_equality_checks
 
 import 'package:flutter/material.dart';
@@ -7,8 +10,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
@@ -33,8 +34,8 @@ class TransferInfoScreen extends StatefulWidget {
 
 class _TransferInfoScreenState extends State<TransferInfoScreen>
     with WidgetsBindingObserver {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
 
   @override
   void initState() {
@@ -68,9 +69,9 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
 //focus para escanear
 
   FocusNode focusNode1 = FocusNode(); // ubicacion Dest
+  FocusNode focusNodeCantidad = FocusNode(); // Cantidad
 
   String? selectedLocation;
-  String? selectedMuelle;
 
   //controller
   final TextEditingController _controllerLocationDest = TextEditingController();
@@ -83,7 +84,12 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
   }
 
   void validateMuelle(String value) {
+//VAMOS A VAIDAR QUE LA UBICACION DE DESTINO YA ESTE
     final bloc = context.read<TransferInfoBloc>();
+    if (bloc.selectedLocationDest.id != 0 &&
+        bloc.selectedLocationDest.id != null) {
+      return;
+    }
 
     // ✅ PROTECCIÓN 1: Si la lista de ubicaciones aún no carga, evitamos el CRASH.
     if (bloc.ubicaciones.isEmpty) {
@@ -99,6 +105,8 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
       );
       // Limpiamos el campo para que el usuario pueda intentar de nuevo
       _controllerLocationDest.clear();
+      Future.microtask(() => focusNode1.requestFocus());
+
       return;
     }
 
@@ -120,18 +128,18 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
       ));
 
       Future.microtask(() => focusNode1.requestFocus());
+      _controllerLocationDest.clear();
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      print('Ubicacion no encontrada');
-
+      debugPrint('Ubicacion no encontrada');
       // Feedback visual opcional
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Ubicación de destino no encontrada")),
       );
-
       bloc.add(ValidateFieldsEventTransfer(field: "muelle", isOk: false));
-      // bloc.add(ClearScannedValueEventTransfer('muelle'));
+      _controllerLocationDest.clear();
+
       Future.microtask(() => focusNode1.requestFocus());
     }
   }
@@ -238,7 +246,7 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
     final differenceInSeconds = DateTime.parse(dateEnd)
         .difference(DateTime.parse(dateStarProduct))
         .inSeconds;
-    print("diferencia en segundos $differenceInSeconds");
+    debugPrint("diferencia en segundos $differenceInSeconds");
 
     bloc.add(SendTransferInfo(
         TransferInfoRequest(
@@ -252,12 +260,13 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
         ),
         cantidad));
 
-    print('timeline: $differenceInSeconds');
+    debugPrint('timeline: $differenceInSeconds');
   }
 
   @override
   void dispose() {
     focusNode1.dispose(); //ubicaicon Dest
+    focusNodeCantidad.dispose();
     super.dispose();
   }
 
@@ -322,7 +331,8 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
 
                         if (state is InfoRapidaLoaded) {
                           // ✅ Paso 2: La carga fue exitosa. La navegación es segura.
-                          print('Datos de Info Rápida cargados. Navegando...');
+                          debugPrint(
+                              'Datos de Info Rápida cargados. Navegando...');
                           Navigator.pushReplacementNamed(
                             listenerContext,
                             'product-info',
@@ -662,10 +672,8 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                       ]),
                     ),
                   ),
-                )
+                ),
                 //todo: cantidad
-
-                ,
                 SizedBox(
                   width: size.width,
                   child: Column(
@@ -686,7 +694,7 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                                 children: [
                                   const Text('Disponible:',
                                       style: TextStyle(
-                                          color: Colors.black, fontSize: 13)),
+                                          color: black, fontSize: 13)),
                                   Padding(
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 5),
@@ -698,8 +706,8 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                                   ),
                                   Expanded(
                                     child: Container(
-                                      padding: const EdgeInsets.only(bottom: 5),
-                                      height: 30,
+                                      // padding: const EdgeInsets.only(bottom: 5),
+                                      height: 40,
                                       alignment: Alignment.center,
                                       child: Padding(
                                         padding: const EdgeInsets.symmetric(
@@ -707,7 +715,8 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                                         child: Container(
                                           alignment: Alignment.center,
                                           child: TextFormField(
-                                              enabled: false,
+                                              focusNode: focusNodeCantidad,
+                                              enabled: true,
                                               inputFormatters: [
                                                 FilteringTextInputFormatter
                                                     .allow(RegExp(r'[0-9.,]')),
@@ -720,7 +729,7 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                                                         int.parse(value);
                                                   } catch (e) {
                                                     // Manejo de errores si la conversión falla
-                                                    print(
+                                                    debugPrint(
                                                         'Error al convertir a entero: $e');
                                                     // Aquí puedes mostrar un mensaje al usuario o manejar el error de otra forma
                                                   }
@@ -740,8 +749,31 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                                               keyboardType:
                                                   TextInputType.number,
                                               maxLines: 1,
+                                              //icono de editar
                                               decoration: InputDecoration(
+                                                suffixIcon: IconButton(
+                                                  onPressed: () {
+                                                    if (focusNodeCantidad
+                                                        .hasFocus) {
+                                                      focusNodeCantidad
+                                                          .unfocus();
+                                                    } else {
+                                                      focusNodeCantidad
+                                                          .requestFocus();
+                                                    }
+                                                  },
+                                                  icon: Icon(
+                                                    focusNodeCantidad.hasFocus
+                                                        ? Icons.close
+                                                        : Icons.edit,
+                                                    size: 20,
+                                                    color: primaryColorApp,
+                                                  ),
+                                                ),
                                                 hintText: '0',
+                                                hintMaxLines: 2,
+                                                hintStyle: TextStyle(
+                                                    color: black, fontSize: 13),
                                                 border: InputBorder.none,
                                                 focusedBorder: InputBorder.none,
                                                 enabledBorder: InputBorder.none,

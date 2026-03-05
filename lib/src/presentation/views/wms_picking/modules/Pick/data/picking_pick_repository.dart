@@ -17,7 +17,7 @@ class PickingPickRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponsePickResult(
         code: 500,
         result: [],
@@ -110,7 +110,7 @@ class PickingPickRepository {
       } else {}
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponsePickResult(
         code: 500,
         msg: 'Error de conexión',
@@ -127,7 +127,7 @@ class PickingPickRepository {
         icon: Icon(Icons.check, color: Colors.red),
       );
 
-      print('Error resPicks: $e, $s');
+      debugPrint('Error resPicks: $e, $s');
     }
     return ResponsePickResult(
       code: 500,
@@ -135,12 +135,6 @@ class PickingPickRepository {
       result: [],
     );
   }
-
-
-
-
-
-  
 
   Future<List<ResultPick>> resPicksDone(
     bool isLoadinDialog,
@@ -150,7 +144,7 @@ class PickingPickRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return []; // Si no hay conexión, retornar una lista vacía
     }
 
@@ -232,7 +226,7 @@ class PickingPickRepository {
       } else {}
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return [];
     } catch (e, s) {
       // Manejo de otros errores
@@ -245,10 +239,11 @@ class PickingPickRepository {
         icon: Icon(Icons.check, color: Colors.red),
       );
 
-      print('Error resPicksDone: $e, $s');
+      debugPrint('Error resPicksDone: $e, $s');
     }
     return [];
   }
+
   Future<List<ResultPick>> resPicksComponentsDone(
     bool isLoadinDialog,
     String date,
@@ -257,7 +252,7 @@ class PickingPickRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return []; // Si no hay conexión, retornar una lista vacía
     }
 
@@ -339,7 +334,7 @@ class PickingPickRepository {
       } else {}
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return [];
     } catch (e, s) {
       // Manejo de otros errores
@@ -352,7 +347,7 @@ class PickingPickRepository {
         icon: Icon(Icons.check, color: Colors.red),
       );
 
-      print('Error resPicksDone: $e, $s');
+      debugPrint('Error resPicksDone: $e, $s');
     }
     return [];
   }
@@ -364,7 +359,7 @@ class PickingPickRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponsePickResult(
         code: 500,
         result: [],
@@ -430,12 +425,12 @@ class PickingPickRepository {
               onWillPop: () async => false,
             );
           }
-            return ResponsePickResult(
-              code: jsonResponse['result']['code'],
-              msg: jsonResponse['result']['msg'],
-              result: [],
-              updateVersion: false,
-            );
+          return ResponsePickResult(
+            code: jsonResponse['result']['code'],
+            msg: jsonResponse['result']['msg'],
+            result: [],
+            updateVersion: false,
+          );
         } else if (jsonResponse.containsKey('error')) {
           if (jsonResponse['error']['code'] == 100) {
             Get.defaultDialog(
@@ -471,7 +466,7 @@ class PickingPickRepository {
       } else {}
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponsePickResult(
         code: 500,
         msg: 'Error de conexión',
@@ -489,7 +484,7 @@ class PickingPickRepository {
         icon: Icon(Icons.check, color: Colors.red),
       );
 
-      print('Error resPicks: $e, $s');
+      debugPrint('Error resPicks: $e, $s');
     }
     return ResponsePickResult(
       code: 500,
@@ -508,7 +503,7 @@ class PickingPickRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return RespondePickDoneId(); // Si no hay conexión, retornar una lista vacía
     }
 
@@ -595,7 +590,7 @@ class PickingPickRepository {
       } else {}
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return RespondePickDoneId();
     } catch (e, s) {
       // Manejo de otros errores
@@ -608,7 +603,7 @@ class PickingPickRepository {
         icon: Icon(Icons.check, color: Colors.red),
       );
 
-      print('Error getPickId: $e, $s');
+      debugPrint('Error getPickId: $e, $s');
     }
     return RespondePickDoneId();
   }

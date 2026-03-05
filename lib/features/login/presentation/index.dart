@@ -353,8 +353,6 @@ class _LoginFormState extends State<_LoginForm> {
                             );
                       }
                     } catch (e, s) {
-                      print("Error en login: $e $s");
-
                       // ⚡️ CORRECCIÓN 2: Eliminado Navigator.pop().
                       // No debemos cerrar nada aquí porque el diálogo de carga NUNCA se mostró.
                       // (El diálogo solo se muestra si el evento LoginButtonPressed se dispara y el Bloc emite Loading)

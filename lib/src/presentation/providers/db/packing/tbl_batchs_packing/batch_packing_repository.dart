@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/packing/tbl_batchs_packing/batch_table.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/packing_response_model.dart';
@@ -57,7 +58,7 @@ class BatchPackingRepository {
         await batch.commit(noResult: true);
       });
     } catch (e) {
-      print("Error insertAllBatchPacking: $e");
+      debugPrint("Error insertAllBatchPacking: $e");
     }
   }
 
@@ -74,7 +75,7 @@ class BatchPackingRepository {
 
       return batchs;
     } catch (e, s) {
-      print("Error tblbatchs_packing: $e => $s");
+      debugPrint("Error tblbatchs_packing: $e => $s");
     }
     return [];
   }
@@ -92,7 +93,8 @@ class BatchPackingRepository {
 
       return resUpdate;
     } catch (e) {
-      print("Error al actualizar el campo $field en tblbatchs_packing: $e");
+      debugPrint(
+          "Error al actualizar el campo $field en tblbatchs_packing: $e");
       return null;
     }
   }
@@ -107,10 +109,10 @@ class BatchPackingRepository {
           "UPDATE ${BatchPackingTable.tableName} SET ${BatchPackingTable.columnStartTimePack} = ? WHERE ${BatchPackingTable.columnId} = ?",
           [date, batchId]);
 
-      print("startStopwatchBatchPack: $resUpdate");
+      debugPrint("startStopwatchBatchPack: $resUpdate");
       return resUpdate;
     } catch (e) {
-      print(
+      debugPrint(
           "Error al iniciar el cronómetro para el batch en pack: $batchId: $e");
       return null;
     }

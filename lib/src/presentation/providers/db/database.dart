@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_print, depend_on_referenced_packages, unnecessary_string_interpolations, unnecessary_brace_in_string_interps, unrelated_type_equality_checks, unnecessary_null_comparison, prefer_conditional_assignment
 
+import 'package:flutter/material.dart';
 import 'package:wms_app/src/presentation/providers/db/conteo/tbl_categories_orden_conteo/categories_orden_repository.dart';
 import 'package:wms_app/src/presentation/providers/db/conteo/tbl_categories_orden_conteo/categories_orden_table.dart';
 import 'package:wms_app/src/presentation/providers/db/conteo/tbl_ordenes/orden_repository.dart';
@@ -98,7 +99,7 @@ class DataBaseSqlite {
           // Este tampoco retorna filas
           await db.execute('PRAGMA cache_size = -10000;');
         } catch (e) {
-          print("Error configurando PRAGMA: $e");
+          debugPrint("Error configurando PRAGMA: $e");
         }
       },
       onCreate: _createDB,
@@ -230,34 +231,34 @@ class DataBaseSqlite {
 
     if (oldVersion < 14) {
       //solucion para cuando la version no tiene la tabla de maestra de productos de inventario
-      print('Migrando la base de datos a la versión 14...');
+      debugPrint('Migrando la base de datos a la versión 14...');
       try {
         // Añadir la columna 'category' a la tabla ProductInventarioTable
         await db.execute('''
           ALTER TABLE ${ProductInventarioTable.tableName}
           ADD COLUMN ${ProductInventarioTable.columnCategory} TEXT;
         ''');
-        print(
+        debugPrint(
             '✅ Columna ${ProductInventarioTable.columnCategory} añadida a ${ProductInventarioTable.tableName}.');
       } catch (e) {
-        print(
+        debugPrint(
             '❌ Error al añadir la columna ${ProductInventarioTable.columnCategory}, es posible que ya exista.');
       }
     }
 
     if (oldVersion < 15) {
       //solucion para cuabndo no tebnemos el campo de accessProductionModule en la tabla de configuraciones
-      print('Migrando la base de datos a la versión 15...');
+      debugPrint('Migrando la base de datos a la versión 15...');
       try {
         // Añadir la columna 'access_production_module' a la tabla ConfigurationsTable
         await db.execute('''
           ALTER TABLE ${ConfigurationsTable.tableName}
           ADD COLUMN ${ConfigurationsTable.columnAccessProductionModule} INTEGER;
         ''');
-        print(
+        debugPrint(
             '✅ Columna ${ConfigurationsTable.columnAccessProductionModule} añadida a ${ConfigurationsTable.tableName}.');
       } catch (e) {
-        print(
+        debugPrint(
             '❌ Error al añadir la columna ${ConfigurationsTable.columnAccessProductionModule}, es posible que ya exista.');
       }
     }
@@ -272,7 +273,7 @@ class DataBaseSqlite {
         await db.execute(
             'CREATE INDEX idx_tblUbicaciones_barcode ON tblUbicaciones (barcode);');
 
-        print('Migrando Barcodes: Agregando is_synced e Índices...');
+        debugPrint('Migrando Barcodes: Agregando is_synced e Índices...');
 
         // 1. Agregar columna para sincronización
         await db.execute(
@@ -323,20 +324,20 @@ class DataBaseSqlite {
         await db.execute(
             'CREATE INDEX idx_inv_product_id ON tblproductos_inventario (product_id);');
 
-        print('✅ Optimización de Barcodes completada.');
+        debugPrint('✅ Optimización de Barcodes completada.');
 
-        print('🚀 Migrando Configuraciones: Optimizando...');
+        debugPrint('🚀 Migrando Configuraciones: Optimizando...');
         await db.execute(
             'ALTER TABLE tblconfigurations ADD COLUMN is_synced INTEGER DEFAULT 0;');
         // PK is already an index.
-        print('✅ Optimización Configuraciones completada.');
+        debugPrint('✅ Optimización Configuraciones completada.');
         await db.execute(
             'ALTER TABLE tblnovedades ADD COLUMN is_synced INTEGER DEFAULT 0;');
 
         // Nota: Como 'id' ya es PRIMARY KEY, SQLite crea un índice único interno automáticamente.
         // No necesitamos crear un índice adicional para que funcione el conflicto por ID.
 
-        print('✅ Optimización Novedades completada.');
+        debugPrint('✅ Optimización Novedades completada.');
         // 1. Agregar columna para Mark & Sweep
         await db.execute(
             'ALTER TABLE tblproductos_devolucion ADD COLUMN is_synced INTEGER DEFAULT 0;');
@@ -353,9 +354,10 @@ class DataBaseSqlite {
         await db.execute(
             'CREATE INDEX idx_dev_barcode ON tblproductos_devolucion (barcode);');
 
-        print('✅ Optimización Devoluciones completada.');
+        debugPrint('✅ Optimización Devoluciones completada.');
 
-        print('🚀 Migrando Barcodes: Creando restricción única estricta...');
+        debugPrint(
+            '🚀 Migrando Barcodes: Creando restricción única estricta...');
 
         // 1. Borramos índices viejos si existen para evitar conflictos
         await db.execute('DROP INDEX IF EXISTS idx_unique_barcode_entry;');
@@ -369,9 +371,9 @@ class DataBaseSqlite {
           (batch_id, id_move, id_product, barcode, barcode_type);
         ''');
 
-        print('✅ Restricción de unicidad aplicada correctamente.');
+        debugPrint('✅ Restricción de unicidad aplicada correctamente.');
       } catch (e) {
-        print("Error actualizando UbicacionesTable: $e");
+        debugPrint("Error actualizando UbicacionesTable: $e");
       }
     }
 
@@ -387,7 +389,7 @@ class DataBaseSqlite {
           ADD COLUMN ${PedidoPackTable.columnObservacion} TEXT;
         ''');
       } catch (e) {
-        print("Error actualizando UbicacionesTable: $e");
+        debugPrint("Error actualizando UbicacionesTable: $e");
       }
     }
     if (oldVersion < 18) {
@@ -398,7 +400,7 @@ class DataBaseSqlite {
           ADD COLUMN type TEXT;
         ''');
       } catch (e) {
-        print("Error actualizando tblbatch_products: $e");
+        debugPrint("Error actualizando tblbatch_products: $e");
       }
     }
     if (oldVersion < 19) {
@@ -409,11 +411,11 @@ class DataBaseSqlite {
           ADD COLUMN type TEXT;
         ''');
       } catch (e) {
-        print("Error actualizando tblbatchs: $e");
+        debugPrint("Error actualizando tblbatchs: $e");
       }
     }
 
-    if(oldVersion < 20){
+    if (oldVersion < 20) {
       //añadir campo de allow_move_excess en la tabla de configuraciones
       try {
         await db.execute('''
@@ -421,7 +423,7 @@ class DataBaseSqlite {
           ADD COLUMN allow_move_excess_production INTEGER;
         ''');
       } catch (e) {
-        print("Error actualizando tblconfigurations: $e");
+        debugPrint("Error actualizando tblconfigurations: $e");
       }
     }
   }
@@ -609,7 +611,7 @@ class DataBaseSqlite {
         await batch.commit(noResult: true); // Mejor rendimiento
       });
     } catch (e, s) {
-      print('Error insertBatchProducts: $e => $s');
+      debugPrint('Error insertBatchProducts: $e => $s');
     }
   }
 
@@ -627,7 +629,7 @@ class DataBaseSqlite {
         }
       }
     } catch (e) {
-      print('Error parsing time_separate: $e');
+      debugPrint('Error parsing time_separate: $e');
     }
     return null; // Si no es válido, devuelve null
   }
@@ -681,7 +683,7 @@ class DataBaseSqlite {
 
       return BatchWithProducts(batch: batch, products: products);
     } catch (e, s) {
-      print('Error getBatchWithProducts: $e => $s');
+      debugPrint('Error getBatchWithProducts: $e => $s');
     }
     return null;
   }
@@ -879,28 +881,33 @@ class DataBaseSqlite {
   }
 
   //*metodo para actualizar la tabla de productos de un batch
- Future<int?> setFieldTableBatchProducts(int batchId, int productId,
+  Future<int?> setFieldTableBatchProducts(int batchId, int productId,
       String field, dynamic setValue, int idMove, String type) async {
     final db = await getDatabaseInstance();
-    
+
     // ✅ SOLUCIÓN: Usamos '?' para los valores y pasamos una lista de argumentos.
     // Nota: $field se deja igual porque es el nombre de la columna, no un valor.
     final resUpdate = await db!.rawUpdate(
         'UPDATE tblbatch_products SET $field = ? WHERE batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
-        [setValue, batchId, productId, idMove, type]); // <--- Aquí pasamos la lista
-        
-    print("update tblbatch_products ($field): $resUpdate");
+        [
+          setValue,
+          batchId,
+          productId,
+          idMove,
+          type
+        ]); // <--- Aquí pasamos la lista
+
+    debugPrint("update tblbatch_products ($field): $resUpdate");
 
     return resUpdate;
   }
-
 
   // ✅ 1. Método genérico para actualizar un campo string
   // Usamos db.update para manejar automáticamente los tipos de datos
   Future<int?> setFieldStringTableBatchProducts(int batchId, int productId,
       String field, dynamic setValue, int idMove, String type) async {
     final db = await getDatabaseInstance();
-    
+
     // db.update es mejor que rawUpdate porque maneja las comillas automáticamente
     return await db!.update(
       'tblbatch_products',
@@ -915,7 +922,7 @@ class DataBaseSqlite {
       int batchId, int productId, int moveId, String field, String type) async {
     try {
       final db = await getDatabaseInstance();
-      
+
       final res = await db!.query(
         'tblbatch_products',
         columns: [field],
@@ -929,7 +936,7 @@ class DataBaseSqlite {
       }
       return "";
     } catch (e, s) {
-      print("error getFieldTableProducts: $e => $s");
+      debugPrint("error getFieldTableProducts: $e => $s");
       return "";
     }
   }
@@ -940,7 +947,7 @@ class DataBaseSqlite {
   Future<int?> startStopwatch(
       int batchId, int productId, int moveId, String date, String type) async {
     final db = await getDatabaseInstance();
-    
+
     return await db!.update(
       'tblbatch_products',
       {'time_separate_start': date},
@@ -953,7 +960,7 @@ class DataBaseSqlite {
   Future<int?> totalStopwatchProduct(
       int batchId, int productId, int moveId, double time, String type) async {
     final db = await getDatabaseInstance();
-    
+
     return await db!.update(
       'tblbatch_products',
       {'time_separate': time},
@@ -966,7 +973,7 @@ class DataBaseSqlite {
   Future<int?> endStopwatchProduct(
       int batchId, String date, int productId, int moveId, String type) async {
     final db = await getDatabaseInstance();
-    
+
     return await db!.update(
       'tblbatch_products',
       {'time_separate_end': date},
@@ -979,7 +986,7 @@ class DataBaseSqlite {
   Future<int?> dateTransaccionProduct(
       int batchId, String date, int productId, int moveId, String type) async {
     final db = await getDatabaseInstance();
-    
+
     return await db!.update(
       'tblbatch_products',
       {'fecha_transaccion': date},
@@ -997,7 +1004,7 @@ class DataBaseSqlite {
     String type,
   ) async {
     final db = await getDatabaseInstance();
-    
+
     return await db!.update(
       'tblbatch_products',
       {'observation': novedad},
@@ -1028,7 +1035,9 @@ class DataBaseSqlite {
           'tblbatchs',
           {'product_separate_qty': newQty},
           where: 'id = ?',
-          whereArgs: [batchId], // Aquí type no es estrictamente necesario si ID es único, pero no hace daño
+          whereArgs: [
+            batchId
+          ], // Aquí type no es estrictamente necesario si ID es único, pero no hace daño
         );
       }
       return null;
@@ -1039,7 +1048,7 @@ class DataBaseSqlite {
   Future<int?> incremenQtytProductSeparate(int batchId, int productId,
       int idMove, dynamic quantity, String type) async {
     final db = await getDatabaseInstance();
-    
+
     return await db!.transaction((txn) async {
       final result = await txn.query(
         'tblbatch_products',
@@ -1050,7 +1059,8 @@ class DataBaseSqlite {
 
       if (result.isNotEmpty) {
         // Aseguramos que los números sean tratados como num (int o double)
-        num currentQtySeparate = (result.first['quantity_separate'] as num?) ?? 0;
+        num currentQtySeparate =
+            (result.first['quantity_separate'] as num?) ?? 0;
         num currentQty = (result.first['quantity'] as num?) ?? 0;
 
         num newQtySeparate = currentQtySeparate + (quantity as num);
@@ -1064,7 +1074,7 @@ class DataBaseSqlite {
           'tblbatch_products',
           {'quantity_separate': newQtySeparate},
           where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
-          whereArgs: [batchId, productId, idMove, type], 
+          whereArgs: [batchId, productId, idMove, type],
         );
       }
       return null;
@@ -1103,5 +1113,4 @@ class DataBaseSqlite {
       limit: 1,
     );
   }
-
 }

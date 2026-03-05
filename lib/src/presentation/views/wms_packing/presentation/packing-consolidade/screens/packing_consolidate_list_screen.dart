@@ -64,7 +64,7 @@ class _PackingConsolidateListScreenState
     // Viajamos a la vista de detalle de un pedido
     Navigator.pushReplacementNamed(context, 'packing-consolidate-detail',
         arguments: [pedido, widget.batchModel, 0]);
-    print('Pedido seleccionado: ${pedido.toMap()}');
+    debugPrint('Pedido seleccionado: ${pedido.toMap()}');
   }
 
   @override
@@ -338,7 +338,7 @@ class _PackingConsolidateListScreenState
                           ),
                           onTap: () {
                             // Lógica para navegar o realizar una acción con el pedido
-                            print('Abriendo detalle de: $pedido');
+                            debugPrint('Abriendo detalle de: $pedido');
                           },
                         ),
                       );
@@ -373,7 +373,7 @@ class _PackingConsolidateListScreenState
                           ),
                           onTap: () {
                             // Lógica para navegar o realizar una acción con el pedido
-                            print('Abriendo detalle de: $pedido');
+                            debugPrint('Abriendo detalle de: $pedido');
                           },
                         ),
                       );

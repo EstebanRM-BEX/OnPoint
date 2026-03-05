@@ -10,7 +10,6 @@ import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_
 import 'package:wms_app/src/presentation/views/transferencias/models/response_transferencias.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class LocationDestTransScreen extends StatefulWidget {
   const LocationDestTransScreen({super.key, this.currentProduct});

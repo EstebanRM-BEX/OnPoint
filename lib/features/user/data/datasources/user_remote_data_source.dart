@@ -3,10 +3,12 @@ import 'package:injectable/injectable.dart';
 import '../../../../src/api/api_request_service.dart';
 import '../models/user_configuration_model.dart';
 import '../models/user_location_model.dart';
+import '../models/user_novelty_model.dart';
 
 abstract class UserRemoteDataSource {
   Future<UserConfigurationModel> getUserConfiguration();
   Future<List<UserLocationModel>> getUserLocations();
+  Future<List<UserNoveltyModel>> getNovelties();
   Future<void> registerDevice(String deviceId, String deviceName,
       String deviceModel, String versionApp);
 }
@@ -19,7 +21,6 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
 
   @override
   Future<UserConfigurationModel> getUserConfiguration() async {
-    print("📍getUserConfiguration");
     final response = await apiService.get(
       endpoint: 'configurations',
       isunecodePath: true,
@@ -36,7 +37,6 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
 
   @override
   Future<List<UserLocationModel>> getUserLocations() async {
-    print("📍getUserLocations");
     final response = await apiService.get(
       endpoint: 'ubicaciones',
       isunecodePath: true,
@@ -55,9 +55,27 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   }
 
   @override
+  Future<List<UserNoveltyModel>> getNovelties() async {
+    final response = await apiService.get(
+      endpoint: 'picking_novelties',
+      isunecodePath: true,
+      isLoadinDialog: false,
+    );
+
+    if (response.statusCode < 400) {
+      final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+      if (jsonResponse.containsKey('result') &&
+          jsonResponse['result'] is List) {
+        final List<dynamic> list = jsonResponse['result'];
+        return list.map((e) => UserNoveltyModel.fromJson(e)).toList();
+      }
+    }
+    throw Exception('Failed to load novelties');
+  }
+
+  @override
   Future<void> registerDevice(String deviceId, String deviceName,
       String deviceModel, String versionApp) async {
-    print("📍registerDevice");
     final response = await apiService.postPicking(
       endpoint: 'pda/register',
       body: {

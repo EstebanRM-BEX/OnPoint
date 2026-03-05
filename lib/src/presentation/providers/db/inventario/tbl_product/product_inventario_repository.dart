@@ -1,5 +1,6 @@
 // ignore_for_file: unrelated_type_equality_checks
 
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/product_inventario_table.dart';
@@ -8,7 +9,6 @@ import 'package:wms_app/src/presentation/views/inventario/models/response_produc
 import 'dart:core';
 
 class ProductInventarioRepository {
-  
   // Tamaño del bloque para inserción masiva
   static const int _batchSize = 500;
 
@@ -20,17 +20,15 @@ class ProductInventarioRepository {
 
     Stopwatch stopwatch = Stopwatch();
     stopwatch.start();
-    
+
     try {
       Database db = await DataBaseSqlite().getDatabaseInstance();
 
       await db.transaction((txn) async {
-        
         // PASO 1: MARCA (Resetear flag)
         // Marcamos todo el inventario actual como "no sincronizado"
         await txn.rawUpdate(
-          'UPDATE ${ProductInventarioTable.tableName} SET ${ProductInventarioTable.columnIsSynced} = 0'
-        );
+            'UPDATE ${ProductInventarioTable.tableName} SET ${ProductInventarioTable.columnIsSynced} = 0');
 
         // PASO 2: UPSERT POR LOTES (Chunking)
         for (var i = 0; i < productosList.length; i += _batchSize) {
@@ -57,28 +55,36 @@ class ProductInventarioRepository {
               ProductInventarioTable.columnLotName:
                   producto.lotName == false ? "" : producto.lotName ?? '',
               ProductInventarioTable.columnExpirationDate:
-                  producto.expirationDate == false ? "" : producto.expirationDate ?? '',
+                  producto.expirationDate == false
+                      ? ""
+                      : producto.expirationDate ?? '',
               ProductInventarioTable.columnWeight:
                   producto.weight == false ? 0 : producto.weight ?? 0,
               ProductInventarioTable.columnWeightUomName:
-                  producto.weightUomName == false ? "" : producto.weightUomName ?? '',
+                  producto.weightUomName == false
+                      ? ""
+                      : producto.weightUomName ?? '',
               ProductInventarioTable.columnVolume:
                   producto.volume == false ? 0 : producto.volume ?? 0,
               ProductInventarioTable.columnVolumeUomName:
-                  producto.volumeUomName == false ? "" : producto.volumeUomName ?? '',
+                  producto.volumeUomName == false
+                      ? ""
+                      : producto.volumeUomName ?? '',
               ProductInventarioTable.columnUom:
                   producto.uom == false ? "" : producto.uom ?? '',
               ProductInventarioTable.columnLocationId:
                   producto.locationId == false ? 0 : producto.locationId ?? 0,
               ProductInventarioTable.columnLocationName:
-                  producto.locationName == false ? "" : producto.locationName ?? '',
+                  producto.locationName == false
+                      ? ""
+                      : producto.locationName ?? '',
               ProductInventarioTable.columnQuantity:
                   producto.quantity == false ? 0.0 : producto.quantity ?? 0.0,
               ProductInventarioTable.columnUseExpirationDate:
                   producto.useExpirationDate == true ? 1 : 0,
               ProductInventarioTable.columnCategory:
                   producto.category == false ? "" : producto.category ?? '',
-              
+
               // ✅ Marcamos como sincronizado
               ProductInventarioTable.columnIsSynced: 1,
             };
@@ -102,11 +108,11 @@ class ProductInventarioRepository {
         );
 
         stopwatch.stop();
-        print("📦 Sync Productos Inventario: Procesados ${productosList.length} | Eliminados Obsoletos: $deleted | Tiempo: ${stopwatch.elapsedMilliseconds} ms");
+        debugPrint(
+            "📦 Sync Productos Inventario: Procesados ${productosList.length} | Eliminados Obsoletos: $deleted | Tiempo: ${stopwatch.elapsedMilliseconds} ms");
       });
-
     } catch (e, s) {
-      print("❌ Error al insertar productos en inventario: $e ==> $s");
+      debugPrint("❌ Error al insertar productos en inventario: $e ==> $s");
     }
   }
 
@@ -118,15 +124,16 @@ class ProductInventarioRepository {
     try {
       Database db = await DataBaseSqlite().getDatabaseInstance();
       // Si la lista es gigante, considera poner un LIMIT aqui
-      List<Map<String, dynamic>> maps = await db.query(ProductInventarioTable.tableName);
-      
+      List<Map<String, dynamic>> maps =
+          await db.query(ProductInventarioTable.tableName);
+
       if (maps.isNotEmpty) {
         return maps.map((m) => Product.fromMap(m)).toList();
       } else {
         return [];
       }
     } catch (e, s) {
-      print("Error al obtener productos: $e ==> $s");
+      debugPrint("Error al obtener productos: $e ==> $s");
       return [];
     }
   }
@@ -144,7 +151,7 @@ class ProductInventarioRepository {
 
       return maps.map((map) => Product.fromMap(map)).toList();
     } catch (e, s) {
-      print("Error al obtener productos únicos por ID: $e ==> $s");
+      debugPrint("Error al obtener productos únicos por ID: $e ==> $s");
       return [];
     }
   }
@@ -154,19 +161,19 @@ class ProductInventarioRepository {
       Database db = await DataBaseSqlite().getDatabaseInstance();
       // Esta consulta ahora es INSTANTÁNEA gracias al índice idx_inv_product_id
       List<Map<String, dynamic>> maps = await db.query(
-        ProductInventarioTable.tableName,
-        where: '${ProductInventarioTable.columnProductId} = ?',
-        whereArgs: [productId],
-        limit: 1 // Optimización
-      );
-      
+          ProductInventarioTable.tableName,
+          where: '${ProductInventarioTable.columnProductId} = ?',
+          whereArgs: [productId],
+          limit: 1 // Optimización
+          );
+
       if (maps.isNotEmpty) {
         return Product.fromMap(maps.first);
       } else {
         return null;
       }
     } catch (e, s) {
-      print("Error al obtener producto por id: $e ==> $s");
+      debugPrint("Error al obtener producto por id: $e ==> $s");
       return null;
     }
   }
@@ -183,14 +190,14 @@ class ProductInventarioRepository {
           ProductInventarioTable.columnWeight: product.weight,
           ProductInventarioTable.columnVolume: product.volume,
           // Aseguramos que se mantenga como sincronizado al editar manualmente
-          ProductInventarioTable.columnIsSynced: 1, 
-        },            
+          ProductInventarioTable.columnIsSynced: 1,
+        },
         where: '${ProductInventarioTable.columnProductId} = ?',
         whereArgs: [product.productId],
       );
-      print("Producto actualizado correctamente: ${product.productId}");
+      debugPrint("Producto actualizado correctamente: ${product.productId}");
     } catch (e, s) {
-      print("Error al actualizar producto: $e ==> $s");   
+      debugPrint("Error al actualizar producto: $e ==> $s");
     }
   }
 }

@@ -127,7 +127,7 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager>
 
     // Calculamos y mostramos cuándo expirará la sesión si no hay más actividad
     final expirationTime = DateTime.now().add(widget.duration);
-    print(
+    debugPrint(
         "🔄 Interacción detectada. La sesión expirará a las: ${expirationTime.hour}:${expirationTime.minute}:${expirationTime.second}");
 
     _timer = Timer(widget.duration, () async {
@@ -170,9 +170,9 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager>
     // Usamos la instancia singleton del servicio a través de DI
     try {
       getIt<IWebSocketService>().disconnect();
-      print("🔌 WebSocket cerrado por inactividad.");
+      debugPrint("🔌 WebSocket cerrado por inactividad.");
     } catch (e) {
-      print("⚠️ Error al cerrar socket: $e");
+      debugPrint("⚠️ Error al cerrar socket: $e");
     }
 
     // Ejecutamos tareas en paralelo para optimizar tiempo

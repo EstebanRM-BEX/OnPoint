@@ -8,9 +8,6 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
-
 class Terceroscreen extends StatefulWidget {
   const Terceroscreen({super.key});
 

@@ -79,13 +79,6 @@ class _UpdateAppDialogState extends State<UpdateAppDialog> {
               Center(
                 child: ElevatedButton(
                     onPressed: () async {
-                      print(context
-                          .read<HomeBloc>()
-                          .appVersion
-                          .result
-                          ?.result
-                          ?.urlDownload);
-
                       //abrimos el navegador con la url de descarga
                       await launch(context
                               .read<HomeBloc>()

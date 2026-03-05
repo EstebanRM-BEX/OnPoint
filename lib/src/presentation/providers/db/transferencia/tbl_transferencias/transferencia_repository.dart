@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/transferencia/tbl_transferencias/transferencia_table.dart';
@@ -127,9 +128,7 @@ class TransferenciaRepository {
                     transfer.backorderName ?? '',
                 TransferenciaTable.columnProveedor: transfer.proveedor ?? '',
                 TransferenciaTable.columnShowCheckAvailability:
-                    transfer.showCheckAvailability == true
-                        ? 1
-                        :0,
+                    transfer.showCheckAvailability == true ? 1 : 0,
                 TransferenciaTable.columnType: type,
                 TransferenciaTable.columnCreateBackorder:
                     transfer.createBackorder ?? '',
@@ -141,9 +140,9 @@ class TransferenciaRepository {
         await batch.commit();
       });
 
-      print('Entradas insertadas correctamente');
+      debugPrint('Entradas insertadas correctamente');
     } catch (e, s) {
-      print('Error en insertEntrada: $e ->$s');
+      debugPrint('Error en insertEntrada: $e ->$s');
     }
   }
 
@@ -161,7 +160,7 @@ class TransferenciaRepository {
       }
       return null;
     } catch (e, s) {
-      print('Error en getTransferencias by id: $e ->$s');
+      debugPrint('Error en getTransferencias by id: $e ->$s');
       return null;
     }
   }
@@ -177,7 +176,7 @@ class TransferenciaRepository {
       );
       return entradas.map((e) => ResultTransFerencias.fromMap(e)).toList();
     } catch (e, s) {
-      print('Error en getAllTransferencias: $e ->$s');
+      debugPrint('Error en getAllTransferencias: $e ->$s');
       return [];
     }
   }
@@ -198,7 +197,7 @@ class TransferenciaRepository {
           setValue,
           idTransfer,
         ]);
-    print(
+    debugPrint(
         "update TableTransfer (idTransfer ----($idTransfer)) -------($field): $resUpdate");
 
     return resUpdate;

@@ -49,7 +49,7 @@ class _UserPageState extends State<UserPage> {
           ),
           BlocListener<InventarioBloc, InventarioState>(
             listener: (context, state) {
-              print('state inventario : $state');
+              debugPrint('state inventario : $state');
               if (state is GetProductsLoadingInventory) {
                 showDialog(
                     context: context,
@@ -106,7 +106,7 @@ class _UserPageState extends State<UserPage> {
                   }
                 },
                 builder: (context, state) {
-                  print('state user page: $state');
+                  debugPrint('state user page: $state');
                   if (state is UserLoading) {
                     return DialogLoading(message: 'Cargando...');
                   } else if (state is UserLoaded) {

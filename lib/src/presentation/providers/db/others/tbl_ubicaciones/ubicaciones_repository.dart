@@ -1,14 +1,12 @@
-
-
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/ubicaciones_table.dart';
 
 class UbicacionesRepository {
-  
   // Tamaño del bloque para procesar. 500 es un balance seguro entre velocidad y consumo de RAM.
-  static const int _batchSize = 500; 
+  static const int _batchSize = 500;
 
   /// --------------------------------------------------------------------------
   /// METODO MAESTRO DE SINCRONIZACIÓN (Full Sync)
@@ -23,23 +21,21 @@ class UbicacionesRepository {
 
       // Usamos una transacción exclusiva. Si algo falla, se revierte todo.
       await db.transaction((txn) async {
-        
         // PASO 1: MARCA (Resetear flag)
         // O(1) - Es instantáneo
         await txn.rawUpdate(
-          'UPDATE ${UbicacionesTable.tableName} SET ${UbicacionesTable.columnIsSynced} = 0'
-        );
+            'UPDATE ${UbicacionesTable.tableName} SET ${UbicacionesTable.columnIsSynced} = 0');
 
         // PASO 2: UPSERT POR LOTES (Chunking)
         // Evita saturar la memoria creando 30,000 operaciones en un solo golpe.
         int totalProcesados = 0;
 
         for (var i = 0; i < ubicacionesList.length; i += _batchSize) {
-          final end = (i + _batchSize < ubicacionesList.length) 
-              ? i + _batchSize 
+          final end = (i + _batchSize < ubicacionesList.length)
+              ? i + _batchSize
               : ubicacionesList.length;
           final batchList = ubicacionesList.sublist(i, end);
-          
+
           final batch = txn.batch();
 
           for (var item in batchList) {
@@ -57,13 +53,13 @@ class UbicacionesRepository {
                 UbicacionesTable.columnIdWarehouse: item.idWarehouse,
                 UbicacionesTable.columnWarehouseName: item.warehouseName,
                 // ✅ IMPORTANTE: Marcamos este registro como actualizado
-                UbicacionesTable.columnIsSynced: 1, 
+                UbicacionesTable.columnIsSynced: 1,
               },
               // ✅ LA CLAVE: REPLACE actúa como "Insertar si no existe, Actualizar si existe"
-              conflictAlgorithm: ConflictAlgorithm.replace, 
+              conflictAlgorithm: ConflictAlgorithm.replace,
             );
           }
-          
+
           // Ejecutamos este lote
           await batch.commit(noResult: true);
           totalProcesados += batchList.length;
@@ -77,13 +73,13 @@ class UbicacionesRepository {
           whereArgs: [0],
         );
 
-        print("⚡ Sync Ubicaciones Finalizada: Procesados $totalProcesados | Eliminados (Obsoletos) $deletedCount");
+        debugPrint(
+            "⚡ Sync Ubicaciones Finalizada: Procesados $totalProcesados | Eliminados (Obsoletos) $deletedCount");
       });
-
     } catch (e, s) {
-      print("❌ Error crítico en syncUbicaciones: $e => $s");
+      debugPrint("❌ Error crítico en syncUbicaciones: $e => $s");
       // Opcional: Relanzar error si necesitas manejarlo en la UI
-      // throw e; 
+      // throw e;
     }
   }
 
@@ -108,7 +104,7 @@ class UbicacionesRepository {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     } catch (e) {
-      print("Error insertOrUpdateSingle: $e");
+      debugPrint("Error insertOrUpdateSingle: $e");
     }
   }
 
@@ -120,21 +116,20 @@ class UbicacionesRepository {
   Future<ResultUbicaciones?> getUbicacionByBarcode(String barcode) async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
-      
+
       final List<Map<String, dynamic>> res = await db!.query(
-        UbicacionesTable.tableName,
-        where: '${UbicacionesTable.columnBarcode} = ?',
-        whereArgs: [barcode],
-        limit: 1 // ✅ Optimización: Detener búsqueda al encontrar el primero
-      );
+          UbicacionesTable.tableName,
+          where: '${UbicacionesTable.columnBarcode} = ?',
+          whereArgs: [barcode],
+          limit: 1 // ✅ Optimización: Detener búsqueda al encontrar el primero
+          );
 
       if (res.isNotEmpty) {
         return _mapToModel(res.first);
       }
       return null;
-
     } catch (e) {
-      print("Error getUbicacionByBarcode: $e");
+      debugPrint("Error getUbicacionByBarcode: $e");
       return null;
     }
   }
@@ -143,11 +138,12 @@ class UbicacionesRepository {
   Future<List<ResultUbicaciones>> getAllUbicaciones() async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
-      final List<Map<String, dynamic>> maps = await db!.query(UbicacionesTable.tableName);
+      final List<Map<String, dynamic>> maps =
+          await db!.query(UbicacionesTable.tableName);
 
       return maps.map((map) => _mapToModel(map)).toList();
     } catch (e) {
-      print("Error getAllUbicaciones: $e");
+      debugPrint("Error getAllUbicaciones: $e");
       return [];
     }
   }

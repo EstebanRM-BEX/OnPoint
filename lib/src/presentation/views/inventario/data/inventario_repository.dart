@@ -26,7 +26,7 @@ class InventarioRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return SendImgProduct(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -65,15 +65,16 @@ class InventarioRepository {
         }
       } else {
         // Manejo de error si la respuesta no es exitosa
-        print('Error al enviar la imagen del producto: ${response.statusCode}');
+        debugPrint(
+            'Error al enviar la imagen del producto: ${response.statusCode}');
         return SendImgProduct(); // Retornamos un objeto vacío en caso de error
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return SendImgProduct(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendImageProduct: $e, $s');
+      debugPrint('Error en sendImageProduct: $e, $s');
       return SendImgProduct(); // Retornamos un objeto vacío en caso de error de red
     }
   }
@@ -86,7 +87,7 @@ class InventarioRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ViewUrlImgProduct(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -125,15 +126,16 @@ class InventarioRepository {
         }
       } else {
         // Manejo de error si la respuesta no es exitosa
-        print('Error al enviar la imagen del producto: ${response.statusCode}');
+        debugPrint(
+            'Error al enviar la imagen del producto: ${response.statusCode}');
         return ViewUrlImgProduct(); // Retornamos un objeto vacío en caso de error
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ViewUrlImgProduct(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendImageProduct: $e, $s');
+      debugPrint('Error en sendImageProduct: $e, $s');
       return ViewUrlImgProduct(); // Retornamos un objeto vacío en caso de error de red
     }
   }
@@ -145,7 +147,7 @@ class InventarioRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return []; // Si no hay conexión, retornar una lista vacía
     }
 
@@ -196,11 +198,11 @@ class InventarioRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return [];
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error getProductosInventario: $e, $s');
+      debugPrint('Error getProductosInventario: $e, $s');
     }
     return [];
   }
@@ -211,7 +213,7 @@ class InventarioRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return []; // Si no hay conexión, retornar una lista vacía
     }
 
@@ -266,11 +268,11 @@ class InventarioRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return [];
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error lotes de un producto: $e, $s');
+      debugPrint('Error lotes de un producto: $e, $s');
     }
     return [];
   }
@@ -281,12 +283,12 @@ class InventarioRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseSendProduct();
     }
 
     try {
-      print(request.toMap());
+      debugPrint(request.toMap().toString());
 
       var response = await ApiRequestService().postInventario(
           endpoint: 'quant_post',
@@ -338,7 +340,7 @@ class InventarioRepository {
       }
       return ResponseSendProduct();
     } catch (e, s) {
-      print("Error en el senProduct inventario : $e =>$s");
+      debugPrint("Error en el senProduct inventario : $e =>$s");
       return ResponseSendProduct();
     }
   }
@@ -353,7 +355,7 @@ class InventarioRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseNewLote(); // Si no hay conexión, retornar una lista vacía
     }
 
@@ -424,11 +426,11 @@ class InventarioRepository {
         }
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseNewLote();
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error resBatchsPacking: $e, $s');
+      debugPrint('Error resBatchsPacking: $e, $s');
     }
     return ResponseNewLote();
   }

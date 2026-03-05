@@ -153,13 +153,14 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       allBarcodeInventario.clear();
       if (response.isNotEmpty) {
         allBarcodeInventario = response;
-        print('Total de códigos de barras: ${allBarcodeInventario.length}');
+        debugPrint(
+            'Total de códigos de barras: ${allBarcodeInventario.length}');
         emit(FetchAllBarcodesSuccess(allBarcodeInventario));
       } else {
         emit(FetchAllBarcodesFailure('No se encontraron códigos de barras'));
       }
     } catch (e, s) {
-      print("❌ Error en _onFetchAllBarcodesInventarioEvent: $e, $s");
+      debugPrint("❌ Error en _onFetchAllBarcodesInventarioEvent: $e, $s");
       emit(FetchAllBarcodesFailure('Error al obtener los códigos de barras'));
     }
   }
@@ -179,7 +180,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
         emit(ConfigurationError('Error al cargar LoadConfigurationsUser'));
       }
     } catch (e, s) {
-      print('❌ Error en LoadConfigurationsUser $e =>$s');
+      debugPrint('❌ Error en LoadConfigurationsUser $e =>$s');
     }
   }
 
@@ -244,7 +245,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
             'Error desconocido al enviar la devolución'));
       }
     } catch (e, s) {
-      print("❌ Error en _onSendDevolucionEvent: $e, $s");
+      debugPrint("❌ Error en _onSendDevolucionEvent: $e, $s");
       emit(SendDevolucionFailure('Error al enviar la devolución'));
     }
   }
@@ -266,7 +267,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       }
       emit(SearchProductSuccess(productosFilters));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -305,7 +306,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       await db.devolucionRepository.deleteAllProductosDevoluciones();
       emit(ClearValueState());
     } catch (e, s) {
-      print("❌ Error en _onClearScannedValueEvent: $e, $s");
+      debugPrint("❌ Error en _onClearScannedValueEvent: $e, $s");
     }
   }
 
@@ -326,7 +327,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       }
     } catch (e, s) {
       emit(GetLotesProductFailure('Error al obtener los lotes del producto'));
-      print('Error en el _onGetLotesProduct: $e, $s');
+      debugPrint('Error en el _onGetLotesProduct: $e, $s');
     }
   }
 
@@ -375,7 +376,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       }
     } catch (e, s) {
       emit(CreateLoteProductFailure('Error al crear el lote'));
-      print('Error en el _onCreateLoteProduct: $e, $s');
+      debugPrint('Error en el _onCreateLoteProduct: $e, $s');
     }
   }
 
@@ -395,7 +396,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       }
       emit(SearchLoteSuccess(listLotesProductFilters));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -408,7 +409,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     newLoteController.clear();
     searchControllerLote.clear();
 
-    print('Lote seleccionado: ${lotesProductCurrent.toMap()}');
+    debugPrint('Lote seleccionado: ${lotesProductCurrent.toMap()}');
     emit(SelectecLoteState(lotesProductCurrent));
   }
 
@@ -420,10 +421,10 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       searchControllerLocationDest.clear();
       scannedValue3 = '';
       locationIsOk = true;
-      print('Ubicación seleccionada: ${currentLocation.toMap()}');
+      debugPrint('Ubicación seleccionada: ${currentLocation.toMap()}');
       emit(SelectLocationState(currentLocation));
     } catch (e, s) {
-      print("❌ Error en _onSelectLocationEvent: $e, $s");
+      debugPrint("❌ Error en _onSelectLocationEvent: $e, $s");
     }
   }
 
@@ -431,7 +432,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   void _onFilterUbicacionesEvent(
       FilterUbicacionesEvent event, Emitter<DevolucionesState> emit) {
     try {
-      print('Filtrando ubicaciones por almacen: ${event.almacen}');
+      debugPrint('Filtrando ubicaciones por almacen: ${event.almacen}');
       emit(FilterLocationsLoading());
       selectedAlmacen = '';
       ubicacionesFilters = [];
@@ -447,7 +448,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       }
       emit(FilterLocationsSuccess(ubicacionesFilters));
     } catch (e, s) {
-      print('Error en el FilterUbicacionesEvent: $e, $s');
+      debugPrint('Error en el FilterUbicacionesEvent: $e, $s');
       emit(FilterLocationsFailure(e.toString()));
     }
   }
@@ -469,7 +470,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       }
       emit(SearchLocationSuccess(ubicacionesFilters));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -484,14 +485,14 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       if (response.isNotEmpty) {
         ubicaciones = response;
         ubicacionesFilters = response;
-        print('ubicaciones length: ${ubicaciones.length}');
+        debugPrint('ubicaciones length: ${ubicaciones.length}');
         emit(LoadLocationsSuccessState(ubicaciones));
       } else {
         emit(LoadLocationsFailureState('No se encontraron ubicaciones'));
       }
     } catch (e, s) {
       emit(LoadLocationsFailureState('Error al cargar las ubicaciones'));
-      print('Error en el fetch de ubicaciones: $e=>$s');
+      debugPrint('Error en el fetch de ubicaciones: $e=>$s');
     }
   }
 
@@ -514,7 +515,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       }
       emit(SearchTerceroSuccess(tercerosFilters));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -527,10 +528,10 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       contactoIsOk = true;
       productIsOk = true;
       scannedValue4 = '';
-      print('Tercero seleccionado: ${currentTercero.toMap()}');
+      debugPrint('Tercero seleccionado: ${currentTercero.toMap()}');
       emit(SelectTerceroState(currentTercero));
     } catch (e, s) {
-      print("❌ Error en _onSelectTerceroEvent: $e, $s");
+      debugPrint("❌ Error en _onSelectTerceroEvent: $e, $s");
     }
   }
 
@@ -548,7 +549,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
         emit(LoadTercerosFailure('No se encontraron terceros'));
       }
     } catch (e, s) {
-      print("❌ Error en _onLoadTercerosEvent: $e, $s");
+      debugPrint("❌ Error en _onLoadTercerosEvent: $e, $s");
       emit(LoadTercerosFailure('Error al cargar los terceros'));
     }
   }
@@ -619,7 +620,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
       emit(UpdateProductInfoState());
     } catch (e, s) {
-      print("❌ Error en _onUpdateProductInfoEvent: $e, $s");
+      debugPrint("❌ Error en _onUpdateProductInfoEvent: $e, $s");
     }
   }
 
@@ -637,10 +638,10 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
         );
         add(GetLotesProduct());
       }
-      print('Producto actual cargado: ${currentProduct.toMap()}');
+      debugPrint('Producto actual cargado: ${currentProduct.toMap()}');
       emit(LoadCurrentProductState(currentProduct));
     } catch (e, s) {
-      print("❌ Error en _onLoaadCurrentProductEvent: $e, $s");
+      debugPrint("❌ Error en _onLoaadCurrentProductEvent: $e, $s");
     }
   }
 
@@ -651,14 +652,14 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       viewQuantity = !viewQuantity;
       emit(ShowQuantityState(viewQuantity));
     } catch (e, s) {
-      print("❌ Error en _onShowQuantityEvent: $e, $s");
+      debugPrint("❌ Error en _onShowQuantityEvent: $e, $s");
     }
   }
 
   void _onSetQuantityEvent(
       SetQuantityEvent event, Emitter<DevolucionesState> emit) {
     quantitySelected += 1;
-    print('Cantidad seleccionada: $quantitySelected');
+    debugPrint('Cantidad seleccionada: $quantitySelected');
     emit(SetQuantityState());
   }
 
@@ -671,7 +672,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     if (productosDevolucion.any((p) =>
         p.productId == event.product.productId &&
         p.lotId == event.product.lotId)) {
-      print('❌ El producto ya está en la lista de devoluciones');
+      debugPrint('❌ El producto ya está en la lista de devoluciones');
       emit(AddProductFailure(
           'El producto ${event.product.name} ${event.product.tracking == 'lot' ? ' con lote ${event.product.lotName}' : ''} ya está en la lista de devoluciones. Para agregar el mismo producto con el mismo lote  debe realizarlo desde la opción de editar'));
       return;
@@ -680,7 +681,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
       await db.devolucionRepository.insertProductoDevolucion(event.product);
       productosDevolucion.add(event.product);
-      print('Producto añadido: ${event.product.toMap()}');
+      debugPrint('Producto añadido: ${event.product.toMap()}');
       emit(AddProductSuccess(event.product));
     }
   }
@@ -694,17 +695,17 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
           p.productId == event.product.productId &&
           p.lotId == event.product.lotId);
       //eliminamos el producto de la base de datos
-      print('Producto eliminado: ${event.product.toMap()}');
+      debugPrint('Producto eliminado: ${event.product.toMap()}');
       emit(RemoveProductSuccess());
     } catch (e, s) {
-      print("❌ Error en _onRemoveProductEvent: $e, $s");
+      debugPrint("❌ Error en _onRemoveProductEvent: $e, $s");
     }
   }
 
   void _onGetProductEvent(
       GetProductEvent event, Emitter<DevolucionesState> emit) {
     if (isDialogVisible) {
-      print('Dialogo ya visible, no se puede buscar otro producto');
+      debugPrint('Dialogo ya visible, no se puede buscar otro producto');
       return;
     }
 
@@ -722,7 +723,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
         return;
       }
 
-      print('Producto encontrado: ${product.toMap()}');
+      debugPrint('Producto encontrado: ${product.toMap()}');
 
       // Obtener todos los productos en devolución con el mismo productId
       final productosRelacionados = productosDevolucion
@@ -754,10 +755,10 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
         orElse: () => Product(),
       );
 
-      print('Producto encontrado:: ${matchedProduct.toMap()}');
+      debugPrint('Producto encontrado:: ${matchedProduct.toMap()}');
 
       if (matchedProduct.barcode == null) {
-        print('❌ Producto no encontrado por codigo principal');
+        debugPrint('❌ Producto no encontrado por codigo principal');
         // Buscar en barcodes adicionales
         final matchedBarcode = allBarcodeInventario.firstWhere(
           (b) => b.barcode?.toLowerCase() == event.barcode,
@@ -765,11 +766,12 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
         );
 
         if (matchedBarcode.barcode == null) {
-          print('❌ Producto no encontrado en barcodes');
+          debugPrint('❌ Producto no encontrado en barcodes');
           emit(GetProductFailure('Producto no encontrado'));
           return;
         }
-        print('✅ Producto encontrado en barcodes: ${matchedBarcode.toMap()}');
+        debugPrint(
+            '✅ Producto encontrado en barcodes: ${matchedBarcode.toMap()}');
         //se encontro un producto con los demas barcodes
         // Buscar producto por id relacionado al barcode encontrado
         final matchedById = productos.firstWhere(
@@ -778,7 +780,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
         );
 
         if (matchedById.productId != null) {
-          print('✅ Producto encontrado por ID: ${matchedById.name}');
+          debugPrint('✅ Producto encontrado por ID: ${matchedById.name}');
 
           final productosRelacionados = productosDevolucion
               .where((p) => p.productId == matchedById.productId)
@@ -801,14 +803,14 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
           emit(GetProductSuccess(currentProduct, true));
           return;
         } else {
-          print('❌ Producto no encontrado por ID');
-          print('❌ Producto no encontrado en barcodes');
+          debugPrint('❌ Producto no encontrado por ID');
+          debugPrint('❌ Producto no encontrado en barcodes');
           emit(GetProductFailure('Producto no encontrado'));
           return;
         }
       }
 
-      print('Producto encontrado: ${matchedProduct.toMap()}');
+      debugPrint('Producto encontrado: ${matchedProduct.toMap()}');
       // Obtener todos los productos en devolución con el mismo productId
       final productosRelacionados = productosDevolucion
           .where((p) => p.productId == matchedProduct.productId)
@@ -841,7 +843,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
           await db.productoInventarioRepository.getAllUniqueProducts();
       productos.clear();
       productosFilters.clear();
-      print('productos: ${response.length}');
+      debugPrint('productos: ${response.length}');
       if (response.isNotEmpty) {
         productos = response;
         productosFilters = productos;
@@ -849,7 +851,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
         productosDevolucion =
             await db.devolucionRepository.getAllProductosDevoluciones();
 
-        print('productosDevolucion: ${productosDevolucion.length}');
+        debugPrint('productosDevolucion: ${productosDevolucion.length}');
 
         emit(GetProductsSuccess(response));
       } else {
@@ -857,7 +859,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       }
     } catch (e, s) {
       emit(GetProductsFailure('Error al cargar los productos'));
-      print('Error en el fetch de productos: $e=>$s');
+      debugPrint('Error en el fetch de productos: $e=>$s');
     }
   }
 }

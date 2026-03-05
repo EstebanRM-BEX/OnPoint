@@ -14,7 +14,6 @@ import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_respon
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 import 'package:intl/intl.dart'; // Importamos el paquete intl
 
@@ -69,7 +68,7 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                       width: double.infinity,
                       child: BlocConsumer<RecepcionBloc, RecepcionState>(
                           listener: (context, state) {
-                        print('STATE ❤️‍🔥 $state');
+                        debugPrint('STATE ❤️‍🔥 $state');
 
                         if (state is CreateLoteProductSuccess) {
                           Navigator.pop(context);

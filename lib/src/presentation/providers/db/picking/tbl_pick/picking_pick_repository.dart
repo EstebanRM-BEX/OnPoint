@@ -1,5 +1,6 @@
 // ignore_for_file: unrelated_type_equality_checks
 
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/picking/tbl_pick/picking_pick_table.dart';
@@ -166,7 +167,7 @@ class PickingPickRepository {
       // Mapeo directo
       return maps.map((map) => ResultPick.fromMap(map)).toList();
     } catch (e, s) {
-      print("Error getAllPickingPicks: $e => $s");
+      debugPrint("Error getAllPickingPicks: $e => $s");
       return [];
     }
   }
@@ -180,11 +181,11 @@ class PickingPickRepository {
       final resUpdate = await db.rawUpdate(
           'UPDATE ${PickingPickTable.tableName} SET $field = ? WHERE ${PickingPickTable.columnId} = ?',
           [setValue, batchId]);
-      print(
+      debugPrint(
           'Se actualizó el campo $field en ${PickingPickTable.tableName} con valor $setValue para el ID $batchId');
       return resUpdate;
     } catch (e) {
-      print(
+      debugPrint(
           "Error al actualizar el campo $field en ${PickingPickTable.tableName}: $e");
       return null;
     }
@@ -210,7 +211,7 @@ class PickingPickRepository {
       // Si no se encontró ningún registro, devuelve null
       return null;
     } catch (e) {
-      print("Error al obtener el pick por ID: $e");
+      debugPrint("Error al obtener el pick por ID: $e");
       return null; // Devuelve null en caso de error
     }
   }
@@ -224,11 +225,11 @@ class PickingPickRepository {
         where: '${PickingPickTable.columnId} = ?',
         whereArgs: [pickId],
       );
-      print(
+      debugPrint(
           'Se eliminaron $rowsDeleted registros con ID $pickId en picking pick');
       return rowsDeleted;
     } catch (e) {
-      print("Error al eliminar el pick por ID: $e");
+      debugPrint("Error al eliminar el pick por ID: $e");
       return 0; // Devuelve 0 en caso de error
     }
   }

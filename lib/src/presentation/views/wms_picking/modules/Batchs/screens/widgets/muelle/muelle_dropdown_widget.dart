@@ -83,7 +83,7 @@ class _MuelleDropdownWidgetState extends State<MuelleDropdownWidget> {
                         !widget.batchBloc.locationDestIsOk &&
                         widget.batchBloc.productIsOk
                     ? (String? newValue) {
-                        print("Muelle seleccionado: $newValue");
+                        debugPrint("Muelle seleccionado: $newValue");
                         if (widget.batchBloc.configurations.result?.result
                                     ?.muelleOption ==
                                 "multiple"

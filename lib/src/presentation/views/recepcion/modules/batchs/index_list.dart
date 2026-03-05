@@ -364,7 +364,7 @@ class ListRecepctionBatchScreen extends StatelessWidget {
                                           bloc.add(
                                               LoadConfigurationsUserReception());
 
-                                          print(
+                                          debugPrint(
                                               'ordenCompra: ${recepcionBatch[index].toMap()}');
                                           //validamos si tiene responsable
 

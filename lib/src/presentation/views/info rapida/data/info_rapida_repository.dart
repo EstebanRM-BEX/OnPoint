@@ -19,7 +19,7 @@ class InfoRapidaRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return InfoRapida(); // Si no hay conexión, retornar una lista vacía
     }
 
@@ -30,7 +30,7 @@ class InfoRapidaRepository {
 
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
 
-      print("barcode $barcode");
+      debugPrint("barcode $barcode");
       var response = await ApiRequestService().getInfo(
         endpoint: 'transferencias/quickinfo',
         body: {
@@ -127,7 +127,7 @@ class InfoRapidaRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return InfoRapida(
           result: InfoRapidaResult(
               code: 500,
@@ -136,7 +136,7 @@ class InfoRapidaRepository {
               updateVersion: false));
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error getInfoQuick: $e, $s');
+      debugPrint('Error getInfoQuick: $e, $s');
     }
     return InfoRapida(
         result: InfoRapidaResult(
@@ -152,12 +152,12 @@ class InfoRapidaRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return InfoRapida(); // Si no hay conexión, retornar una lista vacía
     }
 
     try {
-      print("id $id");
+      debugPrint("id $id");
       //obtenemos la mac o el device id del dispositivo
       final mac = await PrefUtils.getMacPDA();
       final imei = await PrefUtils.getImeiPDA();
@@ -249,11 +249,11 @@ class InfoRapidaRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return InfoRapida();
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error getInfoQuick: $e, $s');
+      debugPrint('Error getInfoQuick: $e, $s');
     }
     return InfoRapida();
   }
@@ -267,11 +267,11 @@ class InfoRapidaRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return SendTransferResponse(); // Si no hay conexión, terminamos la ejecución
     }
 
-    print("transferRequest ${transferInfoRequest.toMap()}");
+    debugPrint("transferRequest ${transferInfoRequest.toMap()}");
 
     try {
       var response = await ApiRequestService().postPacking(
@@ -312,15 +312,15 @@ class InfoRapidaRepository {
         );
       } else {
         // Manejo de error si la respuesta no es exitosa
-        print("Error en la respuesta: ${response.statusCode}");
+        debugPrint("Error en la respuesta: ${response.statusCode}");
         return SendTransferResponse(); // Retornamos un objeto vacío en caso de error
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return SendTransferResponse(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendProductTransferInfo: $e, $s');
+      debugPrint('Error en sendProductTransferInfo: $e, $s');
       return SendTransferResponse(); // Retornamos un objeto vacío en caso de error de red
     }
   }
@@ -333,11 +333,11 @@ class InfoRapidaRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return InfoRapida(); // Si no hay conexión, terminamos la ejecución
     }
 
-    print("request ${request.toMap()}");
+    debugPrint("request ${request.toMap()}");
 
     try {
       var response = await ApiRequestService().postPacking(
@@ -394,11 +394,11 @@ class InfoRapidaRepository {
       } else {}
       return InfoRapida();
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return InfoRapida(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en updateProduct: $e, $s');
+      debugPrint('Error en updateProduct: $e, $s');
       return InfoRapida(); // Retornamos un objeto vacío en caso de error de red
     }
   }
@@ -413,7 +413,7 @@ class InfoRapidaRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return InfoRapida(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -468,11 +468,11 @@ class InfoRapidaRepository {
       } else {}
       return InfoRapida();
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return InfoRapida(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en updateProduct: $e, $s');
+      debugPrint('Error en updateProduct: $e, $s');
       return InfoRapida(); // Retornamos un objeto vacío en caso de error de red
     }
   }

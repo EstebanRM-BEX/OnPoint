@@ -72,7 +72,7 @@ class _NewLoteScreenState extends State<NewLoteRecepBatchScreen> {
                       child:
                           BlocConsumer<RecepcionBatchBloc, RecepcionBatchState>(
                               listener: (context, state) {
-                        print('STATE ❤️‍🔥 $state');
+                        debugPrint('STATE ❤️‍🔥 $state');
 
                         if (state is CreateLoteProductSuccess) {
                           Navigator.pop(context);

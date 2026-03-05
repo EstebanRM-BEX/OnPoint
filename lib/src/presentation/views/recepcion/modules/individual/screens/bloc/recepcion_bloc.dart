@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
+import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
@@ -226,7 +226,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   void _onViewProductImageEvent(
       ViewProductImageEvent event, Emitter<RecepcionState> emit) async {
     try {
-      print('Obteniendo imagen del producto con ID: ${event.idProduct}');
+      debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
       final response =
@@ -244,14 +244,14 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         emit(ViewProductImageFailure('Imagen no disponible'));
       }
     } catch (e, s) {
-      print('Error en el ViewProductImageEvent: $e, $s');
+      debugPrint('Error en el ViewProductImageEvent: $e, $s');
       emit(ViewProductImageFailure(e.toString()));
     }
   }
 
   void _onToggleProductExpansionEvent(
       ToggleProductExpansionEvent event, Emitter<RecepcionState> emit) {
-    print('isExpanded: $isExpanded');
+    debugPrint('isExpanded: $isExpanded');
     isExpanded = event.isExpanded;
     emit(ProductExpansionToggled(isExpanded));
   }
@@ -285,7 +285,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
             response.msg ?? 'Error al enviar la imagen'));
       }
     } catch (e, s) {
-      print('Error en el _onSendImageNovedad: $e, $s');
+      debugPrint('Error en el _onSendImageNovedad: $e, $s');
       emit(SendImageNovedadFailure('Ocurrió un error al enviar la imagen'));
     }
   }
@@ -317,7 +317,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       }
     } catch (e, s) {
       emit(DelectedProductWmsFailure('Error al eliminar el producto'));
-      print('Error en _onDelectedProductWmsEvent: $e, $s');
+      debugPrint('Error en _onDelectedProductWmsEvent: $e, $s');
     }
   }
 
@@ -347,7 +347,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       emit(SearchDevolucionSuccess(listFiltersDevolutions));
     } catch (e, s) {
       emit(SearchDevolucionFailure('Error al buscar la orden de compra'));
-      print('Error en el _onSearchPedidoEvent: $e, $s');
+      debugPrint('Error en el _onSearchPedidoEvent: $e, $s');
     }
   }
 
@@ -370,7 +370,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     } catch (e, s) {
       emit(
           FetchDevolucionesFailureDB('Error al obtener las ordenes de compra'));
-      print('Error en el _onFetchOrdenesCompraOfBd: $e, $s');
+      debugPrint('Error en el _onFetchOrdenesCompraOfBd: $e, $s');
     }
   }
 
@@ -415,10 +415,10 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
           await db.barcodesPackagesRepository
               .insertOrUpdateBarcodes(allBarcodes, 'dev');
 
-          print("listRecepcion: ${listRecepcion.length}");
-          print("productsToInsert: ${productsToInsert.length}");
-          print('productsSedToInsert : ${productsSedToInsert.length}');
-          print("allBarcodes: ${allBarcodes.length}");
+          debugPrint("listRecepcion: ${listRecepcion.length}");
+          debugPrint("productsToInsert: ${productsToInsert.length}");
+          debugPrint('productsSedToInsert : ${productsSedToInsert.length}');
+          debugPrint("allBarcodes: ${allBarcodes.length}");
 
           add(FetchDevolucionesOfDB());
           emit(FetchDevolucionesSuccess(
@@ -438,7 +438,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         emit(FetchDevolucionesFailure(response.result?.msg ?? ''));
       }
     } catch (e, s) {
-      print('Error en RecepcionBloc: $e, $s');
+      debugPrint('Error en RecepcionBloc: $e, $s');
     }
   }
 
@@ -462,7 +462,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         return;
       }
     } catch (e, s) {
-      print('Error en el _onSendTemperatureEvent: $e, $s');
+      debugPrint('Error en el _onSendTemperatureEvent: $e, $s');
       emit(GetTemperatureFailure(
           'Ocurrió un error al procesar la imagen y obtener la temperatura'));
     }
@@ -482,7 +482,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         return;
       }
 
-      print('currentProduct: ${currentProduct.toMap()}');
+      debugPrint('currentProduct: ${currentProduct.toMap()}');
 
       //enviamos la temperatura con la imagen
       final response = await _recepcionRepository.sendTemperature(
@@ -524,7 +524,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         return;
       }
     } catch (e, s) {
-      print('Error en el _onSendTemperatureEvent: $e, $s');
+      debugPrint('Error en el _onSendTemperatureEvent: $e, $s');
       emit(SendTemperatureFailure(
           'Ocurrió un error al procesar la imagen y obtener la temperatura'));
     }
@@ -537,7 +537,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     try {
       emit(SendTemperatureLoading());
 
-      print('currentProduct: ${currentProduct.toMap()}');
+      debugPrint('currentProduct: ${currentProduct.toMap()}');
 
       //enviamos la temperatura con la imagen
       final response = await _recepcionRepository.sendTemperatureManual(
@@ -570,7 +570,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         return;
       }
     } catch (e, s) {
-      print('Error en el _onSendTemperatureEvent: $e, $s');
+      debugPrint('Error en el _onSendTemperatureEvent: $e, $s');
       emit(SendTemperatureFailure(
           'Ocurrió un error al procesar la imagen y obtener la temperatura'));
     }
@@ -594,7 +594,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       }
       emit(FilterUbicacionesSuccess(ubicacionesFilters));
     } catch (e, s) {
-      print('Error en el FilterUbicacionesEvent: $e, $s');
+      debugPrint('Error en el FilterUbicacionesEvent: $e, $s');
       emit(FilterUbicacionesFailure(e.toString()));
     }
   }
@@ -641,7 +641,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       emit(FilterReceptionByTypeSuccess(listFiltersOrdenesCompra));
     } catch (e, s) {
       emit(FilterReceptionByTypeFailure('Error al filtrar las transferencias'));
-      print('Error en el _onFilterTransferByTypeEvent: $e, $s');
+      debugPrint('Error en el _onFilterTransferByTypeEvent: $e, $s');
     }
   }
 
@@ -668,7 +668,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         ));
       }
     } catch (e, s) {
-      print("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
+      debugPrint("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
     }
   }
 
@@ -689,7 +689,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       }
       emit(SearchLocationSuccess(ubicacionesFilters));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -704,15 +704,15 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       if (response.isNotEmpty) {
         ubicaciones = response;
         ubicacionesFilters = ubicaciones;
-        print('ubicaciones length: ${ubicaciones.length}');
+        debugPrint('ubicaciones length: ${ubicaciones.length}');
         emit(LoadLocationsSuccess(ubicaciones));
       } else {
-        print('No se encontraron ubicaciones');
+        debugPrint('No se encontraron ubicaciones');
         emit(LoadLocationsFailure('No se encontraron ubicaciones'));
       }
     } catch (e, s) {
       emit(LoadLocationsFailure('Error al cargar las ubicaciones'));
-      print('Error en el fetch de ubicaciones: $e=>$s');
+      debugPrint('Error en el fetch de ubicaciones: $e=>$s');
     }
   }
 
@@ -732,7 +732,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       }
       emit(SearchLoteSuccess(listLotesProductFilters));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -768,7 +768,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       }
     } catch (e, s) {
       emit(CreateBackOrderOrNotFailure('Error al crear la backorder'));
-      print('Error en el _onCreateBackOrder: $e, $s');
+      debugPrint('Error en el _onCreateBackOrder: $e, $s');
     }
   }
 
@@ -777,7 +777,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     try {
       final time = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
-      print("time : $time");
+      debugPrint("time : $time");
 
       if (event.value == "start_time_reception") {
         await db.entradasRepository.setFieldTableEntrada(
@@ -818,7 +818,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         emit(StartOrStopTimeOrderFailure('Error al enviar el tiempo'));
       }
     } catch (e, s) {
-      print('Error en el _onStartOrStopTimeOrder: $e, $s');
+      debugPrint('Error en el _onStartOrStopTimeOrder: $e, $s');
     }
   }
 
@@ -830,13 +830,10 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       final respnonseEntradaDb = await db.entradasRepository
           .getEntradaById(event.resultEntrada.id ?? 0);
       resultEntrada = respnonseEntradaDb ?? ResultEntrada();
-      print("-----------------");
-      print(resultEntrada.toMap());
-      print("-----------------");
 
       emit(CurrentOrdenesCompraState(resultEntrada));
     } catch (e, s) {
-      print('Error en _onCurrentOrdenesCompra: $e, $s');
+      debugPrint('Error en _onCurrentOrdenesCompra: $e, $s');
     }
   }
 
@@ -893,7 +890,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       }
     } catch (e, s) {
       emit(CreateLoteProductFailure('Error al crear el lote'));
-      print('Error en el _onCreateLoteProduct: $e, $s');
+      debugPrint('Error en el _onCreateLoteProduct: $e, $s');
     }
   }
 
@@ -905,7 +902,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
       final userid = await PrefUtils.getUserId();
 
-      print("loteeeeeee: ${lotesProductCurrent.toMap()}");
+      debugPrint("loteeeeeee: ${lotesProductCurrent.toMap()}");
 
       //calculamos la fecha de transaccion
       DateTime fechaTransaccion = DateTime.now();
@@ -995,7 +992,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
             currentProduct.idMove ?? 0);
 
         if (event.isSplit) {
-          print("Es un producto split");
+          debugPrint("Es un producto split");
           //calculamos la cantidad pendiente del producto
           var pendingQuantity =
               (currentProduct.cantidadFaltante - event.quantity);
@@ -1092,7 +1089,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       }
     } catch (e, s) {
       emit(SendProductToOrderFailure('Error al enviar el producto'));
-      print('Error en el _onSendProductToOrder: $e, $s');
+      debugPrint('Error en el _onSendProductToOrder: $e, $s');
     }
   }
 
@@ -1102,7 +1099,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       currentProduct.idMove,
       currentProduct.idRecepcion,
     );
-    print('productBD: ${productBD?.toMap()}');
+    debugPrint('productBD: ${productBD?.toMap()}');
   }
 
   //*metodo para obtener todos los lotes de un producto
@@ -1122,7 +1119,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       }
     } catch (e, s) {
       emit(GetLotesProductFailure('Error al obtener los lotes del producto'));
-      print('Error en el _onGetLotesProduct: $e, $s');
+      debugPrint('Error en el _onGetLotesProduct: $e, $s');
     }
   }
 
@@ -1159,7 +1156,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
       emit(FinalizarRecepcionProductoSplitSuccess());
     } catch (e, s) {
-      print('Error al finalizar la recepcion del producto split: $e, $s');
+      debugPrint('Error al finalizar la recepcion del producto split: $e, $s');
     }
   }
 
@@ -1187,7 +1184,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     } catch (e, s) {
       emit(FinalizarRecepcionProductoFailure(
           'Error al finalizar la recepcion del producto'));
-      print('Error en el _onFinalizarRecepcionProducto: $e, $s');
+      debugPrint('Error en el _onFinalizarRecepcionProducto: $e, $s');
     }
   }
 
@@ -1200,11 +1197,11 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       if (response != null) {
         novedades.clear();
         novedades = response;
-        print("novedades: ${novedades.length}");
+        debugPrint("novedades: ${novedades.length}");
         emit(NovedadesOrderLoadedState(listOfNovedades: novedades));
       }
     } catch (e, s) {
-      print("Error en __onLoadAllNovedadesEvent: $e, $s");
+      debugPrint("Error en __onLoadAllNovedadesEvent: $e, $s");
       emit(NovedadesOrderErrorState(e.toString()));
     }
   }
@@ -1223,7 +1220,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       }
     } catch (e, s) {
       emit(ChangeQuantitySeparateErrorOrder('Error al aumentar cantidad'));
-      print("❌ Error en el AddQuantitySeparate $e ->$s");
+      debugPrint("❌ Error en el AddQuantitySeparate $e ->$s");
     }
   }
 
@@ -1234,7 +1231,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       viewQuantity = !viewQuantity;
       emit(ShowQuantityOrderState(viewQuantity));
     } catch (e, s) {
-      print("❌ Error en _onShowQuantityEvent: $e, $s");
+      debugPrint("❌ Error en _onShowQuantityEvent: $e, $s");
     }
   }
 
@@ -1268,7 +1265,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       }
       emit(ChangeQuantitySeparateState(quantitySelected));
     } catch (e, s) {
-      print('Error en _onChangeQuantitySelectedEvent: $e, $s');
+      debugPrint('Error en _onChangeQuantitySelectedEvent: $e, $s');
     }
   }
 
@@ -1404,7 +1401,8 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         isLocationDestOk = event.isOk;
         break;
     }
-    print(' Product: $isProductOk, lote: $isLoteOk, Quantity: $isQuantityOk');
+    debugPrint(
+        ' Product: $isProductOk, lote: $isLoteOk, Quantity: $isQuantityOk');
     emit(ValidateFieldsOrderState(isOk: event.isOk));
   }
 
@@ -1467,7 +1465,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       emit(FetchPorductOrderSuccess(currentProduct));
     } catch (e, s) {
       emit(FetchPorductOrderFailure('Error al obtener el producto'));
-      print('Error en el _onFetchPorductOrder: $e, $s');
+      debugPrint('Error en el _onFetchPorductOrder: $e, $s');
     }
   }
 
@@ -1515,7 +1513,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
           listAllOfBarcodes = responseBarcodes;
         }
 
-        print("listAllOfBarcodes : ${listAllOfBarcodes.length}");
+        debugPrint("listAllOfBarcodes : ${listAllOfBarcodes.length}");
 
         emit(GetProductsToEntradaSuccess(response));
       } else {
@@ -1525,7 +1523,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     } catch (e, s) {
       emit(GetProductsToEntradaFailure(
           'Error al obtener los productos de la entrada'));
-      print('Error en el _onGetProductsToEntrada: $e, $s');
+      debugPrint('Error en el _onGetProductsToEntrada: $e, $s');
     }
   }
 
@@ -1573,7 +1571,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       }
     } catch (e, s) {
       emit(AssignUserToOrderFailure('Error al asignar el usuario'));
-      print('Error en el _onAssignUserToOrder: $e, $s');
+      debugPrint('Error en el _onAssignUserToOrder: $e, $s');
     }
   }
 
@@ -1605,7 +1603,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       emit(SearchOrdenCompraSuccess(listFiltersOrdenesCompra));
     } catch (e, s) {
       emit(SearchOrdenCompraFailure('Error al buscar la orden de compra'));
-      print('Error en el _onSearchPedidoEvent: $e, $s');
+      debugPrint('Error en el _onSearchPedidoEvent: $e, $s');
     }
   }
 
@@ -1651,10 +1649,10 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
           await db.barcodesPackagesRepository
               .insertOrUpdateBarcodes(allBarcodes, 'reception');
 
-          print("listRecepcion: ${listRecepcion.length}");
-          print("productsToInsert: ${productsToInsert.length}");
-          print('productsSedToInsert : ${productsSedToInsert.length}');
-          print("allBarcodes: ${allBarcodes.length}");
+          debugPrint("listRecepcion: ${listRecepcion.length}");
+          debugPrint("productsToInsert: ${productsToInsert.length}");
+          debugPrint('productsSedToInsert : ${productsSedToInsert.length}');
+          debugPrint("allBarcodes: ${allBarcodes.length}");
 
           add(FetchOrdenesCompraOfBd());
           emit(FetchOrdenesCompraSuccess(
@@ -1673,7 +1671,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         emit(FetchOrdenesCompraFailure(response.result?.msg ?? ''));
       }
     } catch (e, s) {
-      print('Error en RecepcionBloc: $e, $s');
+      debugPrint('Error en RecepcionBloc: $e, $s');
     }
   }
 
@@ -1726,7 +1724,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     } catch (e, s) {
       emit(FetchOrdenesCompraOfBdFailure(
           'Error al obtener las ordenes de compra'));
-      print('Error en el _onFetchOrdenesCompraOfBd: $e, $s');
+      debugPrint('Error en el _onFetchOrdenesCompraOfBd: $e, $s');
     }
   }
 
@@ -1764,7 +1762,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       }
     } catch (e, s) {
       emit(ConfigurationErrorOrder(e.toString()));
-      print('Error en LoadConfigurationsUserPack.dart: $e =>$s');
+      debugPrint('Error en LoadConfigurationsUserPack.dart: $e =>$s');
     }
   }
 }

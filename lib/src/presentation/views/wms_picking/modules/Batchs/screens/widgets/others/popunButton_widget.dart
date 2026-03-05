@@ -92,7 +92,8 @@ class PopupMenuButtonWidget extends StatelessWidget {
                               onPressed: () {
                                 batchBloc.add(ProductPendingEvent(
                                     batchBloc.batchWithProducts.batch?.id ?? 0,
-                                    currentProduct, batchBloc.typePicking));
+                                    currentProduct,
+                                    batchBloc.typePicking));
                                 Navigator.pop(context);
                               },
                               style: ElevatedButton.styleFrom(
@@ -127,10 +128,11 @@ class PopupMenuButtonWidget extends StatelessWidget {
               ),
               if (batchBloc.locationIsOk == true &&
                   batchBloc.index + 1 <
-                      batchBloc.batchWithProducts.products!.where(
-                          (element) => element.isSeparate != 1,
-                        ).
-                      length &&
+                      batchBloc.batchWithProducts.products!
+                          .where(
+                            (element) => element.isSeparate != 1,
+                          )
+                          .length &&
                   currentProduct.isPending != 1)
                 PopupMenuItem<String>(
                   value: '2',

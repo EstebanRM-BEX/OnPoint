@@ -1,10 +1,11 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously, prefer_is_empty
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
@@ -26,8 +27,8 @@ class Tab2ScreenRecep extends StatefulWidget {
 }
 
 class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
 
   FocusNode focusNodeBuscar = FocusNode(); //cantidad textformfield
 
@@ -52,7 +53,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
     final scan = value.trim().toLowerCase();
 
     _controllerToDo.clear();
-    print('🔎 Scan barcode: $scan');
+    debugPrint('🔎 Scan barcode: $scan');
 
     // Filtrar productos válidos
     final listOfProducts = bloc.listProductsEntrada
@@ -117,7 +118,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
         );
       });
 
-      print('✅ Producto procesado: ${product.toMap()}');
+      debugPrint('✅ Producto procesado: ${product.toMap()}');
     }
 
 // ... (El resto de tu función validateBarcode sin cambios)
@@ -300,7 +301,6 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
                                             ],
                                           );
                                         });
-                                        print(product.toMap());
                                       },
                                       child: Column(
                                         crossAxisAlignment:

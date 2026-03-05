@@ -6,9 +6,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/response_ocupar_muelle_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/history/models/batch_history_id_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/history/models/hisotry_done_model.dart';
@@ -31,7 +31,7 @@ class WmsPickingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return DataBatch(
           code: 500,
           msg: 'No internet connection',
@@ -128,7 +128,7 @@ class WmsPickingRepository {
       }
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return DataBatch(
           code: 500,
           msg: 'Network error: $e',
@@ -136,7 +136,7 @@ class WmsPickingRepository {
           result: []);
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en resBatchs: $e $s');
+      debugPrint('Error en resBatchs: $e $s');
     }
     return DataBatch(
         code: 500, msg: 'Unknown error', updateVersion: false, result: []);
@@ -150,7 +150,7 @@ class WmsPickingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return DataBatch(
           code: 500,
           msg: 'No internet connection',
@@ -247,7 +247,7 @@ class WmsPickingRepository {
       }
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return DataBatch(
           code: 500,
           msg: 'Network error: $e',
@@ -255,7 +255,7 @@ class WmsPickingRepository {
           result: []);
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en resBatchsByComponents: $e $s');
+      debugPrint('Error en resBatchsByComponents: $e $s');
     }
     return DataBatch(
         code: 500, msg: 'Unknown error', updateVersion: false, result: []);
@@ -269,7 +269,7 @@ class WmsPickingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return []; // Si no hay conexión, retornar una lista vacía
     }
 
@@ -329,12 +329,12 @@ class WmsPickingRepository {
       } else {}
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return [];
     } catch (e, s) {
       // Manejo de otros errores
 
-      print('Error resBatchs: $e, $s');
+      debugPrint('Error resBatchs: $e, $s');
     }
     return [];
   }
@@ -345,7 +345,7 @@ class WmsPickingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return HistoryBatchId(); // Si no hay conexión, retornar una lista vacía
     }
 
@@ -398,11 +398,11 @@ class WmsPickingRepository {
       } else {}
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return HistoryBatchId();
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error getBatchById: $e, $s');
+      debugPrint('Error getBatchById: $e, $s');
     }
     return HistoryBatchId();
   }
@@ -415,7 +415,7 @@ class WmsPickingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return []; // Si no hay conexión, retornar una lista vacía
     }
 
@@ -442,11 +442,11 @@ class WmsPickingRepository {
       } else {}
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return [];
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error getmuelles: $e, $s');
+      debugPrint('Error getmuelles: $e, $s');
     }
     return [];
   }
@@ -459,16 +459,15 @@ class WmsPickingRepository {
     required String tipoPicking,
     //
   }) async {
-    print('idBatch: $idBatch');
-    print('timeTotal: $timeTotal');
-    print('cantItemsSeparados: $cantItemsSeparados');
-    print('listItem: ${listItem.map((item) => item.toJson()).toList()}');
+    debugPrint('idBatch: $idBatch');
+    debugPrint('timeTotal: $timeTotal');
+    debugPrint('cantItemsSeparados: $cantItemsSeparados');
+    debugPrint('listItem: ${listItem.map((item) => item.toJson()).toList()}');
 
     try {
       var response = await ApiRequestService().postPicking(
         endpoint:
-        tipoPicking == 'batch' ? 'send_batch' :
-         'send_batch/componentes',
+            tipoPicking == 'batch' ? 'send_batch' : 'send_batch/componentes',
         isunecodePath: true,
         body: {
           "params": {
@@ -481,14 +480,13 @@ class WmsPickingRepository {
         isLoadinDialog: false,
       );
 
-      print(response);
       return SendPickingResponse.fromJson(response.body);
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error sendPicking: $e, $s');
+      debugPrint('Error sendPicking: $e, $s');
     }
     return SendPickingResponse();
   }
@@ -511,88 +509,15 @@ class WmsPickingRepository {
         isLoadinDialog: false,
       );
 
-      print(response);
       return OcuparMuelle.fromJson(response.body);
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error ocuparMuelle: $e, $s');
+      debugPrint('Error ocuparMuelle: $e, $s');
     }
     return OcuparMuelle();
-  }
-
-  //metod para obtener las novedades:
-  Future<List<Novedad>> getnovedades(
-    bool isLoadinDialog,
-  ) async {
-    // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
-      return []; // Si no hay conexión, retornar una lista vacía
-    }
-
-    try {
-      var response = await ApiRequestService().get(
-        endpoint: 'picking_novelties',
-        isunecodePath: true,
-        isLoadinDialog: isLoadinDialog,
-      );
-
-      if (response.statusCode < 400) {
-        // Decodifica la respuesta JSON a un mapa
-        Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-        // Accede a la clave "data" y luego a "result"
-
-        // Asegúrate de que 'result' exista y sea una lista
-        if (jsonResponse.containsKey('result')) {
-          List<dynamic> result = jsonResponse['result']['result'];
-          // Mapea los datos decodificados a una lista de BatchsModel
-          List<Novedad> novedades =
-              result.map((data) => Novedad.fromMap(data)).toList();
-          return novedades;
-        } else if (jsonResponse.containsKey('error')) {
-          if (jsonResponse['error']['code'] == 100) {
-            Get.defaultDialog(
-              title: 'Alerta',
-              titleStyle: TextStyle(color: Colors.red, fontSize: 18),
-              middleText: 'Sesion expirada, por favor inicie sesión nuevamente',
-              middleTextStyle: TextStyle(color: black, fontSize: 14),
-              backgroundColor: Colors.white,
-              radius: 10,
-              actions: [
-                ElevatedButton(
-                  onPressed: () {
-                    Get.back();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColorApp,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: Text('Aceptar', style: TextStyle(color: white)),
-                ),
-              ],
-            );
-            return [];
-          }
-        }
-      } else {
-        print('Error getnovedades: response is null');
-      }
-    } on SocketException catch (e) {
-      // Manejo de error de red
-      print('Error de red: $e');
-      return [];
-    } catch (e, s) {
-      // Manejo de otros errores
-      print('Error getnovedades: $e, $s');
-    }
-    return [];
   }
 
   Future<bool> timePickingUser(int batchId, String time, String endpoint,
@@ -601,7 +526,7 @@ class WmsPickingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return false; // Si no hay conexión, retornar una lista vacía
     }
 
@@ -661,11 +586,11 @@ class WmsPickingRepository {
       } else {}
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return false;
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error timePickingUser: $e, $s');
+      debugPrint('Error timePickingUser: $e, $s');
     }
     return false;
   }
@@ -676,7 +601,7 @@ class WmsPickingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return false; // Si no hay conexión, retornar una lista vacía
     }
 
@@ -735,12 +660,12 @@ class WmsPickingRepository {
       } else {}
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return false;
     } catch (e, s) {
       // Manejo de otros errores
 
-      print('Error timePickingBatch: $e, $s');
+      debugPrint('Error timePickingBatch: $e, $s');
     }
     return false;
   }

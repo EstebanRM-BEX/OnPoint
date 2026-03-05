@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
@@ -7,9 +10,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
@@ -41,8 +42,8 @@ class ScanProductTrasnferScreen extends StatefulWidget {
 
 class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
     with WidgetsBindingObserver {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
   @override
   void initState() {
     super.initState();
@@ -116,7 +117,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
         !bloc.quantityIsOk && //false
         !bloc.locationDestIsOk) //false
     {
-      print("🚼 location");
+      debugPrint("🚼 location");
       FocusScope.of(context).requestFocus(focusNode1);
       //cerramos los demas focos
       focusNode2.unfocus();
@@ -129,7 +130,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
         !bloc.quantityIsOk && //false
         !bloc.locationDestIsOk) //false
     {
-      print("🚼 product");
+      debugPrint("🚼 product");
       FocusScope.of(context).requestFocus(focusNode2);
       //cerramos los demas focos
       focusNode1.unfocus();
@@ -144,7 +145,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
         !bloc.locationDestIsOk && //false
         !bloc.viewQuantity) //false
     {
-      print("🚼 quantity");
+      debugPrint("🚼 quantity");
       FocusScope.of(context).requestFocus(focusNode3);
       //cerramos los demas focos
       focusNode1.unfocus();
@@ -156,7 +157,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
         bloc.productIsOk &&
         !bloc.quantityIsOk &&
         !bloc.locationDestIsOk) {
-      print("🚼 muelle");
+      debugPrint("🚼 muelle");
       FocusScope.of(context).requestFocus(focusNode5);
       //cerramos los demas focos
       focusNode1.unfocus();
@@ -199,7 +200,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
 
     final scan = value.trim().toLowerCase();
 
-    print('scan product: $scan');
+    debugPrint('scan product: $scan');
     _controllerProduct.text = "";
     final currentProduct = bloc.currentProduct;
     if (scan == currentProduct.productBarcode?.toLowerCase()) {
@@ -355,7 +356,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
     if (currentProduct == null || currentProduct.productId == null) {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      print(
+      debugPrint(
           '⚠️ Error: No hay un producto actual seleccionado para validar el muelle.');
       // Puedes añadir un SnackBar aquí para informar al usuario
       bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: false));
@@ -401,7 +402,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
           );
 
       if (matchedUbicacion.barcode != null) {
-        print('Ubicacion encontrada: ${matchedUbicacion.name}');
+        debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
         bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: true));
         bloc.add(ChangeLocationDestIsOkEvent(
           true,
@@ -416,7 +417,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
         // Fallo final
         _audioService.playErrorSound();
         _vibrationService.vibrate();
-        print('Ubicacion no encontrada');
+        debugPrint('Ubicacion no encontrada');
         bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: false));
         // bloc.add(ClearScannedValueEvent('muelle'));
       }
@@ -502,7 +503,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                         child:
                             BlocConsumer<TransferenciaBloc, TransferenciaState>(
                                 listener: (context, state) {
-                          print('STATE ❤️‍🔥 $state');
+                          debugPrint('STATE ❤️‍🔥 $state');
 
                           //*estado cando la ubicacion de origen es cambiada
                           if (state is ChangeLocationIsOkState) {
@@ -933,7 +934,8 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                                       bloc.quantitySelected = int.parse(value);
                                     } catch (e) {
                                       // Manejo de errores si la conversión falla
-                                      print('Error al convertir a entero: $e');
+                                      debugPrint(
+                                          'Error al convertir a entero: $e');
                                       // Aquí puedes mostrar un mensaje al usuario o manejar el error de otra forma
                                     }
                                   } else {

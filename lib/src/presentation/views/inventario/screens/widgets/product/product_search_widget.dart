@@ -140,7 +140,7 @@ class _SearchProductScreenState extends State<SearchProductScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       child: GestureDetector(
         onTap: () {
-          print("Selected product: ${product.toMap()}");
+          debugPrint("Selected product: ${product.toMap()}");
           setState(() => selectedProductKey = isSelected ? null : currentKey);
         },
         child: Card(

@@ -55,7 +55,7 @@ class _Tab3ScreenRecepState extends State<Tab3ScreenConteo> {
           if (state is ViewProductImageSuccess) {
             showImageDialog(context, state.imageUrl);
           } else if (state is ViewProductImageFailure) {
-            showScrollableErrorDialog( state.error);
+            showScrollableErrorDialog(state.error);
           }
           if (state is DeleteProductConteoSuccess) {
             Navigator.pop(context); // Cierra el diálogo de carga
@@ -63,7 +63,7 @@ class _Tab3ScreenRecepState extends State<Tab3ScreenConteo> {
 
           if (state is DeleteProductConteoFailure) {
             Navigator.pop(context); // Cierra el diálogo de carga
-            showScrollableErrorDialog( state.error);
+            showScrollableErrorDialog(state.error);
           }
         },
         builder: (context, state) {
@@ -119,7 +119,7 @@ class _Tab3ScreenRecepState extends State<Tab3ScreenConteo> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       child: GestureDetector(
         onTap: () {
-          print("Producto seleccionado: ${product.toJson()}");
+          debugPrint("Producto seleccionado: ${product.toJson()}");
         },
         child: Card(
           elevation: 2,

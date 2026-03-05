@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
@@ -7,8 +10,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/lote_scanner_widget.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
@@ -41,8 +42,8 @@ class ScanProductConteoScreen extends StatefulWidget {
 
 class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
     with WidgetsBindingObserver {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
 
   //*focus
   FocusNode focusNode1 = FocusNode(); // ubicacion  de origen
@@ -137,12 +138,12 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
     };
 
     //mostrar las variables
-    print("locationIsOk: ${bloc.locationIsOk}");
-    print("productIsOk: ${bloc.productIsOk}");
-    print("locationDestIsOk: ${bloc.locationDestIsOk}");
-    print("loteIsOk: ${bloc.loteIsOk}");
-    print("quantityIsOk: ${bloc.quantityIsOk}");
-    print("viewQuantity: ${bloc.viewQuantity}");
+    debugPrint("locationIsOk: ${bloc.locationIsOk}");
+    debugPrint("productIsOk: ${bloc.productIsOk}");
+    debugPrint("locationDestIsOk: ${bloc.locationDestIsOk}");
+    debugPrint("loteIsOk: ${bloc.loteIsOk}");
+    debugPrint("quantityIsOk: ${bloc.quantityIsOk}");
+    debugPrint("viewQuantity: ${bloc.viewQuantity}");
 
     final focusNodeByKey = {
       "location": focusNode1,
@@ -175,7 +176,7 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
   }
 
   String _getScannedOrManual(String scanned, String manual) {
-    print("Scanned: $scanned, Manual: $manual");
+    debugPrint("Scanned: $scanned, Manual: $manual");
     final scan = scanned.trim().toLowerCase();
     return scan.isEmpty ? manual.trim().toLowerCase() : scan;
   }
@@ -183,7 +184,7 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
   void validateLote(String value) {
     final bloc = context.read<ConteoBloc>();
     final scan = value.trim().toLowerCase();
-    print('scan lote: $scan');
+    debugPrint('scan lote: $scan');
     _controllerLote.clear();
     //tengo una lista de lotes el cual quiero validar si el scan es igual a alguno de los lotes
     LotesProduct? matchedLote = bloc.listLotesProduct.firstWhere(
@@ -193,14 +194,14 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
         );
 
     if (matchedLote.name != null) {
-      print('lote encontrado: ${matchedLote.name}');
+      debugPrint('lote encontrado: ${matchedLote.name}');
       bloc.add(ValidateFieldsEvent(field: "lote", isOk: true));
       bloc.add(SelectecLoteEvent(matchedLote));
       Future.microtask(() => focusNode5.requestFocus());
     } else {
       _vibrationService.vibrate();
       _audioService.playErrorSound();
-      print('lote no encontrado');
+      debugPrint('lote no encontrado');
       bloc.add(ValidateFieldsEvent(field: "lote", isOk: false));
       Future.microtask(() => focusNode5.requestFocus());
     }
@@ -318,7 +319,7 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
     String scan = bloc.scannedValue3.trim().toLowerCase() == ""
         ? value.trim().toLowerCase()
         : bloc.scannedValue3.trim().toLowerCase();
-    print('scan quantity: $scan');
+    debugPrint('scan quantity: $scan');
     _controllerQuantity.clear();
     final currentProduct = bloc.currentProduct;
 
@@ -343,12 +344,6 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
       child: BlocBuilder<ConteoBloc, ConteoState>(
         builder: (context, state) {
           return Scaffold(
-              floatingActionButton: FloatingActionButton(
-                onPressed: () {
-                  print(context.read<ConteoBloc>().currentProduct.toMap());
-                },
-                child: const Icon(Icons.send),
-              ),
               backgroundColor: white,
               body: Column(
                 children: [
@@ -360,7 +355,7 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                         color: primaryColorApp,
                         child: BlocConsumer<ConteoBloc, ConteoState>(
                             listener: (context, state) {
-                          print("❤️‍🔥 state : $state");
+                          debugPrint("❤️‍🔥 state : $state");
 
                           if (state is ViewProductImageSuccess) {
                             showImageDialog(context, state.imageUrl);
@@ -825,15 +820,13 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                     manualFocusNode: focusNode4,
                     viewQuantity: context.read<ConteoBloc>().viewQuantity,
                     onIconButtonPressed: () {
-                      print('borrando');
+                      debugPrint('borrando');
                       context.read<ConteoBloc>().add(ShowQuantityEvent(
                           !context.read<ConteoBloc>().viewQuantity));
                       Future.delayed(const Duration(milliseconds: 100), () {
                         FocusScope.of(context).requestFocus(focusNode3);
                       });
                     },
-                    showKeyboard:
-                        context.read<UserBloc>().fabricante.contains("Zebra"),
                     onToggleViewQuantity: () {
                       context.read<ConteoBloc>().add(ShowQuantityEvent(
                           !context.read<ConteoBloc>().viewQuantity));
@@ -841,7 +834,7 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                       Future.delayed(const Duration(milliseconds: 100), () {
                         FocusScope.of(context).requestFocus(focusNode4);
                       });
-                      print('Toggle view quantity');
+                      debugPrint('Toggle view quantity');
                     },
                     onValidateButton: () {
                       FocusScope.of(context).unfocus();
@@ -851,7 +844,7 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                       validateQuantity(value);
                     },
                     onManualQuantityChanged: (value) {
-                      print('onManualQuantityChanged: $value');
+                      debugPrint('onManualQuantityChanged: $value');
                     },
                     onManualQuantitySubmitted: (value) {
                       final intValue = double.parse(value);
@@ -890,7 +883,7 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
     String input = cantidadController.text.trim();
     //validamos quantity
 
-    print("cantidad: $input");
+    debugPrint("cantidad: $input");
 
     // Si está vacío, usar la cantidad seleccionada del bloc
     if (input.isEmpty) {
@@ -955,14 +948,14 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
             ? bloc.quantitySelected.toString()
             : cantidadController.text);
 
-        print("cantidad: $cantidad");
+        debugPrint("cantidad: $cantidad");
         bloc.add(SendProductConteoEvent(false, cantidad, bloc.currentProduct));
       }
     } else {
       double cantidad = double.parse(cantidadController.text.isEmpty
           ? bloc.quantitySelected.toString()
           : cantidadController.text);
-      print("cantidad: $cantidad");
+      debugPrint("cantidad: $cantidad");
       bloc.add(SendProductConteoEvent(false, cantidad, bloc.currentProduct));
     }
   }

@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
@@ -7,9 +10,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
@@ -23,7 +24,6 @@ import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_widget.dart';
 
 class InventarioScreen extends StatefulWidget {
   const InventarioScreen({super.key});
@@ -34,8 +34,8 @@ class InventarioScreen extends StatefulWidget {
 
 class _InventarioScreenState extends State<InventarioScreen>
     with WidgetsBindingObserver {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
   FocusNode focusNode1 = FocusNode(); // ubicacion  de origen
   FocusNode focusNode2 = FocusNode(); // producto
   FocusNode focusNode3 = FocusNode(); // cantidad por pda
@@ -72,7 +72,7 @@ class _InventarioScreenState extends State<InventarioScreen>
       ),
     ).then((_) {
       // Este callback se ejecuta cuando el diálogo se cierra
-      print('Diálogo cerrado');
+      debugPrint('Diálogo cerrado');
     });
 
     // Cerrar después de 1 segundo de forma segura
@@ -91,7 +91,7 @@ class _InventarioScreenState extends State<InventarioScreen>
       try {
         Navigator.of(context, rootNavigator: false).pop();
       } catch (e) {
-        print('Error al cerrar diálogo: $e');
+        debugPrint('Error al cerrar diálogo: $e');
         // No hacer nada si falla
       }
     }
@@ -104,7 +104,7 @@ class _InventarioScreenState extends State<InventarioScreen>
   }
 
   void _focus(FocusNode node, String label) {
-    print("🚼 $label");
+    debugPrint("🚼 $label");
     FocusScope.of(context).requestFocus(node);
     _unfocusOthers(except: node);
   }
@@ -165,7 +165,7 @@ class _InventarioScreenState extends State<InventarioScreen>
   void validateLocation(String value) {
     final bloc = context.read<InventarioBloc>();
     final scan = value.trim().toLowerCase();
-    print('scan location: $scan');
+    debugPrint('scan location: $scan');
 
     bloc.controllerLocation.clear();
 
@@ -176,14 +176,14 @@ class _InventarioScreenState extends State<InventarioScreen>
         );
 
     if (matchedUbicacion.barcode != null) {
-      print('Ubicacion encontrada: ${matchedUbicacion.name}');
+      debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
       bloc.add(ValidateFieldsEvent(field: "location", isOk: true));
       bloc.add(ChangeLocationIsOkEvent(matchedUbicacion));
       Future.microtask(() => focusNode1.requestFocus());
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      print('Ubicacion no encontrada');
+      debugPrint('Ubicacion no encontrada');
       bloc.add(ValidateFieldsEvent(field: "location", isOk: false));
       Future.microtask(() => focusNode1.requestFocus());
     }
@@ -193,7 +193,7 @@ class _InventarioScreenState extends State<InventarioScreen>
     final bloc = context.read<InventarioBloc>();
     final scan = value.trim().toLowerCase();
 
-    print('scan lote: $scan');
+    debugPrint('scan lote: $scan');
     bloc.controllerLote.clear();
     //tengo una lista de lotes el cual quiero validar si el scan es igual a alguno de los lotes
     LotesProduct? matchedLote = bloc.listLotesProduct.firstWhere(
@@ -203,14 +203,14 @@ class _InventarioScreenState extends State<InventarioScreen>
         );
 
     if (matchedLote.name != null) {
-      print('lote encontrado: ${matchedLote.name}');
+      debugPrint('lote encontrado: ${matchedLote.name}');
       bloc.add(ValidateFieldsEvent(field: "lote", isOk: true));
       bloc.add(SelectecLoteEvent(matchedLote));
       Future.microtask(() => focusNode5.requestFocus());
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      print('Ubicacion no encontrada');
+      debugPrint('Ubicacion no encontrada');
       bloc.add(ValidateFieldsEvent(field: "lote", isOk: false));
       Future.microtask(() => focusNode5.requestFocus());
     }
@@ -222,7 +222,7 @@ class _InventarioScreenState extends State<InventarioScreen>
     // Normalizamos el valor escaneado
     final scan = value.trim().toLowerCase();
     bloc.controllerProduct.clear();
-    print('🔎 Scan product: $scan');
+    debugPrint('🔎 Scan product: $scan');
 
     // Buscar coincidencia directa por barcode o code
     final matchedProduct = bloc.productos.firstWhere(
@@ -231,7 +231,7 @@ class _InventarioScreenState extends State<InventarioScreen>
     );
 
     if (matchedProduct.barcode != null) {
-      print('✅ Producto encontrado directo: ${matchedProduct.name}');
+      debugPrint('✅ Producto encontrado directo: ${matchedProduct.name}');
       bloc
         ..add(ValidateFieldsEvent(field: "product", isOk: true))
         ..add(ChangeProductIsOkEvent(matchedProduct));
@@ -248,7 +248,7 @@ class _InventarioScreenState extends State<InventarioScreen>
     if (matchedBarcode.barcode == null) {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      print('❌ Producto no encontrado en barcodes');
+      debugPrint('❌ Producto no encontrado en barcodes');
       bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
       Future.microtask(() => focusNode2.requestFocus());
       return;
@@ -261,12 +261,12 @@ class _InventarioScreenState extends State<InventarioScreen>
     );
 
     if (matchedById.productId != null) {
-      print('✅ Producto encontrado por ID: ${matchedById.name}');
+      debugPrint('✅ Producto encontrado por ID: ${matchedById.name}');
       bloc
         ..add(ValidateFieldsEvent(field: "product", isOk: true))
         ..add(ChangeProductIsOkEvent(matchedById));
     } else {
-      print('❌ Producto no encontrado por ID');
+      debugPrint('❌ Producto no encontrado por ID');
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
@@ -277,7 +277,7 @@ class _InventarioScreenState extends State<InventarioScreen>
   void validateQuantity(String value) {
     final bloc = context.read<InventarioBloc>();
     final scan = value.trim().toLowerCase();
-    print('scan quantity: $scan');
+    debugPrint('scan quantity: $scan');
     bloc.controllerQuantity.clear();
     final currentProduct = bloc.currentProduct;
 
@@ -292,7 +292,7 @@ class _InventarioScreenState extends State<InventarioScreen>
 
   bool validateScannedBarcode(String scannedBarcode, Product currentProduct,
       InventarioBloc bloc, bool isProduct) {
-    print('entrando a validar barcode');
+    debugPrint('entrando a validar barcode');
     // Buscar el barcode que coincida con el valor escaneado
     BarcodeInventario? matchedBarcode = bloc.barcodeInventario.firstWhere(
         (barcode) => barcode.barcode?.toLowerCase() == scannedBarcode.trim(),
@@ -395,7 +395,7 @@ class _InventarioScreenState extends State<InventarioScreen>
     final size = MediaQuery.sizeOf(context);
     return BlocConsumer<InventarioBloc, InventarioState>(
       listener: (context, state) {
-        print("state ❤️‍🔥:: $state");
+        debugPrint("state ❤️‍🔥:: $state");
 
         //estado para mostrar cuando este cargando la descarga de los productos
         if (state is GetProductsLoadingInventory) {
@@ -1188,7 +1188,8 @@ class _InventarioScreenState extends State<InventarioScreen>
                                     bloc.quantitySelected = int.parse(value);
                                   } catch (e) {
                                     // Manejo de errores si la conversión falla
-                                    print('Error al convertir a entero: $e');
+                                    debugPrint(
+                                        'Error al convertir a entero: $e');
                                     // Aquí puedes mostrar un mensaje al usuario o manejar el error de otra forma
                                   }
                                 } else {

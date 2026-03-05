@@ -32,16 +32,15 @@ class _DialogCapturaTemperaturaState extends State<DialogCapturaTemperatura> {
         setState(() {
           _imageFile = compressedFile; // o lo que uses en tu widget
         });
-        print('Tamaño final: ${await compressedFile.length()} bytes');
+        debugPrint('Tamaño final: ${await compressedFile.length()} bytes');
       } else {
-        print('No se pudo comprimir la imagen');
+        debugPrint('No se pudo comprimir la imagen');
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-
     return BlocConsumer<WmsPackingBloc, WmsPackingState>(
       listener: (context, state) {
         if (state is GetTemperatureFailure) {
@@ -52,7 +51,7 @@ class _DialogCapturaTemperaturaState extends State<DialogCapturaTemperatura> {
         }
       },
       builder: (context, state) {
-    final bloc = context.read<WmsPackingBloc>();
+        final bloc = context.read<WmsPackingBloc>();
         return BackdropFilter(
           filter: ImageFilter.blur(
             sigmaX: 5,

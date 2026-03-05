@@ -1,11 +1,10 @@
-
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_barcode/barcodes_inventario_table.dart';
 import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
 
 class BarcodesInventarioRepository {
-  
   // Tamaño del bloque para inserción masiva
   static const int _batchSize = 500;
 
@@ -14,20 +13,17 @@ class BarcodesInventarioRepository {
   /// --------------------------------------------------------------------------
   Future<void> insertOrUpdateBarcodes(
       List<BarcodeInventario> barcodesList) async {
-    
     if (barcodesList.isEmpty) return;
 
     try {
       Database db = await DataBaseSqlite().getDatabaseInstance();
 
       await db.transaction((txn) async {
-        
         // PASO 1: MARCA (Resetear flag)
         // Marcamos TODO el inventario como no sincronizado.
         // OJO: Esto asume que estás descargando el catálogo completo de barcodes.
         await txn.rawUpdate(
-          'UPDATE ${BarcodesInventarioTable.tableName} SET ${BarcodesInventarioTable.columnIsSynced} = 0'
-        );
+            'UPDATE ${BarcodesInventarioTable.tableName} SET ${BarcodesInventarioTable.columnIsSynced} = 0');
 
         // PASO 2: UPSERT POR LOTES (Chunking)
         for (var i = 0; i < barcodesList.length; i += _batchSize) {
@@ -46,7 +42,7 @@ class BarcodesInventarioRepository {
                 BarcodesInventarioTable.columnBarcode: barcode.barcode,
                 BarcodesInventarioTable.columnCantidad: barcode.cantidad ?? 1,
                 // ✅ Marcamos como actualizado
-                BarcodesInventarioTable.columnIsSynced: 1, 
+                BarcodesInventarioTable.columnIsSynced: 1,
               },
               // ✅ Si existe (Producto + Barcode), actualiza. Si no, inserta.
               conflictAlgorithm: ConflictAlgorithm.replace,
@@ -63,10 +59,11 @@ class BarcodesInventarioRepository {
           whereArgs: [0],
         );
 
-        print("📦 Inventario Barcodes: Procesados ${barcodesList.length} | Eliminados Obsoletos: $deleted");
+        debugPrint(
+            "📦 Inventario Barcodes: Procesados ${barcodesList.length} | Eliminados Obsoletos: $deleted");
       });
     } catch (e, s) {
-      print("❌ Error insertOrUpdateBarcodes: $e => $s");
+      debugPrint("❌ Error insertOrUpdateBarcodes: $e => $s");
     }
   }
 
@@ -77,7 +74,7 @@ class BarcodesInventarioRepository {
   Future<List<BarcodeInventario>> getAllBarcodes() async {
     try {
       Database db = await DataBaseSqlite().getDatabaseInstance();
-      
+
       // Consulta simple (Podrías agregar LIMIT si son demasiados)
       final List<Map<String, dynamic>> maps = await db.query(
         BarcodesInventarioTable.tableName,
@@ -85,7 +82,7 @@ class BarcodesInventarioRepository {
 
       return maps.map((map) => _mapToModel(map)).toList();
     } catch (e) {
-      print("Error al obtener los barcodes: $e");
+      debugPrint("Error al obtener los barcodes: $e");
       return [];
     }
   }
@@ -107,7 +104,7 @@ class BarcodesInventarioRepository {
 
       return maps.map((map) => _mapToModel(map)).toList();
     } catch (e, s) {
-      print("Error al obtener los barcodes: $e, =>$s");
+      debugPrint("Error al obtener los barcodes: $e, =>$s");
       return [];
     }
   }

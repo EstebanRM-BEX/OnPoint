@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
+import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_image_send_novedad_model.dart';
@@ -208,7 +208,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
   void _onViewProductImageEvent(
       ViewProductImageEvent event, Emitter<WmsPackingState> emit) async {
     try {
-      print('Obteniendo imagen del producto con ID: ${event.idProduct}');
+      debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
       final response =
@@ -226,7 +226,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
         emit(ViewProductImageFailure('Imagen no disponible'));
       }
     } catch (e, s) {
-      print('Error en el ViewProductImageEvent: $e, $s');
+      debugPrint('Error en el ViewProductImageEvent: $e, $s');
       emit(ViewProductImageFailure(e.toString()));
     }
   }
@@ -260,7 +260,8 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
 
       emit(DeleteProductFromTemporaryPackageOkState());
     } catch (e, s) {
-      print('Error en el  _onDeleteProductFromTemporaryPackageEvent: $e, $s');
+      debugPrint(
+          'Error en el  _onDeleteProductFromTemporaryPackageEvent: $e, $s');
       emit(DeleteProductFromTemporaryPackageError(e.toString()));
     }
   }
@@ -274,11 +275,11 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       listOfOrigins.clear();
 
       listOfOrigins = batchsFromDB;
-      print('listOfOrigins: ${listOfOrigins.length}');
+      debugPrint('listOfOrigins: ${listOfOrigins.length}');
 
       emit(LoadDocOriginsState(listOfOrigins: listOfOrigins));
     } catch (e, s) {
-      print('Error LoadDocOriginsEvent: $e, $s');
+      debugPrint('Error LoadDocOriginsEvent: $e, $s');
     }
   }
 
@@ -302,7 +303,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
         return;
       }
     } catch (e, s) {
-      print('Error en el _onGetTemperatureEvent: $e, $s');
+      debugPrint('Error en el _onGetTemperatureEvent: $e, $s');
       emit(GetTemperatureFailure(
           'Ocurrió un error al procesar la imagen y obtener la temperatura'));
     }
@@ -312,8 +313,8 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
   void _onSendImageNovedad(
       SendImageNovedad event, Emitter<WmsPackingState> emit) async {
     try {
-      print('------ Enviando imagen de novedad ---');
-      print(
+      debugPrint('------ Enviando imagen de novedad ---');
+      debugPrint(
           'pedidoId: ${event.pedidoId} moveLineId: ${event.moveLineId} productId: ${event.productId}');
       emit(SendImageNovedadLoading());
       final response = await wmsPackingRepository.sendImageNoved(
@@ -338,7 +339,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
             response.msg ?? 'Error al enviar la imagen'));
       }
     } catch (e, s) {
-      print('Error en el _onSendImageNovedad: $e, $s');
+      debugPrint('Error en el _onSendImageNovedad: $e, $s');
       emit(SendImageNovedadFailure('Ocurrió un error al enviar la imagen'));
     }
   }
@@ -357,7 +358,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
         return;
       }
 
-      print('currentProduct: ${currentProduct.toMap()}');
+      debugPrint('currentProduct: ${currentProduct.toMap()}');
 
       //enviamos la temperatura con la imagen
       final response = await wmsPackingRepository.sendTemperature(
@@ -403,7 +404,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
         return;
       }
     } catch (e, s) {
-      print('Error en el _onSendTemperatureEvent: $e, $s');
+      debugPrint('Error en el _onSendTemperatureEvent: $e, $s');
       emit(SendTemperatureFailure(
           'Ocurrió un error al procesar la imagen y obtener la temperatura'));
     }
@@ -418,7 +419,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
 
       //validamso que tengamos imagen y temperatura
 
-      print('currentProduct: ${currentProduct.toMap()}');
+      debugPrint('currentProduct: ${currentProduct.toMap()}');
 
       //enviamos la temperatura con la imagen
       final response = await wmsPackingRepository.sendTemperatureManual(
@@ -454,7 +455,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
         return;
       }
     } catch (e, s) {
-      print('Error en el _onSendTemperatureEvent: $e, $s');
+      debugPrint('Error en el _onSendTemperatureEvent: $e, $s');
       emit(SendTemperatureFailure(
           'Ocurrió un error al procesar la imagen y obtener la temperatura'));
     }
@@ -490,7 +491,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
         emit(TimeSeparatePackError('Error al iniciar el tiempo de separacion'));
       }
     } catch (e, s) {
-      print("❌ Error en _onStartTimePickEvent: $e, $s");
+      debugPrint("❌ Error en _onStartTimePickEvent: $e, $s");
     }
   }
 
@@ -500,7 +501,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       viewDetail = !viewDetail;
       emit(ShowDetailState(viewDetail));
     } catch (e, s) {
-      print("❌ Error en _onShowQuantityEvent: $e, $s");
+      debugPrint("❌ Error en _onShowQuantityEvent: $e, $s");
     }
   }
 
@@ -511,7 +512,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       viewQuantity = !viewQuantity;
       emit(ShowQuantityPackState(viewQuantity));
     } catch (e, s) {
-      print("❌ Error en _onShowQuantityEvent: $e, $s");
+      debugPrint("❌ Error en _onShowQuantityEvent: $e, $s");
     }
   }
 
@@ -680,7 +681,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
         emit(UnPackignError('Error al desempacar los productos'));
       }
     } catch (e, s) {
-      print('Error en el  _onUnPackingEvent: $e, $s');
+      debugPrint('Error en el  _onUnPackingEvent: $e, $s');
       emit(UnPackignError(e.toString()));
     }
   }
@@ -741,7 +742,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       final productUpdate = await db.productosPedidosRepository
           .getProductoPedidoById(event.pedidoId, event.idMove, 'packing-batch');
 
-      print('productUpdate :${productUpdate.toMap()}');
+      debugPrint('productUpdate :${productUpdate.toMap()}');
 
       // Calcular la diferencia del producto ya separado
       Duration differenceProduct = dateTimeNow
@@ -751,7 +752,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       double secondsDifferenceProduct =
           differenceProduct.inMilliseconds / 1000.0;
 
-      print('secondsDifferenceProduct: $secondsDifferenceProduct');
+      debugPrint('secondsDifferenceProduct: $secondsDifferenceProduct');
       //actualizamos el dato de tiempoSeparado
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
           event.pedidoId,
@@ -810,7 +811,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       ));
       emit(SetPickingPackingOkState());
     } catch (e, s) {
-      print('Error en el  _onSetPickingsSplitEvent: $e, $s');
+      debugPrint('Error en el  _onSetPickingsSplitEvent: $e, $s');
       emit(SplitProductError(e.toString()));
     }
   }
@@ -832,7 +833,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       }
     } catch (e, s) {
       emit(ConfigurationErrorPack(e.toString()));
-      print('Error en LoadConfigurationsUserPack.dart: $e =>$s');
+      debugPrint('Error en LoadConfigurationsUserPack.dart: $e =>$s');
     }
   }
 
@@ -845,11 +846,11 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       if (response != null) {
         novedades.clear();
         novedades = response;
-        print("novedades: ${novedades.length}");
+        debugPrint("novedades: ${novedades.length}");
         emit(NovedadesPackingLoadedState(listOfNovedades: novedades));
       }
     } catch (e, s) {
-      print("Error en __onLoadAllNovedadesEvent: $e, $s");
+      debugPrint("Error en __onLoadAllNovedadesEvent: $e, $s");
       emit(NovedadesPackingErrorState(e.toString()));
     }
   }
@@ -866,7 +867,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
         emit(ListOfProductsForPackingState(listOfProductsForPacking));
       }
     } catch (e, s) {
-      print('Error en el _onSelectProductPackingEvent: $e, $s');
+      debugPrint('Error en el _onSelectProductPackingEvent: $e, $s');
       emit(WmsPackingError(e.toString()));
     }
   }
@@ -883,7 +884,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
         emit(ListOfProductsForPackingState(listOfProductsForPacking));
       }
     } catch (e, s) {
-      print('Error en el _onUnSelectProductPackingEvent: $e, $s');
+      debugPrint('Error en el _onUnSelectProductPackingEvent: $e, $s');
       emit(WmsPackingError(e.toString()));
     }
   }
@@ -928,8 +929,8 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       listOfBatchsDB = listOfBatchs;
       // listOfBatchsDB =
       //     listOfBatchsDB.where((batch) => batch.isSeparate == 0).toList();
-      print('listOfBatchsDB: ${listOfBatchsDB.length}');
-      print('listOfBatchs: ${listOfBatchs.length}');
+      debugPrint('listOfBatchsDB: ${listOfBatchsDB.length}');
+      debugPrint('listOfBatchs: ${listOfBatchs.length}');
     } else {
       listOfBatchsDB = listOfBatchs.where((batch) {
         return batch.name?.toLowerCase().contains(query) ?? false;
@@ -986,7 +987,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
         listOfBatchs: listOfBatchsDB,
       ));
     } catch (e, s) {
-      print('Error en el _onSearchPedidoEvent: $e, $s');
+      debugPrint('Error en el _onSearchPedidoEvent: $e, $s');
       emit(WmsPackingError(e.toString()));
     }
   }
@@ -1088,7 +1089,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
 
       emit(WmsPackingSuccessState('Empaquetado exitoso'));
     } catch (e, s) {
-      print('Error en _onSetPackingsEvent: $e\n$s');
+      debugPrint('Error en _onSetPackingsEvent: $e\n$s');
       emit(WmsPackingErrorState('Ocurrió un error inesperado'));
     }
   }
@@ -1142,7 +1143,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       final productUpdate = await db.productosPedidosRepository
           .getProductoPedidoById(event.pedidoId, event.idMove, 'packing-batch');
 
-      print('productUpdate :${productUpdate.toMap()}');
+      debugPrint('productUpdate :${productUpdate.toMap()}');
 
       // Calcular la diferencia del producto ya separado
       Duration differenceProduct = dateTimeNow
@@ -1152,7 +1153,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       double secondsDifferenceProduct =
           differenceProduct.inMilliseconds / 1000.0;
 
-      print('secondsDifferenceProduct: $secondsDifferenceProduct');
+      debugPrint('secondsDifferenceProduct: $secondsDifferenceProduct');
       //actualizamos el dato de tiempoSeparado
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
           event.pedidoId,
@@ -1191,7 +1192,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       add(LoadAllProductsFromPedidoEvent(event.pedidoId));
       emit(SetPickingPackingOkState());
     } catch (e, s) {
-      print('Error en el  _onSetPickingsEvent: $e, $s');
+      debugPrint('Error en el  _onSetPickingsEvent: $e, $s');
       emit(SetPickingPackingErrorState(e.toString()));
     }
   }
@@ -1199,7 +1200,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
   //*metodo para cambiar la cantidad seleccionada
   void _onChangeQuantitySelectedEvent(
       ChangeQuantitySeparate event, Emitter<WmsPackingState> emit) async {
-    print('event.quantity: ${event.quantity}');
+    debugPrint('event.quantity: ${event.quantity}');
     if (event.quantity > 0) {
       quantitySelected = event.quantity;
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
@@ -1229,7 +1230,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
         isQuantityOk = event.isOk;
         break;
     }
-    print(
+    debugPrint(
         'Location: $isLocationOk, Product: $isProductOk, LocationDest: $isLocationDestOk, Quantity: $isQuantityOk');
     emit(ValidateFieldsPackingState(event.isOk));
   }
@@ -1251,7 +1252,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
           currentProduct.idProduct,
           currentProduct.idMove ?? 0,
           'packing-batch');
-      print('listOfBarcodes: ${listOfBarcodes.length}');
+      debugPrint('listOfBarcodes: ${listOfBarcodes.length}');
       locationIsOk = currentProduct.isLocationIsOk == 1 ? true : false;
       productIsOk = currentProduct.productIsOk == 1 ? true : false;
       locationDestIsOk = currentProduct.locationDestIsOk == 1 ? true : false;
@@ -1263,7 +1264,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
 
       emit(WmsProductInfoLoaded());
     } catch (e, s) {
-      print('Error en el  _onFetchProductEvent: $e, $s');
+      debugPrint('Error en el  _onFetchProductEvent: $e, $s');
       emit(WmsPackingError(e.toString()));
     }
   }
@@ -1280,7 +1281,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
           .getProductosPedido(event.pedidoId, 'packing-batch');
 
       if (response != null && response is List) {
-        print('response lista de productos: ${response.length}');
+        debugPrint('response lista de productos: ${response.length}');
         listOfProductos.clear();
         listOfProductos.addAll(response);
         productsDonePacking.clear();
@@ -1293,21 +1294,19 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
                 (product.isPackage == false || product.isPackage == 0))
             .toList();
 
-        print('productsDone: ${productsDone.length}');
+        debugPrint('productsDone: ${productsDone.length}');
 
         productsDonePacking = listOfProductos
             .where(
                 (product) => product.isSeparate == 1 && product.isPackage == 1)
             .toList();
 
-        print('productsDonePacking: ${productsDonePacking.length}');
+        debugPrint('productsDonePacking: ${productsDonePacking.length}');
 
         //filtramos y creamos la lista de productos listo a separar para empaque
         listOfProductosProgress = listOfProductos.where((product) {
           return product.isSeparate == null || product.isSeparate == 0;
         }).toList();
-
-        print(listOfProductosProgress);
 
         ordenarProducts();
 
@@ -1323,14 +1322,14 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
           }
         }
 
-        print('listAllOfBarcodes: ${listAllOfBarcodes.length}');
+        debugPrint('listAllOfBarcodes: ${listAllOfBarcodes.length}');
 
         //traemos todos los paquetes de la base de datos del pedido en cuesiton
         final packagesDB =
             await db.packagesRepository.getPackagesPedido(event.pedidoId);
         packages.clear();
         packages.addAll(packagesDB);
-        print('packagesDB: ${packagesDB.length}');
+        debugPrint('packagesDB: ${packagesDB.length}');
 
         //obtenemos las posiciones de los productos
         getPosicions();
@@ -1339,10 +1338,10 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
           listOfBatchs: listOfBatchsDB,
         ));
       } else {
-        print('Error _onLoadAllProductsFromPedidoEvent: response is null');
+        debugPrint('Error _onLoadAllProductsFromPedidoEvent: response is null');
       }
     } catch (e, s) {
-      print('Error en el  _onLoadAllProductsFromPedidoEvent: $e, $s');
+      debugPrint('Error en el  _onLoadAllProductsFromPedidoEvent: $e, $s');
       emit(WmsPackingError(e.toString()));
     }
   }
@@ -1356,7 +1355,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
   void getPedidosAll() async {
     final response =
         await DataBaseSqlite().pedidosPackingRepository.getAllPedidosPacking();
-    print('response pedidos: ${response.length}');
+    debugPrint('response pedidos: ${response.length}');
   }
 
   void _onLoadAllPedidosFromBatchEvent(
@@ -1367,20 +1366,20 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
           .pedidosPackingRepository
           .getAllPedidosBatch(event.batchId);
       if (response != null && response is List) {
-        print('response pedidos: ${response.length}');
+        debugPrint('response pedidos: ${response.length}');
         listOfPedidos.clear();
         listOfPedidosFilters.clear();
         listOfPedidosFilters = response;
         listOfPedidos = response;
-        print('pedidosToInsert: ${response.length}');
+        debugPrint('pedidosToInsert: ${response.length}');
         emit(LoadAllPedidosFromBatchLoaded(
           listOfPedidos: listOfPedidos,
         ));
       } else {
-        print('Error resPedidos: response is null');
+        debugPrint('Error resPedidos: response is null');
       }
     } catch (e, s) {
-      print('Error en el  _onLoadAllPedidosFromBatchEvent: $e, $s');
+      debugPrint('Error en el  _onLoadAllPedidosFromBatchEvent: $e, $s');
       emit(WmsPackingError(e.toString()));
     }
   }
@@ -1396,7 +1395,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
         }
       }
     }
-    print('positions: ${positions.length}');
+    debugPrint('positions: ${positions.length}');
   }
 
   void products() {
@@ -1421,7 +1420,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
   void _onAddProductPackingEvent(
       AddProductPackingEvent event, Emitter<WmsPackingState> emit) async {
     try {} catch (e, s) {
-      print('Error en el  _onAddProductPackingEvent: $e, $s');
+      debugPrint('Error en el  _onAddProductPackingEvent: $e, $s');
       emit(WmsPackingError(e.toString()));
     }
   }
@@ -1479,15 +1478,16 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
 
           final originsIterable =
               _extractAllOrigins(listOfBatchs).toList(growable: false);
-          print(
+          debugPrint(
               'productsPackagesToInsert Packing : ${productsPackagesToInsert.length}');
 
-          print('pedidosToInsert Packing : ${pedidosToInsert.length}');
-          print('productsToInsert Packing : ${productsToInsert.length}');
-          print('barcode product Packing : ${barcodesToInsert.length}');
-          print('otherBarcodes    Packing : ${otherBarcodesToInsert.length}');
-          print('packagesToInsert Packing : ${packagesToInsert.length}');
-          print('listOfBatchs origin : ${originsIterable.length}');
+          debugPrint('pedidosToInsert Packing : ${pedidosToInsert.length}');
+          debugPrint('productsToInsert Packing : ${productsToInsert.length}');
+          debugPrint('barcode product Packing : ${barcodesToInsert.length}');
+          debugPrint(
+              'otherBarcodes    Packing : ${otherBarcodesToInsert.length}');
+          debugPrint('packagesToInsert Packing : ${packagesToInsert.length}');
+          debugPrint('listOfBatchs origin : ${originsIterable.length}');
 
           // Enviar la lista agrupada de productos de un batch para packing
           await DataBaseSqlite()
@@ -1529,10 +1529,10 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
           listOfBatchs: listOfBatchs,
         ));
       } else {
-        print('Error resBatchs: response is null');
+        debugPrint('Error resBatchs: response is null');
       }
     } catch (e, s) {
-      print('Error en el  _onLoadAllPackingEvent: $e, $s');
+      debugPrint('Error en el  _onLoadAllPackingEvent: $e, $s');
       emit(WmsPackingError(e.toString()));
     }
   }
@@ -1556,7 +1556,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       listOfBatchsDB = batchsFromDB;
       emit(WmsPackingLoadedBD());
     } catch (e, s) {
-      print('Error en el  _onLoadBatchsFromDBEvent: $e, $s');
+      debugPrint('Error en el  _onLoadBatchsFromDBEvent: $e, $s');
       emit(WmsPackingError(e.toString()));
     }
   }
@@ -1689,7 +1689,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
 
       return formattedTime;
     } catch (e, s) {
-      print("❌ Error en el formatSecondsToHHMMSS $e ->$s");
+      debugPrint("❌ Error en el formatSecondsToHHMMSS $e ->$s");
       return "";
     }
   }

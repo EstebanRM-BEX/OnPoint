@@ -1,5 +1,6 @@
 // ignore_for_file: unrelated_type_equality_checks, avoid_print
 
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/devoluciones/tbl_product/product_devolucion_table.dart';
@@ -19,7 +20,6 @@ class ProductDevolucionRepository {
   /// --------------------------------------------------------------------------
   Future<void> insertProductosDevoluciones(
       List<ProductDevolucion> productosList) async {
-    
     if (productosList.isEmpty) return;
 
     Stopwatch stopwatch = Stopwatch();
@@ -30,12 +30,10 @@ class ProductDevolucionRepository {
 
       // Iniciamos una Transacción Exclusiva
       await db.transaction((txn) async {
-        
         // PASO 1: MARCA (Resetear flag)
         // Marcamos todo lo existente como "no sincronizado" (0)
         await txn.rawUpdate(
-          'UPDATE ${ProductDevolucionTable.tableName} SET ${ProductDevolucionTable.columnIsSynced} = 0'
-        );
+            'UPDATE ${ProductDevolucionTable.tableName} SET ${ProductDevolucionTable.columnIsSynced} = 0');
 
         // PASO 2: UPSERT POR LOTES (Chunking)
         for (var i = 0; i < productosList.length; i += _batchSize) {
@@ -88,7 +86,7 @@ class ProductDevolucionRepository {
                   producto.quantity == false ? 0.0 : producto.quantity ?? 0.0,
               ProductDevolucionTable.columnUseExpirationDate:
                   producto.useExpirationDate == false ? 0 : 1,
-              
+
               // ✅ Marcamos este registro como sincronizado/válido
               ProductDevolucionTable.columnIsSynced: 1,
             };
@@ -112,14 +110,15 @@ class ProductDevolucionRepository {
           whereArgs: [0],
         );
 
-        print("📦 Sync Devoluciones: Procesados ${productosList.length} | Eliminados Obsoletos: $deleted");
+        debugPrint(
+            "📦 Sync Devoluciones: Procesados ${productosList.length} | Eliminados Obsoletos: $deleted");
       });
 
       stopwatch.stop();
-      print("Tiempo de inserción optimizada: ${stopwatch.elapsedMilliseconds} ms");
-
+      debugPrint(
+          "Tiempo de inserción optimizada: ${stopwatch.elapsedMilliseconds} ms");
     } catch (e, s) {
-      print("❌ Error en insertProductosDevoluciones: $e ==> $s");
+      debugPrint("❌ Error en insertProductosDevoluciones: $e ==> $s");
     }
   }
 
@@ -167,7 +166,7 @@ class ProductDevolucionRepository {
             producto.quantity == false ? 0.0 : producto.quantity ?? 0.0,
         ProductDevolucionTable.columnUseExpirationDate:
             producto.useExpirationDate == false ? 0 : 1,
-        
+
         // ✅ También marcamos como sincronizado en inserción individual
         ProductDevolucionTable.columnIsSynced: 1,
       };
@@ -178,9 +177,9 @@ class ProductDevolucionRepository {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
-      print("✅ Producto insertado individualmente: ${producto.code}");
+      debugPrint("✅ Producto insertado individualmente: ${producto.code}");
     } catch (e, s) {
-      print("❌ Error en insertProductoDevolucion: $e ==> $s");
+      debugPrint("❌ Error en insertProductoDevolucion: $e ==> $s");
     }
   }
 
@@ -195,7 +194,8 @@ class ProductDevolucionRepository {
         whereArgs: [productId, lotId],
       );
     } catch (e, s) {
-      print("Error al eliminar producto en deleteProductoDevolucion: $e ==> $s");
+      debugPrint(
+          "Error al eliminar producto en deleteProductoDevolucion: $e ==> $s");
     }
   }
 
@@ -205,7 +205,7 @@ class ProductDevolucionRepository {
       Database db = await _databaseProvider.getDatabaseInstance();
       await db.delete(ProductDevolucionTable.tableName);
     } catch (e, s) {
-      print("Error al eliminar todos los productos: $e ==> $s");
+      debugPrint("Error al eliminar todos los productos: $e ==> $s");
     }
   }
 
@@ -220,7 +220,7 @@ class ProductDevolucionRepository {
         return ProductDevolucion.fromMap(maps[i]);
       });
     } catch (e, s) {
-      print("Error al obtener todos los productos: $e ==> $s");
+      debugPrint("Error al obtener todos los productos: $e ==> $s");
       return [];
     }
   }
@@ -238,10 +238,10 @@ class ProductDevolucionRepository {
       if (maps.isNotEmpty) {
         return ProductDevolucion.fromMap(maps.first);
       } else {
-        return null; 
+        return null;
       }
     } catch (e, s) {
-      print("Error al obtener producto por ID: $e ==> $s");
+      debugPrint("Error al obtener producto por ID: $e ==> $s");
       return null;
     }
   }
@@ -298,9 +298,9 @@ class ProductDevolucionRepository {
         whereArgs: [producto.productId, producto.lotId],
       );
 
-      print("✅ Producto actualizado: ${producto.code}");
+      debugPrint("✅ Producto actualizado: ${producto.code}");
     } catch (e, s) {
-      print("❌ Error en updateProductoDevolucion: $e ==> $s");
+      debugPrint("❌ Error en updateProductoDevolucion: $e ==> $s");
     }
   }
 
@@ -314,11 +314,12 @@ class ProductDevolucionRepository {
           'WHERE ${ProductDevolucionTable.columnProductId} = ? '
           'AND ${ProductDevolucionTable.columnLotId} = ?',
           [setValue, productId, lotId]);
-      
-      print("Update Campo ($field) para Prod: $productId. Result: $resUpdate");
+
+      debugPrint(
+          "Update Campo ($field) para Prod: $productId. Result: $resUpdate");
       return resUpdate;
     } catch (e, s) {
-      print("❌ Error en setFieldTableProductDevolucion: $e ==> $s");
+      debugPrint("❌ Error en setFieldTableProductDevolucion: $e ==> $s");
       return null;
     }
   }

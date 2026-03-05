@@ -419,7 +419,6 @@ class AppBar extends StatelessWidget {
                   GestureDetector(
                     onTap: () {
                       context.read<InfoRapidaBloc>().add(IsEditEvent(false));
-
                       context
                           .read<InfoRapidaBloc>()
                           .add(ResetProductsFiltersMassTransferEvent());
@@ -443,78 +442,85 @@ class AppBar extends StatelessWidget {
                         style: TextStyle(color: white, fontSize: 18)),
                   ),
                   const Spacer(),
-                  Visibility(
-                    visible: context
-                            .read<InfoRapidaBloc>()
-                            .configurations
-                            .result
-                            ?.result
-                            ?.updateLocationInventory ==
-                        true,
-                    child: PopupMenuButton<String>(
-                      // Usamos more_vert (3 puntos) o edit según prefieras
-                      icon: Icon(
-                        context.read<InfoRapidaBloc>().isEdit
-                            ? Icons
-                                .close // Si está editando, mostramos X para intuir cerrar
-                            : Icons.more_vert, // Si no, mostramos menú
-                        color: white,
-                        size: 20,
-                      ),
-                      onSelected: (String value) {
-                        if (value == 'edit') {
+                  PopupMenuButton<String>(
+                    // Usamos more_vert (3 puntos) o edit según prefieras
+                    icon: Icon(
+                      context.read<InfoRapidaBloc>().isEdit
+                          ? Icons
+                              .close // Si está editando, mostramos X para intuir cerrar
+                          : Icons.more_vert, // Si no, mostramos menú
+                      color: white,
+                      size: 20,
+                    ),
+                    onSelected: (String value) {
+                      if (value == 'edit') {
+                        if (context
+                                .read<InfoRapidaBloc>()
+                                .configurations
+                                .result
+                                ?.result
+                                ?.updateLocationInventory ==
+                            true) {
                           // Lógica original de Editar Ubicación
                           context.read<InfoRapidaBloc>().add(IsEditEvent(
                               !context.read<InfoRapidaBloc>().isEdit));
-                        } else if (value == 'mass_transfer') {
-                          context.read<InfoRapidaBloc>().add(
-                              ActivateMassTransferEvent(!context
-                                  .read<InfoRapidaBloc>()
-                                  .isMassTransferActive));
+                        } else {
+                          Get.snackbar(
+                            '360 Software Informa',
+                            'No tiene permiso para editar la ubicación',
+                            backgroundColor: white,
+                            colorText: primaryColorApp,
+                            icon: const Icon(Icons.error, color: Colors.red),
+                          );
                         }
-                      },
-                      itemBuilder: (BuildContext context) {
-                        // Verificamos si ya está en modo edición para cambiar el texto del menú
-                        final isEditing = context.read<InfoRapidaBloc>().isEdit;
+                      } else if (value == 'mass_transfer') {
+                        context.read<InfoRapidaBloc>().add(
+                            ActivateMassTransferEvent(!context
+                                .read<InfoRapidaBloc>()
+                                .isMassTransferActive));
+                      }
+                    },
+                    itemBuilder: (BuildContext context) {
+                      // Verificamos si ya está en modo edición para cambiar el texto del menú
+                      final isEditing = context.read<InfoRapidaBloc>().isEdit;
 
-                        return [
-                          PopupMenuItem<String>(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  isEditing ? Icons.close : Icons.edit,
-                                  color: Colors
-                                      .black54, // Color para el menú (fondo blanco por defecto)
-                                ),
-                                const SizedBox(width: 10),
-                                Text(isEditing
-                                    ? "Cancelar edición"
-                                    : "Editar ubicación"),
-                              ],
-                            ),
+                      return [
+                        PopupMenuItem<String>(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(
+                                isEditing ? Icons.close : Icons.edit,
+                                color: Colors
+                                    .black54, // Color para el menú (fondo blanco por defecto)
+                              ),
+                              const SizedBox(width: 10),
+                              Text(isEditing
+                                  ? "Cancelar edición"
+                                  : "Editar ubicación"),
+                            ],
                           ),
-                          PopupMenuItem<String>(
-                            value: 'mass_transfer',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons
-                                      .swap_horiz, // Icono sugerido para transferencia
-                                  color: Colors.black54,
-                                ),
-                                SizedBox(width: 10),
-                                Text(context
-                                        .read<InfoRapidaBloc>()
-                                        .isMassTransferActive
-                                    ? "Desactivar transferencia masiva"
-                                    : "Activar transferencia masiva"),
-                              ],
-                            ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'mass_transfer',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons
+                                    .swap_horiz, // Icono sugerido para transferencia
+                                color: Colors.black54,
+                              ),
+                              SizedBox(width: 10),
+                              Text(context
+                                      .read<InfoRapidaBloc>()
+                                      .isMassTransferActive
+                                  ? "Desactivar transferencia masiva"
+                                  : "Activar transferencia masiva"),
+                            ],
                           ),
-                        ];
-                      },
-                    ),
+                        ),
+                      ];
+                    },
                   ),
                 ],
               ),

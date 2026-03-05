@@ -152,7 +152,7 @@ class Tab3PedidoScreen extends StatelessWidget {
                                   const EdgeInsets.symmetric(horizontal: 8),
                               child: GestureDetector(
                                 onTap: () {
-                                  print("Producto: ${product.toJson()}");
+                                  debugPrint("Producto: ${product.toJson()}");
                                 },
                                 child: Card(
                                     color: product.isSeparate == 1

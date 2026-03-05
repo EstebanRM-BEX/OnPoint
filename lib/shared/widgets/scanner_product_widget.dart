@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 
 class ProductScannerWidget extends StatefulWidget {
   final bool isProductOk;
@@ -24,7 +23,7 @@ class ProductScannerWidget extends StatefulWidget {
   final TextEditingController controller;
   final Widget productDropdown;
   final Widget expiryWidget;
-  final List<Barcodes> listOfBarcodes;
+  final List<dynamic> listOfBarcodes;
   final VoidCallback onBarcodesDialogTap;
   final String category;
   final bool isViewLote;

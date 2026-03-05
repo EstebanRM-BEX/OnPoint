@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:ui';
@@ -9,8 +12,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
@@ -34,8 +35,8 @@ class ListPackingConsolidadeScreen extends StatefulWidget {
 class _ListPackingConsolidadeScreenState
     extends State<ListPackingConsolidadeScreen> {
   NotchBottomBarController controller = NotchBottomBarController();
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
   FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
 
@@ -46,14 +47,13 @@ class _ListPackingConsolidadeScreenState
         .toLowerCase();
 
     _controllerToDo.clear();
-    print('🔎 Scan barcode (batch picking): $scan');
+    debugPrint('🔎 Scan barcode (batch picking): $scan');
 
     final listOfBatchs = bloc.listOfBatchs;
 
     void processBatch(BatchPackingModel batch) {
       bloc.add(ClearScannedValuePackEvent('toDo'));
 
-      print(batch.toMap());
       try {
         _handleBatchTap(context, batch, context);
       } catch (e) {
@@ -74,7 +74,7 @@ class _ListPackingConsolidadeScreenState
     );
 
     if (batchs.id != null) {
-      print(
+      debugPrint(
           '🔎 batch encontrado : ${batchs.id} ${batchs.name} - ${batchs.zonaEntrega}');
       processBatch(batchs);
       return;
@@ -87,7 +87,7 @@ class _ListPackingConsolidadeScreenState
 
   void _handleBatchTap(
       BuildContext context, dynamic batch, BuildContext contextBuilder) async {
-    print('Batch seleccionado: ${batch.toMap()}');
+    debugPrint('Batch seleccionado: ${batch.toMap()}');
     context
         .read<PackingConsolidateBloc>()
         .add(LoadConfigurationsUserPackConsolidate());

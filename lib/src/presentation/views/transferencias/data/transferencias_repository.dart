@@ -26,7 +26,7 @@ class TransferenciasRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseTransferenciasResult(); // Si no hay conexión, retornar una lista vacía
     }
 
@@ -105,7 +105,7 @@ class TransferenciasRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseTransferenciasResult(
         updateVersion: false,
         result: [],
@@ -114,7 +114,7 @@ class TransferenciasRepository {
       );
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error fetAllTransferencias: $e, $s');
+      debugPrint('Error fetAllTransferencias: $e, $s');
     }
     return ResponseTransferenciasResult(
       updateVersion: false,
@@ -131,7 +131,7 @@ class TransferenciasRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseTransferenciasResult(
         result: [],
         code: 500,
@@ -222,11 +222,11 @@ class TransferenciasRepository {
         );
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseTransferenciasResult();
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error fetAllTransferencias: $e, $s');
+      debugPrint('Error fetAllTransferencias: $e, $s');
     }
     return ResponseTransferenciasResult(
       result: [],
@@ -246,7 +246,7 @@ class TransferenciasRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return true; // Si no hay conexión, terminamos la ejecución
     }
 
@@ -308,11 +308,11 @@ class TransferenciasRepository {
         // ...
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return false; // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendTransferRequest: $e, $s');
+      debugPrint('Error en sendTransferRequest: $e, $s');
       return false; // Retornamos un objeto vacío en caso de error de red
     }
     return false; // Retornamos un objeto vacío en caso de error de red
@@ -328,7 +328,7 @@ class TransferenciasRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return false; // Si no hay conexión, retornar una lista vacía
     }
 
@@ -386,11 +386,11 @@ class TransferenciasRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return false;
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error assignUserToTransfer: $e, $s');
+      debugPrint('Error assignUserToTransfer: $e, $s');
     }
     return false;
   }
@@ -404,11 +404,11 @@ class TransferenciasRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseSenTransfer(); // Si no hay conexión, terminamos la ejecución
     }
 
-    print("transferRequest ${transferRequest.toMap()}");
+    debugPrint("transferRequest ${transferRequest.toMap()}");
 
     try {
       var response = await ApiRequestService().postPacking(
@@ -446,11 +446,11 @@ class TransferenciasRepository {
         );
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseSenTransfer(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendProductTransfer: $e, $s');
+      debugPrint('Error en sendProductTransfer: $e, $s');
       return ResponseSenTransfer(); // Retornamos un objeto vacío en caso de error de red
     }
     return ResponseSenTransfer(); // Retornamos un objeto vacío en caso de error de red
@@ -464,11 +464,11 @@ class TransferenciasRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseSenTransfer(); // Si no hay conexión, terminamos la ejecución
     }
 
-    print("transferRequest pick ${transferRequest.toMap()}");
+    debugPrint("transferRequest pick ${transferRequest.toMap()}");
 
     try {
       var response = await ApiRequestService().postPacking(
@@ -504,11 +504,11 @@ class TransferenciasRepository {
         );
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseSenTransfer(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendProductTransfer: $e, $s');
+      debugPrint('Error en sendProductTransfer: $e, $s');
       return ResponseSenTransfer(); // Retornamos un objeto vacío en caso de error de red
     }
     return ResponseSenTransfer(); // Retornamos un objeto vacío en caso de error de red
@@ -523,7 +523,7 @@ class TransferenciasRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseValidate(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -581,11 +581,11 @@ class TransferenciasRepository {
         }
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en validateTransfer: $e, $s');
+      debugPrint('Error en validateTransfer: $e, $s');
       return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
     }
     return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
@@ -600,7 +600,7 @@ class TransferenciasRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseValidate(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -658,11 +658,11 @@ class TransferenciasRepository {
         }
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en validateTransfer: $e, $s');
+      debugPrint('Error en validateTransfer: $e, $s');
       return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
     }
     return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
@@ -676,7 +676,7 @@ class TransferenciasRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return CheckAvailabilityResponseResult(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -734,11 +734,11 @@ class TransferenciasRepository {
         }
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return CheckAvailabilityResponseResult(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en checkAvailability: $e, $s');
+      debugPrint('Error en checkAvailability: $e, $s');
       return CheckAvailabilityResponseResult(); // Retornamos un objeto vacío en caso de error de red
     }
     return CheckAvailabilityResponseResult(); // Retornamos un objeto vacío en caso de error de red
@@ -753,7 +753,7 @@ class TransferenciasRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseDeleteLine(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -821,11 +821,11 @@ class TransferenciasRepository {
         }
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseDeleteLine(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en deleteLineTransfer: $e, $s');
+      debugPrint('Error en deleteLineTransfer: $e, $s');
       return ResponseDeleteLine(); // Retornamos un objeto vacío en caso de error de red
     }
     return ResponseDeleteLine(); // Retornamos un objeto vacío en caso de error de red
@@ -841,7 +841,7 @@ class TransferenciasRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return RespondeCreateTransfer(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -907,11 +907,11 @@ class TransferenciasRepository {
         }
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return RespondeCreateTransfer(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en checkAvailability: $e, $s');
+      debugPrint('Error en checkAvailability: $e, $s');
       return RespondeCreateTransfer(); // Retornamos un objeto vacío en caso de error de red
     }
     return RespondeCreateTransfer();
@@ -929,7 +929,7 @@ class TransferenciasRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return RespondeValidateStock(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -988,11 +988,11 @@ class TransferenciasRepository {
         }
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return RespondeValidateStock(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en validateStockTransfer: $e, $s');
+      debugPrint('Error en validateStockTransfer: $e, $s');
       return RespondeValidateStock(); // Retornamos un objeto vacío en caso de error de
     }
     return RespondeValidateStock(); // Retornamos un objeto vacío en caso de error de

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:injectable/injectable.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -5,6 +6,7 @@ import '../../../../core/error/failures.dart';
 import '../../domain/entities/device_info.dart';
 import '../../domain/entities/user_configuration.dart';
 import '../../domain/entities/user_location.dart';
+import '../../domain/entities/user_novelty.dart';
 import '../../domain/repositories/user_repository.dart';
 import '../datasources/user_local_data_source.dart';
 import '../datasources/user_remote_data_source.dart';
@@ -70,13 +72,37 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
+  Future<Either<Failure, List<Novedad>>> getNovelties() async {
+    if (await _isConnected()) {
+      try {
+        final remoteNovelties = await remoteDataSource.getNovelties();
+        await localDataSource.cacheUserNovelties(remoteNovelties);
+        return Right(remoteNovelties);
+      } catch (e) {
+        return Left(ServerFailure(e.toString()));
+      }
+    } else {
+      try {
+        final localNovelties = await localDataSource.getCachedUserNovelties();
+        if (localNovelties != null) {
+          return Right(localNovelties);
+        } else {
+          return const Left(CacheFailure('No cached novelties found'));
+        }
+      } catch (e) {
+        return Left(CacheFailure(e.toString()));
+      }
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> registerDevice(String deviceId,
       String deviceName, String deviceModel, String versionApp) async {
     if (await _isConnected()) {
       try {
         await remoteDataSource.registerDevice(
             deviceId, deviceName, deviceModel, versionApp);
-        print('✅ Dispositivo registrado correctamente');
+        debugPrint('✅ Dispositivo registrado correctamente');
         return const Right(null);
       } catch (e) {
         return Left(ServerFailure(e.toString()));

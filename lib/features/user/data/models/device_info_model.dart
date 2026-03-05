@@ -1,6 +1,7 @@
+import 'package:wms_app/core/interfaces/i_device_info_service.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import '../../../../core/utils/get_mac_utils.dart';
 import '../../domain/entities/device_info.dart';
 
 class DeviceInfoModel extends DeviceInfo {
@@ -20,8 +21,8 @@ class DeviceInfoModel extends DeviceInfo {
     AndroidDeviceInfo androidInfo = await deviceInfoPlugin.androidInfo;
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
 
-    String mac = (await DeviceInfoCustom.getMacAddress()) ?? 'unknown';
-    String imei = (await DeviceInfoCustom.getImei()) ?? 'unknown';
+    String mac = (await getIt<IDeviceInfoService>().getMacAddress()) ?? 'unknown';
+    String imei = (await getIt<IDeviceInfoService>().getImei()) ?? 'unknown';
 
     return DeviceInfoModel(
       model: androidInfo.model,

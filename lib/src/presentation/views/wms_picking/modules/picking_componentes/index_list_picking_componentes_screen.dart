@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: must_be_immutable, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
@@ -8,8 +11,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
@@ -25,8 +26,8 @@ import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 class IndexListPickComponentsScreen extends StatelessWidget {
   IndexListPickComponentsScreen({super.key});
 
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
   FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
 
@@ -35,14 +36,13 @@ class IndexListPickComponentsScreen extends StatelessWidget {
     final scan = value.trim().toLowerCase();
 
     _controllerToDo.clear();
-    print('🔎 Scan barcode (batch picking): $scan');
+    debugPrint('🔎 Scan barcode (batch picking): $scan');
 
     final listOfBatchs = bloc.listOfPickCompo;
 
     void processBatch(ResultPick batch) {
       // bloc.add(ClearScannedValueEvent('toDo'));
 
-      print(batch.toMap());
       try {
         _handlePickTap(context, batch, context);
       } catch (e) {
@@ -62,7 +62,7 @@ class IndexListPickComponentsScreen extends StatelessWidget {
     );
 
     if (batchs.id != null) {
-      print('🔎 batch encontrado : ${batchs.id} ${batchs.name} ');
+      debugPrint('🔎 batch encontrado : ${batchs.id} ${batchs.name} ');
       processBatch(batchs);
       Future.microtask(() => focusNodeBuscar.requestFocus());
       return;
@@ -786,7 +786,7 @@ class IndexListPickComponentsScreen extends StatelessWidget {
 
   void _handlePickTap(
       BuildContext context, dynamic batch, BuildContext contextBuilder) async {
-    print("Batch: ${batch.toMap()}");
+    debugPrint("Batch: ${batch.toMap()}");
     final bloc = context
         .read<PickingPickBloc>(); // Asegúrate que el BLoC sea el correcto
 

@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously, avoid_print
 
 import 'package:flutter/material.dart';
@@ -6,9 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/shared/widgets/scanner_location_widget.dart';
@@ -40,8 +41,8 @@ class ScanPackScreen extends StatefulWidget {
 }
 
 class _PackingScreenState extends State<ScanPackScreen> {
-  final VibrationService _vibrationService = VibrationService();
-  final AudioService _audioService = AudioService();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
+  final IAudioService _audioService = getIt<IAudioService>();
   FocusNode focusNode1 = FocusNode(); // ubicacion  de origen
   FocusNode focusNode2 = FocusNode(); // producto
   FocusNode focusNode3 = FocusNode(); // cantidad por pda
@@ -68,7 +69,7 @@ class _PackingScreenState extends State<ScanPackScreen> {
         !batchBloc.quantityIsOk && //false
         !batchBloc.locationDestIsOk) //false
     {
-      print('❤️‍🔥 location');
+      debugPrint('❤️‍🔥 location');
       FocusScope.of(context).requestFocus(focusNode1);
       focusNode2.unfocus();
       focusNode3.unfocus();
@@ -79,7 +80,7 @@ class _PackingScreenState extends State<ScanPackScreen> {
         !batchBloc.quantityIsOk && //false
         !batchBloc.locationDestIsOk) //false
     {
-      print('❤️‍🔥 product');
+      debugPrint('❤️‍🔥 product');
       FocusScope.of(context).requestFocus(focusNode2);
       focusNode1.unfocus();
       focusNode3.unfocus();
@@ -91,7 +92,7 @@ class _PackingScreenState extends State<ScanPackScreen> {
         !batchBloc.locationDestIsOk && //false
         !batchBloc.viewQuantity) //false
     {
-      print('❤️‍🔥 quantity');
+      debugPrint('❤️‍🔥 quantity');
       FocusScope.of(context).requestFocus(focusNode3);
       focusNode1.unfocus();
       focusNode2.unfocus();
@@ -257,7 +258,7 @@ class _PackingScreenState extends State<ScanPackScreen> {
                         child:
                             BlocConsumer<PackingPedidoBloc, PackingPedidoState>(
                           listener: (context, state) {
-                            print('❤️‍🔥 state: $state ');
+                            debugPrint('❤️‍🔥 state: $state ');
 
                             if (state is ViewProductImageSuccess) {
                               showImageDialog(context, state.imageUrl);
@@ -659,7 +660,8 @@ class _PackingScreenState extends State<ScanPackScreen> {
                                           double.parse(value);
                                     } catch (e) {
                                       // Manejo de errores si la conversión falla
-                                      print('Error al convertir a entero: $e');
+                                      debugPrint(
+                                          'Error al convertir a entero: $e');
                                       // Aquí puedes mostrar un mensaje al usuario o manejar el error de otra forma
                                     }
                                   } else {
@@ -744,7 +746,7 @@ class _PackingScreenState extends State<ScanPackScreen> {
 
   void _finichPackingProductSplit(BuildContext context, double cantidad) async {
     //marcamos el producto como terminado
-    print('Entramos a _finichPackingProductSplit -----');
+    debugPrint('Entramos a _finichPackingProductSplit -----');
     final batchBloc = context.read<PackingPedidoBloc>();
 
     batchBloc.add(SetPickingSplitEvent(

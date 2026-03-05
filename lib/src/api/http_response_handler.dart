@@ -15,7 +15,7 @@ class HttpResponseHandler {
   BuildContext? get context => navigatorKey.currentContext;
   Future handleHttpResponse(Future<Response> httpCall) async {
     var response = await httpCall;
-    print('handleHttpResponse: ${response.statusCode}');
+    debugPrint('handleHttpResponse: ${response.statusCode}');
     switch (response.statusCode) {
       case 200:
         return response;
@@ -57,7 +57,7 @@ class HttpResponseHandler {
 
   _handle400(Response response) {
     var message = jsonDecode(response.body)["data"];
-    print('handle400: $message');
+    debugPrint('handle400: $message');
     _showErrorSnackBar([message]);
   }
 

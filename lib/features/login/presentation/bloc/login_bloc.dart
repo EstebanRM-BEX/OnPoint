@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'package:bloc/bloc.dart';
+import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 import 'package:meta/meta.dart';
 import 'package:wms_app/features/login/domain/entities/user.dart';
@@ -49,12 +50,12 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     await authResult.fold(
       // Authentication failed
       (failure) async {
-        print('❌ Login failed: ${failure.message}');
+        debugPrint('❌ Login failed: ${failure.message}');
         emit(LoginFailure(failure.message));
       },
       // Authentication successful
       (user) async {
-        print('✅ Login successful: ${user.name}');
+        debugPrint('✅ Login successful: ${user.name}');
 
         // Save user session with encrypted password
         final saveResult = await saveUserSession(
@@ -66,11 +67,11 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
         saveResult.fold(
           (failure) {
-            print('⚠️ Session save failed: ${failure.message}');
+            debugPrint('⚠️ Session save failed: ${failure.message}');
             emit(LoginFailure('Error al guardar sesión: ${failure.message}'));
           },
           (_) {
-            print('💾 Session saved successfully');
+            debugPrint('💾 Session saved successfully');
             emit(LoginSuccess(user));
           },
         );

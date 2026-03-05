@@ -1,10 +1,11 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
@@ -17,8 +18,8 @@ class HistoryListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AudioService audioService = AudioService();
-    final VibrationService vibrationService = VibrationService();
+    final IAudioService audioService = getIt<IAudioService>();
+    final IVibrationService vibrationService = getIt<IVibrationService>();
     FocusNode focusNodeBuscar = FocusNode();
 
     void validateBarcode(String value, BuildContext context) {
@@ -28,7 +29,7 @@ class HistoryListScreen extends StatelessWidget {
           .toLowerCase();
 
       bloc.searchHistoryController.clear();
-      print('🔎 Scan barcode (batch picking): $scan');
+      debugPrint('🔎 Scan barcode (batch picking): $scan');
 
       final listOfBatchs = bloc.filtersHistoryBatchs;
 
@@ -43,7 +44,6 @@ class HistoryListScreen extends StatelessWidget {
           context,
           'history-detail',
         );
-        print(batch.toMap());
         try {} catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -61,7 +61,7 @@ class HistoryListScreen extends StatelessWidget {
       );
 
       if (batchs.id != null) {
-        print('🔎 batch encontrado : ${batchs.id} ${batchs.name}');
+        debugPrint('🔎 batch encontrado : ${batchs.id} ${batchs.name}');
         processBatch(batchs);
         return;
       } else {

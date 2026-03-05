@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
 import 'dart:ui';
@@ -6,8 +9,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
@@ -33,8 +34,8 @@ class PickingCompoBatchScreen extends StatefulWidget {
 }
 
 class _PickingCompoBatchScreenState extends State<PickingCompoBatchScreen> {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
   FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
 
@@ -43,13 +44,12 @@ class _PickingCompoBatchScreenState extends State<PickingCompoBatchScreen> {
     final scan = value.trim().toLowerCase();
 
     _controllerToDo.clear();
-    print('🔎 Scan barcode (batch picking): $scan');
+    debugPrint('🔎 Scan barcode (batch picking): $scan');
 
     final listOfBatchs = bloc.listOfBatchsByComponents;
 
     void processBatch(BatchsModel batch) {
       Future.microtask(() => focusNodeBuscar.requestFocus());
-      print(batch.toMap());
       try {
         _handleBatchSelection(context, context, batch);
       } catch (e) {
@@ -70,7 +70,7 @@ class _PickingCompoBatchScreenState extends State<PickingCompoBatchScreen> {
     );
 
     if (batchs.id != null) {
-      print(
+      debugPrint(
           '🔎 batch encontrado : ${batchs.id} ${batchs.name} - ${batchs.zonaEntrega}');
       processBatch(batchs);
       return;
@@ -269,7 +269,6 @@ class _PickingCompoBatchScreenState extends State<PickingCompoBatchScreen> {
                                         ),
                                         child: GestureDetector(
                                           onTap: () async {
-                                            print(batch.toMap());
                                             try {
                                               _handleBatchSelection(context,
                                                   contextBuilder, batch);

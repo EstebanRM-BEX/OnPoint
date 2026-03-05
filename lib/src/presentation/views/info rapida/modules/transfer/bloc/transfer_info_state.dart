@@ -91,8 +91,12 @@ class FilterUbicacionesSuccess extends TransferInfoState {
   FilterUbicacionesSuccess(this.locations);
 }
 
-
 class SetDateStartStateTransfer extends TransferInfoState {
   final String dateStart;
   SetDateStartStateTransfer(this.dateStart);
+}
+
+class ShowQuantityTransferState extends TransferInfoState {
+  final bool showQuantity;
+  ShowQuantityTransferState(this.showQuantity);
 }

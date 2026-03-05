@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
+import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
 import 'package:wms_app/src/presentation/views/transferencias/data/transferencias_repository.dart';
@@ -273,7 +273,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   void _onViewProductImageEvent(
       ViewProductImageEvent event, Emitter<PickingPickState> emit) async {
     try {
-      print('Obteniendo imagen del producto con ID: ${event.idProduct}');
+      debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
       final response =
@@ -291,7 +291,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         emit(ViewProductImageFailure('Imagen no disponible'));
       }
     } catch (e, s) {
-      print('Error en el ViewProductImageEvent: $e, $s');
+      debugPrint('Error en el ViewProductImageEvent: $e, $s');
       emit(ViewProductImageFailure(e.toString()));
     }
   }
@@ -299,7 +299,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   void _onLoadHistoryPickComponentEvent(LoadHistoryPickComponentEvent event,
       Emitter<PickingPickState> emit) async {
     try {
-      print('date: ${event.date}');
+      debugPrint('date: ${event.date}');
       emit(PickingLoadingState());
 
       final response = await pickingPickRepository.resPicksComponentsDone(
@@ -315,10 +315,10 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
         emit(LoadHistoryPicksState(listOfBatchs: filtersHistoryPicks));
       } else {
-        print('Error resHistoryBatchs: response is null');
+        debugPrint('Error resHistoryBatchs: response is null');
       }
     } catch (e, s) {
-      print('Error LoadHistoryBatchsEvent: $e, $s');
+      debugPrint('Error LoadHistoryBatchsEvent: $e, $s');
       emit(PickingErrorState(e.toString()));
     }
   }
@@ -326,7 +326,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   void _onLoadHistoryPickEvent(
       LoadHistoryPickEvent event, Emitter<PickingPickState> emit) async {
     try {
-      print('date: ${event.date}');
+      debugPrint('date: ${event.date}');
       emit(PickingLoadingState());
 
       final response = await pickingPickRepository.resPicksDone(
@@ -342,10 +342,10 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
         emit(LoadHistoryPicksState(listOfBatchs: filtersHistoryPicks));
       } else {
-        print('Error resHistoryBatchs: response is null');
+        debugPrint('Error resHistoryBatchs: response is null');
       }
     } catch (e, s) {
-      print('Error LoadHistoryBatchsEvent: $e, $s');
+      debugPrint('Error LoadHistoryBatchsEvent: $e, $s');
       emit(PickingErrorState(e.toString()));
     }
   }
@@ -365,10 +365,10 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         historyPickId = response;
         emit(BatchHistoryLoadedState(historyPickId));
       } else {
-        print('Error resHistoryBatchs: response is null');
+        debugPrint('Error resHistoryBatchs: response is null');
       }
     } catch (e, s) {
-      print('Error LoadHistoryBatchsEvent: $e, $s');
+      debugPrint('Error LoadHistoryBatchsEvent: $e, $s');
       emit(BatchsPickingErrorState(e.toString()));
     }
   }
@@ -381,7 +381,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       add(ClearSearchProudctsPickEvent());
       currentProduct = event.selectedProduct;
       listOfBarcodes.clear();
-      print("🔍 Lista de barcodes limpiada");
+      debugPrint("🔍 Lista de barcodes limpiada");
 
       listOfBarcodes = await db.barcodesPackagesRepository.getBarcodesProduct(
         pickWithProducts.pick?.id ?? 0,
@@ -392,7 +392,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
       emit(LoadSelectedProductState(currentProduct));
     } catch (e, s) {
-      print("❌ Error en _onLoadSelectedProductEvent: $e -> $s");
+      debugPrint("❌ Error en _onLoadSelectedProductEvent: $e -> $s");
     }
   }
 
@@ -410,14 +410,14 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
                 muelle.locationId == pickWithProducts.pick?.muelleId)
             .toList();
 
-        print("submuelles: ${submuelles.length}");
+        debugPrint("submuelles: ${submuelles.length}");
         emit(MuellesLoadedState(listOfMuelles: submuelles));
       } else {
         emit(MuellesErrorState('No se encontraron muelles'));
       }
     } catch (e, s) {
       emit(MuellesErrorState('Error al cargar los muelles'));
-      print("❌ Error en __onLoadAllNovedadesEvent: $e, $s");
+      debugPrint("❌ Error en __onLoadAllNovedadesEvent: $e, $s");
     }
   }
 
@@ -439,7 +439,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       }
     } catch (e, s) {
       emit(ValidateConfirmFailure('Error al validar la confirmacion'));
-      print('Error en el _onValidateConfirmEvent: $e, $s');
+      debugPrint('Error en el _onValidateConfirmEvent: $e, $s');
     }
   }
 
@@ -472,9 +472,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         final allBarcodes =
             _extractAllBarcodes(result.result!).toList(growable: false);
 
-        print('productsToInsert: ${productsIterable.length}');
-        print('sentProductsIterable: ${sentProductsIterable.length}');
-        print('allBarcodes: ${allBarcodes.length}');
+        debugPrint('productsToInsert: ${productsIterable.length}');
+        debugPrint('sentProductsIterable: ${sentProductsIterable.length}');
+        debugPrint('allBarcodes: ${allBarcodes.length}');
 
         // Enviar la lista agrupada a insertBatchProducts
         await db.pickProductsRepository
@@ -532,8 +532,8 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     try {
       emit(CreateBackOrderOrNotLoading());
 
-      print('Crear backorder: ${event.isBackOrder}');
-      print('idPick: ${event.idPick}');
+      debugPrint('Crear backorder: ${event.isBackOrder}');
+      debugPrint('idPick: ${event.idPick}');
 
       final response = await repository.validateTransfer(
           event.idPick, event.isBackOrder, false);
@@ -574,7 +574,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         'Error al crear la backorder',
         event.isBackOrder,
       ));
-      print('Error en el _onCreateBackOrder: $e, $s');
+      debugPrint('Error en el _onCreateBackOrder: $e, $s');
     }
   }
 
@@ -603,7 +603,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         'Error al crear la backorder',
         false,
       ));
-      print('Error en el _onCreateBackOrder: $e, $s');
+      debugPrint('Error en el _onCreateBackOrder: $e, $s');
     }
   }
 
@@ -669,7 +669,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
       emit(LoadSearchPickingState());
     } catch (e, s) {
-      print('Error en _onSearchPickEvent: $e, $s');
+      debugPrint('Error en _onSearchPickEvent: $e, $s');
     }
   }
 
@@ -678,7 +678,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       StartOrStopTimeTransfer event, Emitter<PickingPickState> emit) async {
     try {
       final time = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
-      print("time : $time");
+      debugPrint("time : $time");
       if (event.value == "start_time_transfer") {
         await db.pickRepository.setFieldTablePick(
           event.id,
@@ -711,7 +711,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         emit(StartOrStopTimeTransferFailure('Error al enviar el tiempo'));
       }
     } catch (e, s) {
-      print('Error en el _onStartOrStopTimeOrder: $e, $s');
+      debugPrint('Error en el _onStartOrStopTimeOrder: $e, $s');
     }
   }
 
@@ -762,7 +762,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       }
     } catch (e, s) {
       emit(AssignUserToPickError('Error al asignar el usuario'));
-      print('Error en el _onAssignUserToOrder: $e, $s');
+      debugPrint('Error en el _onAssignUserToOrder: $e, $s');
     }
   }
 
@@ -786,7 +786,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       emit(LoadProductsBatchSuccesStateBD(
           listOfProductsBatch: filteredProducts));
     } catch (e, s) {
-      print("❌ Error en el _onEditProductEvent: $e -> $s");
+      debugPrint("❌ Error en el _onEditProductEvent: $e -> $s");
     }
   }
 
@@ -801,7 +801,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       emit(PickingOkState());
     } catch (e, s) {
       emit(PickingOkError());
-      print("❌ Error en PickingOkEvent $e -> $s");
+      debugPrint("❌ Error en PickingOkEvent $e -> $s");
     }
   }
 
@@ -828,7 +828,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         emit(ProductEditError());
       }
     } catch (e, s) {
-      print("❌ Error en el SendProductEditOdooEvent :$e->$s");
+      debugPrint("❌ Error en el SendProductEditOdooEvent :$e->$s");
     }
   }
 
@@ -935,15 +935,15 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         // Calcular la diferencia en segundos
         Duration difference = dateTimeActuality.difference(DateTime.now());
         secondsDifference = difference.inMilliseconds / 1000.0;
-        print("Diferencia en segundos: $secondsDifference");
+        debugPrint("Diferencia en segundos: $secondsDifference");
       } catch (e) {
-        print("❌ Error al parsear la fecha: $e");
+        debugPrint("❌ Error al parsear la fecha: $e");
       }
 
       DateTime fechaTransaccion = DateTime.now();
       String fechaFormateada = formatoFecha(fechaTransaccion);
 
-      print('Enviando producto a Odoo: ${event.product.toMap()}');
+      debugPrint('Enviando producto a Odoo: ${event.product.toMap()}');
 
       final response = await repository.sendProductTransferPick(
         TransferRequest(
@@ -986,7 +986,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         final response = await db.pickProductsRepository
             .getPickWithProducts(pickWithProducts.pick?.id ?? 0);
 
-        print('isEdit: ${event.isEdit}');
+        debugPrint('isEdit: ${event.isEdit}');
 
         final List<ProductsBatch> products = event.isEdit
             ? response!.products!
@@ -1090,7 +1090,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         //   ],
         // ),
       ));
-      print("❌ Error en el SendProductOdooEvent: $e ->$s");
+      debugPrint("❌ Error en el SendProductOdooEvent: $e ->$s");
     } finally {
       _isProcessing =
           false; // Resetear la bandera una vez que el proceso termine
@@ -1106,7 +1106,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       await sortProductsByLocationId();
       emit(LoadProductsPickSuccesState(listOfProductsBatch: filteredProducts));
     } catch (e, s) {
-      print("❌ Error en el ClearSearchProudctsBatchEvent $e ->$s");
+      debugPrint("❌ Error en el ClearSearchProudctsBatchEvent $e ->$s");
     }
   }
 
@@ -1133,8 +1133,8 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
         // 🔎 ¡Depura aquí!
         // Imprime el valor de origin para verificar su contenido
-        print('🔎 Verificando producto con origen: "$origin"');
-        print('🔎 El filtro busca: "$queryLower"');
+        debugPrint('🔎 Verificando producto con origen: "$origin"');
+        debugPrint('🔎 El filtro busca: "$queryLower"');
 
         // Realizar la búsqueda usando el operador OR
         return productId.contains(queryLower) ||
@@ -1203,7 +1203,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       emit(ProductPendingSuccess());
     } catch (e, s) {
       emit(ProductPendingError());
-      print('❌ Error _onPickingPendingEvent: $e, $s');
+      debugPrint('❌ Error _onPickingPendingEvent: $e, $s');
     }
   }
 
@@ -1215,7 +1215,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       emit(SelectNovedadStateSuccess(event.novedad));
     } catch (e, s) {
       emit(SelectNovedadStateError('Errror al seleccionar novedad'));
-      print('❌ Error en el SelectNovedadEvent $e ->$s');
+      debugPrint('❌ Error en el SelectNovedadEvent $e ->$s');
     }
   }
 
@@ -1226,7 +1226,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       isProcessing = event.isProcessing;
       emit(SetIsProcessingState(isProcessing));
     } catch (e, s) {
-      print("❌ Error en _onSetIsProcessingEvent: $e, $s");
+      debugPrint("❌ Error en _onSetIsProcessingEvent: $e, $s");
     }
   }
 
@@ -1325,7 +1325,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       }
     } catch (e, s) {
       emit(SubMuelleEditFail('Error al asignar el submuelle'));
-      print("❌ Error en el AssignSubmuelleEvent :$s ->$s");
+      debugPrint("❌ Error en el AssignSubmuelleEvent :$s ->$s");
     }
   }
 
@@ -1337,7 +1337,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       subMuelleSelected = event.subMuelleSlected;
       emit(SelectSubMuelle(subMuelleSelected));
     } catch (e, s) {
-      print("❌ Error bloc selectedSubMuelle $e -> $s");
+      debugPrint("❌ Error bloc selectedSubMuelle $e -> $s");
     }
   }
 
@@ -1348,7 +1348,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       viewQuantity = !viewQuantity;
       emit(ShowQuantityState(viewQuantity));
     } catch (e, s) {
-      print("❌ Error en _onShowQuantityEvent: $e, $s");
+      debugPrint("❌ Error en _onShowQuantityEvent: $e, $s");
     }
   }
 
@@ -1368,7 +1368,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       emit(ChangeQuantitySeparateStateSuccess(quantitySelected));
     } catch (e, s) {
       emit(ChangeQuantitySeparateStateError('Error al separar cantidad'));
-      print('❌ Error en ChangeQuantitySeparate: $e -> $s ');
+      debugPrint('❌ Error en ChangeQuantitySeparate: $e -> $s ');
     }
   }
 
@@ -1389,7 +1389,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       }
     } catch (e, s) {
       emit(ChangeQuantitySeparateStateError('Error al aumentar cantidad'));
-      print("❌ Error en el AddQuantitySeparate $e ->$s");
+      debugPrint("❌ Error en el AddQuantitySeparate $e ->$s");
     }
   }
 
@@ -1413,7 +1413,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       emit(ValidateFieldsStateSuccess(event.isOk));
     } catch (e, s) {
       emit(ValidateFieldsStateError('Error al validar campos'));
-      print("❌ Error en el ValidateFieldsEvent $e ->$s");
+      debugPrint("❌ Error en el ValidateFieldsEvent $e ->$s");
     }
   }
 
@@ -1508,7 +1508,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         );
       } else {
         // No hay más productos pendientes. Podemos limpiar el currentProduct o dejar el estado de "terminado".
-        print('✅ Todos los productos han sido separados.');
+        debugPrint('✅ Todos los productos han sido separados.');
       }
 
       // --- 4. Emisión del Estado Final y Actualización de Lista ---
@@ -1525,7 +1525,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       // Manejo de cualquier excepción inesperada (conexión, base de datos)
       emit(CurrentProductChangedStateError(
           'Error crítico al procesar el cambio de producto.'));
-      print("❌ Error en el ChangeCurrentProduct $e ->$s");
+      debugPrint("❌ Error en el ChangeCurrentProduct $e ->$s");
     }
   }
 
@@ -1547,10 +1547,10 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         Duration difference = dateTimeActuality.difference(DateTime.now());
         // Obtener la diferencia en segundos
         secondsDifference = difference.inMilliseconds / 1000.0;
-        print("Diferencia en segundos: $secondsDifference");
+        debugPrint("Diferencia en segundos: $secondsDifference");
       } catch (e) {
         // Si ocurre algún error durante el parseo (por ejemplo, formato incorrecto)
-        print("❌ Error al parsear la fecha: $e");
+        debugPrint("❌ Error al parsear la fecha: $e");
       }
 
       final userid = await PrefUtils.getUserId();
@@ -1623,7 +1623,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
             message: response.result?.msg ?? 'Error al enviar el producto');
       }
     } catch (e, s) {
-      print("❌ Error en el sendProuctOdoo $e ->$s ");
+      debugPrint("❌ Error en el sendProuctOdoo $e ->$s ");
       return SendResult(success: false, message: 'Error inesperado: $e');
     }
   }
@@ -1641,7 +1641,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         quantityIsOk,
       ));
     } catch (e, s) {
-      print("❌ Error en el ChangeIsOkQuantity $e ->$s");
+      debugPrint("❌ Error en el ChangeIsOkQuantity $e ->$s");
     }
   }
 
@@ -1667,7 +1667,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         ));
       }
     } catch (e, s) {
-      print("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
+      debugPrint("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
     }
   }
 
@@ -1684,7 +1684,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         locationDestIsOk,
       ));
     } catch (e, s) {
-      print("❌ Error en el ChangeLocationDestIsOkEvent $e ->$s");
+      debugPrint("❌ Error en el ChangeLocationDestIsOkEvent $e ->$s");
     }
   }
 
@@ -1727,7 +1727,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         productIsOk,
       ));
     } catch (e, s) {
-      print("❌ Error en el ChangeProductIsOkEvent $e ->$s");
+      debugPrint("❌ Error en el ChangeProductIsOkEvent $e ->$s");
     }
   }
 
@@ -1747,7 +1747,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         emit(ConfigurationError('Error al cargar LoadConfigurationsUser'));
       }
     } catch (e, s) {
-      print('❌ Error en LoadConfigurationsUser $e =>$s');
+      debugPrint('❌ Error en LoadConfigurationsUser $e =>$s');
     }
   }
 
@@ -1783,7 +1783,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       emit(LoadDataInfoSuccess());
     } catch (e, s) {
       emit(LoadDataInfoError("Error al cargar las variables de estado"));
-      print("❌ Error en  LoadDataInfoEvent $e ->$s");
+      debugPrint("❌ Error en  LoadDataInfoEvent $e ->$s");
     }
   }
 
@@ -1800,18 +1800,18 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         "pick",
       );
       //mostrmaos los datos del producto
-      print("Producto ID: ${currentProduct.toMap()}");
-      print("listOfBarcodes: ${listOfBarcodes.length}");
+      debugPrint("Producto ID: ${currentProduct.toMap()}");
+      debugPrint("listOfBarcodes: ${listOfBarcodes.length}");
       emit(BarcodesProductLoadedState(listOfBarcodes: listOfBarcodes));
     } catch (e, s) {
-      print("❌ Error en _onFetchBarcodesProductEvent: $e, $s");
+      debugPrint("❌ Error en _onFetchBarcodesProductEvent: $e, $s");
     }
   }
 
   void _onFetchPickWithProductsEvent(
       FetchPickWithProductsEvent event, Emitter<PickingPickState> emit) async {
     try {
-      print('Fetching pick with ID: ${event.pickId}');
+      debugPrint('Fetching pick with ID: ${event.pickId}');
       pickWithProducts = PickWithProducts();
 
       final response =
@@ -1821,7 +1821,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         pickWithProducts = response;
 
         if (pickWithProducts.products!.isEmpty) {
-          print('No hay productos en el batch');
+          debugPrint('No hay productos en el batch');
           emit(EmptyProductsPick());
           return;
         }
@@ -1845,10 +1845,10 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       } else {
         pickWithProducts = PickWithProducts();
         emit(EmptyProductsPick());
-        print('No se encontró el batch con ID: ${event.pickId}');
+        debugPrint('No se encontró el batch con ID: ${event.pickId}');
       }
     } catch (e, s) {
-      print("❌ Error en el FetchBatchWithProductsEvent $e ->$s");
+      debugPrint("❌ Error en el FetchBatchWithProductsEvent $e ->$s");
     }
   }
 
@@ -1866,7 +1866,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       // Asignamos el Set a la lista, si es necesario
       listOfProductsName = productIdsSet.toList();
     } catch (e, s) {
-      print("❌ Error en el products $e ->$s");
+      debugPrint("❌ Error en el products $e ->$s");
     }
   }
 
@@ -1886,7 +1886,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       // Convertimos el Set a lista si es necesario
       positionsOrigen = positionsSet.toList();
     } catch (e, s) {
-      print("❌ Error en getPosicions: $e -> $s");
+      debugPrint("❌ Error en getPosicions: $e -> $s");
     }
   }
 
@@ -1957,7 +1957,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
       return filteredProducts;
     } catch (e, s) {
-      print("❌ Error en el sortProductsByLocationId $e ->$s");
+      debugPrint("❌ Error en el sortProductsByLocationId $e ->$s");
       return [];
     }
   }
@@ -1970,11 +1970,11 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       novedades.clear();
       if (response != null) {
         novedades = response;
-        print("novedades: ${novedades.length}");
+        debugPrint("novedades: ${novedades.length}");
       }
       emit(NovedadesLoadedState(listOfNovedades: novedades));
     } catch (e, s) {
-      print("❌ Error en __onLoadAllNovedadesEvent: $e, $s");
+      debugPrint("❌ Error en __onLoadAllNovedadesEvent: $e, $s");
     }
   }
 
@@ -2035,9 +2035,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         final allBarcodes =
             _extractAllBarcodes(result.result!).toList(growable: false);
 
-        print('productsToInsert: ${productsIterable.length}');
-        print('sentProductsIterable: ${sentProductsIterable.length}');
-        print('allBarcodes: ${allBarcodes.length}');
+        debugPrint('productsToInsert: ${productsIterable.length}');
+        debugPrint('sentProductsIterable: ${sentProductsIterable.length}');
+        debugPrint('allBarcodes: ${allBarcodes.length}');
 
         // Enviar la lista agrupada a insertBatchProducts
         await db.pickProductsRepository
@@ -2076,7 +2076,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         muelles.add(pickWithProducts.pick?.muelle ?? '');
       }
     } catch (e, s) {
-      print("❌ Error en el getMuelles $e ->$s");
+      debugPrint("❌ Error en el getMuelles $e ->$s");
     }
   }
 
@@ -2128,7 +2128,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
       return formattedTime;
     } catch (e, s) {
-      print("❌ Error en el formatSecondsToHHMMSS $e ->$s");
+      debugPrint("❌ Error en el formatSecondsToHHMMSS $e ->$s");
       return "";
     }
   }
@@ -2152,7 +2152,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       final progress = (totalSeparadas / totalCantidades) * 100;
       return progress.toStringAsFixed(2);
     } catch (e, s) {
-      print("❌ Error en el calcularUnidadesSeparadas $e ->$s");
+      debugPrint("❌ Error en el calcularUnidadesSeparadas $e ->$s");
       return '';
     }
   }

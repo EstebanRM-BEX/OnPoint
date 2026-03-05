@@ -67,7 +67,7 @@ class _NewLoteScreenState extends State<NewLoteScreenDevolucion> {
                         child:
                             BlocConsumer<DevolucionesBloc, DevolucionesState>(
                                 listener: (context, state) {
-                          print('STATE ❤️‍🔥 $state');
+                          debugPrint('STATE ❤️‍🔥 $state');
 
                           if (state is CreateLoteProductSuccess) {
                             Get.snackbar(

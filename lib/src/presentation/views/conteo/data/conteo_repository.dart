@@ -22,7 +22,7 @@ class ConteoRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResultConteo(
         code: 0,
         msg: "No hay conexión a Internet",
@@ -87,11 +87,11 @@ class ConteoRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResultConteo();
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error conteo fisico: $e, $s');
+      debugPrint('Error conteo fisico: $e, $s');
     }
     return ResultConteo();
   }
@@ -102,7 +102,7 @@ class ConteoRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseSendProductConteo(); // Si no hay conexión, retornar un ResultConteo vacío
     }
 
@@ -191,11 +191,11 @@ class ConteoRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseSendProductConteo();
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error conteo fisico: $e, $s');
+      debugPrint('Error conteo fisico: $e, $s');
     }
     return ResponseSendProductConteo();
   }
@@ -205,7 +205,7 @@ class ConteoRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseDeleteProduct(); // Si no hay conexión, retornar un ResultConteo vacío
     }
 
@@ -263,11 +263,11 @@ class ConteoRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseDeleteProduct();
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error conteo fisico: $e, $s');
+      debugPrint('Error conteo fisico: $e, $s');
     }
     return ResponseDeleteProduct();
   }
@@ -277,7 +277,7 @@ class ConteoRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseDeleteProduct(); // Si no hay conexión, retornar un ResultConteo vacío
     }
 
@@ -335,11 +335,11 @@ class ConteoRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseDeleteProduct();
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error conteo fisico: $e, $s');
+      debugPrint('Error conteo fisico: $e, $s');
     }
     return ResponseDeleteProduct();
   }

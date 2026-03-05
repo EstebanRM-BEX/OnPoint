@@ -29,7 +29,7 @@ class RecepcionRepository {
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
-        print("❌ Sin conexión a Internet.");
+        debugPrint("❌ Sin conexión a Internet.");
         return Recepcionresponse(
             result: RecepcionresponseResult(
                 code: 0,
@@ -47,7 +47,7 @@ class RecepcionRepository {
       stopwatch.stop(); // ⏹ Finalizar conteo
 
       if (response.statusCode >= 400) {
-        print("❌ Error HTTP: ${response.statusCode}");
+        debugPrint("❌ Error HTTP: ${response.statusCode}");
         return Recepcionresponse();
       }
 
@@ -120,10 +120,10 @@ class RecepcionRepository {
         }
       }
     } on SocketException catch (e) {
-      print('🌐 Error de red: $e');
+      debugPrint('🌐 Error de red: $e');
     } catch (e, s) {
-      print('❌ Error general en fetchAllReceptions: $e');
-      print('📍 Stack: $s');
+      debugPrint('❌ Error general en fetchAllReceptions: $e');
+      debugPrint('📍 Stack: $s');
     }
 
     return Recepcionresponse(
@@ -140,7 +140,7 @@ class RecepcionRepository {
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
-        print("❌ Sin conexión a Internet.");
+        debugPrint("❌ Sin conexión a Internet.");
         return Recepcionresponse(
             result: RecepcionresponseResult(
                 code: 0,
@@ -156,11 +156,11 @@ class RecepcionRepository {
       );
 
       stopwatch.stop(); // ⏹ Finalizar conteo
-      print(
+      debugPrint(
           "⏱ fetchAllDevolutions completado en ${stopwatch.elapsedMilliseconds} ms");
 
       if (response.statusCode >= 400) {
-        print("❌ Error HTTP: ${response.statusCode}");
+        debugPrint("❌ Error HTTP: ${response.statusCode}");
         return Recepcionresponse();
       }
 
@@ -233,10 +233,10 @@ class RecepcionRepository {
         }
       }
     } on SocketException catch (e) {
-      print('🌐 Error de red: $e');
+      debugPrint('🌐 Error de red: $e');
     } catch (e, s) {
-      print('❌ Error general en fetchAllDevolutions: $e');
-      print('📍 Stack: $s');
+      debugPrint('❌ Error general en fetchAllDevolutions: $e');
+      debugPrint('📍 Stack: $s');
     }
 
     return Recepcionresponse(
@@ -254,7 +254,7 @@ class RecepcionRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseReceptionBatchs(
         jsonrpc: '2.0',
         id: 1,
@@ -359,7 +359,7 @@ class RecepcionRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseReceptionBatchs(
         jsonrpc: '2.0',
         id: 1,
@@ -372,7 +372,7 @@ class RecepcionRepository {
       );
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error fetchAllBatchReceptions: $e, $s');
+      debugPrint('Error fetchAllBatchReceptions: $e, $s');
     }
     return ResponseReceptionBatchs(
       jsonrpc: '2.0',
@@ -392,7 +392,7 @@ class RecepcionRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return []; // Si no hay conexión, retornar una lista vacía
     }
 
@@ -447,11 +447,11 @@ class RecepcionRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return [];
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error lotes de un producto: $e, $s');
+      debugPrint('Error lotes de un producto: $e, $s');
     }
     return [];
   }
@@ -466,7 +466,7 @@ class RecepcionRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return false; // Si no hay conexión, retornar una lista vacía
     }
 
@@ -524,11 +524,11 @@ class RecepcionRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return false;
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error assignUserToOrder: $e, $s');
+      debugPrint('Error assignUserToOrder: $e, $s');
     }
     return false;
   }
@@ -542,7 +542,7 @@ class RecepcionRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return false; // Si no hay conexión, retornar una lista vacía
     }
 
@@ -600,11 +600,11 @@ class RecepcionRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return false;
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error assignUserToOrder: $e, $s');
+      debugPrint('Error assignUserToOrder: $e, $s');
     }
     return false;
   }
@@ -620,7 +620,7 @@ class RecepcionRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseNewLote(); // Si no hay conexión, retornar una lista vacía
     }
 
@@ -691,11 +691,11 @@ class RecepcionRepository {
         }
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseNewLote();
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error resBatchsPacking: $e, $s');
+      debugPrint('Error resBatchsPacking: $e, $s');
     }
     return ResponseNewLote();
   }
@@ -708,7 +708,7 @@ class RecepcionRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("❌ Error: No hay conexión a Internet.");
+      debugPrint("❌ Error: No hay conexión a Internet.");
       return ResponSendRecepcion(
         result: ResponSendRecepcionResult(
           code: 0,
@@ -759,7 +759,7 @@ class RecepcionRepository {
         );
       }
     } on SocketException catch (e) {
-      print('❌ Error de red: $e');
+      debugPrint('❌ Error de red: $e');
       return ResponSendRecepcion(
         result: ResponSendRecepcionResult(
           code: 0,
@@ -768,7 +768,7 @@ class RecepcionRepository {
         ),
       );
     } catch (e, s) {
-      print('❌ Error inesperado: $e\n$s');
+      debugPrint('❌ Error inesperado: $e\n$s');
       return ResponSendRecepcion(
         result: ResponSendRecepcionResult(
           code: 0,
@@ -789,7 +789,7 @@ class RecepcionRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return DeletedProduct(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -807,8 +807,8 @@ class RecepcionRepository {
         isLoadinDialog: true,
       );
       if (response.statusCode < 400) {
-        print('Se elimino correctamente la linea');
-        print('response: ${response.body}');
+        debugPrint('Se elimino correctamente la linea');
+        debugPrint('response: ${response.body}');
         // Decodifica la respuesta JSON a un mapa
         Map<String, dynamic> jsonResponse = jsonDecode(response.body);
 
@@ -834,11 +834,11 @@ class RecepcionRepository {
         // ...
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return DeletedProduct(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en deleteProductInWms: $e, $s');
+      debugPrint('Error en deleteProductInWms: $e, $s');
       return DeletedProduct(); // Retornamos un objeto vacío en caso de error de red
     }
     return DeletedProduct(); // Retornamos un objeto vacío en caso de error de red
@@ -852,7 +852,7 @@ class RecepcionRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponSendRecepcion(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -895,11 +895,11 @@ class RecepcionRepository {
         // ...
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponSendRecepcion(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendProductRecepcion: $e, $s');
+      debugPrint('Error en sendProductRecepcion: $e, $s');
       return ResponSendRecepcion(); // Retornamos un objeto vacío en caso de error de red
     }
     return ResponSendRecepcion(); // Retornamos un objeto vacío en caso de error de red
@@ -915,7 +915,7 @@ class RecepcionRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return true; // Si no hay conexión, terminamos la ejecución
     }
 
@@ -977,11 +977,11 @@ class RecepcionRepository {
         // ...
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return false; // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendReceptionRequest: $e, $s');
+      debugPrint('Error en sendReceptionRequest: $e, $s');
       return false; // Retornamos un objeto vacío en caso de error de red
     }
     return false; // Retornamos un objeto vacío en caso de error de red
@@ -996,7 +996,7 @@ class RecepcionRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseValidate(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -1054,11 +1054,11 @@ class RecepcionRepository {
         }
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en validateRecepcion: $e, $s');
+      debugPrint('Error en validateRecepcion: $e, $s');
       return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
     }
     return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
@@ -1076,7 +1076,7 @@ class RecepcionRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return TemperatureSend(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -1111,15 +1111,15 @@ class RecepcionRepository {
         }
       } else {
         // Manejo de error si la respuesta no es exitosa
-        print('Error al enviar la temperatura: ${response.statusCode}');
+        debugPrint('Error al enviar la temperatura: ${response.statusCode}');
         return TemperatureSend(); // Retornamos un objeto vacío en caso de error
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return TemperatureSend(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendTemperature: $e, $s');
+      debugPrint('Error en sendTemperature: $e, $s');
       return TemperatureSend(); // Retornamos un objeto vacío en caso de error de red
     }
   }
@@ -1133,7 +1133,7 @@ class RecepcionRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return TemperatureSend(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -1167,15 +1167,15 @@ class RecepcionRepository {
         }
       } else {
         // Manejo de error si la respuesta no es exitosa
-        print('Error al enviar la temperatura: ${response.statusCode}');
+        debugPrint('Error al enviar la temperatura: ${response.statusCode}');
         return TemperatureSend(); // Retornamos un objeto vacío en caso de error
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return TemperatureSend(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendTemperature: $e, $s');
+      debugPrint('Error en sendTemperature: $e, $s');
       return TemperatureSend(); // Retornamos un objeto vacío en caso de error de red
     }
   }
@@ -1189,7 +1189,7 @@ class RecepcionRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ImageSendNovedad(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -1227,15 +1227,15 @@ class RecepcionRepository {
         }
       } else {
         // Manejo de error si la respuesta no es exitosa
-        print('Error al enviar la temperatura: ${response.statusCode}');
+        debugPrint('Error al enviar la temperatura: ${response.statusCode}');
         return ImageSendNovedad(); // Retornamos un objeto vacío en caso de error
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ImageSendNovedad(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendImageNoved: $e, $s');
+      debugPrint('Error en sendImageNoved: $e, $s');
       return ImageSendNovedad(); // Retornamos un objeto vacío en caso de error de red
     }
   }
@@ -1243,7 +1243,7 @@ class RecepcionRepository {
   Future<TemperatureIa> getTemperatureWithImage(File imageFile) async {
     var connectivityResult = await Connectivity().checkConnectivity();
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return TemperatureIa();
     }
 
@@ -1260,9 +1260,9 @@ class RecepcionRepository {
         return TemperatureIa.fromMap(jsonDecode(response.body));
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
     } catch (e, s) {
-      print('Error en getTemperatureWithImage: $e\n$s');
+      debugPrint('Error en getTemperatureWithImage: $e\n$s');
     }
 
     return TemperatureIa(); // Retorna vacío en caso de fallo

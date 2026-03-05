@@ -1,3 +1,7 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:ui';
@@ -7,9 +11,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
-import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/transferencias/models/response_transferencias.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
@@ -37,8 +38,8 @@ class DialogTransferAdvetenciaCantidadScreen extends StatefulWidget {
 
 class _DialogAdvetenciaCantidadScreenState
     extends State<DialogTransferAdvetenciaCantidadScreen> {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
 
   String? selectedNovedad; // Variable para almacenar la opción seleccionada
 
@@ -84,8 +85,8 @@ class _DialogAdvetenciaCantidadScreenState
                     ), // Color del texto normal
                   ),
                   TextSpan(
-                    text:
-                        (widget.currentProduct.cantidadFaltante ?? 0.0).toString(),
+                    text: (widget.currentProduct.cantidadFaltante ?? 0.0)
+                        .toString(),
                     style: const TextStyle(
                       color: green,
                       fontSize: 14,

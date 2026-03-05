@@ -47,7 +47,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecepBatch> {
     final scan = value.trim().toLowerCase();
 
     _controllerToDo.clear();
-    print('🔎 Scan barcode: $scan');
+    debugPrint('🔎 Scan barcode: $scan');
 
     // Filtrar productos válidos
     final listOfProducts = bloc.listProductsEntrada
@@ -93,7 +93,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecepBatch> {
         );
       });
 
-      print('✅ Producto procesado: ${product.toMap()}');
+      debugPrint('✅ Producto procesado: ${product.toMap()}');
     }
 
     // 1️⃣ Buscar producto por código de barras principal
@@ -262,7 +262,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecepBatch> {
                                             ],
                                           );
                                         });
-                                        print(product.toMap());
+                                        debugPrint(product.toMap().toString());
                                       },
                                       child: Column(
                                         crossAxisAlignment:

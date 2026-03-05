@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
+import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_batch_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/batchs/bloc/recepcion_batch_bloc.dart';
@@ -212,10 +212,11 @@ class _DialogAdvetenciaCantidadScreenState
                   Navigator.pop(context); // Cierra el diálogo
                   widget.onAccepted(); // Llama al callback
                 }
-                print(context
+                debugPrint(context
                     .read<RecepcionBatchBloc>()
                     .lotesProductCurrent
-                    .toMap());
+                    .toMap()
+                    .toString());
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColorApp,

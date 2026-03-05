@@ -61,7 +61,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
     result.fold(
       (failure) {
-        print('Error loading user data: ${failure.message}');
         emit(HomeLoadErrorState());
       },
       (userData) {
@@ -86,7 +85,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
     await result.fold(
       (failure) async {
-        print('Error loading app version: ${failure.message}');
+        debugPrint('Error loading app version: ${failure.message}');
 
         // Emit specific state for session expired
         if (failure.runtimeType.toString() == 'SessionExpiredFailure') {
@@ -109,18 +108,18 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         final currentVersion = packageInfo.version;
         final serverVersion = appVersionData.result?.result?.version ?? '';
 
-        print(
+        debugPrint(
             'Current version: $currentVersion, Server version: $serverVersion');
 
         // Compare versions
         if (currentVersion == serverVersion) {
-          print('App is up to date: $currentVersion');
+          debugPrint('App is up to date: $currentVersion');
           emit(AppVersionLoadedState(appVersionData));
         } else if (currentVersion.compareTo(serverVersion) > 0) {
-          print('App is newer than server: $currentVersion');
+          debugPrint('App is newer than server: $currentVersion');
           emit(AppVersionLoadedState(appVersionData));
         } else if (currentVersion.compareTo(serverVersion) < 0) {
-          print('Update available: $serverVersion');
+          debugPrint('Update available: $serverVersion');
           emit(AppVersionUpdateState(appVersionData));
         }
       },
@@ -136,29 +135,29 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       final userId = await PrefUtils.getUserId();
 
       if (userId == null || userId == 0) {
-        print('⚠️ No user ID found, cannot load configurations');
+        debugPrint('⚠️ No user ID found, cannot load configurations');
         return;
       }
 
-      print('🔄 Loading configurations for user ID: $userId');
+      debugPrint('🔄 Loading configurations for user ID: $userId');
 
       final result = await getUserConfigurations(userId);
 
       result.fold(
         (failure) {
-          print('❌ Error loading configurations: ${failure.message}');
+          debugPrint('❌ Error loading configurations: ${failure.message}');
           emit(ConfigurationErrorHomeState(failure.message));
         },
         (config) {
           configurations = config;
-          print('✅ Configurations loaded successfully');
-          print(
+          debugPrint('✅ Configurations loaded successfully');
+          debugPrint(
               '   accessProductionModule: ${config.result?.result?.accessProductionModule}');
           emit(ConfigurationLoadedHomeState(config));
         },
       );
     } catch (e) {
-      print('❌ Exception loading configurations: $e');
+      debugPrint('❌ Exception loading configurations: $e');
       emit(ConfigurationErrorHomeState(e.toString()));
     }
   }

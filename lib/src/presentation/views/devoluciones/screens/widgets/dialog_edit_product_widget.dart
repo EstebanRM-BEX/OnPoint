@@ -190,7 +190,7 @@ class DialogEditProduct extends StatelessWidget {
                                       bloc.quantitySelected =
                                           double.parse(value);
                                     } catch (e) {
-                                      print(
+                                      debugPrint(
                                           '❌ Error al convertir a número: $e');
                                     }
                                   } else {

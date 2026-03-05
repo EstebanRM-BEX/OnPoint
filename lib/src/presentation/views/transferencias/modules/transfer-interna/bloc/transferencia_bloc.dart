@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
+import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
@@ -203,7 +203,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
   void _onViewProductImageEvent(
       ViewProductImageEvent event, Emitter<TransferenciaState> emit) async {
     try {
-      print('Obteniendo imagen del producto con ID: ${event.idProduct}');
+      debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
       final response =
@@ -221,14 +221,14 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
         emit(ViewProductImageFailure('Imagen no disponible'));
       }
     } catch (e, s) {
-      print('Error en el ViewProductImageEvent: $e, $s');
+      debugPrint('Error en el ViewProductImageEvent: $e, $s');
       emit(ViewProductImageFailure(e.toString()));
     }
   }
 
   void _onToggleProductExpansionEvent(
       ToggleProductExpansionEvent event, Emitter<TransferenciaState> emit) {
-    print('isExpanded: $isExpanded');
+    debugPrint('isExpanded: $isExpanded');
     isExpanded = event.isExpanded;
     emit(ProductExpansionToggled(isExpanded));
   }
@@ -340,7 +340,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       }
     } catch (e, s) {
       emit(DeleteLineTransferFailure('Error al eliminar la linea'));
-      print('Error en el _onDeleteLineTransferEvent: $e, $s');
+      debugPrint('Error en el _onDeleteLineTransferEvent: $e, $s');
     }
   }
 
@@ -363,7 +363,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       }
     } catch (e, s) {
       emit(ValidateConfirmFailure('Error al validar la confirmacion'));
-      print('Error en el _onValidateConfirmEvent: $e, $s');
+      debugPrint('Error en el _onValidateConfirmEvent: $e, $s');
     }
   }
 
@@ -380,7 +380,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
           'end_time_transfer',
         ));
 
-        print(
+        debugPrint(
           'response.result?.code: ${response.result?.code}  response.result?.msg: ${response.result?.msg}',
         );
 
@@ -393,7 +393,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
     } catch (e, s) {
       emit(CreateBackOrderOrNotFailure(
           'Error al crear la backorder', event.isBackOrder));
-      print('Error en el _onCreateBackOrder: $e, $s');
+      debugPrint('Error en el _onCreateBackOrder: $e, $s');
     }
   }
 
@@ -418,7 +418,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
         emit(EntregaErrorBD('No se encontraron transferencias'));
       }
     } catch (e, s) {
-      print('Error en el fetch de transferencias: $e=>$s');
+      debugPrint('Error en el fetch de transferencias: $e=>$s');
     }
   }
 
@@ -471,7 +471,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
             EntregaError(response.msg ?? 'Error al cargar las transferencias'));
       }
     } catch (e, s) {
-      print('Error en el fetch de transferencias: $e=>$s');
+      debugPrint('Error en el fetch de transferencias: $e=>$s');
     }
   }
 
@@ -493,7 +493,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       }
       emit(FilterUbicacionesSuccess(ubicacionesFilters));
     } catch (e, s) {
-      print('Error en el FilterUbicacionesEvent: $e, $s');
+      debugPrint('Error en el FilterUbicacionesEvent: $e, $s');
       emit(FilterUbicacionesFailure(e.toString()));
     }
   }
@@ -519,7 +519,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       emit(FilterTransferByTypeSuccess(transferenciasDbFilters));
     } catch (e, s) {
       emit(FilterTransferByTypeFailure('Error al filtrar las transferencias'));
-      print('Error en el _onFilterTransferByTypeEvent: $e, $s');
+      debugPrint('Error en el _onFilterTransferByTypeEvent: $e, $s');
     }
   }
 
@@ -540,7 +540,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       }
       emit(SearchLocationSuccess(ubicacionesFilters));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -582,10 +582,11 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
             .expand((product) => product.productPacking!)
             .toList();
 
-        print('trasnfer productsToInsert: ${productsToInsert.length}');
-        print('trasnfer productsSedToInsert: ${productsSedToInsert.length}');
-        print('trasnfer barcodesToInsert: ${barcodesToInsert.length}');
-        print(
+        debugPrint('trasnfer productsToInsert: ${productsToInsert.length}');
+        debugPrint(
+            'trasnfer productsSedToInsert: ${productsSedToInsert.length}');
+        debugPrint('trasnfer barcodesToInsert: ${barcodesToInsert.length}');
+        debugPrint(
             'trasnfer otherBarcodesToInsert: ${otherBarcodesToInsert.length}');
         // Enviar la lista agrupada a insertBatchProducts
         await db.productTransferenciaRepository
@@ -615,7 +616,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       }
     } catch (e, s) {
       emit(CheckAvailabilityFailure('Error al comprobar disponibilidad'));
-      print('Error en el _onCheckAvailabilityEvent: $e, $s');
+      debugPrint('Error en el _onCheckAvailabilityEvent: $e, $s');
     }
   }
 
@@ -637,7 +638,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
     } catch (e, s) {
       emit(FilterTransferByWarehouseFailure(
           'Error al filtrar las transferencias'));
-      print('Error en el _onFilterTransferByWarehouse: $e, $s');
+      debugPrint('Error en el _onFilterTransferByWarehouse: $e, $s');
     }
   }
 
@@ -650,11 +651,11 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       if (response != null) {
         novedades.clear();
         novedades = response;
-        print("novedades: ${novedades.length}");
+        debugPrint("novedades: ${novedades.length}");
         emit(NovedadesTransferLoadedState(listOfNovedades: novedades));
       }
     } catch (e, s) {
-      print("Error en __onLoadAllNovedadesEvent: $e, $s");
+      debugPrint("Error en __onLoadAllNovedadesEvent: $e, $s");
       emit(NovedadesTransferErrorState(e.toString()));
     }
   }
@@ -669,14 +670,14 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       if (response.isNotEmpty) {
         ubicaciones = response;
         ubicacionesFilters = response;
-        print('ubicaciones length: ${ubicaciones.length}');
+        debugPrint('ubicaciones length: ${ubicaciones.length}');
         emit(LoadLocationsSuccess(ubicaciones));
       } else {
         emit(LoadLocationsFailure('No se encontraron ubicaciones'));
       }
     } catch (e, s) {
       emit(LoadLocationsFailure('Error al cargar las ubicaciones'));
-      print('Error en el fetch de ubicaciones: $e=>$s');
+      debugPrint('Error en el fetch de ubicaciones: $e=>$s');
     }
   }
 
@@ -687,7 +688,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       currentProduct.idTransferencia ?? 0,
     );
 
-    print("productBD: ${productBD?.toMap()}");
+    debugPrint("productBD: ${productBD?.toMap()}");
   }
 
   void _onSendProductToTransfer(
@@ -717,7 +718,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
 
       String dateInicio = productBD?.dateStart ?? "";
       String dateFin = productBD?.dateEnd ?? "";
-      print("dateInicio: $dateInicio  dateFin: $dateFin");
+      debugPrint("dateInicio: $dateInicio  dateFin: $dateFin");
 
       //calculamos la diferencia de tiempo
       DateTime dateStart = DateTime.parse(dateInicio);
@@ -881,7 +882,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       }
     } catch (e, s) {
       emit(SendProductToTransferFailure('Error al enviar el producto'));
-      print('Error en el _onSendProductToTransfer: $e, $s');
+      debugPrint('Error en el _onSendProductToTransfer: $e, $s');
     }
   }
 
@@ -917,7 +918,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
 
       emit(FinalizarTransferProductoSplitSuccess());
     } catch (e, s) {
-      print('Error al finalizar la recepcion del producto split: $e, $s');
+      debugPrint('Error al finalizar la recepcion del producto split: $e, $s');
     }
   }
 
@@ -944,7 +945,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
     } catch (e, s) {
       emit(FinalizarTransferProductoFailure(
           'Error al finalizar la recepcion del producto'));
-      print('Error en el _onFinalizarRecepcionProducto: $e, $s');
+      debugPrint('Error en el _onFinalizarRecepcionProducto: $e, $s');
     }
   }
 
@@ -954,7 +955,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
     try {
       final time = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
-      print("time : $time");
+      debugPrint("time : $time");
 
       if (event.value == "start_time_transfer") {
         await db.transferenciaRepository.setFieldTableTransfer(
@@ -1001,7 +1002,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
         emit(StartOrStopTimeTransferFailure('Error al enviar el tiempo'));
       }
     } catch (e, s) {
-      print('Error en el _onStartOrStopTimeOrder: $e, $s');
+      debugPrint('Error en el _onStartOrStopTimeOrder: $e, $s');
     }
   }
 
@@ -1052,7 +1053,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       }
     } catch (e, s) {
       emit(AssignUserToTransferFailure('Error al asignar el usuario'));
-      print('Error en el _onAssignUserToOrder: $e, $s');
+      debugPrint('Error en el _onAssignUserToOrder: $e, $s');
     }
   }
 
@@ -1063,7 +1064,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       viewQuantity = !viewQuantity;
       emit(ShowQuantityState(viewQuantity));
     } catch (e, s) {
-      print("❌ Error en _onShowQuantityEvent: $e, $s");
+      debugPrint("❌ Error en _onShowQuantityEvent: $e, $s");
     }
   }
 
@@ -1084,7 +1085,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       emit(ChangeQuantitySeparateStateSuccess(quantitySelected));
     } catch (e, s) {
       emit(ChangeQuantitySeparateStateError('Error al separar cantidad'));
-      print('❌ Error en ChangeQuantitySeparate: $e -> $s ');
+      debugPrint('❌ Error en ChangeQuantitySeparate: $e -> $s ');
     }
   }
 
@@ -1104,7 +1105,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       }
     } catch (e, s) {
       emit(ChangeQuantitySeparateStateError('Error al aumentar cantidad'));
-      print("❌ Error en el AddQuantitySeparate $e ->$s");
+      debugPrint("❌ Error en el AddQuantitySeparate $e ->$s");
     }
   }
 
@@ -1137,7 +1138,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
         locationDestIsOk,
       ));
     } catch (e, s) {
-      print("❌ Error en el ChangeLocationDestIsOkEvent $e ->$s");
+      debugPrint("❌ Error en el ChangeLocationDestIsOkEvent $e ->$s");
     }
   }
 
@@ -1158,7 +1159,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
         quantityIsOk,
       ));
     } catch (e, s) {
-      print("❌ Error en el ChangeIsOkQuantity $e ->$s");
+      debugPrint("❌ Error en el ChangeIsOkQuantity $e ->$s");
     }
   }
 
@@ -1207,7 +1208,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
         productIsOk,
       ));
     } catch (e, s) {
-      print("❌ Error en el ChangeProductIsOkEvent $e ->$s");
+      debugPrint("❌ Error en el ChangeProductIsOkEvent $e ->$s");
     }
   }
 
@@ -1231,7 +1232,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       emit(ValidateFieldsStateSuccess(event.isOk));
     } catch (e, s) {
       emit(ValidateFieldsStateError('Error al validar campos'));
-      print("❌ Error en el ValidateFieldsEvent $e ->$s");
+      debugPrint("❌ Error en el ValidateFieldsEvent $e ->$s");
     }
   }
 
@@ -1271,7 +1272,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
         ));
       }
     } catch (e, s) {
-      print("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
+      debugPrint("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
     }
   }
 
@@ -1290,7 +1291,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
 
       // traemos toda la lista de barcodes
       listOfBarcodes.clear();
-      print('listOfBarcodes: ${listOfBarcodes.length}');
+      debugPrint('listOfBarcodes: ${listOfBarcodes.length}');
       currentProduct = LineasTransferenciaTrans();
       currentProduct = event.product;
 
@@ -1317,7 +1318,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       emit(FetchPorductTransferSuccess(currentProduct));
     } catch (e, s) {
       emit(FetchPorductTransferFailure('Error al obtener el producto'));
-      print('Error en el _onFetchPorductOrder: $e, $s');
+      debugPrint('Error en el _onFetchPorductOrder: $e, $s');
     }
   }
 
@@ -1337,7 +1338,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       // Convertimos el Set a lista si es necesario
       positionsOrigen = positionsSet.toList();
     } catch (e, s) {
-      print("❌ Error en getPosicions: $e -> $s");
+      debugPrint("❌ Error en getPosicions: $e -> $s");
     }
   }
 
@@ -1355,7 +1356,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       // Asignamos el Set a la lista, si es necesario
       listOfProductsName = productIdsSet.toList();
     } catch (e, s) {
-      print("❌ Error en el products $e ->$s");
+      debugPrint("❌ Error en el products $e ->$s");
     }
   }
 
@@ -1369,7 +1370,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
 
       listProductsTransfer = [];
       listProductsTransfer = response;
-      print('listProductsTransfer: ${listProductsTransfer.length}');
+      debugPrint('listProductsTransfer: ${listProductsTransfer.length}');
 
       listAllOfBarcodes.clear();
       final responseBarcodes = await db.barcodesPackagesRepository
@@ -1379,13 +1380,13 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
         listAllOfBarcodes = responseBarcodes;
       }
 
-      print('listAllOfBarcodes: ${listAllOfBarcodes.length}');
+      debugPrint('listAllOfBarcodes: ${listAllOfBarcodes.length}');
 
 //procedemos a obtener los barcodes de la transferencia
 
       emit(GetProductsToTransferSuccess(listProductsTransfer));
     } catch (e, s) {
-      print('Error en el _onGetProductsToTrasnfer: $e, $s');
+      debugPrint('Error en el _onGetProductsToTrasnfer: $e, $s');
     }
   }
 
@@ -1404,7 +1405,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       }
     } catch (e, s) {
       emit(ConfigurationErrorOrder(e.toString()));
-      print('Error en LoadConfigurationsUserPack.dart: $e =>$s');
+      debugPrint('Error en LoadConfigurationsUserPack.dart: $e =>$s');
     }
   }
 
@@ -1440,7 +1441,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       }
       emit(SearchTransferenciasSuccess(transferenciasDbFilters));
     } catch (e, s) {
-      print('Error en el fetch de transferencias: $e=>$s');
+      debugPrint('Error en el fetch de transferencias: $e=>$s');
     }
   }
 
@@ -1461,7 +1462,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
         transferenciasDbFilters = response;
 
         tiposTransferencia = obtenerTiposTransferencia(transferenciasDbFilters);
-        print('tiposTransferencia: $tiposTransferencia');
+        debugPrint('tiposTransferencia: $tiposTransferencia');
         emit(TransferenciaBDLoaded(
             transferenciasDbFilters, event.isLoadingDialog));
         //cargamos novedades y ubicaciones
@@ -1469,7 +1470,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
         emit(TransferenciaBDLoaded([], event.isLoadingDialog));
       }
     } catch (e, s) {
-      print('Error en el fetch de transferencias: $e=>$s');
+      debugPrint('Error en el fetch de transferencias: $e=>$s');
     }
   }
 
@@ -1502,13 +1503,9 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       final responseTransfer = await db.transferenciaRepository
           .getTransferenciaById(event.trasnferencia.id ?? 0);
       currentTransferencia = responseTransfer ?? ResultTransFerencias();
-
-      print("-----------------");
-      print(currentTransferencia.toMap());
-      print("-----------------");
       emit(CurrentTransferenciaLoaded());
     } catch (e, s) {
-      print('Error en el fetch de transferencias: $e=>$s');
+      debugPrint('Error en el fetch de transferencias: $e=>$s');
     }
   }
 
@@ -1537,7 +1534,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
             _extractSentProducts(response.result ?? []).toList(growable: false);
         final allBarcodes =
             _extractAllBarcodes(response.result ?? []).toList(growable: false);
-        print('transfer productsToInsert: ${productsToInsert.length}');
+        debugPrint('transfer productsToInsert: ${productsToInsert.length}');
         // Enviar la lista agrupada a insertBatchProducts
         await db.productTransferenciaRepository
             .insertarProductoEntrada(productsToInsert, 'transfer');
@@ -1561,13 +1558,13 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
             response.msg ?? 'Error al cargar las transferencias'));
       }
     } catch (e, s) {
-      print('Error en el fetch de transferencias: $e=>$s');
+      debugPrint('Error en el fetch de transferencias: $e=>$s');
     }
   }
 
   void getProductsAll() async {
     final response = await db.productTransferenciaRepository.getAllProducts();
-    print("response: ${response.length}");
+    debugPrint("response: ${response.length}");
   }
 
   // Generador para productos normales

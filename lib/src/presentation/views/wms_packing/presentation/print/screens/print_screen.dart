@@ -12,7 +12,6 @@ import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/print/models/mode_print_model.dart';
 import 'dart:ui' as ui;
 
-
 class PrintDialog extends StatefulWidget {
   const PrintDialog({super.key, required this.model});
 
@@ -159,9 +158,6 @@ class _PrintDialogState extends State<PrintDialog> {
     );
   }
 
-
-
-
   Future<void> initPlatformState() async {
     String platformVersion;
     int porcentbatery = 0;
@@ -173,7 +169,7 @@ class _PrintDialogState extends State<PrintDialog> {
     }
     if (!mounted) return;
     final bool result = await PrintBluetoothThermal.bluetoothEnabled;
-    print("Bluetooth activado: $result");
+    debugPrint("Bluetooth activado: $result");
     if (result) {
       _msj = "Bluetooth activado, por favor busca y conecta";
     } else {
@@ -183,10 +179,6 @@ class _PrintDialogState extends State<PrintDialog> {
       _info = "$platformVersion ($porcentbatery% batería)";
     });
   }
-
-
-
-
 
   Future<void> getBluetoots() async {
     setState(() {
@@ -221,7 +213,7 @@ class _PrintDialogState extends State<PrintDialog> {
     });
     final bool result =
         await PrintBluetoothThermal.connect(macPrinterAddress: mac);
-    print("Estado conectado $result");
+    debugPrint("Estado conectado $result");
     if (result) connected = true;
     setState(() {
       _progress = false;
@@ -233,7 +225,7 @@ class _PrintDialogState extends State<PrintDialog> {
     setState(() {
       connected = false;
     });
-    print("Estado desconectado $status");
+    debugPrint("Estado desconectado $status");
   }
 
   Future<void> printTest() async {
@@ -242,9 +234,10 @@ class _PrintDialogState extends State<PrintDialog> {
       bool result = false;
       List<int> ticket = await testTicket();
       result = await PrintBluetoothThermal.writeBytes(ticket);
-      print("Resultado de la prueba de impresión:  $result");
+      debugPrint("Resultado de la prueba de impresión:  $result");
     } else {
-      print("Estado de conexión de la prueba de impresión: $conexionStatus");
+      debugPrint(
+          "Estado de conexión de la prueba de impresión: $conexionStatus");
       setState(() {
         disconnect();
       });
@@ -254,10 +247,9 @@ class _PrintDialogState extends State<PrintDialog> {
   Future<List<int>> testTicket() async {
     List<int> bytes = [];
     final profile = await CapabilityProfile.load();
-    final generator = Generator(PaperSize.mm58,
-        profile); 
-        
-        // Ajusta el tamaño del papel según sea necesario
+    final generator = Generator(PaperSize.mm58, profile);
+
+    // Ajusta el tamaño del papel según sea necesario
 
     bytes += generator.reset();
     // Texto
@@ -274,12 +266,8 @@ class _PrintDialogState extends State<PrintDialog> {
         ^FO220,155^FDShelbyville TN 38102^FS
         ^FO220,195^FDUnited States (USA)^FS
         ^FO50,250^GB700,3,3^FS
-        ^XZ""",
-        styles: const PosStyles(align: PosAlign.center, bold: true));
+        ^XZ""", styles: const PosStyles(align: PosAlign.center, bold: true));
 
-
-
-        
     // bytes += generator.text('Batch: ${widget.model.batchName}',
     //     styles: const PosStyles(align: PosAlign.center));
     // bytes += generator.text('Zona TMS: ${widget.model.zonaEntregaTms}',
@@ -299,8 +287,6 @@ class _PrintDialogState extends State<PrintDialog> {
     //     styles: const PosStyles(align: PosAlign.center));
     // bytes +=
     //     generator.text('', styles: const PosStyles(align: PosAlign.center));
-    
-    
 
     // Generar el código QR como Uint8List
     final Uint8List qrUint8List = await _generateQrUint8List();
@@ -319,12 +305,6 @@ class _PrintDialogState extends State<PrintDialog> {
     return bytes;
   }
 
-
-
-
-
-
-
   Future<Uint8List> _generateQrUint8List() async {
     // Definir el tamaño del código QR (ajusta según el ancho del papel)
     const qrSize = 200.0; // Tamaño en píxeles
@@ -340,7 +320,6 @@ class _PrintDialogState extends State<PrintDialog> {
     // Generar el código QR
     final qrPainter = QrPainter(
       data: url,
-
       version: QrVersions.auto,
       color: Colors.black,
       emptyColor: Colors.white,

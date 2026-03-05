@@ -14,10 +14,8 @@ import 'package:wms_app/src/presentation/views/inventario/models/response_produc
 import 'package:wms_app/src/presentation/views/inventario/screens/bloc/inventario_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart';
 
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 import 'package:intl/intl.dart'; // Importamos el paquete intl
 
@@ -64,7 +62,7 @@ class _NewLoteScreenState extends State<NewLoteInventarioScreen> {
                     builder: (context, connectionStatus) {
                       return BlocConsumer<InventarioBloc, InventarioState>(
                         listener: (context, state) {
-                          print('STATE ❤️‍🔥 $state');
+                          debugPrint('STATE ❤️‍🔥 $state');
 
                           if (state is CreateLoteProductSuccess) {
                             Navigator.pop(context);

@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
@@ -5,8 +8,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
@@ -23,7 +24,6 @@ import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/quantity/scanner_quantity_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_numbers_widget.dart';
 
 class CreateTransferScreen extends StatefulWidget {
   const CreateTransferScreen({super.key});
@@ -34,8 +34,8 @@ class CreateTransferScreen extends StatefulWidget {
 
 class _CreateTransferScreenState extends State<CreateTransferScreen>
     with WidgetsBindingObserver {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
 
   //*focus
   FocusNode focusNode1 = FocusNode(); // ubicacion  de origen
@@ -86,7 +86,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
   }
 
   void _focus(FocusNode node, String label) {
-    print("🚼 $label");
+    debugPrint("🚼 $label");
     FocusScope.of(context).requestFocus(node);
     _unfocusOthers(except: node);
   }
@@ -109,12 +109,12 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     final hasLote = bloc.currentProduct?.tracking == "lot";
 
     //mostramos todas las variables de foco y sus condiciones
-    print('---------------- Manejo de dependencias ---------------');
-    print("ubicación: ${bloc.locationIsOk}");
-    print("producto: ${bloc.productIsOk}");
-    print("lote: ${bloc.loteIsOk}");
-    print("cantidad: ${bloc.quantityIsOk}");
-    print("ubicación destino: ${bloc.locationDestIsOk}");
+    debugPrint('---------------- Manejo de dependencias ---------------');
+    debugPrint("ubicación: ${bloc.locationIsOk}");
+    debugPrint("producto: ${bloc.productIsOk}");
+    debugPrint("lote: ${bloc.loteIsOk}");
+    debugPrint("cantidad: ${bloc.quantityIsOk}");
+    debugPrint("ubicación destino: ${bloc.locationDestIsOk}");
 
     final focusMap = {
       "location": () =>
@@ -171,7 +171,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     final bloc = context.read<CreateTransferBloc>();
     final scan = value.trim().toLowerCase();
 
-    print('scan location: $scan');
+    debugPrint('scan location: $scan');
     _controllerLocation.clear();
 
     ResultUbicaciones? matchedUbicacion = bloc.ubicacionesFilters.firstWhere(
@@ -181,13 +181,13 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
         );
 
     if (matchedUbicacion.barcode != null) {
-      print('Ubicacion encontrada: ${matchedUbicacion.name}');
+      debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
       bloc.add(ValidateFieldsEvent(field: "location", isOk: true));
       bloc.add(ChangeLocationIsOkEvent(matchedUbicacion, false));
     } else {
       _vibrationService.vibrate();
       _audioService.playErrorSound();
-      print('Ubicacion no encontrada');
+      debugPrint('Ubicacion no encontrada');
       bloc.add(ValidateFieldsEvent(field: "location", isOk: false));
     }
 
@@ -198,7 +198,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     final bloc = context.read<CreateTransferBloc>();
     final scan = value.trim().toLowerCase();
 
-    print('scan location dest: $scan');
+    debugPrint('scan location dest: $scan');
     _controllerLocationDestino.clear();
 
     ResultUbicaciones? matchedUbicacion = bloc.ubicacionesFilters.firstWhere(
@@ -208,13 +208,13 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
         );
 
     if (matchedUbicacion.barcode != null) {
-      print('Ubicacion encontrada: ${matchedUbicacion.name}');
+      debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
       bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: true));
       bloc.add(ChangeLocationIsOkEvent(matchedUbicacion, true));
     } else {
       _vibrationService.vibrate();
       _audioService.playErrorSound();
-      print('Ubicacion no encontrada');
+      debugPrint('Ubicacion no encontrada');
       bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: false));
     }
 
@@ -227,7 +227,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     final scan = value.trim().toLowerCase();
 
     _controllerProduct.clear();
-    print('🔎 Scan barcode: $scan');
+    debugPrint('🔎 Scan barcode: $scan');
 
     // Buscar coincidencia directa por barcode o code
     final matchedProduct = bloc.productos.firstWhere(
@@ -236,7 +236,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     );
 
     if (matchedProduct.barcode != null) {
-      print('✅ producto encontrado directo: ${matchedProduct.name}');
+      debugPrint('✅ producto encontrado directo: ${matchedProduct.name}');
       bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
       bloc.add(ChangeProductIsOkEvent(matchedProduct, true));
       return;
@@ -249,7 +249,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     );
 
     if (matchedBarcode.barcode == null) {
-      print('❌ Producto no encontrado en barcodes');
+      debugPrint('❌ Producto no encontrado en barcodes');
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
@@ -264,13 +264,13 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     );
 
     if (matchedById.productId != null) {
-      print('✅ Producto encontrado por ID: ${matchedById.name}');
+      debugPrint('✅ Producto encontrado por ID: ${matchedById.name}');
       bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
       bloc.add(ChangeProductIsOkEvent(matchedById, true));
 
       return;
     } else {
-      print('❌ Producto no encontrado por ID');
+      debugPrint('❌ Producto no encontrado por ID');
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
@@ -294,7 +294,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
         (bloc.scannedValue4.isEmpty ? value : bloc.scannedValue4).trim();
     final scan = _normalizeLote(rawScan); // <-- Usamos la nueva función aquí
 
-    print('scan lote normalizado: $scan');
+    debugPrint('scan lote normalizado: $scan');
     _controllerLote.clear();
 
     // Buscar el lote
@@ -304,14 +304,14 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
         orElse: () => LotesProduct());
 
     if (matchedLote.name != null) {
-      print('lote encontrado: ${matchedLote.name}');
+      debugPrint('lote encontrado: ${matchedLote.name}');
       bloc.add(ValidateFieldsEvent(field: "lote", isOk: true));
       bloc.add(SelectecLoteEvent(matchedLote));
       Future.microtask(() => focusNode5.requestFocus());
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      print('lote no encontrado');
+      debugPrint('lote no encontrado');
       bloc.add(ValidateFieldsEvent(field: "lote", isOk: false));
       Future.microtask(() => focusNode5.requestFocus());
     }
@@ -323,7 +323,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     String scan = bloc.scannedValue3.trim().toLowerCase() == ""
         ? value.trim().toLowerCase()
         : bloc.scannedValue3.trim().toLowerCase();
-    print('scan quantity: $scan');
+    debugPrint('scan quantity: $scan');
     _controllerQuantity.clear();
     final currentProduct = bloc.currentProduct;
 
@@ -386,7 +386,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     final Size size = MediaQuery.sizeOf(context);
     return BlocConsumer<CreateTransferBloc, CreateTransferState>(
       listener: (context, state) {
-        print('🔔 Estado actual: $state');
+        debugPrint('🔔 Estado actual: $state');
 
         if (state is ValidateStockFailure) {
           showScrollableErrorDialog(state.error);
@@ -688,15 +688,13 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                   manualFocusNode: focusNode4,
                   viewQuantity: context.read<CreateTransferBloc>().viewQuantity,
                   onIconButtonPressed: () {
-                    print('borrando');
+                    debugPrint('borrando');
                     context.read<CreateTransferBloc>().add(ShowQuantityEvent(
                         !context.read<CreateTransferBloc>().viewQuantity));
                     Future.delayed(const Duration(milliseconds: 100), () {
                       FocusScope.of(context).requestFocus(focusNode3);
                     });
                   },
-                  showKeyboard:
-                      context.read<UserBloc>().fabricante.contains("Zebra"),
                   onToggleViewQuantity: () {
                     context.read<CreateTransferBloc>().add(ShowQuantityEvent(
                         !context.read<CreateTransferBloc>().viewQuantity));
@@ -704,7 +702,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                     Future.delayed(const Duration(milliseconds: 100), () {
                       FocusScope.of(context).requestFocus(focusNode4);
                     });
-                    print('Toggle view quantity');
+                    debugPrint('Toggle view quantity');
                   },
                   onValidateButton: () {
                     FocusScope.of(context).unfocus();
@@ -714,7 +712,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                     validateQuantity(value);
                   },
                   onManualQuantityChanged: (value) {
-                    print('onManualQuantityChanged: $value');
+                    debugPrint('onManualQuantityChanged: $value');
                   },
                   onManualQuantitySubmitted: (value) {
                     final intValue = double.parse(value);
@@ -747,7 +745,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     String input = cantidadController.text.trim();
     //validamos quantity
 
-    print("cantidad: $input");
+    debugPrint("cantidad: $input");
 
     // Si está vacío, usar la cantidad seleccionada del bloc
     if (input.isEmpty) {
@@ -832,7 +830,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
       double cantidad = double.parse(cantidadController.text.isEmpty
           ? bloc.quantitySelected.toString()
           : cantidadController.text);
-      print("cantidad: $cantidad");
+      debugPrint("cantidad: $cantidad");
       bloc.add(ValidateStockProductEvent(cantidad));
     }
   }

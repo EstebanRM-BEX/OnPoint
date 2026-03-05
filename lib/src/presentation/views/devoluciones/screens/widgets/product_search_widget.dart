@@ -66,7 +66,7 @@ class _SearchProductDevScreenState extends State<SearchProductDevScreen> {
                           selectedProduct.productId ?? 0,
                         ));
                         Navigator.pop(context);
-                        print(
+                        debugPrint(
                             'producto seleccionado ${bloc.productosFilters[selectedIndex!].toMap()}');
                       },
                       style: ElevatedButton.styleFrom(

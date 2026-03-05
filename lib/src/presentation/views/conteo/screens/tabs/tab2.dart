@@ -1,10 +1,11 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously, prefer_is_empty
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
@@ -34,8 +35,8 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
 
   final TextEditingController _controllerToLocation = TextEditingController();
 
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
 
   @override
   void didChangeDependencies() {
@@ -57,7 +58,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
     final scan = value.trim().toLowerCase();
 
     _controllerToLocation.clear();
-    print('🔎 Scan barcode: $scan');
+    debugPrint('🔎 Scan barcode: $scan');
 
     final ubicacionActual = bloc.ubicacionExpanded.toLowerCase();
 
@@ -71,7 +72,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
       return isSeparateOk && isDoneItemOk && sameLocation;
     }).toList();
 
-    print(
+    debugPrint(
         'Productos en ubicación "$ubicacionActual": ${listOfProducts.length}');
 
     /// Función auxiliar para procesar un producto encontrado
@@ -123,7 +124,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
         );
       });
 
-      print('✅ Producto procesado: ${product.toMap()}');
+      debugPrint('✅ Producto procesado: ${product.toMap()}');
     }
 
     // 1️⃣ Buscar producto por código de barras principal
@@ -231,7 +232,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
       _audioService.playErrorSound();
       _controllerToLocation.clear();
       Future.microtask(() => focusNode1.requestFocus());
-      print("Ubicación no válida (barcode): $scan");
+      debugPrint("Ubicación no válida (barcode): $scan");
     }
   }
 
@@ -428,7 +429,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
         'scan-product-conteo',
       );
     });
-    print('Producto seleccionado: ${product.toJson()}');
+    debugPrint('Producto seleccionado: ${product.toJson()}');
   }
 
   // Función para ordenar ubicaciones con formato específico

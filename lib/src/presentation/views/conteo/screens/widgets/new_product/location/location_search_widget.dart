@@ -7,8 +7,6 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class SearchLocationConteoScreen extends StatefulWidget {
   const SearchLocationConteoScreen({super.key});

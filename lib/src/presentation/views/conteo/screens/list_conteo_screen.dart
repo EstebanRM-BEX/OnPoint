@@ -100,7 +100,7 @@ class ListConteoScreen extends StatelessWidget {
                                     icon: const Icon(Icons.more_vert,
                                         size: 20, color: white),
                                     onSelected: (String value) {
-                                      print('Filtro seleccionado: $value');
+                                      debugPrint('Filtro seleccionado: $value');
                                       context.read<ConteoBloc>().add(
                                             OrderConteosByStateEvent(value),
                                           );
@@ -201,7 +201,8 @@ class ListConteoScreen extends StatelessWidget {
                                             conteo,
                                           ],
                                         );
-                                        print('orden id: ${conteo?.toJson()}');
+                                        debugPrint(
+                                            'orden id: ${conteo?.toJson()}');
                                       },
                                       child: Card(
                                         elevation: 3,

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/recepcion/entradas/tbl_entradas_batch/entrada_batch_table.dart';
@@ -56,7 +57,6 @@ class EntradaBatchRepository {
             EntradaBatchTable.columnOrderPicking: entrada.orderPicking ?? "",
             //propietario
             EntradaBatchTable.columnPropietario: entrada.propietario ?? "",
-
           };
 
           if (existingIds.contains(entrada.id)) {
@@ -78,9 +78,9 @@ class EntradaBatchRepository {
         await batch.commit(noResult: true); // ⚡ para mejor rendimiento
       });
 
-      print('✅ Entradas por batch insertadas correctamente');
+      debugPrint('✅ Entradas por batch insertadas correctamente');
     } catch (e, s) {
-      print('❌ Error en insertEntradaBatch: $e -> $s');
+      debugPrint('❌ Error en insertEntradaBatch: $e -> $s');
     }
   }
 
@@ -94,12 +94,10 @@ class EntradaBatchRepository {
 
       return result.map((e) => ReceptionBatch.fromMap(e)).toList();
     } catch (e, s) {
-      print('❌ Error al obtener recepciones por batch: $e -> $s');
+      debugPrint('❌ Error al obtener recepciones por batch: $e -> $s');
       return [];
     }
   }
-
-
 
   //metodo para obtener una entrada por id
   Future<ReceptionBatch?> getEntradaById(int id) async {
@@ -115,11 +113,10 @@ class EntradaBatchRepository {
       }
       return null;
     } catch (e, s) {
-      print('Error en getEntradaById: $e ->$s');
+      debugPrint('Error en getEntradaById: $e ->$s');
       return null;
     }
   }
-
 
   // Método: Actualizar un campo específico en la tabla productos_pedidos
   Future<int?> setFieldTableEntradaBatch(
@@ -136,7 +133,7 @@ class EntradaBatchRepository {
           idEntrada,
         ]);
 
-    print(
+    debugPrint(
         "update TableEntrada (idEntrada ----($idEntrada)  ) -------($field): $resUpdate");
 
     return resUpdate;

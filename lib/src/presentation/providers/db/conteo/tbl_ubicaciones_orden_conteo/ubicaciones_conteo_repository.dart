@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:wms_app/src/presentation/providers/db/conteo/tbl_ubicaciones_orden_conteo/ubicaciones_conteo_table.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
@@ -27,10 +28,10 @@ class UbicacionesConteoRepository {
         }
         await batch.commit(noResult: true);
       });
-      print('✅ ${ubicaciones.length} ubicaciones insertadas/actualizadas');
+      debugPrint('✅ ${ubicaciones.length} ubicaciones insertadas/actualizadas');
     } catch (e, s) {
-      print('❌ Error en upsertUbicacionesConteo: $e');
-      print(s);
+      debugPrint('❌ Error en upsertUbicacionesConteo: $e');
+      debugPrint(s.toString());
       rethrow;
     }
   }
@@ -45,7 +46,8 @@ class UbicacionesConteoRepository {
         whereArgs: [ordenConteoId],
       );
 
-      print('Ubicaciones obtenidas para orden $ordenConteoId: ${maps.length}');
+      debugPrint(
+          'Ubicaciones obtenidas para orden $ordenConteoId: ${maps.length}');
 
       return List.generate(maps.length, (i) {
         return Allowed(
@@ -56,8 +58,8 @@ class UbicacionesConteoRepository {
         );
       });
     } catch (e, s) {
-      print('Error en getUbicacionesByOrdenId: $e');
-      print(s);
+      debugPrint('Error en getUbicacionesByOrdenId: $e');
+      debugPrint(s.toString());
       return [];
     }
   }
@@ -76,8 +78,8 @@ class UbicacionesConteoRepository {
         );
       });
     } catch (e, s) {
-      print('Error en getAllUbicacionesConteo: $e');
-      print(s);
+      debugPrint('Error en getAllUbicacionesConteo: $e');
+      debugPrint(s.toString());
       return [];
     }
   }
@@ -92,8 +94,8 @@ class UbicacionesConteoRepository {
         whereArgs: [ordenConteoId],
       );
     } catch (e, s) {
-      print('Error en deleteUbicacionesByOrdenId: $e');
-      print(s);
+      debugPrint('Error en deleteUbicacionesByOrdenId: $e');
+      debugPrint(s.toString());
       return 0;
     }
   }

@@ -1,7 +1,9 @@
 // app_routes.dart
 
 import 'package:flutter/material.dart';
-import 'package:wms_app/features/picking/presentation/screens/picking_cluster/index_screen.dart';
+import 'package:wms_app/features/picking_cluster/presentation/screens/detail_screen.dart';
+import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/index.dart';
+import 'package:wms_app/features/picking_cluster/presentation/screens/scan_product_scree.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/conteo_screen.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/list_conteo_screen.dart';
@@ -92,6 +94,8 @@ class AppRoutes {
 
   //todo picking cluster
   static const String pickingCluster = 'picking-cluster';
+  static const String scanProductCluster = 'scan-product-cluster';
+  static const String detailCluster = 'detail-cluster';
 
   //todo pick
   static const String pick = 'pick';
@@ -280,6 +284,8 @@ class AppRoutes {
 
       //todo picking cluster
       pickingCluster: (_) => const PickingClusterScreen(),
+      scanProductCluster: (_) => const ScanProductCluster(),
+      detailCluster: (_) => const DetailClusterScreen(),
 
       // todo WMS Packing
       wmsPacking: (_) => const WmsPackingScreen(),

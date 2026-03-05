@@ -2,6 +2,7 @@
 
 // ignore_for_file: unnecessary_string_interpolations, unrelated_type_equality_checks
 
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/packing/tbl_products_pedido/productos_pedido_pack_table.dart';
@@ -60,9 +61,9 @@ class ProductosPedidosRepository {
         productCopy,
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
-      print("Producto duplicado insertado con éxito.");
+      debugPrint("Producto duplicado insertado con éxito.");
     } catch (e, s) {
-      print("Error al insertar producto duplicado: $e ==> $s");
+      debugPrint("Error al insertar producto duplicado: $e ==> $s");
     }
   }
 
@@ -176,7 +177,7 @@ class ProductosPedidosRepository {
         }
       });
     } catch (e, s) {
-      print("Error al insertar productos en productos_pedidos: $e ==> $s");
+      debugPrint("Error al insertar productos en productos_pedidos: $e ==> $s");
     }
   }
 
@@ -344,14 +345,15 @@ class ProductosPedidosRepository {
         }
       });
     } catch (e, s) {
-      print("Error al insertar productos de paquetes ya creado : $e ==> $s");
+      debugPrint(
+          "Error al insertar productos de paquetes ya creado : $e ==> $s");
     }
   }
 
   // Obtener productos de un pedido
   Future<List<ProductoPedido>> getProductosPedido(
       int pedidoId, String type) async {
-    print('idPedido: $pedidoId');
+    debugPrint('idPedido: $pedidoId');
     Database db = await DataBaseSqlite().getDatabaseInstance();
     final List<Map<String, dynamic>> maps = await db.query(
       ProductosPedidosTable.tableName,
@@ -364,7 +366,7 @@ class ProductosPedidosRepository {
 
   Future<ProductoPedido> getProductoPedidoById(
       int pedidoId, int idMove, String type) async {
-    print('idPedido: $pedidoId   idMove: $idMove');
+    debugPrint('idPedido: $pedidoId   idMove: $idMove');
     final db = await DataBaseSqlite().getDatabaseInstance();
 
     final List<Map<String, dynamic>> maps = await db.query(
@@ -398,7 +400,7 @@ class ProductosPedidosRepository {
       // La robustez del mapeo recae en la implementación de ProductoPedido.fromMap.
       return maps.map((map) => ProductoPedido.fromMap(map)).toList();
     } catch (e, s) {
-      print(
+      debugPrint(
           "Error al obtener todos los productos de tbl_products_pedido: $e\n$s");
       // Retorna una lista vacía en caso de error para que la aplicación pueda continuar.
       return [];
@@ -419,7 +421,7 @@ class ProductosPedidosRepository {
       'UPDATE ${ProductosPedidosTable.tableName} SET $field = ? WHERE ${ProductosPedidosTable.columnIdProduct} = ? AND ${ProductosPedidosTable.columnPedidoId} = ? AND ${ProductosPedidosTable.columnIdMove} = ? AND ${ProductosPedidosTable.columnIdPackage} = ? AND ${ProductosPedidosTable.columnType} = ?',
       [setValue, productId, pedidoId, idMove, idPackage, type],
     );
-    print("update unpacking tblproductos_pedidos: $resUpdate");
+    debugPrint("update unpacking tblproductos_pedidos: $resUpdate");
     return resUpdate;
   }
 
@@ -431,7 +433,8 @@ class ProductosPedidosRepository {
       'UPDATE ${ProductosPedidosTable.tableName} SET $field = ? WHERE ${ProductosPedidosTable.columnIdProduct} = ? AND ${ProductosPedidosTable.columnPedidoId} = ? AND ${ProductosPedidosTable.columnIdMove} = ? AND ${ProductosPedidosTable.columnIsCertificate} IS NULL AND ${ProductosPedidosTable.columnType} = ?',
       [setValue, productId, pedidoId, idMove, type],
     );
-    print("☢️3 update separated tblproductos_pedidos: ($field): $resUpdate");
+    debugPrint(
+        "☢️3 update separated tblproductos_pedidos: ($field): $resUpdate");
     return resUpdate;
   }
 
@@ -448,7 +451,7 @@ class ProductosPedidosRepository {
       }
       return "";
     } catch (e, s) {
-      print("error getFieldTableProductsPick: $e => $s");
+      debugPrint("error getFieldTableProductsPick: $e => $s");
     }
     return "";
   }
@@ -461,7 +464,7 @@ class ProductosPedidosRepository {
       'UPDATE ${ProductosPedidosTable.tableName} SET $field = ? WHERE ${ProductosPedidosTable.columnIdProduct} = ? AND ${ProductosPedidosTable.columnPedidoId} = ? AND ${ProductosPedidosTable.columnIdMove} = ? AND ${ProductosPedidosTable.columnIsCertificate} = 1 AND ${ProductosPedidosTable.columnIsPackage} = 0 AND ${ProductosPedidosTable.columnType} = ?',
       [setValue, productId, pedidoId, idMove, type],
     );
-    print(
+    debugPrint(
         "☢️2 update tblproductos_pedidos (certificate and no package): ($field): $resUpdate");
     return resUpdate;
   }
@@ -501,7 +504,7 @@ class ProductosPedidosRepository {
       whereArgs: [productId, pedidoId, idMove, type],
     );
 
-    print("✅ Producto revertido en la BD. Filas afectadas: $resUpdate");
+    debugPrint("✅ Producto revertido en la BD. Filas afectadas: $resUpdate");
     return resUpdate;
   }
 
@@ -543,78 +546,80 @@ class ProductosPedidosRepository {
       whereArgs: [productId, pedidoId, idMove, type],
     );
 
-    print("✅ Producto revertido en la BD. Filas afectadas: $resUpdate");
+    debugPrint("✅ Producto revertido en la BD. Filas afectadas: $resUpdate");
     return resUpdate;
   }
 
   Future<int?> findAndAddQuantityAndDelete(int productId, int idMoveToUpdate,
-    dynamic quantityToAdd, int idPedido, String type) async { // Renombrado idMove a idMoveToUpdate para claridad
-  Database db = await DataBaseSqlite().getDatabaseInstance();
-  int? rowsAffected;
+      dynamic quantityToAdd, int idPedido, String type) async {
+    // Renombrado idMove a idMoveToUpdate para claridad
+    Database db = await DataBaseSqlite().getDatabaseInstance();
+    int? rowsAffected;
 
-  // Asegurar que quantityToAdd es double
-  final double safeQuantityToAdd = (quantityToAdd as num).toDouble();
+    // Asegurar que quantityToAdd es double
+    final double safeQuantityToAdd = (quantityToAdd as num).toDouble();
 
-  await db.transaction((txn) async {
-    // 1️⃣ Buscar y obtener la cantidad del producto para actualizar (Búsqueda por idMoveToUpdate)
-    final List<Map<String, dynamic>> productsToUpdate = await txn.query(
-      ProductosPedidosTable.tableName,
-      columns: [ProductosPedidosTable.columnQuantity],
-      where: '${ProductosPedidosTable.columnIdProduct} = ? AND '
-          '${ProductosPedidosTable.columnIdMove} = ? AND '
-          '${ProductosPedidosTable.columnPedidoId} = ? AND '
-          '${ProductosPedidosTable.columnIsSeparate} IS NULL AND '
-          '${ProductosPedidosTable.columnIsProductSplit} = 1 AND '
-          '${ProductosPedidosTable.columnIsSelected} = 0 AND '
-          '${ProductosPedidosTable.columnIsPackage} IS NULL AND '
-          '${ProductosPedidosTable.columnType} = ?',
-      whereArgs: [productId, idMoveToUpdate, idPedido, type],
-      limit: 1,
-    );
-
-    if (productsToUpdate.isNotEmpty) {
-      final currentQuantity = (productsToUpdate
-              .first[ProductosPedidosTable.columnQuantity] as num)
-          .toDouble();
-      final newQuantity = currentQuantity + safeQuantityToAdd;
-
-      // 2️⃣ Actualizar la cantidad del producto encontrado (CORRECCIÓN DEL AND COLGANTE)
-      rowsAffected = await txn.update(
+    await db.transaction((txn) async {
+      // 1️⃣ Buscar y obtener la cantidad del producto para actualizar (Búsqueda por idMoveToUpdate)
+      final List<Map<String, dynamic>> productsToUpdate = await txn.query(
         ProductosPedidosTable.tableName,
-        {ProductosPedidosTable.columnQuantity: newQuantity},
-        where: '${ProductosPedidosTable.columnIdProduct} = ? AND '
-            '${ProductosPedidosTable.columnIdMove} = ? AND '
-            '${ProductosPedidosTable.columnType} = ?', // ✅ SINTAXIS CORREGIDA
-        whereArgs: [productId, idMoveToUpdate, type],
-      );
-
-      // 3️⃣ Eliminar el producto que ya fue procesado (Se asume que idMoveToDelete es idMoveToUpdate)
-      final int rowsDeleted = await txn.delete(
-        ProductosPedidosTable.tableName,
+        columns: [ProductosPedidosTable.columnQuantity],
         where: '${ProductosPedidosTable.columnIdProduct} = ? AND '
             '${ProductosPedidosTable.columnIdMove} = ? AND '
             '${ProductosPedidosTable.columnPedidoId} = ? AND '
-            '${ProductosPedidosTable.columnIsSeparate} = 1 AND '
-            '${ProductosPedidosTable.columnIsSelected} = 1 AND '
-            '${ProductosPedidosTable.columnIsPackage} = 0 AND '
-            '${ProductosPedidosTable.columnIsCertificate} = 1 AND '
+            '${ProductosPedidosTable.columnIsSeparate} IS NULL AND '
             '${ProductosPedidosTable.columnIsProductSplit} = 1 AND '
-            '${ProductosPedidosTable.columnType} = ?', // ✅ CONCATENACIÓN Y TIPO CORRECTO
+            '${ProductosPedidosTable.columnIsSelected} = 0 AND '
+            '${ProductosPedidosTable.columnIsPackage} IS NULL AND '
+            '${ProductosPedidosTable.columnType} = ?',
         whereArgs: [productId, idMoveToUpdate, idPedido, type],
+        limit: 1,
       );
 
-      print(
-          "✅ Producto actualizado exitosamente. Filas afectadas: $rowsAffected");
-      print(
-          "✅ Producto eliminado exitosamente. Filas eliminadas: $rowsDeleted");
-    } else {
-      print("⚠️ No se encontró el producto para actualizar.");
-      rowsAffected = 0;
-    }
-  });
+      if (productsToUpdate.isNotEmpty) {
+        final currentQuantity = (productsToUpdate
+                .first[ProductosPedidosTable.columnQuantity] as num)
+            .toDouble();
+        final newQuantity = currentQuantity + safeQuantityToAdd;
 
-  return rowsAffected;
-}
+        // 2️⃣ Actualizar la cantidad del producto encontrado (CORRECCIÓN DEL AND COLGANTE)
+        rowsAffected = await txn.update(
+          ProductosPedidosTable.tableName,
+          {ProductosPedidosTable.columnQuantity: newQuantity},
+          where: '${ProductosPedidosTable.columnIdProduct} = ? AND '
+              '${ProductosPedidosTable.columnIdMove} = ? AND '
+              '${ProductosPedidosTable.columnType} = ?', // ✅ SINTAXIS CORREGIDA
+          whereArgs: [productId, idMoveToUpdate, type],
+        );
+
+        // 3️⃣ Eliminar el producto que ya fue procesado (Se asume que idMoveToDelete es idMoveToUpdate)
+        final int rowsDeleted = await txn.delete(
+          ProductosPedidosTable.tableName,
+          where: '${ProductosPedidosTable.columnIdProduct} = ? AND '
+              '${ProductosPedidosTable.columnIdMove} = ? AND '
+              '${ProductosPedidosTable.columnPedidoId} = ? AND '
+              '${ProductosPedidosTable.columnIsSeparate} = 1 AND '
+              '${ProductosPedidosTable.columnIsSelected} = 1 AND '
+              '${ProductosPedidosTable.columnIsPackage} = 0 AND '
+              '${ProductosPedidosTable.columnIsCertificate} = 1 AND '
+              '${ProductosPedidosTable.columnIsProductSplit} = 1 AND '
+              '${ProductosPedidosTable.columnType} = ?', // ✅ CONCATENACIÓN Y TIPO CORRECTO
+          whereArgs: [productId, idMoveToUpdate, idPedido, type],
+        );
+
+        debugPrint(
+            "✅ Producto actualizado exitosamente. Filas afectadas: $rowsAffected");
+        debugPrint(
+            "✅ Producto eliminado exitosamente. Filas eliminadas: $rowsDeleted");
+      } else {
+        debugPrint("⚠️ No se encontró el producto para actualizar.");
+        rowsAffected = 0;
+      }
+    });
+
+    return rowsAffected;
+  }
+
   // Actualizar la tabla de productos de un pedido (con certificado y paquete)
   Future<int?> setFieldTableProductosPedidos2String(int pedidoId, int productId,
       String field, dynamic setValue, int idMove, String type) async {
@@ -623,7 +628,7 @@ class ProductosPedidosRepository {
       "UPDATE ${ProductosPedidosTable.tableName} SET $field = '$setValue' WHERE ${ProductosPedidosTable.columnIdProduct} = ? AND ${ProductosPedidosTable.columnPedidoId} = ? AND ${ProductosPedidosTable.columnIdMove} = ? AND ${ProductosPedidosTable.columnIsCertificate} = 1 AND ${ProductosPedidosTable.columnIsPackage} = 0 AND ${ProductosPedidosTable.columnType} = ?",
       [productId, pedidoId, idMove, type],
     );
-    print(
+    debugPrint(
         "☢️2String update tblproductos_pedidos (certificate and no package) String: ($field): $resUpdate");
     return resUpdate;
   }
@@ -636,7 +641,7 @@ class ProductosPedidosRepository {
       "UPDATE ${ProductosPedidosTable.tableName} SET $field = '$setValue' WHERE ${ProductosPedidosTable.columnIdProduct} = ? AND ${ProductosPedidosTable.columnPedidoId} = ? AND ${ProductosPedidosTable.columnIdMove} = ? AND ${ProductosPedidosTable.columnIsCertificate} = 0 AND ${ProductosPedidosTable.columnIsPackage} = 1 AND ${ProductosPedidosTable.columnType} = ?",
       [productId, pedidoId, idMove, type],
     );
-    print(
+    debugPrint(
         "☢️3String update separated tblproductos_pedidos ($field): $resUpdate");
     return resUpdate;
   }
@@ -651,7 +656,7 @@ class ProductosPedidosRepository {
         'UPDATE ${ProductosPedidosTable.tableName} SET $field = ? WHERE ${ProductosPedidosTable.columnIdProduct} = ? AND ${ProductosPedidosTable.columnPedidoId} = ? AND ${ProductosPedidosTable.columnIdMove} = ? AND ${ProductosPedidosTable.columnType} = ?',
         [setValue, productId, pedidoId, idMove, type]);
 
-    print(
+    debugPrint(
         "☢️ update tblproductos_pedidos type: $type (idProduct ----($productId)) -------($field): $resUpdate");
 
     return resUpdate;
@@ -699,7 +704,7 @@ class ProductosPedidosRepository {
         "UPDATE ${ProductosPedidosTable.tableName} SET ${ProductosPedidosTable.columnObservation} = ? WHERE ${ProductosPedidosTable.columnIdProduct} = ? AND ${ProductosPedidosTable.columnPedidoId} = ? AND ${ProductosPedidosTable.columnType} = ?",
         [novedad, productId, pedidoId, type]);
 
-    print("updateNovedad: $resUpdate");
+    debugPrint("updateNovedad: $resUpdate");
     return resUpdate;
   }
 
@@ -763,10 +768,10 @@ class ProductosPedidosRepository {
         where: '${ProductosPedidosTable.columnType} = ?',
         whereArgs: [type],
       );
-      print("Productos eliminados del tipo $type: $result");
+      debugPrint("Productos eliminados del tipo $type: $result");
       return result;
     } catch (e, s) {
-      print("Error al eliminar productos del tipo $type: $e ==> $s");
+      debugPrint("Error al eliminar productos del tipo $type: $e ==> $s");
       return 0;
       ;
     }

@@ -1,5 +1,6 @@
 // urls_recientes_repository.dart
 
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/features/enterprise/domain/entities/recent_url.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
@@ -26,7 +27,7 @@ class UrlsRecientesRepository {
 
       return urls;
     } catch (e) {
-      print("Error al obtener URLs recientes: $e");
+      debugPrint("Error al obtener URLs recientes: $e");
       return []; // Devuelve una lista vacía en caso de error
     }
   }
@@ -65,7 +66,7 @@ class UrlsRecientesRepository {
         }
       });
     } catch (e) {
-      print("Error al insertar/actualizar URL reciente: $e");
+      debugPrint("Error al insertar/actualizar URL reciente: $e");
     }
   }
 
@@ -79,7 +80,7 @@ class UrlsRecientesRepository {
         whereArgs: [url],
       );
     } catch (e) {
-      print("Error al eliminar URL reciente: $e");
+      debugPrint("Error al eliminar URL reciente: $e");
     }
   }
 }

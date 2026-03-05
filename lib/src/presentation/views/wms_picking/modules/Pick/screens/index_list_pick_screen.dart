@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: no_leading_underscores_for_local_identifiers, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
@@ -8,8 +11,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_start_picking_widget.dart';
@@ -20,7 +21,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/pic
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/response_pick_model.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class IndexListPickScreen extends StatelessWidget {
   const IndexListPickScreen({super.key});
@@ -29,8 +29,8 @@ class IndexListPickScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
-    final AudioService _audioService = AudioService();
-    final VibrationService _vibrationService = VibrationService();
+    final IAudioService _audioService = getIt<IAudioService>();
+    final IVibrationService _vibrationService = getIt<IVibrationService>();
     FocusNode focusNodeBuscar = FocusNode();
     final TextEditingController _controllerToDo = TextEditingController();
 
@@ -41,14 +41,13 @@ class IndexListPickScreen extends StatelessWidget {
           .toLowerCase();
 
       _controllerToDo.clear();
-      print('🔎 Scan barcode (batch picking): $scan');
+      debugPrint('🔎 Scan barcode (batch picking): $scan');
 
       final listOfBatchs = bloc.listOfPick;
 
       void processBatch(ResultPick batch) {
         // bloc.add(ClearScannedValueEvent('toDo'));
 
-        print(batch.toMap());
         try {
           _handleTransferTap(context, context, batch);
         } catch (e) {
@@ -70,7 +69,7 @@ class IndexListPickScreen extends StatelessWidget {
       );
 
       if (batchs.id != null) {
-        print(
+        debugPrint(
             '🔎 batch encontrado : ${batchs.id} ${batchs.name} - ${batchs.zonaEntrega}');
         processBatch(batchs);
         return;
@@ -1035,7 +1034,7 @@ class IndexListPickScreen extends StatelessWidget {
 // Tu código refactorizado en un método privado
   void _handleTransferTap(
       BuildContext context, BuildContext contextBuilder, dynamic batch) async {
-    print("Batch: ${batch.toMap()}");
+    debugPrint("Batch: ${batch.toMap()}");
     final bloc = context.read<PickingPickBloc>(); // Asumo que es PickBloc
 
     try {

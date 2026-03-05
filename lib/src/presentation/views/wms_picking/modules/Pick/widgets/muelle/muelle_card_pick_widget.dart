@@ -1,11 +1,12 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/widgets/others/dialog_backorder_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/widgets/others/dialog_picking_incompleted_widget.dart';
@@ -26,8 +27,8 @@ class MuellePickDropdownWidget extends StatefulWidget {
 }
 
 class _MuelleDropdownWidgetState extends State<MuellePickDropdownWidget> {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +115,7 @@ class _MuelleDropdownWidgetState extends State<MuellePickDropdownWidget> {
                         !context.read<PickingPickBloc>().locationDestIsOk &&
                         context.read<PickingPickBloc>().productIsOk
                     ? (String? newValue) {
-                        print("Muelle seleccionado: $newValue");
+                        debugPrint("Muelle seleccionado: $newValue");
                         if (context
                                     .read<PickingPickBloc>()
                                     .configurations
@@ -133,7 +134,7 @@ class _MuelleDropdownWidgetState extends State<MuellePickDropdownWidget> {
                                     .pickWithProducts
                                     .pick
                                     ?.barcodeMuelle) {
-                          print('Muelle correcto');
+                          debugPrint('Muelle correcto');
                           // Validación correcta
                           validatePicking(
                             context.read<PickingPickBloc>(),

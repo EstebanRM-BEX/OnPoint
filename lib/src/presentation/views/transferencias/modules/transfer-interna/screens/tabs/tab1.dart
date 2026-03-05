@@ -220,13 +220,10 @@ class Tab1ScreenTrans extends StatelessWidget {
           final bloc = context.read<TransferenciaBloc>();
           final transferenciaDetail = bloc.currentTransferencia;
 
-          final totalEnviadas = context
-              .read<TransferenciaBloc>()
-              .listProductsTransfer
-              .map((e) {
-                return e.quantityDone ?? 0;
-              })
-              .fold<double>(0, (a, b) => a + b);
+          final totalEnviadas =
+              context.read<TransferenciaBloc>().listProductsTransfer.map((e) {
+            return e.quantityDone ?? 0;
+          }).fold<double>(0, (a, b) => a + b);
 
           return Scaffold(
             backgroundColor: white,
@@ -239,7 +236,7 @@ class Tab1ScreenTrans extends StatelessWidget {
                     //*detalles del batch
                     GestureDetector(
                       onTap: () {
-                        print(
+                        debugPrint(
                             'Detalle de la transferencia: ${transferenciaDetail.toMap()} ');
                       },
                       child: Container(

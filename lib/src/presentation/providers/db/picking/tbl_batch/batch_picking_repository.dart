@@ -1,5 +1,6 @@
 // batch_picking_repository.dart
 
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
@@ -69,7 +70,8 @@ class BatchPickingRepository {
       // Realiza la consulta a la tabla tblbatchs
       final List<Map<String, dynamic>> maps = await db.query(
         BatchPickingTable.tableName,
-        where: '${BatchPickingTable.columnId} = ? AND ${BatchPickingTable.columnType} = ?',
+        where:
+            '${BatchPickingTable.columnId} = ? AND ${BatchPickingTable.columnType} = ?',
         whereArgs: [batchId, type],
       );
 
@@ -81,7 +83,7 @@ class BatchPickingRepository {
       // Si no se encontró ningún registro, devuelve null
       return null;
     } catch (e) {
-      print("Error al obtener el batch por ID: $e");
+      debugPrint("Error al obtener el batch por ID: $e");
       return null; // Devuelve null en caso de error
     }
   }
@@ -118,14 +120,15 @@ class BatchPickingRepository {
           BatchPickingTable.columnZonaEntrega,
           BatchPickingTable.columnIsSeparate,
         ],
-        where: '${BatchPickingTable.columnUserId} = ? AND ${BatchPickingTable.columnType} = ?',
+        where:
+            '${BatchPickingTable.columnUserId} = ? AND ${BatchPickingTable.columnType} = ?',
         whereArgs: [userId, type],
       );
 
       // Mapeo directo
       return maps.map((map) => BatchsModel.fromMap(map)).toList();
     } catch (e, s) {
-      print("Error getBatchsByUserId: $e => $s");
+      debugPrint("Error getBatchsByUserId: $e => $s");
       return [];
     }
   }
@@ -156,13 +159,14 @@ class BatchPickingRepository {
 
       return resUpdate;
     } catch (e) {
-      print("Error al actualizar el campo $field en tblbatchs: $e");
+      debugPrint("Error al actualizar el campo $field en tblbatchs: $e");
       return null;
     }
   }
 
 // Método para obtener el valor de un campo específico de un batch de picking
-  Future<String> getFieldTableBatch(int batchId, String field, String type) async {
+  Future<String> getFieldTableBatch(
+      int batchId, String field, String type) async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
 
@@ -177,13 +181,14 @@ class BatchPickingRepository {
       }
       return "";
     } catch (e) {
-      print("Error al obtener el campo $field de tblbatchs: $e");
+      debugPrint("Error al obtener el campo $field de tblbatchs: $e");
       return "";
     }
   }
 
   // Método para iniciar el cronómetro de un batch de picking
-  Future<int?> startStopwatchBatch(int batchId, String date, String type) async {
+  Future<int?> startStopwatchBatch(
+      int batchId, String date, String type) async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
 
@@ -192,10 +197,10 @@ class BatchPickingRepository {
           "UPDATE ${BatchPickingTable.tableName} SET ${BatchPickingTable.columnStartTimePick} = ? WHERE ${BatchPickingTable.columnId} = ? AND ${BatchPickingTable.columnType} = ?",
           [date, batchId, type]);
 
-      print("startStopwatchBatch: $resUpdate");
+      debugPrint("startStopwatchBatch: $resUpdate");
       return resUpdate;
     } catch (e) {
-      print("Error al iniciar el cronómetro para el batch $batchId: $e");
+      debugPrint("Error al iniciar el cronómetro para el batch $batchId: $e");
       return null;
     }
   }
@@ -210,10 +215,10 @@ class BatchPickingRepository {
           "UPDATE ${BatchPickingTable.tableName} SET ${BatchPickingTable.columnEndTimePick} = ? WHERE ${BatchPickingTable.columnId} = ? AND ${BatchPickingTable.columnType} = ?",
           [date, batchId, type]);
 
-      print("endStopwatchBatch: $resUpdate");
+      debugPrint("endStopwatchBatch: $resUpdate");
       return resUpdate;
     } catch (e) {
-      print("Error al finalizar el cronómetro para el batch $batchId: $e");
+      debugPrint("Error al finalizar el cronómetro para el batch $batchId: $e");
       return null;
     }
   }

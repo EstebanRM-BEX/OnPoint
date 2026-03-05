@@ -180,7 +180,7 @@ class CreateTransferBloc
         emit(ValidateStockFailure(response.result?.msg ?? ""));
       }
     } catch (e, s) {
-      print("❌ Error en el ValidateStockProductEvent $e ->$s");
+      debugPrint("❌ Error en el ValidateStockProductEvent $e ->$s");
       emit(ValidateStockFailure('Error al validar el stock del producto'));
     }
   }
@@ -228,7 +228,7 @@ class CreateTransferBloc
         emit(CreateTransferFailure(response.result?.msg ?? ""));
       }
     } catch (e, s) {
-      print("❌ Error en el CreateTransferEvent $e ->$s");
+      debugPrint("❌ Error en el CreateTransferEvent $e ->$s");
       emit(CreateTransferFailure(e.toString()));
     }
   }
@@ -242,7 +242,7 @@ class CreateTransferBloc
       productosCreateTransfer.clear();
       if (response.isNotEmpty) {
         productosCreateTransfer = response;
-        print(
+        debugPrint(
             'productos de la bd de crear transferencia::::: ${productosCreateTransfer.length}');
         emit(GetProductsSuccessBD(response));
       } else {
@@ -250,7 +250,7 @@ class CreateTransferBloc
       }
     } catch (e, s) {
       emit(GetProductsFailure('Error al cargar los productos'));
-      print('Error en el fetch de productos: $e=>$s');
+      debugPrint('Error en el fetch de productos: $e=>$s');
     }
   }
 
@@ -265,7 +265,7 @@ class CreateTransferBloc
           .removeWhere((prod) => prod.productId == event.product.productId);
       emit(ProductRemovedFromTransferState());
     } catch (e, s) {
-      print("❌ Error en _onRemoveProductFromTransferEvent: $e, $s");
+      debugPrint("❌ Error en _onRemoveProductFromTransferEvent: $e, $s");
       emit(ProductRemoveFromTransferErrorState(
           'Error al eliminar el producto de la transferencia'));
     }
@@ -287,9 +287,9 @@ class CreateTransferBloc
       }
 
       //mostramos el tiempo de inicio y fin
-      print('Fecha de inicio: $dateInicio');
+      debugPrint('Fecha de inicio: $dateInicio');
       dateFin = DateTime.now().toString();
-      print('Fecha de fin: $dateFin');
+      debugPrint('Fecha de fin: $dateFin');
 
       //calculamos la diferencia de tiempo
       if (dateInicio == "" || dateInicio == null) {
@@ -339,7 +339,7 @@ class CreateTransferBloc
       //todo limpiamos las variables
       add(ClearDataCreateTransferEvent(isClearProduct: true));
     } catch (e, s) {
-      print("❌ Error en _onAddProductCreateTransferEvent: $e, $s");
+      debugPrint("❌ Error en _onAddProductCreateTransferEvent: $e, $s");
       emit(ProductAddToTransferErrorState(
           'Error al agregar el producto a la transferencia'));
     }
@@ -352,13 +352,14 @@ class CreateTransferBloc
       allBarcodeInventario.clear();
       if (response.isNotEmpty) {
         allBarcodeInventario = response;
-        print('Total de códigos de barras: ${allBarcodeInventario.length}');
+        debugPrint(
+            'Total de códigos de barras: ${allBarcodeInventario.length}');
         emit(FetchAllBarcodesSuccess(allBarcodeInventario));
       } else {
         emit(FetchAllBarcodesFailure('No se encontraron códigos de barras'));
       }
     } catch (e, s) {
-      print("❌ Error en _onFetchAllBarcodesInventarioEvent: $e, $s");
+      debugPrint("❌ Error en _onFetchAllBarcodesInventarioEvent: $e, $s");
       emit(FetchAllBarcodesFailure('Error al obtener los códigos de barras'));
     }
   }
@@ -381,7 +382,7 @@ class CreateTransferBloc
         return;
       }
     } catch (e, s) {
-      print("❌ Error en _onFetchBarcodesProductEvent: $e, $s");
+      debugPrint("❌ Error en _onFetchBarcodesProductEvent: $e, $s");
     }
     emit(BarcodesProductLoadedState(listOfBarcodes: listOfBarcodes));
   }
@@ -464,7 +465,7 @@ class CreateTransferBloc
 
       emit(ClearDataCreateTransferState());
     } catch (e, s) {
-      print("❌ Error en _onClearDataCreateTransferEvent: $e, $s");
+      debugPrint("❌ Error en _onClearDataCreateTransferEvent: $e, $s");
     }
   }
 
@@ -477,7 +478,7 @@ class CreateTransferBloc
       emit(ChangeQuantitySeparateStateSuccess(quantitySelected));
     } catch (e, s) {
       emit(ChangeQuantitySeparateStateError('Error al aumentar cantidad'));
-      print("❌ Error en el AddQuantitySeparate $e ->$s");
+      debugPrint("❌ Error en el AddQuantitySeparate $e ->$s");
     }
   }
 
@@ -489,7 +490,7 @@ class CreateTransferBloc
       }
       emit(ChangeQuantitySeparateState(quantitySelected));
     } catch (e, s) {
-      print('Error en _onChangeQuantitySelectedEvent: $e, $s');
+      debugPrint('Error en _onChangeQuantitySelectedEvent: $e, $s');
     }
   }
 
@@ -500,7 +501,7 @@ class CreateTransferBloc
       viewQuantity = !viewQuantity;
       emit(ShowQuantityState(viewQuantity));
     } catch (e, s) {
-      print("❌ Error en _onShowQuantityEvent: $e, $s");
+      debugPrint("❌ Error en _onShowQuantityEvent: $e, $s");
     }
   }
 
@@ -527,7 +528,7 @@ class CreateTransferBloc
         loteIsOk,
       ));
     } catch (e, s) {
-      print('Error en el SelectecLoteEvent de inventario $s ->$e');
+      debugPrint('Error en el SelectecLoteEvent de inventario $s ->$e');
     }
   }
 
@@ -546,7 +547,7 @@ class CreateTransferBloc
       emit(GetLotesProductSuccess(response));
     } catch (e, s) {
       emit(GetLotesProductFailure('Error al obtener los lotes del producto'));
-      print('Error en _onGetLotesProduct: $e\n$s');
+      debugPrint('Error en _onGetLotesProduct: $e\n$s');
     }
   }
 
@@ -587,7 +588,7 @@ class CreateTransferBloc
       }
     } catch (e, s) {
       emit(CreateLoteProductFailure('Error al crear el lote'));
-      print('Error en el _onCreateLoteProduct: $e, $s');
+      debugPrint('Error en el _onCreateLoteProduct: $e, $s');
     }
   }
 
@@ -607,7 +608,7 @@ class CreateTransferBloc
       }
       emit(SearchLoteSuccess(listLotesProductFilters));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -669,7 +670,7 @@ class CreateTransferBloc
         }
       }
     } catch (e, s) {
-      print("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
+      debugPrint("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
     }
   }
 
@@ -689,7 +690,7 @@ class CreateTransferBloc
       }
       emit(SearchLocationSuccess(ubicacionesFilters));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -699,7 +700,7 @@ class CreateTransferBloc
     Emitter<CreateTransferState> emit,
   ) async {
     try {
-      print('🔍 Buscando productos con query: "${event.query}"');
+      debugPrint('🔍 Buscando productos con query: "${event.query}"');
       emit(SearchLoading());
 
       productosFilters = [];
@@ -721,7 +722,7 @@ class CreateTransferBloc
       }
       emit(SearchProductSuccess(productosFilters));
     } catch (e, s) {
-      print('❌ Error en SearchProductEvent: $e\n$s');
+      debugPrint('❌ Error en SearchProductEvent: $e\n$s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -736,14 +737,14 @@ class CreateTransferBloc
       if (response.isNotEmpty) {
         productos = response;
         productosFilters = response;
-        print('productos de la bd::::: ${productos.length}');
+        debugPrint('productos de la bd::::: ${productos.length}');
         emit(GetProductsSuccessBD(response));
       } else {
         emit(GetProductsFailure('No se encontraron productos'));
       }
     } catch (e, s) {
       emit(GetProductsFailure('Error al cargar los productos'));
-      print('Error en el fetch de productos: $e=>$s');
+      debugPrint('Error en el fetch de productos: $e=>$s');
     }
   }
 
@@ -754,7 +755,7 @@ class CreateTransferBloc
       final response = await db.ubicacionesRepository.getAllUbicaciones();
       ubicaciones.clear();
       ubicacionesFilters.clear();
-      print('ubicaciones: ${response.length}');
+      debugPrint('ubicaciones: ${response.length}');
       if (response.isNotEmpty) {
         ubicaciones = response;
         ubicacionesFilters = ubicaciones;
@@ -764,7 +765,7 @@ class CreateTransferBloc
       }
     } catch (e, s) {
       emit(LoadLocationsFailure('Error al cargar las ubicaciones'));
-      print('Error en el fetch de ubicaciones: $e=>$s');
+      debugPrint('Error en el fetch de ubicaciones: $e=>$s');
     }
   }
 
@@ -792,7 +793,7 @@ class CreateTransferBloc
       emit(ValidateFieldsStateSuccess(event.isOk));
     } catch (e, s) {
       emit(ValidateFieldsStateError('Error al validar campos'));
-      print("❌ Error en el ValidateFieldsEvent $e ->$s");
+      debugPrint("❌ Error en el ValidateFieldsEvent $e ->$s");
     }
   }
 
@@ -812,7 +813,7 @@ class CreateTransferBloc
         emit(ConfigurationError('Error al cargar LoadConfigurationsUser'));
       }
     } catch (e, s) {
-      print('❌ Error en LoadConfigurationsUser $e =>$s');
+      debugPrint('❌ Error en LoadConfigurationsUser $e =>$s');
     }
   }
 }

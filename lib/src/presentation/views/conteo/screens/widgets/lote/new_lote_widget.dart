@@ -62,7 +62,7 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                     builder: (context, connectionStatus) {
                       return BlocConsumer<ConteoBloc, ConteoState>(
                         listener: (context, state) {
-                          print('STATE ❤️‍🔥 $state');
+                          debugPrint('STATE ❤️‍🔥 $state');
 
                           if (state is CreateLoteProductSuccess) {
                             Navigator.pop(context);

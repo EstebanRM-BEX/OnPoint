@@ -160,15 +160,15 @@ class _SelectSubMuelleBottomSheetState
                               ? null
                               : () {
                                   // Podrías guardar isOccupied en el bloc aquí si es necesario
-                                  print(
+                                  debugPrint(
                                       'Estado del submuelle: ${isOccupied == true ? "Ocupado" : "Libre"}');
 
                                   batchBloc.add(AssignSubmuelleEvent(
                                     batchBloc.filteredProducts.where((e) {
-                                       return (e.isSeparate == 1) &&
-                                        (e.locationDestId ==
-                                        batchBloc.batchWithProducts.batch
-                                            ?.muelle);
+                                      return (e.isSeparate == 1) &&
+                                          (e.locationDestId ==
+                                              batchBloc.batchWithProducts.batch
+                                                  ?.muelle);
                                     }).toList(),
                                     batchBloc.subMuelleSelected,
                                     isOccupied == null ? false : isOccupied!,

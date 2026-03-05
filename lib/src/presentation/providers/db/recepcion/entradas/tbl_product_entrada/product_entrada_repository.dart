@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/recepcion/entradas/tbl_product_entrada/product_entrada_table.dart';
@@ -100,10 +101,10 @@ class ProductsEntradaRepository {
                 product.manejaTemperatura ?? 0,
             ProductRecepcionTable.columnTemperature: product.temperatura ?? 0,
             ProductRecepcionTable.columnImage: product.image ?? '',
-            ProductRecepcionTable.columnImageNovedad: product.imageNovedad ?? '',
+            ProductRecepcionTable.columnImageNovedad:
+                product.imageNovedad ?? '',
             ProductRecepcionTable.columnUseExpirationDate:
                 product.useExpirationDate ?? 0,
-
           };
 
           // Si la clave ya existe, se hace UPDATE; si no, se hace INSERT.
@@ -130,9 +131,9 @@ class ProductsEntradaRepository {
         // Ejecutar el batch sin esperar los resultados individuales para mayor eficiencia.
         await batch.commit(noResult: true);
       });
-      print('Productos de entradas insertados con éxito.');
+      debugPrint('Productos de entradas insertados con éxito.');
     } catch (e, s) {
-      print('Error en el insertarProductoEntrada: $e, $s');
+      debugPrint('Error en el insertarProductoEntrada: $e, $s');
     }
   }
 
@@ -197,7 +198,6 @@ class ProductsEntradaRepository {
         ProductRecepcionTable.columnImageNovedad: '',
         ProductRecepcionTable.columnUseExpirationDate:
             producto.useExpirationDate ?? 0,
-
       };
 
       await db.insert(
@@ -205,9 +205,9 @@ class ProductsEntradaRepository {
         productCopy,
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
-      print("Producto duplicado insertado con éxito.");
+      debugPrint("Producto duplicado insertado con éxito.");
     } catch (e, s) {
-      print("Error al insertar producto duplicado: $e ==> $s");
+      debugPrint("Error al insertar producto duplicado: $e ==> $s");
     }
   }
 
@@ -222,7 +222,7 @@ class ProductsEntradaRepository {
           .map((product) => LineasTransferencia.fromMap(product))
           .toList();
     } catch (e, s) {
-      print('Error en getAllProductsEntrada: $e, $s');
+      debugPrint('Error en getAllProductsEntrada: $e, $s');
       return [];
     }
   }
@@ -237,10 +237,10 @@ class ProductsEntradaRepository {
             '${ProductRecepcionTable.columnIdRecepcion} = ? AND ${ProductRecepcionTable.columnIdMove} = ?',
         whereArgs: [idRecepcion, idMove],
       );
-      print('Producto eliminado de la entrada: $resDelete');
+      debugPrint('Producto eliminado de la entrada: $resDelete');
       return resDelete;
     } catch (e, s) {
-      print('Error en deleteProductEntrada: $e, $s');
+      debugPrint('Error en deleteProductEntrada: $e, $s');
       return null;
     }
   }
@@ -256,10 +256,10 @@ class ProductsEntradaRepository {
             '${ProductRecepcionTable.columnIdRecepcion} = ? AND ${ProductRecepcionTable.columnIdMove} IN (${List.filled(listIdMove.length, '?').join(',')})',
         whereArgs: [idRecepcion, ...listIdMove],
       );
-      print('Productos eliminados de la entrada: $resDelete');
+      debugPrint('Productos eliminados de la entrada: $resDelete');
       return resDelete;
     } catch (e, s) {
-      print('Error en deleteProductsEntrada: $e, $s');
+      debugPrint('Error en deleteProductsEntrada: $e, $s');
       return null;
     }
   }
@@ -325,13 +325,13 @@ class ProductsEntradaRepository {
             whereArgs: [idRecepcion, idProducto, idMoveEliminar],
           );
 
-          print("🔁 Producto ACTUALIZADO:");
-          print("📦 $nombre");
-          print("🆔 Producto: $idProducto");
-          print("🔢 idMove destino: $idMoveDestino");
-          print("📉 Cantidad anterior: $cantidadAnterior");
-          print("📈 Cantidad nueva: $cantidadActualizada");
-          print("🗑️ Eliminado producto con idMove: $idMoveEliminar");
+          debugPrint("🔁 Producto ACTUALIZADO:");
+          debugPrint("📦 $nombre");
+          debugPrint("🆔 Producto: $idProducto");
+          debugPrint("🔢 idMove destino: $idMoveDestino");
+          debugPrint("📉 Cantidad anterior: $cantidadAnterior");
+          debugPrint("📈 Cantidad nueva: $cantidadActualizada");
+          debugPrint("🗑️ Eliminado producto con idMove: $idMoveEliminar");
         } else {
           // ❌ CASO 2: No se encuentra el equivalente
           await txn.update(
@@ -356,12 +356,13 @@ class ProductsEntradaRepository {
             whereArgs: [idRecepcion, idProducto, idMoveEliminar],
           );
 
-          print("🔁 Producto REASIGNADO y RESET:");
-          print("📦 $nombre");
-          print("🆔 Producto: $idProducto");
-          print("🔁 idMove actualizado de $idMoveEliminar → $idMoveDestino");
-          print("🆕 Cantidad faltante actualizada a: $cantidadNueva");
-          print("🔧 Otros campos reiniciados correctamente");
+          debugPrint("🔁 Producto REASIGNADO y RESET:");
+          debugPrint("📦 $nombre");
+          debugPrint("🆔 Producto: $idProducto");
+          debugPrint(
+              "🔁 idMove actualizado de $idMoveEliminar → $idMoveDestino");
+          debugPrint("🆕 Cantidad faltante actualizada a: $cantidadNueva");
+          debugPrint("🔧 Otros campos reiniciados correctamente");
         }
       }
     });
@@ -383,7 +384,7 @@ class ProductsEntradaRepository {
           .map((product) => LineasTransferencia.fromMap(product))
           .toList();
     } catch (e, s) {
-      print('Error en getProductsByRecepcionId: $e, $s');
+      debugPrint('Error en getProductsByRecepcionId: $e, $s');
       return [];
     }
   }
@@ -403,7 +404,7 @@ class ProductsEntradaRepository {
         'AND ${ProductRecepcionTable.columnIsDoneItem} = 0',
         [setValue, productId, idMove, idEntrada]);
 
-    print(
+    debugPrint(
         "update TableProductEntrada (idProduct ----($productId)) -------($field): $resUpdate");
 
     return resUpdate;
@@ -420,7 +421,7 @@ class ProductsEntradaRepository {
         'AND ${ProductRecepcionTable.columnIdRecepcion} = ?',
         [setValue, productId, idMove, idEntrada]);
 
-    print(
+    debugPrint(
         "update TableProductEntrada (idProduct ----($productId)) -------($field): $resUpdate");
 
     return resUpdate;
@@ -438,7 +439,7 @@ class ProductsEntradaRepository {
         'AND ${ProductRecepcionTable.columnIsDoneItem} = 1',
         [setValue, productId, idMove, idEntrada]);
 
-    print(
+    debugPrint(
         "update TableProductEntrada product Send (idProduct ----($productId)) -------($field): $resUpdate");
 
     return resUpdate;
@@ -448,7 +449,7 @@ class ProductsEntradaRepository {
   Future<LineasTransferencia?> getProductById(
       int idProduct, int idMove, int idRecepcion) async {
     try {
-      print(
+      debugPrint(
           'idProduct: $idProduct, idMove: $idMove, idRecepcion: $idRecepcion');
       // Obtener la instancia de la base de datos
       Database db = await DataBaseSqlite().getDatabaseInstance();
@@ -471,7 +472,7 @@ class ProductsEntradaRepository {
           : null;
     } catch (e, s) {
       // Imprimir detalles del error para facilitar la depuración
-      print('Error en getProductById: $e, StackTrace: $s');
+      debugPrint('Error en getProductById: $e, StackTrace: $s');
       return null;
     }
   }
@@ -526,7 +527,7 @@ class ProductsEntradaRepository {
         "UPDATE ${ProductRecepcionTable.tableName} SET ${ProductRecepcionTable.columnObservation} = ? WHERE ${ProductRecepcionTable.columnProductId} = ? AND ${ProductRecepcionTable.columnIdRecepcion} = ? AND ${ProductRecepcionTable.columnIdMove} = ?",
         [novedad, productId, idRecepcion, idMove]);
 
-    print("updateNovedad: $resUpdate");
+    debugPrint("updateNovedad: $resUpdate");
     return resUpdate;
   }
 }

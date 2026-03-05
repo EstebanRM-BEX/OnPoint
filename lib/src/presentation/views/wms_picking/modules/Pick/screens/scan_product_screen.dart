@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously, unrelated_type_equality_checks
 
 import 'package:flutter/material.dart';
@@ -7,9 +10,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/shared/widgets/scanner_locationDest_widget.dart';
@@ -46,8 +47,8 @@ class ScanProductPickScreen extends StatefulWidget {
 
 class _ScanProductPickScreenState extends State<ScanProductPickScreen>
     with WidgetsBindingObserver {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
   String scannedValue6 = '';
   String? selectedLocation;
   String? selectedMuelle;
@@ -113,7 +114,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
         !batchBloc.quantityIsOk && //false
         !batchBloc.locationDestIsOk) //false
     {
-      // print("🚼 location");
+      // debugPrint("🚼 location");
       FocusScope.of(context).requestFocus(focusNode1);
       //cerramos los demas focos
       focusNode2.unfocus();
@@ -127,7 +128,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
         !batchBloc.quantityIsOk && //false
         !batchBloc.locationDestIsOk) //false
     {
-      print("🚼 product");
+      debugPrint("🚼 product");
       FocusScope.of(context).requestFocus(focusNode2);
       //cerramos los demas focos
       focusNode1.unfocus();
@@ -142,7 +143,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
         !batchBloc.locationDestIsOk && //false
         !batchBloc.viewQuantity) //false
     {
-      print("🚼 quantity");
+      debugPrint("🚼 quantity");
       FocusScope.of(context).requestFocus(focusNode3);
       //cerramos los demas focos
       focusNode1.unfocus();
@@ -155,7 +156,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
         batchBloc.productIsOk &&
         !batchBloc.quantityIsOk &&
         !batchBloc.locationDestIsOk) {
-      print("🚼 muelle");
+      debugPrint("🚼 muelle");
       FocusScope.of(context).requestFocus(focusNode5);
       //cerramos los demas focos
       focusNode1.unfocus();
@@ -207,7 +208,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
 
     final scan = value.trim().toLowerCase();
 
-    print('scan product: $scan');
+    debugPrint('scan product: $scan');
     _controllerProduct.text = "";
     final currentProduct = batchBloc.currentProduct;
     if (scan == currentProduct.barcode?.toLowerCase()) {
@@ -220,12 +221,12 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
           currentProduct.idMove ?? 0));
       Future.microtask(() => focusNode2.requestFocus());
     } else {
-      print("Validando codigo de barras alternativo...");
+      debugPrint("Validando codigo de barras alternativo...");
       final isok = validateScannedBarcode(
           scan, batchBloc.currentProduct, batchBloc, true);
 
       if (!isok) {
-        print("Codigo de barras no valido. $isok");
+        debugPrint("Codigo de barras no valido. $isok");
         _vibrationService.vibrate();
         _audioService.playErrorSound();
         batchBloc.add(ValidateFieldsEvent(field: "product", isOk: false));
@@ -237,9 +238,9 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
   bool validateScannedBarcode(String scannedBarcode,
       ProductsBatch currentProduct, PickingPickBloc batchBloc, bool isProduct) {
     // Buscar el barcode que coincida con el valor escaneado
-    print("scannedBarcode: $scannedBarcode");
+    debugPrint("scannedBarcode: $scannedBarcode");
 
-    print("listOfBarcodes: ${batchBloc.listOfBarcodes}");
+    debugPrint("listOfBarcodes: ${batchBloc.listOfBarcodes}");
 
     Barcodes? matchedBarcode = batchBloc.listOfBarcodes.firstWhere(
         (barcode) => barcode.barcode?.toLowerCase() == scannedBarcode,
@@ -411,7 +412,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                           listenWhen: (previous, current) {
                         return true;
                       }, listener: (context, state) {
-                        print("❤️‍🔥 state ::: $state");
+                        debugPrint("❤️‍🔥 state ::: $state");
 
                         if (state is ViewProductImageSuccess) {
                           showImageDialog(context, state.imageUrl);
@@ -715,16 +716,16 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
 
                         //*estado cuando los barcodes del producto son cargados
                         if (state is BarcodesProductLoadedState) {
-                          print(
+                          debugPrint(
                               "✅ Barcodes cargados: ${state.listOfBarcodes.length}");
                           // El estado se emite para forzar el rebuild del UI
                         }
 
                         //*estado cuando un producto es seleccionado
                         if (state is LoadSelectedProductState) {
-                          print(
+                          debugPrint(
                               "✅ Producto seleccionado cargado: ${state.selectedProduct.productId}");
-                          print(
+                          debugPrint(
                               "✅ Barcodes disponibles en el bloc: ${batchBloc.listOfBarcodes.length}");
                           // El estado se emite para forzar el rebuild del UI
                         }
@@ -1149,7 +1150,8 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                         double.parse(value);
                                   } catch (e) {
                                     // Manejo de errores si la conversión falla
-                                    print('Error al convertir a entero: $e');
+                                    debugPrint(
+                                        'Error al convertir a entero: $e');
                                     // Aquí puedes mostrar un mensaje al usuario o manejar el error de otra forma
                                   }
                                 } else {
@@ -1323,7 +1325,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
       // Si no hay batch, termina la ejecución
       if (batch == null) return;
 
-      print("currentProduct ${currentProduct.productId}");
+      debugPrint("currentProduct ${currentProduct.productId}");
 
       // Función para actualizar la base de datos en varios campos a la vez
       Future<void> _updateDatabaseFields() async {
@@ -1396,7 +1398,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
       batchBloc.sortProductsByLocationId();
       await _moveToNextProduct();
     } catch (e, s) {
-      print("❌ Error en _nextProduct: $e -> $s");
+      debugPrint("❌ Error en _nextProduct: $e -> $s");
       // Manejo de errores
     } finally {
       batchBloc.add(SetIsProcessingEvent(false));

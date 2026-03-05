@@ -80,7 +80,7 @@ class Tab3ScreenRecepBatch extends StatelessWidget {
                                 ),
                                 child: GestureDetector(
                                   onTap: () {
-                                    print('product: ${product.toMap()}');
+                                    debugPrint('product: ${product.toMap()}');
                                   },
                                   child: Card(
                                     color: Colors.green[

@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously, must_be_immutable
 
 import 'package:flutter/material.dart';
@@ -6,8 +9,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
@@ -31,9 +32,9 @@ class ListOrdenesCompraScreen extends StatefulWidget {
 }
 
 class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
-  final AudioService _audioService = AudioService();
+  final IAudioService _audioService = getIt<IAudioService>();
 
-  final VibrationService _vibrationService = VibrationService();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
 
   FocusNode focusNodeBuscar = FocusNode();
 
@@ -52,7 +53,7 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
     final scan = value.trim().toLowerCase();
 
     _controllerToDo.clear();
-    print('🔎 Scan barcode (batch picking): $scan');
+    debugPrint('🔎 Scan barcode (batch picking): $scan');
 
     final ResultEntrada batchs = bloc.listOrdenesCompra.firstWhere(
       (b) =>
@@ -81,7 +82,7 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
 
     return BlocConsumer<RecepcionBloc, RecepcionState>(
       listener: (context, state) {
-        print('state recepcion: $state');
+        debugPrint('state recepcion: $state');
 
         if (state is FetchOrdenesCompraLoading) {
           showDialog(
@@ -620,7 +621,7 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
   }
 
   void _handleOrderTap(BuildContext context, dynamic ordenCompra) async {
-    print('ordenCompra: ${ordenCompra.toMap()}');
+    debugPrint('ordenCompra: ${ordenCompra.toMap()}');
     final recepcionBloc = context.read<RecepcionBloc>();
 
     // 1. Cargamos los permisos del usuario una sola vez

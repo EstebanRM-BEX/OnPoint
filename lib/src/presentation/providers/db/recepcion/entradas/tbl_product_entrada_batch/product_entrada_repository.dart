@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/recepcion/entradas/tbl_product_entrada_batch/product_entrada_batch_table.dart';
@@ -137,9 +138,9 @@ class ProductsEntradaBatchRepository {
         // Ejecutar el batch sin esperar los resultados individuales para mayor eficiencia.
         await batch.commit(noResult: true);
       });
-      print('Productos de entradas insertados con éxito.');
+      debugPrint('Productos de entradas insertados con éxito.');
     } catch (e, s) {
-      print('Error en el insertarProductoEntrada: $e, $s');
+      debugPrint('Error en el insertarProductoEntrada: $e, $s');
     }
   }
 
@@ -216,9 +217,9 @@ class ProductsEntradaBatchRepository {
         productCopy,
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
-      print("Producto duplicado insertado con éxito.");
+      debugPrint("Producto duplicado insertado con éxito.");
     } catch (e, s) {
-      print("Error al insertar producto duplicado: $e ==> $s");
+      debugPrint("Error al insertar producto duplicado: $e ==> $s");
     }
   }
 
@@ -234,7 +235,7 @@ class ProductsEntradaBatchRepository {
           .map((product) => LineasRecepcionBatch.fromMap(product))
           .toList();
     } catch (e, s) {
-      print('Error en getAllProductsEntrada: $e, $s');
+      debugPrint('Error en getAllProductsEntrada: $e, $s');
       return [];
     }
   }
@@ -255,7 +256,7 @@ class ProductsEntradaBatchRepository {
           .map((product) => LineasRecepcionBatch.fromMap(product))
           .toList();
     } catch (e, s) {
-      print('Error en getProductsByRecepcionId: $e, $s');
+      debugPrint('Error en getProductsByRecepcionId: $e, $s');
       return [];
     }
   }
@@ -275,7 +276,7 @@ class ProductsEntradaBatchRepository {
         'AND ${ProductRecepcionBatchTable.columnIsDoneItem} = 0',
         [setValue, productId, idMove, idEntrada]);
 
-    print(
+    debugPrint(
         "update TableProductEntradaBatch (idProduct ----($productId)) -------($field): $resUpdate");
 
     return resUpdate;
@@ -285,7 +286,7 @@ class ProductsEntradaBatchRepository {
   Future<LineasRecepcionBatch?> getProductById(
       int idProduct, int idMove, int idRecepcion) async {
     try {
-      print(
+      debugPrint(
           'idProduct: $idProduct, idMove: $idMove, idRecepcion: $idRecepcion');
       // Obtener la instancia de la base de datos
       Database db = await DataBaseSqlite().getDatabaseInstance();
@@ -308,7 +309,7 @@ class ProductsEntradaBatchRepository {
           : null;
     } catch (e, s) {
       // Imprimir detalles del error para facilitar la depuración
-      print('Error en getProductById: $e, StackTrace: $s');
+      debugPrint('Error en getProductById: $e, StackTrace: $s');
       return null;
     }
   }
@@ -363,7 +364,7 @@ class ProductsEntradaBatchRepository {
         "UPDATE ${ProductRecepcionBatchTable.tableName} SET ${ProductRecepcionBatchTable.columnObservation} = ? WHERE ${ProductRecepcionBatchTable.columnProductId} = ? AND ${ProductRecepcionBatchTable.columnIdRecepcion} = ? AND ${ProductRecepcionBatchTable.columnIdMove} = ?",
         [novedad, productId, idRecepcion, idMove]);
 
-    print("updateNovedad: $resUpdate");
+    debugPrint("updateNovedad: $resUpdate");
     return resUpdate;
   }
 }

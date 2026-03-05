@@ -31,7 +31,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return PackingModelResponseResult(
           code: 500,
           result: [],
@@ -128,12 +128,12 @@ class WmsPackingRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return PackingModelResponseResult(
           code: 500, result: [], msg: 'Error de red: $e', updateVersion: false);
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error resBatchsPacking: $e, $s');
+      debugPrint('Error resBatchsPacking: $e, $s');
     }
     return PackingModelResponseResult(
         code: 500, result: [], msg: 'Error desconocido', updateVersion: false);
@@ -146,7 +146,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return PackingModelResponseResult(
           code: 500,
           result: [],
@@ -243,12 +243,12 @@ class WmsPackingRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return PackingModelResponseResult(
           code: 500, result: [], msg: 'Error de red: $e', updateVersion: false);
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error resBatchsPacking consolidate: $e, $s');
+      debugPrint('Error resBatchsPacking consolidate: $e, $s');
     }
     return PackingModelResponseResult(
         code: 500, result: [], msg: 'Error desconocido', updateVersion: false);
@@ -261,7 +261,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return PackingPedidoResult(
           code: 500, msg: 'No hay conexión a Internet', updateVersion: false);
     }
@@ -352,12 +352,12 @@ class WmsPackingRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return PackingPedidoResult(
           code: 500, msg: 'Error de red: $e', updateVersion: false);
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error resPackingPedido: $e, $s');
+      debugPrint('Error resPackingPedido: $e, $s');
     }
     return PackingPedidoResult(
         code: 500, msg: 'Error desconocido', updateVersion: false);
@@ -373,7 +373,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return false; // Si no hay conexión, retornar una lista vacía
     }
 
@@ -431,11 +431,11 @@ class WmsPackingRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return false;
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error assignUserToTransfer: $e, $s');
+      debugPrint('Error assignUserToTransfer: $e, $s');
     }
     return false;
   }
@@ -450,7 +450,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return true; // Si no hay conexión, terminamos la ejecución
     }
 
@@ -512,11 +512,11 @@ class WmsPackingRepository {
         // ...
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return false; // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendTransferRequest: $e, $s');
+      debugPrint('Error en sendTransferRequest: $e, $s');
       return false; // Retornamos un objeto vacío en caso de error de red
     }
     return false; // Retornamos un objeto vacío en caso de error de red
@@ -531,7 +531,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseValidate(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -589,11 +589,11 @@ class WmsPackingRepository {
         }
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en validateTransfer: $e, $s');
+      debugPrint('Error en validateTransfer: $e, $s');
       return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
     }
     return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
@@ -608,7 +608,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseValidate(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -666,11 +666,11 @@ class WmsPackingRepository {
         }
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en validateTransfer: $e, $s');
+      debugPrint('Error en validateTransfer: $e, $s');
       return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
     }
     return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
@@ -686,7 +686,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return true; // Si no hay conexión, terminamos la ejecución
     }
 
@@ -748,11 +748,11 @@ class WmsPackingRepository {
         // ...
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return false; // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendTransferRequest: $e, $s');
+      debugPrint('Error en sendTransferRequest: $e, $s');
       return false; // Retornamos un objeto vacío en caso de error de red
     }
     return false; // Retornamos un objeto vacío en caso de error de red
@@ -766,7 +766,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return UnPacking(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -805,11 +805,11 @@ class WmsPackingRepository {
         // ...
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return UnPacking(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en unPacking: $e, $s');
+      debugPrint('Error en unPacking: $e, $s');
       return UnPacking(); // Retornamos un objeto vacío en caso de error de red
     }
     return UnPacking(); // Retornamos un objeto vacío en caso de error de red
@@ -822,7 +822,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return UnPacking(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -861,11 +861,11 @@ class WmsPackingRepository {
         // ...
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return UnPacking(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en unPacking: $e, $s');
+      debugPrint('Error en unPacking: $e, $s');
       return UnPacking(); // Retornamos un objeto vacío en caso de error de red
     }
     return UnPacking(); // Retornamos un objeto vacío en caso de error de red
@@ -878,7 +878,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return UnPacking(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -918,11 +918,11 @@ class WmsPackingRepository {
         // ...
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return UnPacking(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en unPacking: $e, $s');
+      debugPrint('Error en unPacking: $e, $s');
       return UnPacking(); // Retornamos un objeto vacío en caso de error de red
     }
     return UnPacking(); // Retornamos un objeto vacío en caso de error de red
@@ -937,7 +937,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseSendPacking(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -983,11 +983,11 @@ class WmsPackingRepository {
         // ...
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseSendPacking(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendPackingRequest: $e, $s');
+      debugPrint('Error en sendPackingRequest: $e, $s');
       return ResponseSendPacking(); // Retornamos un objeto vacío en caso de error de red
     }
     return ResponseSendPacking(); // Retornamos un objeto vacío en caso de error de red
@@ -1001,7 +1001,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseSendPacking(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -1047,11 +1047,11 @@ class WmsPackingRepository {
         // ...
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseSendPacking(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendPackingRequest: $e, $s');
+      debugPrint('Error en sendPackingRequest: $e, $s');
       return ResponseSendPacking(); // Retornamos un objeto vacío en caso de error de red
     }
     return ResponseSendPacking(); // Retornamos un objeto vacío en caso de error de red
@@ -1065,7 +1065,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseSendPack(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -1111,11 +1111,11 @@ class WmsPackingRepository {
         // ...
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseSendPack(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendPackRequest: $e, $s');
+      debugPrint('Error en sendPackRequest: $e, $s');
       return ResponseSendPack(); // Retornamos un objeto vacío en caso de error de red
     }
     return ResponseSendPack(); // Retornamos un objeto vacío en caso de error de red
@@ -1127,7 +1127,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return false; // Si no hay conexión, retornar una lista vacía
     }
 
@@ -1187,12 +1187,12 @@ class WmsPackingRepository {
       } else {}
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return false;
     } catch (e, s) {
       // Manejo de otros errores
 
-      print('Error timePackingUser: $e, $s');
+      debugPrint('Error timePackingUser: $e, $s');
     }
     return false;
   }
@@ -1203,7 +1203,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return false; // Si no hay conexión, retornar una lista vacía
     }
 
@@ -1262,12 +1262,12 @@ class WmsPackingRepository {
       } else {}
     } on SocketException catch (e) {
       // Manejo de error de red
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return false;
     } catch (e, s) {
       // Manejo de otros errores
 
-      print('Error timePackingBatch: $e, $s');
+      debugPrint('Error timePackingBatch: $e, $s');
     }
     return false;
   }
@@ -1275,7 +1275,7 @@ class WmsPackingRepository {
   Future<TemperatureIa> getTemperatureWithImage(File imageFile) async {
     var connectivityResult = await Connectivity().checkConnectivity();
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return TemperatureIa();
     }
 
@@ -1292,9 +1292,9 @@ class WmsPackingRepository {
         return TemperatureIa.fromMap(jsonDecode(response.body));
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
     } catch (e, s) {
-      print('Error en getTemperatureWithImage: $e\n$s');
+      debugPrint('Error en getTemperatureWithImage: $e\n$s');
     }
 
     return TemperatureIa(); // Retorna vacío en caso de fallo
@@ -1308,7 +1308,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ImageSendNovedad(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -1346,15 +1346,15 @@ class WmsPackingRepository {
         }
       } else {
         // Manejo de error si la respuesta no es exitosa
-        print('Error al enviar la temperatura: ${response.statusCode}');
+        debugPrint('Error al enviar la temperatura: ${response.statusCode}');
         return ImageSendNovedad(); // Retornamos un objeto vacío en caso de error
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ImageSendNovedad(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendImageNoved: $e, $s');
+      debugPrint('Error en sendImageNoved: $e, $s');
       return ImageSendNovedad(); // Retornamos un objeto vacío en caso de error de red
     }
   }
@@ -1369,7 +1369,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return TemperatureSend(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -1404,15 +1404,15 @@ class WmsPackingRepository {
         }
       } else {
         // Manejo de error si la respuesta no es exitosa
-        print('Error al enviar la temperatura: ${response.statusCode}');
+        debugPrint('Error al enviar la temperatura: ${response.statusCode}');
         return TemperatureSend(); // Retornamos un objeto vacío en caso de error
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return TemperatureSend(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendTemperature: $e, $s');
+      debugPrint('Error en sendTemperature: $e, $s');
       return TemperatureSend(); // Retornamos un objeto vacío en caso de error de red
     }
   }
@@ -1426,7 +1426,7 @@ class WmsPackingRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return TemperatureSend(); // Si no hay conexión, terminamos la ejecución
     }
 
@@ -1460,15 +1460,15 @@ class WmsPackingRepository {
         }
       } else {
         // Manejo de error si la respuesta no es exitosa
-        print('Error al enviar la temperatura: ${response.statusCode}');
+        debugPrint('Error al enviar la temperatura: ${response.statusCode}');
         return TemperatureSend(); // Retornamos un objeto vacío en caso de error
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return TemperatureSend(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendTemperature: $e, $s');
+      debugPrint('Error en sendTemperature: $e, $s');
       return TemperatureSend(); // Retornamos un objeto vacío en caso de error de red
     }
   }

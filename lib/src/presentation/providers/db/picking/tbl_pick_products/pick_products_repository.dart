@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/picking/tbl_pick/picking_pick_table.dart';
@@ -59,7 +60,8 @@ class PickProductsRepository {
             //product_code
             PickProductsTable.columnProductCode: product.productCode ?? '',
             //product_tracking
-            PickProductsTable.columnProductTracking: product.productTracking ?? '',
+            PickProductsTable.columnProductTracking:
+                product.productTracking ?? '',
             // Convertir timeSeparate a segundos
             PickProductsTable.columnTimeSeparateStart:
                 _parseDurationToSeconds(product.timeSeparate),
@@ -89,7 +91,7 @@ class PickProductsRepository {
         await batch.commit(noResult: true);
       });
     } catch (e, s) {
-      print('Error insertPickProducts: $e => $s');
+      debugPrint('Error insertPickProducts: $e => $s');
     }
   }
 
@@ -107,7 +109,7 @@ class PickProductsRepository {
         }
       }
     } catch (e) {
-      print('Error parsing time_separate: $e');
+      debugPrint('Error parsing time_separate: $e');
     }
     return null; // Si no es válido, devuelve null
   }
@@ -139,7 +141,7 @@ class PickProductsRepository {
 
       return PickWithProducts(pick: pick, products: products);
     } catch (e, s) {
-      print('Error getPickWithProducts: $e => $s');
+      debugPrint('Error getPickWithProducts: $e => $s');
       return null;
     }
   }
@@ -147,7 +149,18 @@ class PickProductsRepository {
   //* Obtener todos los productos de la tabla
   Future<List<ProductsBatch>> getProducts() async {
     final db = await DataBaseSqlite().getDatabaseInstance();
-    final List<Map<String, dynamic>> maps = await db.query(_table);
+    final List<Map<String, dynamic>> maps = await db!.query(_table);
+    return maps.map((map) => ProductsBatch.fromMap(map)).toList();
+  }
+
+  //* Obtener productos filtrados por id de batch
+  Future<List<ProductsBatch>> getBatchProducts(int batchId) async {
+    final db = await DataBaseSqlite().getDatabaseInstance();
+    final List<Map<String, dynamic>> maps = await db!.query(
+      _table,
+      where: 'batch_id = ?',
+      whereArgs: [batchId],
+    );
     return maps.map((map) => ProductsBatch.fromMap(map)).toList();
   }
 
@@ -168,7 +181,7 @@ class PickProductsRepository {
       [novedad, batchId, productId, idMove],
     );
 
-    print("updateNovedad: $resUpdate");
+    debugPrint("updateNovedad: $resUpdate");
     return resUpdate;
   }
 
@@ -190,7 +203,7 @@ class PickProductsRepository {
       [setValue, batchId, productId, idMove],
     );
 
-    print("update $_table ($field): $resUpdate");
+    debugPrint("update $_table ($field): $resUpdate");
     return resUpdate;
   }
 
@@ -212,7 +225,7 @@ class PickProductsRepository {
       [setValue, batchId, productId, idMove],
     );
 
-    print("update $_table ($field): $resUpdate");
+    debugPrint("update $_table ($field): $resUpdate");
     return resUpdate;
   }
 
@@ -267,7 +280,7 @@ class PickProductsRepository {
       [date, batchId, productId, moveId],
     );
 
-    print("dateTransaccionProduct: $resUpdate");
+    debugPrint("dateTransaccionProduct: $resUpdate");
     return resUpdate;
   }
 
@@ -293,7 +306,7 @@ class PickProductsRepository {
     final db = await DataBaseSqlite().getDatabaseInstance();
     final resUpdate = await db!.rawUpdate(
         "UPDATE $_table SET time_separate_start = '$date' WHERE batch_id = $batchId AND id_product = $productId AND id_move = $moveId");
-    print("tiemppo de inicio :$date  --> $resUpdate");
+    debugPrint("tiemppo de inicio :$date  --> $resUpdate");
     return resUpdate;
   }
 
@@ -302,7 +315,7 @@ class PickProductsRepository {
     final db = await DataBaseSqlite().getDatabaseInstance();
     final resUpdate = await db!.rawUpdate(
         "UPDATE $_table SET time_separate = $time WHERE batch_id = $batchId AND id_product = $productId AND id_move = $moveId");
-    print("totalStopwatchProduct: $resUpdate");
+    debugPrint("totalStopwatchProduct: $resUpdate");
     return resUpdate;
   }
 
@@ -311,7 +324,7 @@ class PickProductsRepository {
     final db = await DataBaseSqlite().getDatabaseInstance();
     final resUpdate = await db!.rawUpdate(
         "UPDATE $_table SET time_separate_end = '$date' WHERE batch_id = $batchId AND id_product = $productId AND id_move = $moveId");
-    print("endStopwatchProduct: $resUpdate");
+    debugPrint("endStopwatchProduct: $resUpdate");
     return resUpdate;
   }
 
@@ -328,7 +341,7 @@ class PickProductsRepository {
       }
       return "";
     } catch (e, s) {
-      print("error getFieldTableProductsPick: $e => $s");
+      debugPrint("error getFieldTableProductsPick: $e => $s");
     }
     return "";
   }

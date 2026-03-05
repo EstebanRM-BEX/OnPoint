@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/conteo/tbl_categories_orden_conteo/categories_orden_table.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
@@ -5,7 +6,9 @@ import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_mod
 
 class CategoriasConteoRepository {
   // Insertar/actualizar categorías de conteo
-  Future<void> upsertCategoriasConteo(List<Allowed> categorias, ) async {
+  Future<void> upsertCategoriasConteo(
+    List<Allowed> categorias,
+  ) async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
 
@@ -15,7 +18,8 @@ class CategoriasConteoRepository {
           final categoriaMap = {
             CategoriasConteoTable.columnId: categoria.id,
             CategoriasConteoTable.columnName: categoria.name ?? '',
-            CategoriasConteoTable.columnOrdenConteoId: categoria.ordenConteoId ?? 0,
+            CategoriasConteoTable.columnOrdenConteoId:
+                categoria.ordenConteoId ?? 0,
           };
 
           batch.insert(
@@ -28,10 +32,10 @@ class CategoriasConteoRepository {
         await batch.commit(noResult: true);
       });
 
-      print('✅ ${categorias.length} categorías insertadas');
+      debugPrint('✅ ${categorias.length} categorías insertadas');
     } catch (e, s) {
-      print('❌ Error en upsertCategoriasConteo: $e');
-      print(s);
+      debugPrint('❌ Error en upsertCategoriasConteo: $e');
+      debugPrint(s.toString());
       rethrow;
     }
   }
@@ -53,8 +57,8 @@ class CategoriasConteoRepository {
         );
       });
     } catch (e, s) {
-      print('Error en getCategoriasByOrdenId: $e');
-      print(s);
+      debugPrint('Error en getCategoriasByOrdenId: $e');
+      debugPrint(s.toString());
       return [];
     }
   }
@@ -63,7 +67,7 @@ class CategoriasConteoRepository {
   Future<List<Allowed>> getAllCategoriasConteo() async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
-      final List<Map<String, dynamic>> maps = 
+      final List<Map<String, dynamic>> maps =
           await db.query(CategoriasConteoTable.tableName);
 
       return List.generate(maps.length, (i) {
@@ -73,8 +77,8 @@ class CategoriasConteoRepository {
         );
       });
     } catch (e, s) {
-      print('Error en getAllCategoriasConteo: $e');
-      print(s);
+      debugPrint('Error en getAllCategoriasConteo: $e');
+      debugPrint(s.toString());
       return [];
     }
   }
@@ -89,11 +93,9 @@ class CategoriasConteoRepository {
         whereArgs: [ordenConteoId],
       );
     } catch (e, s) {
-      print('Error en deleteCategoriasByOrdenId: $e');
-      print(s);
+      debugPrint('Error en deleteCategoriasByOrdenId: $e');
+      debugPrint(s.toString());
       return 0;
     }
   }
-
-
 }

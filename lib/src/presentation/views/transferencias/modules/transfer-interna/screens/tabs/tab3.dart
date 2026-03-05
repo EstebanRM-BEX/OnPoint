@@ -27,7 +27,7 @@ class Tab3ScreenTrans extends StatelessWidget {
       },
       child: BlocConsumer<TransferenciaBloc, TransferenciaState>(
         listener: (context, state) {
-          print('state: $state');
+          debugPrint('state: $state');
 
           if (state is ViewProductImageSuccess) {
             showImageDialog(context, state.imageUrl);
@@ -174,9 +174,8 @@ class Tab3ScreenTrans extends StatelessWidget {
                                                             Navigator.pop(
                                                                 context);
                                                           },
-                                                          style:
-                                                              ElevatedButton
-                                                                  .styleFrom(
+                                                          style: ElevatedButton
+                                                              .styleFrom(
                                                             backgroundColor:
                                                                 grey,
                                                             shape:
@@ -196,8 +195,7 @@ class Tab3ScreenTrans extends StatelessWidget {
                                                         ElevatedButton(
                                                           onPressed: () {
                                                             bloc.add(DeleteLineTransferEvent(
-                                                                product
-                                                                    .idMove!,
+                                                                product.idMove!,
                                                                 int.parse(product
                                                                     .productId!),
                                                                 product
@@ -205,9 +203,8 @@ class Tab3ScreenTrans extends StatelessWidget {
                                                             Navigator.pop(
                                                                 context);
                                                           },
-                                                          style:
-                                                              ElevatedButton
-                                                                  .styleFrom(
+                                                          style: ElevatedButton
+                                                              .styleFrom(
                                                             backgroundColor:
                                                                 primaryColorApp,
                                                             shape:
@@ -243,8 +240,7 @@ class Tab3ScreenTrans extends StatelessWidget {
                                               child: Text(
                                                 "${product.productName}",
                                                 style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color: black),
+                                                    fontSize: 12, color: black),
                                               ),
                                             ),
                                             const Spacer(),
@@ -253,23 +249,21 @@ class Tab3ScreenTrans extends StatelessWidget {
                                                 context
                                                     .read<TransferenciaBloc>()
                                                     .add(ViewProductImageEvent(
-                                                        int.parse(product
-                                                                .productId ??
-                                                            "0")));
+                                                        int.parse(
+                                                            product.productId ??
+                                                                "0")));
                                               },
                                               child: Card(
                                                 //borde
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
-                                                      BorderRadius.circular(
-                                                          5),
+                                                      BorderRadius.circular(5),
                                                 ),
                                                 elevation: 2,
                                                 color: white,
                                                 child: Padding(
                                                   padding:
-                                                      const EdgeInsets.all(
-                                                          2.0),
+                                                      const EdgeInsets.all(2.0),
                                                   child: Icon(
                                                     Icons.image,
                                                     color: primaryColorApp,
@@ -280,10 +274,9 @@ class Tab3ScreenTrans extends StatelessWidget {
                                             ),
                                           ],
                                         ),
-                                       
                                         Visibility(
-                                          visible: product.productTracking ==
-                                              'lot',
+                                          visible:
+                                              product.productTracking == 'lot',
                                           child: Row(
                                             children: [
                                               Text(
@@ -328,8 +321,7 @@ class Tab3ScreenTrans extends StatelessWidget {
                                                 color: primaryColorApp,
                                               ),
                                             ),
-                                            Text(
-                                                "${product.locationDestName}",
+                                            Text("${product.locationDestName}",
                                                 style: const TextStyle(
                                                     fontSize: 12,
                                                     color: black)),
@@ -363,8 +355,7 @@ class Tab3ScreenTrans extends StatelessWidget {
                                                     color: primaryColorApp,
                                                   ),
                                                 ),
-                                                Text(
-                                                    "${product.quantityDone}",
+                                                Text("${product.quantityDone}",
                                                     style: const TextStyle(
                                                         fontSize: 12,
                                                         color: black)),
@@ -390,8 +381,7 @@ class Tab3ScreenTrans extends StatelessWidget {
                                           ],
                                         ),
                                         Visibility(
-                                          visible:
-                                              product.isProductSplit == 1,
+                                          visible: product.isProductSplit == 1,
                                           child: Row(
                                             children: [
                                               Text(
@@ -412,9 +402,8 @@ class Tab3ScreenTrans extends StatelessWidget {
                                           ),
                                         ),
                                         Visibility(
-                                          visible:
-                                              product.observation != "" ||
-                                                  product.observation != null,
+                                          visible: product.observation != "" ||
+                                              product.observation != null,
                                           child: Row(
                                             children: [
                                               Text(

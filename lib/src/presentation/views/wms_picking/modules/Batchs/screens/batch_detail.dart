@@ -7,12 +7,11 @@ import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
+import 'package:wms_app/shared/widgets/dialog_confirm_product_load_widget.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,7 +19,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiredate_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class BatchDetailScreen extends StatelessWidget {
   const BatchDetailScreen({super.key});
@@ -385,10 +383,10 @@ class BatchDetailScreen extends StatelessWidget {
                                       horizontal: 10, vertical: 5),
                                   child: GestureDetector(
                                     onTap: () async {
-                                      print("----------------");
-                                      print(
+                                      debugPrint("----------------");
+                                      debugPrint(
                                           "product detail info: ${productsBatch.toMap()}");
-                                      print("----------------");
+                                      debugPrint("----------------");
                                     },
                                     child: Card(
                                         elevation: 4,
@@ -517,9 +515,20 @@ class BatchDetailScreen extends StatelessWidget {
                                                               context: context,
                                                               builder:
                                                                   (context) {
-                                                                return DialogoConfirmateProductLoad(
-                                                                    productsBatch:
-                                                                        productsBatch);
+                                                                return DialogConfirmProductLoadWidget(
+                                                                  productsBatch:
+                                                                      productsBatch,
+                                                                  onAccept: () {
+                                                                    context.read<BatchBloc>().add(LoadSelectedProductEvent(
+                                                                        productsBatch,
+                                                                        context
+                                                                            .read<BatchBloc>()
+                                                                            .typePicking));
+                                                                    Navigator.pushReplacementNamed(
+                                                                        context,
+                                                                        'batch');
+                                                                  },
+                                                                );
                                                               });
                                                         },
                                                         child: Icon(
@@ -1143,83 +1152,5 @@ class BatchDetailScreen extends StatelessWidget {
       return const Color.fromARGB(
           255, 211, 190, 1); // Amarillo para entre 50% y 100%
     }
-  }
-}
-
-class DialogoConfirmateProductLoad extends StatelessWidget {
-  const DialogoConfirmateProductLoad({
-    super.key,
-    required this.productsBatch,
-  });
-
-  final ProductsBatch productsBatch;
-
-  @override
-  Widget build(BuildContext context) {
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-      child: AlertDialog(
-        actionsAlignment: MainAxisAlignment.center,
-        title: Center(
-          child: Text("Confirmación",
-              style: TextStyle(color: primaryColorApp, fontSize: 20)),
-        ),
-        content: Text.rich(
-          TextSpan(
-            text: "¿Está seguro que desea comenzar a separar ",
-            style: const TextStyle(color: Colors.black), // estilo base
-            children: [
-              TextSpan(
-                text: productsBatch.productId,
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, color: primaryColorApp),
-              ),
-              if (productsBatch.lotId != null && productsBatch.lotId != "") ...[
-                TextSpan(
-                  text: " con lote: ",
-                  style: const TextStyle(color: Colors.black),
-                ),
-                TextSpan(
-                  text: productsBatch.lotId ?? "",
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, color: primaryColorApp),
-                ),
-              ],
-              TextSpan(
-                text: "?",
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, color: primaryColorApp),
-              ),
-            ],
-          ),
-          textAlign: TextAlign.center,
-        ),
-        actions: [
-          ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: grey,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text("Cancelar", style: TextStyle(color: white))),
-          ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColorApp,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-                context.read<BatchBloc>().add(LoadSelectedProductEvent(
-                    productsBatch, context.read<BatchBloc>().typePicking));
-                Navigator.pushReplacementNamed(context, 'batch');
-              },
-              child: const Text("Aceptar", style: TextStyle(color: white))),
-        ],
-      ),
-    );
   }
 }

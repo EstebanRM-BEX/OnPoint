@@ -106,7 +106,7 @@ class ProductDevolucionCard extends StatelessWidget {
                   ),
                   GestureDetector(
                     onTap: () {
-                      print('Producto seleccionado: ${product.toMap()}');
+                      debugPrint('Producto seleccionado: ${product.toMap()}');
                     },
                     child: Row(
                       children: [

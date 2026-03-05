@@ -27,7 +27,7 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
 
     return BlocConsumer<InfoRapidaBloc, InfoRapidaState>(
       listener: (context, state) {
-        print("state es $state");
+        debugPrint("state es $state");
 
         if (state is DeviceNotAuthorized) {
           Navigator.pop(context);
@@ -108,7 +108,7 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
                   route == 'location-info' ? [state.infoRapidaResult] : null,
             );
           } catch (e) {
-            print("Error al procesar resultado: $e");
+            debugPrint("Error al procesar resultado: $e");
             Get.snackbar(
               'Error',
               'Error al procesar los datos encontrados.',

@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
@@ -5,8 +8,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
@@ -35,8 +36,8 @@ class NewProductConteoScreen extends StatefulWidget {
 
 class _NewProductConteoScreenState extends State<NewProductConteoScreen>
     with WidgetsBindingObserver {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
   //*focus
   FocusNode focusNode1 = FocusNode(); // ubicacion  de origen
   FocusNode focusNode2 = FocusNode(); // producto
@@ -81,7 +82,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
   }
 
   void _focus(FocusNode node, String label) {
-    print("🚼 $label");
+    debugPrint("🚼 $label");
     FocusScope.of(context).requestFocus(node);
     _unfocusOthers(except: node);
   }
@@ -143,7 +144,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
     final bloc = context.read<ConteoBloc>();
     final scan = value.trim().toLowerCase();
 
-    print('scan location: $scan');
+    debugPrint('scan location: $scan');
     _controllerLocation.clear();
 
     ResultUbicaciones? matchedUbicacion = bloc.ubicacionesFilters.firstWhere(
@@ -153,13 +154,13 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
         );
 
     if (matchedUbicacion.barcode != null) {
-      print('Ubicacion encontrada: ${matchedUbicacion.name}');
+      debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
       bloc.add(ValidateFieldsEvent(field: "location", isOk: true));
       bloc.add(ChangeLocationIsOkEvent(true, matchedUbicacion, 0, 0, 0));
     } else {
       _vibrationService.vibrate();
       _audioService.playErrorSound();
-      print('Ubicacion no encontrada');
+      debugPrint('Ubicacion no encontrada');
       bloc.add(ValidateFieldsEvent(field: "location", isOk: false));
     }
     Future.microtask(() => focusNode1.requestFocus());
@@ -172,7 +173,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
         : bloc.scannedValue2.trim().toLowerCase();
 
     _controllerProduct.clear();
-    print('🔎 Scan barcode: $scan');
+    debugPrint('🔎 Scan barcode: $scan');
 
     Product? matchedProducts = bloc.productosFilters.firstWhere(
         (productoUbi) =>
@@ -183,7 +184,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
         );
 
     if (matchedProducts.barcode != null) {
-      print('producto encontrado: ${matchedProducts.name}');
+      debugPrint('producto encontrado: ${matchedProducts.name}');
       bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
       bloc.add(ChangeProductIsOkEvent(true, matchedProducts, 0, true, 0, 0, 0));
       return;
@@ -196,7 +197,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
     );
 
     if (matchedBarcode.barcode == null) {
-      print('❌ Producto no encontrado en barcodes');
+      debugPrint('❌ Producto no encontrado en barcodes');
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
@@ -211,13 +212,13 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
     );
 
     if (matchedById.productId != null) {
-      print('✅ Producto encontrado por ID: ${matchedById.name}');
+      debugPrint('✅ Producto encontrado por ID: ${matchedById.name}');
       bloc
         ..add(ValidateFieldsEvent(field: "product", isOk: true))
         ..add(ChangeProductIsOkEvent(true, matchedById, 0, true, 0, 0, 0));
       return;
     } else {
-      print('❌ Producto no encontrado por ID');
+      debugPrint('❌ Producto no encontrado por ID');
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
@@ -232,7 +233,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
     String scan = bloc.scannedValue3.trim().toLowerCase() == ""
         ? value.trim().toLowerCase()
         : bloc.scannedValue3.trim().toLowerCase();
-    print('scan quantity: $scan');
+    debugPrint('scan quantity: $scan');
     _controllerQuantity.clear();
     final currentProduct = bloc.currentProduct;
 
@@ -249,7 +250,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
   void validateLote(String value) {
     final bloc = context.read<ConteoBloc>();
     final scan = value.trim().toLowerCase();
-    print('scan lote: $scan');
+    debugPrint('scan lote: $scan');
     _controllerLote.clear();
     //tengo una lista de lotes el cual quiero validar si el scan es igual a alguno de los lotes
     LotesProduct? matchedLote = bloc.listLotesProduct.firstWhere(
@@ -259,14 +260,14 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
         );
 
     if (matchedLote.name != null) {
-      print('lote encontrado: ${matchedLote.name}');
+      debugPrint('lote encontrado: ${matchedLote.name}');
       bloc.add(ValidateFieldsEvent(field: "lote", isOk: true));
       bloc.add(SelectecLoteEvent(matchedLote));
       Future.microtask(() => focusNode5.requestFocus());
     } else {
       _vibrationService.vibrate();
       _audioService.playErrorSound();
-      print('lote no encontrado');
+      debugPrint('lote no encontrado');
       bloc.add(ValidateFieldsEvent(field: "lote", isOk: false));
       Future.microtask(() => focusNode5.requestFocus());
     }
@@ -341,7 +342,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
                     color: primaryColorApp,
                     child: BlocConsumer<ConteoBloc, ConteoState>(
                         listener: (context, state) {
-                      print("❤️‍🔥 state : $state");
+                      debugPrint("❤️‍🔥 state : $state");
 
                       if (state is ResetValuesLoadingState) {
                         showDialog(
@@ -607,15 +608,13 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
                 manualFocusNode: focusNode4,
                 viewQuantity: context.read<ConteoBloc>().viewQuantity,
                 onIconButtonPressed: () {
-                  print('borrando');
+                  debugPrint('borrando');
                   context.read<ConteoBloc>().add(ShowQuantityEvent(
                       !context.read<ConteoBloc>().viewQuantity));
                   Future.delayed(const Duration(milliseconds: 100), () {
                     FocusScope.of(context).requestFocus(focusNode3);
                   });
                 },
-                showKeyboard:
-                    context.read<UserBloc>().fabricante.contains("Zebra"),
                 onToggleViewQuantity: () {
                   context.read<ConteoBloc>().add(ShowQuantityEvent(
                       !context.read<ConteoBloc>().viewQuantity));
@@ -623,7 +622,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
                   Future.delayed(const Duration(milliseconds: 100), () {
                     FocusScope.of(context).requestFocus(focusNode4);
                   });
-                  print('Toggle view quantity');
+                  debugPrint('Toggle view quantity');
                 },
                 onValidateButton: () {
                   FocusScope.of(context).unfocus();
@@ -633,7 +632,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
                   validateQuantity(value);
                 },
                 onManualQuantityChanged: (value) {
-                  print('onManualQuantityChanged: $value');
+                  debugPrint('onManualQuantityChanged: $value');
                 },
                 onManualQuantitySubmitted: (value) {
                   final intValue = double.parse(value);
@@ -663,7 +662,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
     String input = cantidadController.text.trim();
     //validamos quantity
 
-    print("cantidad: $input");
+    debugPrint("cantidad: $input");
 
     // Si está vacío, usar la cantidad seleccionada del bloc
     if (input.isEmpty) {
@@ -732,7 +731,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
       double cantidad = double.parse(cantidadController.text.isEmpty
           ? bloc.quantitySelected.toString()
           : cantidadController.text);
-      print("cantidad: $cantidad");
+      debugPrint("cantidad: $cantidad");
       bloc.add(SendProductConteoEvent(true, cantidad, bloc.currentProduct));
     }
   }

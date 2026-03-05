@@ -1,6 +1,7 @@
 // configurations_repository.dart
 // ignore_for_file: avoid_print
 
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
@@ -62,11 +63,11 @@ class ConfigurationsRepository {
           whereArgs: [0],
         );
 
-        print(
+        debugPrint(
             "⚙️ Config Sync: Processed ${configList.length} | Deleted Obsolete: $deleted");
       });
     } catch (e, s) {
-      print("❌ Error in syncConfigurations: $e => $s");
+      debugPrint("❌ Error in syncConfigurations: $e => $s");
     }
   }
 
@@ -88,9 +89,9 @@ class ConfigurationsRepository {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
-      print("✅ Configuration inserted/updated successfully.");
+      debugPrint("✅ Configuration inserted/updated successfully.");
     } catch (e, s) {
-      print("❌ Error inserting configuration: $e => $s");
+      debugPrint("❌ Error inserting configuration: $e => $s");
     }
   }
 
@@ -114,7 +115,7 @@ class ConfigurationsRepository {
         return null;
       }
     } catch (e, s) {
-      print("❌ Error fetching configuration: $e => $s");
+      debugPrint("❌ Error fetching configuration: $e => $s");
       return null;
     }
   }

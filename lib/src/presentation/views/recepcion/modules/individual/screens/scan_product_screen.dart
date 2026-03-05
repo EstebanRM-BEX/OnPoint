@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously, unrelated_type_equality_checks
 
 import 'package:flutter/material.dart';
@@ -7,9 +10,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
@@ -48,8 +49,8 @@ class ScanProductOrderScreen extends StatefulWidget {
 
 class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
     with WidgetsBindingObserver {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
   @override
   void initState() {
     super.initState();
@@ -115,13 +116,13 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
   }
 
   void _requestOnly(FocusNode node, String tag) {
-    print("🎯 Enfocando: $tag");
+    debugPrint("🎯 Enfocando: $tag");
     FocusScope.of(context).requestFocus(node);
     _unfocusAll(except: node);
   }
 
   void _handleDependencies() {
-    print('🚼 _handleDependencies');
+    debugPrint('🚼 _handleDependencies');
     final bloc = context.read<RecepcionBloc>();
 
     final hasLote = bloc.currentProduct.productTracking == "lot";
@@ -135,12 +136,12 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
     }
 
     if (hasLote) {
-      print('--- CON LOTE ---');
-      print('productIsOk: ${bloc.productIsOk}');
-      print('quantityIsOk: ${bloc.quantityIsOk}');
-      print('loteIsOk: ${bloc.loteIsOk}');
-      print('viewQuantity: ${bloc.viewQuantity}');
-      print('locationsDestIsok: ${bloc.locationsDestIsok}');
+      debugPrint('--- CON LOTE ---');
+      debugPrint('productIsOk: ${bloc.productIsOk}');
+      debugPrint('quantityIsOk: ${bloc.quantityIsOk}');
+      debugPrint('loteIsOk: ${bloc.loteIsOk}');
+      debugPrint('viewQuantity: ${bloc.viewQuantity}');
+      debugPrint('locationsDestIsok: ${bloc.locationsDestIsok}');
 
       if (bloc.productIsOk &&
           !bloc.loteIsOk &&
@@ -170,7 +171,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
       }
     } else {
       // SIN LOTE
-      print('--- SIN LOTE ---');
+      debugPrint('--- SIN LOTE ---');
       if (configMuelle) {
         if (bloc.productIsOk && !bloc.quantityIsOk && !bloc.locationsDestIsok) {
           _requestOnly(focusNode5, 'muelle');
@@ -241,7 +242,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
   void validateLote(String value) {
     final bloc = context.read<RecepcionBloc>();
     final scan = value.trim().toLowerCase();
-    print('scan lote: $scan');
+    debugPrint('scan lote: $scan');
     bloc.loteController.clear();
     //tengo una lista de lotes el cual quiero validar si el scan es igual a alguno de los lotes
     LotesProduct? matchedLote = bloc.listLotesProduct.firstWhere(
@@ -251,14 +252,14 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
         );
 
     if (matchedLote.name != null) {
-      print('lote encontrado: ${matchedLote.name}');
+      debugPrint('lote encontrado: ${matchedLote.name}');
       bloc.add(ValidateFieldsOrderEvent(field: "lote", isOk: true));
       bloc.add(SelectecLoteEvent(matchedLote));
       Future.microtask(() => focusNode6.requestFocus());
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      print('lote no encontrado');
+      debugPrint('lote no encontrado');
       bloc.add(ValidateFieldsOrderEvent(field: "lote", isOk: false));
       Future.microtask(() => focusNode6.requestFocus());
     }
@@ -292,7 +293,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
     final bloc = context.read<RecepcionBloc>();
     final currentProduct = bloc.currentProduct;
     final scan = value.trim().toLowerCase();
-    print('scan location: $scan');
+    debugPrint('scan location: $scan');
     bloc.locationDestController.clear();
     ResultUbicaciones? matchedUbicacion = bloc.ubicaciones.firstWhere(
         (ubicacion) => ubicacion.barcode?.toLowerCase() == scan.trim(),
@@ -300,7 +301,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
             ResultUbicaciones() // Si no se encuentra ningún match, devuelve null
         );
     if (matchedUbicacion.barcode != null) {
-      print('Ubicacion encontrada: ${matchedUbicacion.name}');
+      debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
       bloc.add(ValidateFieldsOrderEvent(field: "locationDest", isOk: true));
       bloc.add(ChangeLocationDestIsOkEvent(
           currentProduct.idRecepcion ?? 0,
@@ -312,7 +313,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      print('Ubicacion no encontrada');
+      debugPrint('Ubicacion no encontrada');
       bloc.add(ValidateFieldsOrderEvent(field: "locationDest", isOk: false));
       Future.microtask(() => focusNode4.requestFocus());
     }
@@ -347,7 +348,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
                       width: double.infinity,
                       child: BlocConsumer<RecepcionBloc, RecepcionState>(
                           listener: (context, state) {
-                        print('STATE ❤️‍🔥 $state');
+                        debugPrint('STATE ❤️‍🔥 $state');
 
                         if (state is ViewProductImageSuccess) {
                           showImageDialog(context, state.imageUrl);
@@ -986,12 +987,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
                 //todo: cantidad
                 SizedBox(
                   width: size.width,
-                  height: recepcionBloc.viewQuantity == true &&
-                          context.read<UserBloc>().fabricante.contains("Zebra")
-                      ? 345
-                      : !recepcionBloc.viewQuantity
-                          ? 110
-                          : 150,
+                  height: !recepcionBloc.viewQuantity ? 110 : 150,
                   child: Column(
                     children: [
                       Padding(
@@ -1080,7 +1076,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
                                               recepcionBloc.quantitySelected >=
                                                   0
                                           ? () {
-                                              print('press');
+                                              debugPrint('press');
                                               recepcionBloc.add(
                                                   ShowQuantityOrderEvent(
                                                       !recepcionBloc
@@ -1125,7 +1121,8 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
                                         int.parse(value);
                                   } catch (e) {
                                     // Manejo de errores si la conversión falla
-                                    print('Error al convertir a entero: $e');
+                                    debugPrint(
+                                        'Error al convertir a entero: $e');
                                     // Aquí puedes mostrar un mensaje al usuario o manejar el error de otra forma
                                   }
                                 } else {
@@ -1415,7 +1412,6 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
 
   void _finishSeprateProductOrder(BuildContext context, dynamic cantidad) {
     if (context.read<RecepcionBloc>().currentProduct.productTracking == "lot") {
-      print(context.read<RecepcionBloc>().lotesProductCurrent.toMap());
       if (context.read<RecepcionBloc>().selectLote == "") {
         _audioService.playErrorSound();
         _vibrationService.vibrate();

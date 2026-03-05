@@ -129,8 +129,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       // 1. Segundo Listener: HomeBloc (Hijo del primero)
       child: BlocListener<HomeBloc, HomeState>(
         listener: (context, state) {
-          print(" ❤️‍🔥 STATE: $state");
-
           if (state is HomeLoadErrorState) {
             Get.snackbar(
               'Error',
@@ -722,15 +720,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                   ?.accessProductionModule ??
                                               false;
 
-                                          print(
-                                              '🔍 Checking production module access (Picking Componentes):');
-                                          print(
-                                              '   HomeBloc: ${homeConfig?.accessProductionModule}');
-                                          print(
-                                              '   UserBloc: ${userConfig?.accessProductionModule}');
-                                          print(
-                                              '   Final decision: $hasAccess');
-
                                           if (hasAccess) {
                                             showDialog(
                                               context: context,
@@ -773,15 +762,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                               userConfig
                                                   ?.accessProductionModule ??
                                               false;
-
-                                          print(
-                                              '🔍 Production module access check:');
-                                          print(
-                                              '   HomeBloc: ${homeConfig?.accessProductionModule}');
-                                          print(
-                                              '   UserBloc: ${userConfig?.accessProductionModule}');
-                                          print(
-                                              '   Final decision: $hasAccess');
 
                                           if (hasAccess) {
                                             showDialog(

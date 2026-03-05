@@ -32,9 +32,9 @@ class _DialogCapturaTemperaturaState extends State<DialogCapturaTemperatura> {
         setState(() {
           _imageFile = compressedFile; // o lo que uses en tu widget
         });
-        print('Tamaño final: ${await compressedFile.length()} bytes');
+        debugPrint('Tamaño final: ${await compressedFile.length()} bytes');
       } else {
-        print('No se pudo comprimir la imagen');
+        debugPrint('No se pudo comprimir la imagen');
       }
     }
   }

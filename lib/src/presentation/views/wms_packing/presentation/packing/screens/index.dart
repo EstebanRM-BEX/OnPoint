@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously
 
 import 'package:animated_notch_bottom_bar/animated_notch_bottom_bar/animated_notch_bottom_bar.dart';
@@ -7,8 +10,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
@@ -30,8 +31,8 @@ class ListPackingScreen extends StatefulWidget {
 
 class _WmsPackingScreenState extends State<ListPackingScreen> {
   NotchBottomBarController controller = NotchBottomBarController();
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
   FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
 
@@ -42,14 +43,13 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
         .toLowerCase();
 
     _controllerToDo.clear();
-    print('🔎 Scan barcode (batch picking): $scan');
+    debugPrint('🔎 Scan barcode (batch picking): $scan');
 
     final listOfBatchs = bloc.listOfPedidosBD;
 
     void processBatch(PedidoPackingResult batch) {
       Future.microtask(() => focusNodeBuscar.requestFocus());
 
-      print(batch.toMap());
       try {
         _handlePackingOnTap(context, batch, context);
       } catch (e) {
@@ -70,7 +70,7 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
     );
 
     if (batchs.id != null) {
-      print(
+      debugPrint(
           '🔎 batch encontrado : ${batchs.id} ${batchs.name} - ${batchs.zonaEntrega}');
       processBatch(batchs);
       return;
@@ -90,7 +90,7 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
 
     return BlocConsumer<PackingPedidoBloc, PackingPedidoState>(
         listener: (context, state) {
-      print("Estado del bloc: $state");
+      debugPrint("Estado del bloc: $state");
 
       if (state is NeedUpdateVersionState) {
         Get.snackbar(

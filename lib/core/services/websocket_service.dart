@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -38,7 +39,7 @@ class WebSocketService implements IWebSocketService {
       final String rawCookie = await PrefUtils.getCookie();
 
       if (enterpriseUrl.isEmpty || rawCookie.isEmpty) {
-        print("⛔ WebSocket: Faltan datos (URL o Cookie).");
+        debugPrint("⛔ WebSocket: Faltan datos (URL o Cookie).");
         return;
       }
 
@@ -55,7 +56,7 @@ class WebSocketService implements IWebSocketService {
       }
 
       if (sessionId.isEmpty) {
-        print("⛔ WebSocket: No se pudo extraer session_id de la cookie.");
+        debugPrint("⛔ WebSocket: No se pudo extraer session_id de la cookie.");
         return;
       }
 
@@ -69,10 +70,10 @@ class WebSocketService implements IWebSocketService {
       String socketUrl = cleanBaseUrl.replaceFirst('https://', 'wss://');
       socketUrl += '/websocket';
 
-      print("🔄 WebSocket: Intentando conectar a $socketUrl");
-      print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-      print("📋 HEADERS DE CONEXIÓN:");
-      print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      debugPrint("🔄 WebSocket: Intentando conectar a $socketUrl");
+      debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      debugPrint("📋 HEADERS DE CONEXIÓN:");
+      debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
       // 5. Preparar HEADERS (Crucial para que el servidor acepte la conexión)
       final Map<String, dynamic> headers = {
@@ -80,11 +81,6 @@ class WebSocketService implements IWebSocketService {
         'Origin':
             cleanBaseUrl, // El servidor verifica de dónde viene la petición
       };
-
-      // Mostrar headers para verificación
-      print("🍪 Cookie: $sessionId");
-      print("🌐 Origin: $cleanBaseUrl");
-      print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
       // 5. Conectar usando IOWebSocketChannel
       _channel = IOWebSocketChannel.connect(
@@ -103,21 +99,21 @@ class WebSocketService implements IWebSocketService {
         },
         onDone: () {
           _resetConnectionState();
-          print("⚠️ WebSocket: Desconectado por el servidor (onDone).");
+          debugPrint("⚠️ WebSocket: Desconectado por el servidor (onDone).");
         },
         onError: (error) {
           _resetConnectionState();
-          print("❌ WebSocket Error: $error");
+          debugPrint("❌ WebSocket Error: $error");
         },
       );
 
-      print("✅ WebSocket: Conexión física establecida.");
+      debugPrint("✅ WebSocket: Conexión física establecida.");
 
       // 7. Intentar suscripción automática
       _subscribeToChannel();
     } catch (e) {
       _resetConnectionState();
-      print("❌ WebSocket Excepción Crítica: $e");
+      debugPrint("❌ WebSocket Excepción Crítica: $e");
     }
   }
 
@@ -125,7 +121,7 @@ class WebSocketService implements IWebSocketService {
   void _subscribeToChannel() {
     // 🛡️ VALIDACIÓN: Si ya estamos suscritos, evitamos enviar basura al servidor
     if (_isSubscribed) {
-      print("✋ WebSocket: Ya estás suscrito, omitiendo solicitud.");
+      debugPrint("✋ WebSocket: Ya estás suscrito, omitiendo solicitud.");
       return;
     }
 
@@ -137,45 +133,35 @@ class WebSocketService implements IWebSocketService {
       }
     };
 
-    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    print("📤 ENVIANDO SUSCRIPCIÓN AL SERVIDOR:");
-    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    print("📦 Payload: ${jsonEncode(subscriptionPayload)}");
-    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    debugPrint("📤 ENVIANDO SUSCRIPCIÓN AL SERVIDOR:");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    debugPrint("📦 Payload: ${jsonEncode(subscriptionPayload)}");
+    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     sendMessage(jsonEncode(subscriptionPayload));
   }
 
   /// Procesa cada mensaje que llega del servidor
   void _handleMessage(dynamic data) {
-    // print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    // print("📥 MENSAJE RECIBIDO DEL SERVIDOR:");
-    // print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    // print("⏰ Timestamp: ${DateTime.now().toIso8601String()}");
-
     try {
       // Intentamos decodificar para ver si es la confirmación de suscripción
       final Map<String, dynamic> decodedData = jsonDecode(data);
 
       // Mostrar el mensaje formateado
-      print("📦 Contenido JSON:");
-      print(const JsonEncoder.withIndent('  ').convert(decodedData));
+      debugPrint("📦 Contenido JSON:");
+      debugPrint(const JsonEncoder.withIndent('  ').convert(decodedData));
 
       // --- VALIDACIÓN DE SUSCRIPCIÓN ---
       // Aquí buscamos el evento que confirma que el servidor aceptó la suscripción.
       if (decodedData['event_name'] == 'subscription_succeeded' ||
           decodedData['event_name'] == 'subscribe_success') {
         _isSubscribed = true;
-        // print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        // print("✅ ¡SUSCRIPCIÓN CONFIRMADA POR EL SERVIDOR!");
-        // print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
       }
     } catch (e) {
       // Si falla el jsonDecode es porque llegó un dato plano o corrupto
-      print("📦 Contenido RAW (no es JSON válido):");
-      print(data.toString());
+      debugPrint("📦 Contenido RAW (no es JSON válido):");
+      debugPrint(data.toString());
     }
-
-    // print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
     // Pasamos el mensaje a la UI (Bloc/Cubit)
     if (!_messageController.isClosed) {
@@ -187,26 +173,16 @@ class WebSocketService implements IWebSocketService {
   @override
   void sendMessage(dynamic data) {
     if (_isConnected && _channel != null) {
-      // print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-      // print("📤 ENVIANDO MENSAJE AL SERVIDOR:");
-      // print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-      // print("⏰ Timestamp: ${DateTime.now().toIso8601String()}");
-
       // Intentar mostrar como JSON formateado si es posible
       try {
         final decoded = jsonDecode(data);
-        // print("📦 Contenido JSON:");
-        // print(const JsonEncoder.withIndent('  ').convert(decoded));
       } catch (e) {
-        // print("📦 Contenido RAW:");
-        print(data.toString());
+        (data.toString());
       }
-
-      // print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
       _channel!.sink.add(data);
     } else {
-      print("⚠️ WebSocket: No se pudo enviar mensaje (Desconectado).");
+      debugPrint("⚠️ WebSocket: No se pudo enviar mensaje (Desconectado).");
     }
   }
 
@@ -225,7 +201,7 @@ class WebSocketService implements IWebSocketService {
       _channel = null;
     }
     _resetConnectionState();
-    print("🔌 WebSocket: Desconectado manualmente.");
+    debugPrint("🔌 WebSocket: Desconectado manualmente.");
   }
 
   /// Limpieza total al destruir el servicio

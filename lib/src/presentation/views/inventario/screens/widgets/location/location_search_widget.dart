@@ -9,7 +9,6 @@ import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_
 import 'package:wms_app/src/presentation/views/inventario/screens/bloc/inventario_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
-import 'package:wms_app/src/presentation/widgets/keyboard_widget.dart';
 
 class SearchLocationScreen extends StatefulWidget {
   const SearchLocationScreen({super.key});

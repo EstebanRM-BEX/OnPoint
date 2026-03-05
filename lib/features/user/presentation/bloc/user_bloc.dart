@@ -1,13 +1,17 @@
+import 'package:flutter/material.dart';
+import 'package:wms_app/core/interfaces/i_device_info_service.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:wms_app/core/utils/get_mac_utils.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../domain/entities/device_info.dart';
 import '../../domain/entities/user_configuration.dart';
 import '../../domain/entities/user_location.dart';
+import '../../domain/entities/user_novelty.dart';
 import '../../domain/usecases/get_device_info.dart';
 import '../../domain/usecases/get_user_configuration.dart';
 import '../../domain/usecases/get_user_locations.dart';
+import '../../domain/usecases/get_user_novelties.dart';
 import '../../domain/usecases/register_device.dart';
 import 'user_event.dart';
 import 'user_state.dart';
@@ -24,17 +28,20 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   final GetUserConfiguration getUserConfiguration;
   final GetDeviceInfo getDeviceInfo;
   final GetUserLocations getUserLocations;
+  final GetUserNovelties getUserNovelties;
   final RegisterDevice registerDevice;
 
   UserBloc({
     required this.getUserConfiguration,
     required this.getDeviceInfo,
     required this.getUserLocations,
+    required this.getUserNovelties,
     required this.registerDevice,
   }) : super(UserInitial()) {
     on<LoadUserInfoEvent>(_onLoadUserInfo);
     on<RegisterDeviceEvent>(_onRegisterDevice);
     on<LoadUserLocationsEvent>(_onLoadUserLocations);
+    on<LoadUserNoveltiesEvent>(_onLoadUserNovelties);
     on<LoadInfoDeviceEventUser>(_onLoadInfoDeviceUser);
   }
 
@@ -48,10 +55,10 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     AndroidDeviceInfo androidInfo = await deviceInfoPlugin.androidInfo;
     String modelo = androidInfo.model;
     String fabricante = androidInfo.manufacturer;
-    String mac =
-        (await DeviceInfoCustom.getMacAddress()) ?? ''; // mac del dispositivo
-    String imei =
-        (await DeviceInfoCustom.getImei()) ?? ''; // imei del dispositivo
+    String mac = (await getIt<IDeviceInfoService>().getMacAddress()) ??
+        ''; // mac del dispositivo
+    String imei = (await getIt<IDeviceInfoService>().getImei()) ??
+        ''; // imei del dispositivo
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
 
     //REGISTRAMOS LOS DATOS DEL DISPOSITIVO
@@ -81,6 +88,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     UserConfiguration? config;
     DeviceInfo? deviceInfo;
     List<UserLocation> locations = [];
+    List<Novedad> novelties = [];
     String? errorMessage;
 
     // 1. Get Device Info
@@ -115,10 +123,10 @@ class UserBloc extends Bloc<UserEvent, UserState> {
           await DataBaseSqlite()
               .configurationsRepository
               .insertConfiguration(config!, userId);
-          print('✅ Configuraciones guardadas en BD local');
+          debugPrint('✅ Configuraciones guardadas en BD local');
         }
       } catch (e) {
-        print('⚠️ Error guardando configuraciones en BD: $e');
+        debugPrint('⚠️ Error guardando configuraciones en BD: $e');
       }
     }
 
@@ -128,9 +136,21 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       (failure) {
         // We might want to show user info even if locations fail, or treat as error.
         // For now, logging error but proceeding with empty locations if config is loaded
-        print('Failed to load locations: ${failure.message}');
+        debugPrint('Failed to load locations: ${failure.message}');
       },
       (data) => locations = data,
+    );
+
+    // 4. Get Novelties
+    final noveltiesResult = await getUserNovelties(NoParams());
+    noveltiesResult.fold(
+      (failure) {
+        debugPrint('Failed to load novelties: ${failure.message}');
+      },
+      (data) {
+        novelties = data;
+        debugPrint('Novelties loaded: ${novelties.length}');
+      },
     );
 
     if (config != null && deviceInfo != null) {
@@ -138,6 +158,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         configuration: config!,
         deviceInfo: deviceInfo!,
         locations: locations,
+        novelties: novelties,
       ));
     }
   }
@@ -199,8 +220,21 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     result.fold(
       (failure) => emit(UserLocationsError(failure.message)),
       (locations) {
-        print('Locations loaded: ${locations.length}');
+        debugPrint('Locations loaded: ${locations.length}');
         emit(UserLocationsLoaded(locations: locations));
+      },
+    );
+  }
+
+  Future<void> _onLoadUserNovelties(
+      LoadUserNoveltiesEvent event, Emitter<UserState> emit) async {
+    emit(UserNoveltiesLoading());
+    final result = await getUserNovelties(NoParams());
+    result.fold(
+      (failure) => emit(UserNoveltiesError(failure.message)),
+      (novelties) {
+        debugPrint("novedades: ${novelties.length}");
+        emit(UserNoveltiesLoaded(novelties: novelties));
       },
     );
   }
@@ -242,6 +276,16 @@ extension UserBlocHelpers on UserBloc {
     // Verificar si el estado es UserLoaded (cuando se carga toda la info del usuario)
     if (state is UserLoaded) {
       return (state as UserLoaded).locations;
+    }
+    return [];
+  }
+
+  List<Novedad> get novedades {
+    if (state is UserNoveltiesLoaded) {
+      return (state as UserNoveltiesLoaded).novelties;
+    }
+    if (state is UserLoaded) {
+      return (state as UserLoaded).novelties;
     }
     return [];
   }

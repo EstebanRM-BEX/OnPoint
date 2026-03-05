@@ -582,7 +582,7 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
                                         ],
                                       ),
                                       onTap: () async {
-                                        print(
+                                        debugPrint(
                                             'transferenciaDetail: ${transferenciaDetail.toMap()}');
                                         //cargamos los permisos del usuario
                                         context.read<TransferenciaBloc>().add(

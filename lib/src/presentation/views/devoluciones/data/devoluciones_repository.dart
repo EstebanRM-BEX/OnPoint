@@ -23,7 +23,7 @@ class DevolucionesRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return []; // Si no hay conexión, retornar una lista vacía
     }
 
@@ -73,11 +73,11 @@ class DevolucionesRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return [];
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error fetAllTerceros: $e, $s');
+      debugPrint('Error fetAllTerceros: $e, $s');
     }
     return [];
   }
@@ -88,7 +88,7 @@ class DevolucionesRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return []; // Si no hay conexión, retornar una lista vacía
     }
 
@@ -143,11 +143,11 @@ class DevolucionesRepository {
         }
       } else {}
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return [];
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error lotes de un producto: $e, $s');
+      debugPrint('Error lotes de un producto: $e, $s');
     }
     return [];
   }
@@ -162,7 +162,7 @@ class DevolucionesRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseNewLote(); // Si no hay conexión, retornar una lista vacía
     }
 
@@ -193,7 +193,7 @@ class DevolucionesRepository {
                   ? ResponseNewLoteResult.fromMap(jsonResponse['result'])
                   : null,
             );
-          }else{
+          } else {
             return ResponseNewLote(
               jsonrpc: jsonResponse['jsonrpc'],
               id: jsonResponse['id'],
@@ -234,11 +234,11 @@ class DevolucionesRepository {
         }
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseNewLote();
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error resBatchsPacking: $e, $s');
+      debugPrint('Error resBatchsPacking: $e, $s');
     }
     return ResponseNewLote();
   }
@@ -251,11 +251,11 @@ class DevolucionesRepository {
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult == ConnectivityResult.none) {
-      print("Error: No hay conexión a Internet.");
+      debugPrint("Error: No hay conexión a Internet.");
       return ResponseDevolucion(); // Si no hay conexión, terminamos la ejecución
     }
 
-    print("request ${request.toJson()}");
+    debugPrint("request ${request.toJson()}");
 
     //obtenemos la mac o el device id del dispositivo
     final mac = await PrefUtils.getMacPDA();
@@ -296,7 +296,7 @@ class DevolucionesRepository {
         );
       } else {
         // Manejo de error si la respuesta no es exitosa
-        print("Error en la respuesta: ${response.statusCode}");
+        debugPrint("Error en la respuesta: ${response.statusCode}");
         Map<String, dynamic> jsonResponse = jsonDecode(response.body);
 
         // Verifica si la respuesta contiene la clave 'result' y convierte la lista correctamente
@@ -311,11 +311,11 @@ class DevolucionesRepository {
             ));
       }
     } on SocketException catch (e) {
-      print('Error de red: $e');
+      debugPrint('Error de red: $e');
       return ResponseDevolucion(); // Retornamos un objeto vacío en caso de error de red
     } catch (e, s) {
       // Manejo de otros errores
-      print('Error en sendDevolucion: $e, $s');
+      debugPrint('Error en sendDevolucion: $e, $s');
       return ResponseDevolucion(); // Retornamos un objeto vacío en caso de error de red
     }
   }

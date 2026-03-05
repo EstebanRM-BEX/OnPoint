@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:async';
@@ -7,8 +10,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
@@ -24,8 +25,8 @@ class InfoRapidaScreen extends StatefulWidget {
 }
 
 class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
 
   final TextEditingController _controllerSearch = TextEditingController();
   final FocusNode focusNode1 = FocusNode();
@@ -66,7 +67,7 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
       buildWhen: (previous, current) =>
           current is InfoRapidaInitial || current is InfoRapidaLoaded,
       listener: (context, state) async {
-        print('Estado actual: $state');
+        debugPrint('Estado actual: $state');
         if (state is DeviceNotAuthorized) {
           if (Navigator.canPop(context)) {
             Navigator.pop(context); // Cierra el loader si hubo error

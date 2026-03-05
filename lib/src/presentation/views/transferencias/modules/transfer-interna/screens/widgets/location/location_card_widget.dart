@@ -1,9 +1,10 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks
 
 import 'package:flutter/material.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/src/presentation/views/transferencias/models/response_transferencias.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 
@@ -27,8 +28,8 @@ class LocationDropdownTransferWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AudioService _audioService = AudioService();
-    final VibrationService _vibrationService = VibrationService();
+    final IAudioService _audioService = getIt<IAudioService>();
+    final IVibrationService _vibrationService = getIt<IVibrationService>();
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqlite_api.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
@@ -20,7 +21,7 @@ class WarehouseRepository {
 
       return warehouses;
     } catch (e) {
-      print("Error al obtener los almacenes: $e");
+      debugPrint("Error al obtener los almacenes: $e");
       return []; // Devuelve una lista vacía en caso de error
     }
   }
@@ -52,9 +53,9 @@ class WarehouseRepository {
         await batch.commit();
       });
 
-      print("Almacenes actualizados con éxito.");
+      debugPrint("Almacenes actualizados con éxito.");
     } catch (e) {
-      print("Error al actualizar almacenes: $e");
+      debugPrint("Error al actualizar almacenes: $e");
     }
   }
 }

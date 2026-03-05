@@ -31,7 +31,7 @@ class DialogValidateProductSendWidget extends StatelessWidget {
         return double.parse(cantidadController.text);
       }
     } catch (e) {
-      print('❌ Error obteniendo cantidad: $e');
+      debugPrint('❌ Error obteniendo cantidad: $e');
       return 0.0;
     }
   }
@@ -205,11 +205,7 @@ class DialogValidateProductSendWidget extends StatelessWidget {
                   // Usar el context del callback, no del build
                   final bloc = context.read<ConteoBloc>();
                   bloc.add(UpdateProductConteoEvent(
-                    product, 
-                    productExist, 
-                    cantidad, 
-                    true
-                  ));
+                      product, productExist, cantidad, true));
                   // _safePop(context);
                 },
                 style: ElevatedButton.styleFrom(
@@ -222,11 +218,7 @@ class DialogValidateProductSendWidget extends StatelessWidget {
                 onPressed: () {
                   final bloc = context.read<ConteoBloc>();
                   bloc.add(UpdateProductConteoEvent(
-                    product, 
-                    productExist, 
-                    cantidad, 
-                    false
-                  ));
+                      product, productExist, cantidad, false));
                   // _safePop(context);
                 },
                 style: ElevatedButton.styleFrom(

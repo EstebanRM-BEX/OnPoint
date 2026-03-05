@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
@@ -30,7 +31,8 @@ class WebSocketBloc extends Bloc<WebSocketEvent, WebSocketState> {
     WebSocketMessageReceived event,
     Emitter<WebSocketState> emit,
   ) {
-    print('WebSocketBloc: Mensaje recibido en tiempo real: ${event.payload}');
+    debugPrint(
+        'WebSocketBloc: Mensaje recibido en tiempo real: ${event.payload}');
 
     // Emit state with received data
     emit(WebSocketDataReceived(event.payload));

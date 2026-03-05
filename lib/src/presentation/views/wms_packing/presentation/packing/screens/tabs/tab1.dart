@@ -90,7 +90,7 @@ class Tab1PedidoScreen extends StatelessWidget {
               context.read<PackingPedidoBloc>().currentPedidoPack;
           return BlocListener<PackingPedidoBloc, PackingPedidoState>(
             listener: (context, state) {
-              print('STATE : $state');
+              debugPrint('STATE : $state');
               if (state is UnPackignSuccess) {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   duration: const Duration(milliseconds: 1000),
@@ -862,11 +862,11 @@ class Tab1PedidoScreen extends StatelessWidget {
                                                       filteredProducts[index];
                                                   return GestureDetector(
                                                     onTap: () {
-                                                      print(
+                                                      debugPrint(
                                                           "info paquete: ${package.toMap()}");
-                                                      print(
+                                                      debugPrint(
                                                           "--------------------");
-                                                      print(
+                                                      debugPrint(
                                                           "Producto seleccionado: ${product.toMap()}");
                                                     },
                                                     child: Card(
@@ -1148,7 +1148,8 @@ class Tab1PedidoScreen extends StatelessWidget {
                                                                                 TextStyle(fontSize: 12, color: black)), // Parte del texto en color negro (o el color que prefieras)
 
                                                                         TextSpan(
-                                                                          text: (product.quantity ?? 0.0).toString(), // La cantidad en color rojo
+                                                                          text:
+                                                                              (product.quantity ?? 0.0).toString(), // La cantidad en color rojo
                                                                           style: TextStyle(
                                                                               color: primaryColorApp,
                                                                               fontSize: 12), // Estilo solo para la cantidad

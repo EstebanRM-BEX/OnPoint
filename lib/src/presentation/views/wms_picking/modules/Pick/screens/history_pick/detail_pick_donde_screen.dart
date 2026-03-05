@@ -24,7 +24,7 @@ class DetailPickDoneScreen extends StatelessWidget {
         backgroundColor: white,
         body: BlocConsumer<PickingPickBloc, PickingPickState>(
           listener: (context, state) {
-            print("estado del listener $state");
+            debugPrint("estado del listener $state");
 
             if (state is CreateBackOrderOrNotLoading) {
               showDialog(
@@ -495,7 +495,7 @@ class DetailPickDoneScreen extends StatelessWidget {
                       final unidadesSeparadas =
                           calcularUnidadesSeparadas(batch!);
 
-                      print("unidades $unidadesSeparadas");
+                      debugPrint("unidades $unidadesSeparadas");
                       showDialog(
                           context: Navigator.of(context, rootNavigator: true)
                               .context,
@@ -893,7 +893,7 @@ class DetailPickDoneScreen extends StatelessWidget {
       final progress = (batch.quantityDone / batch.quantityOrdered) * 100;
       return progress.toStringAsFixed(2);
     } catch (e, s) {
-      print("❌ Error en el calcularUnidadesSeparadas $e ->$s");
+      debugPrint("❌ Error en el calcularUnidadesSeparadas $e ->$s");
       return '';
     }
   }

@@ -1,12 +1,12 @@
 // novedades_repository.dart
 
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:wms_app/src/presentation/models/novedades_response_model.dart';
+import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'novedades_table.dart';
 
 class NovedadesRepository {
-  
   // Tamaño del bloque para inserción masiva
   static const int _batchSize = 500;
 
@@ -24,11 +24,9 @@ class NovedadesRepository {
 
       // Transacción exclusiva para velocidad y consistencia
       await db.transaction((txn) async {
-        
         // PASO 1: MARCA (Resetear flag)
         await txn.rawUpdate(
-          'UPDATE ${NovedadesTable.tableName} SET ${NovedadesTable.columnIsSynced} = 0'
-        );
+            'UPDATE ${NovedadesTable.tableName} SET ${NovedadesTable.columnIsSynced} = 0');
 
         // PASO 2: UPSERT POR LOTES (Chunking)
         for (var i = 0; i < novedadesList.length; i += _batchSize) {
@@ -63,11 +61,11 @@ class NovedadesRepository {
           whereArgs: [0],
         );
 
-        print("📋 Sync Novedades: Procesados ${novedadesList.length} | Eliminados Obsoletos: $deleted");
+        debugPrint(
+            "📋 Sync Novedades: Procesados ${novedadesList.length} | Eliminados Obsoletos: $deleted");
       });
-
     } catch (e, s) {
-      print("❌ Error al sincronizar novedades: $e => $s");
+      debugPrint("❌ Error al sincronizar novedades: $e => $s");
     }
   }
 
@@ -87,7 +85,7 @@ class NovedadesRepository {
         );
       }).toList();
     } catch (e) {
-      print("Error al obtener novedades: $e");
+      debugPrint("Error al obtener novedades: $e");
       return [];
     }
   }

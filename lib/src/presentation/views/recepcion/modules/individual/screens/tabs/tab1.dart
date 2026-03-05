@@ -57,7 +57,7 @@ class Tab1ScreenRecep extends StatelessWidget {
                 icon: Icon(Icons.error, color: Colors.red));
           }
 
-          print("State: $state");
+          debugPrint("State: $state");
           if (state is CreateBackOrderOrNotLoading) {
             showDialog(
               context: context,

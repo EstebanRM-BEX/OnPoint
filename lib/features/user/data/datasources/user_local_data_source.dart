@@ -1,17 +1,20 @@
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
+import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import '../../../../core/utils/prefs/pref_utils.dart';
 import '../../../../src/presentation/models/response_ubicaciones_model.dart';
 import '../../../../src/presentation/providers/db/database.dart';
-import '../models/user_configuration_model.dart';
 import '../models/user_location_model.dart';
+import '../models/user_novelty_model.dart';
 
 abstract class UserLocalDataSource {
   Future<void> cacheUserConfiguration(UserConfigurationModel config);
   Future<UserConfigurationModel?> getCachedUserConfiguration();
   Future<void> cacheUserLocations(List<UserLocationModel> locations);
   Future<List<AllowedWarehouse>> getCachedWarehouses();
+  Future<void> cacheUserNovelties(List<UserNoveltyModel> novelties);
+  Future<List<UserNoveltyModel>?> getCachedUserNovelties();
 }
 
 @LazySingleton(as: UserLocalDataSource)
@@ -70,6 +73,35 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
   @override
   Future<List<AllowedWarehouse>> getCachedWarehouses() async {
     return await db.warehouseRepository.getAllowedWarehouse();
+  }
+
+  @override
+  Future<void> cacheUserNovelties(List<UserNoveltyModel> novelties) async {
+    final List<Novedad> legacyNovelties = novelties.map((e) {
+      return Novedad(
+        id: e.id,
+        name: e.name,
+        code: e.code,
+      );
+    }).toList();
+    await db.novedadesRepository.syncNovedades(legacyNovelties);
+  }
+
+  @override
+  Future<List<UserNoveltyModel>?> getCachedUserNovelties() async {
+    final List<Novedad> legacyNovelties =
+        await db.novedadesRepository.getAllNovedades();
+
+    if (legacyNovelties.isNotEmpty) {
+      return legacyNovelties.map((e) {
+        return UserNoveltyModel(
+          id: e.id!,
+          name: e.name ?? '',
+          code: e.code ?? '',
+        );
+      }).toList();
+    }
+    return null;
   }
 
   // Mapper helper: UserConfigurationModel -> Configurations

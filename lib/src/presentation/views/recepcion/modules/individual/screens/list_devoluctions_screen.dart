@@ -513,7 +513,7 @@ class _ListDevolutionsScreenState extends State<ListDevolutionsScreen> {
                                           ],
                                         ),
                                         onTap: () async {
-                                          print(
+                                          debugPrint(
                                               'ordenCompra: ${ordenCompra[index].toMap()}');
                                           //cargamos los permisos del usuario
                                           context.read<RecepcionBloc>().add(

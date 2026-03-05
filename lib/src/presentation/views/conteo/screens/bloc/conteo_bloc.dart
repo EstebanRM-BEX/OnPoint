@@ -182,7 +182,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   void _onViewProductImageEvent(
       ViewProductImageEvent event, Emitter<ConteoState> emit) async {
     try {
-      print('Obteniendo imagen del producto con ID: ${event.idProduct}');
+      debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
       final response = await _inventarioRepository.viewUrlImageProduct(
@@ -200,7 +200,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         emit(ViewProductImageFailure('Imagen no disponible'));
       }
     } catch (e, s) {
-      print('Error en el ViewProductImageEvent: $e, $s');
+      debugPrint('Error en el ViewProductImageEvent: $e, $s');
       emit(ViewProductImageFailure(e.toString()));
     }
   }
@@ -235,7 +235,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       }
       emit(OrderConteosByStateSuccess(ordenesDeConteo));
     } catch (e, s) {
-      print("❌ Error en _onOrderConteosByStateEvent: $e, $s");
+      debugPrint("❌ Error en _onOrderConteosByStateEvent: $e, $s");
     }
   }
 
@@ -272,7 +272,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
           loteId: event.productExist.lotId,
         );
 
-        print("productSend: ${productSend.toJson()}");
+        debugPrint("productSend: ${productSend.toJson()}");
 
         final response = await _repository.sendProductConteo(true, productSend);
 
@@ -299,7 +299,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         final newQuantity =
             (event.productExist.quantityCounted ?? 0) + (event.quantity ?? 0);
 
-        print("nueva cantidad: $newQuantity");
+        debugPrint("nueva cantidad: $newQuantity");
 
         //actualizamos la cantidad del producto en la bd
         await db.productoOrdenConteoRepository.setFieldTableProductOrdenConteo(
@@ -325,7 +325,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
           locationId: event.productExist.locationId,
           loteId: event.productExist.lotId,
         );
-        print("productSend: ${productSend.toJson()}");
+        debugPrint("productSend: ${productSend.toJson()}");
         final response = await _repository.sendProductConteo(true, productSend);
         //validamos la respuesta
         if (response.result?.code != 200) {
@@ -345,14 +345,14 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         emit(SendProductConteoSuccess(response));
       }
     } catch (e, s) {
-      print("❌ Error en _onLoadCurrentProductEvent: $e, $s");
+      debugPrint("❌ Error en _onLoadCurrentProductEvent: $e, $s");
     }
   }
 
   //metodo para validar si el producto que voy a enviar ya fue enviado
   Future<CountedLine?> validateProductSentEvent(ConteoItem product) async {
     try {
-      print(
+      debugPrint(
           "locationID: ${product.locationId} productID: ${product.productId} loteID: ${product.loteId}");
 
       final productosEnvidos =
@@ -374,7 +374,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         return existingProduct; // Producto ya fue enviado
       }
     } catch (e, s) {
-      print("❌ Error en _onValidateProductSentEvent: $e, $s");
+      debugPrint("❌ Error en _onValidateProductSentEvent: $e, $s");
     }
     return null;
   }
@@ -382,7 +382,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   //metodo paara validar si el producto que voy a enviar ya esta en el listado de por hacer
   Future<CountedLine?> validateProductPorHacerEvent(ConteoItem product) async {
     try {
-      print(
+      debugPrint(
           "locationID: ${product.locationId} productID: ${product.productId} loteID: ${product.loteId}");
 
       final productosPorHacer =
@@ -404,7 +404,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         return existingProduct; // Producto ya fue enviado
       }
     } catch (e, s) {
-      print("❌ Error en _onValidateProductSentEvent: $e, $s");
+      debugPrint("❌ Error en _onValidateProductSentEvent: $e, $s");
     }
     return null;
   }
@@ -417,14 +417,14 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       productos.clear();
       if (response.isNotEmpty) {
         productos.addAll(response);
-        print('productos de la bd::::: ${productos.length}');
+        debugPrint('productos de la bd::::: ${productos.length}');
         emit(GetProductsSuccessBD(response));
       } else {
         emit(GetProductsFailure('No se encontraron productos'));
       }
     } catch (e, s) {
       emit(GetProductsFailure('Error al cargar los productos'));
-      print('Error en el fetch de productos: $e=>$s');
+      debugPrint('Error en el fetch de productos: $e=>$s');
     }
   }
 
@@ -433,7 +433,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     Emitter<ConteoState> emit,
   ) async {
     try {
-      print('🔍 Buscando productos con query: "${event.query}"');
+      debugPrint('🔍 Buscando productos con query: "${event.query}"');
       emit(SearchLoading());
 
       productosFiltersSearch = [];
@@ -455,7 +455,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       }
       emit(SearchProductSuccess(productosFiltersSearch));
     } catch (e, s) {
-      print('❌ Error en SearchProductEvent: $e\n$s');
+      debugPrint('❌ Error en SearchProductEvent: $e\n$s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -476,7 +476,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       }
       emit(SearchLocationSuccess(ubicacionesFiltersSearch));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -609,8 +609,8 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         ubicacionesFilters = ubicaciones;
       }
 
-      print("ubicacionesFilters: ${ubicacionesFilters.length}");
-      print("productosFilters: ${productosFilters.length}");
+      debugPrint("ubicacionesFilters: ${ubicacionesFilters.length}");
+      debugPrint("productosFilters: ${productosFilters.length}");
 
       //cargamos las ubicaciones de la maestra
 
@@ -629,14 +629,14 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       ubicaciones.clear();
       if (response.isNotEmpty) {
         ubicaciones.addAll(response);
-        print("ubicaciones bd ::: ${ubicaciones.length}");
+        debugPrint("ubicaciones bd ::: ${ubicaciones.length}");
         emit(LoadLocationsSuccess(ubicaciones));
       } else {
         emit(LoadLocationsFailure('No se encontraron ubicaciones'));
       }
     } catch (e, s) {
       emit(LoadLocationsFailure('Error al cargar las ubicaciones'));
-      print('Error en el fetch de ubicaciones: $e=>$s');
+      debugPrint('Error en el fetch de ubicaciones: $e=>$s');
     }
   }
 
@@ -684,7 +684,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         }
       }
     } catch (e, s) {
-      print('Error al eliminar el producto: $e, $s');
+      debugPrint('Error al eliminar el producto: $e, $s');
       emit(DeleteProductConteoFailure('Error al eliminar el producto'));
     }
   }
@@ -694,7 +694,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     try {
       emit(SendProductConteoLoading());
 
-      print("SendProductConteoEvent: cantidad: ${event.cantidad}");
+      debugPrint("SendProductConteoEvent: cantidad: ${event.cantidad}");
 
       int userId = await PrefUtils.getUserId();
       //verificamos si el producto actual tiene lote
@@ -945,7 +945,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
             response.result?.msg ?? 'Error al enviar el producto'));
       }
     } catch (e, s) {
-      print('Error al enviar el producto: $e, $s');
+      debugPrint('Error al enviar el producto: $e, $s');
       emit(SendProductConteoFailure('Error al enviar el producto'));
     }
   }
@@ -993,7 +993,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       }
     } catch (e, s) {
       emit(CreateLoteProductFailure('Error al crear el lote'));
-      print('Error en el _onCreateLoteProduct: $e, $s');
+      debugPrint('Error en el _onCreateLoteProduct: $e, $s');
     }
   }
 
@@ -1013,7 +1013,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       }
       emit(SearchLoteSuccess(listLotesProductFilters));
     } catch (e, s) {
-      print('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
@@ -1032,7 +1032,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         loteIsOk,
       ));
     } catch (e, s) {
-      print('Error en el SelectecLoteEvent de inventario $s ->$e');
+      debugPrint('Error en el SelectecLoteEvent de inventario $s ->$e');
     }
   }
 
@@ -1051,7 +1051,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       emit(GetLotesProductSuccess(response));
     } catch (e, s) {
       emit(GetLotesProductFailure('Error al obtener los lotes del producto'));
-      print('Error en _onGetLotesProduct: $e\n$s');
+      debugPrint('Error en _onGetLotesProduct: $e\n$s');
     }
   }
 
@@ -1072,10 +1072,10 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
             currentProduct.idMove ?? 0,
             'orden');
       }
-      print("listOfBarcodes: ${listOfBarcodes.length}");
+      debugPrint("listOfBarcodes: ${listOfBarcodes.length}");
       //imprimir todos los barcodes
     } catch (e, s) {
-      print("❌ Error en _onFetchBarcodesProductEvent: $e, $s");
+      debugPrint("❌ Error en _onFetchBarcodesProductEvent: $e, $s");
     }
     emit(BarcodesProductLoadedState(listOfBarcodes: listOfBarcodes));
   }
@@ -1093,7 +1093,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       emit(ChangeQuantitySeparateStateSuccess(quantitySelected));
     } catch (e, s) {
       emit(ChangeQuantitySeparateStateError('Error al aumentar cantidad'));
-      print("❌ Error en el AddQuantitySeparate $e ->$s");
+      debugPrint("❌ Error en el AddQuantitySeparate $e ->$s");
     }
   }
 
@@ -1104,7 +1104,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       viewQuantity = !viewQuantity;
       emit(ShowQuantityState(viewQuantity));
     } catch (e, s) {
-      print("❌ Error en _onShowQuantityEvent: $e, $s");
+      debugPrint("❌ Error en _onShowQuantityEvent: $e, $s");
     }
   }
 
@@ -1119,7 +1119,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       }
       listOfProductsName = productsSet.toList();
     } catch (e, s) {
-      print("❌ Error en el products $e ->$s");
+      debugPrint("❌ Error en el products $e ->$s");
     }
   }
 
@@ -1179,7 +1179,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   void _onExpandLocationEvent(
       ExpandLocationEvent event, Emitter<ConteoState> emit) {
     ubicacionExpanded = event.ubicacion;
-    print('Ubicacion expandida: $ubicacionExpanded');
+    debugPrint('Ubicacion expandida: $ubicacionExpanded');
     emit(ExpandLocationState(ubicacionExpanded));
   }
 
@@ -1285,7 +1285,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       }
       emit(ChangeQuantitySeparateState(quantitySelected));
     } catch (e, s) {
-      print('Error en _onChangeQuantitySelectedEvent: $e, $s');
+      debugPrint('Error en _onChangeQuantitySelectedEvent: $e, $s');
     }
   }
 
@@ -1328,7 +1328,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         ));
       }
     } catch (e, s) {
-      print("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
+      debugPrint("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
     }
   }
 
@@ -1365,7 +1365,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         emit(ConfigurationError('Error al cargar LoadConfigurationsUser'));
       }
     } catch (e, s) {
-      print('❌ Error en LoadConfigurationsUser $e =>$s');
+      debugPrint('❌ Error en LoadConfigurationsUser $e =>$s');
     }
   }
 
@@ -1385,7 +1385,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       // Convertimos el Set a lista si es necesario
       positionsOrigen = positionsSet.toList();
     } catch (e, s) {
-      print("❌ Error en getPosicions: $e -> $s");
+      debugPrint("❌ Error en getPosicions: $e -> $s");
     }
   }
 
@@ -1410,12 +1410,12 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       // locationIsOk = productBD?.isLocationIsOk == 1 ? true : false;
       // productIsOk = productBD?.productIsOk == 1 ? true : false;
 
-      print('Variable locationIsOk: $locationIsOk');
-      print('Variable productIsOk: $productIsOk');
-      print('Variable quantityIsOk: $quantityIsOk');
+      debugPrint('Variable locationIsOk: $locationIsOk');
+      debugPrint('Variable productIsOk: $productIsOk');
+      debugPrint('Variable quantityIsOk: $quantityIsOk');
 
       currentProduct = productBD ?? CountedLine();
-      print('Producto actual db: ${currentProduct.toMap()}');
+      debugPrint('Producto actual db: ${currentProduct.toMap()}');
       products();
       add(FetchBarcodesProductEvent(false));
       //validamos si el producto tiene lote
@@ -1435,7 +1435,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       emit(LoadCurrentProductSuccess(currentProduct));
     } catch (e, s) {
       emit(LoadCurrentProductError('Error al cargar el producto actual'));
-      print("❌ Error en el LoadCurrentProductEvent $e ->$s");
+      debugPrint("❌ Error en el LoadCurrentProductEvent $e ->$s");
     }
   }
 
@@ -1462,7 +1462,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       emit(ValidateFieldsStateSuccess(event.isOk));
     } catch (e, s) {
       emit(ValidateFieldsStateError('Error al validar campos'));
-      print("❌ Error en el ValidateFieldsEvent $e ->$s");
+      debugPrint("❌ Error en el ValidateFieldsEvent $e ->$s");
     }
   }
 
@@ -1484,7 +1484,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
             ConteoFromDBError("No se encontraron conteos en la base de datos"));
       }
     } catch (e, s) {
-      print("Error al obtener los conteos desde la BD: $e, $s");
+      debugPrint("Error al obtener los conteos desde la BD: $e, $s");
       emit(ConteoFromDBError("Error al obtener los conteos desde la BD: $e"));
     }
   }
@@ -1509,10 +1509,10 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         listAllOfBarcodes = responseBarcodes;
       }
 
-      print("listAllOfBarcodes : ${listAllOfBarcodes.length}");
+      debugPrint("listAllOfBarcodes : ${listAllOfBarcodes.length}");
 
       for (var barcode in listAllOfBarcodes) {
-        print("barcode: ${barcode.barcode}");
+        debugPrint("barcode: ${barcode.barcode}");
       }
 
       //obtenemos las ubicaciones de esa orden de conteo
@@ -1527,7 +1527,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
 
       emit(LoadConteoSuccess(ordenConteo));
     } catch (e, s) {
-      print("Error al cargar el conteo: $e, $s");
+      debugPrint("Error al cargar el conteo: $e, $s");
       emit(ConteoError("Error al cargar el conteo: $e"));
     }
   }
@@ -1605,7 +1605,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         emit(ConteoError("No se encontraron conteos"));
       }
     } catch (e, s) {
-      print("Error al obtener los conteos: $e, $s");
+      debugPrint("Error al obtener los conteos: $e, $s");
       emit(ConteoError("Error al obtener los conteos: $e"));
     }
   }
@@ -1672,6 +1672,6 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       currentProduct.locationId ?? 0,
     );
 
-    print('productBD: ${productBD?.toMap()}');
+    debugPrint('productBD: ${productBD?.toMap()}');
   }
 }

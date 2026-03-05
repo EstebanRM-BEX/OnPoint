@@ -1,3 +1,6 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously, unnecessary_null_comparison
 
 import 'package:flutter/material.dart';
@@ -5,8 +8,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/lista_product_packing.dart';
@@ -25,8 +26,8 @@ class Tab2PedidoScreen extends StatefulWidget {
 }
 
 class _Tab2ScreenState extends State<Tab2PedidoScreen> {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
   FocusNode focusNodeBuscar = FocusNode(); //cantidad textformfield
 
   final TextEditingController _controllerToDo = TextEditingController();
@@ -50,7 +51,7 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
         .toLowerCase();
 
     _controllerToDo.clear();
-    print('🔎 Scan barcode (packing pedido): $scan');
+    debugPrint('🔎 Scan barcode (packing pedido): $scan');
 
     final listOfProducts = bloc.listOfProductosProgress;
 
@@ -63,7 +64,7 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
       if (product.idProduct == null ||
           product.pedidoId == null ||
           product.idMove == null) {
-        print('❌ Producto incompleto: ${product.toMap()}');
+        debugPrint('❌ Producto incompleto: ${product.toMap()}');
         _showError(context, bloc);
         return;
       }
@@ -115,7 +116,7 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
         Navigator.pushReplacementNamed(context, 'scan-pack');
       });
 
-      print('✅ Producto procesado: ${product.toMap()}');
+      debugPrint('✅ Producto procesado: ${product.toMap()}');
     }
 
     // Buscar el producto usando el código de barras principal o el código de producto
@@ -127,12 +128,12 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
             (p.productCode?.toLowerCase() == scan),
       );
     } catch (e) {
-      print('ℹ️ Producto no encontrado en búsqueda principal: $e');
+      debugPrint('ℹ️ Producto no encontrado en búsqueda principal: $e');
       product = null;
     }
 
     if (product?.idMove != null) {
-      print(
+      debugPrint(
           '🔎 Producto encontrado por código principal: ${product!.idProduct}');
       processProduct(product);
       return;
@@ -145,12 +146,12 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
         (b) => b.barcode?.toLowerCase() == scan,
       );
     } catch (e) {
-      print('ℹ️ Código de barras secundario no encontrado: $e');
+      debugPrint('ℹ️ Código de barras secundario no encontrado: $e');
       barcode = null;
     }
 
     if (barcode?.barcode != null && barcode?.idProduct != null) {
-      print(
+      debugPrint(
           '🔎 Código de barras secundario encontrado. Buscando ID de producto: ${barcode!.idProduct}');
 
       ProductoPedido? productByBarcode;
@@ -159,12 +160,12 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
           (p) => p.idProduct.toString() == barcode!.idProduct.toString(),
         );
       } catch (e) {
-        print('ℹ️ Producto no encontrado por código secundario: $e');
+        debugPrint('ℹ️ Producto no encontrado por código secundario: $e');
         productByBarcode = null;
       }
 
       if (productByBarcode?.idProduct != null) {
-        print(
+        debugPrint(
             '🔎 Producto encontrado por código de barras secundario: ${productByBarcode!.idProduct}');
         processProduct(productByBarcode);
         return;
@@ -190,7 +191,7 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
     final size = MediaQuery.sizeOf(context);
     return BlocConsumer<PackingPedidoBloc, PackingPedidoState>(
       listener: (context, state) {
-        print('state: $state');
+        debugPrint('state: $state');
       },
       builder: (context, state) {
         return Scaffold(
@@ -420,7 +421,7 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
                                             Expanded(
                                               child: GestureDetector(
                                                 onTap: () {
-                                                  print(
+                                                  debugPrint(
                                                       "Producto seleccionado: ${product.toMap()}");
                                                   // validamos si este articulo se encuentra en la lista de productos preparados
                                                   if (context

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 
 class CantLineasMuelle extends StatelessWidget {
   const CantLineasMuelle({
@@ -8,7 +7,7 @@ class CantLineasMuelle extends StatelessWidget {
     required this.productsOk,
   });
 
-  final List<ProductsBatch> productsOk;
+  final List<dynamic> productsOk;
 
   @override
   Widget build(BuildContext context) {
@@ -41,8 +40,9 @@ class CantLineasMuelle extends StatelessWidget {
                                 style:
                                     const TextStyle(fontSize: 12, color: black),
                               ),
-                              onTap: (){
-                                print('product: ${ productsOk[index].toMap()}');
+                              onTap: () {
+                                debugPrint(
+                                    'product: ${productsOk[index].toMap()}');
                               },
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,8 +67,7 @@ class CantLineasMuelle extends StatelessWidget {
                                   Text(
                                       "Ubicacion destino: ${productsOk[index].locationDestId}",
                                       style: const TextStyle(
-                                          fontSize: 12,
-                                          color: black)),
+                                          fontSize: 12, color: black)),
                                 ],
                               ),
                             ),

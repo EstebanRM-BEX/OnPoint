@@ -1,12 +1,13 @@
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/sounds_utils.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
-import 'package:wms_app/core/utils/vibrate_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
@@ -40,8 +41,8 @@ class ScanProductPackingConsolidateScreen extends StatefulWidget {
 
 class _ScanProductPackingConsolidateScreenState
     extends State<ScanProductPackingConsolidateScreen> {
-  final AudioService _audioService = AudioService();
-  final VibrationService _vibrationService = VibrationService();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
 
   FocusNode focusNode1 = FocusNode(); // ubicacion  de origen
   FocusNode focusNode2 = FocusNode(); // producto
@@ -65,7 +66,7 @@ class _ScanProductPackingConsolidateScreenState
   void _handleDependencies() {
     final batchBloc = context.read<PackingConsolidateBloc>();
 
-    print(
+    debugPrint(
         '❤️‍🔥 locationIsOk: ${batchBloc.locationIsOk},\n productIsOk: ${batchBloc.productIsOk},\n quantityIsOk: ${batchBloc.quantityIsOk},\n locationDestIsOk: ${batchBloc.locationDestIsOk}, \nviewQuantity: ${batchBloc.viewQuantity}');
 
     if (!batchBloc.locationIsOk && //false
@@ -73,7 +74,7 @@ class _ScanProductPackingConsolidateScreenState
         !batchBloc.quantityIsOk && //false
         !batchBloc.locationDestIsOk) //false
     {
-      print('❤️‍🔥 location');
+      debugPrint('❤️‍🔥 location');
       FocusScope.of(context).requestFocus(focusNode1);
       focusNode2.unfocus();
       focusNode3.unfocus();
@@ -84,7 +85,7 @@ class _ScanProductPackingConsolidateScreenState
         !batchBloc.quantityIsOk && //false
         !batchBloc.locationDestIsOk) //false
     {
-      print('❤️‍🔥 product');
+      debugPrint('❤️‍🔥 product');
       FocusScope.of(context).requestFocus(focusNode2);
       focusNode1.unfocus();
       focusNode3.unfocus();
@@ -96,7 +97,7 @@ class _ScanProductPackingConsolidateScreenState
         !batchBloc.locationDestIsOk && //false
         !batchBloc.viewQuantity) //false
     {
-      print('❤️‍🔥 quantity');
+      debugPrint('❤️‍🔥 quantity');
       FocusScope.of(context).requestFocus(focusNode3);
       focusNode1.unfocus();
       focusNode2.unfocus();
@@ -254,7 +255,7 @@ class _ScanProductPackingConsolidateScreenState
         listener: (context, state) {
           final packinghBloc = context.read<PackingConsolidateBloc>();
 
-          print('❤️‍🔥 state: $state ');
+          debugPrint('❤️‍🔥 state: $state ');
 
           if (state is ViewProductImageSuccess) {
             showImageDialog(context, state.imageUrl);
@@ -817,7 +818,8 @@ class _ScanProductPackingConsolidateScreenState
                                         double.parse(value);
                                   } catch (e) {
                                     // Manejo de errores si la conversión falla
-                                    print('Error al convertir a entero: $e');
+                                    debugPrint(
+                                        'Error al convertir a entero: $e');
                                     // Aquí puedes mostrar un mensaje al usuario o manejar el error de otra forma
                                   }
                                 } else {
@@ -903,7 +905,7 @@ class _ScanProductPackingConsolidateScreenState
 
   void _finichPackingProductSplit(BuildContext context, double cantidad) async {
     //marcamos el producto como terminado
-    print('Entramos a _finichPackingProductSplit -----');
+    debugPrint('Entramos a _finichPackingProductSplit -----');
     final batchBloc = context.read<PackingConsolidateBloc>();
 
     batchBloc.add(SetPickingSplitEvent(
