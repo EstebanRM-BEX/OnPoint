@@ -248,21 +248,29 @@ class LocationInfoScreen extends StatelessWidget {
                                         context
                                                 .read<InfoRapidaBloc>()
                                                 .isMassTransferActive
-                                            ? Checkbox(
-                                                value: context
-                                                    .read<InfoRapidaBloc>()
-                                                    .productosFiltersMassTransfer
-                                                    .any((p) =>
-                                                        p.id == producto?.id),
-                                                onChanged: (bool? value) {
-                                                  context
-                                                      .read<InfoRapidaBloc>()
-                                                      .add(
-                                                          ToggleProductMassTransferEvent(
-                                                              producto!,
-                                                              value ?? false));
-                                                },
-                                              )
+                                            ?
+
+                                            //VALIDAMOS QUE EL PRODUCTO NO ESTE EN UN PAQUETE
+                                            producto?.packing == true
+                                                ? null
+                                                : Checkbox(
+                                                    value: context
+                                                        .read<InfoRapidaBloc>()
+                                                        .productosFiltersMassTransfer
+                                                        .any((p) =>
+                                                            p.id ==
+                                                            producto?.id),
+                                                    onChanged: (bool? value) {
+                                                      context
+                                                          .read<
+                                                              InfoRapidaBloc>()
+                                                          .add(
+                                                              ToggleProductMassTransferEvent(
+                                                                  producto!,
+                                                                  value ??
+                                                                      false));
+                                                    },
+                                                  )
                                             : IconButton(
                                                 icon: Icon(
                                                     Icons.arrow_forward_ios,
@@ -275,11 +283,6 @@ class LocationInfoScreen extends StatelessWidget {
                                                       context);
                                                 },
                                               ),
-                                    // onTap: () async {
-                                    //   getInfoProduct(
-                                    //       producto?.id.toString() ?? '',
-                                    //       context);
-                                    // },
                                     title: Text(
                                       producto?.producto ?? 'Sin nombre',
                                       style: TextStyle(
@@ -325,6 +328,16 @@ class LocationInfoScreen extends StatelessWidget {
                                                       ""
                                               ? Colors.red
                                               : black,
+                                        ),
+                                        //producto en paquete
+                                        ProductInfoRow(
+                                          title: 'Paquete :',
+                                          value: producto?.packing == true
+                                              ? "${producto?.nombrePaquete}"
+                                              : "Sin paquete",
+                                          color: producto?.packing == true
+                                              ? black
+                                              : Colors.red,
                                         ),
                                       ],
                                     ),

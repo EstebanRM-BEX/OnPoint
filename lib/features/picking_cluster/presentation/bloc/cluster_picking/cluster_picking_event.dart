@@ -140,3 +140,33 @@ class LoadSelectedProductEvent extends ClusterPickingEvent {
   final String type;
   LoadSelectedProductEvent(this.selectedProduct, this.type);
 }
+
+class ValidatePedidoEvent extends ClusterPickingEvent {
+  final int productId;
+  final int batchId;
+  final int idMove;
+  final String type;
+  const ValidatePedidoEvent(
+      this.productId, this.batchId, this.idMove, this.type);
+}
+
+class MarkPedidoAsValidatedEvent extends ClusterPickingEvent {
+  final int batchId;
+  final String namePedido;
+  final bool isValidated;
+
+  const MarkPedidoAsValidatedEvent({
+    required this.batchId,
+    required this.namePedido,
+    required this.isValidated,
+  });
+
+  @override
+  List<Object> get props => [batchId, namePedido, isValidated];
+}
+
+class EndTimePick extends ClusterPickingEvent {
+  final int batchId;
+  final DateTime time;
+  EndTimePick(this.batchId, this.time);
+}

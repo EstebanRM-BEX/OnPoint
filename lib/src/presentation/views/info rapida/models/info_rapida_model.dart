@@ -207,7 +207,8 @@ class Ubicacion {
   String? fechaCaducidad;
   String? fechaEntrada;
   String? unidadMedida;
-  
+  bool? packing;
+  String? nombrePaquete;
 
   Ubicacion({
     this.idMove,
@@ -224,6 +225,8 @@ class Ubicacion {
     this.fechaCaducidad,
     this.fechaEntrada,
     this.unidadMedida,
+    this.packing,
+    this.nombrePaquete,
   });
 
   factory Ubicacion.fromMap(Map<String, dynamic> json) => Ubicacion(
@@ -241,6 +244,8 @@ class Ubicacion {
         fechaCaducidad: json["fecha_caducidad"],
         fechaEntrada: json["fecha_entrada"],
         unidadMedida: json["unidad_medida"],
+        packing: json["packing"],
+        nombrePaquete: json["nombre_paquete"],
       );
 
   Map<String, dynamic> toMap() => {
@@ -258,6 +263,8 @@ class Ubicacion {
         "fecha_caducidad": fechaCaducidad,
         "fecha_entrada": fechaEntrada,
         "unidad_medida": unidadMedida,
+        "packing": packing,
+        "nombre_paquete": nombrePaquete,
       };
 }
 
@@ -276,6 +283,8 @@ class Producto {
   String? nombreAlmacen;
   dynamic? operador;
   String? fechaVencimiento;
+  bool? packing;
+  String? nombrePaquete;
 
   Producto({
     this.id,
@@ -292,6 +301,8 @@ class Producto {
     this.nombreAlmacen,
     this.operador,
     this.fechaVencimiento,
+    this.packing,
+    this.nombrePaquete,
   });
 
   factory Producto.fromMap(Map<String, dynamic> json) => Producto(
@@ -309,6 +320,8 @@ class Producto {
         nombreAlmacen: json["nombre_almacen"],
         operador: json["operador"],
         fechaVencimiento: json["fecha_vencimiento"],
+        packing: json["packing"],
+        nombrePaquete: json["nombre_paquete"],
       );
 
   Map<String, dynamic> toMap() => {
@@ -326,5 +339,7 @@ class Producto {
         "nombre_almacen": nombreAlmacen,
         "operador": operador,
         "fecha_vencimiento": fechaVencimiento,
+        "packing": packing,
+        "nombre_paquete": nombrePaquete,
       };
 }

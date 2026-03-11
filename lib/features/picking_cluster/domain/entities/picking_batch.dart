@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'pedido_validate.dart';
 
 /// Represents a batch or cluster of picking tasks.
 class PickingBatch extends Equatable {
@@ -19,13 +20,14 @@ class PickingBatch extends Equatable {
   final dynamic idMuellePadre;
   final String? barcodeMuelle;
   final int? countItems;
-  final dynamic? totalQuantityItems;
+  final dynamic totalQuantityItems;
   final int? completedItems;
-  final dynamic? progressPercentage;
+  final dynamic progressPercentage;
   final dynamic startTimePick;
   final dynamic endTimePick;
   final int? productSeparateQty;
   final String? zonaEntrega;
+  final List<PedidoValidate> pedidosValidate;
   final List<PickingBatchItem> listItems;
 
   const PickingBatch({
@@ -53,8 +55,67 @@ class PickingBatch extends Equatable {
     this.endTimePick,
     this.productSeparateQty,
     this.zonaEntrega,
+    this.pedidosValidate = const [],
     required this.listItems,
   });
+
+  PickingBatch copyWith({
+    int? id,
+    String? name,
+    String? userName,
+    int? userId,
+    String? rol,
+    String? orderBy,
+    String? orderPicking,
+    String? scheduledDate,
+    String? state,
+    String? pickingTypeId,
+    String? observation,
+    bool? isWave,
+    String? muelle,
+    dynamic idMuelle,
+    dynamic idMuellePadre,
+    String? barcodeMuelle,
+    int? countItems,
+    dynamic? totalQuantityItems,
+    int? completedItems,
+    dynamic? progressPercentage,
+    dynamic startTimePick,
+    dynamic endTimePick,
+    int? productSeparateQty,
+    String? zonaEntrega,
+    List<PedidoValidate>? pedidosValidate,
+    List<PickingBatchItem>? listItems,
+  }) {
+    return PickingBatch(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      userName: userName ?? this.userName,
+      userId: userId ?? this.userId,
+      rol: rol ?? this.rol,
+      orderBy: orderBy ?? this.orderBy,
+      orderPicking: orderPicking ?? this.orderPicking,
+      scheduledDate: scheduledDate ?? this.scheduledDate,
+      state: state ?? this.state,
+      pickingTypeId: pickingTypeId ?? this.pickingTypeId,
+      observation: observation ?? this.observation,
+      isWave: isWave ?? this.isWave,
+      muelle: muelle ?? this.muelle,
+      idMuelle: idMuelle ?? this.idMuelle,
+      idMuellePadre: idMuellePadre ?? this.idMuellePadre,
+      barcodeMuelle: barcodeMuelle ?? this.barcodeMuelle,
+      countItems: countItems ?? this.countItems,
+      totalQuantityItems: totalQuantityItems ?? this.totalQuantityItems,
+      completedItems: completedItems ?? this.completedItems,
+      progressPercentage: progressPercentage ?? this.progressPercentage,
+      startTimePick: startTimePick ?? this.startTimePick,
+      endTimePick: endTimePick ?? this.endTimePick,
+      productSeparateQty: productSeparateQty ?? this.productSeparateQty,
+      zonaEntrega: zonaEntrega ?? this.zonaEntrega,
+      pedidosValidate: pedidosValidate ?? this.pedidosValidate,
+      listItems: listItems ?? this.listItems,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -82,6 +143,7 @@ class PickingBatch extends Equatable {
         endTimePick,
         productSeparateQty,
         zonaEntrega,
+        pedidosValidate,
         listItems,
       ];
 }

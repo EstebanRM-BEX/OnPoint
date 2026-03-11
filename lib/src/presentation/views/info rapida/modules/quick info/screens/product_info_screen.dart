@@ -539,12 +539,14 @@ class ProductInfoScreen extends StatelessWidget {
                   ),
                   //listado de ubicaciones
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                    ),
                     child: ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemExtent:
-                          175, // Altura fija por item para mejor rendimiento
+                          195, // Altura fija por item para mejor rendimiento
                       cacheExtent: 500, // Precarga 500px adicionales
                       padding: const EdgeInsets.all(0),
                       itemCount: product.ubicaciones?.length ?? 0,
@@ -556,126 +558,143 @@ class ProductInfoScreen extends StatelessWidget {
                         }
 
                         final ubicacion = product.ubicaciones?[index];
-                        return Card(
-                          elevation: 2,
-                          color: white,
-                          child: ListTile(
-                            title: Text(
-                              ubicacion?.ubicacion ?? 'Sin nombre',
-                              style: TextStyle(
-                                  color: primaryColorApp,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Column(
-                              children: [
-                                ProductInfoRow(
-                                  title:
-                                      'Cantidad disponible: ', // Este parece repetido, si es correcto, déjalo así
-                                  value:
-                                      '${ubicacion?.cantidadMano} ${ubicacion?.unidadMedida ?? 'UND'}',
-                                  color: green,
-                                ),
-                                ProductInfoRow(
-                                  title:
-                                      'En inventario: ', // Este parece repetido, si es correcto, déjalo así
-                                  value:
-                                      '${ubicacion?.cantidad}  ${ubicacion?.unidadMedida ?? 'UND'}',
-                                ),
-                                ProductInfoRow(
-                                  title:
-                                      'Cantidad reservada: ', // Este parece repetido, si es correcto, déjalo así
-                                  value:
-                                      '${ubicacion?.reservado} ${ubicacion?.unidadMedida ?? 'UND'}',
-                                  color: red,
-                                ),
-                                ProductInfoRow(
-                                  title:
-                                      'Lote: ', // Este parece repetido, si es correcto, déjalo así
-                                  value: ubicacion?.lote == null ||
-                                          ubicacion?.lote == ''
-                                      ? 'Sin lote'
-                                      : ubicacion?.lote ?? 'Sin lote',
-                                ),
-                                ProductInfoRow(
-                                  title:
-                                      'Fecha de entrada: ', // Este parece repetido, si es correcto, déjalo así
-                                  value: '${ubicacion?.fechaEntrada}',
-                                ),
-                                ProductInfoRow(
-                                  title:
-                                      'Fecha de caducidad: ', // Este parece repetido, si es correcto, déjalo así
-                                  value: ubicacion?.fechaCaducidad == null ||
-                                          ubicacion?.fechaCaducidad == ''
-                                      ? 'Sin fecha de caducidad'
-                                      : '${ubicacion?.fechaCaducidad}',
-                                ),
-                                const SizedBox(height: 5),
-                                GestureDetector(
-                                  onTap: () async {
-                                    context
-                                        .read<TransferInfoBloc>()
-                                        .add(LoadLocationsTransfer());
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Card(
+                            elevation: 2,
+                            color: white,
+                            child: ListTile(
+                              title: Text(
+                                ubicacion?.ubicacion ?? 'Sin nombre',
+                                style: TextStyle(
+                                    color: primaryColorApp,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              subtitle: Column(
+                                children: [
+                                  ProductInfoRow(
+                                    title:
+                                        'Cantidad disponible: ', // Este parece repetido, si es correcto, déjalo así
+                                    value:
+                                        '${ubicacion?.cantidadMano} ${ubicacion?.unidadMedida ?? 'UND'}',
+                                    color: green,
+                                  ),
+                                  ProductInfoRow(
+                                    title:
+                                        'En inventario: ', // Este parece repetido, si es correcto, déjalo así
+                                    value:
+                                        '${ubicacion?.cantidad}  ${ubicacion?.unidadMedida ?? 'UND'}',
+                                  ),
+                                  ProductInfoRow(
+                                    title:
+                                        'Cantidad reservada: ', // Este parece repetido, si es correcto, déjalo así
+                                    value:
+                                        '${ubicacion?.reservado} ${ubicacion?.unidadMedida ?? 'UND'}',
+                                    color: red,
+                                  ),
+                                  ProductInfoRow(
+                                    title:
+                                        'Lote: ', // Este parece repetido, si es correcto, déjalo así
+                                    value: ubicacion?.lote == null ||
+                                            ubicacion?.lote == ''
+                                        ? 'Sin lote'
+                                        : ubicacion?.lote ?? 'Sin lote',
+                                  ),
+                                  ProductInfoRow(
+                                    title:
+                                        'Fecha de entrada: ', // Este parece repetido, si es correcto, déjalo así
+                                    value: '${ubicacion?.fechaEntrada}',
+                                  ),
+                                  ProductInfoRow(
+                                    title:
+                                        'Fecha de caducidad: ', // Este parece repetido, si es correcto, déjalo así
+                                    value: ubicacion?.fechaCaducidad == null ||
+                                            ubicacion?.fechaCaducidad == ''
+                                        ? 'Sin fecha de caducidad'
+                                        : '${ubicacion?.fechaCaducidad}',
+                                  ),
+                                  // Informacion si el producto esta en un paquete
+                                  ProductInfoRow(
+                                    title: 'Paquete:',
+                                    value: ubicacion?.packing == true
+                                        ? '${ubicacion?.nombrePaquete}'
+                                        : 'Sin paquete',
+                                    color: ubicacion?.packing == true
+                                        ? Colors.red
+                                        : black,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  if (ubicacion?.packing == false)
+                                    GestureDetector(
+                                      onTap: () async {
+                                        context
+                                            .read<TransferInfoBloc>()
+                                            .add(LoadLocationsTransfer());
 
-                                    context
-                                        .read<TransferInfoBloc>()
-                                        .add(SetDateStartEventTransfer());
+                                        context
+                                            .read<TransferInfoBloc>()
+                                            .add(SetDateStartEventTransfer());
 
-                                    showDialog(
-                                      context: contextList,
-                                      builder: (contextList) {
-                                        return const DialogLoading(
-                                          message: "Cargando informacion...",
+                                        showDialog(
+                                          context: contextList,
+                                          builder: (contextList) {
+                                            return const DialogLoading(
+                                              message:
+                                                  "Cargando informacion...",
+                                            );
+                                          },
                                         );
+
+                                        //esperamos 1 segundo
+                                        await Future.delayed(
+                                          const Duration(seconds: 1),
+                                        );
+
+                                        // Verificar si el contexto sigue siendo válido antes de navegar
+                                        if (context.mounted) {
+                                          Navigator.pop(context);
+                                          Navigator.pushReplacementNamed(
+                                              context, 'transfer-info',
+                                              arguments: [product, ubicacion]);
+                                        }
                                       },
-                                    );
-
-                                    //esperamos 1 segundo
-                                    await Future.delayed(
-                                      const Duration(seconds: 1),
-                                    );
-
-                                    // Verificar si el contexto sigue siendo válido antes de navegar
-                                    if (context.mounted) {
-                                      Navigator.pop(context);
-                                      Navigator.pushReplacementNamed(
-                                          context, 'transfer-info',
-                                          arguments: [product, ubicacion]);
-                                    }
-                                  },
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: SizedBox(
-                                      width: size.width * 0.4,
-                                      child: Card(
-                                        color: white,
-                                        elevation: 3,
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.compare_arrows_sharp,
-                                                color: primaryColorApp,
-                                                size: 20,
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: SizedBox(
+                                          width: size.width * 0.4,
+                                          child: Card(
+                                            color: white,
+                                            elevation: 3,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(
+                                                    Icons.compare_arrows_sharp,
+                                                    color: primaryColorApp,
+                                                    size: 20,
+                                                  ),
+                                                  const SizedBox(width: 5),
+                                                  Text('TRANSFERIR',
+                                                      style: TextStyle(
+                                                          color:
+                                                              primaryColorApp,
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.bold)),
+                                                ],
                                               ),
-                                              const SizedBox(width: 5),
-                                              Text('TRANSFERIR',
-                                                  style: TextStyle(
-                                                      color: primaryColorApp,
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.bold)),
-                                            ],
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                )
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         );

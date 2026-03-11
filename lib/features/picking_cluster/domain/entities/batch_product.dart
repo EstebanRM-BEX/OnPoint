@@ -13,6 +13,8 @@ class BatchProduct extends Equatable {
   final int? idProduct;
   final int? orderProduct;
   final dynamic productId;
+  final dynamic pedido;
+  final int? pedidoId;
   final dynamic batchId;
   final String? name;
   final dynamic removalPriority;
@@ -67,6 +69,8 @@ class BatchProduct extends Equatable {
     this.removalPriority,
     this.lotId,
     this.loteId,
+    this.pedido,
+    this.pedidoId,
     this.lote,
     this.locationId,
     this.muelleId,
@@ -111,6 +115,8 @@ class BatchProduct extends Equatable {
         idProduct,
         orderProduct,
         productId,
+        pedido,
+        pedidoId,
         batchId,
         name,
         removalPriority,
@@ -158,6 +164,8 @@ class BatchProduct extends Equatable {
     String? unidades,
     int? idMove,
     int? idProduct,
+    String? pedido,
+    int? pedidoId,
     int? orderProduct,
     dynamic productId,
     dynamic batchId,
@@ -202,6 +210,8 @@ class BatchProduct extends Equatable {
       barcode: barcode ?? this.barcode,
       type: type ?? this.type,
       weight: weight ?? this.weight,
+      pedido: pedido ?? this.pedido,
+      pedidoId: pedidoId ?? this.pedidoId,
       unidades: unidades ?? this.unidades,
       idMove: idMove ?? this.idMove,
       idProduct: idProduct ?? this.idProduct,

@@ -10,18 +10,17 @@ import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/lote_producto.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/cluster_picking/cluster_picking_bloc.dart';
-import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/muelle_dropdown_widget.dart';
+import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/pedido_dropdown_widget.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/popunButton_widget.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/lote_scanner_widget.dart';
-import 'package:wms_app/shared/widgets/scanner_locationDest_widget.dart';
 import 'package:wms_app/shared/widgets/scanner_location_widget.dart';
+import 'package:wms_app/shared/widgets/scanner_dynamic_widget.dart';
 import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/batch_product.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/cant_lineas_muelle_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/features/picking_cluster/presentation/widgets/dropdowbutton_widget.dart';
@@ -31,6 +30,7 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
 
+import 'picking_cluster/widgets/dialog_picking_incompleted_widget.dart';
 import 'picking_cluster/widgets/location_dropdown_widget.dart';
 import 'picking_cluster/widgets/product_dropdown_widget.dart';
 
@@ -50,7 +50,6 @@ class _ScanProductClusterState extends State<ScanProductCluster>
   FocusNode focusNode2 = FocusNode(); // producto
   FocusNode focusNode3 = FocusNode(); // cantidad
   FocusNode focusNode4 = FocusNode(); // cantidad por pda
-  FocusNode focusNode5 = FocusNode(); //muelle
   FocusNode focusNode6 = FocusNode(); // lote
   FocusNode focusNode7 = FocusNode(); //Submuelle
 
@@ -59,9 +58,8 @@ class _ScanProductClusterState extends State<ScanProductCluster>
   final TextEditingController _controllerProduct = TextEditingController();
   final TextEditingController _controllerLote = TextEditingController();
   final TextEditingController _controllerQuantity = TextEditingController();
-  final TextEditingController _controllerMuelle = TextEditingController();
-  final TextEditingController _controllerSubMuelle = TextEditingController();
   final TextEditingController _controllerCantidad = TextEditingController();
+  final TextEditingController _controllerPedido = TextEditingController();
 
   String? selectedMuelle;
 
@@ -70,6 +68,33 @@ class _ScanProductClusterState extends State<ScanProductCluster>
     super.initState();
     // Añadimos el observer para escuchar el ciclo de vida de la app.
     WidgetsBinding.instance.addObserver(this);
+    validate();
+  }
+
+  void validate() {
+    // Esperamos a que el widget termine de construirse antes de ejecutar navegación o diálogos
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Es buena práctica verificar si el widget sigue montado
+      if (!mounted) return;
+
+      final bloc = context.read<ClusterPickingBloc>();
+
+      // validamos si todos los productos fueron procesados
+      final products = bloc.filteredProducts
+          .where((element) => element.isSeparate == 0)
+          .toList();
+
+      if (products.isEmpty) {
+        // También validamos que currentProduct no sea null antes de usar !
+        if (bloc.currentProduct != null) {
+          validatePicking(
+            bloc,
+            context,
+            bloc.currentProduct!,
+          );
+        }
+      }
+    });
   }
 
   @override
@@ -84,7 +109,6 @@ class _ScanProductClusterState extends State<ScanProductCluster>
       focusNode2,
       focusNode3,
       focusNode4,
-      focusNode5,
       focusNode6,
       focusNode7,
     ]) {
@@ -99,17 +123,9 @@ class _ScanProductClusterState extends State<ScanProductCluster>
   }
 
   void _handleDependencies() {
-    debugPrint('🚼 _handleDependencies');
     final bloc = context.read<ClusterPickingBloc>();
 
     final hasLote = bloc.currentProduct?.productTracking == "lot";
-
-    // debugPrint('hasLote: $hasLote');
-    // debugPrint('locationIsOk: ${bloc.locationIsOk}');
-    // debugPrint('productIsOk: ${bloc.productIsOk}');
-    // debugPrint('quantityIsOk: ${bloc.quantityIsOk}');
-    // debugPrint('locationDestIsOk: ${bloc.locationDestIsOk}');
-    // debugPrint('viewQuantity: ${bloc.viewQuantity}');
 
     if (!bloc.locationIsOk &&
         !bloc.productIsOk &&
@@ -130,6 +146,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
     if (hasLote) {
       if (bloc.locationIsOk &&
           bloc.productIsOk &&
+          !bloc.pedidoValidateIsOk &&
           !bloc.loteIsOk &&
           !bloc.quantityIsOk &&
           !bloc.viewQuantity) {
@@ -137,33 +154,35 @@ class _ScanProductClusterState extends State<ScanProductCluster>
         return;
       }
     }
-    if (bloc.locationIsOk &&
-        bloc.productIsOk &&
-        bloc.quantityIsOk &&
-        !bloc.locationsDestIsok &&
-        !bloc.viewQuantity) {
-      _requestOnly(focusNode3, 'quantity');
-      return;
-    }
 
     if (bloc.locationIsOk &&
         bloc.productIsOk &&
+        !bloc.pedidoValidateIsOk &&
         !bloc.quantityIsOk &&
-        !bloc.locationDestIsOk) {
-      _requestOnly(focusNode5, 'muelle');
+        !bloc.locationsDestIsok &&
+        !bloc.viewQuantity) {
+      _requestOnly(focusNode7, 'pedido');
+      return;
+    }
+    if (bloc.locationIsOk &&
+        bloc.productIsOk &&
+        bloc.quantityIsOk &&
+        bloc.pedidoValidateIsOk &&
+        !bloc.locationsDestIsok &&
+        !bloc.viewQuantity) {
+      _requestOnly(focusNode3, 'quantity');
       return;
     }
   }
 
   @override
   void dispose() {
-    focusNode1.dispose(); //location
-    focusNode2.dispose(); //product
-    focusNode3.dispose(); //quantity
-    focusNode4.dispose(); //quantity
-    focusNode5.dispose(); //quantity textformfield
-    focusNode6.dispose(); //muelle
-    focusNode7.dispose(); //lote
+    focusNode1.dispose(); //
+    focusNode2.dispose(); //
+    focusNode3.dispose(); //
+    focusNode4.dispose(); //
+    focusNode6.dispose(); //
+    focusNode7.dispose(); //
     super.dispose();
   }
 
@@ -327,175 +346,127 @@ class _ScanProductClusterState extends State<ScanProductCluster>
     Future.microtask(() => focusNode3.requestFocus());
   }
 
-  void validateMuelle(String value) async {
+  void validatePedido(String value) async {
     if (!mounted) return;
 
     final bloc = context.read<ClusterPickingBloc>();
     final scan = value.trim().toLowerCase();
     final product = bloc.currentProduct;
 
-    _controllerMuelle.clear();
+    _controllerPedido.clear();
 
-    final expected =
-        bloc.configurations.result?.result?.muelleOption == "multiple"
-            ? product?.barcodeLocationDest?.toLowerCase()
-            : bloc.currentBatch?.barcodeMuelle?.toLowerCase();
+    final currentPedido = product?.origin?.trim().toLowerCase();
 
-    if (scan == expected) {
-      validatePicking(bloc, context, product!);
+    if (scan == currentPedido) {
+      bloc.add(ValidateFieldsEvent(field: "pedido", isOk: true));
     } else {
       _vibrationService.vibrate();
       _audioService.playErrorSound();
 
-      bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: false));
+      bloc.add(ValidateFieldsEvent(field: "pedido", isOk: false));
     }
 
-    Future.microtask(() => focusNode5.requestFocus());
+    Future.microtask(() => focusNode7.requestFocus());
   }
 
   void validatePicking(ClusterPickingBloc batchBloc, BuildContext context,
       BatchProduct currentProduct) {
-    // batchBloc.add(FetchBatchWithProductsEvent(
-    //     batchBloc.batchWithProducts.batch?.id ?? 0, batchBloc.typePicking));
+    // -------------------------------------------------------------
+    // ⚡️ CAMBIO PRINCIPAL AQUÍ
+    // Usamos la función booleana que valida producto por producto
+    // en lugar de confiar en el porcentaje global.
+    // -------------------------------------------------------------
 
-    // // -------------------------------------------------------------
-    // // ⚡️ CAMBIO PRINCIPAL AQUÍ
-    // // Usamos la función booleana que valida producto por producto
-    // // en lugar de confiar en el porcentaje global.
-    // // -------------------------------------------------------------
+    final bool estaCompleto = batchBloc.isPickingCompleto();
 
-    // final bool estaCompleto = batchBloc.isPickingCompleto();
+    // if (unidadesSeparadas == "100.0" || unidadesSeparadas >= 100.0) <-- VIEJO
+    if (estaCompleto) {
+      // <-- NUEVO Y SEGURO
 
-    // // if (unidadesSeparadas == "100.0" || unidadesSeparadas >= 100.0) <-- VIEJO
-    // if (estaCompleto) {
-    //   // <-- NUEVO Y SEGURO
+      var productsToSend = batchBloc.filteredProducts
+          .where((element) => element.isSendOdoo == 0)
+          .toList();
 
-    //   var productsToSend = batchBloc.filteredProducts
-    //       .where((element) => element.isSendOdoo == 0)
-    //       .toList();
+      // Si hay productos pendientes de enviar a Odoo, mostramos un modal
+      if (productsToSend.isNotEmpty) {
+        showDialog(
+          barrierDismissible: false,
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: Colors.white,
+            title: const Center(
+              child: Text("360 Software Informa",
+                  style: TextStyle(color: yellow, fontSize: 16)),
+            ),
+            content: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                    "Tienes productos que no han sido enviados al WMS. revisa la lista de productos y envíalos antes de continuar.",
+                    style: TextStyle(color: black, fontSize: 14)),
+                const SizedBox(height: 15),
+                ElevatedButton(
+                    onPressed: () {
+                      batchBloc.isSearch = false;
+                      Navigator.pushReplacementNamed(
+                        context,
+                        'detail-cluster',
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 3,
+                    ),
+                    child: Text('Ver productos',
+                        style: TextStyle(color: primaryColorApp, fontSize: 12)))
+              ],
+            ),
+          ),
+        );
+      } else {
+        // batchBloc.add(EndTimePick(
+        //     batchBloc.batchWithProducts.batch?.id ?? 0, DateTime.now()));
 
-    //   // Si hay productos pendientes de enviar a Odoo, mostramos un modal
-    //   if (productsToSend.isNotEmpty) {
-    //     showDialog(
-    //       context: context,
-    //       builder: (context) => AlertDialog(
-    //         backgroundColor: Colors.white,
-    //         title: const Center(
-    //           child: Text("360 Software Informa",
-    //               style: TextStyle(color: yellow, fontSize: 16)),
-    //         ),
-    //         content: Column(
-    //           mainAxisAlignment: MainAxisAlignment.center,
-    //           mainAxisSize: MainAxisSize.min,
-    //           children: [
-    //             const Text(
-    //                 "Tienes productos que no han sido enviados al WMS. revisa la lista de productos y envíalos antes de continuar.",
-    //                 style: TextStyle(color: black, fontSize: 14)),
-    //             const SizedBox(height: 15),
-    //             ElevatedButton(
-    //                 onPressed: () {
-    //                   // Navigator.pop(context);
-    //                   if (batchBloc.configurations.result?.result
-    //                           ?.showDetallesPicking ==
-    //                       true) {
-    //                     //cerramos el focus
-    //                     batchBloc.isSearch = false;
-    //                     batchBloc
-    //                         .add(LoadProductEditEvent(batchBloc.typePicking));
-    //                     // batchBloc.add(IsShouldRunDependencies(false));
-    //                     Navigator.pushReplacementNamed(
-    //                       context,
-    //                       'batch-detail',
-    //                     );
-    //                   } else {
-    //                     ScaffoldMessenger.of(context).showSnackBar(
-    //                       const SnackBar(
-    //                         duration: Duration(milliseconds: 1000),
-    //                         content:
-    //                             Text('No tienes permisos para ver detalles'),
-    //                       ),
-    //                     );
-    //                   }
-    //                 },
-    //                 style: ElevatedButton.styleFrom(
-    //                   backgroundColor: Colors.white,
-    //                   shape: RoundedRectangleBorder(
-    //                     borderRadius: BorderRadius.circular(10),
-    //                   ),
-    //                   elevation: 3,
-    //                 ),
-    //                 child: Text('Ver productos',
-    //                     style: TextStyle(color: primaryColorApp, fontSize: 12)))
-    //           ],
-    //         ),
-    //       ),
-    //     );
-    //   } else {
-    //     batchBloc.add(ValidateFieldsEvent(field: "locationDest", isOk: true));
-    //     batchBloc.add(ChangeLocationDestIsOkEvent(
-    //         true,
-    //         currentProduct.idProduct ?? 0,
-    //         batchBloc.batchWithProducts.batch?.id ?? 0,
-    //         currentProduct.idMove ?? 0,
-    //         batchBloc.typePicking));
+        // batchBloc.add(PickingOkEvent(batchBloc.batchWithProducts.batch?.id ?? 0,
+        //     currentProduct.idProduct ?? 0, batchBloc.typePicking));
 
-    //     batchBloc.add(EndTimePick(
-    //         batchBloc.batchWithProducts.batch?.id ?? 0, DateTime.now()));
+        batchBloc.index = 0;
+        batchBloc.isSearch = true;
+        Navigator.pushReplacementNamed(
+          context,
+          'validate-cluster',
+        );
+        //navegamos a validar el pedido
+      }
+    } else {
+      final double porcentajeVisual =
+          double.tryParse(batchBloc.calcularProgresoReal()) ?? 0.0;
+      showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (contextDialog) {
+            return DialogPickingIncompleted(
+                currentProduct: batchBloc.currentProduct!,
+                cantidad: porcentajeVisual,
+                batchBloc: batchBloc,
+                onAccepted: () {
+                  if (Navigator.canPop(contextDialog)) {
+                    Navigator.pop(contextDialog);
+                  }
 
-    //     batchBloc.add(PickingOkEvent(batchBloc.batchWithProducts.batch?.id ?? 0,
-    //         currentProduct.idProduct ?? 0, batchBloc.typePicking));
-    //     context
-    //         .read<WMSPickingBloc>()
-    //         .add(FilterBatchesBStatusEvent('', batchBloc.typePicking));
-    //     batchBloc.index = 0;
-    //     batchBloc.isSearch = true;
-    //     //validamos el type
-    //     if (batchBloc.typePicking == 'components') {
-    //       Navigator.pushReplacementNamed(
-    //         context,
-    //         'picking-componentes-batch',
-    //       );
-    //     } else if (batchBloc.typePicking == 'batch') {
-    //       Navigator.pushReplacementNamed(
-    //         context,
-    //         'wms-picking',
-    //       );
-    //     } else {
-    //       Navigator.pushReplacementNamed(context, '/home');
-    //     }
-    //   }
-    // } else {
-    //   final double porcentajeVisual =
-    //       double.tryParse(batchBloc.calcularProgresoReal()) ?? 0.0;
-    //   showDialog(
-    //       context: context,
-    //       builder: (context) {
-    //         return DialogPickingIncompleted(
-    //             currentProduct: batchBloc.currentProduct,
-    //             cantidad: porcentajeVisual,
-    //             batchBloc: batchBloc,
-    //             onAccepted: () {
-    //               if (batchBloc
-    //                       .configurations.result?.result?.showDetallesPicking ==
-    //                   true) {
-    //                 //cerramos el focus
-    //                 batchBloc.isSearch = false;
-    //                 batchBloc.add(LoadProductEditEvent(batchBloc.typePicking));
-    //                 Navigator.pushReplacementNamed(
-    //                   context,
-    //                   'batch-detail',
-    //                 ).then((_) {});
-    //               } else {
-    //                 ScaffoldMessenger.of(context).showSnackBar(
-    //                   const SnackBar(
-    //                     duration: Duration(milliseconds: 1000),
-    //                     content: Text('No tienes permisos para ver detalles'),
-    //                   ),
-    //                 );
-    //               }
-    //             });
-    //       });
-    // }
+                  batchBloc.isSearch = false;
+                  //   batchBloc.add(LoadProductEditEvent(batchBloc.typePicking));
+                  Navigator.pushReplacementNamed(
+                    context,
+                    'detail-cluster',
+                  );
+                });
+          });
+    }
   }
 
   void _validatebuttonquantity() {
@@ -523,18 +494,13 @@ class _ScanProductClusterState extends State<ScanProductCluster>
       return;
     }
 
-    // ---------------------------------------------------------
-    // DEFINICIÓN DE LÓGICA
-    // ---------------------------------------------------------
-
-    // Función auxiliar para NO REPETIR el código de envío a la API
     void procesarTransaccion() {
       batchBloc.add(ChangeQuantitySeparate(
           cantidad!, // Usamos ! porque ya validamos arriba
           currentProduct?.idProduct ?? 0,
           currentProduct?.idMove ?? 0,
-          'cluser'));
-      // _nextProduct(currentProduct, batchBloc);
+          'cluster'));
+      _nextProduct(currentProduct!, batchBloc);
       _controllerCantidad.clear();
     }
 
@@ -636,6 +602,36 @@ class _ScanProductClusterState extends State<ScanProductCluster>
               listener: (context, state) {
                 debugPrint("✅STATE: $state");
 
+                if (state is LoadValidatePedidoState) {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context); // Cierra el loader
+                  }
+                  //mostramos dialogo para
+                  validatePicking(context.read<ClusterPickingBloc>(), context,
+                      context.read<ClusterPickingBloc>().currentProduct!);
+                }
+
+                if (state is CurrentProductChangedStateLoading) {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) =>
+                        const DialogLoading(message: "Enviando producto..."),
+                  );
+                }
+
+                if (state is CurrentProductChangedStateError) {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context); // Cierra el loader
+                  }
+                }
+
+                if (state is CurrentProductChangedState) {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context); // Cierra el loader
+                  }
+                }
+
                 if (state is BatchProductsError) {
                   Get.snackbar(
                     '360 Software Informa',
@@ -675,8 +671,15 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                         "lot") {
                       FocusScope.of(context).requestFocus(focusNode6);
                     } else {
-                      FocusScope.of(context).requestFocus(focusNode3);
+                      FocusScope.of(context).requestFocus(focusNode7);
                     }
+                  });
+                  _handleDependencies();
+                }
+
+                if (state is ValidatePedidoStateSuccess) {
+                  Future.delayed(const Duration(seconds: 1), () {
+                    FocusScope.of(context).requestFocus(focusNode3);
                   });
                   _handleDependencies();
                 }
@@ -1010,105 +1013,114 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                               ),
                             ),
 
-                            //Todo: MUELLE
-
-                            if (bloc.filteredProducts
-                                        .where((e) => e.isSeparate == 0)
-                                        .length ==
-                                    1 ||
-                                bloc.filteredProducts
-                                    .where((e) => e.isSeparate == 0)
-                                    .isEmpty)
-                              LocationDestScannerWidget(
-                                isLocationDestOk: bloc.isLocationDestOk,
-                                locationDestIsOk: bloc.locationDestIsOk,
-                                locationIsOk: bloc.locationIsOk,
-                                productIsOk: bloc.productIsOk,
-                                quantityIsOk: bloc.quantityIsOk,
-                                size: size,
-                                muelleHint: bloc.currentBatch?.muelle ?? "",
-                                onValidateMuelle: (value) {
-                                  validateMuelle(
-                                      value); // tu función actual de validación
-                                },
-                                onKeyScanned: (keyLabel) {},
-                                focusNode: focusNode5,
-                                controller: _controllerMuelle,
-                                dropdownWidget: MuelleDropdownWidget(
-                                  selectedMuelle: selectedMuelle,
-                                  batchBloc: bloc,
-                                  currentProduct: bloc.currentProduct!,
-                                ),
+                            DynamicScannerWidget(
+                              isLocationOk: bloc.isLocationOk,
+                              locationIsOk: bloc.locationIsOk,
+                              productIsOk: bloc.productIsOk,
+                              pedidoValidateIsOk: bloc.pedidoValidateIsOk,
+                              isPedidoValidateOk: bloc.isPedidoValidateOk,
+                              quantityIsOk: bloc.quantityIsOk,
+                              locationDestIsOk: bloc.locationDestIsOk,
+                              currentLocationId:
+                                  bloc.currentProduct?.pedido?.toString() ??
+                                      'Sin Pedido',
+                              onValidateLocation: (value) {
+                                validatePedido(value);
+                              },
+                              onKeyScanned: (keyLabel) {},
+                              focusNode: focusNode7,
+                              controller: _controllerPedido,
+                              locationDropdown: PedidoDropdownWidget(
+                                selectedLocation: "",
+                                positionsOrigen:
+                                    bloc.currentProduct?.origin != null
+                                        ? [
+                                            bloc.currentProduct?.origin
+                                                    .toString() ??
+                                                ""
+                                          ]
+                                        : [],
+                                currentLocationId:
+                                    bloc.currentProduct?.origin?.toString() ??
+                                        "",
+                                currentProduct: bloc.currentProduct!,
+                                isPDA: true,
                               ),
+                            ),
+                            //Todo: MUELLE fijo
+
+                            Row(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10),
+                                  child: Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      color: green,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                                Card(
+                                  color: Colors.green[100],
+                                  elevation: 5,
+                                  child: Container(
+                                      // color: Colors.amber,
+                                      width: size.width * 0.85,
+                                      padding: const EdgeInsets.only(
+                                          left: 10,
+                                          right: 10,
+                                          top: 10,
+                                          bottom: 10),
+                                      child: Column(
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Text(
+                                                'Ubicación destino',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: primaryColorApp,
+                                                ),
+                                              ),
+                                              const Spacer(),
+                                              SvgPicture.asset(
+                                                color: primaryColorApp,
+                                                "assets/icons/packing.svg",
+                                                height: 20,
+                                                width: 20,
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ],
+                                          ),
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Row(
+                                              children: [
+                                                Text(
+                                                  bloc.currentProduct
+                                                          ?.locationDestId ??
+                                                      '',
+                                                  style: const TextStyle(
+                                                      fontSize: 14,
+                                                      color: black),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      )),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
                     ),
                   ),
 
-                  //todo muelle multiple
-                  Visibility(
-                    visible: bloc.configurations.result?.result?.muelleOption ==
-                        "multiple",
-                    child: Container(
-                        width: size.width,
-                        height: 55,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                        ),
-                        child: Card(
-                            color: Colors.grey[300],
-                            elevation: 5,
-                            child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 5,
-                                ),
-                                child: Row(children: [
-                                  CantLineasMuelle(
-                                      productsOk:
-                                          bloc.filteredProducts.where((e) {
-                                    return (e.isSeparate == 1) &&
-                                        (e.locationDestId ==
-                                            bloc.currentBatch?.muelle);
-                                  }).toList()),
-                                  const Spacer(),
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.symmetric(vertical: 8),
-                                    child: ElevatedButton(
-                                        onPressed: bloc.filteredProducts
-                                                .where((e) {
-                                                  return (e.isSeparate == 1) &&
-                                                      (e.locationDestId ==
-                                                          bloc.currentBatch
-                                                              ?.muelle);
-                                                })
-                                                .toList()
-                                                .isEmpty
-                                            ? null
-                                            : () {
-                                                // batchBloc
-                                                //     .add(FetchMuellesEvent());
-                                              },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: primaryColorAppLigth,
-                                          minimumSize: const Size(100, 40),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          bloc.currentBatch?.muelle
-                                                  .toString() ??
-                                              '',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                          ),
-                                        )),
-                                  ),
-                                ])))),
-                  ),
                   //todo: cantidad
                   QuantityScannerWidget(
                     size: size,
@@ -1235,8 +1247,12 @@ class _ScanProductClusterState extends State<ScanProductCluster>
 
       // Función para actualizar la base de datos en varios campos a la vez
       Future<void> updateDatabaseFields() async {
-        batchBloc.add(SeparateProductEvent(currentProduct.idProduct ?? 0,
-            batch.id ?? 0, currentProduct.idMove ?? 0, 'cluster'));
+        batchBloc.add(SeparateProductEvent(
+          currentProduct.idProduct ?? 0,
+          batch.id ?? 0,
+          currentProduct.idMove ?? 0,
+          'cluster',
+        ));
       }
 
       // Función para gestionar la transición al siguiente producto
@@ -1246,8 +1262,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
             batchBloc.filteredProducts.where((e) => e.isSeparate == 0).toList();
 
         if (batchBloc.index + 1 == separated.length) {
-          // Último elemento alcanzado
-          // Cambiar el producto actual
+          debugPrint("Último elemento alcanzado");
           batchBloc.add(ChangeCurrentProduct(
             currentProduct: currentProduct,
             type: 'cluster',
@@ -1264,14 +1279,8 @@ class _ScanProductClusterState extends State<ScanProductCluster>
 
           batchBloc.updateStateQuantity(currentProduct.idProduct ?? 0,
               batch.id ?? 0, currentProduct.idMove ?? 0, 0);
-
-          // Recargar productos
-          batchBloc.add(FetchBatchProductsEvent(batch));
-
-          // Esperar 1 segundo y mover el foco
-          await Future.delayed(const Duration(seconds: 1));
-          FocusScope.of(context).requestFocus(focusNode5);
         } else {
+          debugPrint("No estamos en la última posición");
           // Si no estamos en la última posición, cambiamos el producto actual
           batchBloc.add(ChangeCurrentProduct(
             currentProduct: currentProduct,

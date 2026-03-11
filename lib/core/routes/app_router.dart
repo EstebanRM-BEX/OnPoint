@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/detail_screen.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/index.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/scan_product_scree.dart';
+import 'package:wms_app/features/picking_cluster/presentation/screens/validate_screen.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/conteo_screen.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/list_conteo_screen.dart';
@@ -96,6 +97,7 @@ class AppRoutes {
   static const String pickingCluster = 'picking-cluster';
   static const String scanProductCluster = 'scan-product-cluster';
   static const String detailCluster = 'detail-cluster';
+  static const String validateCluster = 'validate-cluster';
 
   //todo pick
   static const String pick = 'pick';
@@ -286,6 +288,7 @@ class AppRoutes {
       pickingCluster: (_) => const PickingClusterScreen(),
       scanProductCluster: (_) => const ScanProductCluster(),
       detailCluster: (_) => const DetailClusterScreen(),
+      validateCluster: (_) => const ValidateScreen(),
 
       // todo WMS Packing
       wmsPacking: (_) => const WmsPackingScreen(),

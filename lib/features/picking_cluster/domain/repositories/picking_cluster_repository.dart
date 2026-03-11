@@ -22,6 +22,12 @@ abstract class IPickingClusterRepository {
   Future<Either<Failure, String>> viewProductImage(
       int idProduct, bool isLoadinDialog);
 
+  Future<Either<Failure, bool>> timePickingUser(
+      int batchId, String time, String endpoint, String field, int userid);
+
+  Future<Either<Failure, bool>> timePickingBatch(
+      int batchId, String time, String endpoint, String field, String field2);
+
   // ─── Local ───────────────────────────────────────────────────────────────
   Future<Either<Failure, List<PickingBatch>>> getCachedPickingBatches();
   Future<Either<Failure, List<BatchProduct>>> getBatchProducts(int batchId);
@@ -39,4 +45,9 @@ abstract class IPickingClusterRepository {
       int batchId, int productId, int moveId, String field, String type);
   Future<Either<Failure, BatchProduct?>> getProductBatch(
       int batchId, int productId, int idMove, String type);
+  Future<Either<Failure, void>> setFieldTableBatchPedidoValidate(
+      int batchId, String namePedido, String field, dynamic value);
+
+  Future<Either<Failure, void>> endStopwatchBatch(
+      int batchId, String time, String typePicking);
 }

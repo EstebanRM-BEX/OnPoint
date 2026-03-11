@@ -69,6 +69,8 @@ import 'features/picking_cluster/domain/repositories/picking_cluster_repository.
     as _i932;
 import 'features/picking_cluster/domain/usecases/crear_lote_producto_use_case.dart'
     as _i975;
+import 'features/picking_cluster/domain/usecases/end_time_pick_use_case.dart'
+    as _i782;
 import 'features/picking_cluster/domain/usecases/get_barcodes_product_use_case.dart'
     as _i309;
 import 'features/picking_cluster/domain/usecases/get_field_table_products_use_case.dart'
@@ -91,6 +93,8 @@ import 'features/picking_cluster/domain/usecases/send_product_odoo_use_case.dart
     as _i984;
 import 'features/picking_cluster/domain/usecases/set_cluster_batch_field_use_case.dart'
     as _i956;
+import 'features/picking_cluster/domain/usecases/set_cluster_batch_pedido_field_use_case.dart'
+    as _i274;
 import 'features/picking_cluster/domain/usecases/set_cluster_batch_product_field_use_case.dart'
     as _i915;
 import 'features/picking_cluster/domain/usecases/view_product_image_usecase.dart'
@@ -256,6 +260,11 @@ extension GetItInjectableX on _i174.GetIt {
         _i984.SendProductOdooUseCase(gh<_i932.IPickingClusterRepository>()));
     gh.lazySingleton<_i149.ViewProductImageUseCase>(() =>
         _i149.ViewProductImageUseCase(gh<_i932.IPickingClusterRepository>()));
+    gh.lazySingleton<_i274.SetClusterBatchPedidoFieldUseCase>(() =>
+        _i274.SetClusterBatchPedidoFieldUseCase(
+            gh<_i932.IPickingClusterRepository>()));
+    gh.lazySingleton<_i782.EndTimePickUseCase>(
+        () => _i782.EndTimePickUseCase(gh<_i932.IPickingClusterRepository>()));
     gh.factory<_i1070.LoginBloc>(() => _i1070.LoginBloc(
           authenticateUser: gh<_i792.AuthenticateUser>(),
           saveUserSession: gh<_i311.SaveUserSession>(),
@@ -302,6 +311,9 @@ extension GetItInjectableX on _i174.GetIt {
           sendProductOdooUseCase: gh<_i984.SendProductOdooUseCase>(),
           viewProductImageUseCase: gh<_i149.ViewProductImageUseCase>(),
           getUserNovelties: gh<_i465.GetUserNovelties>(),
+          setClusterBatchPedidoFieldUseCase:
+              gh<_i274.SetClusterBatchPedidoFieldUseCase>(),
+          endTimePickUseCase: gh<_i782.EndTimePickUseCase>(),
         ));
     gh.factory<_i20.EnterpriseBloc>(() => _i20.EnterpriseBloc(
           searchEnterpriseUseCase: gh<_i138.SearchEnterprise>(),

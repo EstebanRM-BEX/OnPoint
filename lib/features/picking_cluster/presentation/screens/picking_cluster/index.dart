@@ -39,6 +39,7 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
       },
       child: BlocListener<ClusterPickingBloc, ClusterPickingState>(
         listener: (context, state) {
+          print('State: $state');
           if (state is PickingClustersLoading) {
             showDialog(
               context: context,
@@ -70,10 +71,15 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
 
             final pendingProducts =
                 state.products.where((p) => p.isSeparate == 0).toList();
+
             if (pendingProducts.isNotEmpty) {
               context
                   .read<ClusterPickingBloc>()
                   .add(LoadCurrentProductEvent(pendingProducts.first));
+            } else if (state.products.isNotEmpty) {
+              context
+                  .read<ClusterPickingBloc>()
+                  .add(LoadCurrentProductEvent(state.products.last));
             }
 
             Navigator.pushReplacementNamed(context, 'scan-product-cluster',

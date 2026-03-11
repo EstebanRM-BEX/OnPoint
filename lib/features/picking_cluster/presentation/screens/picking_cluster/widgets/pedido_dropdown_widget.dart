@@ -8,14 +8,14 @@ import 'package:wms_app/features/picking_cluster/domain/entities/batch_product.d
 
 import '../../../bloc/cluster_picking/cluster_picking_bloc.dart';
 
-class LocationDropdownWidget extends StatefulWidget {
+class PedidoDropdownWidget extends StatefulWidget {
   final String? selectedLocation;
   final List<String> positionsOrigen;
   final String currentLocationId;
   final BatchProduct currentProduct;
   final bool isPDA;
 
-  const LocationDropdownWidget({
+  const PedidoDropdownWidget({
     super.key,
     required this.selectedLocation,
     required this.positionsOrigen,
@@ -25,10 +25,10 @@ class LocationDropdownWidget extends StatefulWidget {
   });
 
   @override
-  State<LocationDropdownWidget> createState() => _LocationDropdownWidgetState();
+  State<PedidoDropdownWidget> createState() => _PedidoDropdownWidgetState();
 }
 
-class _LocationDropdownWidgetState extends State<LocationDropdownWidget> {
+class _PedidoDropdownWidgetState extends State<PedidoDropdownWidget> {
   @override
   Widget build(BuildContext context) {
     final IAudioService _audioService = getIt<IAudioService>();
@@ -52,12 +52,15 @@ class _LocationDropdownWidgetState extends State<LocationDropdownWidget> {
             borderRadius: BorderRadius.circular(10),
             focusColor: Colors.white,
             isExpanded: true,
+            itemHeight: 55,
+            //tamaño del dropdown
+
             hint: Text(
-              'Ubicación de origen',
+              'Pedido',
               style: TextStyle(fontSize: 14, color: primaryColorApp),
             ),
             icon: Image.asset(
-              "assets/icons/ubicacion.png",
+              "assets/icons/producto.png",
               color: primaryColorApp,
               width: 20,
             ),
@@ -75,7 +78,7 @@ class _LocationDropdownWidgetState extends State<LocationDropdownWidget> {
                     color: isSelected ? Colors.green[100] : Colors.white,
                   ),
                   width: screenWidth * 0.9,
-                  height: 45,
+                  height: 55,
                   padding: const EdgeInsets.symmetric(horizontal: 5),
                   child: Align(
                     alignment: Alignment.centerLeft,
@@ -99,7 +102,7 @@ class _LocationDropdownWidgetState extends State<LocationDropdownWidget> {
                     color: isSelected ? Colors.green[100] : Colors.white,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  height: 45,
+                  height: 55,
                   child: Text(
                     location,
                     maxLines: 2,
@@ -109,36 +112,33 @@ class _LocationDropdownWidgetState extends State<LocationDropdownWidget> {
                 );
               }).toList();
             },
-            onChanged: bloc
-                        .configurations.result?.result?.locationPickingManual ==
-                    false
+            onChanged: (!bloc.locationIsOk ||
+                    !bloc.productIsOk ||
+                    bloc.pedidoValidateIsOk)
                 ? null
-                : bloc.locationIsOk
-                    ? null
-                    : (String? newValue) async {
-                        final expected =
-                            widget.currentProduct.locationId.toString();
-                        if (newValue == expected) {
-                          bloc.add(ValidateFieldsEvent(
-                              field: "location", isOk: true));
-                          // bloc.add(ChangeLocationIsOkEvent(
-                          //     widget.currentProduct.idProduct ?? 0,
-                          //     widget.batchBloc.batchWithProducts.batch?.id ?? 0,
-                          //     widget.currentProduct.idMove ?? 0,
-                          //     widget.batchBloc.typePicking));
-                          bloc.oldLocation = expected;
-                        } else {
-                          _vibrationService.vibrate();
-                          _audioService.playErrorSound();
-                          bloc.add(ValidateFieldsEvent(
-                              field: "location", isOk: false));
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            duration: const Duration(milliseconds: 1000),
-                            content: const Text('Ubicación errónea'),
-                            backgroundColor: Colors.red[200],
-                          ));
-                        }
-                      },
+                : (String? newValue) async {
+                    final expected = widget.currentProduct.origin.toString();
+                    if (newValue == expected) {
+                      bloc.add(
+                          ValidateFieldsEvent(field: "pedido", isOk: true));
+                      bloc.add(ValidatePedidoEvent(
+                          widget.currentProduct.idProduct ?? 0,
+                          bloc.currentBatch?.id ?? 0,
+                          widget.currentProduct.idMove ?? 0,
+                          'cluster'));
+                      bloc.oldPedido = expected;
+                    } else {
+                      _vibrationService.vibrate();
+                      _audioService.playErrorSound();
+                      bloc.add(
+                          ValidateFieldsEvent(field: "pedido", isOk: false));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        duration: const Duration(milliseconds: 1000),
+                        content: const Text('Pedido erróneo'),
+                        backgroundColor: Colors.red[200],
+                      ));
+                    }
+                  },
           ),
         ),
         if (widget.currentProduct.barcodeLocation == null ||

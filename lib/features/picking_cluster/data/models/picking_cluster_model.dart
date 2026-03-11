@@ -1,5 +1,6 @@
 import 'dart:convert';
 import '../../domain/entities/picking_batch.dart';
+import 'pedido_validate_model.dart';
 
 PickingClusterModel pickingClusterModelFromJson(String str) =>
     PickingClusterModel.fromJson(json.decode(str));
@@ -73,6 +74,7 @@ class ResultElementModel {
   final int? productSeparateQty;
   final String? zonaEntrega;
   // final List<OriginElement>? origin;
+  final List<PedidoValidateModel>? pedidosValidate;
   final List<ListItem>? listItems;
 
   ResultElementModel({
@@ -101,6 +103,7 @@ class ResultElementModel {
     this.productSeparateQty,
     this.zonaEntrega,
     // this.origin,
+    this.pedidosValidate,
     this.listItems,
   });
   factory ResultElementModel.fromJson(Map<String, dynamic> json) =>
@@ -132,10 +135,11 @@ class ResultElementModel {
             : DateTime.parse(json["end_time_pick"]),
         productSeparateQty: json["product_separate_qty"],
         zonaEntrega: json["zona_entrega"],
-        // origin: json["origin"] == null
-        //     ? []
-        //     : List<OriginElement>.from(
         //         json["origin"]!.map((x) => OriginElement.fromJson(x))),
+        pedidosValidate: json["pedidos_validate"] == null
+            ? []
+            : List<PedidoValidateModel>.from(json["pedidos_validate"]!
+                .map((x) => PedidoValidateModel.fromJson(x))),
         listItems: json["list_items"] == null
             ? []
             : List<ListItem>.from(
@@ -168,6 +172,7 @@ class ResultElementModel {
       endTimePick: endTimePick,
       productSeparateQty: productSeparateQty,
       zonaEntrega: zonaEntrega,
+      pedidosValidate: pedidosValidate?.map((i) => i.toEntity()).toList() ?? [],
       listItems: listItems?.map((i) => i.toEntity()).toList() ?? [],
     );
   }
@@ -197,9 +202,10 @@ class ResultElementModel {
         "end_time_pick": endTimePick,
         "product_separate_qty": productSeparateQty,
         "zona_entrega": zonaEntrega,
-        // "origin": origin == null
-        //     ? []
         //     : List<dynamic>.from(origin!.map((x) => x.toJson())),
+        "pedidos_validate": pedidosValidate == null
+            ? []
+            : List<dynamic>.from(pedidosValidate!.map((x) => x.toJson())),
         "list_items": listItems == null
             ? []
             : List<dynamic>.from(listItems!.map((x) => x.toJson())),

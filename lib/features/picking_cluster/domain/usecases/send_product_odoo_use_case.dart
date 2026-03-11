@@ -41,21 +41,22 @@ class SendProductOdooUseCase implements UseCase<String, SendProductOdooParams> {
       final bool esExceso = cantidadSeparada > cantidadSolicitada;
       double cantidadFinal = esExceso ? cantidadSolicitada : cantidadSeparada;
 
-      // 4. Construcción del payload
+      // 4. Construcción del payload según el nuevo requerimiento
       final Map<String, dynamic> itemMap = {
         "id_move": params.product.idMove ?? 0,
         "product_id": params.product.idProduct ?? 0,
-        "lote": params.product.lotId ?? '',
-        "cantidad": cantidadFinal,
-        "novedad": (params.product.observation == null ||
+        "id_lote": params.product.loteId ?? 0,
+        "cantidad_separada": cantidadFinal,
+        "observacion": (params.product.observation == null ||
                 params.product.observation!.isEmpty)
             ? 'Sin novedad'
             : params.product.observation,
         "time_line": params.product.timeSeparate == null
-            ? 30.0
-            : (params.product.timeSeparate as num).toDouble(),
-        "muelle": params.product.muelleId ?? 0,
-        "id_operativo": userid,
+            ? 10.0
+            : (params.product.timeSeparate is String)
+                ? double.tryParse(params.product.timeSeparate) ?? 10.0
+                : (params.product.timeSeparate as num).toDouble(),
+        "id_operario": userid,
         "fecha_transaccion":
             params.product.fechaTransaccion ?? DateTime.now().toString(),
       };
@@ -64,7 +65,7 @@ class SendProductOdooUseCase implements UseCase<String, SendProductOdooParams> {
       final response = await repository.sendPickingProduct(
         idBatch: params.product.batchId ?? 0,
         timeTotal: secondsDifference,
-        cantItemsSeparados: params.cantItemsSeparados,
+        cantItemsSeparados: 0,
         listItem: [itemMap],
         tipoPicking: params.type,
       );
@@ -96,13 +97,11 @@ class SendProductOdooUseCase implements UseCase<String, SendProductOdooParams> {
 class SendProductOdooParams {
   final BatchProduct product;
   final String type;
-  final int cantItemsSeparados;
   final UserConfigurationModel? configurations;
 
   SendProductOdooParams({
     required this.product,
     required this.type,
-    required this.cantItemsSeparados,
     this.configurations,
   });
 }

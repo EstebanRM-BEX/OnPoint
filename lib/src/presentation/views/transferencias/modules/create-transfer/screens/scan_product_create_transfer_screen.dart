@@ -20,7 +20,6 @@ import 'package:wms_app/src/presentation/views/transferencias/modules/create-tra
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/location/LocationCardButton_widget%20copy.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/others/popup_menu_widget.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/product/product_dropdown_widget.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/quantity/scanner_quantity_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
@@ -388,9 +387,32 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
       listener: (context, state) {
         debugPrint('🔔 Estado actual: $state');
 
+        if (state is ValidateStockLoading) {
+          showDialog(
+            context: context,
+            builder: (context) =>
+                const DialogLoading(message: "Validando stock..."),
+          );
+        }
+
+        if (state is ValidateStockSuccess) {
+          //validamos si tenemos dialog abierto para cerrarlo
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          }
+        }
+
         if (state is ValidateStockFailure) {
+          //validamos si tenemos dialog abierto para cerrarlo
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          }
           showScrollableErrorDialog(state.error);
         } else if (state is CreateTransferFailure) {
+          //validamos si tenemos dialog abierto para cerrarlo
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          }
           showScrollableErrorDialog(state.error);
         } else
 
@@ -704,10 +726,12 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                     });
                     debugPrint('Toggle view quantity');
                   },
-                  onValidateButton: () {
-                    FocusScope.of(context).unfocus();
-                    _validatebuttonquantity();
-                  },
+                  onValidateButton: state is ValidateStockLoading
+                      ? () {}
+                      : () {
+                          FocusScope.of(context).unfocus();
+                          _validatebuttonquantity();
+                        },
                   onValidateScannerInput: (value) {
                     validateQuantity(value);
                   },

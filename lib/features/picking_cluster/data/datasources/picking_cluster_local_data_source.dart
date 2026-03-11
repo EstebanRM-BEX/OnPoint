@@ -4,6 +4,7 @@ import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/picking_cluster/data/models/batch_product_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
+import 'package:wms_app/features/picking_cluster/data/models/pedido_validate_model.dart';
 import '../../domain/entities/batch_product.dart';
 import '../../domain/entities/picking_batch.dart';
 
@@ -24,6 +25,9 @@ abstract class PickingClusterLocalDataSource {
       int batchId, int productId, int moveId, String field, String type);
   Future<BatchProduct?> getProductBatch(
       int batchId, int productId, int idMove, String type);
+  Future<void> setFieldTableBatchPedidoValidate(
+      int batchId, String namePedido, String field, dynamic value);
+  Future<void> endStopwatchBatch(int batchId, String time, String typePicking);
 }
 
 @LazySingleton(as: PickingClusterLocalDataSource)
@@ -49,6 +53,13 @@ class PickingClusterLocalDataSourceImpl
             _extractAllBarcodes(batchModels).toList(growable: false);
 
         await DataBaseSqlite().insertBatchProducts(productsIterable, 'cluster');
+
+        final allPedidosValidate = batches
+            .expand((b) => b.pedidosValidate)
+            .map((e) => PedidoValidateModel.fromEntity(e))
+            .toList();
+        await DataBaseSqlite().insertPedidosValidate(allPedidosValidate);
+
         if (allBarcodes.isNotEmpty) {
           await DataBaseSqlite()
               .barcodesPackagesRepository
@@ -69,7 +80,17 @@ class PickingClusterLocalDataSourceImpl
           .batchPickingRepository
           .getAllBatchs(userId, 'cluster');
 
-      return batchModels.map((model) => model.toPickingBatchEntity()).toList();
+      final entities = <PickingBatch>[];
+      for (var model in batchModels) {
+        final entity = model.toPickingBatchEntity();
+        final pedidosValidateModels =
+            await DataBaseSqlite().getPedidosValidate(entity.id!);
+        entities.add(entity.copyWith(
+          pedidosValidate:
+              pedidosValidateModels.map((m) => m.toEntity()).toList(),
+        ));
+      }
+      return entities;
     } catch (e) {
       log('Error reading cached picking clusters from sqlite: $e',
           name: 'PickingClusterLocalDS');
@@ -181,6 +202,32 @@ class PickingClusterLocalDataSourceImpl
     }
   }
 
+  @override
+  Future<void> setFieldTableBatchPedidoValidate(
+      int batchId, String namePedido, String field, dynamic value) async {
+    try {
+      await DataBaseSqlite()
+          .setFieldTableBatchPedidoValidate(batchId, namePedido, field, value);
+    } catch (e) {
+      log('Error setFieldTableBatchPedidoValidate sqlite: $e',
+          name: 'PickingClusterLocalDS');
+      throw Exception('Database error');
+    }
+  }
+
+  @override
+  Future<void> endStopwatchBatch(
+      int batchId, String time, String typePicking) async {
+    try {
+      await DataBaseSqlite()
+          .batchPickingRepository
+          .endStopwatchBatch(batchId, time, typePicking);
+    } catch (e) {
+      log('Error endStopwatchBatch sqlite: $e', name: 'PickingClusterLocalDS');
+      throw Exception('Database error');
+    }
+  }
+
   // ─── Private helpers ────────────────────────────────────────────────────
 
   Iterable<Barcodes> _extractAllBarcodes(List<BatchsModel> batches) sync* {
@@ -280,6 +327,8 @@ extension BatchItemMapping on PickingBatchItem {
       orderProduct: null,
       productId: productId,
       origin: origin,
+      pedido: pedido,
+      pedidoId: pedidoId,
       muelleId: null,
       barcodeLocation: location,
       barcodeLocationDest: locationDest,
@@ -315,6 +364,7 @@ extension BatchItemMapping on PickingBatchItem {
       observation: observation,
       fechaTransaccion: fechaTransaccion?.toString(),
       isSeparate: isSeparate,
+      productTracking: productTracking,
     );
   }
 }

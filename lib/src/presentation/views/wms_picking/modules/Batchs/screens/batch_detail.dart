@@ -6,6 +6,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/core/utils/get_colors_utils.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/dialog_confirm_product_load_widget.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
@@ -198,112 +199,102 @@ class BatchDetailScreen extends StatelessWidget {
                       child: SingleChildScrollView(
                         child: Column(
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Card(
-                                  color: white,
-                                  elevation: 2,
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        width: size.width * 0.6,
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 5),
-                                        child: Center(
-                                          child: Row(
-                                            children: [
-                                              Text(
-                                                "Unidades separadas: ${(context.read<BatchBloc>().calcularProgresoReal())}%",
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: getColorForPercentage(
-                                                      double.tryParse(context
-                                                              .read<BatchBloc>()
-                                                              .calcularProgresoReal()) ??
-                                                          0.0), // Convertir a double
-                                                ),
-                                              ),
-                                              const Spacer(),
-                                              //icono de ayuda
-                                              GestureDetector(
-                                                  onTap: () {
-                                                    showDialog(
-                                                      context: context,
-                                                      builder: (context) {
-                                                        return BackdropFilter(
-                                                          filter:
-                                                              ImageFilter.blur(
-                                                                  sigmaX: 5,
-                                                                  sigmaY: 5),
-                                                          child: AlertDialog(
-                                                            actionsAlignment:
-                                                                MainAxisAlignment
-                                                                    .center,
-                                                            title: Center(
-                                                              child: Text(
-                                                                  "Información",
+                            Card(
+                              color: white,
+                              elevation: 2,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: size.width * 0.6,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 5),
+                                    child: Center(
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            "Unidades separadas: ${(context.read<BatchBloc>().calcularProgresoReal())}%",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: getColorForPercentage(
+                                                  double.tryParse(context
+                                                          .read<BatchBloc>()
+                                                          .calcularProgresoReal()) ??
+                                                      0.0), // Convertir a double
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          //icono de ayuda
+                                          GestureDetector(
+                                              onTap: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    return BackdropFilter(
+                                                      filter: ImageFilter.blur(
+                                                          sigmaX: 5, sigmaY: 5),
+                                                      child: AlertDialog(
+                                                        actionsAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        title: Center(
+                                                          child: Text(
+                                                              "Información",
+                                                              style: TextStyle(
+                                                                  color:
+                                                                      primaryColorApp,
+                                                                  fontSize:
+                                                                      20)),
+                                                        ),
+                                                        content: const Column(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: [
+                                                            Text(
+                                                                "El porcentaje de unidades separadas se calcula de la siguiente manera:"),
+                                                            SizedBox(height: 5),
+                                                            Text(
+                                                                "Porcentaje de unidades separadas = (Unidades separadas / Unidades totales) * 100"),
+                                                          ],
+                                                        ),
+                                                        actions: [
+                                                          ElevatedButton(
+                                                              style:
+                                                                  ElevatedButton
+                                                                      .styleFrom(
+                                                                backgroundColor:
+                                                                    grey,
+                                                                shape: RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                            10)),
+                                                              ),
+                                                              onPressed: () {
+                                                                Navigator.of(
+                                                                        context)
+                                                                    .pop();
+                                                              },
+                                                              child: const Text(
+                                                                  "Cerrar",
                                                                   style: TextStyle(
                                                                       color:
-                                                                          primaryColorApp,
-                                                                      fontSize:
-                                                                          20)),
-                                                            ),
-                                                            content:
-                                                                const Column(
-                                                              mainAxisSize:
-                                                                  MainAxisSize
-                                                                      .min,
-                                                              children: [
-                                                                Text(
-                                                                    "El porcentaje de unidades separadas se calcula de la siguiente manera:"),
-                                                                SizedBox(
-                                                                    height: 5),
-                                                                Text(
-                                                                    "Porcentaje de unidades separadas = (Unidades separadas / Unidades totales) * 100"),
-                                                              ],
-                                                            ),
-                                                            actions: [
-                                                              ElevatedButton(
-                                                                  style: ElevatedButton
-                                                                      .styleFrom(
-                                                                    backgroundColor:
-                                                                        grey,
-                                                                    shape: RoundedRectangleBorder(
-                                                                        borderRadius:
-                                                                            BorderRadius.circular(10)),
-                                                                  ),
-                                                                  onPressed:
-                                                                      () {
-                                                                    Navigator.of(
-                                                                            context)
-                                                                        .pop();
-                                                                  },
-                                                                  child: const Text(
-                                                                      "Cerrar",
-                                                                      style: TextStyle(
-                                                                          color:
-                                                                              white))),
-                                                            ],
-                                                          ),
-                                                        );
-                                                      },
+                                                                          white))),
+                                                        ],
+                                                      ),
                                                     );
                                                   },
-                                                  child: Icon(Icons.help,
-                                                      color: primaryColorApp,
-                                                      size: 15)),
-                                            ],
-                                          ),
-                                        ),
+                                                );
+                                              },
+                                              child: Icon(Icons.help,
+                                                  color: primaryColorApp,
+                                                  size: 15)),
+                                        ],
                                       ),
-                                    ],
+                                    ),
                                   ),
-                                )
-                              ],
+                                ],
+                              ),
                             ),
 
                             // //*widget de busqueda
@@ -1139,18 +1130,5 @@ class BatchDetailScreen extends StatelessWidget {
         );
       },
     );
-  }
-
-  Color getColorForPercentage(double percentage) {
-    if (percentage >= 100) {
-      return Colors.green; // Verde para 100%
-    } else if (percentage < 20) {
-      return Colors.red; // Rojo para menos del 20%
-    } else if (percentage < 50) {
-      return Colors.orange; // Naranja para menos del 50%
-    } else {
-      return const Color.fromARGB(
-          255, 211, 190, 1); // Amarillo para entre 50% y 100%
-    }
   }
 }

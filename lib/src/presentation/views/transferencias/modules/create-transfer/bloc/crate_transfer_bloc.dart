@@ -166,7 +166,7 @@ class CreateTransferBloc
         currentUbication?.id ?? 0,
         currentProduct?.tracking == "lot" ? currentProductLote?.id ?? 0 : 0,
         event.quantity,
-        true,
+        false,
       );
 
       if (response.result?.code == 200 &&

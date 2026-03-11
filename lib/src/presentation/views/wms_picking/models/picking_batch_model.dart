@@ -76,7 +76,7 @@ class BatchsModel {
   final String? type;
   final dynamic scheduleddate;
   final dynamic pickingTypeId;
-  final String? muelle; 
+  final String? muelle;
   final String? barcodeMuelle;
   final dynamic? idMuelle;
   final dynamic? idMuellePadre; // Nuevo campo para el ID del muelle padre
@@ -100,7 +100,6 @@ class BatchsModel {
 
   final dynamic orderBy;
   final dynamic orderPicking;
-
 
   final dynamic startTimePick;
   final dynamic endTimePick;
@@ -182,8 +181,7 @@ class BatchsModel {
         zonaEntrega: json["zona_entrega"],
         origin: json["origin"] == null
             ? []
-            : List<Origin>.from(
-                json["origin"]!.map((x) => Origin.fromMap(x))),
+            : List<Origin>.from(json["origin"]!.map((x) => Origin.fromMap(x))),
       );
 
   Map<String, dynamic> toMap() => {
@@ -224,13 +222,10 @@ class BatchsModel {
       };
 }
 
-
-class Origin{
-
+class Origin {
   final int? id;
   final String? name;
   final int? idBatch;
-
 
   Origin({
     this.id,
@@ -241,18 +236,16 @@ class Origin{
   factory Origin.fromJson(String str) => Origin.fromMap(json.decode(str));
   String toJson() => json.encode(toMap());
   factory Origin.fromMap(Map<String, dynamic> json) => Origin(
-    id: json['id'],
-    name: json['name'],
-    idBatch: json['id_batch'],
-  );
+        id: json['id'],
+        name: json['name'],
+        idBatch: json['id_batch'],
+      );
 
   Map<String, dynamic> toMap() => {
-    'id': id,
-    'name': name,
-    'id_batch': idBatch,
-  };
-
-
+        'id': id,
+        'name': name,
+        'id_batch': idBatch,
+      };
 }
 
 class ProductsBatch {
@@ -263,6 +256,8 @@ class ProductsBatch {
   final String? unidades;
 
   final int? idMove;
+  final String? pedido;
+  final int? pedidoId;
 
   final int? idProduct;
   final int? orderProduct;
@@ -270,7 +265,7 @@ class ProductsBatch {
   final dynamic? batchId;
   final String? name;
   final dynamic? rimovalPriority;
-  
+
   final dynamic lotId;
   final dynamic loteId;
   final dynamic lote;
@@ -320,6 +315,8 @@ class ProductsBatch {
     this.id,
     this.batchId,
     this.idMove,
+    this.pedido,
+    this.pedidoId,
     this.rimovalPriority,
     this.muelleId,
     this.type,
@@ -327,10 +324,7 @@ class ProductsBatch {
     // this.pickingId,
     this.orderProduct,
     this.origin,
-
     this.productTracking,
-
-    
     this.barcodeLocation,
     this.idProduct,
     this.productId,
@@ -346,9 +340,6 @@ class ProductsBatch {
     this.productPacking,
     this.barcode,
     this.isPending,
-
-
-
     this.name,
     this.weigth,
     this.unidades,
@@ -378,16 +369,16 @@ class ProductsBatch {
       rimovalPriority: map['rimoval_priority'],
       expireDate: map['expire_date'],
       batchId: map['batch_id'],
-      type: map['type'] ,
+      type: map['type'],
+      pedido: map['pedido'],
+      pedidoId: map['pedido_id'],
       orderProduct: map['order_product'],
       idProduct: map['id_product'],
       productId: map['product_id'],
       origin: map['origin'],
       muelleId: map['muelle_id'],
       idMove: map['id_move'],
-
       productTracking: map['product_tracking'],
-
       barcodeLocation: map['barcode_location'],
       barcodeLocationDest: map['barcode_location_dest'],
       lotId: map['lot_id'],
@@ -418,7 +409,6 @@ class ProductsBatch {
       timeSeparateEnd: map['time_separate_end'],
       observation: map['observation'],
       isMuelle: map['is_muelle'],
-
       isLocationIsOk: map["is_location_is_ok"] ?? false,
       productIsOk: map["product_is_ok"] ?? false,
       locationDestIsOk: map["location_dest_is_ok"] ?? false,
@@ -442,6 +432,8 @@ class ProductsBatch {
       "batch_id": batchId,
       "id_move": idMove,
       "muelle_id": muelleId,
+      "pedido": pedido,
+      "pedido_id": pedidoId,
       "origin": origin,
 
       "product_tracking": productTracking,

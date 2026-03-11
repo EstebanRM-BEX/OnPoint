@@ -67,6 +67,7 @@ import 'package:wms_app/src/presentation/providers/db/transferencia/tbl_transfer
 import 'package:wms_app/src/presentation/providers/db/transferencia/tbl_transferencias/transferencia_table.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/BatchWithProducts_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
+import 'package:wms_app/features/picking_cluster/data/models/pedido_validate_model.dart';
 
 import 'package:sqflite/sqflite.dart';
 
@@ -89,7 +90,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 20,
+      version: 22,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -184,6 +185,8 @@ class DataBaseSqlite {
       CREATE TABLE tblbatch_products (
         id INTEGER PRIMARY KEY,
         type TEXT,
+        pedido TEXT,
+        pedido_id INTEGER,
         id_product INTEGER,
         batch_id INTEGER,
         expire_date VARCHAR(255),
@@ -215,6 +218,7 @@ class DataBaseSqlite {
         is_muelle INTEGER,
         muelle_id INTEGER,
         is_location_is_ok INTEGER,
+        product_tracking TEXT,
         product_is_ok INTEGER,
         is_quantity_is_ok INTEGER,
         location_dest_is_ok INTEGER,
@@ -224,6 +228,20 @@ class DataBaseSqlite {
         FOREIGN KEY (batch_id) REFERENCES tblbatchs (id)
           )
      ''');
+
+    await db.execute('''
+      CREATE TABLE tblbatch_pedidos_validate (
+        batch_id INTEGER,
+        name_pedido TEXT,
+        id_picking INTEGER,
+        id_pedido INTEGER,
+        muelle TEXT,
+        id_muelle INTEGER,
+        barcode_muelle TEXT,
+        is_validated INTEGER,
+        FOREIGN KEY (batch_id) REFERENCES tblbatchs (id)
+      )
+    ''');
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
@@ -260,120 +278,6 @@ class DataBaseSqlite {
       } catch (e) {
         debugPrint(
             '❌ Error al añadir la columna ${ConfigurationsTable.columnAccessProductionModule}, es posible que ya exista.');
-      }
-    }
-    if (oldVersion < 16) {
-      // O tu siguiente versión
-      try {
-        // Agregar columna para estrategia Mark & Sweep
-        await db.execute(
-            'ALTER TABLE tblUbicaciones ADD COLUMN is_synced INTEGER DEFAULT 0;');
-
-        // Agregar Índices para velocidad
-        await db.execute(
-            'CREATE INDEX idx_tblUbicaciones_barcode ON tblUbicaciones (barcode);');
-
-        debugPrint('Migrando Barcodes: Agregando is_synced e Índices...');
-
-        // 1. Agregar columna para sincronización
-        await db.execute(
-            'ALTER TABLE ${BarcodesPackagesTable.tableName} ADD COLUMN ${BarcodesPackagesTable.columnIsSynced} INTEGER DEFAULT 0;');
-
-        // 2. Índice para búsquedas rápidas (Lectura)
-        await db.execute(
-            'CREATE INDEX idx_barcodes_search ON ${BarcodesPackagesTable.tableName} (${BarcodesPackagesTable.columnBatchId}, ${BarcodesPackagesTable.columnIdProduct}, ${BarcodesPackagesTable.columnBarcodeType});');
-
-        // 3. ÍNDICE ÚNICO (Critico para Escritura Rápida)
-        // Esto permite usar ConflictAlgorithm.replace. Si intentas insertar un duplicado de estos campos, lo actualizará en vez de crear otro.
-        await db.execute('''
-          CREATE UNIQUE INDEX idx_unique_barcode_entry ON ${BarcodesPackagesTable.tableName} 
-          (${BarcodesPackagesTable.columnBatchId}, ${BarcodesPackagesTable.columnIdMove}, ${BarcodesPackagesTable.columnIdProduct}, ${BarcodesPackagesTable.columnBarcode}, ${BarcodesPackagesTable.columnBarcodeType});
-        ''');
-
-        // 1. Agregar columna de sincronización
-        await db.execute(
-            'ALTER TABLE tblbarcodes_inventario ADD COLUMN is_synced INTEGER DEFAULT 0;');
-
-        // 2. ÍNDICE ÚNICO (Para escritura rápida):
-        // Define que la combinación (Producto + Barcode) es única.
-        // Esto permite que 'ConflictAlgorithm.replace' funcione.
-        await db.execute('''
-          CREATE UNIQUE INDEX idx_unique_barcode_inv ON tblbarcodes_inventario 
-          (id_product, barcode);
-        ''');
-
-        // 3. ÍNDICE DE LECTURA (Para búsqueda rápida):
-        await db.execute(
-            'CREATE INDEX idx_search_inv_product ON tblbarcodes_inventario (id_product);');
-
-        // 1. Agregar columna para Mark & Sweep
-        await db.execute(
-            'ALTER TABLE tblproductos_inventario ADD COLUMN is_synced INTEGER DEFAULT 0;');
-
-        // 2. ÍNDICE ÚNICO (Critico para Upsert):
-        // Define que la combinación (Producto + Lote + Ubicación) es única.
-        // Si llega el mismo producto en el mismo lote y ubicación, se actualiza el stock/datos.
-        await db.execute('''
-          CREATE UNIQUE INDEX idx_unique_inventory_stock ON tblproductos_inventario 
-          (product_id, lot_id, location_id);
-        ''');
-
-        // 3. ÍNDICES DE LECTURA (Búsquedas instantáneas):
-        await db.execute(
-            'CREATE INDEX idx_inv_barcode ON tblproductos_inventario (barcode);');
-        await db.execute(
-            'CREATE INDEX idx_inv_product_id ON tblproductos_inventario (product_id);');
-
-        debugPrint('✅ Optimización de Barcodes completada.');
-
-        debugPrint('🚀 Migrando Configuraciones: Optimizando...');
-        await db.execute(
-            'ALTER TABLE tblconfigurations ADD COLUMN is_synced INTEGER DEFAULT 0;');
-        // PK is already an index.
-        debugPrint('✅ Optimización Configuraciones completada.');
-        await db.execute(
-            'ALTER TABLE tblnovedades ADD COLUMN is_synced INTEGER DEFAULT 0;');
-
-        // Nota: Como 'id' ya es PRIMARY KEY, SQLite crea un índice único interno automáticamente.
-        // No necesitamos crear un índice adicional para que funcione el conflicto por ID.
-
-        debugPrint('✅ Optimización Novedades completada.');
-        // 1. Agregar columna para Mark & Sweep
-        await db.execute(
-            'ALTER TABLE tblproductos_devolucion ADD COLUMN is_synced INTEGER DEFAULT 0;');
-
-        // 2. ÍNDICE ÚNICO (Crítico para Upsert):
-        // Define que un Producto con un Lote específico es único en la lista de devoluciones.
-        // Esto permite actualizar automáticamente si el registro ya existe.
-        await db.execute('''
-          CREATE UNIQUE INDEX idx_unique_devolucion 
-          ON tblproductos_devolucion (product_id, lot_id);
-        ''');
-
-        // 3. ÍNDICES DE LECTURA (Búsquedas rápidas):
-        await db.execute(
-            'CREATE INDEX idx_dev_barcode ON tblproductos_devolucion (barcode);');
-
-        debugPrint('✅ Optimización Devoluciones completada.');
-
-        debugPrint(
-            '🚀 Migrando Barcodes: Creando restricción única estricta...');
-
-        // 1. Borramos índices viejos si existen para evitar conflictos
-        await db.execute('DROP INDEX IF EXISTS idx_unique_barcode_entry;');
-
-        // 2. CREAR EL ÍNDICE ÚNICO ESTRICTO
-        // Esta es la "regla" que ConflictAlgorithm.replace va a obedecer.
-        // Solo sobrescribirá si COINCIDEN TODOS estos campos.
-        // Si cambia aunque sea el id_move, creará uno nuevo.
-        await db.execute('''
-          CREATE UNIQUE INDEX idx_strict_barcode_validation ON tblbarcodes_packages 
-          (batch_id, id_move, id_product, barcode, barcode_type);
-        ''');
-
-        debugPrint('✅ Restricción de unicidad aplicada correctamente.');
-      } catch (e) {
-        debugPrint("Error actualizando UbicacionesTable: $e");
       }
     }
 
@@ -424,6 +328,40 @@ class DataBaseSqlite {
         ''');
       } catch (e) {
         debugPrint("Error actualizando tblconfigurations: $e");
+      }
+    }
+
+    if (oldVersion < 21) {
+      //añadir campo de pedido y pedido_id en la tabla de tblbatch_products
+      try {
+        await db.execute('''
+          ALTER TABLE tblbatch_products
+          ADD COLUMN pedido TEXT;
+          ADD COLUMN pedido_id INTEGER;
+        ''');
+      } catch (e) {
+        debugPrint("Error actualizando tblbatch_products: $e");
+      }
+    }
+
+    if (oldVersion < 22) {
+      //añadir tabla de pedidos validate
+      try {
+        await db.execute('''
+          CREATE TABLE tblbatch_pedidos_validate (
+            batch_id INTEGER,
+            name_pedido TEXT,
+            id_picking INTEGER,
+            id_pedido INTEGER,
+            muelle TEXT,
+            id_muelle INTEGER,
+            barcode_muelle TEXT,
+            is_validated INTEGER,
+            FOREIGN KEY (batch_id) REFERENCES tblbatchs (id)
+          )
+        ''');
+      } catch (e) {
+        debugPrint("Error actualizando tblbatch_pedidos_validate: $e");
       }
     }
   }
@@ -554,10 +492,13 @@ class DataBaseSqlite {
             "batch_id": product.batchId,
             "expire_date":
                 product.expireDate == false ? "" : product.expireDate,
+            "pedido": product.pedido,
+            "pedido_id": product.pedidoId,
             "product_id": product.productId?[1],
             "location_id": product.locationId?[1],
             "lot_id": product.lotId == "" ? "" : product.lotId?[1],
             "rimoval_priority": product.rimovalPriority,
+            'product_tracking': product.productTracking,
             "barcode_location_dest": product.barcodeLocationDest == false
                 ? ""
                 : product.barcodeLocationDest,
@@ -613,6 +554,65 @@ class DataBaseSqlite {
     } catch (e, s) {
       debugPrint('Error insertBatchProducts: $e => $s');
     }
+  }
+
+  Future<void> insertPedidosValidate(List<PedidoValidateModel> pedidos) async {
+    try {
+      final db = await getDatabaseInstance();
+      await db.transaction((txn) async {
+        final batch = txn.batch();
+        for (var p in pedidos) {
+          batch.insert(
+            'tblbatch_pedidos_validate',
+            {
+              "batch_id": p.batchId,
+              "name_pedido": p.namePedido,
+              "id_picking": p.idPicking,
+              "id_pedido": p.idPedido,
+              "muelle": p.muelle,
+              "id_muelle": p.idMuelle,
+              "barcode_muelle": p.barcodeMuelle,
+              "is_validated": p.isValidated == true ? 1 : 0,
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+        await batch.commit(noResult: true);
+      });
+    } catch (e) {
+      debugPrint('Error insertPedidosValidate: $e');
+    }
+  }
+
+  Future<List<PedidoValidateModel>> getPedidosValidate(int batchId) async {
+    try {
+      final db = await getDatabaseInstance();
+      final List<Map<String, dynamic>> maps = await db.query(
+        'tblbatch_pedidos_validate',
+        where: 'batch_id = ?',
+        whereArgs: [batchId],
+      );
+      return maps.map((m) => PedidoValidateModel.fromJson(m)).toList();
+    } catch (e) {
+      debugPrint('Error getPedidosValidate: $e');
+      return [];
+    }
+  }
+
+  Future<int?> setFieldTableBatchPedidoValidate(
+      int batchId, String namePedido, String field, dynamic setValue) async {
+    final db = await getDatabaseInstance();
+
+    final resUpdate = await db!.update(
+      'tblbatch_pedidos_validate',
+      {field: setValue},
+      where: 'batch_id = ? AND name_pedido = ?',
+      whereArgs: [batchId, namePedido],
+    );
+
+    debugPrint("update tblbatch_pedidos_validate ($field): $resUpdate");
+
+    return resUpdate;
   }
 
   double? _parseDurationToSeconds(dynamic time) {
@@ -705,6 +705,7 @@ class DataBaseSqlite {
     final db = await getDatabaseInstance();
     await db.delete(BatchPickingTable.tableName);
     await db.delete('tblbatch_products');
+    await db.delete('tblbatch_pedidos_validate');
     await db.delete(SubmuellesTable.tableName);
     await deleOrigin("picking");
     await deleOrigin("components");
@@ -715,6 +716,7 @@ class DataBaseSqlite {
     await db.delete(BatchPickingTable.tableName,
         where: '${BatchPickingTable.columnType} = ?', whereArgs: [type]);
     await db.delete('tblbatch_products', where: 'type = ?', whereArgs: [type]);
+    await db.delete('tblbatch_pedidos_validate');
     await deleBarcodes(type);
     await db.delete(SubmuellesTable.tableName);
     await deleOrigin(type);

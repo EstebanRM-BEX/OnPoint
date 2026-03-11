@@ -176,10 +176,9 @@ class SendToOdooStateError extends ClusterPickingState {
 }
 
 final class CurrentProductChangedState extends ClusterPickingState {
-  final BatchProduct currentProduct;
+  final BatchProduct? currentProduct;
   final int index;
-  CurrentProductChangedState(
-      {required this.currentProduct, required this.index});
+  CurrentProductChangedState({this.currentProduct, required this.index});
 }
 
 class ViewProductImageLoading extends ClusterPickingState {}
@@ -197,4 +196,26 @@ class ViewProductImageFailure extends ClusterPickingState {
 class LoadSelectedProductState extends ClusterPickingState {
   final BatchProduct selectedProduct;
   const LoadSelectedProductState(this.selectedProduct);
+}
+
+class ValidatePedidoStateSuccess extends ClusterPickingState {
+  final dynamic quantity;
+  const ValidatePedidoStateSuccess(this.quantity);
+}
+
+class MarkPedidoAsValidatedStateSuccess extends ClusterPickingState {
+  final List<PedidoValidate> pedidosValidate;
+  const MarkPedidoAsValidatedStateSuccess(this.pedidosValidate);
+}
+
+class LoadValidatePedidoState extends ClusterPickingState {}
+
+class TimeSeparateSuccess extends ClusterPickingState {
+  final String date;
+  const TimeSeparateSuccess(this.date);
+}
+
+class TimeSeparateError extends ClusterPickingState {
+  final String message;
+  const TimeSeparateError(this.message);
 }

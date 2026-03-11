@@ -171,6 +171,18 @@ class PickingClusterRepositoryImpl implements IPickingClusterRepository {
   }
 
   @override
+  Future<Either<Failure, void>> setFieldTableBatchPedidoValidate(
+      int batchId, String namePedido, String field, dynamic value) async {
+    try {
+      await localDataSource.setFieldTableBatchPedidoValidate(
+          batchId, namePedido, field, value);
+      return const Right(null);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, String>> sendPickingProduct({
     required int idBatch,
     required double timeTotal,
@@ -182,7 +194,6 @@ class PickingClusterRepositoryImpl implements IPickingClusterRepository {
       final responseText = await remoteDataSource.sendPickingProduct(
         idBatch: idBatch,
         timeTotal: timeTotal,
-        cantItemsSeparados: cantItemsSeparados,
         listItem: listItem,
         tipoPicking: tipoPicking,
       );
@@ -201,6 +212,41 @@ class PickingClusterRepositoryImpl implements IPickingClusterRepository {
       return Right(url);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> timePickingUser(int batchId, String time,
+      String endpoint, String field, int userid) async {
+    try {
+      final result = await remoteDataSource.timePickingUser(
+          batchId, time, endpoint, field, userid);
+      return Right(result);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> timePickingBatch(int batchId, String time,
+      String endpoint, String field, String field2) async {
+    try {
+      final result = await remoteDataSource.timePickingBatch(
+          batchId, time, endpoint, field, field2);
+      return Right(result);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> endStopwatchBatch(
+      int batchId, String time, String typePicking) async {
+    try {
+      await localDataSource.endStopwatchBatch(batchId, time, typePicking);
+      return const Right(null);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
     }
   }
 }

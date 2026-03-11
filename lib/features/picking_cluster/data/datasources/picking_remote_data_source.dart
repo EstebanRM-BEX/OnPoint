@@ -14,11 +14,14 @@ abstract class PickingClusterRemoteDataSource {
   Future<String> sendPickingProduct({
     required int idBatch,
     required double timeTotal,
-    required int cantItemsSeparados,
     required List<Map<String, dynamic>> listItem,
     required String tipoPicking,
   });
   Future<String> viewProductImage(int idProduct, bool isLoadinDialog);
+  Future<bool> timePickingUser(
+      int batchId, String time, String endpoint, String field, int userid);
+  Future<bool> timePickingBatch(
+      int batchId, String time, String endpoint, String field, String field2);
 }
 
 @LazySingleton(as: PickingClusterRemoteDataSource)
@@ -107,25 +110,22 @@ class PickingClusterRemoteDataSourceImpl
   Future<String> sendPickingProduct({
     required int idBatch,
     required double timeTotal,
-    required int cantItemsSeparados,
     required List<Map<String, dynamic>> listItem,
     required String tipoPicking,
   }) async {
+    String endpoint;
+    Map<String, dynamic> params;
+    endpoint = 'cluster/send_picking';
+    params = {
+      "id_batch": idBatch,
+      "list_item": listItem,
+    };
     final response = await apiRequestService.postPicking(
-      endpoint:
-          tipoPicking == 'batch' ? 'send_batch' : 'send_batch/componentes',
+      endpoint: endpoint,
       isunecodePath: true,
-      body: {
-        "params": {
-          "id_batch": idBatch,
-          "time_total": timeTotal,
-          "cant_items_separados": cantItemsSeparados,
-          "list_item": listItem,
-        }
-      },
+      body: {"params": params},
       isLoadinDialog: false,
     );
-
     // We expect the result directly since ApiRequestService returns the HTTP response.
     return response.body;
   }
@@ -154,5 +154,54 @@ class PickingClusterRemoteDataSourceImpl
     } else {
       throw Exception('Failed to load product image: ${response.statusCode}');
     }
+  }
+
+  @override
+  Future<bool> timePickingUser(int batchId, String time, String endpoint,
+      String field, int userid) async {
+    final response = await apiRequestService.postPicking(
+        endpoint: endpoint,
+        isunecodePath: true,
+        isLoadinDialog: false,
+        body: {
+          "params": {
+            "id_batch": "$batchId",
+            "user_id": "$userid",
+            field: time,
+            "operation_type": "picking"
+          }
+        });
+    if (response.statusCode < 400) {
+      Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+      if (jsonResponse.containsKey('result')) {
+        if (jsonResponse['result']['code'] == 200) return true;
+        return false;
+      }
+    }
+    throw Exception('Failed timePickingUser');
+  }
+
+  @override
+  Future<bool> timePickingBatch(int batchId, String time, String endpoint,
+      String field, String field2) async {
+    final response = await apiRequestService.postPicking(
+        endpoint: endpoint,
+        isunecodePath: true,
+        isLoadinDialog: false,
+        body: {
+          "params": {
+            "picking_id": "$batchId",
+            field2: time,
+            "field_name": field,
+          }
+        });
+    if (response.statusCode < 400) {
+      Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+      if (jsonResponse.containsKey('result')) {
+        if (jsonResponse['result']['code'] == 200) return true;
+        return false;
+      }
+    }
+    throw Exception('Failed timePickingBatch');
   }
 }

@@ -65,8 +65,8 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
     if (response.statusCode < 400) {
       final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
       if (jsonResponse.containsKey('result') &&
-          jsonResponse['result'] is List) {
-        final List<dynamic> list = jsonResponse['result'];
+          jsonResponse['result']['code'] == 200) {
+        final List<dynamic> list = jsonResponse['result']['result'] ?? [];
         return list.map((e) => UserNoveltyModel.fromJson(e)).toList();
       }
     }

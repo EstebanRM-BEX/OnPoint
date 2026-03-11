@@ -2,16 +2,17 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
+import 'package:intl/intl.dart';
 import 'package:wms_app/core/usecases/usecase.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/error/failures.dart';
-import 'package:wms_app/features/picking_cluster/data/models/lote_producto_model.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/lote_producto.dart';
 import 'package:wms_app/features/picking_cluster/domain/usecases/view_product_image_usecase.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/features/user/domain/usecases/get_user_novelties.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/batch_product.dart';
+import 'package:wms_app/features/picking_cluster/domain/entities/pedido_validate.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/features/user/domain/usecases/get_user_configuration.dart';
 import '../../../domain/entities/picking_batch.dart';
@@ -27,6 +28,8 @@ import '../../../domain/usecases/set_cluster_batch_field_use_case.dart';
 import '../../../domain/usecases/set_cluster_batch_product_field_use_case.dart';
 import '../../../domain/usecases/get_product_batch_use_case.dart';
 import '../../../domain/usecases/send_product_odoo_use_case.dart';
+import '../../../domain/usecases/set_cluster_batch_pedido_field_use_case.dart';
+import '../../../domain/usecases/end_time_pick_use_case.dart';
 
 part 'cluster_picking_event.dart';
 part 'cluster_picking_state.dart';
@@ -47,6 +50,8 @@ class ClusterPickingBloc
   final GetProductBatchUseCase getProductBatchUseCase;
   final SendProductOdooUseCase sendProductOdooUseCase;
   final ViewProductImageUseCase viewProductImageUseCase;
+  final SetClusterBatchPedidoFieldUseCase setClusterBatchPedidoFieldUseCase;
+  final EndTimePickUseCase endTimePickUseCase;
 
   //uses cases de bloc user
   final GetUserConfiguration getUserConfiguration;
@@ -58,6 +63,7 @@ class ClusterPickingBloc
   bool isLocationDestOk = true;
   bool isQuantityOk = true;
   bool isLoteOk = true;
+  bool isPedidoValidateOk = true;
   bool viewQuantity = false;
   bool locationsDestIsOk = false;
 
@@ -66,12 +72,17 @@ class ClusterPickingBloc
   bool productIsOk = false;
   bool locationDestIsOk = false;
   bool quantityIsOk = false;
+  bool pedidoValidateIsOk = false;
   bool loteIsOk = false;
   bool locationsDestIsok = false;
+
+  //variable de apoyo
+  bool isSearch = true;
 
   //variables para validar
   dynamic quantitySelected = 0;
   String oldLocation = '';
+  String oldPedido = '';
   //*indice del producto actual
   int index = 0;
 
@@ -87,6 +98,9 @@ class ClusterPickingBloc
 
   //*lista de novedades
   List<Novedad> novedades = [];
+
+  //lista de pedidos para validar
+  List<PedidoValidate> pedidosValidate = [];
 
   //lista de lotes de un producto
   List<LoteProducto> listLotesProduct = [];
@@ -117,6 +131,8 @@ class ClusterPickingBloc
     required this.sendProductOdooUseCase,
     required this.viewProductImageUseCase,
     required this.getUserNovelties,
+    required this.setClusterBatchPedidoFieldUseCase,
+    required this.endTimePickUseCase,
   }) : super(ClusterPickingInitial()) {
     on<FetchPickingClustersEvent>(_onFetchPickingClusters);
     on<LoadLocalPickingClustersEvent>(_onLoadLocalPickingClusters);
@@ -142,6 +158,72 @@ class ClusterPickingBloc
     on<ViewProductImageEvent>(_onViewProductImageEvent);
     //*evento para cargar un producto seleccionado
     on<LoadSelectedProductEvent>(_onLoadSelectedProductEvent);
+    on<ValidatePedidoEvent>(_onValidatePedidoEvent);
+    on<MarkPedidoAsValidatedEvent>(_onMarkPedidoAsValidated);
+    on<EndTimePick>(_onEndTimePickEvent);
+  }
+
+  void _onEndTimePickEvent(
+      EndTimePick event, Emitter<ClusterPickingState> emit) async {
+    try {
+      DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+      String formattedDate = formatter.format(event.time);
+      // final userid = await PrefUtils.getUserId();
+
+      final result = await endTimePickUseCase.call(
+        EndTimePickParams(
+          batchId: event.batchId,
+          formattedDate: formattedDate,
+          typePicking: 'cluster',
+          userid: 1,
+        ),
+      );
+
+      result.fold(
+        (failure) => emit(TimeSeparateError(failure.message)),
+        (_) => emit(TimeSeparateSuccess(formattedDate)),
+      );
+    } catch (e, s) {
+      debugPrint("❌ Error en _onEndTimePickEvent: $e, $s");
+    }
+  }
+
+  String calcularProgresoReal() {
+    try {
+      if (filteredProducts == null || filteredProducts!.isEmpty) {
+        return "0.00";
+      }
+
+      double sumaRequeridaTotal = 0;
+      double sumaAvanzadaReal = 0; // Esta suma tiene "tope" por producto
+
+      for (var product in filteredProducts!) {
+        double solicitado = (product.quantity ?? 0).toDouble();
+        double separado = (product.quantitySeparate ?? 0).toDouble();
+
+        sumaRequeridaTotal += solicitado;
+
+        // LOGICA CLAVE:
+        // Si separaste más de lo pedido (Exceso), para el % global solo sumamos lo pedido.
+        // Si separaste menos, sumamos lo que llevas.
+        if (separado > solicitado) {
+          sumaAvanzadaReal += solicitado; // Topeamos al 100% de este item
+        } else {
+          sumaAvanzadaReal += separado;
+        }
+      }
+
+      if (sumaRequeridaTotal == 0) return "0.00";
+
+      final progress = (sumaAvanzadaReal / sumaRequeridaTotal) * 100;
+
+      // Con esta lógica, el progreso nunca será > 100% si hay faltantes.
+      // Solo será 100% si todo está completo (incluso si hay excesos).
+      return progress.toStringAsFixed(2);
+    } catch (e) {
+      debugPrint("Error calculando progreso real: $e");
+      return "0.00";
+    }
   }
 
 //metodo para cargar un producto seleccionado
@@ -184,6 +266,7 @@ class ClusterPickingBloc
       viewQuantity = false;
       emit(CurrentProductChangedStateLoading());
 
+      // 1. Actualizamos el producto actual en la base de datos local antes de enviar
       await setClusterBatchProductFieldUseCase
           .call(SetClusterBatchProductFieldParams(
         batchId: currentBatch?.id ?? 0,
@@ -200,10 +283,10 @@ class ClusterPickingBloc
       await setClusterBatchProductFieldUseCase
           .call(SetClusterBatchProductFieldParams(
         batchId: currentBatch?.id ?? 0,
-        productId: currentProduct?.idProduct ?? 0,
+        productId: event.currentProduct.idProduct ?? 0,
         field: 'time_separate_end',
         value: dateTimeActuality.toString(),
-        idMove: currentProduct?.idMove ?? 0,
+        idMove: event.currentProduct.idMove ?? 0,
         type: event.type,
       ));
 
@@ -219,9 +302,9 @@ class ClusterPickingBloc
 
       final starTimeProductResult = await getFieldTableProductsUseCase.call(
         GetFieldTableProductsParams(
-          batchId: currentProduct?.batchId ?? 0,
-          productId: currentProduct?.idProduct ?? 0,
-          moveId: currentProduct?.idMove ?? 0,
+          batchId: event.currentProduct.batchId ?? 0,
+          productId: event.currentProduct.idProduct ?? 0,
+          moveId: event.currentProduct.idMove ?? 0,
           field: "time_separate_start",
           type: event.type,
         ),
@@ -248,13 +331,14 @@ class ClusterPickingBloc
       await setClusterBatchProductFieldUseCase
           .call(SetClusterBatchProductFieldParams(
         batchId: currentBatch?.id ?? 0,
-        productId: currentProduct?.idProduct ?? 0,
-        field: 'time_total_separate',
+        productId: event.currentProduct.idProduct ?? 0,
+        field: 'time_separate',
         value: secondsDifferenceProduct,
-        idMove: currentProduct?.idMove ?? 0,
+        idMove: event.currentProduct.idMove ?? 0,
         type: event.type,
       ));
 
+      // 2. Enviamos el producto a Odoo
       final (success, errorMessage) = await sendProuctOdoo(event.type);
 
       if (!success) {
@@ -262,15 +346,31 @@ class ClusterPickingBloc
         return;
       }
 
-      if (filteredProducts
-          .where((product) => product.isSeparate == 0)
-          .isNotEmpty) {
+      // 3. Refrescamos la lista de productos de la base de datos local
+      // para asegurar que 'isSeparate' esté actualizado antes de buscar el siguiente
+      final resultProducts = await getLocalBatchProductsData(
+          GetBatchProductsParams(batchId: currentBatch!.id!));
+
+      resultProducts.fold(
+        (failure) {
+          debugPrint("❌ Error al refrescar productos: ${failure.message}");
+        },
+        (productsResult) {
+          final sortedProducts = _sortProducts(currentBatch!, productsResult);
+          products = sortedProducts;
+          filteredProducts = List.from(sortedProducts);
+        },
+      );
+
+      // 4. Buscamos el siguiente producto que no esté separado
+      final nextProducts =
+          filteredProducts.where((product) => product.isSeparate == 0).toList();
+
+      if (nextProducts.isNotEmpty) {
         productIsOk = false;
         quantityIsOk = false;
-        currentProduct = filteredProducts
-            .where((product) => product.isSeparate == 0)
-            .toList()
-            .first;
+        currentProduct = nextProducts.first;
+
         if (currentProduct?.locationId == oldLocation) {
           debugPrint('La ubicación es igual');
           locationIsOk = true;
@@ -278,6 +378,7 @@ class ClusterPickingBloc
           locationIsOk = false;
           debugPrint('La ubicación es diferente');
         }
+        pedidoValidateIsOk = false;
 
         await setClusterBatchProductFieldUseCase
             .call(SetClusterBatchProductFieldParams(
@@ -288,16 +389,21 @@ class ClusterPickingBloc
           idMove: currentProduct?.idMove ?? 0,
           type: event.type,
         ));
+      } else {
+        // No hay más productos pendientes
+        //dejamos el ultimo producto
+        currentProduct = event.currentProduct;
+        emit(LoadValidatePedidoState());
+        return;
       }
-      emit(CurrentProductChangedState(
-          currentProduct: currentProduct!, index: index));
 
+      emit(CurrentProductChangedState(
+          currentProduct: currentProduct, index: index));
+
+      // 5. Notificamos al resto del sistema el cambio de estado del lote
       add(FetchBatchProductsEvent(currentBatch!));
 
-      //mostramos todas las variables
-
       return;
-      // }
     } catch (e, s) {
       emit(CurrentProductChangedStateError('Error al cambiar de producto'));
       debugPrint("❌ Error en el ChangeCurrentProduct $e ->$s");
@@ -336,7 +442,6 @@ class ClusterPickingBloc
         SendProductOdooParams(
           product: product,
           type: type,
-          cantItemsSeparados: currentBatch?.productSeparateQty ?? 0,
           configurations: configurations,
         ),
       );
@@ -394,8 +499,8 @@ class ClusterPickingBloc
             ),
           );
 
-          // Emitimos fallo para reaccionar en la vista si querremos
-          // emit(SendToOdooStateError(mensajeError));
+          // ignore: invalid_use_of_visible_for_testing_member
+          emit(SendToOdooStateError(mensajeError));
           return (false, mensajeError);
         },
         (success) async {
@@ -412,7 +517,8 @@ class ClusterPickingBloc
             ),
           );
 
-          // emit(SendToOdooStateSuccess(true));
+          // ignore: invalid_use_of_visible_for_testing_member
+          emit(SendToOdooStateSuccess(true));
           return (true, '');
         },
       );
@@ -552,6 +658,7 @@ class ClusterPickingBloc
     try {
       if (event.quantity > 0) {
         quantitySelected = event.quantity;
+
         await setClusterBatchProductFieldUseCase
             .call(SetClusterBatchProductFieldParams(
           batchId: currentBatch?.id ?? 0,
@@ -559,13 +666,63 @@ class ClusterPickingBloc
           field: 'quantity_separate',
           value: event.quantity,
           idMove: event.idMove,
-          type: event.type,
+          type: 'cluster',
         ));
       }
       emit(ChangeQuantitySeparateStateSuccess(quantitySelected));
     } catch (e, s) {
       emit(ChangeQuantitySeparateStateError('Error al separar cantidad'));
       debugPrint('❌ Error en ChangeQuantitySeparate: $e -> $s ');
+    }
+  }
+
+  void _onValidatePedidoEvent(
+      ValidatePedidoEvent event, Emitter<ClusterPickingState> emit) async {
+    try {
+      updateStateQuantity(
+          event.productId, currentBatch?.id ?? 0, event.idMove, 1);
+
+      quantityIsOk = true;
+
+      emit(ValidatePedidoStateSuccess(quantitySelected));
+    } catch (e, s) {
+      emit(ChangeQuantitySeparateStateError('Error al separar cantidad'));
+      debugPrint('❌ Error en ChangeQuantitySeparate: $e -> $s ');
+    }
+  }
+
+  void _onMarkPedidoAsValidated(MarkPedidoAsValidatedEvent event,
+      Emitter<ClusterPickingState> emit) async {
+    try {
+      await setClusterBatchPedidoFieldUseCase.call(
+        SetClusterBatchPedidoFieldParams(
+          batchId: event.batchId,
+          namePedido: event.namePedido,
+          field: 'is_validated',
+          value: event.isValidated ? 1 : 0,
+        ),
+      );
+
+      // Actualizar el estado local
+      pedidosValidate = pedidosValidate.map((p) {
+        if (p.namePedido == event.namePedido) {
+          return PedidoValidate(
+            batchId: p.batchId,
+            namePedido: p.namePedido,
+            idPicking: p.idPicking,
+            idPedido: p.idPedido,
+            muelle: p.muelle,
+            idMuelle: p.idMuelle,
+            barcodeMuelle: p.barcodeMuelle,
+            isValidated: event.isValidated,
+          );
+        }
+        return p;
+      }).toList();
+
+      emit(MarkPedidoAsValidatedStateSuccess(pedidosValidate));
+    } catch (e, s) {
+      debugPrint('❌ Error en MarkPedidoAsValidatedEvent: $e -> $s ');
     }
   }
 
@@ -597,11 +754,6 @@ class ClusterPickingBloc
           idMove: event.idMove,
           type: event.type,
         ));
-
-        updateStateQuantity(
-            event.productId, currentBatch?.id ?? 0, event.idMove, 1);
-
-        quantityIsOk = true;
 
         await setClusterBatchProductFieldUseCase
             .call(SetClusterBatchProductFieldParams(
@@ -679,11 +831,16 @@ class ClusterPickingBloc
       loteIsOk = false;
       locationsDestIsok = false;
 
+      pedidoValidateIsOk = false;
+      isPedidoValidateOk = true;
+
       isProcessing = false;
       _isProcessing = false;
+      isSearch = true;
 
       quantitySelected = 0;
       oldLocation = '';
+      oldPedido = '';
       index = 0;
       currentProduct = const BatchProduct();
       currentBatch = null;
@@ -754,6 +911,10 @@ class ClusterPickingBloc
           isLoteOk = event.isOk;
           if (event.isOk) loteIsOk = true;
           break;
+        case 'pedido':
+          isPedidoValidateOk = event.isOk;
+          if (event.isOk) pedidoValidateIsOk = true;
+          break;
       }
       emit(ValidateFieldsStateSuccess(event.isOk));
     } catch (e, s) {
@@ -807,6 +968,7 @@ class ClusterPickingBloc
           GetBatchProductsParams(batchId: event.batch.id!));
 
       currentBatch = event.batch;
+      pedidosValidate = event.batch.pedidosValidate;
 
       bool hasError = false;
       String errorMsg = '';
@@ -920,19 +1082,24 @@ class ClusterPickingBloc
 
     if (separatedProducts.isNotEmpty) {
       currentProduct = separatedProducts.first;
+    } else if (filteredProducts.isNotEmpty) {
+      currentProduct = filteredProducts.last;
+    } else {
+      currentProduct = null;
+    }
+
+    if (currentProduct != null) {
       if (currentProduct?.locationId == oldLocation) {
         locationIsOk = true;
       } else {
         locationIsOk = currentProduct?.isLocationIsOk == 1;
       }
-
+      // pedidoValidateIsOk = currentProduct?.isPedidoValidateIsOk == 1;
       productIsOk = currentProduct?.productIsOk == 1;
       locationDestIsOk = currentProduct?.locationDestIsOk == 1;
-      quantityIsOk = currentProduct?.isQuantityIsOk == 1;
+      // quantityIsOk = currentProduct?.isQuantityIsOk == 1;
       quantitySelected = currentProduct?.quantitySeparate ?? 0;
       _isProcessing = false;
-    } else {
-      currentProduct = null;
     }
 
     debugPrint(
@@ -1118,5 +1285,26 @@ class ClusterPickingBloc
       debugPrint("❌ Error en el formatSecondsToHHMMSS $e ->$s");
       return "";
     }
+  }
+
+  bool isPickingCompleto() {
+    if (filteredProducts == null || filteredProducts.isEmpty) {
+      return false;
+    }
+
+    // Iteramos producto por producto
+    for (var product in filteredProducts) {
+      double solicitado = (product.quantity ?? 0).toDouble();
+      double separado = (product.quantitySeparate ?? 0).toDouble();
+
+      // Si ALGUNO tiene menos de lo solicitado, el picking NO está completo
+      // Nota: Aquí el exceso en otro producto no importa, este if falla inmediatamente.
+      if (separado < solicitado) {
+        return false;
+      }
+    }
+
+    // Si pasó por todos y ninguno falló, entonces está completo.
+    return true;
   }
 }
