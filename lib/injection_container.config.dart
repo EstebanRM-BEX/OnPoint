@@ -97,6 +97,10 @@ import 'features/picking_cluster/domain/usecases/set_cluster_batch_pedido_field_
     as _i274;
 import 'features/picking_cluster/domain/usecases/set_cluster_batch_product_field_use_case.dart'
     as _i915;
+import 'features/picking_cluster/domain/usecases/start_time_pick_use_case.dart'
+    as _i612;
+import 'features/picking_cluster/domain/usecases/validate_pedido_usecase.dart'
+    as _i1044;
 import 'features/picking_cluster/domain/usecases/view_product_image_usecase.dart'
     as _i149;
 import 'features/picking_cluster/presentation/bloc/cluster_picking/cluster_picking_bloc.dart'
@@ -265,6 +269,10 @@ extension GetItInjectableX on _i174.GetIt {
             gh<_i932.IPickingClusterRepository>()));
     gh.lazySingleton<_i782.EndTimePickUseCase>(
         () => _i782.EndTimePickUseCase(gh<_i932.IPickingClusterRepository>()));
+    gh.lazySingleton<_i1044.ValidatePedidoUseCase>(() =>
+        _i1044.ValidatePedidoUseCase(gh<_i932.IPickingClusterRepository>()));
+    gh.lazySingleton<_i612.StartTimePickUseCase>(() =>
+        _i612.StartTimePickUseCase(gh<_i932.IPickingClusterRepository>()));
     gh.factory<_i1070.LoginBloc>(() => _i1070.LoginBloc(
           authenticateUser: gh<_i792.AuthenticateUser>(),
           saveUserSession: gh<_i311.SaveUserSession>(),
@@ -273,23 +281,6 @@ extension GetItInjectableX on _i174.GetIt {
           remoteDataSource: gh<_i359.HomeRemoteDataSource>(),
           localDataSource: gh<_i205.HomeLocalDataSource>(),
           networkInfo: gh<_i75.NetworkInfo>(),
-        ));
-    gh.factory<_i573.LoteProductoBloc>(() => _i573.LoteProductoBloc(
-          getLotesProductoUseCase: gh<_i799.GetLotesProductoUseCase>(),
-          crearLoteProductoUseCase: gh<_i975.CrearLoteProductoUseCase>(),
-        ));
-    gh.lazySingleton<_i312.GetAppVersion>(
-        () => _i312.GetAppVersion(gh<_i649.HomeRepository>()));
-    gh.lazySingleton<_i485.GetUserData>(
-        () => _i485.GetUserData(gh<_i649.HomeRepository>()));
-    gh.lazySingleton<_i698.GetUserConfigurations>(
-        () => _i698.GetUserConfigurations(gh<_i649.HomeRepository>()));
-    gh.factory<_i565.UserBloc>(() => _i565.UserBloc(
-          getUserConfiguration: gh<_i280.GetUserConfiguration>(),
-          getDeviceInfo: gh<_i932.GetDeviceInfo>(),
-          getUserLocations: gh<_i247.GetUserLocations>(),
-          getUserNovelties: gh<_i465.GetUserNovelties>(),
-          registerDevice: gh<_i902.RegisterDevice>(),
         ));
     gh.factory<_i545.ClusterPickingBloc>(() => _i545.ClusterPickingBloc(
           getPickingClusterData: gh<_i524.GetPickingClusterData>(),
@@ -314,6 +305,25 @@ extension GetItInjectableX on _i174.GetIt {
           setClusterBatchPedidoFieldUseCase:
               gh<_i274.SetClusterBatchPedidoFieldUseCase>(),
           endTimePickUseCase: gh<_i782.EndTimePickUseCase>(),
+          startTimePickUseCase: gh<_i612.StartTimePickUseCase>(),
+          validatePedidoUseCase: gh<_i1044.ValidatePedidoUseCase>(),
+        ));
+    gh.factory<_i573.LoteProductoBloc>(() => _i573.LoteProductoBloc(
+          getLotesProductoUseCase: gh<_i799.GetLotesProductoUseCase>(),
+          crearLoteProductoUseCase: gh<_i975.CrearLoteProductoUseCase>(),
+        ));
+    gh.lazySingleton<_i312.GetAppVersion>(
+        () => _i312.GetAppVersion(gh<_i649.HomeRepository>()));
+    gh.lazySingleton<_i485.GetUserData>(
+        () => _i485.GetUserData(gh<_i649.HomeRepository>()));
+    gh.lazySingleton<_i698.GetUserConfigurations>(
+        () => _i698.GetUserConfigurations(gh<_i649.HomeRepository>()));
+    gh.factory<_i565.UserBloc>(() => _i565.UserBloc(
+          getUserConfiguration: gh<_i280.GetUserConfiguration>(),
+          getDeviceInfo: gh<_i932.GetDeviceInfo>(),
+          getUserLocations: gh<_i247.GetUserLocations>(),
+          getUserNovelties: gh<_i465.GetUserNovelties>(),
+          registerDevice: gh<_i902.RegisterDevice>(),
         ));
     gh.factory<_i20.EnterpriseBloc>(() => _i20.EnterpriseBloc(
           searchEnterpriseUseCase: gh<_i138.SearchEnterprise>(),

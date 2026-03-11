@@ -219,3 +219,20 @@ class TimeSeparateError extends ClusterPickingState {
   final String message;
   const TimeSeparateError(this.message);
 }
+
+class LoadingSendProductEdit extends ClusterPickingState {}
+
+class SendProductEditOdooStateSuccess extends ClusterPickingState {
+  final bool isOk;
+  const SendProductEditOdooStateSuccess(this.isOk);
+}
+
+class SendProductEditOdooStateError extends ClusterPickingState {
+  final String msg;
+  const SendProductEditOdooStateError(this.msg);
+}
+
+class ValidatePedidoStateError extends ClusterPickingState {
+  final String msg;
+  const ValidatePedidoStateError(this.msg);
+}

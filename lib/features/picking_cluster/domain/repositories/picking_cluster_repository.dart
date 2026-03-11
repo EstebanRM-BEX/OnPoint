@@ -23,10 +23,12 @@ abstract class IPickingClusterRepository {
       int idProduct, bool isLoadinDialog);
 
   Future<Either<Failure, bool>> timePickingUser(
-      int batchId, String time, String endpoint, String field, int userid);
+      int batchId, String time, String endpoint, String field);
 
   Future<Either<Failure, bool>> timePickingBatch(
       int batchId, String time, String endpoint, String field, String field2);
+
+  Future<Either<Failure, bool>> validatePedido(int idPedido, int idLocation);
 
   // ─── Local ───────────────────────────────────────────────────────────────
   Future<Either<Failure, List<PickingBatch>>> getCachedPickingBatches();
@@ -49,5 +51,8 @@ abstract class IPickingClusterRepository {
       int batchId, String namePedido, String field, dynamic value);
 
   Future<Either<Failure, void>> endStopwatchBatch(
+      int batchId, String time, String typePicking);
+
+  Future<Either<Failure, void>> startStopwatchBatch(
       int batchId, String time, String typePicking);
 }

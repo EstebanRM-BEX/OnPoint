@@ -358,6 +358,8 @@ class _ScanProductClusterState extends State<ScanProductCluster>
     final currentPedido = product?.origin?.trim().toLowerCase();
 
     if (scan == currentPedido) {
+      bloc.add(ValidatePedidoEvent(product?.idProduct ?? 0,
+          bloc.currentBatch?.id ?? 0, product?.idMove ?? 0, 'cluster'));
       bloc.add(ValidateFieldsEvent(field: "pedido", isOk: true));
     } else {
       _vibrationService.vibrate();
@@ -532,7 +534,8 @@ class _ScanProductClusterState extends State<ScanProductCluster>
           novedades: batchBloc.novedades,
           batchId: batchBloc.currentBatch?.id ?? 0,
           onAccepted: (String selectedNovedad) async {
-            batchBloc.add(UpdateNovedadProductEvent(selectedNovedad));
+            batchBloc.add(
+                UpdateNovedadProductEvent(selectedNovedad, currentProduct!));
             procesarTransaccion();
           },
         );
@@ -602,6 +605,44 @@ class _ScanProductClusterState extends State<ScanProductCluster>
               listener: (context, state) {
                 debugPrint("✅STATE: $state");
 
+                if (state is PickingClustersLoading) {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) =>
+                        const DialogLoading(message: "Cargando Clústers..."),
+                  );
+                }
+
+                if (state is PickingClustersLoaded) {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context); // Cierra el loader
+                  }
+                  Navigator.pushReplacementNamed(context, 'picking-cluster');
+                }
+
+                if (state is PickingClustersError) {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context); // Cierra el loader
+                  }
+                  Get.snackbar(
+                    '360 Software Informa',
+                    state.message,
+                    backgroundColor: white,
+                    colorText: primaryColorApp,
+                    icon: const Icon(Icons.error, color: Colors.red),
+                    showProgressIndicator: true,
+                    duration: const Duration(seconds: 5),
+                  );
+                  Navigator.pushReplacementNamed(context, 'picking-cluster');
+                }
+
+                if (state is SendToOdooStateSuccess) {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context); // Cierra el loader
+                  }
+                }
+
                 if (state is LoadValidatePedidoState) {
                   if (Navigator.canPop(context)) {
                     Navigator.pop(context); // Cierra el loader
@@ -624,12 +665,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                   if (Navigator.canPop(context)) {
                     Navigator.pop(context); // Cierra el loader
                   }
-                }
-
-                if (state is CurrentProductChangedState) {
-                  if (Navigator.canPop(context)) {
-                    Navigator.pop(context); // Cierra el loader
-                  }
+                  showScrollableErrorDialog(state.msg);
                 }
 
                 if (state is BatchProductsError) {
@@ -640,7 +676,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                     colorText: primaryColorApp,
                     icon: const Icon(Icons.error, color: Colors.red),
                     showProgressIndicator: true,
-                    duration: const Duration(seconds: 5),
+                    duration: const Duration(seconds: 2),
                   );
                 }
 
@@ -708,17 +744,6 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                       return const DialogLoading(message: "Procesando Lote...");
                     },
                   );
-                } else if (state is LoteProductoCreated) {
-                  Navigator.pop(context); // Cerrar loading
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      duration: const Duration(seconds: 2),
-                      content: const Text('Lote creado exitosamente'),
-                      backgroundColor: Colors.green[400],
-                    ),
-                  );
-                  // final bloc = context.read<ClusterPickingBloc>();
-                  // bloc.add(ValidarLoteRecienCreadoEvent(state.lote)); // TODO: Lanzar evento aqui
                 } else if (state is LoteProductoError) {
                   Navigator.pop(context); // Cerrar loading
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -765,12 +790,8 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                                   IconButton(
                                     onPressed: () {
                                       _controllerQuantity.clear();
-
                                       bloc.add(ClearFieldsEvent());
-
                                       bloc.add(LoadLocalPickingClustersEvent());
-                                      Navigator.pushReplacementNamed(
-                                          context, 'picking-cluster');
                                     },
                                     icon: const Icon(Icons.arrow_back,
                                         color: Colors.white, size: 20),
@@ -1206,7 +1227,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                                         bloc.currentProduct?.idMove ?? 0,
                                         'cluster'));
                                     bloc.add(UpdateNovedadProductEvent(
-                                        selectedNovedad));
+                                        selectedNovedad, bloc.currentProduct!));
 
                                     _nextProduct(bloc.currentProduct!, bloc);
                                   },
@@ -1233,7 +1254,8 @@ class _ScanProductClusterState extends State<ScanProductCluster>
     // Si el proceso ya está en ejecución, no hacemos nada
     if (batchBloc.isProcessing) return;
 
-    // Establecemos la bandera para indicar que el proceso está en ejecución
+    // Establecemos la bandera de forma síncrona para bloquear de inmediato
+    batchBloc.isProcessing = true;
     batchBloc.add(SetIsProcessingEvent(true));
 
     try {
@@ -1308,8 +1330,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
       await moveToNextProduct();
     } catch (e, s) {
       debugPrint("❌ Error en _nextProduct: $e -> $s");
-      // Manejo de errores
-    } finally {
+      batchBloc.isProcessing = false;
       batchBloc.add(SetIsProcessingEvent(false));
     }
   }

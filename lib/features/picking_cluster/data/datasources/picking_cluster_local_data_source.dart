@@ -28,6 +28,9 @@ abstract class PickingClusterLocalDataSource {
   Future<void> setFieldTableBatchPedidoValidate(
       int batchId, String namePedido, String field, dynamic value);
   Future<void> endStopwatchBatch(int batchId, String time, String typePicking);
+  Future<void> startStopwatchBatch(
+      int batchId, String time, String typePicking);
+  Future<int> getUserId();
 }
 
 @LazySingleton(as: PickingClusterLocalDataSource)
@@ -226,6 +229,25 @@ class PickingClusterLocalDataSourceImpl
       log('Error endStopwatchBatch sqlite: $e', name: 'PickingClusterLocalDS');
       throw Exception('Database error');
     }
+  }
+
+  @override
+  Future<void> startStopwatchBatch(
+      int batchId, String time, String typePicking) async {
+    try {
+      await DataBaseSqlite()
+          .batchPickingRepository
+          .startStopwatchBatch(batchId, time, typePicking);
+    } catch (e) {
+      log('Error startStopwatchBatch sqlite: $e',
+          name: 'PickingClusterLocalDS');
+      throw Exception('Database error');
+    }
+  }
+
+  @override
+  Future<int> getUserId() async {
+    return await PrefUtils.getUserId();
   }
 
   // ─── Private helpers ────────────────────────────────────────────────────

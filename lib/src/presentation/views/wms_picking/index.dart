@@ -613,21 +613,11 @@ class _PickingPageState extends State<WMSPickingPage> {
       },
     );
 
-    // ⚠️ NOTA: El código que carga los datos del Batch debe ejecutarse aquí
-    // Ejemplo: batchBloc.add(FetchBatchData(batch.id));
-
-    // 2. Esperar un tiempo mínimo fijo para el UX del diálogo (retraso muy corto)
-    // Reemplazamos await Future.delayed(const Duration(seconds: 1));
     await Future.delayed(const Duration(milliseconds: 300));
-
-    // 3. Cierre Seguro del Diálogo
-    // Usamos el contexto capturado, asegurando que la acción de pop sea válida
     if (dialogContext != null) {
       Navigator.of(dialogContext!, rootNavigator: true).pop();
     }
 
-    // 4. Navegación (Lógica sin cambios)
-    // Si batch.isSeparate es 1, entonces navegamos a "batch-detail"
     if (batch.isSeparate != 1) {
       Navigator.pushReplacementNamed(context, 'batch');
     } else {

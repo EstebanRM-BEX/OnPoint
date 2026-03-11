@@ -58,7 +58,78 @@ class PickingClusterRepositoryImpl implements IPickingClusterRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, String>> sendPickingProduct({
+    required int idBatch,
+    required double timeTotal,
+    required int cantItemsSeparados,
+    required List<Map<String, dynamic>> listItem,
+    required String tipoPicking,
+  }) async {
+    try {
+      final responseText = await remoteDataSource.sendPickingProduct(
+        idBatch: idBatch,
+        timeTotal: timeTotal,
+        listItem: listItem,
+        tipoPicking: tipoPicking,
+      );
+      return Right(responseText);
+    } catch (e) {
+      return Left(ServerFailure('Connection rejected'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> viewProductImage(
+      int idProduct, bool isLoadinDialog) async {
+    try {
+      final url =
+          await remoteDataSource.viewProductImage(idProduct, isLoadinDialog);
+      return Right(url);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> timePickingBatch(int batchId, String time,
+      String endpoint, String field, String field2) async {
+    try {
+      final result = await remoteDataSource.timePickingBatch(
+          batchId, time, endpoint, field, field2);
+      return Right(result);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> validatePedido(
+      int idPedido, int idLocation) async {
+    try {
+      final result =
+          await remoteDataSource.validatePedido(idPedido, idLocation);
+      return Right(result);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
   // ─── Local ───────────────────────────────────────────────────────────────
+
+  @override
+  Future<Either<Failure, bool>> timePickingUser(
+      int batchId, String time, String endpoint, String field) async {
+    try {
+      final int userId = await localDataSource.getUserId();
+
+      final result = await remoteDataSource.timePickingUser(
+          batchId, time, endpoint, field, userId);
+      return Right(result);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 
   @override
   Future<Either<Failure, List<PickingBatch>>> getCachedPickingBatches() async {
@@ -183,67 +254,21 @@ class PickingClusterRepositoryImpl implements IPickingClusterRepository {
   }
 
   @override
-  Future<Either<Failure, String>> sendPickingProduct({
-    required int idBatch,
-    required double timeTotal,
-    required int cantItemsSeparados,
-    required List<Map<String, dynamic>> listItem,
-    required String tipoPicking,
-  }) async {
-    try {
-      final responseText = await remoteDataSource.sendPickingProduct(
-        idBatch: idBatch,
-        timeTotal: timeTotal,
-        listItem: listItem,
-        tipoPicking: tipoPicking,
-      );
-      return Right(responseText);
-    } catch (e) {
-      return Left(ServerFailure('Connection rejected'));
-    }
-  }
-
-  @override
-  Future<Either<Failure, String>> viewProductImage(
-      int idProduct, bool isLoadinDialog) async {
-    try {
-      final url =
-          await remoteDataSource.viewProductImage(idProduct, isLoadinDialog);
-      return Right(url);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
-    }
-  }
-
-  @override
-  Future<Either<Failure, bool>> timePickingUser(int batchId, String time,
-      String endpoint, String field, int userid) async {
-    try {
-      final result = await remoteDataSource.timePickingUser(
-          batchId, time, endpoint, field, userid);
-      return Right(result);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
-    }
-  }
-
-  @override
-  Future<Either<Failure, bool>> timePickingBatch(int batchId, String time,
-      String endpoint, String field, String field2) async {
-    try {
-      final result = await remoteDataSource.timePickingBatch(
-          batchId, time, endpoint, field, field2);
-      return Right(result);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
-    }
-  }
-
-  @override
   Future<Either<Failure, void>> endStopwatchBatch(
       int batchId, String time, String typePicking) async {
     try {
       await localDataSource.endStopwatchBatch(batchId, time, typePicking);
+      return const Right(null);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> startStopwatchBatch(
+      int batchId, String time, String typePicking) async {
+    try {
+      await localDataSource.startStopwatchBatch(batchId, time, typePicking);
       return const Right(null);
     } catch (e) {
       return Left(CacheFailure(e.toString()));

@@ -5,47 +5,51 @@ import 'package:wms_app/core/usecases/usecase.dart';
 import '../repositories/picking_cluster_repository.dart';
 
 @lazySingleton
-class EndTimePickUseCase implements UseCase<void, EndTimePickParams> {
+class StartTimePickUseCase implements UseCase<void, StartTimePickParams> {
   final IPickingClusterRepository repository;
 
-  EndTimePickUseCase(this.repository);
+  StartTimePickUseCase(this.repository);
 
   @override
-  Future<Either<Failure, void>> call(EndTimePickParams params) async {
+  Future<Either<Failure, void>> call(StartTimePickParams params) async {
     // 1. timePickingUser
     final userResult = await repository.timePickingUser(params.batchId,
         params.formattedDate, params.endpointUser, params.fieldUser);
 
     return userResult.fold(
       (failure) => left(failure),
-      (userSuccess) async {
+      (successUser) async {
+        if (!successUser) {
+          return left(ServerFailure('Failed timePickingUser API call'));
+        }
+
         // 2. timePickingBatch
         final batchResult = await repository.timePickingBatch(
           params.batchId,
           params.formattedDate,
           params.endpointBatch,
           params.fieldBatch,
-          params.field2Batch,
+          params.fieldBatch2,
         );
 
         return batchResult.fold(
           (failure) => left(failure),
-          (batchSuccess) async {
-            if (batchSuccess) {
-              // 3. endStopwatchBatch
-              final localResult = await repository.endStopwatchBatch(
-                params.batchId,
-                params.formattedDate,
-                params.typePicking,
-              );
-              return localResult.fold(
-                (failure) => left(failure),
-                (_) => right(null),
-              );
-            } else {
-              return left(
-                  ServerFailure('Error al terminar el tiempo de separacion'));
+          (successBatch) async {
+            if (!successBatch) {
+              return left(ServerFailure('Failed timePickingBatch API call'));
             }
+
+            // 3. startStopwatchBatch
+            final localResult = await repository.startStopwatchBatch(
+              params.batchId,
+              params.formattedDate,
+              params.typePicking,
+            );
+
+            return localResult.fold(
+              (failure) => left(failure),
+              (_) => right(null),
+            );
           },
         );
       },
@@ -53,7 +57,7 @@ class EndTimePickUseCase implements UseCase<void, EndTimePickParams> {
   }
 }
 
-class EndTimePickParams {
+class StartTimePickParams {
   final int batchId;
   final String formattedDate;
   final String typePicking;
@@ -61,16 +65,16 @@ class EndTimePickParams {
   final String fieldUser;
   final String endpointBatch;
   final String fieldBatch;
-  final String field2Batch;
+  final String fieldBatch2;
 
-  EndTimePickParams({
+  StartTimePickParams({
     required this.batchId,
     required this.formattedDate,
     required this.typePicking,
-    this.endpointUser = 'end_time_batch_user',
-    this.fieldUser = 'end_time',
-    this.endpointBatch = 'update_end_time',
-    this.fieldBatch = 'end_time_pick',
-    this.field2Batch = 'end_time',
+    this.endpointUser = 'start_time_batch_user',
+    this.fieldUser = 'start_time',
+    this.endpointBatch = 'update_start_time',
+    this.fieldBatch = 'start_time_pick',
+    this.fieldBatch2 = 'start_time',
   });
 }

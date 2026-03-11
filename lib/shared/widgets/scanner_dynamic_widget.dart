@@ -100,9 +100,8 @@ class _DynamicScannerWidgetState extends State<DynamicScannerWidget> {
                     controller: widget.controller,
                     enabled: widget.locationIsOk &&
                         widget.productIsOk &&
-                        widget.pedidoValidateIsOk &&
-                        !widget.quantityIsOk &&
-                        !widget.locationDestIsOk,
+                        !widget.pedidoValidateIsOk &&
+                        !widget.quantityIsOk,
                     focusNode: widget.focusNode,
                     keyboardType: TextInputType.none,
                     enableInteractiveSelection: false,

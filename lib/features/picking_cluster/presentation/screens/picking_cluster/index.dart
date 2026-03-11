@@ -1,6 +1,9 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:get/get.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/features/picking_cluster/domain/entities/picking_batch.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,6 +13,7 @@ import 'package:wms_app/shared/widgets/custom_header_widget.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/picking_batch_card.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_start_picking_widget.dart';
 
 class PickingClusterScreen extends StatefulWidget {
   const PickingClusterScreen({super.key});
@@ -150,9 +154,8 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                               return PickingBatchCard(
                                 batch: batch,
                                 onTap: () {
-                                  context
-                                      .read<ClusterPickingBloc>()
-                                      .add(FetchBatchProductsEvent(batch));
+                                  _handleBatchSelection(
+                                      context, context, batch);
                                 },
                               );
                             },
@@ -184,5 +187,74 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
         ),
       ),
     );
+  }
+
+  void goBatchInfo(BuildContext context, PickingBatch batch) async {
+    // 1. Mostrar Diálogo (Capturamos el contexto del diálogo)
+    BuildContext? dialogContext;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        dialogContext = ctx; // ✅ Capturamos el contexto del diálogo
+        return const DialogLoading(
+          message: 'Cargando interfaz...',
+        );
+      },
+    );
+
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (dialogContext != null) {
+      Navigator.of(dialogContext!, rootNavigator: true).pop();
+    }
+
+    context.read<ClusterPickingBloc>().add(FetchBatchProductsEvent(batch));
+  }
+
+  Future<void> _handleBatchSelection(
+      BuildContext context, BuildContext contextBuilder, dynamic batch) async {
+    final batchBloc = context.read<ClusterPickingBloc>();
+
+    // 1. Mostrar diálogo de carga mientras se despachan los eventos al BLoC
+    BuildContext? loadingContext;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        loadingContext = ctx;
+        return const DialogLoading(message: 'Cargando batch...');
+      },
+    );
+
+    await Future.delayed(const Duration(milliseconds: 400));
+
+    // 3. Cerrar diálogo de carga
+    if (loadingContext != null && Navigator.canPop(loadingContext!)) {
+      Navigator.of(loadingContext!, rootNavigator: true).pop();
+    }
+
+    // 4. Definir la función de navegación
+    void navigateToBatchInfo() {
+      goBatchInfo(contextBuilder, batch);
+    }
+
+    // 5. Lógica para decidir si mostrar el diálogo de inicio o navegar directamente
+    if (batch.startTimePick != "") {
+      navigateToBatchInfo();
+    } else {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => DialogStartTimeWidget(
+          onAccepted: () async {
+            batchBloc
+                .add(StartTimePick(batch.id ?? 0, DateTime.now(), 'batch'));
+            Navigator.pop(context);
+            navigateToBatchInfo();
+          },
+          title: 'Iniciar Picking',
+        ),
+      );
+    }
   }
 }

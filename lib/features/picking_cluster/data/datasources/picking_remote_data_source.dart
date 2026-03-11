@@ -22,6 +22,7 @@ abstract class PickingClusterRemoteDataSource {
       int batchId, String time, String endpoint, String field, int userid);
   Future<bool> timePickingBatch(
       int batchId, String time, String endpoint, String field, String field2);
+  Future<bool> validatePedido(int idPedido, int idLocation);
 }
 
 @LazySingleton(as: PickingClusterRemoteDataSource)
@@ -203,5 +204,55 @@ class PickingClusterRemoteDataSourceImpl
       }
     }
     throw Exception('Failed timePickingBatch');
+  }
+
+  @override
+  Future<bool> validatePedido(int idPedido, int idLocation) async {
+    final Map<String, dynamic> params = {
+      "id_pedido": idPedido,
+      "id_location": idLocation,
+    };
+
+    final requestBody = {
+      "params": params,
+    };
+
+    print('requestBody: $requestBody');
+
+    final response = await apiRequestService.postPicking(
+      endpoint: 'cluster/validate_pedido/id',
+      body: requestBody,
+      isLoadinDialog: true,
+      isunecodePath: true,
+    );
+
+    try {
+      final jsonResponse = jsonDecode(response.body);
+
+      // JSON-RPC returns a 'result' object for success
+      if (jsonResponse.containsKey('result')) {
+        final resultData = jsonResponse['result'];
+        if (resultData['code'] == 200) {
+          return true;
+        } else {
+          throw Exception(resultData['msg'] ?? 'Error validando pedido');
+        }
+      }
+
+      // JSON-RPC returns an 'error' object when it fails
+      if (jsonResponse.containsKey('error')) {
+        throw Exception(jsonResponse['error']['message'] ??
+            'Error desconocido del servidor');
+      }
+
+      return false;
+    } catch (e) {
+      if (response.body.contains('404')) {
+        throw Exception(
+            'Error 404: La ruta /api/cluster/validate_pedido/id no se encontró en Odoo. (Comprueba el backend).');
+      }
+      throw Exception(
+          'Error en respuesta: ${response.statusCode} - ${response.body}');
+    }
   }
 }

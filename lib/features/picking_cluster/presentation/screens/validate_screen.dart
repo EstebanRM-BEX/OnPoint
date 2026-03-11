@@ -11,6 +11,7 @@ import 'package:wms_app/features/picking_cluster/domain/entities/batch_product.d
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
+import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 
 class ValidateScreen extends StatefulWidget {
   const ValidateScreen({super.key});
@@ -79,7 +80,58 @@ class _ValidateScreenState extends State<ValidateScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: white,
-      body: BlocBuilder<ClusterPickingBloc, ClusterPickingState>(
+      body: BlocConsumer<ClusterPickingBloc, ClusterPickingState>(
+        listener: (context, state) {
+          print('✅ state: $state');
+          if (state is ValidatePedidoStateError) {
+            Get.snackbar(
+              '360 Software Informa',
+              state.msg,
+              backgroundColor: white,
+              colorText: primaryColorApp,
+              icon: const Icon(Icons.error, color: Colors.red),
+              showProgressIndicator: true,
+              duration: const Duration(seconds: 5),
+            );
+          }
+
+          if (state is PickingClustersLoading) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) =>
+                  const DialogLoading(message: "Sincronizando Localmente..."),
+            );
+          }
+
+          if (state is PickingClustersLoaded) {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context); // Cierra el loader
+            }
+
+            Navigator.pushReplacementNamed(
+              context,
+              'picking-cluster',
+            );
+          }
+
+          if (state is PickingClustersError || state is BatchProductsError) {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context); // Cierra el loader
+            }
+            Get.snackbar(
+              '360 Software Informa',
+              state is PickingClustersError
+                  ? state.message
+                  : (state as BatchProductsError).message,
+              backgroundColor: white,
+              colorText: primaryColorApp,
+              icon: const Icon(Icons.error, color: Colors.red),
+              showProgressIndicator: true,
+              duration: Duration(seconds: 5),
+            );
+          }
+        },
         builder: (context, state) {
           final bloc = context.read<ClusterPickingBloc>();
           final pedidos = bloc.pedidosValidate;
@@ -202,24 +254,10 @@ class _ValidateScreenState extends State<ValidateScreen> {
                       //validamos que todos los pedidos esten validados
                       if (bloc.pedidosValidate
                           .every((pedido) => pedido.isValidated == true)) {
-                        // batchBloc.add(PickingOkEvent(
-                        //     batchBloc.batchWithProducts.batch?.id ?? 0,
-                        //     currentProduct.idProduct ?? 0,
-                        //     batchBloc.typePicking));
-
-                        // batchBloc.add(EndTimePick(
-                        //     batchBloc.batchWithProducts.batch?.id ?? 0,
-                        //     DateTime.now()));
-
-                        // context.read<WMSPickingBloc>().add(
-                        //     FilterBatchesBStatusEvent('', batchBloc.typePicking));
-                        // context.read<BatchBloc>().index = 0;
-                        // context.read<BatchBloc>().isSearch = true;
-                        // Navigator.pop(context);
-                        // Navigator.pushReplacementNamed(
-                        //   context,
-                        //   'wms-picking',
-                        // );
+                        bloc.add(ClearFieldsEvent());
+                        bloc.add(EndTimePick(
+                            bloc.currentBatch?.id ?? 0, DateTime.now()));
+                        bloc.add(const FetchPickingClustersEvent());
                       } else {
                         Get.snackbar("360 Software Informa",
                             "No todos los pedidos estan validados",
@@ -271,7 +309,7 @@ class _ValidateScreenState extends State<ValidateScreen> {
             pedido.namePedido ?? 'Sin Nombre',
             style: const TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 16,
+              fontSize: 12,
               color: primaryColorApp,
             ),
           ),
@@ -281,11 +319,12 @@ class _ValidateScreenState extends State<ValidateScreen> {
                 children: [
                   const Text(
                     'Muelle:',
-                    style: TextStyle(color: primaryColorApp),
+                    style: TextStyle(color: primaryColorApp, fontSize: 12),
                   ),
                   Text(
                     pedido.muelle ?? 'S',
-                    style: TextStyle(color: Colors.grey.shade600),
+                    maxLines: 2,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                   ),
                 ],
               ),
@@ -293,11 +332,12 @@ class _ValidateScreenState extends State<ValidateScreen> {
                 children: [
                   const Text(
                     'Barcode:',
-                    style: TextStyle(color: primaryColorApp),
+                    style: TextStyle(color: primaryColorApp, fontSize: 12),
                   ),
                   Text(
                     pedido.barcodeMuelle ?? 'N/A',
-                    style: TextStyle(color: Colors.grey.shade600),
+                    maxLines: 2,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                   ),
                 ],
               ),
@@ -311,7 +351,7 @@ class _ValidateScreenState extends State<ValidateScreen> {
               // Limitamos la altura al 65% de la pantalla para evitar renderizado síncrono de cientos de items
               constraints: BoxConstraints(
                 maxHeight: products.length > 3
-                    ? MediaQuery.of(context).size.height * 0.65
+                    ? MediaQuery.of(context).size.height * 0.6
                     : double.infinity,
               ),
               child: ListView.builder(
@@ -378,7 +418,7 @@ class _ProductItemWidget extends StatelessWidget {
       color: white,
       elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

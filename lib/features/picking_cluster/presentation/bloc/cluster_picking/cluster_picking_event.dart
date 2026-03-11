@@ -103,7 +103,8 @@ class ShowQuantityEvent extends ClusterPickingEvent {
 
 class UpdateNovedadProductEvent extends ClusterPickingEvent {
   final String selectedNovedad;
-  const UpdateNovedadProductEvent(this.selectedNovedad);
+  final BatchProduct product;
+  const UpdateNovedadProductEvent(this.selectedNovedad, this.product);
 }
 
 class SetIsProcessingEvent extends ClusterPickingEvent {
@@ -169,4 +170,25 @@ class EndTimePick extends ClusterPickingEvent {
   final int batchId;
   final DateTime time;
   EndTimePick(this.batchId, this.time);
+}
+
+class StartTimePick extends ClusterPickingEvent {
+  final int batchId;
+  final DateTime time;
+  final String type;
+
+  const StartTimePick(this.batchId, this.time, this.type);
+
+  @override
+  List<Object> get props => [batchId, time, type];
+}
+
+class SendProductEditOdooEvent extends ClusterPickingEvent {
+  final BatchProduct product;
+  final dynamic cantidad;
+
+  SendProductEditOdooEvent(
+    this.product,
+    this.cantidad,
+  );
 }

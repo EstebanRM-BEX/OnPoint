@@ -30,6 +30,8 @@ import '../../../domain/usecases/get_product_batch_use_case.dart';
 import '../../../domain/usecases/send_product_odoo_use_case.dart';
 import '../../../domain/usecases/set_cluster_batch_pedido_field_use_case.dart';
 import '../../../domain/usecases/end_time_pick_use_case.dart';
+import '../../../domain/usecases/start_time_pick_use_case.dart';
+import '../../../domain/usecases/validate_pedido_usecase.dart';
 
 part 'cluster_picking_event.dart';
 part 'cluster_picking_state.dart';
@@ -52,6 +54,8 @@ class ClusterPickingBloc
   final ViewProductImageUseCase viewProductImageUseCase;
   final SetClusterBatchPedidoFieldUseCase setClusterBatchPedidoFieldUseCase;
   final EndTimePickUseCase endTimePickUseCase;
+  final StartTimePickUseCase startTimePickUseCase;
+  final ValidatePedidoUseCase validatePedidoUseCase;
 
   //uses cases de bloc user
   final GetUserConfiguration getUserConfiguration;
@@ -112,6 +116,8 @@ class ClusterPickingBloc
   //configuraciones del usuario
   UserConfigurationModel configurations = UserConfigurationModel();
 
+  TextEditingController editProductController = TextEditingController();
+
   bool _isProcessing = false; // Bandera para controlar el estado del proceso
   bool isProcessing = false; // Bandera para controlar el estado del proceso
 
@@ -133,6 +139,8 @@ class ClusterPickingBloc
     required this.getUserNovelties,
     required this.setClusterBatchPedidoFieldUseCase,
     required this.endTimePickUseCase,
+    required this.startTimePickUseCase,
+    required this.validatePedidoUseCase,
   }) : super(ClusterPickingInitial()) {
     on<FetchPickingClustersEvent>(_onFetchPickingClusters);
     on<LoadLocalPickingClustersEvent>(_onLoadLocalPickingClusters);
@@ -161,6 +169,67 @@ class ClusterPickingBloc
     on<ValidatePedidoEvent>(_onValidatePedidoEvent);
     on<MarkPedidoAsValidatedEvent>(_onMarkPedidoAsValidated);
     on<EndTimePick>(_onEndTimePickEvent);
+    on<StartTimePick>(_onStartTimePickEvent);
+    on<SendProductEditOdooEvent>(_onSendProductEditOdooEvent);
+  }
+
+  //*evento para enviar un producto a odoo editado
+  void _onSendProductEditOdooEvent(
+      SendProductEditOdooEvent event, Emitter<ClusterPickingState> emit) async {
+    try {
+      emit(LoadingSendProductEdit());
+
+      final (success, errorMessage) = await sendProuctOdoo(event.product);
+
+      if (success) {
+        //actualizamos la lista  de products para que la cantidad de ese producto este actualizada
+        final resultProducts = await getLocalBatchProductsData(
+            GetBatchProductsParams(batchId: currentBatch?.id ?? 0));
+
+        resultProducts.fold(
+          (failure) {
+            debugPrint("❌ Error al refrescar productos: ${failure.message}");
+          },
+          (productsResult) {
+            if (currentBatch != null) {
+              final sortedProducts =
+                  _sortProducts(currentBatch!, productsResult);
+              products = sortedProducts;
+              filteredProducts = List.from(sortedProducts);
+            }
+          },
+        );
+
+        emit(SendProductEditOdooStateSuccess(true));
+      } else {
+        emit(SendProductEditOdooStateError(errorMessage));
+      }
+    } catch (e, s) {
+      debugPrint("❌ Error en el SendProductEditOdooEvent :$e->$s");
+    }
+  }
+
+  void _onStartTimePickEvent(
+      StartTimePick event, Emitter<ClusterPickingState> emit) async {
+    try {
+      DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+      String formattedDate = formatter.format(event.time);
+
+      final result = await startTimePickUseCase.call(
+        StartTimePickParams(
+          batchId: event.batchId,
+          formattedDate: formattedDate,
+          typePicking: event.type,
+        ),
+      );
+
+      result.fold(
+        (failure) => emit(TimeSeparateError(failure.message)),
+        (_) => emit(TimeSeparateSuccess(formattedDate)),
+      );
+    } catch (e, s) {
+      debugPrint("❌ Error en _onStartTimePickEvent: $e, $s");
+    }
   }
 
   void _onEndTimePickEvent(
@@ -168,14 +237,12 @@ class ClusterPickingBloc
     try {
       DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
       String formattedDate = formatter.format(event.time);
-      // final userid = await PrefUtils.getUserId();
 
       final result = await endTimePickUseCase.call(
         EndTimePickParams(
           batchId: event.batchId,
           formattedDate: formattedDate,
           typePicking: 'cluster',
-          userid: 1,
         ),
       );
 
@@ -339,10 +406,13 @@ class ClusterPickingBloc
       ));
 
       // 2. Enviamos el producto a Odoo
-      final (success, errorMessage) = await sendProuctOdoo(event.type);
+      final (success, errorMessage) =
+          await sendProuctOdoo(event.currentProduct);
 
       if (!success) {
         emit(CurrentProductChangedStateError(errorMessage));
+        isProcessing = false;
+        add(SetIsProcessingEvent(false));
         return;
       }
 
@@ -380,6 +450,8 @@ class ClusterPickingBloc
         }
         pedidoValidateIsOk = false;
 
+        quantitySelected = currentProduct?.quantitySeparate ?? 0;
+
         await setClusterBatchProductFieldUseCase
             .call(SetClusterBatchProductFieldParams(
           batchId: currentBatch?.id ?? 0,
@@ -394,6 +466,8 @@ class ClusterPickingBloc
         //dejamos el ultimo producto
         currentProduct = event.currentProduct;
         emit(LoadValidatePedidoState());
+        isProcessing = false;
+        add(SetIsProcessingEvent(false));
         return;
       }
 
@@ -403,15 +477,19 @@ class ClusterPickingBloc
       // 5. Notificamos al resto del sistema el cambio de estado del lote
       add(FetchBatchProductsEvent(currentBatch!));
 
+      isProcessing = false;
+      add(SetIsProcessingEvent(false));
       return;
     } catch (e, s) {
       emit(CurrentProductChangedStateError('Error al cambiar de producto'));
       debugPrint("❌ Error en el ChangeCurrentProduct $e ->$s");
+      isProcessing = false;
+      add(SetIsProcessingEvent(false));
     }
   }
 
   //* Metodo para enviar al wms
-  Future<(bool, String)> sendProuctOdoo(String type) async {
+  Future<(bool, String)> sendProuctOdoo(BatchProduct producto) async {
     try {
       debugPrint("sendProuctOdoo ------------");
 
@@ -419,13 +497,13 @@ class ClusterPickingBloc
       final productResult = await getProductBatchUseCase.call(
         GetProductBatchParams(
           batchId: currentBatch?.id ?? 0,
-          productId: currentProduct?.idProduct ?? 0,
-          idMove: currentProduct?.idMove ?? 0,
-          type: type,
+          productId: producto.idProduct ?? 0,
+          idMove: producto.idMove ?? 0,
+          type: 'cluster',
         ),
       );
 
-      final product = productResult.fold(
+      final productBD = productResult.fold(
         (failure) {
           debugPrint("❌ Error al traer producto de BD local: \$failure");
           return null;
@@ -433,15 +511,15 @@ class ClusterPickingBloc
         (value) => value,
       );
 
-      if (product == null) {
+      if (productBD == null) {
         return (false, 'No se pudo obtener el producto localmente');
       }
 
       // 1. Delegamos lógica de negocio, cálculos de tiempo, y variables al UseCase
       final response = await sendProductOdooUseCase.call(
         SendProductOdooParams(
-          product: product,
-          type: type,
+          product: productBD,
+          type: 'cluster',
           configurations: configurations,
         ),
       );
@@ -457,50 +535,51 @@ class ClusterPickingBloc
 
           await setClusterBatchProductFieldUseCase.call(
             SetClusterBatchProductFieldParams(
-              batchId: product.batchId ?? 0,
-              productId: product.idProduct ?? 0,
+              batchId: productBD.batchId ?? 0,
+              productId: productBD.idProduct ?? 0,
               field: 'is_send_odoo',
               value: null,
-              idMove: product.idMove ?? 0,
-              type: type,
+              idMove: productBD.idMove ?? 0,
+              type: 'cluster',
             ),
           );
 
           await setClusterBatchProductFieldUseCase.call(
             SetClusterBatchProductFieldParams(
-              batchId: product.batchId ?? 0,
-              productId: product.idProduct ?? 0,
+              batchId: productBD.batchId ?? 0,
+              productId: productBD.idProduct ?? 0,
               field: 'is_separate',
               value: 0,
-              idMove: product.idMove ?? 0,
-              type: type,
+              idMove: productBD.idMove ?? 0,
+              type: 'cluster',
             ),
           );
 
           await setClusterBatchProductFieldUseCase.call(
             SetClusterBatchProductFieldParams(
-              batchId: product.batchId ?? 0,
-              productId: product.idProduct ?? 0,
+              batchId: productBD.batchId ?? 0,
+              productId: productBD.idProduct ?? 0,
               field: 'is_selected',
               value: 0,
-              idMove: product.idMove ?? 0,
-              type: type,
+              idMove: productBD.idMove ?? 0,
+              type: 'cluster',
             ),
           );
 
           await setClusterBatchProductFieldUseCase.call(
             SetClusterBatchProductFieldParams(
-              batchId: product.batchId ?? 0,
-              productId: product.idProduct ?? 0,
+              batchId: productBD.batchId ?? 0,
+              productId: productBD.idProduct ?? 0,
               field: 'quantity_separate',
               value: 0,
-              idMove: product.idMove ?? 0,
-              type: type,
+              idMove: productBD.idMove ?? 0,
+              type: 'cluster',
             ),
           );
 
           // ignore: invalid_use_of_visible_for_testing_member
           emit(SendToOdooStateError(mensajeError));
+          print("❌ Error en sendProuctOdoo: $mensajeError");
           return (false, mensajeError);
         },
         (success) async {
@@ -508,12 +587,12 @@ class ClusterPickingBloc
 
           await setClusterBatchProductFieldUseCase.call(
             SetClusterBatchProductFieldParams(
-              batchId: product.batchId ?? 0,
-              productId: product.idProduct ?? 0,
+              batchId: productBD.batchId ?? 0,
+              productId: productBD.idProduct ?? 0,
               field: 'is_send_odoo',
               value: 1,
-              idMove: product.idMove ?? 0,
-              type: type,
+              idMove: productBD.idMove ?? 0,
+              type: 'cluster',
             ),
           );
 
@@ -572,10 +651,10 @@ class ClusterPickingBloc
       await setClusterBatchProductFieldUseCase
           .call(SetClusterBatchProductFieldParams(
         batchId: currentBatch?.id ?? 0,
-        productId: currentProduct?.idProduct ?? 0,
+        productId: event.product.idProduct ?? 0,
         field: 'observation',
         value: event.selectedNovedad,
-        idMove: currentProduct?.idMove ?? 0,
+        idMove: event.product.idMove ?? 0,
         type: 'cluster',
       ));
       emit(UpdateNovedadProductState(event.selectedNovedad));
@@ -652,6 +731,19 @@ class ClusterPickingBloc
     }
   }
 
+  void quantitySeparate(
+      int productId, int batchId, int idMove, dynamic value) async {
+    await setClusterBatchProductFieldUseCase
+        .call(SetClusterBatchProductFieldParams(
+      batchId: batchId,
+      productId: productId,
+      field: 'quantity_separate',
+      value: value,
+      idMove: idMove,
+      type: 'cluster',
+    ));
+  }
+
   //*metodo para cambiar la cantidad seleccionada
   void _onChangeQuantitySelectedEvent(
       ChangeQuantitySeparate event, Emitter<ClusterPickingState> emit) async {
@@ -694,6 +786,40 @@ class ClusterPickingBloc
   void _onMarkPedidoAsValidated(MarkPedidoAsValidatedEvent event,
       Emitter<ClusterPickingState> emit) async {
     try {
+      // 1. Obtener los ids del pedido y la ubicación para validar con el backend
+      final pedidoToValidate = pedidosValidate.firstWhere(
+        (p) => p.namePedido == event.namePedido,
+        orElse: () => const PedidoValidate(),
+      );
+
+      final validateResult = await validatePedidoUseCase.call(
+        ValidatePedidoParams(
+          idPedido: pedidoToValidate.idPedido ?? 0,
+          idLocation: pedidoToValidate.idMuelle ??
+              0, // idMuelle es lo pedido como idLocation
+        ),
+      );
+
+      bool validateSuccess = false;
+      String errorMessage = '';
+
+      validateResult.fold(
+        (failure) {
+          validateSuccess = false;
+          errorMessage = failure.message;
+        },
+        (success) {
+          validateSuccess = success;
+        },
+      );
+
+      if (!validateSuccess) {
+        debugPrint('❌ Error validando pedido en API: $errorMessage');
+        emit(ValidatePedidoStateError(errorMessage));
+        return; // Detenemos la ejecución si falla en backend
+      }
+
+      // 2. Si es correcto hacemos ya el siguiente proceso
       await setClusterBatchPedidoFieldUseCase.call(
         SetClusterBatchPedidoFieldParams(
           batchId: event.batchId,
@@ -848,6 +974,7 @@ class ClusterPickingBloc
       filteredProducts = [];
       listLotesProduct = [];
       listOfBarcodes = [];
+      pedidosValidate = [];
       listLotesProductFilters = [];
       lotesProductCurrent = LoteProducto();
       emit(ClearFieldsState());
@@ -1038,10 +1165,10 @@ class ClusterPickingBloc
       case "removal_priority":
         if (batch.orderPicking == "asc") {
           sortedProducts.sort((a, b) =>
-              (a.removalPriority ?? 0).compareTo(b.removalPriority ?? 0));
+              (a.rimovalPriority ?? 0).compareTo(b.rimovalPriority ?? 0));
         } else {
           sortedProducts.sort((a, b) =>
-              (b.removalPriority ?? 0).compareTo(a.removalPriority ?? 0));
+              (b.rimovalPriority ?? 0).compareTo(a.rimovalPriority ?? 0));
         }
         break;
       case "location_name":
@@ -1095,15 +1222,20 @@ class ClusterPickingBloc
         locationIsOk = currentProduct?.isLocationIsOk == 1;
       }
       // pedidoValidateIsOk = currentProduct?.isPedidoValidateIsOk == 1;
-      productIsOk = currentProduct?.productIsOk == 1;
-      locationDestIsOk = currentProduct?.locationDestIsOk == 1;
-      // quantityIsOk = currentProduct?.isQuantityIsOk == 1;
+      productIsOk = currentProduct?.productIsOk == 1 ? true : false;
+      quantityIsOk = currentProduct?.isQuantityIsOk == 1 ? true : false;
       quantitySelected = currentProduct?.quantitySeparate ?? 0;
       _isProcessing = false;
-    }
 
-    debugPrint(
-        'currentProduct: idProduct=${currentProduct?.idProduct}, name=${currentProduct?.name}');
+      if (productIsOk == true) {
+        locationIsOk = true;
+      }
+      if (quantityIsOk == true) {
+        pedidoValidateIsOk = true;
+      } else {
+        pedidoValidateIsOk = false;
+      }
+    }
 
     listLotesProduct = [];
     listLotesProductFilters = [];

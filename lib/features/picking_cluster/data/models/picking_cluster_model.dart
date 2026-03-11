@@ -130,7 +130,7 @@ class ResultElementModel {
         completedItems: json["completed_items"],
         progressPercentage: json["progress_percentage"],
         startTimePick: json["start_time_pick"],
-        endTimePick: json["end_time_pick"] == false
+        endTimePick: json["end_time_pick"] == ""
             ? ""
             : DateTime.parse(json["end_time_pick"]),
         productSeparateQty: json["product_separate_qty"],
