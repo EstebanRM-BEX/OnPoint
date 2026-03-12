@@ -5,6 +5,8 @@ import 'package:wms_app/features/picking_cluster/presentation/screens/detail_scr
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/index.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/scan_product_scree.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/validate_screen.dart';
+import 'package:wms_app/features/picking_cluster/presentation/screens/view_lote_widget.dart';
+import 'package:wms_app/features/picking_cluster/domain/entities/lote_producto.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/conteo_screen.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/list_conteo_screen.dart';
@@ -98,6 +100,7 @@ class AppRoutes {
   static const String scanProductCluster = 'scan-product-cluster';
   static const String detailCluster = 'detail-cluster';
   static const String validateCluster = 'validate-cluster';
+  static const String selectLoteCluster = 'select-lote-cluster';
 
   //todo pick
   static const String pick = 'pick';
@@ -289,6 +292,17 @@ class AppRoutes {
       scanProductCluster: (_) => const ScanProductCluster(),
       detailCluster: (_) => const DetailClusterScreen(),
       validateCluster: (_) => const ValidateScreen(),
+
+      selectLoteCluster: (context) {
+        final args =
+            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
+        final lotes = args[0] as List<LoteProducto>;
+        final suggestedLoteId = args[1] as int?;
+        return ViewLoteScreen(
+          lotes: lotes,
+          suggestedLoteId: suggestedLoteId,
+        );
+      },
 
       // todo WMS Packing
       wmsPacking: (_) => const WmsPackingScreen(),

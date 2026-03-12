@@ -51,40 +51,37 @@ class _LoteScannerWidgetState extends State<LoteScannerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 5),
-      child: Container(
-        height: 20,
-        margin: const EdgeInsets.only(bottom: 5, top: 5),
-        child: TextFormField(
-          autofocus: true,
-          showCursor: false,
-          controller: widget.controller,
-          focusNode: widget.focusNode,
-          enabled: widget.enabled,
-          keyboardType: TextInputType.none,
-          enableInteractiveSelection: false,
-          textInputAction: TextInputAction.done,
-          style: const TextStyle(color: Colors.transparent),
-          onChanged: _onChanged,
-          onFieldSubmitted: (value) {
-            // Disparo inmediato en Enter: cancela el debounce pendiente
-            _debounce?.cancel();
-            if (value.trim().isNotEmpty) {
-              widget.onValidateLote(value);
-            }
-            widget.controller.clear();
-          },
-          decoration: InputDecoration(
-            hintText: widget.hintText,
-            hintMaxLines: 1,
-            disabledBorder: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            border: InputBorder.none,
-            hintStyle: const TextStyle(fontSize: 12, color: black),
-          ),
-        ),
+    // Only claim autofocus when this widget's route is the active top-most
+    // route. If another screen (like ViewLoteScreen) is pushed on top, the
+    // underlying scanner must NOT steal focus from it.
+    final bool isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
+    return TextFormField(
+      autofocus: isCurrentRoute,
+      showCursor: false,
+      controller: widget.controller,
+      focusNode: widget.focusNode,
+      enabled: widget.enabled,
+      keyboardType: TextInputType.none,
+      enableInteractiveSelection: false,
+      textInputAction: TextInputAction.done,
+      style: const TextStyle(color: Colors.transparent),
+      onChanged: _onChanged,
+      onFieldSubmitted: (value) {
+        // Disparo inmediato en Enter: cancela el debounce pendiente
+        _debounce?.cancel();
+        if (value.trim().isNotEmpty) {
+          widget.onValidateLote(value);
+        }
+        widget.controller.clear();
+      },
+      decoration: InputDecoration(
+        hintText: widget.hintText,
+        hintMaxLines: 1,
+        disabledBorder: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        border: InputBorder.none,
+        hintStyle: const TextStyle(fontSize: 12, color: black),
       ),
     );
   }

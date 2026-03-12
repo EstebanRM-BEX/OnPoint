@@ -45,7 +45,7 @@ class SendProductOdooUseCase implements UseCase<String, SendProductOdooParams> {
       final Map<String, dynamic> itemMap = {
         "id_move": params.product.idMove ?? 0,
         "product_id": params.product.idProduct ?? 0,
-        "id_lote": params.product.loteId ?? 0,
+        "id_lote": params.loteId,
         "cantidad_separada": cantidadFinal,
         "observacion": (params.product.observation == null ||
                 params.product.observation!.isEmpty)
@@ -98,10 +98,12 @@ class SendProductOdooParams {
   final BatchProduct product;
   final String type;
   final UserConfigurationModel? configurations;
+  final int loteId;
 
   SendProductOdooParams({
     required this.product,
     required this.type,
     this.configurations,
+    required this.loteId,
   });
 }

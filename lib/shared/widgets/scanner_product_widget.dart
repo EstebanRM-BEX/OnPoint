@@ -197,21 +197,23 @@ class _ProductScannerWidgetState extends State<ProductScannerWidget> {
                 ),
                 Row(
                   children: [
-                    if (widget.lotId != "") ...[
-                      Text('Lote/serie:',
-                          style:
-                              TextStyle(fontSize: 13, color: primaryColorApp)),
-                      const SizedBox(width: 5),
-                      Text(
-                          widget.lotId == "" || widget.lotId == null
-                              ? "Sin lote"
-                              : widget.lotId ?? "",
-                          style: TextStyle(
-                              fontSize: 13,
-                              color: widget.lotId == "" || widget.lotId == null
-                                  ? red
-                                  : black)),
-                    ],
+                    if (widget.isViewLote)
+                      if (widget.lotId != "") ...[
+                        Text('Lote/serie:',
+                            style: TextStyle(
+                                fontSize: 13, color: primaryColorApp)),
+                        const SizedBox(width: 5),
+                        Text(
+                            widget.lotId == "" || widget.lotId == null
+                                ? "Sin lote"
+                                : widget.lotId ?? "",
+                            style: TextStyle(
+                                fontSize: 13,
+                                color:
+                                    widget.lotId == "" || widget.lotId == null
+                                        ? red
+                                        : black)),
+                      ],
                     const Spacer(),
                     GestureDetector(
                       onTap: widget.onBarcodesDialogTap,

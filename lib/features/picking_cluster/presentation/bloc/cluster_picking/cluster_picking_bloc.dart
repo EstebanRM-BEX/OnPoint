@@ -171,6 +171,7 @@ class ClusterPickingBloc
     on<EndTimePick>(_onEndTimePickEvent);
     on<StartTimePick>(_onStartTimePickEvent);
     on<SendProductEditOdooEvent>(_onSendProductEditOdooEvent);
+    on<SelectLoteEventCluster>(_onSelectLoteEventCluster);
   }
 
   //*evento para enviar un producto a odoo editado
@@ -223,9 +224,18 @@ class ClusterPickingBloc
         ),
       );
 
-      result.fold(
-        (failure) => emit(TimeSeparateError(failure.message)),
-        (_) => emit(TimeSeparateSuccess(formattedDate)),
+      await result.fold(
+        (failure) async => emit(TimeSeparateError(failure.message)),
+        (_) async {
+          //actualizamos el timepo del batch
+          await setClusterBatchFieldUseCase.call(SetClusterBatchFieldParams(
+              batchId: event.batchId,
+              field: 'start_time_pick',
+              value: formattedDate,
+              type: 'cluster'));
+
+          emit(TimeSeparateSuccess(formattedDate));
+        },
       );
     } catch (e, s) {
       debugPrint("❌ Error en _onStartTimePickEvent: $e, $s");
@@ -246,9 +256,9 @@ class ClusterPickingBloc
         ),
       );
 
-      result.fold(
-        (failure) => emit(TimeSeparateError(failure.message)),
-        (_) => emit(TimeSeparateSuccess(formattedDate)),
+      await result.fold(
+        (failure) async => emit(TimeSeparateError(failure.message)),
+        (_) async => emit(TimeSeparateSuccess(formattedDate)),
       );
     } catch (e, s) {
       debugPrint("❌ Error en _onEndTimePickEvent: $e, $s");
@@ -452,6 +462,10 @@ class ClusterPickingBloc
 
         quantitySelected = currentProduct?.quantitySeparate ?? 0;
 
+        lotesProductCurrent = LoteProducto();
+        isLoteOk = true;
+        loteIsOk = false;
+
         await setClusterBatchProductFieldUseCase
             .call(SetClusterBatchProductFieldParams(
           batchId: currentBatch?.id ?? 0,
@@ -519,6 +533,7 @@ class ClusterPickingBloc
       final response = await sendProductOdooUseCase.call(
         SendProductOdooParams(
           product: productBD,
+          loteId: lotesProductCurrent.id ?? 0,
           type: 'cluster',
           configurations: configurations,
         ),
@@ -595,6 +610,40 @@ class ClusterPickingBloc
               type: 'cluster',
             ),
           );
+
+          //actualizamos el lote del producto si maneja lote
+          if (productBD.productTracking == "lot") {
+            await setClusterBatchProductFieldUseCase.call(
+              SetClusterBatchProductFieldParams(
+                batchId: productBD.batchId ?? 0,
+                productId: productBD.idProduct ?? 0,
+                field: 'lot_id',
+                value: lotesProductCurrent?.name ?? 0,
+                idMove: productBD.idMove ?? 0,
+                type: 'cluster',
+              ),
+            );
+            await setClusterBatchProductFieldUseCase.call(
+              SetClusterBatchProductFieldParams(
+                batchId: productBD.batchId ?? 0,
+                productId: productBD.idProduct ?? 0,
+                field: 'lote_id',
+                value: lotesProductCurrent?.name ?? 0,
+                idMove: productBD.idMove ?? 0,
+                type: 'cluster',
+              ),
+            );
+            await setClusterBatchProductFieldUseCase.call(
+              SetClusterBatchProductFieldParams(
+                batchId: productBD.batchId ?? 0,
+                productId: productBD.idProduct ?? 0,
+                field: 'expire_date',
+                value: lotesProductCurrent?.expirationDate.toString() ?? '',
+                idMove: productBD.idMove ?? 0,
+                type: 'cluster',
+              ),
+            );
+          }
 
           // ignore: invalid_use_of_visible_for_testing_member
           emit(SendToOdooStateSuccess(true));
@@ -947,6 +996,7 @@ class ClusterPickingBloc
       isLocationDestOk = true;
       isQuantityOk = true;
       isLoteOk = true;
+      loteIsOk = false;
       viewQuantity = false;
       locationsDestIsOk = false;
 
@@ -954,7 +1004,6 @@ class ClusterPickingBloc
       productIsOk = false;
       locationDestIsOk = false;
       quantityIsOk = false;
-      loteIsOk = false;
       locationsDestIsok = false;
 
       pedidoValidateIsOk = false;
@@ -1438,5 +1487,13 @@ class ClusterPickingBloc
 
     // Si pasó por todos y ninguno falló, entonces está completo.
     return true;
+  }
+
+  void _onSelectLoteEventCluster(
+      SelectLoteEventCluster event, Emitter<ClusterPickingState> emit) {
+    lotesProductCurrent = event.selectedLote;
+    loteIsOk = true;
+    isLoteOk = true;
+    emit(ValidateFieldsStateSuccess(true));
   }
 }

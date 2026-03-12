@@ -140,7 +140,7 @@ class _LocationDropdownWidgetState extends State<LocationDropdownWidget> {
         if (widget.currentProduct.barcodeLocation == null ||
             widget.currentProduct.barcodeLocation!.isEmpty)
           const Padding(
-            padding: EdgeInsets.only(top: 4),
+            padding: EdgeInsets.only(top: 2),
             child: Text(
               "Sin código de barras",
               style: TextStyle(fontSize: 14, color: red),
@@ -148,7 +148,7 @@ class _LocationDropdownWidgetState extends State<LocationDropdownWidget> {
           ),
         if (widget.isPDA)
           Padding(
-            padding: const EdgeInsets.only(top: 4),
+            padding: const EdgeInsets.only(top: 2),
             child: Text(
               widget.currentLocationId,
               style: const TextStyle(fontSize: 14, color: black),

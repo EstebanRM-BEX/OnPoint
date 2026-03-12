@@ -192,3 +192,12 @@ class SendProductEditOdooEvent extends ClusterPickingEvent {
     this.cantidad,
   );
 }
+
+class SelectLoteEventCluster extends ClusterPickingEvent {
+  final LoteProducto selectedLote;
+
+  const SelectLoteEventCluster(this.selectedLote);
+
+  @override
+  List<Object> get props => [selectedLote];
+}

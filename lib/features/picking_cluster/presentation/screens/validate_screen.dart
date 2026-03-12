@@ -105,10 +105,7 @@ class _ValidateScreenState extends State<ValidateScreen> {
           }
 
           if (state is PickingClustersLoaded) {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context); // Cierra el loader
-            }
-
+            Navigator.of(context).popUntil((route) => route.isFirst);
             Navigator.pushReplacementNamed(
               context,
               'picking-cluster',
@@ -292,13 +289,6 @@ class _ValidateScreenState extends State<ValidateScreen> {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      // shape: RoundedRectangleBorder(
-      //   borderRadius: BorderRadius.circular(12),
-      //   side: BorderSide(
-      //     color: isValidated ? Colors.green : Colors.grey.shade300,
-      //     width: 1.5,
-      //   ),
-      // ),
       color: isValidated ? Colors.green[100] : Colors.grey[300],
       elevation: 2,
       child: Theme(

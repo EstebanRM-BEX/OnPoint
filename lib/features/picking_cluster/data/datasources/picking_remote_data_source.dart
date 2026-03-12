@@ -52,7 +52,7 @@ class PickingClusterRemoteDataSourceImpl
   Future<List<LotesProduct>> getLotesProducto(int productId) async {
     final response = await apiRequestService.get(
       endpoint: 'api/lotes/$productId',
-      isLoadinDialog: true,
+      isLoadinDialog: false,
       isunecodePath: false,
     );
 

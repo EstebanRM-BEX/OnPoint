@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:wms_app/core/constants/colors.dart';
 
 class DynamicScannerWidget extends StatefulWidget {
   final bool isLocationOk;
@@ -95,7 +94,7 @@ class _DynamicScannerWidgetState extends State<DynamicScannerWidget> {
                   height: 1,
                   margin: const EdgeInsets.only(bottom: 5),
                   child: TextFormField(
-                    autofocus: true,
+                    autofocus: ModalRoute.of(context)?.isCurrent ?? true,
                     showCursor: false,
                     controller: widget.controller,
                     enabled: widget.locationIsOk &&
@@ -119,10 +118,9 @@ class _DynamicScannerWidgetState extends State<DynamicScannerWidget> {
                       // Limpiar el controller después del submit
                       widget.controller.clear();
                     },
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintMaxLines: 1,
                       disabledBorder: InputBorder.none,
-                      hintStyle: TextStyle(fontSize: 1, color: black),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,

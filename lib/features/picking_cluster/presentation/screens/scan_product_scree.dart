@@ -12,6 +12,7 @@ import 'package:wms_app/features/picking_cluster/domain/entities/lote_producto.d
 import 'package:wms_app/features/picking_cluster/presentation/bloc/cluster_picking/cluster_picking_bloc.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/pedido_dropdown_widget.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/popunButton_widget.dart';
+import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/lote_scanner_widget.dart';
@@ -307,8 +308,24 @@ class _ScanProductClusterState extends State<ScanProductCluster>
         );
     if (matchedLote.name != null) {
       debugPrint('lote encontrado: ${matchedLote.name}');
-      bloc.add(ValidateFieldsEvent(field: "lote", isOk: true));
-      // bloc.add(  (matchedLote));
+
+      if (matchedLote.id == bloc.currentProduct?.loteId) {
+        Navigator.pop(context); // Cierra modal
+        bloc.add(ValidateFieldsEvent(field: "lote", isOk: true));
+        bloc.add(SelectLoteEventCluster(matchedLote));
+      } else {
+        //mostrar dialgo de confirmacion para seleccionar otro lote
+        showDialog(
+          context: context,
+          builder: (context) => DialogValidateLot(
+            bloc: bloc,
+            selectedLote: matchedLote,
+            onLoteSelectedWithValidate: (lote) {
+              bloc.add(SelectLoteEventCluster(lote));
+            },
+          ),
+        );
+      }
       Future.microtask(() => focusNode6.requestFocus());
     } else {
       _audioService.playErrorSound();
@@ -498,7 +515,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
 
     void procesarTransaccion() {
       batchBloc.add(ChangeQuantitySeparate(
-          cantidad!, // Usamos ! porque ya validamos arriba
+          cantidad, // Usamos la variable validada
           currentProduct?.idProduct ?? 0,
           currentProduct?.idMove ?? 0,
           'cluster'));
@@ -872,6 +889,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                               isProductOk: bloc.isProductOk,
                               productIsOk: bloc.productIsOk,
                               locationIsOk: bloc.locationIsOk,
+                              isViewLote: false,
                               quantityIsOk: bloc.quantityIsOk,
                               locationDestIsOk: bloc.locationDestIsOk,
                               currentProductId:
@@ -901,10 +919,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                                 currentProduct: bloc.currentProduct!,
                                 bloc: bloc,
                               ),
-                              expiryWidget: ExpirationBadgeWidget(
-                                expirationDate:
-                                    bloc.currentProduct?.expireDate ?? '',
-                              ),
+                              expiryWidget: Container(),
                               listOfBarcodes: bloc.listOfBarcodes,
                               onBarcodesDialogTap: () {
                                 showDialog(
@@ -926,111 +941,123 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                             Visibility(
                               visible:
                                   bloc.currentProduct?.productTracking == "lot",
-                              child: Row(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10),
-                                    child: Container(
-                                      width: 10,
-                                      height: 10,
-                                      decoration: BoxDecoration(
-                                        color: bloc.loteIsOk ? green : yellow,
-                                        shape: BoxShape.circle,
+                              child: GestureDetector(
+                                onTap: bloc.locationIsOk && bloc.productIsOk
+                                    ? () {
+                                        Navigator.pushReplacementNamed(
+                                          context,
+                                          AppRoutes.selectLoteCluster,
+                                          arguments: [
+                                            bloc.listLotesProduct, // [0] lotes
+                                            bloc.currentProduct
+                                                ?.loteId, // [3] suggestedLoteId
+                                          ],
+                                        );
+                                      }
+                                    : null,
+                                child: Row(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10),
+                                      child: Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: BoxDecoration(
+                                          color: bloc.loteIsOk ? green : yellow,
+                                          shape: BoxShape.circle,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  Card(
-                                    color: bloc.isLoteOk
-                                        ? bloc.loteIsOk
-                                            ? Colors.green[100]
-                                            : Colors.grey[300]
-                                        : Colors.red[200],
-                                    elevation: 5,
-                                    child: Container(
-                                        width: size.width * 0.85,
-                                        padding: const EdgeInsets.only(
-                                            left: 10, right: 10, bottom: 5),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  'Lote del producto',
-                                                  style: TextStyle(
-                                                      fontSize: 14,
-                                                      color: primaryColorApp),
+                                    Card(
+                                      color: bloc.isLoteOk
+                                          ? bloc.loteIsOk
+                                              ? Colors.green[100]
+                                              : Colors.grey[300]
+                                          : Colors.red[200],
+                                      elevation: 5,
+                                      child: Container(
+                                          width: size.width * 0.85,
+                                          padding: const EdgeInsets.only(
+                                              left: 10, right: 10, bottom: 5),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              SizedBox(
+                                                height: 30,
+                                                child: Row(
+                                                  children: [
+                                                    Text(
+                                                      'Lote del producto',
+                                                      style: TextStyle(
+                                                          fontSize: 14,
+                                                          color:
+                                                              primaryColorApp),
+                                                    ),
+                                                    const Spacer(),
+                                                    SizedBox(
+                                                      height: 20,
+                                                      width: 20,
+                                                      child: SvgPicture.asset(
+                                                        color: primaryColorApp,
+                                                        "assets/icons/barcode.svg",
+                                                        height: 20,
+                                                        width: 20,
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                                const Spacer(),
-                                                SizedBox(
-                                                  height: 20,
-                                                  width: 20,
-                                                  child: SvgPicture.asset(
-                                                    color: primaryColorApp,
-                                                    "assets/icons/barcode.svg",
+                                              ),
+                                              Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.start,
+                                                children: [
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            bottom: 5),
                                                     height: 20,
-                                                    width: 20,
-                                                    fit: BoxFit.cover,
+                                                    child: LoteScannerWidget(
+                                                      controller:
+                                                          _controllerLote,
+                                                      focusNode: focusNode6,
+                                                      enabled: bloc
+                                                              .productIsOk && //true
+                                                          !bloc
+                                                              .loteIsOk && //false
+                                                          !bloc
+                                                              .quantityIsOk && //false
+                                                          !bloc.viewQuantity,
+                                                      hintText: bloc.lotesProductCurrent
+                                                                      .name ==
+                                                                  "" ||
+                                                              bloc.lotesProductCurrent
+                                                                      .name ==
+                                                                  null
+                                                          ? 'Esperando escaneo'
+                                                          : bloc.lotesProductCurrent
+                                                                  .name ??
+                                                              "",
+                                                      onValidateLote:
+                                                          validateLote,
+                                                    ),
                                                   ),
-                                                ),
-                                                IconButton(
-                                                    onPressed: () {
-                                                      // Navigator
-                                                      //     .pushReplacementNamed(
-                                                      //   context,
-                                                      //   'new-lote',
-                                                      //   arguments: [
-                                                      //     widget.ordenCompra,
-                                                      //     widget.currentProduct
-                                                      //   ],
-                                                      // );
-                                                    },
-                                                    icon: Icon(
-                                                      Icons.arrow_forward_ios,
-                                                      color: primaryColorApp,
-                                                      size: 20,
-                                                    ))
-                                              ],
-                                            ),
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.start,
-                                              children: [
-                                                LoteScannerWidget(
-                                                  controller: _controllerLote,
-                                                  focusNode: focusNode6,
-                                                  enabled: bloc
-                                                          .productIsOk && //true
-                                                      !bloc.loteIsOk && //false
-                                                      !bloc
-                                                          .quantityIsOk && //false
-                                                      !bloc.viewQuantity,
-                                                  hintText: bloc.lotesProductCurrent
-                                                                  .name ==
-                                                              "" ||
-                                                          bloc.lotesProductCurrent
-                                                                  .name ==
-                                                              null
-                                                      ? 'Esperando escaneo'
-                                                      : bloc.lotesProductCurrent
-                                                              .name ??
-                                                          "",
-                                                  onValidateLote: validateLote,
-                                                ),
-                                                ExpirationBadgeWidget(
-                                                  expirationDate: bloc
-                                                      .lotesProductCurrent
-                                                      .expirationDate,
-                                                ),
-                                              ],
-                                            )
-                                          ],
-                                        )),
-                                  ),
-                                ],
+                                                  ExpirationBadgeWidget(
+                                                    expirationDate: bloc
+                                                        .lotesProductCurrent
+                                                        .expirationDate,
+                                                  ),
+                                                ],
+                                              )
+                                            ],
+                                          )),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
 
@@ -1093,8 +1120,8 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                                       padding: const EdgeInsets.only(
                                           left: 10,
                                           right: 10,
-                                          top: 10,
-                                          bottom: 10),
+                                          top: 2,
+                                          bottom: 2),
                                       child: Column(
                                         children: [
                                           Row(
@@ -1333,5 +1360,91 @@ class _ScanProductClusterState extends State<ScanProductCluster>
       batchBloc.isProcessing = false;
       batchBloc.add(SetIsProcessingEvent(false));
     }
+  }
+}
+
+class DialogValidateLot extends StatelessWidget {
+  const DialogValidateLot({
+    super.key,
+    required this.bloc,
+    required this.selectedLote,
+    required this.onLoteSelectedWithValidate,
+  });
+
+  final ClusterPickingBloc bloc;
+  final LoteProducto selectedLote;
+  final Function(LoteProducto) onLoteSelectedWithValidate;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Center(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            //icono de advertencia
+            const Icon(
+              Icons.warning,
+              color: Colors.amber,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'ADVERTENCIA',
+              style: TextStyle(
+                  fontSize: 16, color: black, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+              textAlign: TextAlign.center,
+              'El lote seleccionado no es el sugerido desde la reserva en WMS'),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Text('Lote sugerido: ', style: TextStyle(color: primaryColorApp)),
+              Text('${bloc.currentProduct?.lotId}'),
+            ],
+          ),
+          Row(
+            children: [
+              Text('Lote seleccionado: ',
+                  style: TextStyle(color: primaryColorApp)),
+              Text('${selectedLote.name}'),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text('¿Desea continuar?'),
+        ],
+      ),
+      actions: [
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: grey,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          child: const Text('Cancelar', style: TextStyle(color: white)),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            onLoteSelectedWithValidate(selectedLote);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColorApp,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          child: const Text('Aceptar', style: TextStyle(color: white)),
+        ),
+      ],
+    );
   }
 }
