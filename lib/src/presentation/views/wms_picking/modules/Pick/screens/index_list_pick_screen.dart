@@ -22,63 +22,169 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/r
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
-class IndexListPickScreen extends StatelessWidget {
+class IndexListPickScreen extends StatefulWidget {
   const IndexListPickScreen({super.key});
+
+  @override
+  State<IndexListPickScreen> createState() => _IndexListPickScreenState();
+}
+
+class _IndexListPickScreenState extends State<IndexListPickScreen> {
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
+  final FocusNode focusNodeBuscar = FocusNode();
+  final TextEditingController _controllerToDo = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => focusNodeBuscar.requestFocus());
+  }
+
+  @override
+  void dispose() {
+    focusNodeBuscar.dispose();
+    _controllerToDo.dispose();
+    super.dispose();
+  }
+
+  void validateBarcode(String value, BuildContext context) {
+    final bloc = context.read<PickingPickBloc>();
+    final scan = (bloc.scannedValue5.isEmpty ? value : bloc.scannedValue5)
+        .trim()
+        .toLowerCase();
+
+    _controllerToDo.clear();
+    debugPrint('🔎 Scan barcode (batch picking): $scan');
+
+    final listOfPick = bloc.listOfPick;
+
+    void processBatch(ResultPick batch) {
+      try {
+        _handleTap(context, context, batch);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error al cargar los datos'),
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+
+    // Buscar el pick usando el código de barras o el nombre
+    final pick = listOfPick.firstWhere(
+      (b) =>
+          b.name?.toLowerCase() == scan || b.zonaEntrega?.toLowerCase() == scan,
+      orElse: () => ResultPick(),
+    );
+
+    if (pick.id != null) {
+      debugPrint(
+          '🔎 pick encontrado : ${pick.id} ${pick.name} - ${pick.zonaEntrega}');
+      processBatch(pick);
+      return;
+    } else {
+      _audioService.playErrorSound();
+      _vibrationService.vibrate();
+      Future.microtask(() => focusNodeBuscar.requestFocus());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pick no encontrado en la lista')),
+      );
+    }
+  }
+
+  void _handleTap(
+      BuildContext context, BuildContext contextBuilder, dynamic batch) async {
+    debugPrint("Batch: ${batch.toMap()}");
+    final bloc = context.read<PickingPickBloc>();
+
+    try {
+      // Lógica para asignar responsable si no existe
+      if (batch.responsableId == null || batch.responsableId == 0) {
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => DialogAsignUserWidget(
+            title:
+                'Esta seguro de tomar este pick, una vez aceptado no podrá ser cancelada desde la app, una vez asignada se registrará el tiempo de inicio de la operación.',
+            onCancel: () {
+              Future.microtask(() => focusNodeBuscar.requestFocus());
+              Navigator.pop(dialogContext);
+            },
+            onAccepted: () async {
+              bloc.add(AssignUserToTransfer(batch.id ?? 0));
+              Navigator.pop(dialogContext);
+            },
+          ),
+        );
+        bloc.searchPickController.clear();
+        return;
+      }
+
+      // Lógica para iniciar la transferencia si el tiempo no ha comenzado
+      if (batch.startTimeTransfer == "") {
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => DialogStartTimeWidget(
+            title: 'Iniciar Pick',
+            onAccepted: () async {
+              bloc.add(StartOrStopTimeTransfer(
+                batch.id ?? 0,
+                'start_time_transfer',
+              ));
+              Navigator.pop(dialogContext);
+            },
+          ),
+        );
+      }
+
+      bloc.searchPickController.clear();
+      bloc.add(FetchPickWithProductsEvent(batch.id ?? 0));
+      bloc.add(LoadConfigurationsUser());
+
+      _goBatchInfo(
+        contextBuilder,
+        bloc,
+        batch,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(contextBuilder).showSnackBar(
+        const SnackBar(
+          content: Text('Error al cargar los datos'),
+          duration: Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  void _goBatchInfo(
+    BuildContext context,
+    PickingPickBloc batchBloc,
+    ResultPick batch,
+  ) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const DialogLoading(
+        message: 'Cargando interfaz...',
+      ),
+    );
+
+    await Future.delayed(const Duration(seconds: 1));
+    Navigator.pop(context);
+
+    if (batch.isSeparate != 1) {
+      batchBloc.searchPickController.clear();
+      Navigator.pushReplacementNamed(context, 'scan-product-pick',
+          arguments: [true]);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-
-    final IAudioService _audioService = getIt<IAudioService>();
-    final IVibrationService _vibrationService = getIt<IVibrationService>();
-    FocusNode focusNodeBuscar = FocusNode();
-    final TextEditingController _controllerToDo = TextEditingController();
-
-    void validateBarcode(String value, BuildContext context) {
-      final bloc = context.read<PickingPickBloc>();
-      final scan = (bloc.scannedValue5.isEmpty ? value : bloc.scannedValue5)
-          .trim()
-          .toLowerCase();
-
-      _controllerToDo.clear();
-      debugPrint('🔎 Scan barcode (batch picking): $scan');
-
-      final listOfBatchs = bloc.listOfPick;
-
-      void processBatch(ResultPick batch) {
-        // bloc.add(ClearScannedValueEvent('toDo'));
-
-        try {
-          _handleTransferTap(context, context, batch);
-        } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Error al cargar los datos'),
-              duration: Duration(seconds: 4),
-            ),
-          );
-        }
-      }
-
-      // Buscar el producto usando el código de barras principal o el código de producto
-      final batchs = listOfBatchs.firstWhere(
-        (b) =>
-            b.name?.toLowerCase() == scan ||
-            b.zonaEntrega?.toLowerCase() == scan,
-        orElse: () => ResultPick(),
-      );
-
-      if (batchs.id != null) {
-        debugPrint(
-            '🔎 batch encontrado : ${batchs.id} ${batchs.name} - ${batchs.zonaEntrega}');
-        processBatch(batchs);
-        return;
-      } else {
-        _audioService.playErrorSound();
-        _vibrationService.vibrate();
-        // bloc.add(ClearScannedValueEvent('toDo'));
-      }
-    }
 
     return WillPopScope(
       onWillPop: () async {
@@ -109,11 +215,9 @@ class IndexListPickScreen extends StatelessWidget {
           }
 
           if (state is AssignUserToPickLoading) {
-            // mostramos un dialogo de carga y despues
             showDialog(
               context: context,
-              barrierDismissible:
-                  false, // No permitir que el usuario cierre el diálogo manualmente
+              barrierDismissible: false,
               builder: (_) => const DialogLoading(
                 message: 'Cargando interfaz...',
               ),
@@ -121,7 +225,6 @@ class IndexListPickScreen extends StatelessWidget {
           }
 
           if (state is AssignUserToPickSuccess) {
-            // cerramos el dialogo de carga
             Navigator.pop(context);
             context
                 .read<PickingPickBloc>()
@@ -144,7 +247,6 @@ class IndexListPickScreen extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 10),
               child: Column(
                 children: [
-                  //*appbar
                   Container(
                     decoration: BoxDecoration(
                       color: primaryColorApp,
@@ -159,12 +261,8 @@ class IndexListPickScreen extends StatelessWidget {
                         children: [
                           const WarningWidgetCubit(),
                           Padding(
-                            padding: EdgeInsets.only(
-                                left: 10,
-                                right: 10,
-                                top:
-                                    status != ConnectionStatus.online ? 20 : 20,
-                                bottom: 0),
+                            padding: const EdgeInsets.only(
+                                left: 10, right: 10, top: 20, bottom: 0),
                             child: Column(
                               children: [
                                 Row(
@@ -195,12 +293,8 @@ class IndexListPickScreen extends StatelessWidget {
                                                   fontSize: 18,
                                                   fontWeight: FontWeight.bold),
                                             ),
-
-                                            const SizedBox(
-                                              width: 5,
-                                            ),
-                                            //icono de refres
-                                            Icon(
+                                            const SizedBox(width: 5),
+                                            const Icon(
                                               Icons.refresh,
                                               color: white,
                                               size: 20,
@@ -210,28 +304,18 @@ class IndexListPickScreen extends StatelessWidget {
                                       ),
                                     ),
                                     const Spacer(),
-
-                                    // ✅ AQUI AGREGAMOS EL FILTRO (Igual que en ProductInfoScreen)
                                     PopupMenuButton<String>(
-                                      icon: Icon(
-                                        Icons.more_vert, // Los tres punticos
-                                        // Si NO es el defecto (priority_high), pintamos el icono del menú de naranja
-                                        color: white,
-                                        size: 24,
-                                      ),
+                                      icon: const Icon(Icons.more_vert,
+                                          color: white, size: 24),
                                       onSelected: (value) {
-                                        // Lógica de ordenamiento
-                                        // Nota: Debes crear este evento en tu PickingPickBloc
                                         switch (value) {
                                           case 'priority_high':
                                             bloc.add(SortPickListEvent(
-                                                'priority',
-                                                false)); // Descendente (Alta primero)
+                                                'priority', false));
                                             break;
                                           case 'priority_normal':
                                             bloc.add(SortPickListEvent(
-                                                'priority',
-                                                true)); // Ascendente (Normal primero)
+                                                'priority', true));
                                             break;
                                           case 'date_asc':
                                             bloc.add(SortPickListEvent(
@@ -249,30 +333,22 @@ class IndexListPickScreen extends StatelessWidget {
                                             bloc.add(SortPickListEvent(
                                                 'name', false));
                                             break;
-
-                                          // NUEVOS CASOS:
                                           case 'backorder_desc':
-                                            // false = Mostrar primero los que SÍ tienen backorder
                                             bloc.add(SortPickListEvent(
                                                 'backorder', false));
                                             break;
                                           case 'backorder_asc':
-                                            // true = Mostrar primero los que NO tienen backorder
                                             bloc.add(SortPickListEvent(
                                                 'backorder', true));
                                             break;
                                         }
                                       },
                                       itemBuilder: (BuildContext context) {
-// 1. Obtenemos la llave actual para comparar
                                         final currentKey =
                                             bloc.currentFilterKey;
-
-                                        // 2. Definimos el color de resaltado (Naranja o tu PrimaryColor)
-                                        final Color activeColor =
-                                            primaryColorApp; // O usa primaryColorApp
-                                        final Color inactiveColor =
-                                            Colors.black;
+                                        const Color activeColor =
+                                            primaryColorApp;
+                                        const Color inactiveColor = black;
 
                                         TextStyle getStyle(String key) {
                                           final isSelected = currentKey == key;
@@ -287,7 +363,6 @@ class IndexListPickScreen extends StatelessWidget {
                                           );
                                         }
 
-                                        // 4. Icono seleccionado vs normal
                                         Color getIconColor(String key) {
                                           return currentKey == key
                                               ? activeColor
@@ -295,7 +370,6 @@ class IndexListPickScreen extends StatelessWidget {
                                         }
 
                                         return <PopupMenuEntry<String>>[
-                                          // --- SECCIÓN PRIORIDAD ---
                                           const PopupMenuItem<String>(
                                             enabled: false,
                                             height: 30,
@@ -314,19 +388,18 @@ class IndexListPickScreen extends StatelessWidget {
                                                   color: currentKey ==
                                                           'priority_high'
                                                       ? Colors.red
-                                                      : Colors
-                                                          .grey), // Rojo si está seleccionado, o siempre rojo si prefieres
-                                              SizedBox(width: 8),
+                                                      : Colors.grey),
+                                              const SizedBox(width: 8),
                                               Text('Alta primero',
                                                   style: getStyle(
                                                       'priority_high')),
                                               if (currentKey ==
                                                   'priority_high') ...[
-                                                Spacer(),
-                                                Icon(Icons.check,
+                                                const Spacer(),
+                                                const Icon(Icons.check,
                                                     size: 15,
                                                     color: activeColor)
-                                              ] // Check visual
+                                              ]
                                             ]),
                                           ),
                                           PopupMenuItem<String>(
@@ -337,22 +410,20 @@ class IndexListPickScreen extends StatelessWidget {
                                                   size: 16,
                                                   color: getIconColor(
                                                       'priority_normal')),
-                                              SizedBox(width: 8),
+                                              const SizedBox(width: 8),
                                               Text('Normal primero',
                                                   style: getStyle(
                                                       'priority_normal')),
                                               if (currentKey ==
                                                   'priority_normal') ...[
-                                                Spacer(),
-                                                Icon(Icons.check,
+                                                const Spacer(),
+                                                const Icon(Icons.check,
                                                     size: 15,
                                                     color: activeColor)
                                               ]
                                             ]),
                                           ),
                                           const PopupMenuDivider(),
-
-                                          // --- SECCIÓN FECHA ---
                                           const PopupMenuItem<String>(
                                             enabled: false,
                                             height: 30,
@@ -371,12 +442,12 @@ class IndexListPickScreen extends StatelessWidget {
                                                   size: 16,
                                                   color:
                                                       getIconColor('date_asc')),
-                                              SizedBox(width: 8),
+                                              const SizedBox(width: 8),
                                               Text('Más Antiguas',
                                                   style: getStyle('date_asc')),
                                               if (currentKey == 'date_asc') ...[
-                                                Spacer(),
-                                                Icon(Icons.check,
+                                                const Spacer(),
+                                                const Icon(Icons.check,
                                                     size: 15,
                                                     color: activeColor)
                                               ]
@@ -391,21 +462,19 @@ class IndexListPickScreen extends StatelessWidget {
                                                   size: 16,
                                                   color: getIconColor(
                                                       'date_desc')),
-                                              SizedBox(width: 8),
+                                              const SizedBox(width: 8),
                                               Text('Más Recientes',
                                                   style: getStyle('date_desc')),
                                               if (currentKey ==
                                                   'date_desc') ...[
-                                                Spacer(),
-                                                Icon(Icons.check,
+                                                const Spacer(),
+                                                const Icon(Icons.check,
                                                     size: 15,
                                                     color: activeColor)
                                               ]
                                             ]),
                                           ),
                                           const PopupMenuDivider(),
-
-                                          // --- SECCIÓN CONSECUTIVO ---
                                           const PopupMenuItem<String>(
                                             enabled: false,
                                             height: 30,
@@ -423,12 +492,12 @@ class IndexListPickScreen extends StatelessWidget {
                                                   size: 16,
                                                   color:
                                                       getIconColor('name_asc')),
-                                              SizedBox(width: 8),
+                                              const SizedBox(width: 8),
                                               Text('Consecutivo (A-Z)',
                                                   style: getStyle('name_asc')),
                                               if (currentKey == 'name_asc') ...[
-                                                Spacer(),
-                                                Icon(Icons.check,
+                                                const Spacer(),
+                                                const Icon(Icons.check,
                                                     size: 15,
                                                     color: activeColor)
                                               ]
@@ -442,21 +511,19 @@ class IndexListPickScreen extends StatelessWidget {
                                                   size: 16,
                                                   color: getIconColor(
                                                       'name_desc')),
-                                              SizedBox(width: 8),
+                                              const SizedBox(width: 8),
                                               Text('Consecutivo (Z-A)',
                                                   style: getStyle('name_desc')),
                                               if (currentKey ==
                                                   'name_desc') ...[
-                                                Spacer(),
-                                                Icon(Icons.check,
+                                                const Spacer(),
+                                                const Icon(Icons.check,
                                                     size: 15,
                                                     color: activeColor)
                                               ]
                                             ]),
                                           ),
                                           const PopupMenuDivider(),
-
-                                          // --- SECCIÓN BACKORDER ---
                                           const PopupMenuItem<String>(
                                             enabled: false,
                                             height: 30,
@@ -474,14 +541,14 @@ class IndexListPickScreen extends StatelessWidget {
                                                   size: 16,
                                                   color: getIconColor(
                                                       'backorder_desc')),
-                                              SizedBox(width: 8),
+                                              const SizedBox(width: 8),
                                               Text('Con Backorder primero',
                                                   style: getStyle(
                                                       'backorder_desc')),
                                               if (currentKey ==
                                                   'backorder_desc') ...[
-                                                Spacer(),
-                                                Icon(Icons.check,
+                                                const Spacer(),
+                                                const Icon(Icons.check,
                                                     size: 15,
                                                     color: activeColor)
                                               ]
@@ -495,14 +562,14 @@ class IndexListPickScreen extends StatelessWidget {
                                                   size: 16,
                                                   color: getIconColor(
                                                       'backorder_asc')),
-                                              SizedBox(width: 8),
+                                              const SizedBox(width: 8),
                                               Text('Sin Backorder primero',
                                                   style: getStyle(
                                                       'backorder_asc')),
                                               if (currentKey ==
                                                   'backorder_asc') ...[
-                                                Spacer(),
-                                                Icon(Icons.check,
+                                                const Spacer(),
+                                                const Icon(Icons.check,
                                                     size: 15,
                                                     color: activeColor)
                                               ]
@@ -520,10 +587,8 @@ class IndexListPickScreen extends StatelessWidget {
                       );
                     }),
                   ),
-
                   Row(
                     children: [
-                      //*barra de buscar
                       DynamicSearchBar(
                         width: size.width * 0.8,
                         controller: bloc.searchPickController,
@@ -540,11 +605,8 @@ class IndexListPickScreen extends StatelessWidget {
                           });
                         },
                       ),
-
-                      //icono de fecha
                       GestureDetector(
                         onTap: () async {
-                          // Primero, asegúrate de que el FocusNode esté activo
                           FocusScope.of(context).unfocus();
                           var pickedDate =
                               await DatePicker.showSimpleDatePicker(
@@ -552,38 +614,29 @@ class IndexListPickScreen extends StatelessWidget {
                             context,
                             confirmText: 'Buscar',
                             cancelText: 'Cancelar',
-                            // initialDate: DateTime(2020),
-                            firstDate:
-                                //un mes atras
-                                DateTime.now()
-                                    .subtract(const Duration(days: 30)),
+                            firstDate: DateTime.now()
+                                .subtract(const Duration(days: 30)),
                             lastDate: DateTime.now(),
                             dateFormat: "dd-MMMM-yyyy",
                             locale: DateTimePickerLocale.es,
                             looping: false,
                           );
 
-                          // Verificar si el usuario seleccionó una fecha
                           if (pickedDate != null) {
-                            // Formatear la fecha al formato "yyyy-MM-dd"
                             final formattedDate =
                                 DateFormat('yyyy-MM-dd').format(pickedDate);
-
-                            // Disparar el evento con la fecha seleccionada
                             context.read<PickingPickBloc>().add(
                                   LoadHistoryPickEvent(true, formattedDate),
                                 );
-
-                            // Navegar a la pantalla de historial
                             Navigator.pushReplacementNamed(context, 'pick-done',
                                 arguments: [true]);
                           }
                         },
-                        child: Card(
+                        child: const Card(
                           elevation: 3,
                           color: white,
                           child: Padding(
-                            padding: const EdgeInsets.all(8.0),
+                            padding: EdgeInsets.all(8.0),
                             child: Icon(
                               Icons.calendar_month,
                               color: primaryColorApp,
@@ -592,25 +645,16 @@ class IndexListPickScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-
                       const SizedBox(width: 5),
                     ],
                   ),
-
-                  //*buscar por scan
                   BarcodeScannerField(
                     controller: _controllerToDo,
                     focusNode: focusNodeBuscar,
                     onBarcodeScanned: (value, context) {
                       return validateBarcode(value, context);
                     },
-                    // onKeyScanned: (keyLabel, type, context) {
-                    //   return context.read<PickingPickBloc>().add(
-                    //         UpdateScannedValueEvent(keyLabel, type),
-                    //       );
-                    // },
                   ),
-
                   Expanded(
                     child: bloc.listOfPickFiltered
                             .where((batch) => batch.isSeparate == 0)
@@ -629,11 +673,8 @@ class IndexListPickScreen extends StatelessWidget {
                                   horizontal: 10,
                                 ),
                                 child: GestureDetector(
-                                  onTap: () async {
-                                    // Agrupar eventos de BatchBloc si es necesario
-                                    _handleTransferTap(
-                                        context, contextBuilder, batch);
-                                  },
+                                  onTap: () =>
+                                      _handleTap(context, contextBuilder, batch),
                                   child: Card(
                                     color: batch.isSeparate == 1
                                         ? Colors.green[100]
@@ -1004,96 +1045,5 @@ class IndexListPickScreen extends StatelessWidget {
         },
       ),
     );
-  }
-
-  void goBatchInfo(
-    BuildContext context,
-    PickingPickBloc batchBloc,
-    ResultPick batch,
-  ) async {
-    // mostramos un dialogo de carga y despues
-    showDialog(
-      context: context,
-      barrierDismissible:
-          false, // No permitir que el usuario cierre el diálogo manualmente
-      builder: (_) => const DialogLoading(
-        message: 'Cargando interfaz...',
-      ),
-    );
-
-    await Future.delayed(const Duration(seconds: 1));
-    Navigator.pop(context);
-    // Si batch.isSeparate es 1, entonces navegamos a "batch-detail"
-    if (batch.isSeparate != 1) {
-      batchBloc.searchPickController.clear();
-      Navigator.pushReplacementNamed(context, 'scan-product-pick',
-          arguments: [true]);
-    }
-  }
-
-// Tu código refactorizado en un método privado
-  void _handleTransferTap(
-      BuildContext context, BuildContext contextBuilder, dynamic batch) async {
-    debugPrint("Batch: ${batch.toMap()}");
-    final bloc = context.read<PickingPickBloc>(); // Asumo que es PickBloc
-
-    try {
-      // Lógica para asignar responsable si no existe
-      if (batch.responsableId == null || batch.responsableId == 0) {
-        await showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) => DialogAsignUserToOrderWidget(
-            title:
-                'Esta seguro de tomar este pick, una vez aceptado no podrá ser cancelada desde la app, una vez asignada se registrará el tiempo de inicio de la operación.',
-            onAccepted: () async {
-              // Se llama a la lógica del BLoC
-              bloc.add(AssignUserToTransfer(batch.id ?? 0));
-              Navigator.pop(dialogContext); // Cierra el diálogo de asignación
-            },
-          ),
-        );
-        // El resto del código se ejecuta después de que el diálogo se cierre.
-        bloc.searchPickController.clear();
-        return; // Salimos de la función si solo se asignó el responsable
-      }
-
-      // Lógica para iniciar la transferencia si el tiempo no ha comenzado
-      if (batch.startTimeTransfer == "") {
-        await showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) => DialogStartTimeWidget(
-            title: 'Iniciar Pick',
-            onAccepted: () async {
-              bloc.add(StartOrStopTimeTransfer(
-                batch.id ?? 0,
-                'start_time_transfer',
-              ));
-              Navigator.pop(dialogContext); // Cierra el diálogo de inicio
-            },
-          ),
-        );
-      }
-
-      // Lógica de carga y navegación que es común en ambos flujos
-      bloc.searchPickController.clear();
-      bloc.add(FetchPickWithProductsEvent(batch.id ?? 0));
-      bloc.add(LoadConfigurationsUser());
-
-      goBatchInfo(
-        contextBuilder,
-        bloc,
-        batch,
-      );
-    } catch (e) {
-      // Manejo de errores centralizado
-      ScaffoldMessenger.of(contextBuilder).showSnackBar(
-        const SnackBar(
-          content: Text('Error al cargar los datos'),
-          duration: Duration(seconds: 4),
-        ),
-      );
-    }
   }
 }

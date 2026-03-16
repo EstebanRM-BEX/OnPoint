@@ -133,13 +133,13 @@ class ChangeCurrentProduct extends ClusterPickingEvent {
 
 class ViewProductImageEvent extends ClusterPickingEvent {
   final int idProduct;
-  ViewProductImageEvent(this.idProduct);
+  const ViewProductImageEvent(this.idProduct);
 }
 
 class LoadSelectedProductEvent extends ClusterPickingEvent {
   final BatchProduct selectedProduct;
   final String type;
-  LoadSelectedProductEvent(this.selectedProduct, this.type);
+  const LoadSelectedProductEvent(this.selectedProduct, this.type);
 }
 
 class ValidatePedidoEvent extends ClusterPickingEvent {
@@ -169,7 +169,7 @@ class MarkPedidoAsValidatedEvent extends ClusterPickingEvent {
 class EndTimePick extends ClusterPickingEvent {
   final int batchId;
   final DateTime time;
-  EndTimePick(this.batchId, this.time);
+  const EndTimePick(this.batchId, this.time);
 }
 
 class StartTimePick extends ClusterPickingEvent {
@@ -187,7 +187,7 @@ class SendProductEditOdooEvent extends ClusterPickingEvent {
   final BatchProduct product;
   final dynamic cantidad;
 
-  SendProductEditOdooEvent(
+  const SendProductEditOdooEvent(
     this.product,
     this.cantidad,
   );
@@ -200,4 +200,12 @@ class SelectLoteEventCluster extends ClusterPickingEvent {
 
   @override
   List<Object> get props => [selectedLote];
+}
+
+class ProductPendingEvent extends ClusterPickingEvent {
+  final int batchId;
+
+  final BatchProduct product;
+  final String type;
+  const ProductPendingEvent(this.batchId, this.product, this.type);
 }

@@ -632,18 +632,21 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (dialogContext) => DialogAsignUserToOrderWidget(
-          title:
-              'Esta seguro de tomar esta orden, una vez aceptada no podrá ser cancelada desde la app, una vez asignada se registrará el tiempo de inicio de la operación.',
-          onAccepted: () async {
-            // Lógica para asignar el usuario
-            recepcionBloc.searchControllerOrderC.clear();
-            recepcionBloc.add(SearchOrdenCompraEvent(''));
-            recepcionBloc.add(AssignUserToOrder(ordenCompra));
+        builder: (dialogContext) => DialogAsignUserWidget(
+            title:
+                'Esta seguro de tomar esta orden, una vez aceptada no podrá ser cancelada desde la app, una vez asignada se registrará el tiempo de inicio de la operación.',
+            onAccepted: () async {
+              // Lógica para asignar el usuario
+              recepcionBloc.searchControllerOrderC.clear();
+              recepcionBloc.add(SearchOrdenCompraEvent(''));
+              recepcionBloc.add(AssignUserToOrder(ordenCompra));
 
-            Navigator.pop(dialogContext); // Cierra el diálogo de asignación
-          },
-        ),
+              Navigator.pop(dialogContext); // Cierra el diálogo de asignación
+            },
+            onCancel: () {
+              Future.microtask(() => focusNodeBuscar.requestFocus());
+              Navigator.pop(dialogContext); // Cierra el diálogo de asignación
+            }),
       );
     } else {
       // Si el responsable ya existe, validar el tiempo directamente

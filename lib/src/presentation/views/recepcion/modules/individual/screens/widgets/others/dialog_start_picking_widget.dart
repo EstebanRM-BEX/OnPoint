@@ -3,11 +3,16 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:wms_app/core/constants/colors.dart';
 
-class DialogAsignUserToOrderWidget extends StatelessWidget {
+class DialogAsignUserWidget extends StatelessWidget {
   final VoidCallback onAccepted; // Callback para la acción a ejecutar
+  final VoidCallback onCancel;
   final String title;
 
-  const DialogAsignUserToOrderWidget({super.key, required this.onAccepted, required this.title});
+  const DialogAsignUserWidget(
+      {super.key,
+      required this.onAccepted,
+      required this.title,
+      required this.onCancel});
 
   @override
   Widget build(BuildContext context) {
@@ -32,8 +37,7 @@ class DialogAsignUserToOrderWidget extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                  title,
+              Text(title,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: black,
@@ -46,7 +50,7 @@ class DialogAsignUserToOrderWidget extends StatelessWidget {
         actions: [
           ElevatedButton(
               onPressed: () {
-                Navigator.pop(context);
+                onCancel();
               },
               style: ElevatedButton.styleFrom(
                   backgroundColor: grey,

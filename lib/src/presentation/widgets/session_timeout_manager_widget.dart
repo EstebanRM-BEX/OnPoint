@@ -126,9 +126,6 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager>
     if (!await PrefUtils.getIsLoggedIn()) return;
 
     // Calculamos y mostramos cuándo expirará la sesión si no hay más actividad
-    final expirationTime = DateTime.now().add(widget.duration);
-    debugPrint(
-        "🔄 Interacción detectada. La sesión expirará a las: ${expirationTime.hour}:${expirationTime.minute}:${expirationTime.second}");
 
     _timer = Timer(widget.duration, () async {
       // Al terminar el tiempo, validamos de nuevo por seguridad

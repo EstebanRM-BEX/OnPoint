@@ -796,9 +796,13 @@ class IndexListPickComponentsScreen extends StatelessWidget {
         await showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (dialogContext) => DialogAsignUserToOrderWidget(
+          builder: (dialogContext) => DialogAsignUserWidget(
             title:
                 'Esta seguro de tomar este pick, una vez aceptado no podrá ser cancelada desde la app, una vez asignada se registrará el tiempo de inicio de la operación.',
+            onCancel: () {
+              Future.microtask(() => focusNodeBuscar.requestFocus());
+              Navigator.pop(dialogContext);
+            },
             onAccepted: () async {
               bloc.add(AssignUserToTransfer(batch.id ?? 0));
               Navigator.pop(dialogContext); // Cierra el diálogo de asignación

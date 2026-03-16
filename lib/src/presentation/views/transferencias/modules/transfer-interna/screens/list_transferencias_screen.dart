@@ -841,9 +841,13 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (dialogContext) => DialogAsignUserToOrderWidget(
+        builder: (dialogContext) => DialogAsignUserWidget(
           title:
               'Esta seguro de tomar esta orden, una vez aceptada no podrá ser cancelada desde la app, una vez asignada se registrará el tiempo de inicio de la operación.',
+          onCancel: () {
+            Future.microtask(() => focusNodeBuscar.requestFocus());
+            Navigator.pop(dialogContext);
+          },
           onAccepted: () async {
             // Lógica para asignar el usuario
             transferenciaBloc.searchControllerTransfer.clear();

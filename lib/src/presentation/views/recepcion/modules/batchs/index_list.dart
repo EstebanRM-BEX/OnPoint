@@ -380,9 +380,15 @@ class ListRecepctionBatchScreen extends StatelessWidget {
                                               barrierDismissible:
                                                   false, // No permitir que el usuario cierre el diálogo manualmente
                                               builder: (context) =>
-                                                  DialogAsignUserToOrderWidget(
+                                                  DialogAsignUserWidget(
                                                 title:
                                                     'Esta seguro de tomar esta recepcion por batch, una vez aceptada no podrá ser cancelada desde la app, una vez asignada se registrará el tiempo de inicio de la operación.',
+                                                onCancel: () {
+                                                  // Future.microtask(() =>
+                                                  //     focusNodeBuscar
+                                                  //         .requestFocus());
+                                                  Navigator.pop(context);
+                                                },
                                                 onAccepted: () async {
                                                   bloc.searchControllerRecepcionBatch
                                                       .clear();

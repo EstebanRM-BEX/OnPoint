@@ -382,6 +382,8 @@ class _ViewLoteScreenState extends State<ViewLoteScreen> {
                           context
                               .read<ClusterPickingBloc>()
                               .add(SelectLoteEventCluster(selectedLote));
+                          Navigator.pushReplacementNamed(
+                              context, 'scan-product-cluster');
                         } else {
                           showDialog(
                             context: context,

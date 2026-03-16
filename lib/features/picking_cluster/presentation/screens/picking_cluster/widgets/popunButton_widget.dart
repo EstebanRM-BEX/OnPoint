@@ -40,6 +40,7 @@ class PopupMenuButtonWidget extends StatelessWidget {
                 Navigator.pushReplacementNamed(
                   context,
                   'detail-cluster',
+                  // 'validate-cluster',
                 );
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -88,10 +89,10 @@ class PopupMenuButtonWidget extends StatelessWidget {
                                   style: TextStyle(color: primaryColorApp))),
                           ElevatedButton(
                               onPressed: () {
-                                // batchBloc.add(ProductPendingEvent(
-                                //     batchBloc.batchWithProducts.batch?.id ?? 0,
-                                //     currentProduct,
-                                //     batchBloc.typePicking));
+                                batchBloc.add(ProductPendingEvent(
+                                    batchBloc.currentBatch?.id ?? 0,
+                                    currentProduct,
+                                    'cluster'));
                                 Navigator.pop(context);
                               },
                               style: ElevatedButton.styleFrom(

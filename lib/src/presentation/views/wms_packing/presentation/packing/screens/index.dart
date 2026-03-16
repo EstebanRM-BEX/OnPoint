@@ -981,9 +981,13 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (dialogContext) => DialogAsignUserToOrderWidget(
+          builder: (dialogContext) => DialogAsignUserWidget(
             title:
                 'Esta seguro de tomar este pedido de packing, una vez aceptado no podrá ser cancelada desde la app, una vez asignada se registrará el tiempo de inicio de la operación.',
+            onCancel: () {
+              Future.microtask(() => focusNodeBuscar.requestFocus());
+              Navigator.pop(dialogContext);
+            },
             onAccepted: () async {
               // Lógica para asignar el usuario
               final packingBloc = context.read<PackingPedidoBloc>();

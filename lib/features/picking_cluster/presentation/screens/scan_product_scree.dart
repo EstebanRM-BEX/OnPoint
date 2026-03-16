@@ -310,7 +310,6 @@ class _ScanProductClusterState extends State<ScanProductCluster>
       debugPrint('lote encontrado: ${matchedLote.name}');
 
       if (matchedLote.id == bloc.currentProduct?.loteId) {
-        Navigator.pop(context); // Cierra modal
         bloc.add(ValidateFieldsEvent(field: "lote", isOk: true));
         bloc.add(SelectLoteEventCluster(matchedLote));
       } else {
@@ -346,7 +345,9 @@ class _ScanProductClusterState extends State<ScanProductCluster>
 
     _controllerCantidad.clear();
 
-    if (bloc.quantitySelected == product?.quantity) return;
+    if (bloc.quantitySelected == product?.quantity) {
+      return;
+    }
 
     if (scan == product?.barcode?.toLowerCase()) {
       bloc.add(AddQuantitySeparate(
@@ -1404,17 +1405,20 @@ class DialogValidateLot extends StatelessWidget {
               textAlign: TextAlign.center,
               'El lote seleccionado no es el sugerido desde la reserva en WMS'),
           const SizedBox(height: 10),
-          Row(
+          Column(
             children: [
               Text('Lote sugerido: ', style: TextStyle(color: primaryColorApp)),
               Text('${bloc.currentProduct?.lotId}'),
             ],
           ),
-          Row(
+          Column(
             children: [
               Text('Lote seleccionado: ',
                   style: TextStyle(color: primaryColorApp)),
-              Text('${selectedLote.name}'),
+              Text(
+                '${selectedLote.name}',
+                maxLines: 2,
+              ),
             ],
           ),
           const SizedBox(height: 10),

@@ -159,63 +159,108 @@ class _ValidateScreenState extends State<ValidateScreen> {
                   children: [
                     const WarningWidgetCubit(),
                     Padding(
-                      padding: const EdgeInsets.only(
-                        top: 25,
-                      ),
-                      child: Align(
-                        alignment: Alignment.center,
-                        child: Text(
-                          bloc.currentBatch?.name ?? '',
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 14),
-                        ),
-                      ),
-                    ),
-                    Card(
-                      elevation: 2,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              "Unidades separadas: ${(context.read<ClusterPickingBloc>().calcularProgresoReal())}%",
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: getColorForPercentage(double.tryParse(
-                                        context
-                                            .read<ClusterPickingBloc>()
-                                            .calcularProgresoReal()) ??
-                                    0.0), // Convertir a double
-                              ),
-                            ),
-                          ),
-                          const SizedBox(
-                            width: 10,
-                          ),
-                          ElevatedButton(
-                              onPressed: () async {
-                                context.read<ClusterPickingBloc>().isSearch =
-                                    false;
-                                //   batchBloc.add(LoadProductEditEvent(batchBloc.typePicking));
+                      padding: const EdgeInsets.only(top: 25),
+                      child: SizedBox(
+                        height: 50,
+                        child: Row(
+                          children: [
+                            //icono para atras
+                            IconButton(
+                              icon: const Icon(Icons.arrow_back, color: white),
+                              onPressed: () {
+                                //scan-product-cluster
                                 Navigator.pushReplacementNamed(
                                   context,
-                                  'detail-cluster',
+                                  'scan-product-cluster',
                                 );
                               },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryColorApp,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                elevation: 3,
-                                minimumSize: const Size(100, 30),
+                            ),
+                            const Spacer(),
+                            Align(
+                              alignment: Alignment.center,
+                              child: Column(
+                                children: [
+                                  Text(
+                                    bloc.currentBatch?.name ?? '',
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 14),
+                                  ),
+                                  Card(
+                                    elevation: 2,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 2),
+                                      child: Text(
+                                        "Unidades separadas: ${(context.read<ClusterPickingBloc>().calcularProgresoReal())}%",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: getColorForPercentage(
+                                              double.tryParse(context
+                                                      .read<
+                                                          ClusterPickingBloc>()
+                                                      .calcularProgresoReal()) ??
+                                                  0.0), // Convertir a double
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              child: const Text('Verificar',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 12))),
-                        ],
+                            ),
+                            const Spacer(),
+                            PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert, color: white),
+                              onSelected: (value) async {
+                                switch (value) {
+                                  case 'verificar':
+                                    context
+                                        .read<ClusterPickingBloc>()
+                                        .isSearch = false;
+                                    Navigator.pushReplacementNamed(
+                                      context,
+                                      'detail-cluster',
+                                    );
+                                    break;
+                                  case 'salir':
+                                    // Regresar al listado de batch
+                                    Navigator.pushReplacementNamed(
+                                      context,
+                                      'picking-cluster',
+                                    );
+                                    break;
+                                  case 'filtros':
+                                    // Lógica para filtros (pendiente por definir)
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content:
+                                              Text('Filtros seleccionados')),
+                                    );
+                                    break;
+                                }
+                              },
+                              itemBuilder: (BuildContext context) =>
+                                  <PopupMenuEntry<String>>[
+                                const PopupMenuItem<String>(
+                                  value: 'verificar',
+                                  child: Text('Verificar unidades',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                      )),
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'salir',
+                                  child: Text('Salir al listado de batch',
+                                      style: TextStyle(fontSize: 12)),
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'filtros',
+                                  child: Text('Filtros',
+                                      style: TextStyle(fontSize: 12)),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -374,11 +419,67 @@ class _ValidateScreenState extends State<ValidateScreen> {
 
     return ElevatedButton(
       onPressed: () {
-        bloc.add(MarkPedidoAsValidatedEvent(
-          batchId: pedido.batchId ?? 0,
-          namePedido: pedido.namePedido ?? '',
-          isValidated: true,
-        ));
+        //dialogo de confirmacion
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            actionsAlignment: MainAxisAlignment.center,
+            title: Center(
+              child: const Text('360 Software Informa',
+                  style: TextStyle(
+                      fontSize: 16,
+                      color: primaryColorApp,
+                      fontWeight: FontWeight.bold)),
+            ),
+            content: const Text(
+                '¿Está seguro de que desea validar este pedido?',
+                style: TextStyle(fontSize: 14, color: black)),
+            actions: [
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: grey,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  minimumSize: const Size(60, 32),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text('Cancelar',
+                    style: TextStyle(fontSize: 14, color: white)),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  bloc.add(MarkPedidoAsValidatedEvent(
+                    batchId: pedido.batchId ?? 0,
+                    namePedido: pedido.namePedido ?? '',
+                    isValidated: true,
+                  ));
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColorApp,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  minimumSize: const Size(60, 32),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text('Validar',
+                    style: TextStyle(fontSize: 14, color: Colors.white)),
+              ),
+            ],
+          ),
+        );
+
+        // bloc.add(MarkPedidoAsValidatedEvent(
+        //   batchId: pedido.batchId ?? 0,
+        //   namePedido: pedido.namePedido ?? '',
+        //   isValidated: true,
+        // ));
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryColorApp,

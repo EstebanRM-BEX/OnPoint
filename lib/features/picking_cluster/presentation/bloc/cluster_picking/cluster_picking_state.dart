@@ -236,3 +236,14 @@ class ValidatePedidoStateError extends ClusterPickingState {
   final String msg;
   const ValidatePedidoStateError(this.msg);
 }
+
+class ChangeQuantitySeparateStateLoading extends ClusterPickingState {}
+
+class ProductPendingLoading extends ClusterPickingState {}
+
+class ProductPendingError extends ClusterPickingState {
+  final String msg;
+  const ProductPendingError(this.msg);
+}
+
+class ProductPendingSuccess extends ClusterPickingState {}

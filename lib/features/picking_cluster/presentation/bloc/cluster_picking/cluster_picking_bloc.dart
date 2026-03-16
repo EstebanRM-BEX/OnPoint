@@ -172,6 +172,171 @@ class ClusterPickingBloc
     on<StartTimePick>(_onStartTimePickEvent);
     on<SendProductEditOdooEvent>(_onSendProductEditOdooEvent);
     on<SelectLoteEventCluster>(_onSelectLoteEventCluster);
+    //*evento para dejar pendiente la separacion
+    on<ProductPendingEvent>(_onPickingPendingEvent);
+  }
+
+  //*evento para dejar pendiente la separacion
+  void _onPickingPendingEvent(
+      ProductPendingEvent event, Emitter<ClusterPickingState> emit) async {
+    try {
+      viewQuantity = false;
+      emit(ProductPendingLoading());
+      if (filteredProducts.isEmpty) {
+        return;
+      }
+      //cambiamos el estado del producto a pendiente
+
+      await setClusterBatchProductFieldUseCase
+          .call(SetClusterBatchProductFieldParams(
+        batchId: event.batchId,
+        productId: event.product.idProduct ?? 0,
+        field: 'is_pending',
+        value: 1,
+        idMove: event.product.idMove ?? 0,
+        type: event.type,
+      ));
+
+      //deseleccionamos el producto actual
+      await setClusterBatchProductFieldUseCase
+          .call(SetClusterBatchProductFieldParams(
+        batchId: event.batchId,
+        productId: event.product.idProduct ?? 0,
+        field: 'is_selected',
+        value: 0,
+        idMove: event.product.idMove ?? 0,
+        type: event.type,
+      ));
+
+      //marcamos el producto con la ubicacion no leida
+      await setClusterBatchProductFieldUseCase
+          .call(SetClusterBatchProductFieldParams(
+        batchId: event.batchId,
+        productId: event.product.idProduct ?? 0,
+        field: 'is_location_is_ok',
+        value: 0,
+        idMove: event.product.idMove ?? 0,
+        type: event.type,
+      ));
+
+      //marcamos la cantidad como no leida
+      await setClusterBatchProductFieldUseCase
+          .call(SetClusterBatchProductFieldParams(
+        batchId: event.batchId,
+        productId: event.product.idProduct ?? 0,
+        field: 'is_quantity_is_ok',
+        value: 0,
+        idMove: event.product.idMove ?? 0,
+        type: event.type,
+      ));
+
+      //marcamos el producto como no leido
+      await setClusterBatchProductFieldUseCase
+          .call(SetClusterBatchProductFieldParams(
+        batchId: event.batchId,
+        productId: event.product.idProduct ?? 0,
+        field: 'product_is_ok',
+        value: 0,
+        idMove: event.product.idMove ?? 0,
+        type: event.type,
+      ));
+
+      //traemos los productos del batch
+      final resultProducts = await getLocalBatchProductsData(
+          GetBatchProductsParams(batchId: event.batchId));
+
+      resultProducts.fold(
+        (failure) {
+          debugPrint("❌ Error al refrescar productos: ${failure.message}");
+        },
+        (productsResult) {
+          if (currentBatch != null) {
+            final sortedProducts = _sortProducts(currentBatch!, productsResult);
+            products = sortedProducts;
+            filteredProducts = List.from(sortedProducts);
+          }
+        },
+      );
+
+      // Buscamos el siguiente producto que no esté separado
+      final nextProducts =
+          filteredProducts.where((product) => product.isSeparate == 0).toList();
+
+      if (nextProducts.isNotEmpty) {
+        productIsOk = false;
+        quantityIsOk = false;
+        currentProduct = nextProducts.first;
+
+        if (currentProduct?.locationId == oldLocation) {
+          debugPrint('La ubicación es igual');
+          locationIsOk = true;
+        } else {
+          locationIsOk = false;
+          debugPrint('La ubicación es diferente');
+        }
+        pedidoValidateIsOk = false;
+
+        quantitySelected = currentProduct?.quantitySeparate ?? 0;
+
+        lotesProductCurrent = LoteProducto();
+        isLoteOk = true;
+        loteIsOk = false;
+        listLotesProduct = [];
+        listLotesProductFilters = [];
+
+        await setClusterBatchProductFieldUseCase
+            .call(SetClusterBatchProductFieldParams(
+          batchId: event.batchId,
+          productId: currentProduct?.idProduct ?? 0,
+          field: 'time_separate_start',
+          value: DateTime.now().toString(),
+          idMove: currentProduct?.idMove ?? 0,
+          type: event.type,
+        ));
+      } else {
+        currentProduct = event.product;
+      }
+
+      emit(CurrentProductChangedState(
+          currentProduct: currentProduct, index: index));
+
+      //si el producto maneja lote
+      //verificamos si el producto maneja lote
+      if (currentProduct != null && currentProduct?.productTracking == "lot") {
+        final productId = currentProduct?.idProduct ?? 0;
+        final result = await getLotesProductoUseCase(
+          GetLotesProductoParams(productId: productId),
+        );
+
+        result.fold(
+          (failure) {
+            debugPrint("Error cargando lotes: ${failure.message}");
+          },
+          (lotes) {
+            listLotesProduct = lotes
+                .map((lote) => LoteProducto(
+                      id: lote.id,
+                      name: lote.name,
+                      quantity: lote.quantity,
+                      expirationDate: lote.expirationDate,
+                      productId: lote.productId,
+                      productName: lote.productName,
+                    ))
+                .toList();
+            listLotesProductFilters = List.from(listLotesProduct);
+          },
+        );
+      }
+
+      if (currentBatch != null) {
+        add(FetchBatchProductsEvent(currentBatch!));
+      }
+
+      emit(ProductPendingSuccess());
+    } catch (e, s) {
+      emit(ProductPendingError(e.toString()));
+      debugPrint('❌ Error _onPickingPendingEvent: $e, $s');
+    }
   }
 
   //*evento para enviar un producto a odoo editado
@@ -305,11 +470,52 @@ class ClusterPickingBloc
 
 //metodo para cargar un producto seleccionado
   void _onLoadSelectedProductEvent(
-      LoadSelectedProductEvent event, Emitter<ClusterPickingState> emit) {
+      LoadSelectedProductEvent event, Emitter<ClusterPickingState> emit) async {
     try {
       currentProduct = event.selectedProduct;
-      quantitySelected = currentProduct?.quantitySeparate ?? 0;
+      quantitySelected = 0;
+      quantityIsOk = false;
+      locationIsOk = false;
+      productIsOk = false;
+      pedidoValidateIsOk = false;
+      oldLocation = "";
+      oldPedido = "";
+      listLotesProduct = [];
+      listLotesProductFilters = [];
+      viewQuantity = false;
+      isLocationOk = true;
+      isPedidoValidateOk = true;
+      isProductOk = true;
+
+      //verificamos si el producto maneja lote
+      if (currentProduct != null && currentProduct?.productTracking == "lot") {
+        final productId = currentProduct?.idProduct ?? 0;
+        final result = await getLotesProductoUseCase(
+          GetLotesProductoParams(productId: productId),
+        );
+
+        result.fold(
+          (failure) {
+            debugPrint("Error cargando lotes: ${failure.message}");
+          },
+          (lotes) {
+            listLotesProduct = lotes
+                .map((lote) => LoteProducto(
+                      id: lote.id,
+                      name: lote.name,
+                      quantity: lote.quantity,
+                      expirationDate: lote.expirationDate,
+                      productId: lote.productId,
+                      productName: lote.productName,
+                    ))
+                .toList();
+            listLotesProductFilters = List.from(listLotesProduct);
+          },
+        );
+      }
+
       add(FetchBarcodesProductEvent());
+
       emit(LoadSelectedProductState(currentProduct!));
     } catch (e, s) {
       debugPrint("❌ Error en _onLoadSelectedProductEvent: $e -> $s");
@@ -465,6 +671,37 @@ class ClusterPickingBloc
         lotesProductCurrent = LoteProducto();
         isLoteOk = true;
         loteIsOk = false;
+
+        listLotesProduct = [];
+        listLotesProductFilters = [];
+
+        //verificamos si el producto maneja lote
+        if (currentProduct != null &&
+            currentProduct?.productTracking == "lot") {
+          final productId = currentProduct?.idProduct ?? 0;
+          final result = await getLotesProductoUseCase(
+            GetLotesProductoParams(productId: productId),
+          );
+
+          result.fold(
+            (failure) {
+              debugPrint("Error cargando lotes: ${failure.message}");
+            },
+            (lotes) {
+              listLotesProduct = lotes
+                  .map((lote) => LoteProducto(
+                        id: lote.id,
+                        name: lote.name,
+                        quantity: lote.quantity,
+                        expirationDate: lote.expirationDate,
+                        productId: lote.productId,
+                        productName: lote.productName,
+                      ))
+                  .toList();
+              listLotesProductFilters = List.from(listLotesProduct);
+            },
+          );
+        }
 
         await setClusterBatchProductFieldUseCase
             .call(SetClusterBatchProductFieldParams(
@@ -740,7 +977,11 @@ class ClusterPickingBloc
   void _onAddQuantitySeparateEvent(
       AddQuantitySeparate event, Emitter<ClusterPickingState> emit) async {
     try {
+      emit(ChangeQuantitySeparateStateLoading());
+
       if (quantitySelected > (currentProduct?.quantity ?? 0)) {
+        print(
+            "Error: La cantidad seleccionada es mayor a la cantidad del producto");
         return;
       } else {
         quantitySelected = quantitySelected + event.quantity;
@@ -1187,10 +1428,6 @@ class ClusterPickingBloc
           novedades = novelties;
         },
       );
-
-      // El usuario solicitó específicamente que LoadCurrentProductEvent se mantenga separado.
-      // Por ende, comentamos esta orquestación interna:
-      // await _setAndLoadCurrentProductDetails();
 
       // 5. Emit Loaded
       emit(BatchProductsLoaded(
