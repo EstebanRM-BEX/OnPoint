@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
+import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_bloc.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/cluster_picking/cluster_picking_bloc.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/lote_producto/lote_producto_bloc.dart';
 import 'package:wms_app/firebase_options.dart';
@@ -152,6 +153,7 @@ class MyApp extends StatelessWidget {
             BlocProvider(create: (_) => getIt<EnterpriseBloc>()),
             BlocProvider(create: (_) => getIt<ClusterPickingBloc>()),
             BlocProvider(create: (_) => getIt<LoteProductoBloc>()),
+            BlocProvider(create: (_) => getIt<PackagingTypeBloc>()),
           ],
           child: SessionTimeoutManager(
             duration: const Duration(minutes: 240),

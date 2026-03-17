@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/features/packaging_types/domain/entities/packaging_type.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/screens/widgets/dialog_confirmated_packing_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/bloc/packing_consolidade_bloc.dart';
@@ -52,6 +53,8 @@ class Tab3Screen extends StatelessWidget {
                                     final bloc =
                                         context.read<PackingConsolidateBloc>();
                                     return DialogConfirmatedPacking(
+                                      manejaPeso: false,
+                                      manejaTipoEmpaque: false,
                                       productos: context
                                           .read<PackingConsolidateBloc>()
                                           .productsDone,
@@ -60,7 +63,8 @@ class Tab3Screen extends StatelessWidget {
                                       onToggleSticker: (value) {
                                         bloc.add(ChangeStickerEvent(value));
                                       },
-                                      onConfirm: () {
+                                      onConfirm:
+                                          (PackagingType? type, String weight) {
                                         bloc.add(SetPackingsEvent(
                                             context
                                                 .read<PackingConsolidateBloc>()

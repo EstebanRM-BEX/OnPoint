@@ -1,5 +1,6 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/features/packaging_types/domain/entities/packaging_type.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously, unnecessary_null_comparison
 
@@ -234,6 +235,16 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
                                     final bloc =
                                         context.read<PackingPedidoBloc>();
                                     return DialogConfirmatedPacking(
+                                      manejaPeso: context
+                                              .read<PackingPedidoBloc>()
+                                              .currentPedidoPack
+                                              .configPacking ==
+                                          "cluster",
+                                      manejaTipoEmpaque: context
+                                              .read<PackingPedidoBloc>()
+                                              .currentPedidoPack
+                                              .configPacking ==
+                                          "cluster",
                                       productos: context
                                           .read<PackingPedidoBloc>()
                                           .listOfProductsForPacking,
@@ -242,13 +253,21 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
                                       onToggleSticker: (value) {
                                         bloc.add(ChangeStickerEvent(value));
                                       },
-                                      onConfirm: () {
+                                      onConfirm: (PackagingType? pedidoType,
+                                          String weight) {
                                         bloc.add(SetPackingsEvent(
-                                            context
-                                                .read<PackingPedidoBloc>()
-                                                .listOfProductsForPacking,
-                                            bloc.isSticker,
-                                            false));
+                                          context
+                                              .read<PackingPedidoBloc>()
+                                              .listOfProductsForPacking,
+                                          bloc.isSticker,
+                                          context
+                                              .read<PackingPedidoBloc>()
+                                              .currentPedidoPack
+                                              .configPacking,
+                                          false,
+                                          double.parse(weight),
+                                          pedidoType!,
+                                        ));
                                       },
                                     );
                                   },

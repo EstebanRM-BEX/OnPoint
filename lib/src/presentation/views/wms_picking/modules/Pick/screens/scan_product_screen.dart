@@ -6,7 +6,6 @@ import 'package:wms_app/injection_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
@@ -19,7 +18,6 @@ import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/cant_lineas_muelle_widget.dart';
@@ -345,13 +343,20 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                   });
             });
       } else {
-        _vibrationService.vibrate();
-        _audioService.playErrorSound();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          duration: const Duration(milliseconds: 1000),
-          content: const Text('Cantidad erronea'),
-          backgroundColor: Colors.red[200],
+        batchBloc.add(ChangeQuantitySeparate(
+          cantidad,
+          currentProduct.idProduct ?? 0,
+          currentProduct.idMove ?? 0,
         ));
+
+        _nextProduct(currentProduct, batchBloc);
+        // _vibrationService.vibrate();
+        // _audioService.playErrorSound();
+        // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        //   duration: const Duration(milliseconds: 1000),
+        //   content: const Text('Cantidad erronea'),
+        //   backgroundColor: Colors.red[200],
+        // ));
       }
     }
   }
@@ -845,7 +850,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                           currentProductId:
                               batchBloc.currentProduct.productId.toString(),
                           barcode: currentProduct.barcode,
-                          lotId: currentProduct.lotId,
+                          lotId: currentProduct.lote,
                           origin: currentProduct.origin,
                           expireDate: currentProduct.expireDate,
                           size: size,

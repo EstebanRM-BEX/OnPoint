@@ -59,6 +59,20 @@ import 'features/login/domain/repositories/login_repository.dart' as _i889;
 import 'features/login/domain/usecases/authenticate_user.dart' as _i792;
 import 'features/login/domain/usecases/save_user_session.dart' as _i311;
 import 'features/login/presentation/bloc/login_bloc.dart' as _i1070;
+import 'features/packaging_types/data/datasources/local/packaging_type_local_datasource.dart'
+    as _i3;
+import 'features/packaging_types/data/datasources/remote/packaging_type_remote_datasource.dart'
+    as _i846;
+import 'features/packaging_types/data/repositories/packaging_type_repository_impl.dart'
+    as _i690;
+import 'features/packaging_types/domain/repositories/packaging_type_repository.dart'
+    as _i72;
+import 'features/packaging_types/domain/usecases/get_local_packaging_types_usecase.dart'
+    as _i762;
+import 'features/packaging_types/domain/usecases/get_packaging_types_usecase.dart'
+    as _i658;
+import 'features/packaging_types/presentation/bloc/packaging_type_bloc.dart'
+    as _i475;
 import 'features/picking_cluster/data/datasources/picking_cluster_local_data_source.dart'
     as _i130;
 import 'features/picking_cluster/data/datasources/picking_remote_data_source.dart'
@@ -168,6 +182,8 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i1011.NotificationService());
     gh.lazySingleton<_i918.EnterpriseRemoteDataSource>(() =>
         _i918.EnterpriseRemoteDataSourceImpl(gh<_i319.ApiRequestService>()));
+    gh.lazySingleton<_i846.PackagingTypeRemoteDataSource>(() =>
+        _i846.PackagingTypeRemoteDataSourceImpl(gh<_i319.ApiRequestService>()));
     gh.lazySingleton<_i18.LoginRemoteDataSource>(
         () => _i18.LoginRemoteDataSourceImpl(gh<_i319.ApiRequestService>()));
     gh.lazySingleton<_i180.UserRepository>(() => _i39.UserRepositoryImpl(
@@ -222,6 +238,8 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i747.SaveRecentUrl(gh<_i309.EnterpriseRepository>()));
     gh.lazySingleton<_i552.DeleteRecentUrl>(
         () => _i552.DeleteRecentUrl(gh<_i309.EnterpriseRepository>()));
+    gh.lazySingleton<_i3.PackagingTypeLocalDataSource>(
+        () => _i3.PackagingTypeLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()));
     gh.factory<_i676.WebSocketBloc>(() =>
         _i676.WebSocketBloc(webSocketService: gh<_i1062.IWebSocketService>()));
     gh.lazySingleton<_i1015.AuthRepository>(() => _i111.AuthRepositoryImpl(
@@ -325,6 +343,11 @@ extension GetItInjectableX on _i174.GetIt {
           getUserNovelties: gh<_i465.GetUserNovelties>(),
           registerDevice: gh<_i902.RegisterDevice>(),
         ));
+    gh.lazySingleton<_i72.PackagingTypeRepository>(
+        () => _i690.PackagingTypeRepositoryImpl(
+              remoteDataSource: gh<_i846.PackagingTypeRemoteDataSource>(),
+              localDataSource: gh<_i3.PackagingTypeLocalDataSource>(),
+            ));
     gh.factory<_i20.EnterpriseBloc>(() => _i20.EnterpriseBloc(
           searchEnterpriseUseCase: gh<_i138.SearchEnterprise>(),
           getRecentUrlsUseCase: gh<_i91.GetRecentUrls>(),
@@ -340,6 +363,16 @@ extension GetItInjectableX on _i174.GetIt {
         ));
     gh.factory<_i363.AuthBloc>(
         () => _i363.AuthBloc(validateSession: gh<_i52.ValidateSession>()));
+    gh.lazySingleton<_i658.GetPackagingTypesUseCase>(() =>
+        _i658.GetPackagingTypesUseCase(gh<_i72.PackagingTypeRepository>()));
+    gh.lazySingleton<_i762.GetLocalPackagingTypesUseCase>(() =>
+        _i762.GetLocalPackagingTypesUseCase(
+            gh<_i72.PackagingTypeRepository>()));
+    gh.factory<_i475.PackagingTypeBloc>(() => _i475.PackagingTypeBloc(
+          getPackagingTypesUseCase: gh<_i658.GetPackagingTypesUseCase>(),
+          getLocalPackagingTypesUseCase:
+              gh<_i762.GetLocalPackagingTypesUseCase>(),
+        ));
     return this;
   }
 }

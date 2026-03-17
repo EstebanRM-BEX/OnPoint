@@ -1573,8 +1573,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
               cantidadEnviada: (product?.quantitySeparate ?? 0.0) >
                       (product?.quantity ??
                           0.0) // Asegura que ambos lados sean numéricos
-                  ? (product?.quantity ??
-                      0.0) // Si es verdadero, usa quantity, pero también con ?? 0.0
+                  ? (product?.quantitySeparate ?? 0.0)
+                  //  (product?.quantity ??
+                  //     0.0) // Si es verdadero, usa quantity, pero también con ?? 0.0
                   : (product?.quantitySeparate ??
                       0.0), // Si es falso, usa quantitySeparate
               idOperario: userid,

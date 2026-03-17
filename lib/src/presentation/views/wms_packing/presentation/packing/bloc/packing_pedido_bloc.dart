@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:wms_app/features/packaging_types/domain/entities/packaging_type.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
@@ -723,12 +724,15 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         idTransferencia: event.productos[0].pedidoId ?? 0,
         isSticker: event.isSticker,
         isCertificate: event.isCertificate,
-        pesoTotalPaquete: 34.0, // Considera calcular esto dinámicamente
+        pesoCaja: event.peso,
+        pesoTotalPaquete: event.peso,
+        tipoEmpaque: event.packagingType.id,
         listItems: listItems,
       );
 
       final responsePacking = await wmsPackingRepository.sendPackRequest(
         packingRequest,
+        event.tipoEmpaque == 'cluster',
         true,
       );
 

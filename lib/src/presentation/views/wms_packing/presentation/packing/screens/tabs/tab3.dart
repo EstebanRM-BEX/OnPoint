@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/features/packaging_types/domain/entities/packaging_type.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/screens/widgets/dialog_confirmated_packing_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
@@ -49,6 +50,16 @@ class Tab3PedidoScreen extends StatelessWidget {
                                         final bloc =
                                             context.read<PackingPedidoBloc>();
                                         return DialogConfirmatedPacking(
+                                          manejaPeso: context
+                                                  .read<PackingPedidoBloc>()
+                                                  .currentPedidoPack
+                                                  .configPacking ==
+                                              "cluster",
+                                          manejaTipoEmpaque: context
+                                                  .read<PackingPedidoBloc>()
+                                                  .currentPedidoPack
+                                                  .configPacking ==
+                                              "cluster",
                                           productos: context
                                               .read<PackingPedidoBloc>()
                                               .productsDone,
@@ -57,13 +68,21 @@ class Tab3PedidoScreen extends StatelessWidget {
                                           onToggleSticker: (value) {
                                             bloc.add(ChangeStickerEvent(value));
                                           },
-                                          onConfirm: () {
+                                          onConfirm: (PackagingType? pedidoType,
+                                              String weight) {
                                             bloc.add(SetPackingsEvent(
-                                                context
-                                                    .read<PackingPedidoBloc>()
-                                                    .productsDone,
-                                                bloc.isSticker,
-                                                true));
+                                              context
+                                                  .read<PackingPedidoBloc>()
+                                                  .productsDone,
+                                              bloc.isSticker,
+                                              context
+                                                  .read<PackingPedidoBloc>()
+                                                  .currentPedidoPack
+                                                  .configPacking,
+                                              true,
+                                              double.parse(weight),
+                                              pedidoType!,
+                                            ));
                                           },
                                         );
                                       },

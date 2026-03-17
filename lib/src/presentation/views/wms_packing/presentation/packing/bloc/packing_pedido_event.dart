@@ -177,12 +177,24 @@ class SetPackingsEvent extends PackingPedidoEvent {
   final List<ProductoPedido> productos;
   final bool isSticker;
   final bool isCertificate;
+  final double peso;
+  final String tipoEmpaque;
+  final PackagingType packagingType;
 
   SetPackingsEvent(
-    this.productos,
-    this.isSticker,
-    this.isCertificate,
-  );
+      this.productos, this.isSticker, this.tipoEmpaque, this.isCertificate,
+      [this.peso = 0.0,
+      this.packagingType = const PackagingType(
+        id: 0,
+        name: '',
+        barcode: '',
+        maxWeight: 0.0,
+        height: 0.0,
+        width: 0.0,
+        packagingLength: 0.0,
+        size: '',
+        carrier: '',
+      )]);
 }
 
 class SelectProductPackingEvent extends PackingPedidoEvent {

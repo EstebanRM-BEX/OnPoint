@@ -7,6 +7,7 @@ class PedidoPackTable {
   static const String columnName = 'name';
   static const String columnObservacion = 'observacion';
   static const String columnFechaCreacion = 'fecha_creacion';
+  static const String columnConfigPacking = 'config_packing';
   static const String columnLocationId = 'location_id';
   static const String columnLocationName = 'location_name';
   static const String columnLocationBarcode = 'location_barcode';
@@ -45,9 +46,8 @@ class PedidoPackTable {
   //is_started
   static const String columnIsStarted = 'is_started';
 
-    // create_backorder
+  // create_backorder
   static const String columnCreateBackorder = 'create_backorder';
-
 
   // Método para crear la tabla
   static String createTable() {
@@ -59,6 +59,7 @@ class PedidoPackTable {
         $columnObservacion TEXT,
         $columnFechaCreacion TEXT, -- Almacenar DateTime como TEXT (ISO 8601 string)
         $columnLocationId INTEGER,
+        $columnConfigPacking TEXT,
         $columnLocationName TEXT,
         $columnLocationBarcode TEXT,
         $columnLocationDestId INTEGER,

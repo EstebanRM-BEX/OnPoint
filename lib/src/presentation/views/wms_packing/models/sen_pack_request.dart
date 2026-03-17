@@ -2,14 +2,18 @@ class PackingPackRequest {
   final int idTransferencia;
   final bool isSticker;
   final bool isCertificate;
+  final double pesoCaja;
   final double pesoTotalPaquete;
+  final int tipoEmpaque;
   final List<ListItemPack> listItems;
 
   PackingPackRequest({
     required this.idTransferencia,
     required this.isSticker,
     required this.isCertificate,
+    required this.pesoCaja,
     required this.pesoTotalPaquete,
+    required this.tipoEmpaque,
     required this.listItems,
   });
 
@@ -18,6 +22,8 @@ class PackingPackRequest {
       "id_transferencia": idTransferencia,
       "is_sticker": isSticker,
       "is_certificate": isCertificate,
+      "tipo_paquete": tipoEmpaque,
+      "peso_caja": pesoCaja,
       "peso_total_paquete": pesoTotalPaquete,
       "list_items": listItems.map((item) => item.toMap()).toList(),
     };

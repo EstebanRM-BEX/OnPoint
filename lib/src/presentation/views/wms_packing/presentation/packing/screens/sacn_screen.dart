@@ -452,7 +452,7 @@ class _PackingScreenState extends State<ScanPackScreen> {
                                 focusNode: focusNode1,
                                 controller: _controllerLocation,
                                 locationDropdown: LocationPackDropdownWidget(
-                                  isPDA: false,
+                                  isPDA: true,
                                   selectedLocation: selectedLocation,
                                   positionsOrigen:
                                       packingBloc.currentProduct.locationId,

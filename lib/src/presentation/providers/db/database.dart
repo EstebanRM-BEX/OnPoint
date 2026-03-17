@@ -90,7 +90,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 22,
+      version: 24,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -242,6 +242,21 @@ class DataBaseSqlite {
         FOREIGN KEY (batch_id) REFERENCES tblbatchs (id)
       )
     ''');
+
+    // tabla de tipos de empaque
+    await db.execute('''
+      CREATE TABLE tbl_packaging_types (
+        id INTEGER PRIMARY KEY,
+        name TEXT,
+        barcode TEXT,
+        max_weight REAL,
+        height REAL,
+        width REAL,
+        packaging_length REAL,
+        tamaño TEXT,
+        transportista TEXT
+      )
+    ''');
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
@@ -360,8 +375,38 @@ class DataBaseSqlite {
             FOREIGN KEY (batch_id) REFERENCES tblbatchs (id)
           )
         ''');
+
+        //añadimos en la tabla: tbl_pedido_pack la varibale columnConfigPacking
+        try {
+          await db.execute('''
+          ALTER TABLE ${PedidoPackTable.tableName}
+          ADD COLUMN ${PedidoPackTable.columnConfigPacking} TEXT;
+        ''');
+        } catch (e) {
+          debugPrint("Error actualizando tbl_pedido_pack: $e");
+        }
       } catch (e) {
         debugPrint("Error actualizando tblbatch_pedidos_validate: $e");
+      }
+    }
+
+    if (oldVersion < 24) {
+      try {
+        await db.execute('''
+          CREATE TABLE tbl_packaging_types (
+            id INTEGER PRIMARY KEY,
+            name TEXT,
+            barcode TEXT,
+            max_weight REAL,
+            height REAL,
+            width REAL,
+            packaging_length REAL,
+            tamaño TEXT,
+            transportista TEXT
+          )
+        ''');
+      } catch (e) {
+        debugPrint("Error actualizando tbl_packaging_types: $e");
       }
     }
   }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
+import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_bloc.dart';
+import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_event.dart';
+import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_state.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/home/presentation/widgets/background.dart';
@@ -71,6 +74,37 @@ class _UserPageState extends State<UserPage> {
                 Get.snackbar(
                   '360 Software Informa',
                   state.error,
+                  backgroundColor: white,
+                  colorText: primaryColorApp,
+                  icon: const Icon(Icons.error, color: Colors.red),
+                );
+              }
+            },
+          ),
+          BlocListener<PackagingTypeBloc, PackagingTypeState>(
+            listener: (context, state) {
+              debugPrint('state packaging type : $state');
+              if (state is PackagingTypesLoadInProgress) {
+                showDialog(
+                    context: context,
+                    builder: (context) => const DialogLoading(
+                        message: 'Descargando tipos de empaque...'));
+              }
+              if (state is PackagingTypesLoadSuccess) {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+                Get.snackbar(
+                  '360 Software Informa',
+                  "Se han descargado ${state.packagingTypes.length} tipos de empaque",
+                  backgroundColor: white,
+                  colorText: primaryColorApp,
+                  icon: const Icon(Icons.check_circle, color: Colors.green),
+                );
+              }
+              if (state is PackagingTypeLoadFailure) {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+                Get.snackbar(
+                  '360 Software Informa',
+                  state.message,
                   backgroundColor: white,
                   colorText: primaryColorApp,
                   icon: const Icon(Icons.error, color: Colors.red),
@@ -219,6 +253,20 @@ class _UserPageState extends State<UserPage> {
                   backgroundColor: grey),
               child: const Text(
                 "Descargar productos",
+                style: TextStyle(color: white),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                context
+                    .read<PackagingTypeBloc>()
+                    .add(SyncPackagingTypesEvent());
+              },
+              style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 30),
+                  backgroundColor: grey),
+              child: const Text(
+                "Descargar tipos de empaque",
                 style: TextStyle(color: white),
               ),
             ),

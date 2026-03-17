@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
+import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_bloc.dart';
+import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_event.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/core/utils/validator_utils.dart';
 import 'package:wms_app/core/utils/widgets/dialog_loading_widget.dart';
@@ -37,6 +39,7 @@ class LoginPage extends StatelessWidget {
         }
         if (state is LoginSuccess) {
           context.read<UserBloc>().add(RegisterDeviceEvent());
+          context.read<PackagingTypeBloc>().add(SyncPackagingTypesEvent());
         }
 
         if (state is LoginFailure) {

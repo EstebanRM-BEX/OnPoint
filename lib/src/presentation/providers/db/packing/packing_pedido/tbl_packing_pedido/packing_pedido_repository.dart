@@ -111,6 +111,7 @@ class PedidoPackRepository {
         PedidoPackTable.columnId: pedido.id,
         PedidoPackTable.columnBatchId: pedido.batchId,
         PedidoPackTable.columnName: pedido.name,
+        PedidoPackTable.columnConfigPacking: pedido.configPacking,
         PedidoPackTable.columnObservacion: pedido.observacion,
         PedidoPackTable.columnFechaCreacion:
             pedido.fechaCreacion?.toIso8601String(),

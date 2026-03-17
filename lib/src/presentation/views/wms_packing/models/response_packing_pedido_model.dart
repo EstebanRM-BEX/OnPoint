@@ -79,6 +79,7 @@ class PedidoPackingResult {
   final String? name;
   final String? observacion;
   final dynamic? fechaCreacion;
+  final dynamic? configPacking;
   final int? locationId;
   final String? locationName;
   final String? locationBarcode;
@@ -126,6 +127,7 @@ class PedidoPackingResult {
     this.observacion,
     this.fechaCreacion,
     this.locationId,
+    this.configPacking,
     this.locationName,
     this.locationBarcode,
     this.locationDestId,
@@ -176,6 +178,7 @@ class PedidoPackingResult {
         id: json["id"],
         name: json["name"],
         observacion: json["observacion"],
+        configPacking: json["config_packing"],
         fechaCreacion: json["fecha_creacion"] == null
             ? null
             : DateTime.parse(json["fecha_creacion"]),
@@ -230,6 +233,7 @@ class PedidoPackingResult {
         "id": id,
         "name": name,
         "observacion": observacion,
+        "config_packing": configPacking,
         "fecha_creacion": fechaCreacion?.toIso8601String(),
         "location_id": locationId,
         "location_name": locationName,

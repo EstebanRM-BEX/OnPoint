@@ -709,41 +709,48 @@ class _BatchDetailScreenState extends State<BatchScreen>
                                         batchBloc
                                             .batchWithProducts.batch?.muelle);
                               }).toList()),
-                              const Spacer(),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 8),
-                                child: ElevatedButton(
-                                    onPressed: batchBloc.filteredProducts
-                                            .where((e) {
-                                              return (e.isSeparate == 1) &&
-                                                  (e.locationDestId ==
-                                                      batchBloc
-                                                          .batchWithProducts
-                                                          .batch
-                                                          ?.muelle);
-                                            })
-                                            .toList()
-                                            .isEmpty
-                                        ? null
-                                        : () {
-                                            batchBloc.add(FetchMuellesEvent());
-                                          },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: primaryColorAppLigth,
-                                      minimumSize: const Size(100, 40),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 8),
+                                  child: ElevatedButton(
+                                      onPressed: batchBloc.filteredProducts
+                                              .where((e) {
+                                                return (e.isSeparate == 1) &&
+                                                    (e.locationDestId ==
+                                                        batchBloc
+                                                            .batchWithProducts
+                                                            .batch
+                                                            ?.muelle);
+                                              })
+                                              .toList()
+                                              .isEmpty
+                                          ? null
+                                          : () {
+                                              batchBloc
+                                                  .add(FetchMuellesEvent());
+                                            },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: primaryColorAppLigth,
+                                        minimumSize: const Size(100, 40),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
                                       ),
-                                    ),
-                                    child: Text(
-                                      batchBloc.batchWithProducts.batch?.muelle
-                                              .toString() ??
-                                          '',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                      ),
-                                    )),
+                                      child: Text(
+                                        batchBloc
+                                                .batchWithProducts.batch?.muelle
+                                                .toString() ??
+                                            '',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                        ),
+                                      )),
+                                ),
                               ),
                             ])))),
               ),

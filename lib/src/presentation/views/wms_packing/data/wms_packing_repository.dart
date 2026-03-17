@@ -1060,6 +1060,7 @@ class WmsPackingRepository {
   Future<ResponseSendPack> sendPackRequest(
     PackingPackRequest packingRequest,
     bool isLoadingDialog,
+    bool isCluster,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
@@ -1071,13 +1072,16 @@ class WmsPackingRepository {
 
     try {
       var response = await ApiRequestService().postPacking(
-        endpoint:
-            'send_transfer/pack', // Cambiado para que sea el endpoint correspondiente
+        endpoint: isCluster
+            ? 'send_cluster/pack'
+            : 'send_transfer/pack', // Cambiado para que sea el endpoint correspondiente
         body: {
           "params": {
             "id_transferencia": packingRequest.idTransferencia,
             "is_sticker": packingRequest.isSticker,
             "is_certificate": packingRequest.isCertificate,
+            "tipo_paquete": packingRequest.tipoEmpaque,
+            "peso_caja": packingRequest.pesoCaja,
             "peso_total_paquete": packingRequest.pesoTotalPaquete,
             "list_items":
                 packingRequest.listItems.map((item) => item.toMap()).toList(),
