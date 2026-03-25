@@ -189,7 +189,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
         listItems: productosFiltersMassTransfer
             .map((product) => ListItem(
                   idProducto: product.id ?? 0,
-                  cantidadEnviada: product.cantidad ?? 0,
+                  cantidadEnviada: product.cantidadMano ?? 0,
                   idLote: product.loteId ?? 0,
                   timeLine: 2,
                 ))

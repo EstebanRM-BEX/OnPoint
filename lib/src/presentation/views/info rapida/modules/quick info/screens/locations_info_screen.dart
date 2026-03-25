@@ -250,8 +250,10 @@ class LocationInfoScreen extends StatelessWidget {
                                                 .isMassTransferActive
                                             ?
 
-                                            //VALIDAMOS QUE EL PRODUCTO NO ESTE EN UN PAQUETE
-                                            producto?.packing == true
+                                            //VALIDAMOS QUE EL PRODUCTO NO ESTE EN UN PAQUETE y su cantidad disponible sea mayor a 0
+                                            producto?.packing == true ||
+                                                    producto?.cantidadMano ==
+                                                        0.0
                                                 ? null
                                                 : Checkbox(
                                                     value: context
@@ -293,8 +295,21 @@ class LocationInfoScreen extends StatelessWidget {
                                     subtitle: Column(
                                       children: [
                                         ProductInfoRow(
-                                          title: 'Cantidad: ',
-                                          value: '${producto?.cantidad}',
+                                          title: 'Cantidad disponible: ',
+                                          value:
+                                              '${producto?.cantidadMano} ${producto?.unidadMedida}',
+                                          color: green,
+                                        ),
+                                        ProductInfoRow(
+                                          title: 'En inventario: ',
+                                          value:
+                                              '${producto?.cantidad} ${producto?.unidadMedida}',
+                                        ),
+                                        ProductInfoRow(
+                                          title: 'Cantidad reservada: ',
+                                          value:
+                                              '${producto?.reservado} ${producto?.unidadMedida}',
+                                          color: red,
                                         ),
                                         ProductInfoRow(
                                           title: 'Barcode: ',

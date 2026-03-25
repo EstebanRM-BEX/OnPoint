@@ -65,7 +65,11 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
     // Buscar el producto usando el código de barras principal o el código de producto
     final batchs = listOfBatchs.firstWhere(
       (b) =>
-          b.name?.toLowerCase() == scan || b.zonaEntrega?.toLowerCase() == scan,
+          b.name?.toLowerCase() == scan ||
+          b.zonaEntrega?.toLowerCase() == scan ||
+          b.locationBarcode?.toLowerCase() == scan ||
+          b.locationBarcodeCluster?.toLowerCase() == scan ||
+          b.referencia?.toLowerCase() == scan,
       orElse: () => PedidoPackingResult(),
     );
 
@@ -104,19 +108,44 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
         );
       }
 
-      if (state is AssignUserToPedidoError) {
-        //validamos que este un dialog abierto
+      if (state is LoadPedidoAndProductsLoading) {
         if (Navigator.canPop(context)) {
           Navigator.pop(context);
         }
-        Get.snackbar(
-          '360 Software Informa',
-          state.error,
-          backgroundColor: white,
-          colorText: primaryColorApp,
-          icon: Icon(Icons.error, color: Colors.red),
+        //dialogo de cargando
+        showDialog(
+          context: context,
+          barrierDismissible:
+              false, // No permitir que el usuario cierre el diálogo manualmente
+          builder: (_) => const DialogLoading(
+            message: 'Cargando pedido...',
+          ),
         );
       }
+
+      if (state is LoadPedidoAndProductsLoaded) {
+        //cerramos el dialogo de cargando
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+        //navegamos a la pantalla de detalle
+        Navigator.pushReplacementNamed(context, 'detail-packing-pedido',
+            arguments: [0]);
+      }
+
+      // if (state is AssignUserToPedidoError) {
+      //   //validamos que este un dialog abierto
+      //   if (Navigator.canPop(context)) {
+      //     Navigator.pop(context);
+      //   }
+      //   Get.snackbar(
+      //     '360 Software Informa',
+      //     state.error,
+      //     backgroundColor: white,
+      //     colorText: primaryColorApp,
+      //     icon: Icon(Icons.error, color: Colors.red),
+      //   );
+      // }
 
       if (state is AssignUserToPedidoLoading) {
         // mostramos un dialogo de carga y despues
@@ -132,15 +161,15 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
 
       if (state is AssignUserToPedidoLoaded) {
         // cerramos el dialogo de carga
-        Navigator.pop(context);
+        // Navigator.pop(context);
         context.read<PackingPedidoBloc>().add(LoadConfigurationsUser());
         //traemos el pedido y los productos
         context.read<PackingPedidoBloc>().add(LoadPedidoAndProductsEvent(
               state.id,
             ));
 
-        Navigator.pushReplacementNamed(context, 'detail-packing-pedido',
-            arguments: [0]);
+        // Navigator.pushReplacementNamed(context, 'detail-packing-pedido',
+        //     arguments: [0]);
       }
     }, builder: (context, state) {
       final bloc = context.read<PackingPedidoBloc>();
@@ -200,6 +229,11 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                                         EdgeInsets.only(left: size.width * 0.1),
                                     child: GestureDetector(
                                       onTap: () async {
+                                        if (state
+                                            is WmsPackingPedidoWMSLoading) {
+                                          return;
+                                        }
+
                                         await DataBaseSqlite()
                                             .delePacking('packing-pack');
                                         context
@@ -675,6 +709,51 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                                             ],
                                           ),
                                         ),
+                                        if (batch.configPacking !=
+                                            'cluster') ...[
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Row(
+                                              children: [
+                                                Text('Ubicacion: ',
+                                                    style: TextStyle(
+                                                        fontSize: 12,
+                                                        color:
+                                                            primaryColorApp)),
+                                                Text(
+                                                  batch.locationName ?? '',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: black,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                        if (batch.configPacking ==
+                                            'cluster') ...[
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Row(
+                                              children: [
+                                                Text('Ubicacion : ',
+                                                    style: TextStyle(
+                                                        fontSize: 12,
+                                                        color:
+                                                            primaryColorApp)),
+                                                Text(
+                                                  batch.locationNameCluster ??
+                                                      '',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: black,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                         Divider(
                                           color: black,
                                           thickness: 1,
@@ -951,10 +1030,10 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                 StartOrStopTimePack(pedido.id ?? 0, "start_time_transfer"));
             packingPedidoBloc.add(LoadPedidoAndProductsEvent(pedido.id ?? 0));
             Navigator.pop(dialogContext);
-            if (mounted) {
-              Navigator.pushReplacementNamed(context, 'detail-packing-pedido',
-                  arguments: [0]);
-            }
+            // if (mounted) {
+            //   Navigator.pushReplacementNamed(context, 'detail-packing-pedido',
+            //       arguments: [0]);
+            // }
           },
           title: 'Iniciar Packing',
         ),
@@ -965,8 +1044,6 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
       packingPedidoBloc.add(
         LoadPedidoAndProductsEvent(pedido.id ?? 0),
       );
-      Navigator.pushReplacementNamed(context, 'detail-packing-pedido',
-          arguments: [0]);
     }
   }
 

@@ -473,6 +473,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
       },
       child: BlocConsumer<TransferenciaBloc, TransferenciaState>(
         listener: (context, state) {
+          print("STATE: $state");
           if (state is ViewProductImageSuccess) {
             showImageDialog(context, state.imageUrl);
           } else if (state is ViewProductImageFailure) {
@@ -512,6 +513,10 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                               FocusScope.of(context).requestFocus(focusNode2);
                             });
                             _handleDependencies();
+                          }
+
+                          if (state is ChangeLocationDestIsOkStateError) {
+                            showScrollableErrorDialog(state.error);
                           }
 
                           //*estado cuando el producto es leido ok

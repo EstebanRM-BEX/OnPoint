@@ -265,8 +265,10 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
                                               .currentPedidoPack
                                               .configPacking,
                                           false,
-                                          double.parse(weight),
-                                          pedidoType!,
+                                          weight == "" || weight == null
+                                              ? 0.0
+                                              : double.parse(weight),
+                                          pedidoType ?? PackagingType(),
                                         ));
                                       },
                                     );
@@ -640,12 +642,18 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
                                                             alignment: Alignment
                                                                 .centerLeft,
                                                             child: Text(
-                                                                "${product.lotId}",
-                                                                style: const TextStyle(
+                                                                product.lotId ==
+                                                                        ""
+                                                                    ? "Sin lote"
+                                                                    : "${product.lotId}",
+                                                                style: TextStyle(
                                                                     fontSize:
                                                                         12,
-                                                                    color:
-                                                                        black)),
+                                                                    color: product.lotId ==
+                                                                            ""
+                                                                        ? Colors
+                                                                            .red
+                                                                        : black)),
                                                           ),
                                                         ],
                                                       ),

@@ -162,6 +162,12 @@ class _PickingCompoBatchScreenState extends State<PickingCompoBatchScreen> {
                                             Spacer(),
                                             GestureDetector(
                                               onTap: () async {
+                                                final bloc = context
+                                                    .read<WMSPickingBloc>();
+                                                if (bloc.state
+                                                    is BatchsPickingLoadingState) {
+                                                  return;
+                                                }
                                                 final products =
                                                     await DataBaseSqlite()
                                                         .getProducts(

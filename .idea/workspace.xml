@@ -1,5 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="7da9283c-b484-441f-9ccb-ba01066cf8f8" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.flutter-plugins-dependencies" beforeDir="false" afterPath="$PROJECT_DIR$/.flutter-plugins-dependencies" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/home/presentation/index.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/home/presentation/index.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/packaging_types/domain/entities/packaging_type.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/packaging_types/domain/entities/packaging_type.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/injection_container.config.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/injection_container.config.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/providers/db/packing/tbl_package_pack/package_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/providers/db/packing/tbl_package_pack/package_repository.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/providers/db/packing/tbl_package_pack/package_table.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/providers/db/packing/tbl_package_pack/package_table.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/info rapida/models/info_rapida_model.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/info rapida/models/info_rapida_model.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/info rapida/modules/quick info/bloc/info_rapida_bloc.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/info rapida/modules/quick info/bloc/info_rapida_bloc.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/info rapida/modules/quick info/screens/create-transfer/create_mass_trasnfer_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/info rapida/modules/quick info/screens/create-transfer/create_mass_trasnfer_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/info rapida/modules/quick info/screens/locations_info_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/info rapida/modules/quick info/screens/locations_info_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/transferencias/modules/entrega-productos/list_entrada_productos_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/transferencias/modules/entrega-productos/list_entrada_productos_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_state.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_state.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/transferencias/modules/transfer-interna/screens/list_transferencias_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/transferencias/modules/transfer-interna/screens/list_transferencias_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/transferencias/modules/transfer-interna/screens/scan_product_transfer_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/transferencias/modules/transfer-interna/screens/scan_product_transfer_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/wms_packing/models/packing_response_model.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/wms_packing/models/packing_response_model.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/wms_packing/presentation/packing/screens/index.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/wms_packing/presentation/packing/screens/index.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/wms_packing/presentation/packing/screens/tabs/tab1.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/wms_packing/presentation/packing/screens/tabs/tab1.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/wms_packing/presentation/packing/screens/tabs/tab2.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/wms_packing/presentation/packing/screens/tabs/tab2.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/wms_packing/presentation/packing/screens/tabs/tab3.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/wms_packing/presentation/packing/screens/tabs/tab3.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/wms_picking/modules/Pick/screens/index_list_pick_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/wms_picking/modules/Pick/screens/index_list_pick_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/wms_picking/modules/picking_componentes/batch/index_list_picking_componentes_batchs_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/wms_picking/modules/picking_componentes/batch/index_list_picking_componentes_batchs_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/wms_picking/modules/picking_componentes/index_list_picking_componentes_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/wms_picking/modules/picking_componentes/index_list_picking_componentes_screen.dart" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
   <component name="FileEditorManager">
     <leaf>
       <file leaf-file-name="main.dart" pinned="false" current-in-tab="true">
@@ -13,24 +53,57 @@
       </file>
     </leaf>
   </component>
-  <component name="ToolWindowManager">
-    <editor active="true" />
-    <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
-    </layout>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 7
+}]]></component>
+  <component name="ProjectId" id="3BMtOs0340v5D6Y7lBAzVRxU7Db" />
   <component name="ProjectView">
-    <navigator currentView="ProjectPane" proportions="" version="1">
-    </navigator>
+    <navigator currentView="ProjectPane" proportions="" version="1" />
     <panes>
       <pane id="ProjectPane">
         <option name="show-excluded-files" value="false" />
       </pane>
     </panes>
   </component>
-  <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="dart.analysis.tool.window.force.activate" value="true" />
-    <property name="show.migrate.to.gradle.popup" value="false" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "dart.analysis.tool.window.visible": "false",
+    "git-widget-placeholder": "clean-arquitecture",
+    "io.flutter.project.isFirstOpen": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/Volumes/Baneste/appwms",
+    "settings.editor.selected.configurable": "AndroidSdkUpdater",
+    "show.migrate.to.gradle.popup": "false"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="7da9283c-b484-441f-9ccb-ba01066cf8f8" name="Changes" comment="" />
+      <created>1774310737341</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1774310737341</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="ToolWindowManager">
+    <editor active="true" />
+    <layout>
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+    </layout>
   </component>
 </project>

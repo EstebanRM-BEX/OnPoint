@@ -12,15 +12,15 @@ class PackagingType extends Equatable {
   final String carrier; // mapping to 'transportista'
 
   const PackagingType({
-    required this.id,
-    required this.name,
-    required this.barcode,
-    required this.maxWeight,
-    required this.height,
-    required this.width,
-    required this.packagingLength,
-    required this.size,
-    required this.carrier,
+    this.id = 0,
+    this.name = '',
+    this.barcode = '',
+    this.maxWeight = 0.0,
+    this.height = 0.0,
+    this.width = 0.0,
+    this.packagingLength = 0.0,
+    this.size = '',
+    this.carrier = '',
   });
 
   @override

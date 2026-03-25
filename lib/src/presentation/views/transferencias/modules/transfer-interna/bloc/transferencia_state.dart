@@ -142,6 +142,13 @@ class ChangeLocationDestIsOkState extends TransferenciaState {
   ChangeLocationDestIsOkState(this.isOk);
 }
 
+class ChangeLocationDestIsOkStateLoading extends TransferenciaState {}
+
+class ChangeLocationDestIsOkStateError extends TransferenciaState {
+  final String error;
+  ChangeLocationDestIsOkStateError(this.error);
+}
+
 class ChangeProductIsOkState extends TransferenciaState {
   final bool isOk;
   ChangeProductIsOkState(this.isOk);

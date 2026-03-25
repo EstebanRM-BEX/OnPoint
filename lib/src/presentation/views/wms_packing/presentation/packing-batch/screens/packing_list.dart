@@ -205,6 +205,9 @@ class _PakingListScreenState extends State<PakingListScreen>
                                         icon: const Icon(Icons.arrow_back,
                                             color: white),
                                         onPressed: () {
+                                          if (state is BatchsPackingLoadingState) {
+                                            return;
+                                          }
                                           context.read<WmsPackingBloc>().add(
                                               LoadBatchPackingFromDBEvent());
 

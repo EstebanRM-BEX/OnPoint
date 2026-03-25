@@ -772,6 +772,134 @@ class ApiRequestService {
     }
   }
 
+  Future<http.Response> postPrint({
+    required String endpoint,
+    required Map<String, dynamic>? body,
+    required bool isLoadinDialog,
+  }) async {
+    var url = await PrefUtils.getEnterprise();
+    var cookie = await PrefUtils.getCookie();
+
+    // Extraer el session_id de la cookie
+    String sessionId = '';
+    List<String> cookies = cookie.split(',');
+    for (var c in cookies) {
+      if (c.contains('session_id=')) {
+        sessionId = c.split(';')[0].trim();
+        break; // Detener la búsqueda después de encontrar el session_id
+      }
+    }
+
+    var headers = {
+      'Content-Type': 'application/json',
+      'Cookie': '$sessionId',
+    };
+
+    debugPrint(headers.toString());
+
+    try {
+      var connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult == ConnectivityResult.none) {
+        // Si no hay conexión, retornar una lista vacía
+        debugPrint('🔴 Error de red en [postPacking]: No hay conexión');
+        Get.snackbar('Error de red', 'No se pudo conectar al servidor',
+            backgroundColor: white,
+            colorText: primaryColorApp,
+            duration: const Duration(seconds: 5),
+            leftBarIndicatorColor: yellow,
+            icon: Icon(
+              Icons.error,
+              color: primaryColorApp,
+            ));
+      } else {
+        final result = await InternetAddress.lookup('example.com');
+        if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+          if (isLoadinDialog) {
+            // Mostrar el diálogo de carga con Get.dialog
+            Get.dialog(
+              DialogLoadingNetwork(titel: endpoint),
+              barrierDismissible:
+                  false, // No permitir cerrar tocando fuera del diálogo
+            );
+          }
+
+          url = '$url/$endpoint';
+
+          print('✅✅✅✅✅✅ url: $url');
+
+          // Intentar hacer la solicitud HTTP
+          var request = http.Request('POST', Uri.parse(url));
+          request.body = json.encode(body);
+          request.headers.addAll(headers);
+
+          debugPrint("==== BODY ====");
+          debugPrint(jsonEncode(body));
+          debugPrint("==== URL ====");
+          debugPrint(url);
+          debugPrint("==== HEADERS ====");
+          debugPrint(headers.toString());
+
+          final response = await request.send();
+
+          // Cerrar el diálogo de carga cuando la solicitud se haya completado
+          if (isLoadinDialog) {
+            Get.back();
+          }
+
+          debugPrint("--------------------------------------------");
+          debugPrint('Petición POST a $endpoint');
+          debugPrint('url: $url');
+          debugPrint('Cuerpo de la solicitud: ${jsonDecode(request.body)}');
+          debugPrint('headers: $headers');
+          debugPrint('status code: ${response.statusCode}');
+          debugPrint("--------------------------------------------");
+
+          return http.Response.fromStream(response);
+        } else {
+          debugPrint('🔴 Error de red en [postPacking]: Fallo lookup');
+          Get.snackbar(
+            'Error de red',
+            'No se pudo conectar al servidor',
+            backgroundColor: white,
+            colorText: primaryColorApp,
+            duration: const Duration(seconds: 5),
+            leftBarIndicatorColor: yellow,
+            icon: Icon(
+              Icons.error,
+              color: primaryColorApp,
+            ),
+          );
+        }
+      }
+      return http.Response('Error de red', 404);
+    } on SocketException catch (e) {
+      // Manejo de error de red
+      debugPrint('Error de red: $e');
+      debugPrint('🔴 Error de red en [postPacking]: SocketException $e');
+      Get.snackbar(
+        'Error de red',
+        'No se pudo conectar al servidor',
+        backgroundColor: white,
+        colorText: primaryColorApp,
+        duration: const Duration(seconds: 5),
+        leftBarIndicatorColor: yellow,
+        icon: Icon(
+          Icons.error,
+          color: primaryColorApp,
+        ),
+      );
+      // Cerrar el diálogo de carga incluso en caso de error de red
+      Get.back();
+      rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
+    } catch (e) {
+      // Manejo de otros errores
+      debugPrint('Error desconocido en la solicitud: $e');
+      // Cerrar el diálogo de carga incluso en caso de otros errores
+      Get.back();
+      rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
+    }
+  }
+
   void _showNetworkErrorSnackbar() {
     debugPrint('🔴 EJECUTANDO SNACKBAR EN: _showNetworkErrorSnackbar');
     Get.snackbar(

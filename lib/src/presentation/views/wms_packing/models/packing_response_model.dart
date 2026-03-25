@@ -136,7 +136,6 @@ class BatchPackingModel {
     this.origin,
     this.origins,
     this.cantidadTotalPedidos,
-      
     this.cantidadTotalProductos,
     this.unidadesProductos,
   });
@@ -332,6 +331,8 @@ class Paquete {
   final bool? isCertificate;
   final String? type;
   final dynamic? consecutivo;
+  final String? typePaquete;
+  final dynamic? peso;
 
   Paquete({
     this.id,
@@ -344,6 +345,8 @@ class Paquete {
     this.isCertificate,
     this.type,
     this.consecutivo,
+    this.typePaquete,
+    this.peso,
   });
 
   factory Paquete.fromJson(String str) => Paquete.fromMap(json.decode(str));
@@ -364,6 +367,8 @@ class Paquete {
         isCertificate: json["is_certificate"],
         type: json["type"],
         consecutivo: json["consecutivo"],
+        typePaquete: json["type_paquete"],
+        peso: json["peso"],
       );
 
   Map<String, dynamic> toMap() => {
@@ -380,5 +385,7 @@ class Paquete {
         "is_certificate": isCertificate,
         "type": type,
         "consecutivo": consecutivo,
+        "type_paquete": typePaquete,
+        "peso": peso,
       };
 }

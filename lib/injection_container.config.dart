@@ -121,6 +121,13 @@ import 'features/picking_cluster/presentation/bloc/cluster_picking/cluster_picki
     as _i545;
 import 'features/picking_cluster/presentation/bloc/lote_producto/lote_producto_bloc.dart'
     as _i573;
+import 'features/printing/data/repositories/printing_repository_impl.dart'
+    as _i330;
+import 'features/printing/domain/repositories/printing_repository.dart'
+    as _i681;
+import 'features/printing/domain/usecases/get_printers.dart' as _i277;
+import 'features/printing/domain/usecases/print_report.dart' as _i152;
+import 'features/printing/presentation/bloc/printing_bloc.dart' as _i335;
 import 'features/user/data/datasources/user_local_data_source.dart' as _i232;
 import 'features/user/data/datasources/user_remote_data_source.dart' as _i1071;
 import 'features/user/data/repositories/user_repository_impl.dart' as _i39;
@@ -240,6 +247,9 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i552.DeleteRecentUrl(gh<_i309.EnterpriseRepository>()));
     gh.lazySingleton<_i3.PackagingTypeLocalDataSource>(
         () => _i3.PackagingTypeLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()));
+    gh.lazySingleton<_i681.PrintingRepository>(() =>
+        _i330.PrintingRepositoryImpl(
+            apiService: gh<_i319.ApiRequestService>()));
     gh.factory<_i676.WebSocketBloc>(() =>
         _i676.WebSocketBloc(webSocketService: gh<_i1062.IWebSocketService>()));
     gh.lazySingleton<_i1015.AuthRepository>(() => _i111.AuthRepositoryImpl(
@@ -354,12 +364,20 @@ extension GetItInjectableX on _i174.GetIt {
           saveRecentUrlUseCase: gh<_i747.SaveRecentUrl>(),
           deleteRecentUrlUseCase: gh<_i552.DeleteRecentUrl>(),
         ));
+    gh.lazySingleton<_i152.PrintReport>(
+        () => _i152.PrintReport(gh<_i681.PrintingRepository>()));
+    gh.lazySingleton<_i277.GetPrinters>(
+        () => _i277.GetPrinters(gh<_i681.PrintingRepository>()));
     gh.lazySingleton<_i52.ValidateSession>(
         () => _i52.ValidateSession(gh<_i1015.AuthRepository>()));
     gh.factory<_i123.HomeBloc>(() => _i123.HomeBloc(
           getUserData: gh<_i485.GetUserData>(),
           getAppVersion: gh<_i312.GetAppVersion>(),
           getUserConfigurations: gh<_i698.GetUserConfigurations>(),
+        ));
+    gh.factory<_i335.PrintingBloc>(() => _i335.PrintingBloc(
+          getPrinters: gh<_i277.GetPrinters>(),
+          printReport: gh<_i152.PrintReport>(),
         ));
     gh.factory<_i363.AuthBloc>(
         () => _i363.AuthBloc(validateSession: gh<_i52.ValidateSession>()));

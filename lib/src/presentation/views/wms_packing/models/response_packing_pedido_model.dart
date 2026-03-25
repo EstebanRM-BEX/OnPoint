@@ -82,6 +82,9 @@ class PedidoPackingResult {
   final dynamic? configPacking;
   final int? locationId;
   final String? locationName;
+  final String? locationNameCluster;
+  final String? locationBarcodeCluster;
+  final int? locationIdCluster;
   final String? locationBarcode;
   final int? locationDestId;
   final String? locationDestName;
@@ -129,6 +132,9 @@ class PedidoPackingResult {
     this.locationId,
     this.configPacking,
     this.locationName,
+    this.locationNameCluster,
+    this.locationBarcodeCluster,
+    this.locationIdCluster,
     this.locationBarcode,
     this.locationDestId,
     this.locationDestName,
@@ -184,6 +190,9 @@ class PedidoPackingResult {
             : DateTime.parse(json["fecha_creacion"]),
         locationId: json["location_id"],
         locationName: json["location_name"],
+        locationNameCluster: json["location_name_cluster"],
+        locationBarcodeCluster: json["location_barcode_cluster"],
+        locationIdCluster: json["location_id_cluster"],
         locationBarcode: json["location_barcode"],
         locationDestId: json["location_dest_id"],
         locationDestName: json["location_dest_name"],
@@ -237,6 +246,9 @@ class PedidoPackingResult {
         "fecha_creacion": fechaCreacion?.toIso8601String(),
         "location_id": locationId,
         "location_name": locationName,
+        "location_name_cluster": locationNameCluster,
+        "location_barcode_cluster": locationBarcodeCluster,
+        "location_id_cluster": locationIdCluster,
         "location_barcode": locationBarcode,
         "location_dest_id": locationDestId,
         "location_dest_name": locationDestName,

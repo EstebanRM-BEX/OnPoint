@@ -272,6 +272,8 @@ class Producto {
   int? id;
   String? producto;
   dynamic cantidad;
+  dynamic reservado;
+  dynamic cantidadMano;
   dynamic codigoBarras;
   dynamic loteId;
   String? lote;
@@ -290,6 +292,8 @@ class Producto {
     this.id,
     this.producto,
     this.cantidad,
+    this.reservado,
+    this.cantidadMano,
     this.codigoBarras,
     this.loteId,
     this.lote,
@@ -309,6 +313,8 @@ class Producto {
         id: json["id"],
         producto: json["producto"],
         cantidad: json["cantidad"],
+        reservado: json["reservado"],
+        cantidadMano: json["cantidad_mano"],
         codigoBarras: json["codigo_barras"],
         loteId: json["lote_id"],
         lote: json["lote"],
@@ -328,6 +334,8 @@ class Producto {
         "id": id,
         "producto": producto,
         "cantidad": cantidad,
+        "reservado": reservado,
+        "cantidad_mano": cantidadMano,
         "codigo_barras": codigoBarras,
         "lote_id": loteId,
         "lote": lote,

@@ -1112,6 +1112,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
   void _onChangeLocationDestIsOkEvent(ChangeLocationDestIsOkEvent event,
       Emitter<TransferenciaState> emit) async {
     try {
+      emit(ChangeLocationDestIsOkStateLoading());
       if (event.locationDestIsOk) {
         await db.productTransferenciaRepository.setFieldTableProductTransfer(
           event.idTransfer,
@@ -1138,6 +1139,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
         locationDestIsOk,
       ));
     } catch (e, s) {
+      emit(ChangeLocationDestIsOkStateError('Error al cambiar la ubicación'));
       debugPrint("❌ Error en el ChangeLocationDestIsOkEvent $e ->$s");
     }
   }

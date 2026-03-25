@@ -420,11 +420,12 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
 
                     //todo ubicacion destino
                     LocationScannerAll(
-                      isLocationOk: true,
+                      isLocationOk:
+                          context.read<InfoRapidaBloc>().locationDestIsOk,
                       locationIsOk:
                           context.read<InfoRapidaBloc>().locationDestIsOk,
-                      productIsOk: true,
-                      quantityIsOk: true,
+                      productIsOk: false,
+                      quantityIsOk: false,
                       currentLocationName: 'Esperando escaneo',
                       onLocationScanned: (value) {
                         validateLocationDest(value);
@@ -710,9 +711,9 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
                                           Align(
                                             alignment: Alignment.centerLeft,
                                             child: Text(
-                                              product.cantidad == null
+                                              product.cantidadMano == null
                                                   ? "0.0"
-                                                  : "${product.cantidad}",
+                                                  : "${product.cantidadMano}",
                                               style: const TextStyle(
                                                   fontSize: 12, color: black),
                                             ),

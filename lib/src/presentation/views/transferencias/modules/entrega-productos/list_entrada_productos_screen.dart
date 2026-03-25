@@ -5,8 +5,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
+import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_start_picking_widget.dart';
@@ -33,6 +37,73 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.sizeOf(context);
+
+    final IAudioService _audioService = getIt<IAudioService>();
+    final IVibrationService _vibrationService = getIt<IVibrationService>();
+    FocusNode focusNodeBuscar = FocusNode();
+    final TextEditingController _controllerToDo = TextEditingController();
+
+    void validateBarcode(String value, BuildContext context) {
+      final bloc = context.read<TransferenciaBloc>();
+
+// ✅ PROTECCIÓN 1: Evitar crash si la lista aún no carga
+      if (bloc.entregaProductosDB.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Espere a que carguen las transferencias..."),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+
+      final scan = value.trim().toLowerCase();
+
+      _controllerToDo.clear();
+      debugPrint('🔎 Scan barcode (batch picking): $scan');
+
+      final listOfBatchs = bloc.entregaProductosDB;
+
+      void processBatch(ResultTransFerencias batch) {
+        Future.microtask(() => focusNodeBuscar.requestFocus());
+
+        try {
+          _handleTransferTap(
+            context,
+            batch,
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Error al cargar los datos'),
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+
+      // Buscar el producto usando el código de barras principal o el código de producto
+      // ✅ PROTECCIÓN 2: Uso seguro de firstWhere con manejo de nulos
+      final batchs = listOfBatchs.firstWhere(
+        (b) =>
+            (b.name?.toLowerCase() ?? '') == scan ||
+            (b.origin?.toLowerCase() ?? '') == scan,
+        orElse: () => ResultTransFerencias(),
+      );
+
+      if (batchs.id != null) {
+        debugPrint('🔎 batch encontrado : ${batchs.id} ${batchs.name} ');
+        processBatch(batchs);
+        return;
+      } else {
+        _audioService.playErrorSound();
+        _vibrationService.vibrate();
+        Future.microtask(() => focusNodeBuscar.requestFocus());
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Entrega de productos no encontrada')),
+        );
+      }
+    }
 
     return WillPopScope(
         onWillPop: () async {
@@ -284,6 +355,16 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
                       });
                     },
                   ),
+
+                  //*buscar por scan
+                  BarcodeScannerField(
+                    controller: _controllerToDo,
+                    focusNode: focusNodeBuscar,
+                    onBarcodeScanned: (value, context) {
+                      return validateBarcode(value, context);
+                    },
+                  ),
+
                   (transferBloc.entregaProductosBDFilters
                           .where((element) =>
                               element.isFinish == 0 || element.isFinish == null)
@@ -582,56 +663,8 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
                                         ],
                                       ),
                                       onTap: () async {
-                                        debugPrint(
-                                            'transferenciaDetail: ${transferenciaDetail.toMap()}');
-                                        //cargamos los permisos del usuario
-                                        context.read<TransferenciaBloc>().add(
-                                            LoadConfigurationsUserTransfer());
-
-                                        //verificamos si la orden de entrada tiene ya un responsable
-                                        if (transferenciaDetail.responsableId ==
-                                                null ||
-                                            transferenciaDetail.responsableId ==
-                                                0) {
-                                          showDialog(
-                                            context: context,
-                                            barrierDismissible:
-                                                false, // No permitir que el usuario cierre el diálogo manualmente
-                                            builder: (context) =>
-                                                DialogAsignUserWidget(
-                                              title:
-                                                  'Esta seguro de tomar esta orden, una vez aceptada no podrá ser cancelada desde la app, una vez asignada se registrará el tiempo de inicio de la operación.',
-                                              onCancel: () {
-                                                // Future.microtask(() => focusNodeBuscar.requestFocus());
-                                                Navigator.pop(context);
-                                              },
-                                              onAccepted: () async {
-                                                context
-                                                    .read<TransferenciaBloc>()
-                                                    .searchControllerTransfer
-                                                    .clear();
-
-                                                context
-                                                    .read<TransferenciaBloc>()
-                                                    .add(SearchTransferEvent(
-                                                      "",
-                                                      'entrega',
-                                                    ));
-                                                //asignamos el responsable a esa orden de entrada
-                                                context
-                                                    .read<TransferenciaBloc>()
-                                                    .add(
-                                                      AssignUserToTransfer(
-                                                          transferenciaDetail),
-                                                    );
-                                                Navigator.pop(context);
-                                              },
-                                            ),
-                                          );
-                                        } else {
-                                          validateTime(
-                                              transferenciaDetail, context);
-                                        }
+                                        _handleTransferTap(
+                                            context, transferenciaDetail);
                                       },
                                     ),
                                   ),
@@ -643,6 +676,46 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
             ),
           );
         }));
+  }
+
+  void _handleTransferTap(
+      BuildContext context, dynamic transferenciaDetail) async {
+    debugPrint('transferenciaDetail: ${transferenciaDetail.toMap()}');
+    //cargamos los permisos del usuario
+    context.read<TransferenciaBloc>().add(LoadConfigurationsUserTransfer());
+
+    //verificamos si la orden de entrada tiene ya un responsable
+    if (transferenciaDetail.responsableId == null ||
+        transferenciaDetail.responsableId == 0) {
+      showDialog(
+        context: context,
+        barrierDismissible:
+            false, // No permitir que el usuario cierre el diálogo manualmente
+        builder: (context) => DialogAsignUserWidget(
+          title:
+              'Esta seguro de tomar esta orden, una vez aceptada no podrá ser cancelada desde la app, una vez asignada se registrará el tiempo de inicio de la operación.',
+          onCancel: () {
+            // Future.microtask(() => focusNodeBuscar.requestFocus());
+            Navigator.pop(context);
+          },
+          onAccepted: () async {
+            context.read<TransferenciaBloc>().searchControllerTransfer.clear();
+
+            context.read<TransferenciaBloc>().add(SearchTransferEvent(
+                  "",
+                  'entrega',
+                ));
+            //asignamos el responsable a esa orden de entrada
+            context.read<TransferenciaBloc>().add(
+                  AssignUserToTransfer(transferenciaDetail),
+                );
+            Navigator.pop(context);
+          },
+        ),
+      );
+    } else {
+      validateTime(transferenciaDetail, context);
+    }
   }
 
   void validateTime(ResultTransFerencias transfer, BuildContext context) {

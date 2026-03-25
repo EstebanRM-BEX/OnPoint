@@ -8,6 +8,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
@@ -464,6 +465,30 @@ class Tab1ScreenRecep extends StatelessWidget {
                   ),
                 ),
                 // const Spacer(),
+//btn de imprimir
+                // Padding(
+                //   padding: const EdgeInsets.symmetric(horizontal: 20),
+                //   child: ElevatedButton(
+                //       onPressed: () {
+                //         ModalPrintersList.show(context);
+                //       },
+                //       style: ElevatedButton.styleFrom(
+                //         minimumSize: Size(size.width * 0.9, 40),
+                //         backgroundColor: primaryColorApp,
+                //         shape: RoundedRectangleBorder(
+                //           borderRadius: BorderRadius.circular(10),
+                //         ),
+                //       ),
+                //       child: Row(
+                //         mainAxisAlignment: MainAxisAlignment.center,
+                //         children: [
+                //           Icon(Icons.print, color: white),
+                //           const SizedBox(width: 5),
+                //           Text('Imprimir', style: TextStyle(color: white)),
+                //         ],
+                //       )),
+                // ),
+
                 Visibility(
                   visible: context
                           .read<RecepcionBloc>()

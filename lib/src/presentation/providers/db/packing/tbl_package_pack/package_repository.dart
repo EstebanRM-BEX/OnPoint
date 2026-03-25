@@ -32,6 +32,8 @@ class PackagesRepository {
               PackagesTable.columnIsSticker: package.isSticker == true ? 1 : 0,
               PackagesTable.columnType: type,
               PackagesTable.columnConsecutivo: package.consecutivo,
+              PackagesTable.columnTypePaquete: package.typePaquete,
+              PackagesTable.columnPeso: package.peso,
             },
             where: '${PackagesTable.columnId} = ?',
             whereArgs: [package.id],
@@ -50,6 +52,8 @@ class PackagesRepository {
               PackagesTable.columnIsSticker: package.isSticker == true ? 1 : 0,
               PackagesTable.columnType: type,
               PackagesTable.columnConsecutivo: package.consecutivo,
+              PackagesTable.columnTypePaquete: package.typePaquete,
+              PackagesTable.columnPeso: package.peso,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
@@ -90,6 +94,8 @@ class PackagesRepository {
                     package.isSticker == true ? 1 : 0,
                 PackagesTable.columnType: type,
                 PackagesTable.columnConsecutivo: package.consecutivo,
+                PackagesTable.columnTypePaquete: package.typePaquete,
+                PackagesTable.columnPeso: package.peso,
               },
               where: '${PackagesTable.columnId} = ?',
               whereArgs: [package.id],
@@ -110,10 +116,11 @@ class PackagesRepository {
                     package.isSticker == true ? 1 : 0,
                 PackagesTable.columnType: type,
                 PackagesTable.columnConsecutivo: package.consecutivo,
+                PackagesTable.columnTypePaquete: package.typePaquete,
+                PackagesTable.columnPeso: package.peso,
               },
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
-            debugPrint("Se agregó la inserción del paquete: ${package.id}");
           }
         }
 
@@ -145,6 +152,8 @@ class PackagesRepository {
         isSticker: map[PackagesTable.columnIsSticker] == 1,
         type: map[PackagesTable.columnType],
         consecutivo: map[PackagesTable.columnConsecutivo],
+        typePaquete: map[PackagesTable.columnTypePaquete],
+        peso: map[PackagesTable.columnPeso],
       );
     }).toList();
     return productos;
@@ -209,6 +218,8 @@ class PackagesRepository {
         isSticker: maps[0][PackagesTable.columnIsSticker] == 1,
         type: maps[0][PackagesTable.columnType],
         consecutivo: maps[0][PackagesTable.columnConsecutivo],
+        typePaquete: maps[0][PackagesTable.columnTypePaquete],
+        peso: maps[0][PackagesTable.columnPeso],
       );
     }
     return null;
@@ -237,6 +248,8 @@ class PackagesRepository {
         PackagesTable.columnIsSticker: package.isSticker == true ? 1 : 0,
         PackagesTable.columnType: package.type,
         PackagesTable.columnConsecutivo: package.consecutivo,
+        PackagesTable.columnTypePaquete: package.typePaquete,
+        PackagesTable.columnPeso: package.peso,
       },
       where: '${PackagesTable.columnId} = ?',
       whereArgs: [package.id],

@@ -41,8 +41,6 @@ class IndexListPickComponentsScreen extends StatelessWidget {
     final listOfBatchs = bloc.listOfPickCompo;
 
     void processBatch(ResultPick batch) {
-      // bloc.add(ClearScannedValueEvent('toDo'));
-
       try {
         _handlePickTap(context, batch, context);
       } catch (e) {
@@ -57,7 +55,9 @@ class IndexListPickComponentsScreen extends StatelessWidget {
 
     // Buscar el producto usando el código de barras principal o el código de producto
     final batchs = listOfBatchs.firstWhere(
-      (b) => b.name?.toLowerCase() == scan,
+      (b) =>
+          b.name?.toLowerCase() == scan ||
+          (b.origin?.toLowerCase() ?? '') == scan,
       orElse: () => ResultPick(),
     );
 
@@ -69,7 +69,6 @@ class IndexListPickComponentsScreen extends StatelessWidget {
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
-      // bloc.add(ClearScannedValueEvent('toDo'));
       Future.microtask(() => focusNodeBuscar.requestFocus());
     }
   }
@@ -177,9 +176,17 @@ class IndexListPickComponentsScreen extends StatelessWidget {
                                     ),
                                     GestureDetector(
                                       onTap: () async {
+                                        final bloc =
+                                            context.read<PickingPickBloc>();
+                                        if (bloc.state
+                                                is PickingPickCompoLoading ||
+                                            bloc.state
+                                                is PickingPickCompoBDLoading) {
+                                          return;
+                                        }
                                         await DataBaseSqlite()
                                             .delePick('pick-componentes');
-                                        context.read<PickingPickBloc>().add(
+                                        bloc.add(
                                             FetchPickingComponentesEvent(true));
                                       },
                                       child: Padding(
@@ -760,6 +767,85 @@ class IndexListPickComponentsScreen extends StatelessWidget {
     );
   }
 
+  void _handlePickTap(
+      BuildContext context, dynamic batch, BuildContext contextBuilder) async {
+    debugPrint("Batch: ${batch.toMap()}");
+    final bloc = context
+        .read<PickingPickBloc>(); // Asegúrate que el BLoC sea el correcto
+
+    context.read<PickingPickBloc>().add(LoadConfigurationsUser());
+
+    try {
+      // Lógica para asignar responsable si no existe
+      if (batch.responsableId == null || batch.responsableId == 0) {
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => DialogAsignUserWidget(
+            title:
+                'Esta seguro de tomar este pick, una vez aceptado no podrá ser cancelada desde la app, una vez asignada se registrará el tiempo de inicio de la operación.',
+            onCancel: () {
+              Future.microtask(() => focusNodeBuscar.requestFocus());
+              Navigator.pop(dialogContext);
+              return;
+            },
+            onAccepted: () async {
+              bloc.searchPickController.clear();
+              bloc.add(SearchPickEvent('', true));
+              bloc.add(AssignUserToTransfer(batch.id ?? 0));
+              Navigator.pop(dialogContext); // Cierra el diálogo de asignación
+            },
+          ),
+        );
+      } else {
+        validateTime(batch, context);
+      }
+    } catch (e) {
+      // Manejo de errores centralizado
+      ScaffoldMessenger.of(contextBuilder).showSnackBar(
+        const SnackBar(
+          content: Text('Error al cargar los datos'),
+          duration: Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  void validateTime(dynamic batch, BuildContext context) {
+    final bloc = context.read<PickingPickBloc>();
+
+    if (batch.startTimeTransfer == "" || batch.startTimeTransfer == null) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => DialogStartTimeWidget(
+          title: 'Iniciar Pick',
+          onAccepted: () async {
+            bloc.searchPickController.clear();
+            bloc.add(SearchPickEvent('', true));
+            bloc.add(
+                StartOrStopTimeTransfer(batch.id ?? 0, 'start_time_transfer'));
+            bloc.add(FetchPickWithProductsEvent(batch.id ?? 0));
+            bloc.add(LoadAllNovedadesPickEvent());
+            bloc.add(LoadConfigurationsUser());
+            Navigator.pop(dialogContext); // Cierra el diálogo de inicio
+            Navigator.pushReplacementNamed(context, 'scan-product-pick');
+          },
+        ),
+      );
+    } else {
+      // Acciones comunes que se ejecutan después de los diálogos
+      bloc.searchPickController.clear();
+      bloc.add(SearchPickEvent('', true));
+      bloc.add(FetchPickWithProductsEvent(batch.id ?? 0));
+      bloc.add(LoadAllNovedadesPickEvent());
+      bloc.add(LoadConfigurationsUser());
+
+      // Navegación final
+      goBatchInfo(context, bloc, batch);
+    }
+  }
+
   void goBatchInfo(
     BuildContext context,
     PickingPickBloc batchBloc,
@@ -782,67 +868,5 @@ class IndexListPickComponentsScreen extends StatelessWidget {
       batchBloc.searchPickController.clear();
       Navigator.pushReplacementNamed(context, 'scan-product-pick');
     } else {}
-  }
-
-  void _handlePickTap(
-      BuildContext context, dynamic batch, BuildContext contextBuilder) async {
-    debugPrint("Batch: ${batch.toMap()}");
-    final bloc = context
-        .read<PickingPickBloc>(); // Asegúrate que el BLoC sea el correcto
-
-    try {
-      // Lógica para asignar responsable si no existe
-      if (batch.responsableId == null || batch.responsableId == 0) {
-        await showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) => DialogAsignUserWidget(
-            title:
-                'Esta seguro de tomar este pick, una vez aceptado no podrá ser cancelada desde la app, una vez asignada se registrará el tiempo de inicio de la operación.',
-            onCancel: () {
-              Future.microtask(() => focusNodeBuscar.requestFocus());
-              Navigator.pop(dialogContext);
-            },
-            onAccepted: () async {
-              bloc.add(AssignUserToTransfer(batch.id ?? 0));
-              Navigator.pop(dialogContext); // Cierra el diálogo de asignación
-            },
-          ),
-        );
-      }
-
-      // Lógica para iniciar la transferencia si el tiempo no ha comenzado
-      if (batch.startTimeTransfer == "") {
-        await showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) => DialogStartTimeWidget(
-            title: 'Iniciar Pick',
-            onAccepted: () async {
-              bloc.add(StartOrStopTimeTransfer(
-                  batch.id ?? 0, 'start_time_transfer'));
-              Navigator.pop(dialogContext); // Cierra el diálogo de inicio
-            },
-          ),
-        );
-      }
-
-      // Acciones comunes que se ejecutan después de los diálogos
-      bloc.searchPickController.clear();
-      bloc.add(SearchPickEvent('', true));
-      bloc.add(FetchPickWithProductsEvent(batch.id ?? 0));
-      bloc.add(LoadConfigurationsUser());
-
-      // Navegación final
-      goBatchInfo(contextBuilder, bloc, batch);
-    } catch (e) {
-      // Manejo de errores centralizado
-      ScaffoldMessenger.of(contextBuilder).showSnackBar(
-        const SnackBar(
-          content: Text('Error al cargar los datos'),
-          duration: Duration(seconds: 4),
-        ),
-      );
-    }
   }
 }

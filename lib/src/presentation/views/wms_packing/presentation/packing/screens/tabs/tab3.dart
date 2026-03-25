@@ -80,8 +80,10 @@ class Tab3PedidoScreen extends StatelessWidget {
                                                   .currentPedidoPack
                                                   .configPacking,
                                               true,
-                                              double.parse(weight),
-                                              pedidoType!,
+                                              weight == "" || weight == null
+                                                  ? 0.0
+                                                  : double.parse(weight),
+                                              pedidoType ?? PackagingType(),
                                             ));
                                           },
                                         );

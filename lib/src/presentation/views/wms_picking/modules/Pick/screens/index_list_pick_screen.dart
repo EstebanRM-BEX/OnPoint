@@ -279,6 +279,11 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                     ),
                                     GestureDetector(
                                       onTap: () async {
+                                        if (bloc.state is PickingPickLoading ||
+                                            bloc.state
+                                                is PickingPickBDLoading) {
+                                          return;
+                                        }
                                         bloc.add(FetchPickingPickEvent(true));
                                       },
                                       child: Padding(
@@ -673,8 +678,8 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                   horizontal: 10,
                                 ),
                                 child: GestureDetector(
-                                  onTap: () =>
-                                      _handleTap(context, contextBuilder, batch),
+                                  onTap: () => _handleTap(
+                                      context, contextBuilder, batch),
                                   child: Card(
                                     color: batch.isSeparate == 1
                                         ? Colors.green[100]

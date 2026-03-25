@@ -82,7 +82,9 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
     // Buscar el producto usando el código de barras principal o el código de producto
     // ✅ PROTECCIÓN 2: Uso seguro de firstWhere con manejo de nulos
     final batchs = listOfBatchs.firstWhere(
-      (b) => (b.name?.toLowerCase() ?? '') == scan,
+      (b) =>
+          (b.name?.toLowerCase() ?? '') == scan ||
+          (b.origin?.toLowerCase() ?? '') == scan,
       orElse: () => ResultTransFerencias(),
     );
 

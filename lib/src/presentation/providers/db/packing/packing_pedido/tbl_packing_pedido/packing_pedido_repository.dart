@@ -116,6 +116,10 @@ class PedidoPackRepository {
         PedidoPackTable.columnFechaCreacion:
             pedido.fechaCreacion?.toIso8601String(),
         PedidoPackTable.columnLocationId: pedido.locationId,
+        PedidoPackTable.columnLocationNameCluster: pedido.locationNameCluster,
+        PedidoPackTable.columnLocationBarcodeCluster:
+            pedido.locationBarcodeCluster,
+        PedidoPackTable.columnLocationIdCluster: pedido.locationIdCluster,
         PedidoPackTable.columnLocationName:
             pedido.locationName?.toString().split('.').last,
         PedidoPackTable.columnLocationBarcode:

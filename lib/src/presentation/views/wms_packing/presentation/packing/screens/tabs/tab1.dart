@@ -814,10 +814,41 @@ class Tab1PedidoScreen extends StatelessWidget {
                                                     fontSize: 12,
                                                     color: primaryColorApp),
                                               ),
-                                              Text(
-                                                "${package.consecutivo}",
-                                                style: TextStyle(
-                                                    fontSize: 10, color: black),
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    "${package.consecutivo}",
+                                                    style: TextStyle(
+                                                        fontSize: 10,
+                                                        color: black),
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  if (context
+                                                          .read<
+                                                              PackingPedidoBloc>()
+                                                          .currentPedidoPack
+                                                          .configPacking ==
+                                                      'cluster')
+                                                    Row(
+                                                      children: [
+                                                        Icon(Icons.scale,
+                                                            size: 12,
+                                                            color:
+                                                                primaryColorApp),
+                                                        const SizedBox(
+                                                            width: 5),
+                                                        Text(
+                                                          package.peso == null
+                                                              ? "0.0"
+                                                              : "${package.peso}",
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: black),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                ],
                                               ),
                                               Row(
                                                 children: [
@@ -848,6 +879,29 @@ class Tab1PedidoScreen extends StatelessWidget {
                                                   const SizedBox(width: 10),
                                                 ],
                                               ),
+                                              if (context
+                                                      .read<PackingPedidoBloc>()
+                                                      .currentPedidoPack
+                                                      .configPacking ==
+                                                  'cluster')
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      "Tipo de empaque: ",
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color:
+                                                              primaryColorApp),
+                                                    ),
+                                                    Text(
+                                                      package.typePaquete ??
+                                                          'No asignado',
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: black),
+                                                    ),
+                                                  ],
+                                                ),
                                             ],
                                           ),
                                           children: [
