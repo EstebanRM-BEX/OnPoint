@@ -108,79 +108,84 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
           }
         },
         child: Scaffold(
-          backgroundColor: white,
+          backgroundColor: primaryColorApp,
           body: BlocBuilder<ClusterPickingBloc, ClusterPickingState>(
             builder: (context, state) {
-              return Column(
-                children: [
-                  CustomHeaderWidget(
-                    title: 'PICK CLUSTER',
-                    onBack: () {
-                      Navigator.pushReplacementNamed(context, '/home');
-                    },
-                    onRefresh: () async {
-                      context
-                          .read<ClusterPickingBloc>()
-                          .add(const FetchPickingClustersEvent());
-                    },
-                    showCalendar: false,
-                  ),
-                  const SizedBox(height: 10),
-                  BarcodeScannerField(
-                    controller: _controllerToDo,
-                    focusNode: focusNodeBuscar,
-                    onBarcodeScanned: (value, context) {
-                      validateBarcode(value, context);
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  Expanded(
-                    child: Builder(
-                      builder: (context) {
-                        if (state is PickingClustersLoaded) {
-                          if (state.batches.isEmpty) {
-                            return const Center(
-                              child: Text(
-                                'No hay clusters disponibles',
-                                style:
-                                    TextStyle(color: Colors.grey, fontSize: 16),
-                              ),
-                            );
-                          }
-                          return ListView.builder(
-                            itemCount: state.batches.length,
-                            itemBuilder: (context, index) {
-                              final batch = state.batches[index];
-                              return PickingBatchCard(
-                                batch: batch,
-                                onTap: () {
-                                  _handleBatchSelection(
-                                      context, context, batch);
+              return SafeArea(
+                child: Container(
+                  color: Colors.white,
+                  child: Column(
+                    children: [
+                      CustomHeaderWidget(
+                        title: 'PICK CLUSTER',
+                        onBack: () {
+                          Navigator.pushReplacementNamed(context, '/home');
+                        },
+                        onRefresh: () async {
+                          context
+                              .read<ClusterPickingBloc>()
+                              .add(const FetchPickingClustersEvent());
+                        },
+                        showCalendar: false,
+                      ),
+                      const SizedBox(height: 10),
+                      BarcodeScannerField(
+                        controller: _controllerToDo,
+                        focusNode: focusNodeBuscar,
+                        onBarcodeScanned: (value, context) {
+                          validateBarcode(value, context);
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      Expanded(
+                        child: Builder(
+                          builder: (context) {
+                            if (state is PickingClustersLoaded) {
+                              if (state.batches.isEmpty) {
+                                return const Center(
+                                  child: Text(
+                                    'No hay clusters disponibles',
+                                    style: TextStyle(
+                                        color: Colors.grey, fontSize: 16),
+                                  ),
+                                );
+                              }
+                              return ListView.builder(
+                                itemCount: state.batches.length,
+                                itemBuilder: (context, index) {
+                                  final batch = state.batches[index];
+                                  return PickingBatchCard(
+                                    batch: batch,
+                                    onTap: () {
+                                      _handleBatchSelection(
+                                          context, context, batch);
+                                    },
+                                  );
                                 },
                               );
-                            },
-                          );
-                        } else if (state is PickingClustersLoading) {
-                          return const SizedBox
-                              .shrink(); // Loader handled by dialog
-                        }
+                            } else if (state is PickingClustersLoading) {
+                              return const SizedBox
+                                  .shrink(); // Loader handled by dialog
+                            }
 
-                        // Initial state or error fallback
-                        return Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: const Center(
-                            child: Text(
-                              'No hay clusters disponibles, recargue la pantalla',
-                              textAlign: TextAlign.center,
-                              style:
-                                  TextStyle(color: Colors.grey, fontSize: 16),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                            // Initial state or error fallback
+                            return Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: const Center(
+                                child: Text(
+                                  'No hay clusters disponibles, recargue la pantalla',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 16),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               );
             },
           ),

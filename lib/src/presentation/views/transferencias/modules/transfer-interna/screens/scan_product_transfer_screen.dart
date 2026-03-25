@@ -483,530 +483,542 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
         builder: (context, state) {
           final bloc = context.read<TransferenciaBloc>();
           return Scaffold(
-            backgroundColor: white,
-            body: SizedBox(
-              width: size.width * 1,
-              height: size.height * 1,
-              child: Column(
-                children: [
-                  BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
-                    builder: (context, status) {
-                      return Container(
-                        padding: const EdgeInsets.only(top: 20),
-                        decoration: BoxDecoration(
-                          color: primaryColorApp,
-                          borderRadius: const BorderRadius.only(
-                            bottomLeft: Radius.circular(20),
-                            bottomRight: Radius.circular(20),
+            backgroundColor: primaryColorApp,
+            body: SafeArea(
+              child: Container(
+                color: Colors.white,
+                width: size.width * 1,
+                height: size.height * 1,
+                child: Column(
+                  children: [
+                    BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
+                      builder: (context, status) {
+                        return Container(
+                          padding: const EdgeInsets.only(top: 20),
+                          decoration: BoxDecoration(
+                            color: primaryColorApp,
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(20),
+                              bottomRight: Radius.circular(20),
+                            ),
                           ),
-                        ),
-                        width: double.infinity,
-                        child:
-                            BlocConsumer<TransferenciaBloc, TransferenciaState>(
-                                listener: (context, state) {
-                          debugPrint('STATE ❤️‍🔥 $state');
+                          width: double.infinity,
+                          child: BlocConsumer<TransferenciaBloc,
+                              TransferenciaState>(listener: (context, state) {
+                            debugPrint('STATE ❤️‍🔥 $state');
 
-                          //*estado cando la ubicacion de origen es cambiada
-                          if (state is ChangeLocationIsOkState) {
-                            //cambiamos el foco
-                            Future.delayed(const Duration(seconds: 1), () {
-                              FocusScope.of(context).requestFocus(focusNode2);
-                            });
-                            _handleDependencies();
-                          }
-
-                          if (state is ChangeLocationDestIsOkStateError) {
-                            showScrollableErrorDialog(state.error);
-                          }
-
-                          //*estado cuando el producto es leido ok
-                          if (state is ChangeProductIsOkState) {
-                            //cambiamos el foco a cantidad
-                            Future.delayed(const Duration(seconds: 1), () {
-                              FocusScope.of(context).requestFocus(focusNode3);
-                            });
-                            _handleDependencies();
-                          }
-
-                          //*estado cuando la cantidad fue cambiada
-                          if (state is ChangeQuantitySeparateStateSuccess) {
-                            if (state.quantity ==
-                                (bloc.currentProduct.cantidadFaltante)) {
+                            //*estado cando la ubicacion de origen es cambiada
+                            if (state is ChangeLocationIsOkState) {
+                              //cambiamos el foco
                               Future.delayed(const Duration(seconds: 1), () {
-                                FocusScope.of(context).requestFocus(focusNode5);
+                                FocusScope.of(context).requestFocus(focusNode2);
                               });
                               _handleDependencies();
-                              //validacion automatica donde la cantidad a mover sea igual a la cantidad pedida
-                              _validatebuttonquantity();
                             }
-                          }
 
-                          //*estado cuando la ubicacion de destino es validada
-                          if (state is ChangeLocationDestIsOkState) {
-                            _validateQuantityFinish();
-                          }
-                        }, builder: (context, status) {
-                          return Column(
-                            children: [
-                              const WarningWidgetCubit(),
-                              Padding(
-                                padding: EdgeInsets.only(
-                                    // bottom: 5,
-                                    top: status != ConnectionStatus.online
-                                        ? 0
-                                        : 35),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.arrow_back,
-                                          color: white),
-                                      onPressed: () {
-                                        termiateProcess();
+                            if (state is ChangeLocationDestIsOkStateError) {
+                              showScrollableErrorDialog(state.error);
+                            }
 
-                                        bloc.add(CleanFieldsEvent());
-                                        Navigator.pushReplacementNamed(
-                                            context, 'transferencia-detail',
-                                            arguments: [
-                                              bloc.currentTransferencia,
-                                              1
-                                            ]);
-                                      },
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsets.only(
-                                          left: size.width * 0.2),
-                                      child: Text(
-                                          bloc.currentTransferencia.name ?? '',
-                                          style: TextStyle(
-                                              color: white, fontSize: 18)),
-                                    ),
-                                    const Spacer(),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          );
-                        }),
-                      );
-                    },
-                  ),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: SingleChildScrollView(
-                        child: Column(children: [
-                          //todo : ubicacion de origen
+                            //*estado cuando el producto es leido ok
+                            if (state is ChangeProductIsOkState) {
+                              //cambiamos el foco a cantidad
+                              Future.delayed(const Duration(seconds: 1), () {
+                                FocusScope.of(context).requestFocus(focusNode3);
+                              });
+                              _handleDependencies();
+                            }
 
-                          LocationScannerWidget(
-                            isLocationOk: bloc.isLocationOk,
-                            locationIsOk: bloc.locationIsOk,
-                            productIsOk: bloc.productIsOk,
-                            quantityIsOk: bloc.quantityIsOk,
-                            locationDestIsOk: bloc.locationDestIsOk,
-                            currentLocationId:
-                                bloc.currentProduct.locationName ?? "",
-                            onValidateLocation: (value) {
-                              validateLocation(value);
-                            },
-                            onKeyScanned: (keyLabel) {},
-                            focusNode: focusNode1,
-                            controller: _controllerLocation,
-                            locationDropdown: LocationDropdownTransferWidget(
-                              isPDA: true,
-                              selectedLocation: selectedLocation,
-                              positionsOrigen: bloc.positionsOrigen,
-                              currentLocationId:
-                                  bloc.currentProduct.locationName.toString(),
-                              batchBloc: bloc,
-                              currentProduct: bloc.currentProduct,
-                            ),
-                          ),
+                            //*estado cuando la cantidad fue cambiada
+                            if (state is ChangeQuantitySeparateStateSuccess) {
+                              if (state.quantity ==
+                                  (bloc.currentProduct.cantidadFaltante)) {
+                                Future.delayed(const Duration(seconds: 1), () {
+                                  FocusScope.of(context)
+                                      .requestFocus(focusNode5);
+                                });
+                                _handleDependencies();
+                                //validacion automatica donde la cantidad a mover sea igual a la cantidad pedida
+                                _validatebuttonquantity();
+                              }
+                            }
 
-                          //todo: producto
+                            //*estado cuando la ubicacion de destino es validada
+                            if (state is ChangeLocationDestIsOkState) {
+                              _validateQuantityFinish();
+                            }
+                          }, builder: (context, status) {
+                            return Column(
+                              children: [
+                                const WarningWidgetCubit(),
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                      // bottom: 5,
+                                      top: status != ConnectionStatus.online
+                                          ? 0
+                                          : 35),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.arrow_back,
+                                            color: white),
+                                        onPressed: () {
+                                          termiateProcess();
 
-                          ProductScannerWidget(
-                            isProductOk: bloc.isProductOk,
-                            productIsOk: bloc.productIsOk,
-                            locationIsOk: bloc.locationIsOk,
-                            quantityIsOk: bloc.quantityIsOk,
-                            locationDestIsOk: bloc.locationDestIsOk,
-                            currentProductId:
-                                bloc.currentProduct.productName.toString(),
-                            barcode: bloc.currentProduct.productBarcode,
-                            lotId: bloc.currentProduct.lotName,
-                            origin: '',
-                            expireDate: bloc.currentProduct.fechaVencimiento,
-                            size: size,
-                            onValidateProduct: (value) {
-                              validateProduct(value); // tu función actual
-                            },
-                            onKeyScanned: (keyLabel) {
-                              // bloc.add(
-                              //     UpdateScannedValueEvent(keyLabel, 'product'));
-                            },
-                            focusNode: focusNode2,
-                            controller: _controllerProduct,
-                            productDropdown: ProductDropdownTransferWidget(
-                              selectedProduct: selectedLocation,
-                              listOfProductsName: bloc.listOfProductsName,
-                              currentProductId:
-                                  bloc.currentProduct.productName.toString(),
-                              batchBloc: bloc,
-                              currentProduct: bloc.currentProduct,
-                              isPDA: false,
-                            ),
-                            expiryWidget: ExpirationBadgeWidget(
-                              expirationDate:
-                                  bloc.currentProduct?.fechaVencimiento,
-                            ),
-                            listOfBarcodes: bloc.listOfBarcodes,
-                            onBarcodesDialogTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) {
-                                  return DialogBarcodes(
-                                      listOfBarcodes: bloc.listOfBarcodes);
-                                },
-                              );
-                            },
-                            onViewImgProduct: () {
-                              bloc.add(ViewProductImageEvent(int.parse(
-                                  bloc.currentProduct.productId ?? "")));
-                            },
-                          ),
-
-                          //todo: ubicacion de destino
-
-                          Row(
-                            children: [
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 10),
-                                child: Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: BoxDecoration(
-                                    color:
-                                        bloc.locationDestIsOk ? green : yellow,
-                                    shape: BoxShape.circle,
+                                          bloc.add(CleanFieldsEvent());
+                                          Navigator.pushReplacementNamed(
+                                              context, 'transferencia-detail',
+                                              arguments: [
+                                                bloc.currentTransferencia,
+                                                1
+                                              ]);
+                                        },
+                                      ),
+                                      Padding(
+                                        padding: EdgeInsets.only(
+                                            left: size.width * 0.2),
+                                        child: Text(
+                                            bloc.currentTransferencia.name ??
+                                                '',
+                                            style: TextStyle(
+                                                color: white, fontSize: 18)),
+                                      ),
+                                      const Spacer(),
+                                    ],
                                   ),
                                 ),
+                              ],
+                            );
+                          }),
+                        );
+                      },
+                    ),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: SingleChildScrollView(
+                          child: Column(children: [
+                            //todo : ubicacion de origen
+
+                            LocationScannerWidget(
+                              isLocationOk: bloc.isLocationOk,
+                              locationIsOk: bloc.locationIsOk,
+                              productIsOk: bloc.productIsOk,
+                              quantityIsOk: bloc.quantityIsOk,
+                              locationDestIsOk: bloc.locationDestIsOk,
+                              currentLocationId:
+                                  bloc.currentProduct.locationName ?? "",
+                              onValidateLocation: (value) {
+                                validateLocation(value);
+                              },
+                              onKeyScanned: (keyLabel) {},
+                              focusNode: focusNode1,
+                              controller: _controllerLocation,
+                              locationDropdown: LocationDropdownTransferWidget(
+                                isPDA: true,
+                                selectedLocation: selectedLocation,
+                                positionsOrigen: bloc.positionsOrigen,
+                                currentLocationId:
+                                    bloc.currentProduct.locationName.toString(),
+                                batchBloc: bloc,
+                                currentProduct: bloc.currentProduct,
                               ),
-                              Card(
-                                color: bloc.isLocationDestOk
-                                    ? bloc.locationDestIsOk
-                                        ? Colors.green[100]
-                                        : Colors.grey[300]
-                                    : Colors.red[200],
-                                elevation: 5,
-                                child: Container(
-                                    width: size.width * 0.85,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 10),
-                                    child: Column(
-                                      children: [
-                                        GestureDetector(
-                                          onTap: bloc.locationIsOk &&
-                                                  bloc.productIsOk &&
-                                                  !bloc.quantityIsOk &&
-                                                  !bloc.locationDestIsOk
-                                              ? () {
-                                                  Navigator.pushReplacementNamed(
-                                                      context,
-                                                      'seacrh-locationsDest-trans',
-                                                      arguments: [
-                                                        bloc.currentProduct
-                                                      ]);
-                                                }
-                                              : null,
-                                          child: Row(
-                                            children: [
-                                              Text(
-                                                'Ubicación de destino',
-                                                style: TextStyle(
-                                                  fontSize: 14,
-                                                  color: primaryColorApp,
+                            ),
+
+                            //todo: producto
+
+                            ProductScannerWidget(
+                              isProductOk: bloc.isProductOk,
+                              productIsOk: bloc.productIsOk,
+                              locationIsOk: bloc.locationIsOk,
+                              quantityIsOk: bloc.quantityIsOk,
+                              locationDestIsOk: bloc.locationDestIsOk,
+                              currentProductId:
+                                  bloc.currentProduct.productName.toString(),
+                              barcode: bloc.currentProduct.productBarcode,
+                              lotId: bloc.currentProduct.lotName,
+                              origin: '',
+                              expireDate: bloc.currentProduct.fechaVencimiento,
+                              size: size,
+                              onValidateProduct: (value) {
+                                validateProduct(value); // tu función actual
+                              },
+                              onKeyScanned: (keyLabel) {
+                                // bloc.add(
+                                //     UpdateScannedValueEvent(keyLabel, 'product'));
+                              },
+                              focusNode: focusNode2,
+                              controller: _controllerProduct,
+                              productDropdown: ProductDropdownTransferWidget(
+                                selectedProduct: selectedLocation,
+                                listOfProductsName: bloc.listOfProductsName,
+                                currentProductId:
+                                    bloc.currentProduct.productName.toString(),
+                                batchBloc: bloc,
+                                currentProduct: bloc.currentProduct,
+                                isPDA: false,
+                              ),
+                              expiryWidget: ExpirationBadgeWidget(
+                                expirationDate:
+                                    bloc.currentProduct?.fechaVencimiento,
+                              ),
+                              listOfBarcodes: bloc.listOfBarcodes,
+                              onBarcodesDialogTap: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return DialogBarcodes(
+                                        listOfBarcodes: bloc.listOfBarcodes);
+                                  },
+                                );
+                              },
+                              onViewImgProduct: () {
+                                bloc.add(ViewProductImageEvent(int.parse(
+                                    bloc.currentProduct.productId ?? "")));
+                              },
+                            ),
+
+                            //todo: ubicacion de destino
+
+                            Row(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10),
+                                  child: Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      color: bloc.locationDestIsOk
+                                          ? green
+                                          : yellow,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                                Card(
+                                  color: bloc.isLocationDestOk
+                                      ? bloc.locationDestIsOk
+                                          ? Colors.green[100]
+                                          : Colors.grey[300]
+                                      : Colors.red[200],
+                                  elevation: 5,
+                                  child: Container(
+                                      width: size.width * 0.85,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 10),
+                                      child: Column(
+                                        children: [
+                                          GestureDetector(
+                                            onTap: bloc.locationIsOk &&
+                                                    bloc.productIsOk &&
+                                                    !bloc.quantityIsOk &&
+                                                    !bloc.locationDestIsOk
+                                                ? () {
+                                                    Navigator.pushReplacementNamed(
+                                                        context,
+                                                        'seacrh-locationsDest-trans',
+                                                        arguments: [
+                                                          bloc.currentProduct
+                                                        ]);
+                                                  }
+                                                : null,
+                                            child: Row(
+                                              children: [
+                                                Text(
+                                                  'Ubicación de destino',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: primaryColorApp,
+                                                  ),
                                                 ),
-                                              ),
-                                              const Spacer(),
-                                              SizedBox(
-                                                height: 20,
-                                                width: 20,
-                                                child: SvgPicture.asset(
-                                                  color: primaryColorApp,
-                                                  "assets/icons/packing.svg",
+                                                const Spacer(),
+                                                SizedBox(
                                                   height: 20,
                                                   width: 20,
-                                                  fit: BoxFit.cover,
+                                                  child: SvgPicture.asset(
+                                                    color: primaryColorApp,
+                                                    "assets/icons/packing.svg",
+                                                    height: 20,
+                                                    width: 20,
+                                                    fit: BoxFit.cover,
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                        BarcodeScannerField(
-                                          controller: _controllerLocationDest,
-                                          focusNode: focusNode5,
-                                          onBarcodeScanned: (value, context) {
-                                            return validateMuelle(value);
-                                          },
-                                        ),
-                                        Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(bloc.selectedLocation,
-                                              style: TextStyle(
-                                                  fontSize: 14, color: black)),
-                                        )
-                                      ],
-                                    )),
-                              ),
-                            ],
-                          ),
-                        ]),
+                                          BarcodeScannerField(
+                                            controller: _controllerLocationDest,
+                                            focusNode: focusNode5,
+                                            onBarcodeScanned: (value, context) {
+                                              return validateMuelle(value);
+                                            },
+                                          ),
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Text(bloc.selectedLocation,
+                                                style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: black)),
+                                          )
+                                        ],
+                                      )),
+                                ),
+                              ],
+                            ),
+                          ]),
+                        ),
                       ),
                     ),
-                  ),
 
-                  //todo: cantidad
+                    //todo: cantidad
 
-                  SizedBox(
-                    width: size.width,
-                    height: !bloc.viewQuantity ? 110 : 150,
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                          ),
-                          child: Card(
-                            color: bloc.isQuantityOk
-                                ? bloc.quantityIsOk
-                                    ? white
-                                    : Colors.grey[300]
-                                : Colors.red[200],
-                            elevation: 1,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                              child: Center(
-                                child: Row(
-                                  children: [
-                                    const Text('Cant:',
-                                        style: TextStyle(
-                                            color: Colors.black, fontSize: 13)),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 5),
-                                      child: Text(
-                                        (bloc.currentProduct.cantidadFaltante ??
-                                                0.0)
-                                            .toString(),
-                                        style: TextStyle(
-                                            color: primaryColorApp,
-                                            fontSize: 13),
-                                      ),
-                                    ),
-                                    Visibility(
-                                      visible: (bloc.currentProduct
-                                                  .cantidadFaltante) -
-                                              bloc.quantitySelected !=
-                                          0,
-                                      child: const Text('Pdte:',
+                    SizedBox(
+                      width: size.width,
+                      height: !bloc.viewQuantity ? 110 : 150,
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                            ),
+                            child: Card(
+                              color: bloc.isQuantityOk
+                                  ? bloc.quantityIsOk
+                                      ? white
+                                      : Colors.grey[300]
+                                  : Colors.red[200],
+                              elevation: 1,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
+                                child: Center(
+                                  child: Row(
+                                    children: [
+                                      const Text('Cant:',
                                           style: TextStyle(
                                               color: Colors.black,
                                               fontSize: 13)),
-                                    ),
-                                    Padding(
+                                      Padding(
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 5),
-                                        child: (bloc.currentProduct
-                                                        .cantidadFaltante) -
-                                                    bloc.quantitySelected ==
-                                                0
-                                            ? Container() // Ocultamos el widget si la diferencia es 0
-
-                                            : Text(
-                                                (bloc.quantitySelected <=
-                                                        (bloc.currentProduct
-                                                            .cantidadFaltante)
-                                                    ? ((bloc.currentProduct
-                                                                    .cantidadFaltante) -
-                                                                bloc.quantitySelected ??
-                                                            0.0)
-                                                        .toStringAsFixed(2)
-                                                    : '0'), // Aquí puedes definir qué mostrar si la condición no se cumple
-                                                style: TextStyle(
-                                                  color: _getColorForDifference(
-                                                    bloc.quantitySelected <=
-                                                            (bloc.currentProduct
-                                                                    .cantidadFaltante ??
-                                                                0.0)
-                                                        ? ((bloc.currentProduct
-                                                                    .cantidadFaltante ??
-                                                                0.0) -
-                                                            (bloc.quantitySelected ??
-                                                                0.0))
-                                                        : 0, // Si no cumple, el color será para diferencia 0
-                                                  ),
-                                                  fontSize: 13,
-                                                ),
-                                              )),
-                                    Text(bloc.currentProduct.uom ?? "",
-                                        style: const TextStyle(
-                                            color: Colors.black, fontSize: 13)),
-                                    Expanded(
-                                      child: Container(
-                                        padding:
-                                            const EdgeInsets.only(bottom: 5),
-                                        height: 30,
-                                        alignment: Alignment.center,
-                                        child: Stack(
-                                          alignment: Alignment.center,
-                                          children: [
-                                            SizedBox(
-                                                width: double.infinity,
-                                                child: BarcodeScannerField(
-                                                  controller:
-                                                      _controllerQuantity,
-                                                  focusNode: focusNode3,
-                                                  onBarcodeScanned:
-                                                      (value, context) {
-                                                    validateQuantity(value);
-                                                  },
-                                                )),
-                                            Text(
-                                                bloc.quantitySelected
-                                                    .toString(),
-                                                style: const TextStyle(
-                                                    color: black,
-                                                    fontSize: 14)),
-                                          ],
+                                        child: Text(
+                                          (bloc.currentProduct
+                                                      .cantidadFaltante ??
+                                                  0.0)
+                                              .toString(),
+                                          style: TextStyle(
+                                              color: primaryColorApp,
+                                              fontSize: 13),
                                         ),
                                       ),
-                                    ),
-                                    IconButton(
-                                        onPressed: bloc
-                                                    .configurations
-                                                    .result
-                                                    ?.result
-                                                    ?.manualQuantityTransfer ==
-                                                false
-                                            ? null
-                                            : bloc.quantityEdit &&
-                                                    bloc.quantitySelected >= 0
-                                                ? () {
-                                                    bloc.add(ShowQuantityEvent(
-                                                        !bloc.viewQuantity));
-                                                    Future.delayed(
-                                                        const Duration(
-                                                            milliseconds: 100),
-                                                        () {
-                                                      FocusScope.of(context)
-                                                          .requestFocus(
-                                                              focusNode4);
-                                                    });
-                                                  }
-                                                : null,
-                                        icon: Icon(Icons.edit_note_rounded,
-                                            color: primaryColorApp, size: 25)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Visibility(
-                          visible: bloc.viewQuantity,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 3),
-                            child: SizedBox(
-                              height: 35,
-                              child: TextFormField(
-                                //tmano del campo
+                                      Visibility(
+                                        visible: (bloc.currentProduct
+                                                    .cantidadFaltante) -
+                                                bloc.quantitySelected !=
+                                            0,
+                                        child: const Text('Pdte:',
+                                            style: TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 13)),
+                                      ),
+                                      Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 5),
+                                          child: (bloc.currentProduct
+                                                          .cantidadFaltante) -
+                                                      bloc.quantitySelected ==
+                                                  0
+                                              ? Container() // Ocultamos el widget si la diferencia es 0
 
-                                focusNode: focusNode4,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                      RegExp(r'[0-9.]')),
-                                ],
-                                onChanged: (value) {
-                                  // Verifica si el valor no está vacío y si es un número válido
-                                  if (value.isNotEmpty) {
-                                    try {
-                                      bloc.quantitySelected = int.parse(value);
-                                    } catch (e) {
-                                      // Manejo de errores si la conversión falla
-                                      debugPrint(
-                                          'Error al convertir a entero: $e');
-                                      // Aquí puedes mostrar un mensaje al usuario o manejar el error de otra forma
-                                    }
-                                  } else {
-                                    // Si el valor está vacío, puedes establecer un valor por defecto
-                                    bloc.quantitySelected =
-                                        0; // O cualquier valor que consideres adecuado
-                                  }
-                                },
-                                controller: _cantidadController,
-                                keyboardType: TextInputType.number,
-                                maxLines: 1,
-                                decoration:
-                                    InputDecorations.authInputDecoration(
-                                  hintText: 'Cantidad',
-                                  labelText: 'Cantidad',
-                                  suffixIconButton: IconButton(
-                                    onPressed: () {
-                                      bloc.add(ShowQuantityEvent(
-                                          !bloc.viewQuantity));
-                                      _cantidadController.clear();
-
-                                      //cambiamos el foco pa leer por pda la cantidad
-                                      Future.delayed(
-                                          const Duration(milliseconds: 100),
-                                          () {
-                                        FocusScope.of(context)
-                                            .requestFocus(focusNode3);
-                                      });
-                                    },
-                                    icon: const Icon(Icons.clear),
+                                              : Text(
+                                                  (bloc.quantitySelected <=
+                                                          (bloc.currentProduct
+                                                              .cantidadFaltante)
+                                                      ? ((bloc.currentProduct
+                                                                      .cantidadFaltante) -
+                                                                  bloc.quantitySelected ??
+                                                              0.0)
+                                                          .toStringAsFixed(2)
+                                                      : '0'), // Aquí puedes definir qué mostrar si la condición no se cumple
+                                                  style: TextStyle(
+                                                    color:
+                                                        _getColorForDifference(
+                                                      bloc.quantitySelected <=
+                                                              (bloc.currentProduct
+                                                                      .cantidadFaltante ??
+                                                                  0.0)
+                                                          ? ((bloc.currentProduct
+                                                                      .cantidadFaltante ??
+                                                                  0.0) -
+                                                              (bloc.quantitySelected ??
+                                                                  0.0))
+                                                          : 0, // Si no cumple, el color será para diferencia 0
+                                                    ),
+                                                    fontSize: 13,
+                                                  ),
+                                                )),
+                                      Text(bloc.currentProduct.uom ?? "",
+                                          style: const TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 13)),
+                                      Expanded(
+                                        child: Container(
+                                          padding:
+                                              const EdgeInsets.only(bottom: 5),
+                                          height: 30,
+                                          alignment: Alignment.center,
+                                          child: Stack(
+                                            alignment: Alignment.center,
+                                            children: [
+                                              SizedBox(
+                                                  width: double.infinity,
+                                                  child: BarcodeScannerField(
+                                                    controller:
+                                                        _controllerQuantity,
+                                                    focusNode: focusNode3,
+                                                    onBarcodeScanned:
+                                                        (value, context) {
+                                                      validateQuantity(value);
+                                                    },
+                                                  )),
+                                              Text(
+                                                  bloc.quantitySelected
+                                                      .toString(),
+                                                  style: const TextStyle(
+                                                      color: black,
+                                                      fontSize: 14)),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      IconButton(
+                                          onPressed: bloc
+                                                      .configurations
+                                                      .result
+                                                      ?.result
+                                                      ?.manualQuantityTransfer ==
+                                                  false
+                                              ? null
+                                              : bloc.quantityEdit &&
+                                                      bloc.quantitySelected >= 0
+                                                  ? () {
+                                                      bloc.add(ShowQuantityEvent(
+                                                          !bloc.viewQuantity));
+                                                      Future.delayed(
+                                                          const Duration(
+                                                              milliseconds:
+                                                                  100), () {
+                                                        FocusScope.of(context)
+                                                            .requestFocus(
+                                                                focusNode4);
+                                                      });
+                                                    }
+                                                  : null,
+                                          icon: Icon(Icons.edit_note_rounded,
+                                              color: primaryColorApp,
+                                              size: 25)),
+                                    ],
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                        Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 0),
-                            child: ElevatedButton(
-                              onPressed: bloc.quantityEdit &&
-                                      bloc.quantitySelected >= 0 &&
-                                      !bloc.locationDestIsOk
-                                  ? () {
-                                      //cerramos el teclado
-                                      FocusScope.of(context).unfocus();
-                                      _validatebuttonquantity2();
+                          Visibility(
+                            visible: bloc.viewQuantity,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 3),
+                              child: SizedBox(
+                                height: 35,
+                                child: TextFormField(
+                                  //tmano del campo
+
+                                  focusNode: focusNode4,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(
+                                        RegExp(r'[0-9.]')),
+                                  ],
+                                  onChanged: (value) {
+                                    // Verifica si el valor no está vacío y si es un número válido
+                                    if (value.isNotEmpty) {
+                                      try {
+                                        bloc.quantitySelected =
+                                            int.parse(value);
+                                      } catch (e) {
+                                        // Manejo de errores si la conversión falla
+                                        debugPrint(
+                                            'Error al convertir a entero: $e');
+                                        // Aquí puedes mostrar un mensaje al usuario o manejar el error de otra forma
+                                      }
+                                    } else {
+                                      // Si el valor está vacío, puedes establecer un valor por defecto
+                                      bloc.quantitySelected =
+                                          0; // O cualquier valor que consideres adecuado
                                     }
-                                  : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryColorApp,
-                                minimumSize: Size(size.width * 0.93, 30),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                                  },
+                                  controller: _cantidadController,
+                                  keyboardType: TextInputType.number,
+                                  maxLines: 1,
+                                  decoration:
+                                      InputDecorations.authInputDecoration(
+                                    hintText: 'Cantidad',
+                                    labelText: 'Cantidad',
+                                    suffixIconButton: IconButton(
+                                      onPressed: () {
+                                        bloc.add(ShowQuantityEvent(
+                                            !bloc.viewQuantity));
+                                        _cantidadController.clear();
+
+                                        //cambiamos el foco pa leer por pda la cantidad
+                                        Future.delayed(
+                                            const Duration(milliseconds: 100),
+                                            () {
+                                          FocusScope.of(context)
+                                              .requestFocus(focusNode3);
+                                        });
+                                      },
+                                      icon: const Icon(Icons.clear),
+                                    ),
+                                  ),
                                 ),
                               ),
-                              child: const Text(
-                                'APLICAR CANTIDAD',
-                                style: TextStyle(
-                                    color: Colors.white, fontSize: 14),
-                              ),
-                            )),
-                      ],
+                            ),
+                          ),
+                          Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 0),
+                              child: ElevatedButton(
+                                onPressed: bloc.quantityEdit &&
+                                        bloc.quantitySelected >= 0 &&
+                                        !bloc.locationDestIsOk
+                                    ? () {
+                                        //cerramos el teclado
+                                        FocusScope.of(context).unfocus();
+                                        _validatebuttonquantity2();
+                                      }
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primaryColorApp,
+                                  minimumSize: Size(size.width * 0.93, 30),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'APLICAR CANTIDAD',
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 14),
+                                ),
+                              )),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );

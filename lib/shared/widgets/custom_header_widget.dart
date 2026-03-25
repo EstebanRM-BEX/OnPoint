@@ -42,7 +42,6 @@ class CustomHeaderWidget extends StatelessWidget {
                 padding: EdgeInsets.only(
                   left: 10,
                   right: 10,
-                  top: status != ConnectionStatus.online ? 0 : 25,
                   bottom: 0,
                 ),
                 child: Column(

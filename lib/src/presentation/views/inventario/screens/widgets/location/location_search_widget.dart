@@ -32,169 +32,175 @@ class _SearchLocationScreenState extends State<SearchLocationScreen> {
             return false;
           },
           child: Scaffold(
-            backgroundColor: white,
-            body: SizedBox(
-                width: size.width * 1,
-                height: size.height * 1,
-                child: Column(
-                  children: [
-                    _AppBarInfo(size: size),
-                    //*barra de buscar
-                    DynamicSearchBar(
-                      controller: bloc.searchControllerLocation,
-                      hintText: "Buscar ubicación",
-                      onSearchChanged: (value) {
-                        bloc.add(SearchLocationEvent(value));
-                      },
-                      onSearchCleared: () {
-                        bloc.searchControllerLocation.clear();
-                        bloc.add(SearchLocationEvent(''));
-                        Future.microtask(() {
-                          if (mounted) {
-                            FocusScope.of(context).unfocus();
-                          }
-                        });
-                      },
-                    ),
+            backgroundColor: primaryColorApp,
+            body: SafeArea(
+              child: Container(
+                  color: white,
+                  width: size.width * 1,
+                  height: size.height * 1,
+                  child: Column(
+                    children: [
+                      _AppBarInfo(size: size),
+                      //*barra de buscar
+                      DynamicSearchBar(
+                        controller: bloc.searchControllerLocation,
+                        hintText: "Buscar ubicación",
+                        onSearchChanged: (value) {
+                          bloc.add(SearchLocationEvent(value));
+                        },
+                        onSearchCleared: () {
+                          bloc.searchControllerLocation.clear();
+                          bloc.add(SearchLocationEvent(''));
+                          Future.microtask(() {
+                            if (mounted) {
+                              FocusScope.of(context).unfocus();
+                            }
+                          });
+                        },
+                      ),
 
-                    Expanded(
-                        child: ListView.builder(
-                            itemCount: bloc.ubicacionesFilters.length,
-                            itemBuilder: (context, index) {
-                              bool isSelected = selectedIndex == index;
+                      Expanded(
+                          child: ListView.builder(
+                              itemCount: bloc.ubicacionesFilters.length,
+                              itemBuilder: (context, index) {
+                                bool isSelected = selectedIndex == index;
 
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 0),
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      selectedIndex = isSelected ? null : index;
-                                    });
-                                  },
-                                  child: Card(
-                                    elevation: 3,
-                                    color:
-                                        isSelected ? Colors.green[100] : white,
-                                    child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 5),
-                                        child: SizedBox(
-                                          // height: 30,
-                                          child: Column(
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    'Nombre: ',
-                                                    style: TextStyle(
-                                                      color: black,
-                                                      fontSize: 12,
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 0),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedIndex =
+                                            isSelected ? null : index;
+                                      });
+                                    },
+                                    child: Card(
+                                      elevation: 3,
+                                      color: isSelected
+                                          ? Colors.green[100]
+                                          : white,
+                                      child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 5),
+                                          child: SizedBox(
+                                            // height: 30,
+                                            child: Column(
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      'Nombre: ',
+                                                      style: TextStyle(
+                                                        color: black,
+                                                        fontSize: 12,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  Text(
-                                                    bloc
-                                                            .ubicacionesFilters[
-                                                                index]
-                                                            .name ??
-                                                        '',
-                                                    style: TextStyle(
-                                                      color: primaryColorApp,
-                                                      fontSize: 12,
+                                                    Text(
+                                                      bloc
+                                                              .ubicacionesFilters[
+                                                                  index]
+                                                              .name ??
+                                                          '',
+                                                      style: TextStyle(
+                                                        color: primaryColorApp,
+                                                        fontSize: 12,
+                                                      ),
                                                     ),
-                                                  ),
-                                                ],
-                                              ),
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    'Barcode: ',
-                                                    style: TextStyle(
-                                                      color: black,
-                                                      fontSize: 12,
+                                                  ],
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      'Barcode: ',
+                                                      style: TextStyle(
+                                                        color: black,
+                                                        fontSize: 12,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  const SizedBox(width: 5),
-                                                  Text(
-                                                    bloc
-                                                                .ubicacionesFilters[
-                                                                    index]
-                                                                .barcode ==
-                                                            false
-                                                        ? 'Sin barcode'
-                                                        : bloc
-                                                                .ubicacionesFilters[
-                                                                    index]
-                                                                .barcode ??
-                                                            '',
-                                                    style: TextStyle(
-                                                      color: bloc
+                                                    const SizedBox(width: 5),
+                                                    Text(
+                                                      bloc
                                                                   .ubicacionesFilters[
                                                                       index]
                                                                   .barcode ==
                                                               false
-                                                          ? red
-                                                          : primaryColorApp,
-                                                      fontSize: 12,
+                                                          ? 'Sin barcode'
+                                                          : bloc
+                                                                  .ubicacionesFilters[
+                                                                      index]
+                                                                  .barcode ??
+                                                              '',
+                                                      style: TextStyle(
+                                                        color: bloc
+                                                                    .ubicacionesFilters[
+                                                                        index]
+                                                                    .barcode ==
+                                                                false
+                                                            ? red
+                                                            : primaryColorApp,
+                                                        fontSize: 12,
+                                                      ),
                                                     ),
-                                                  ),
-                                                ],
-                                              )
-                                            ],
-                                          ),
-                                        )),
+                                                  ],
+                                                )
+                                              ],
+                                            ),
+                                          )),
+                                    ),
                                   ),
-                                ),
-                              );
-                            })),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Visibility(
-                      visible: selectedIndex != null,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (selectedIndex != null) {
-                            // seleccionamos la ubicacion
-                            final selectedLocation =
-                                bloc.ubicacionesFilters[selectedIndex!];
-
-                            //seleccionamos la ubicacion
-                            bloc.add(ValidateFieldsEvent(
-                                field: "location", isOk: true));
-                            bloc.add(ChangeLocationIsOkEvent(selectedLocation));
-
-                            FocusScope.of(context).unfocus();
-
-                            setState(() {
-                              selectedIndex == null;
-                            });
-
-                            Navigator.pushReplacementNamed(
-                              context,
-                              'inventario',
-                              arguments: selectedLocation,
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColorApp,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          minimumSize: Size(size.width * 0.9, 40),
-                        ),
-                        child: Text("Seleccionar",
-                            style: TextStyle(
-                              color: white,
-                            )),
+                                );
+                              })),
+                      const SizedBox(
+                        height: 20,
                       ),
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                  ],
-                )),
+                      Visibility(
+                        visible: selectedIndex != null,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (selectedIndex != null) {
+                              // seleccionamos la ubicacion
+                              final selectedLocation =
+                                  bloc.ubicacionesFilters[selectedIndex!];
+
+                              //seleccionamos la ubicacion
+                              bloc.add(ValidateFieldsEvent(
+                                  field: "location", isOk: true));
+                              bloc.add(
+                                  ChangeLocationIsOkEvent(selectedLocation));
+
+                              FocusScope.of(context).unfocus();
+
+                              setState(() {
+                                selectedIndex == null;
+                              });
+
+                              Navigator.pushReplacementNamed(
+                                context,
+                                'inventario',
+                                arguments: selectedLocation,
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColorApp,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            minimumSize: Size(size.width * 0.9, 40),
+                          ),
+                          child: Text("Seleccionar",
+                              style: TextStyle(
+                                color: white,
+                              )),
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                    ],
+                  )),
+            ),
           ),
         );
       },
@@ -228,70 +234,65 @@ class _AppBarInfo extends StatelessWidget {
               child: Column(
                 children: [
                   const WarningWidgetCubit(), // Usa cubit global
-                  Padding(
-                    padding: EdgeInsets.only(
-                      top: connectionStatus != ConnectionStatus.online ? 0 : 35,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back, color: white),
-                          onPressed: () {
-                            Navigator.pushReplacementNamed(
-                              context,
-                              'inventario',
-                            );
-                          },
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: white),
+                        onPressed: () {
+                          Navigator.pushReplacementNamed(
+                            context,
+                            'inventario',
+                          );
+                        },
+                      ),
+                      Padding(
+                        padding: EdgeInsets.only(left: size.width * 0.2),
+                        child: const Text(
+                          'UBICACIONES',
+                          style: TextStyle(color: white, fontSize: 18),
                         ),
-                        Padding(
-                          padding: EdgeInsets.only(left: size.width * 0.2),
-                          child: const Text(
-                            'UBICACIONES',
-                            style: TextStyle(color: white, fontSize: 18),
-                          ),
+                      ),
+                      const Spacer(),
+                      PopupMenuButton<String>(
+                        color: white,
+                        icon: const Icon(
+                          Icons.more_vert,
+                          color: Colors.white,
+                          size: 20,
                         ),
-                        const Spacer(),
-                        PopupMenuButton<String>(
-                          color: white,
-                          icon: const Icon(
-                            Icons.more_vert,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          onSelected: (value) {
-                            context.read<InventarioBloc>().add(
-                                  FilterUbicacionesAlmacenEvent(value),
-                                );
-                          },
-                          itemBuilder: (BuildContext context) {
-                            final tipos = context.read<UserBloc>().almacenes;
-                            return tipos.map((tipo) {
-                              return PopupMenuItem<String>(
-                                value: tipo.name,
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.file_upload_outlined,
-                                      color: primaryColorApp,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      tipo.name ?? "",
-                                      style: const TextStyle(
-                                        color: black,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                        onSelected: (value) {
+                          context.read<InventarioBloc>().add(
+                                FilterUbicacionesAlmacenEvent(value),
                               );
-                            }).toList();
-                          },
-                        ),
-                      ],
-                    ),
+                        },
+                        itemBuilder: (BuildContext context) {
+                          final tipos = context.read<UserBloc>().almacenes;
+                          return tipos.map((tipo) {
+                            return PopupMenuItem<String>(
+                              value: tipo.name,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.file_upload_outlined,
+                                    color: primaryColorApp,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    tipo.name ?? "",
+                                    style: const TextStyle(
+                                      color: black,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList();
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),

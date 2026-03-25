@@ -30,57 +30,62 @@ class _SearchProductDevScreenState extends State<SearchProductDevScreen> {
         return WillPopScope(
           onWillPop: () async => false,
           child: Scaffold(
-            backgroundColor: white,
-            body: Column(
-              children: [
-                _AppBarInfo(size: size),
-                _SearchBar(size: size),
-                Expanded(
-                  child: bloc.productosFilters.isEmpty
-                      ? const _NoProductsMessage()
-                      : ListView.builder(
-                          itemCount: bloc.productosFilters.length,
-                          itemBuilder: (_, index) {
-                            return ProductListTile(
-                              index: index,
-                              isSelected: selectedIndex == index,
-                              onSelect: () {
-                                setState(() => selectedIndex = index);
+            backgroundColor: primaryColorApp,
+            body: SafeArea(
+              child: Container(
+                color: Colors.white,
+                child: Column(
+                  children: [
+                    _AppBarInfo(size: size),
+                    _SearchBar(size: size),
+                    Expanded(
+                      child: bloc.productosFilters.isEmpty
+                          ? const _NoProductsMessage()
+                          : ListView.builder(
+                              itemCount: bloc.productosFilters.length,
+                              itemBuilder: (_, index) {
+                                return ProductListTile(
+                                  index: index,
+                                  isSelected: selectedIndex == index,
+                                  onSelect: () {
+                                    setState(() => selectedIndex = index);
+                                  },
+                                );
                               },
-                            );
-                          },
-                        ),
-                ),
-                if (selectedIndex != null)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        final selectedProduct =
-                            bloc.productosFilters[selectedIndex!];
-                        FocusScope.of(context).unfocus();
-                        bloc.add(ChangeStateIsDialogVisibleEvent(false));
-                        bloc.add(GetProductEvent(
-                          selectedProduct.barcode ?? '',
-                          true,
-                          selectedProduct.productId ?? 0,
-                        ));
-                        Navigator.pop(context);
-                        debugPrint(
-                            'producto seleccionado ${bloc.productosFilters[selectedIndex!].toMap()}');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColorApp,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        minimumSize: Size(size.width * 0.9, 40),
-                      ),
-                      child: const Text("Seleccionar",
-                          style: TextStyle(color: white)),
+                            ),
                     ),
-                  ),
-              ],
+                    if (selectedIndex != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            final selectedProduct =
+                                bloc.productosFilters[selectedIndex!];
+                            FocusScope.of(context).unfocus();
+                            bloc.add(ChangeStateIsDialogVisibleEvent(false));
+                            bloc.add(GetProductEvent(
+                              selectedProduct.barcode ?? '',
+                              true,
+                              selectedProduct.productId ?? 0,
+                            ));
+                            Navigator.pop(context);
+                            debugPrint(
+                                'producto seleccionado ${bloc.productosFilters[selectedIndex!].toMap()}');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColorApp,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            minimumSize: Size(size.width * 0.9, 40),
+                          ),
+                          child: const Text("Seleccionar",
+                              style: TextStyle(color: white)),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
         );

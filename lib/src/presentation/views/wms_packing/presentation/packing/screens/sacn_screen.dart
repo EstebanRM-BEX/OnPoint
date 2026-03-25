@@ -246,486 +246,508 @@ class _PackingScreenState extends State<ScanPackScreen> {
           final packingBloc = context.read<PackingPedidoBloc>();
 
           return Scaffold(
-              backgroundColor: Colors.white,
-              body: Column(
-                children: [
-                  //*barra de informacion
-                  BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
-                    builder: (context, status) {
-                      return Container(
-                        width: size.width,
-                        color: primaryColorApp,
-                        child:
-                            BlocConsumer<PackingPedidoBloc, PackingPedidoState>(
-                          listener: (context, state) {
-                            debugPrint('❤️‍🔥 state: $state ');
+              backgroundColor: primaryColorApp,
+              body: SafeArea(
+                child: Container(
+                  color: Colors.white,
+                  child: Column(
+                    children: [
+                      //*barra de informacion
+                      BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
+                        builder: (context, status) {
+                          return Container(
+                            width: size.width,
+                            color: primaryColorApp,
+                            child: BlocConsumer<PackingPedidoBloc,
+                                PackingPedidoState>(
+                              listener: (context, state) {
+                                debugPrint('❤️‍🔥 state: $state ');
 
-                            if (state is ViewProductImageSuccess) {
-                              showImageDialog(context, state.imageUrl);
-                            } else if (state is ViewProductImageFailure) {
-                              showScrollableErrorDialog(state.error);
-                            }
-
-                            if (state is ChangeQuantitySeparateState) {
-                              if (state.quantity ==
-                                  packingBloc.currentProduct.quantity) {
-                                _finichPackingProduct(context);
-                              }
-                            }
-
-                            if (state is SetPickingPackingLoadingState) {
-                              showDialog(
-                                context: context,
-                                builder: (context) => const DialogLoading(
-                                  message: "Separando producto...",
-                                ),
-                              );
-                            }
-
-                            if (state is SetPickingPackingOkState) {
-                              if (Navigator.canPop(context)) {
-                                Navigator.pop(context);
-                              }
-
-                              //validamos si el producto maneja temperatura
-                              if (packingBloc
-                                          .currentProduct.manejaTemperatura ==
-                                      1 ||
-                                  packingBloc
-                                          .currentProduct.manejaTemperatura ==
-                                      true) {
-                                if (packingBloc.configurations.result?.result
-                                        ?.showPhotoTemperature ==
-                                    true) {
-                                  showDialog(
-                                    barrierDismissible:
-                                        false, // Evita que se cierre tocando fuera del diálogo
-                                    context: context,
-                                    builder: (context) => WillPopScope(
-                                      onWillPop: () async =>
-                                          false, // Evita que se cierre con la flecha de atrás
-                                      child: DialogCapturaTemperaturaPack(
-                                        moveLineId:
-                                            packingBloc.currentProduct.idMove ??
-                                                0,
-                                      ),
-                                    ),
-                                  );
-                                  return;
-                                } else {
-                                  showDialog(
-                                    barrierDismissible:
-                                        false, // Evita que se cierre tocando fuera del diálogo
-                                    context: context,
-                                    builder: (context) => WillPopScope(
-                                      onWillPop: () async =>
-                                          false, // Evita que se cierre con la flecha de atrás
-                                      child: DialogTemperaturaManualPack(
-                                        moveLineId:
-                                            packingBloc.currentProduct.idMove ??
-                                                0,
-                                      ),
-                                    ),
-                                  );
-                                  return;
+                                if (state is ViewProductImageSuccess) {
+                                  showImageDialog(context, state.imageUrl);
+                                } else if (state is ViewProductImageFailure) {
+                                  showScrollableErrorDialog(state.error);
                                 }
-                              }
 
-                              Navigator.pushReplacementNamed(
-                                context,
-                                'detail-packing-pedido',
-                                arguments: [1],
-                              );
-                            }
+                                if (state is ChangeQuantitySeparateState) {
+                                  if (state.quantity ==
+                                      packingBloc.currentProduct.quantity) {
+                                    _finichPackingProduct(context);
+                                  }
+                                }
 
-                            if (state is SendTemperatureSuccess) {
-                              if (Navigator.canPop(context)) {
-                                Navigator.pop(context);
-                              }
-                              Navigator.pushReplacementNamed(
-                                context,
-                                'detail-packing-pedido',
-                                arguments: [1],
-                              );
-                            }
-
-                            if (state is SendTemperatureFailure) {
-                              Navigator.pop(context);
-
-                              showScrollableErrorDialog(state.error);
-                            }
-
-                            if (state is SendImageNovedadSuccess) {
-                              packingBloc.add(ChangeQuantitySeparate(
-                                  state.cantidad,
-                                  packingBloc.currentProduct.idProduct ?? 0,
-                                  packingBloc.currentProduct.pedidoId ?? 0,
-                                  packingBloc.currentProduct.idMove ?? 0));
-                              cantidadController.clear();
-                              _finichPackingProduct(context);
-                            }
-
-                            if (state is ChangeLocationPackingIsOkState) {
-                              Future.delayed(const Duration(seconds: 1), () {
-                                FocusScope.of(context).requestFocus(focusNode2);
-                              });
-                              _handleDependencies();
-                            }
-
-                            if (state is ChangeProductPackingIsOkState) {
-                              Future.delayed(const Duration(seconds: 1), () {
-                                FocusScope.of(context).requestFocus(focusNode3);
-                              });
-                              _handleDependencies();
-                            }
-                          },
-                          builder: (context, state) {
-                            return Column(
-                              children: [
-                                const WarningWidgetCubit(),
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 25),
-                                  child: Row(
-                                    children: [
-                                      IconButton(
-                                        onPressed: () {
-                                          packingBloc.quantitySelected = 0;
-                                          cantidadController.clear();
-                                          packingBloc.oldLocation = "";
-
-                                          context.read<PackingPedidoBloc>().add(
-                                              LoadPedidoAndProductsEvent(
-                                                  packingBloc.currentProduct
-                                                          .pedidoId ??
-                                                      0));
-                                          Navigator.pushReplacementNamed(
-                                            context,
-                                            'detail-packing-pedido',
-                                            arguments: [1],
-                                          );
-                                        },
-                                        icon: const Icon(Icons.arrow_back,
-                                            color: Colors.white, size: 30),
-                                      ),
-                                      Padding(
-                                        padding: EdgeInsets.only(
-                                            left: size.width * 0.2),
-                                        child: Text(
-                                          "CERTIFICACION",
-                                          style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 18),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Form(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children: [
-                              //todo : ubicacion de origen
-
-                              LocationScannerWidget(
-                                isLocationOk: packingBloc.isLocationOk,
-                                locationIsOk: packingBloc.locationIsOk,
-                                productIsOk: packingBloc.productIsOk,
-                                quantityIsOk: packingBloc.quantityIsOk,
-                                locationDestIsOk: packingBloc.locationDestIsOk,
-                                currentLocationId: packingBloc
-                                    .currentProduct.locationId
-                                    .toString(),
-                                onValidateLocation: (value) {
-                                  validateLocation(value);
-                                },
-                                onKeyScanned: (keyLabel) {},
-                                focusNode: focusNode1,
-                                controller: _controllerLocation,
-                                locationDropdown: LocationPackDropdownWidget(
-                                  isPDA: true,
-                                  selectedLocation: selectedLocation,
-                                  positionsOrigen:
-                                      packingBloc.currentProduct.locationId,
-                                  currentLocationId: packingBloc
-                                      .currentProduct.locationId
-                                      .toString(),
-                                  batchBloc: packingBloc,
-                                  currentProduct: packingBloc.currentProduct,
-                                ),
-                              ),
-
-                              // todo: Producto
-
-                              ProductScannerWidget(
-                                isProductOk: packingBloc.isProductOk,
-                                productIsOk: packingBloc.productIsOk,
-                                locationIsOk: packingBloc.locationIsOk,
-                                quantityIsOk: packingBloc.quantityIsOk,
-                                locationDestIsOk: packingBloc.locationDestIsOk,
-                                currentProductId: packingBloc
-                                    .currentProduct.productId
-                                    .toString(),
-                                barcode: packingBloc.currentProduct.barcode,
-                                lotId: packingBloc.currentProduct.lotId,
-                                origin: '',
-                                expireDate:
-                                    packingBloc.currentProduct.expireDate,
-                                size: size,
-                                onValidateProduct: (value) {
-                                  validateProduct(value); // tu función actual
-                                },
-                                onKeyScanned: (keyLabel) {},
-                                focusNode: focusNode2,
-                                controller: _controllerProduct,
-                                productDropdown: ProductDropdownPackWidget(
-                                  selectedProduct: selectedLocation,
-                                  listOfProductsName:
-                                      packingBloc.listOfProductsName,
-                                  currentProductId: packingBloc
-                                      .currentProduct.idProduct
-                                      .toString(),
-                                  batchBloc: packingBloc,
-                                  currentProduct: packingBloc.currentProduct,
-                                ),
-                                expiryWidget: ExpirationBadgeWidget(
-                                  expirationDate:
-                                      packingBloc.currentProduct?.expireDate,
-                                ),
-                                listOfBarcodes: packingBloc.listOfBarcodes,
-                                onBarcodesDialogTap: () {
+                                if (state is SetPickingPackingLoadingState) {
                                   showDialog(
                                     context: context,
-                                    builder: (context) {
-                                      return DialogBarcodes(
-                                          listOfBarcodes:
-                                              packingBloc.listOfBarcodes);
-                                    },
+                                    builder: (context) => const DialogLoading(
+                                      message: "Separando producto...",
+                                    ),
                                   );
-                                },
-                                onViewImgProduct: () {
-                                  packingBloc.add(ViewProductImageEvent(
-                                      packingBloc.currentProduct.idProduct ??
-                                          0));
-                                },
+                                }
+
+                                if (state is SetPickingPackingOkState) {
+                                  if (Navigator.canPop(context)) {
+                                    Navigator.pop(context);
+                                  }
+
+                                  //validamos si el producto maneja temperatura
+                                  if (packingBloc.currentProduct
+                                              .manejaTemperatura ==
+                                          1 ||
+                                      packingBloc.currentProduct
+                                              .manejaTemperatura ==
+                                          true) {
+                                    if (packingBloc.configurations.result
+                                            ?.result?.showPhotoTemperature ==
+                                        true) {
+                                      showDialog(
+                                        barrierDismissible:
+                                            false, // Evita que se cierre tocando fuera del diálogo
+                                        context: context,
+                                        builder: (context) => WillPopScope(
+                                          onWillPop: () async =>
+                                              false, // Evita que se cierre con la flecha de atrás
+                                          child: DialogCapturaTemperaturaPack(
+                                            moveLineId: packingBloc
+                                                    .currentProduct.idMove ??
+                                                0,
+                                          ),
+                                        ),
+                                      );
+                                      return;
+                                    } else {
+                                      showDialog(
+                                        barrierDismissible:
+                                            false, // Evita que se cierre tocando fuera del diálogo
+                                        context: context,
+                                        builder: (context) => WillPopScope(
+                                          onWillPop: () async =>
+                                              false, // Evita que se cierre con la flecha de atrás
+                                          child: DialogTemperaturaManualPack(
+                                            moveLineId: packingBloc
+                                                    .currentProduct.idMove ??
+                                                0,
+                                          ),
+                                        ),
+                                      );
+                                      return;
+                                    }
+                                  }
+
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    'detail-packing-pedido',
+                                    arguments: [1],
+                                  );
+                                }
+
+                                if (state is SendTemperatureSuccess) {
+                                  if (Navigator.canPop(context)) {
+                                    Navigator.pop(context);
+                                  }
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    'detail-packing-pedido',
+                                    arguments: [1],
+                                  );
+                                }
+
+                                if (state is SendTemperatureFailure) {
+                                  Navigator.pop(context);
+
+                                  showScrollableErrorDialog(state.error);
+                                }
+
+                                if (state is SendImageNovedadSuccess) {
+                                  packingBloc.add(ChangeQuantitySeparate(
+                                      state.cantidad,
+                                      packingBloc.currentProduct.idProduct ?? 0,
+                                      packingBloc.currentProduct.pedidoId ?? 0,
+                                      packingBloc.currentProduct.idMove ?? 0));
+                                  cantidadController.clear();
+                                  _finichPackingProduct(context);
+                                }
+
+                                if (state is ChangeLocationPackingIsOkState) {
+                                  Future.delayed(const Duration(seconds: 1),
+                                      () {
+                                    FocusScope.of(context)
+                                        .requestFocus(focusNode2);
+                                  });
+                                  _handleDependencies();
+                                }
+
+                                if (state is ChangeProductPackingIsOkState) {
+                                  Future.delayed(const Duration(seconds: 1),
+                                      () {
+                                    FocusScope.of(context)
+                                        .requestFocus(focusNode3);
+                                  });
+                                  _handleDependencies();
+                                }
+                              },
+                              builder: (context, state) {
+                                return Column(
+                                  children: [
+                                    const WarningWidgetCubit(),
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 25),
+                                      child: Row(
+                                        children: [
+                                          IconButton(
+                                            onPressed: () {
+                                              packingBloc.quantitySelected = 0;
+                                              cantidadController.clear();
+                                              packingBloc.oldLocation = "";
+
+                                              context
+                                                  .read<PackingPedidoBloc>()
+                                                  .add(LoadPedidoAndProductsEvent(
+                                                      packingBloc.currentProduct
+                                                              .pedidoId ??
+                                                          0));
+                                              Navigator.pushReplacementNamed(
+                                                context,
+                                                'detail-packing-pedido',
+                                                arguments: [1],
+                                              );
+                                            },
+                                            icon: const Icon(Icons.arrow_back,
+                                                color: Colors.white, size: 30),
+                                          ),
+                                          Padding(
+                                            padding: EdgeInsets.only(
+                                                left: size.width * 0.2),
+                                            child: Text(
+                                              "CERTIFICACION",
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 18),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Form(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                children: [
+                                  //todo : ubicacion de origen
+
+                                  LocationScannerWidget(
+                                    isLocationOk: packingBloc.isLocationOk,
+                                    locationIsOk: packingBloc.locationIsOk,
+                                    productIsOk: packingBloc.productIsOk,
+                                    quantityIsOk: packingBloc.quantityIsOk,
+                                    locationDestIsOk:
+                                        packingBloc.locationDestIsOk,
+                                    currentLocationId: packingBloc
+                                        .currentProduct.locationId
+                                        .toString(),
+                                    onValidateLocation: (value) {
+                                      validateLocation(value);
+                                    },
+                                    onKeyScanned: (keyLabel) {},
+                                    focusNode: focusNode1,
+                                    controller: _controllerLocation,
+                                    locationDropdown:
+                                        LocationPackDropdownWidget(
+                                      isPDA: true,
+                                      selectedLocation: selectedLocation,
+                                      positionsOrigen:
+                                          packingBloc.currentProduct.locationId,
+                                      currentLocationId: packingBloc
+                                          .currentProduct.locationId
+                                          .toString(),
+                                      batchBloc: packingBloc,
+                                      currentProduct:
+                                          packingBloc.currentProduct,
+                                    ),
+                                  ),
+
+                                  // todo: Producto
+
+                                  ProductScannerWidget(
+                                    isProductOk: packingBloc.isProductOk,
+                                    productIsOk: packingBloc.productIsOk,
+                                    locationIsOk: packingBloc.locationIsOk,
+                                    quantityIsOk: packingBloc.quantityIsOk,
+                                    locationDestIsOk:
+                                        packingBloc.locationDestIsOk,
+                                    currentProductId: packingBloc
+                                        .currentProduct.productId
+                                        .toString(),
+                                    barcode: packingBloc.currentProduct.barcode,
+                                    lotId: packingBloc.currentProduct.lotId,
+                                    origin: '',
+                                    expireDate:
+                                        packingBloc.currentProduct.expireDate,
+                                    size: size,
+                                    onValidateProduct: (value) {
+                                      validateProduct(
+                                          value); // tu función actual
+                                    },
+                                    onKeyScanned: (keyLabel) {},
+                                    focusNode: focusNode2,
+                                    controller: _controllerProduct,
+                                    productDropdown: ProductDropdownPackWidget(
+                                      selectedProduct: selectedLocation,
+                                      listOfProductsName:
+                                          packingBloc.listOfProductsName,
+                                      currentProductId: packingBloc
+                                          .currentProduct.idProduct
+                                          .toString(),
+                                      batchBloc: packingBloc,
+                                      currentProduct:
+                                          packingBloc.currentProduct,
+                                    ),
+                                    expiryWidget: ExpirationBadgeWidget(
+                                      expirationDate: packingBloc
+                                          .currentProduct?.expireDate,
+                                    ),
+                                    listOfBarcodes: packingBloc.listOfBarcodes,
+                                    onBarcodesDialogTap: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return DialogBarcodes(
+                                              listOfBarcodes:
+                                                  packingBloc.listOfBarcodes);
+                                        },
+                                      );
+                                    },
+                                    onViewImgProduct: () {
+                                      packingBloc.add(ViewProductImageEvent(
+                                          packingBloc
+                                                  .currentProduct.idProduct ??
+                                              0));
+                                    },
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
 
-                  //todo: cantidad
-                  SizedBox(
-                    width: size.width,
-                    height: !packingBloc.viewQuantity ? 110 : 150,
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                          ),
-                          child: Card(
-                            color: packingBloc.isQuantityOk
-                                ? packingBloc.quantityIsOk
-                                    ? white
-                                    : Colors.grey[300]
-                                : Colors.red[200],
-                            elevation: 5,
-                            child: Padding(
+                      //todo: cantidad
+                      SizedBox(
+                        width: size.width,
+                        height: !packingBloc.viewQuantity ? 110 : 150,
+                        child: Column(
+                          children: [
+                            Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 10,
                               ),
-                              child: Center(
-                                child: Row(
-                                  children: [
-                                    const Text('Recoger:',
-                                        style: TextStyle(
-                                            color: Colors.black, fontSize: 14)),
-                                    Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10),
-                                        child: Text(
-                                          (packingBloc.currentProduct
-                                                      .quantity ??
-                                                  0.0)
-                                              .toString(),
-                                          style: TextStyle(
-                                            color: primaryColorApp,
-                                            fontSize: 14,
-                                          ),
-                                        )),
-                                    Text(
-                                        packingBloc.currentProduct.unidades ??
-                                            "",
-                                        style: const TextStyle(
-                                            color: Colors.black, fontSize: 14)),
-                                    const Spacer(),
-                                    Expanded(
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10),
-                                        alignment: Alignment.center,
-                                        child: Stack(
-                                          alignment: Alignment.center,
-                                          children: [
-                                            SizedBox(
-                                              width: double.infinity,
-                                              child: BarcodeScannerField(
-                                                controller: _controllerQuantity,
-                                                focusNode: focusNode3,
-                                                onBarcodeScanned:
-                                                    (value, context) {
-                                                  validateQuantity(
-                                                      value, packingBloc);
-                                                },
+                              child: Card(
+                                color: packingBloc.isQuantityOk
+                                    ? packingBloc.quantityIsOk
+                                        ? white
+                                        : Colors.grey[300]
+                                    : Colors.red[200],
+                                elevation: 5,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                  ),
+                                  child: Center(
+                                    child: Row(
+                                      children: [
+                                        const Text('Recoger:',
+                                            style: TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 14)),
+                                        Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10),
+                                            child: Text(
+                                              (packingBloc.currentProduct
+                                                          .quantity ??
+                                                      0.0)
+                                                  .toString(),
+                                              style: TextStyle(
+                                                color: primaryColorApp,
+                                                fontSize: 14,
                                               ),
+                                            )),
+                                        Text(
+                                            packingBloc
+                                                    .currentProduct.unidades ??
+                                                "",
+                                            style: const TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 14)),
+                                        const Spacer(),
+                                        Expanded(
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10),
+                                            alignment: Alignment.center,
+                                            child: Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                SizedBox(
+                                                  width: double.infinity,
+                                                  child: BarcodeScannerField(
+                                                    controller:
+                                                        _controllerQuantity,
+                                                    focusNode: focusNode3,
+                                                    onBarcodeScanned:
+                                                        (value, context) {
+                                                      validateQuantity(
+                                                          value, packingBloc);
+                                                    },
+                                                  ),
+                                                ),
+                                                Text(
+                                                    packingBloc.quantitySelected
+                                                        .toString(),
+                                                    style: const TextStyle(
+                                                        color: black,
+                                                        fontSize: 14)),
+                                              ],
                                             ),
-                                            Text(
-                                                packingBloc.quantitySelected
-                                                    .toString(),
-                                                style: const TextStyle(
-                                                    color: black,
-                                                    fontSize: 14)),
-                                          ],
+                                          ),
                                         ),
-                                      ),
+                                        IconButton(
+                                            onPressed: packingBloc
+                                                        .configurations
+                                                        .result
+                                                        ?.result
+                                                        ?.manualQuantityPack ==
+                                                    false
+                                                ? null
+                                                : packingBloc.quantityIsOk &&
+                                                        packingBloc
+                                                                .quantitySelected >=
+                                                            0
+                                                    ? () {
+                                                        packingBloc.add(
+                                                            ShowQuantityPackEvent(
+                                                                !packingBloc
+                                                                    .viewQuantity));
+                                                        Future.delayed(
+                                                            const Duration(
+                                                                milliseconds:
+                                                                    100), () {
+                                                          FocusScope.of(context)
+                                                              .requestFocus(
+                                                                  focusNode4);
+                                                        });
+                                                      }
+                                                    : null,
+                                            icon: Icon(Icons.edit_note_rounded,
+                                                color: primaryColorApp,
+                                                size: 30)),
+                                      ],
                                     ),
-                                    IconButton(
-                                        onPressed: packingBloc
-                                                    .configurations
-                                                    .result
-                                                    ?.result
-                                                    ?.manualQuantityPack ==
-                                                false
-                                            ? null
-                                            : packingBloc.quantityIsOk &&
-                                                    packingBloc
-                                                            .quantitySelected >=
-                                                        0
-                                                ? () {
-                                                    packingBloc.add(
-                                                        ShowQuantityPackEvent(
-                                                            !packingBloc
-                                                                .viewQuantity));
-                                                    Future.delayed(
-                                                        const Duration(
-                                                            milliseconds: 100),
-                                                        () {
-                                                      FocusScope.of(context)
-                                                          .requestFocus(
-                                                              focusNode4);
-                                                    });
-                                                  }
-                                                : null,
-                                        icon: Icon(Icons.edit_note_rounded,
-                                            color: primaryColorApp, size: 30)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Visibility(
-                          visible: packingBloc.viewQuantity,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 2),
-                            child: SizedBox(
-                              height: 40,
-                              child: TextFormField(
-                                //tmano del campo
-
-                                focusNode: focusNode4,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                      RegExp(r'[0-9.]')),
-                                ],
-                                showCursor: true,
-                                onChanged: (value) {
-                                  // Verifica si el valor no está vacío y si es un número válido
-                                  if (value.isNotEmpty) {
-                                    try {
-                                      packingBloc.quantitySelected =
-                                          double.parse(value);
-                                    } catch (e) {
-                                      // Manejo de errores si la conversión falla
-                                      debugPrint(
-                                          'Error al convertir a entero: $e');
-                                      // Aquí puedes mostrar un mensaje al usuario o manejar el error de otra forma
-                                    }
-                                  } else {
-                                    // Si el valor está vacío, puedes establecer un valor por defecto
-                                    packingBloc.quantitySelected =
-                                        0; // O cualquier valor que consideres adecuado
-                                  }
-                                },
-                                controller: cantidadController,
-                                keyboardType: TextInputType.number,
-                                decoration:
-                                    InputDecorations.authInputDecoration(
-                                  hintText: 'Cantidad',
-                                  labelText: 'Cantidad',
-                                  suffixIconButton: IconButton(
-                                    onPressed: () {
-                                      packingBloc.add(ShowQuantityPackEvent(
-                                          !packingBloc.viewQuantity));
-                                      cantidadController.clear();
-                                      //cambiamos el foco pa leer por pda la cantidad
-                                      Future.delayed(
-                                          const Duration(milliseconds: 100),
-                                          () {
-                                        FocusScope.of(context)
-                                            .requestFocus(focusNode3);
-                                      });
-                                    },
-                                    icon: const Icon(Icons.clear),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                        Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                            ),
-                            child: ElevatedButton(
-                              onPressed: packingBloc.quantityIsOk &&
-                                      packingBloc.quantitySelected >= 0
-                                  ? () {
-                                      //cerramos el teclado
-                                      FocusScope.of(context).unfocus();
-                                      _validatebuttonquantity();
-                                    }
-                                  : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryColorApp,
-                                minimumSize: Size(size.width * 0.93, 35),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                            Visibility(
+                              visible: packingBloc.viewQuantity,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 2),
+                                child: SizedBox(
+                                  height: 40,
+                                  child: TextFormField(
+                                    //tmano del campo
+
+                                    focusNode: focusNode4,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.allow(
+                                          RegExp(r'[0-9.]')),
+                                    ],
+                                    showCursor: true,
+                                    onChanged: (value) {
+                                      // Verifica si el valor no está vacío y si es un número válido
+                                      if (value.isNotEmpty) {
+                                        try {
+                                          packingBloc.quantitySelected =
+                                              double.parse(value);
+                                        } catch (e) {
+                                          // Manejo de errores si la conversión falla
+                                          debugPrint(
+                                              'Error al convertir a entero: $e');
+                                          // Aquí puedes mostrar un mensaje al usuario o manejar el error de otra forma
+                                        }
+                                      } else {
+                                        // Si el valor está vacío, puedes establecer un valor por defecto
+                                        packingBloc.quantitySelected =
+                                            0; // O cualquier valor que consideres adecuado
+                                      }
+                                    },
+                                    controller: cantidadController,
+                                    keyboardType: TextInputType.number,
+                                    decoration:
+                                        InputDecorations.authInputDecoration(
+                                      hintText: 'Cantidad',
+                                      labelText: 'Cantidad',
+                                      suffixIconButton: IconButton(
+                                        onPressed: () {
+                                          packingBloc.add(ShowQuantityPackEvent(
+                                              !packingBloc.viewQuantity));
+                                          cantidadController.clear();
+                                          //cambiamos el foco pa leer por pda la cantidad
+                                          Future.delayed(
+                                              const Duration(milliseconds: 100),
+                                              () {
+                                            FocusScope.of(context)
+                                                .requestFocus(focusNode3);
+                                          });
+                                        },
+                                        icon: const Icon(Icons.clear),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
-                              child: const Text(
-                                'APLICAR CANTIDAD',
-                                style: TextStyle(
-                                    color: Colors.white, fontSize: 14),
-                              ),
-                            )),
-                      ],
-                    ),
+                            ),
+                            Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
+                                child: ElevatedButton(
+                                  onPressed: packingBloc.quantityIsOk &&
+                                          packingBloc.quantitySelected >= 0
+                                      ? () {
+                                          //cerramos el teclado
+                                          FocusScope.of(context).unfocus();
+                                          _validatebuttonquantity();
+                                        }
+                                      : null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryColorApp,
+                                    minimumSize: Size(size.width * 0.93, 35),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'APLICAR CANTIDAD',
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 14),
+                                  ),
+                                )),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ));
         },
       ),

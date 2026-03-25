@@ -6,7 +6,6 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 
 class SearchProductConteoScreen extends StatefulWidget {
   const SearchProductConteoScreen({super.key});
@@ -29,16 +28,21 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
         return WillPopScope(
           onWillPop: () async => false,
           child: Scaffold(
-            backgroundColor: white,
-            body: Column(
-              children: [
-                _AppBarInfo(size: size),
-                _buildSearchBar(context, bloc, size),
-                Expanded(child: _buildProductList(context, bloc)),
-                const SizedBox(height: 20),
-                _buildSelectButton(bloc, size),
-                const SizedBox(height: 10),
-              ],
+            backgroundColor: primaryColorApp,
+            body: SafeArea(
+              child: Container(
+                color: Colors.white,
+                child: Column(
+                  children: [
+                    _AppBarInfo(size: size),
+                    _buildSearchBar(context, bloc, size),
+                    Expanded(child: _buildProductList(context, bloc)),
+                    const SizedBox(height: 20),
+                    _buildSelectButton(bloc, size),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+              ),
             ),
           ),
         );
@@ -283,32 +287,27 @@ class _AppBarInfo extends StatelessWidget {
               return Column(
                 children: [
                   const WarningWidgetCubit(),
-                  Padding(
-                    padding: EdgeInsets.only(
-                      top: connectionStatus != ConnectionStatus.online ? 0 : 25,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back, color: white),
-                          onPressed: () {
-                            Navigator.pushReplacementNamed(
-                              context,
-                              'new-product-conteo',
-                            );
-                          },
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: white),
+                        onPressed: () {
+                          Navigator.pushReplacementNamed(
+                            context,
+                            'new-product-conteo',
+                          );
+                        },
+                      ),
+                      Padding(
+                        padding: EdgeInsets.only(left: size.width * 0.22),
+                        child: const Text(
+                          'PRODUCTOS',
+                          style: TextStyle(color: white, fontSize: 18),
                         ),
-                        Padding(
-                          padding: EdgeInsets.only(left: size.width * 0.22),
-                          child: const Text(
-                            'PRODUCTOS',
-                            style: TextStyle(color: white, fontSize: 18),
-                          ),
-                        ),
-                        const Spacer(),
-                      ],
-                    ),
+                      ),
+                      const Spacer(),
+                    ],
                   ),
                 ],
               );

@@ -16,8 +16,8 @@ class WarningWidgetCubit extends StatelessWidget {
         return Visibility(
           visible: status != ConnectionStatus.online,
           child: Container(
-            padding: EdgeInsets.only(top: isTop ? 20 : 5, left: 16, right: 16),
-            height: 60,
+            padding: EdgeInsets.only(top: 5, left: 16, right: 16),
+            height: 40,
             color: grey,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,

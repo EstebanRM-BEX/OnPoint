@@ -69,331 +69,339 @@ class LocationInfoScreen extends StatelessWidget {
             return false;
           },
           child: Scaffold(
-            backgroundColor: white,
-            body: SizedBox(
-              width: size.width * 1,
-              height: size.height * 1,
-              child: Column(
-                children: [
-                  AppBar(size: size, infoRapidaResult: infoRapidaResult),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 5, left: 20),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Ubicación",
-                        style: TextStyle(
-                            color: black,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold),
+            backgroundColor: primaryColorApp,
+            body: SafeArea(
+              child: Container(
+                color: white,
+                width: size.width * 1,
+                height: size.height * 1,
+                child: Column(
+                  children: [
+                    AppBar(size: size, infoRapidaResult: infoRapidaResult),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 5, left: 20),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "Ubicación",
+                          style: TextStyle(
+                              color: black,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: SizedBox(
-                      width: size.width * 1,
-                      child: Card(
-                        elevation: 3,
-                        color: white,
-                        child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              children: [
-                                EditableReferenceRow(
-                                  title: 'Nombre: ',
-                                  isEditMode: bloc.isEdit,
-                                  onTap: () {
-                                    // context.read<InfoRapidaBloc>().add(
-                                    //     ShowKeyboardInfoEvent(
-                                    //         true, nameController,
-                                    //         isNumeric: false));
-                                  },
-                                  controller: nameController,
-                                  isNumber: false,
-                                  isName: false,
-                                  isExpanded: true,
-                                ),
-                                EditableReferenceRow(
-                                  title: 'Barcode: ',
-                                  isEditMode: bloc.isEdit,
-                                  isNumber: false,
-                                  onTap: () {
-                                    // context.read<InfoRapidaBloc>().add(
-                                    //     ShowKeyboardInfoEvent(
-                                    //         true, barcodeController,
-                                    //         isNumeric: false));
-                                  },
-                                  controller: barcodeController,
-                                  isExpanded: true,
-                                ),
-                                ProductInfoRow(
-                                  title: 'Ubicación padre:',
-                                  value:
-                                      ubicacion?.ubicacionPadre ?? "Sin nombre",
-                                ),
-                                ProductInfoRow(
-                                  title: 'Ubicación tipo: ',
-                                  value: '${ubicacion?.tipoUbicacion}',
-                                ),
-                                Visibility(
-                                  visible: bloc.isEdit,
-                                  child: Center(
-                                    child: ElevatedButton(
-                                        onPressed: () {
-                                          //validamos que todos los campos esten llenos
-                                          if (nameController.text.isEmpty ||
-                                              barcodeController.text.isEmpty) {
-                                            Get.snackbar(
-                                              '360 Software Informa',
-                                              'Por favor, complete todos los campos',
-                                              backgroundColor: white,
-                                              colorText: primaryColorApp,
-                                              icon: const Icon(
-                                                  Icons.check_circle,
-                                                  color: Colors.red),
-                                            );
-                                            return;
-                                          }
-
-                                          bloc.add(EditLocationEvent(
-                                            ubicacion?.id ?? 0,
-                                            nameController.text,
-                                            barcodeController.text,
-                                          ));
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          minimumSize:
-                                              Size(size.width * 0.9, 30),
-                                          backgroundColor: primaryColorApp,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                          ),
-                                        ),
-                                        child: Text('Actualizar',
-                                            style: TextStyle(
-                                                color: white, fontSize: 12))),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: SizedBox(
+                        width: size.width * 1,
+                        child: Card(
+                          elevation: 3,
+                          color: white,
+                          child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                children: [
+                                  EditableReferenceRow(
+                                    title: 'Nombre: ',
+                                    isEditMode: bloc.isEdit,
+                                    onTap: () {
+                                      // context.read<InfoRapidaBloc>().add(
+                                      //     ShowKeyboardInfoEvent(
+                                      //         true, nameController,
+                                      //         isNumeric: false));
+                                    },
+                                    controller: nameController,
+                                    isNumber: false,
+                                    isName: false,
+                                    isExpanded: true,
                                   ),
-                                )
-                              ],
-                            )),
+                                  EditableReferenceRow(
+                                    title: 'Barcode: ',
+                                    isEditMode: bloc.isEdit,
+                                    isNumber: false,
+                                    onTap: () {
+                                      // context.read<InfoRapidaBloc>().add(
+                                      //     ShowKeyboardInfoEvent(
+                                      //         true, barcodeController,
+                                      //         isNumeric: false));
+                                    },
+                                    controller: barcodeController,
+                                    isExpanded: true,
+                                  ),
+                                  ProductInfoRow(
+                                    title: 'Ubicación padre:',
+                                    value: ubicacion?.ubicacionPadre ??
+                                        "Sin nombre",
+                                  ),
+                                  ProductInfoRow(
+                                    title: 'Ubicación tipo: ',
+                                    value: '${ubicacion?.tipoUbicacion}',
+                                  ),
+                                  Visibility(
+                                    visible: bloc.isEdit,
+                                    child: Center(
+                                      child: ElevatedButton(
+                                          onPressed: () {
+                                            //validamos que todos los campos esten llenos
+                                            if (nameController.text.isEmpty ||
+                                                barcodeController
+                                                    .text.isEmpty) {
+                                              Get.snackbar(
+                                                '360 Software Informa',
+                                                'Por favor, complete todos los campos',
+                                                backgroundColor: white,
+                                                colorText: primaryColorApp,
+                                                icon: const Icon(
+                                                    Icons.check_circle,
+                                                    color: Colors.red),
+                                              );
+                                              return;
+                                            }
+
+                                            bloc.add(EditLocationEvent(
+                                              ubicacion?.id ?? 0,
+                                              nameController.text,
+                                              barcodeController.text,
+                                            ));
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            minimumSize:
+                                                Size(size.width * 0.9, 30),
+                                            backgroundColor: primaryColorApp,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                          child: Text('Actualizar',
+                                              style: TextStyle(
+                                                  color: white, fontSize: 12))),
+                                    ),
+                                  )
+                                ],
+                              )),
+                        ),
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10, left: 20),
-                    child: Row(
-                      children: [
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            "Productos",
-                            style: TextStyle(
-                                color: black,
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10, left: 20),
+                      child: Row(
+                        children: [
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              "Productos",
+                              style: TextStyle(
+                                  color: black,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold),
+                            ),
                           ),
-                        ),
-                        const Spacer(),
-                        GestureDetector(
-                          onTap: () {
-                            context.read<InfoRapidaBloc>().add(
-                                SortProductsEvent(!context
-                                    .read<InfoRapidaBloc>()
-                                    .isAscending));
-                          },
-                          child: Row(
-                            children: [
-                              Text(
-                                "Ordenar ",
-                                style: TextStyle(
-                                    color: black,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(width: 5),
-                              Icon(
-                                context.read<InfoRapidaBloc>().isAscending
-                                    ? Icons.arrow_upward
-                                    : Icons.arrow_downward,
-                                color: primaryColorApp,
-                                size: 20,
-                              ),
-                            ],
+                          const Spacer(),
+                          GestureDetector(
+                            onTap: () {
+                              context.read<InfoRapidaBloc>().add(
+                                  SortProductsEvent(!context
+                                      .read<InfoRapidaBloc>()
+                                      .isAscending));
+                            },
+                            child: Row(
+                              children: [
+                                Text(
+                                  "Ordenar ",
+                                  style: TextStyle(
+                                      color: black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(width: 5),
+                                Icon(
+                                  context.read<InfoRapidaBloc>().isAscending
+                                      ? Icons.arrow_upward
+                                      : Icons.arrow_downward,
+                                  color: primaryColorApp,
+                                  size: 20,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 10)
-                      ],
+                          const SizedBox(width: 10)
+                        ],
+                      ),
                     ),
-                  ),
 
-                  //listado de productos
-                  Expanded(
-                    child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: ListView.builder(
-                            padding: const EdgeInsets.all(0),
-                            itemCount: ubicacion?.productos?.length ?? 0,
-                            itemBuilder: (context, index) {
-                              final producto = ubicacion?.productos?[index];
-                              return Card(
-                                  color: white,
-                                  elevation: 3,
-                                  child: ListTile(
-                                    trailing:
+                    //listado de productos
+                    Expanded(
+                      child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: ListView.builder(
+                              padding: const EdgeInsets.all(0),
+                              itemCount: ubicacion?.productos?.length ?? 0,
+                              itemBuilder: (context, index) {
+                                final producto = ubicacion?.productos?[index];
+                                return Card(
+                                    color: white,
+                                    elevation: 3,
+                                    child: ListTile(
+                                      trailing:
 
-                                        //CheckBox para seleccionar productos para transferencia masiva
+                                          //CheckBox para seleccionar productos para transferencia masiva
 
-                                        context
-                                                .read<InfoRapidaBloc>()
-                                                .isMassTransferActive
-                                            ?
+                                          context
+                                                  .read<InfoRapidaBloc>()
+                                                  .isMassTransferActive
+                                              ?
 
-                                            //VALIDAMOS QUE EL PRODUCTO NO ESTE EN UN PAQUETE y su cantidad disponible sea mayor a 0
-                                            producto?.packing == true ||
-                                                    producto?.cantidadMano ==
-                                                        0.0
-                                                ? null
-                                                : Checkbox(
-                                                    value: context
-                                                        .read<InfoRapidaBloc>()
-                                                        .productosFiltersMassTransfer
-                                                        .any((p) =>
-                                                            p.id ==
-                                                            producto?.id),
-                                                    onChanged: (bool? value) {
-                                                      context
+                                              //VALIDAMOS QUE EL PRODUCTO NO ESTE EN UN PAQUETE y su cantidad disponible sea mayor a 0
+                                              producto?.packing == true ||
+                                                      producto?.cantidadMano ==
+                                                          0.0
+                                                  ? null
+                                                  : Checkbox(
+                                                      value: context
                                                           .read<
                                                               InfoRapidaBloc>()
-                                                          .add(
-                                                              ToggleProductMassTransferEvent(
-                                                                  producto!,
-                                                                  value ??
-                                                                      false));
-                                                    },
-                                                  )
-                                            : IconButton(
-                                                icon: Icon(
-                                                    Icons.arrow_forward_ios,
-                                                    size: 20,
-                                                    color: primaryColorApp),
-                                                onPressed: () async {
-                                                  getInfoProduct(
-                                                      producto?.id.toString() ??
-                                                          '',
-                                                      context);
-                                                },
-                                              ),
-                                    title: Text(
-                                      producto?.producto ?? 'Sin nombre',
-                                      style: TextStyle(
-                                          color: primaryColorApp,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    subtitle: Column(
-                                      children: [
-                                        ProductInfoRow(
-                                          title: 'Cantidad disponible: ',
-                                          value:
-                                              '${producto?.cantidadMano} ${producto?.unidadMedida}',
-                                          color: green,
-                                        ),
-                                        ProductInfoRow(
-                                          title: 'En inventario: ',
-                                          value:
-                                              '${producto?.cantidad} ${producto?.unidadMedida}',
-                                        ),
-                                        ProductInfoRow(
-                                          title: 'Cantidad reservada: ',
-                                          value:
-                                              '${producto?.reservado} ${producto?.unidadMedida}',
-                                          color: red,
-                                        ),
-                                        ProductInfoRow(
-                                          title: 'Barcode: ',
-                                          value: producto?.codigoBarras == false
-                                              ? 'Sin barcode'
-                                              : '${producto?.codigoBarras}',
-                                        ),
-                                        ProductInfoRow(
-                                          title: 'Lote: ',
-                                          value: producto?.lote == null ||
-                                                  producto?.lote == ""
-                                              ? "Sin lote"
-                                              : "${producto?.lote}",
-                                          color: producto?.lote == null ||
-                                                  producto?.lote == ""
-                                              ? Colors.red
-                                              : black,
-                                        ),
-                                        //fecha de vencimiento
-                                        ProductInfoRow(
-                                          title: 'Caducidad :',
-                                          value: producto?.fechaVencimiento ==
-                                                      null ||
-                                                  producto?.fechaVencimiento ==
-                                                      ""
-                                              ? "Sin caducidad"
-                                              : "${producto?.fechaVencimiento}",
-                                          color: producto?.fechaVencimiento ==
-                                                      null ||
-                                                  producto?.fechaVencimiento ==
-                                                      ""
-                                              ? Colors.red
-                                              : black,
-                                        ),
-                                        //producto en paquete
-                                        ProductInfoRow(
-                                          title: 'Paquete :',
-                                          value: producto?.packing == true
-                                              ? "${producto?.nombrePaquete}"
-                                              : "Sin paquete",
-                                          color: producto?.packing == true
-                                              ? black
-                                              : Colors.red,
-                                        ),
-                                      ],
-                                    ),
-                                  ));
-                            })),
-                  ),
+                                                          .productosFiltersMassTransfer
+                                                          .any((p) =>
+                                                              p.id ==
+                                                              producto?.id),
+                                                      onChanged: (bool? value) {
+                                                        context
+                                                            .read<
+                                                                InfoRapidaBloc>()
+                                                            .add(
+                                                                ToggleProductMassTransferEvent(
+                                                                    producto!,
+                                                                    value ??
+                                                                        false));
+                                                      },
+                                                    )
+                                              : IconButton(
+                                                  icon: Icon(
+                                                      Icons.arrow_forward_ios,
+                                                      size: 20,
+                                                      color: primaryColorApp),
+                                                  onPressed: () async {
+                                                    getInfoProduct(
+                                                        producto?.id
+                                                                .toString() ??
+                                                            '',
+                                                        context);
+                                                  },
+                                                ),
+                                      title: Text(
+                                        producto?.producto ?? 'Sin nombre',
+                                        style: TextStyle(
+                                            color: primaryColorApp,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      subtitle: Column(
+                                        children: [
+                                          ProductInfoRow(
+                                            title: 'Cantidad disponible: ',
+                                            value:
+                                                '${producto?.cantidadMano} ${producto?.unidadMedida}',
+                                            color: green,
+                                          ),
+                                          ProductInfoRow(
+                                            title: 'En inventario: ',
+                                            value:
+                                                '${producto?.cantidad} ${producto?.unidadMedida}',
+                                          ),
+                                          ProductInfoRow(
+                                            title: 'Cantidad reservada: ',
+                                            value:
+                                                '${producto?.reservado} ${producto?.unidadMedida}',
+                                            color: red,
+                                          ),
+                                          ProductInfoRow(
+                                            title: 'Barcode: ',
+                                            value: producto?.codigoBarras ==
+                                                    false
+                                                ? 'Sin barcode'
+                                                : '${producto?.codigoBarras}',
+                                          ),
+                                          ProductInfoRow(
+                                            title: 'Lote: ',
+                                            value: producto?.lote == null ||
+                                                    producto?.lote == ""
+                                                ? "Sin lote"
+                                                : "${producto?.lote}",
+                                            color: producto?.lote == null ||
+                                                    producto?.lote == ""
+                                                ? Colors.red
+                                                : black,
+                                          ),
+                                          //fecha de vencimiento
+                                          ProductInfoRow(
+                                            title: 'Caducidad :',
+                                            value: producto?.fechaVencimiento ==
+                                                        null ||
+                                                    producto?.fechaVencimiento ==
+                                                        ""
+                                                ? "Sin caducidad"
+                                                : "${producto?.fechaVencimiento}",
+                                            color: producto?.fechaVencimiento ==
+                                                        null ||
+                                                    producto?.fechaVencimiento ==
+                                                        ""
+                                                ? Colors.red
+                                                : black,
+                                          ),
+                                          //producto en paquete
+                                          ProductInfoRow(
+                                            title: 'Paquete :',
+                                            value: producto?.packing == true
+                                                ? "${producto?.nombrePaquete}"
+                                                : "Sin paquete",
+                                            color: producto?.packing == true
+                                                ? black
+                                                : Colors.red,
+                                          ),
+                                        ],
+                                      ),
+                                    ));
+                              })),
+                    ),
 
-                  //btn de crear trasnferencia masiva
-                  if (context.read<InfoRapidaBloc>().isMassTransferActive)
-                    ElevatedButton(
-                        onPressed: () {
-                          if (context
-                              .read<InfoRapidaBloc>()
-                              .productosFiltersMassTransfer
-                              .isEmpty) {
-                            Get.snackbar(
-                              '360 Software Informa',
-                              'Debe seleccionar al menos un producto para realizar la transferencia masiva',
-                              backgroundColor: white,
-                              colorText: primaryColorApp,
-                              icon: const Icon(Icons.error, color: Colors.red),
+                    //btn de crear trasnferencia masiva
+                    if (context.read<InfoRapidaBloc>().isMassTransferActive)
+                      ElevatedButton(
+                          onPressed: () {
+                            if (context
+                                .read<InfoRapidaBloc>()
+                                .productosFiltersMassTransfer
+                                .isEmpty) {
+                              Get.snackbar(
+                                '360 Software Informa',
+                                'Debe seleccionar al menos un producto para realizar la transferencia masiva',
+                                backgroundColor: white,
+                                colorText: primaryColorApp,
+                                icon:
+                                    const Icon(Icons.error, color: Colors.red),
+                              );
+                              return;
+                            }
+                            Navigator.pushReplacementNamed(
+                              context,
+                              'create-mass-transfer',
                             );
-                            return;
-                          }
-                          Navigator.pushReplacementNamed(
-                            context,
-                            'create-mass-transfer',
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: Size(size.width * 0.9, 30),
-                          backgroundColor: primaryColorApp,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                          },
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: Size(size.width * 0.9, 30),
+                            backgroundColor: primaryColorApp,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          "Crear transferencia masiva",
-                          style: TextStyle(color: white),
-                        ))
-                ],
+                          child: Text(
+                            "Crear transferencia masiva",
+                            style: TextStyle(color: white),
+                          ))
+                  ],
+                ),
               ),
             ),
           ),
@@ -437,10 +445,10 @@ class AppBar extends StatelessWidget {
             const WarningWidgetCubit(),
             Padding(
               padding: EdgeInsets.only(
-                  left: size.width * 0.05,
-                  right: size.width * 0.05,
-                  bottom: 10,
-                  top: status != ConnectionStatus.online ? 0 : 35),
+                left: size.width * 0.05,
+                right: size.width * 0.05,
+                bottom: 5,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

@@ -29,33 +29,39 @@ class _SearchProductScreenState extends State<SearchProductScreen> {
         return WillPopScope(
           onWillPop: () async => false,
           child: Scaffold(
-            backgroundColor: white,
-            body: Column(
-              children: [
-                _AppBarInfo(size: size),
-                //*barra de buscar
-                DynamicSearchBar(
-                  controller: bloc.searchControllerProducts,
-                  hintText: "Buscar producto",
-                  onSearchChanged: (value) {
-                    bloc.add(SearchProductEvent(value));
-                  },
-                  onSearchCleared: () {
-                    final searchBloc = bloc; // Usa la instancia del BLoC actual
-                    searchBloc.searchControllerProducts.clear();
-                    searchBloc.add(SearchProductEvent(''));
-                    Future.microtask(() {
-                      if (mounted) {
-                        FocusScope.of(context).unfocus();
-                      }
-                    });
-                  },
+            backgroundColor: primaryColorApp,
+            body: SafeArea(
+              child: Container(
+                color: Colors.white,
+                child: Column(
+                  children: [
+                    _AppBarInfo(size: size),
+                    //*barra de buscar
+                    DynamicSearchBar(
+                      controller: bloc.searchControllerProducts,
+                      hintText: "Buscar producto",
+                      onSearchChanged: (value) {
+                        bloc.add(SearchProductEvent(value));
+                      },
+                      onSearchCleared: () {
+                        final searchBloc =
+                            bloc; // Usa la instancia del BLoC actual
+                        searchBloc.searchControllerProducts.clear();
+                        searchBloc.add(SearchProductEvent(''));
+                        Future.microtask(() {
+                          if (mounted) {
+                            FocusScope.of(context).unfocus();
+                          }
+                        });
+                      },
+                    ),
+                    Expanded(child: _buildProductList(context, bloc)),
+                    const SizedBox(height: 20),
+                    _buildSelectButton(bloc, size),
+                    const SizedBox(height: 10),
+                  ],
                 ),
-                Expanded(child: _buildProductList(context, bloc)),
-                const SizedBox(height: 20),
-                _buildSelectButton(bloc, size),
-                const SizedBox(height: 10),
-              ],
+              ),
             ),
           ),
         );
@@ -262,30 +268,24 @@ class _AppBarInfo extends StatelessWidget {
               return Column(
                 children: [
                   const WarningWidgetCubit(),
-                  Padding(
-                    padding: EdgeInsets.only(
-                      top: connectionStatus != ConnectionStatus.online ? 0 : 25,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back, color: white),
-                          onPressed: () {
-                            Navigator.pushReplacementNamed(
-                                context, 'inventario');
-                          },
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: white),
+                        onPressed: () {
+                          Navigator.pushReplacementNamed(context, 'inventario');
+                        },
+                      ),
+                      Padding(
+                        padding: EdgeInsets.only(left: size.width * 0.22),
+                        child: const Text(
+                          'PRODUCTOS',
+                          style: TextStyle(color: white, fontSize: 18),
                         ),
-                        Padding(
-                          padding: EdgeInsets.only(left: size.width * 0.22),
-                          child: const Text(
-                            'PRODUCTOS',
-                            style: TextStyle(color: white, fontSize: 18),
-                          ),
-                        ),
-                        const Spacer(),
-                      ],
-                    ),
+                      ),
+                      const Spacer(),
+                    ],
                   ),
                 ],
               );

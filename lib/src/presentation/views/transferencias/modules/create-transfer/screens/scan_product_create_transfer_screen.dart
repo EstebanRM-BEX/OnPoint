@@ -502,262 +502,293 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
       },
       builder: (context, state) {
         return Scaffold(
-            backgroundColor: white,
-            body: Column(
-              children: [
-                //*AppBar
-                Container(
-                  decoration: BoxDecoration(
-                    color: primaryColorApp,
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(20),
-                      bottomRight: Radius.circular(20),
+            backgroundColor: primaryColorApp,
+            body: SafeArea(
+              child: Container(
+                color: Colors.white,
+                child: Column(
+                  children: [
+                    //*AppBar
+                    Container(
+                      decoration: BoxDecoration(
+                        color: primaryColorApp,
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20),
+                        ),
+                      ),
+                      width: double.infinity,
+                      child:
+                          BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
+                              builder: (context, status) {
+                        return Column(
+                          children: [
+                            const WarningWidgetCubit(),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_back,
+                                      color: white),
+                                  onPressed: () {
+                                    Navigator.pushReplacementNamed(
+                                      context,
+                                      'transferencias',
+                                    );
+                                  },
+                                ),
+                                Padding(
+                                  padding:
+                                      EdgeInsets.only(left: size.width * 0.12),
+                                  child: const Text("CREAR TRANSFERENCIA",
+                                      style: TextStyle(
+                                          color: white, fontSize: 18)),
+                                ),
+                                const Spacer(),
+                                PopupMenuCreateTransferWidget()
+                              ],
+                            ),
+                          ],
+                        );
+                      }),
                     ),
-                  ),
-                  width: double.infinity,
-                  child: BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
-                      builder: (context, status) {
-                    return Column(
-                      children: [
-                        const WarningWidgetCubit(),
-                        Padding(
-                          padding: EdgeInsets.only(
-                              bottom: 0,
-                              top: status != ConnectionStatus.online ? 0 : 25),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              IconButton(
-                                icon:
-                                    const Icon(Icons.arrow_back, color: white),
-                                onPressed: () {
-                                  Navigator.pushReplacementNamed(
-                                    context,
-                                    'transferencias',
-                                  );
+
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: SingleChildScrollView(
+                          child: Column(children: [
+                            //todo ubicacion de origen
+                            LocationScannerAll(
+                              isLocationOk: context
+                                  .read<CreateTransferBloc>()
+                                  .isLocationOk,
+                              locationIsOk: context
+                                  .read<CreateTransferBloc>()
+                                  .locationIsOk,
+                              productIsOk: context
+                                  .read<CreateTransferBloc>()
+                                  .productIsOk,
+                              quantityIsOk: context
+                                  .read<CreateTransferBloc>()
+                                  .quantityIsOk,
+                              currentLocationName: context
+                                  .read<CreateTransferBloc>()
+                                  .currentUbication
+                                  ?.name,
+                              onLocationScanned: (value) {
+                                validateLocation(value);
+                              },
+                              focusNode: focusNode1,
+                              controller: _controllerLocation,
+                              locationDropdown:
+                                  LocationCardButtonCreateTransfer(
+                                bloc: context.read<
+                                    CreateTransferBloc>(), // Tu instancia de BLoC/Controlador
+                                cardColor:
+                                    white, // Asegúrate que 'white' esté definido en tus colores
+                                textAndIconColor:
+                                    primaryColorApp, // Usa tu color primario
+                                title: 'Ubicación Origen',
+                                routeName: 'search-location-create-transfer',
+                                ubicacionFija: true,
+                                isLocationDest: false,
+                              ), // Pasamos el widget del dropdown como parámetro
+                            ),
+
+                            //todo ubicacion destino
+                            LocationScannerAll(
+                              isLocationOk: context
+                                  .read<CreateTransferBloc>()
+                                  .isLocationDestOk,
+                              locationIsOk: context
+                                  .read<CreateTransferBloc>()
+                                  .locationDestIsOk,
+                              productIsOk: context
+                                  .read<CreateTransferBloc>()
+                                  .productIsOk,
+                              quantityIsOk: context
+                                  .read<CreateTransferBloc>()
+                                  .quantityIsOk,
+                              currentLocationName: context
+                                  .read<CreateTransferBloc>()
+                                  .currentUbicationDest
+                                  ?.name,
+                              onLocationScanned: (value) {
+                                validateLocationDest(value);
+                              },
+                              focusNode: focusNode6,
+                              controller: _controllerLocationDestino,
+                              locationDropdown:
+                                  LocationCardButtonCreateTransfer(
+                                bloc: context.read<
+                                    CreateTransferBloc>(), // Tu instancia de BLoC/Controlador
+                                cardColor:
+                                    white, // Asegúrate que 'white' esté definido en tus colores
+                                textAndIconColor:
+                                    primaryColorApp, // Usa tu color primario
+                                title: 'Ubicación Destino',
+                                routeName: 'search-location-create-transfer',
+                                ubicacionFija: true,
+                                isLocationDest: true,
+                              ), // Pasamos el widget del dropdown como parámetro
+                            ),
+
+                            //todo: producto
+                            ProductScannerAll(
+                              isCreateTransfer: true,
+                              focusNode: focusNode2,
+                              controller: _controllerProduct,
+                              locationIsOk: context
+                                  .read<CreateTransferBloc>()
+                                  .locationIsOk,
+                              productIsOk: context
+                                  .read<CreateTransferBloc>()
+                                  .productIsOk,
+                              quantityIsOk: context
+                                  .read<CreateTransferBloc>()
+                                  .quantityIsOk,
+                              isProductOk: context
+                                  .read<CreateTransferBloc>()
+                                  .isProductOk,
+                              currentProduct: context
+                                  .read<CreateTransferBloc>()
+                                  .currentProduct,
+                              onValidateProduct: (value) {
+                                validateProduct(value);
+                              },
+                              productDropdown:
+                                  ProductDropdownCreateTransferWidget(),
+                            ),
+
+                            //todo lote
+                            Visibility(
+                              // El padre controla la visibilidad
+                              visible: context
+                                      .read<CreateTransferBloc>()
+                                      .currentProduct
+                                      ?.tracking ==
+                                  "lot",
+                              child: LoteScannerWidget(
+                                routeName: 'search-lote-create-transfer',
+                                focusNode: focusNode5,
+                                controller: _controllerLote,
+                                isLoteOk:
+                                    context.read<CreateTransferBloc>().isLoteOk,
+                                loteIsOk:
+                                    context.read<CreateTransferBloc>().loteIsOk,
+                                locationIsOk: context
+                                    .read<CreateTransferBloc>()
+                                    .locationIsOk,
+                                productIsOk: context
+                                    .read<CreateTransferBloc>()
+                                    .productIsOk,
+                                quantityIsOk: context
+                                    .read<CreateTransferBloc>()
+                                    .quantityIsOk,
+                                viewQuantity: context
+                                    .read<CreateTransferBloc>()
+                                    .viewQuantity,
+                                currentProduct: context
+                                    .read<CreateTransferBloc>()
+                                    .currentProduct,
+                                currentProductLote: context
+                                    .read<CreateTransferBloc>()
+                                    .currentProductLote,
+                                onValidateLote: (value) {
+                                  validateLote(value);
                                 },
                               ),
-                              Padding(
-                                padding:
-                                    EdgeInsets.only(left: size.width * 0.12),
-                                child: const Text("CREAR TRANSFERENCIA",
-                                    style:
-                                        TextStyle(color: white, fontSize: 18)),
-                              ),
-                              const Spacer(),
-                              PopupMenuCreateTransferWidget()
-                            ],
-                          ),
+                            ),
+                          ]),
                         ),
-                      ],
-                    );
-                  }),
-                ),
+                      ),
+                    )
 
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: SingleChildScrollView(
-                      child: Column(children: [
-                        //todo ubicacion de origen
-                        LocationScannerAll(
-                          isLocationOk:
-                              context.read<CreateTransferBloc>().isLocationOk,
-                          locationIsOk:
-                              context.read<CreateTransferBloc>().locationIsOk,
-                          productIsOk:
-                              context.read<CreateTransferBloc>().productIsOk,
-                          quantityIsOk:
-                              context.read<CreateTransferBloc>().quantityIsOk,
-                          currentLocationName: context
+                    //todo: cantidad
+                    ,
+                    QuantityScannerWidget(
+                      size: size,
+                      isQuantityOk:
+                          context.read<CreateTransferBloc>().isQuantityOk,
+                      quantityIsOk:
+                          context.read<CreateTransferBloc>().quantityIsOk,
+                      locationIsOk:
+                          context.read<CreateTransferBloc>().locationIsOk,
+                      productIsOk:
+                          context.read<CreateTransferBloc>().productIsOk,
+                      locationDestIsOk: false,
+                      totalQuantity: 0,
+                      quantitySelected:
+                          context.read<CreateTransferBloc>().quantitySelected,
+                      unidades: context
                               .read<CreateTransferBloc>()
-                              .currentUbication
-                              ?.name,
-                          onLocationScanned: (value) {
-                            validateLocation(value);
-                          },
-                          focusNode: focusNode1,
-                          controller: _controllerLocation,
-                          locationDropdown: LocationCardButtonCreateTransfer(
-                            bloc: context.read<
-                                CreateTransferBloc>(), // Tu instancia de BLoC/Controlador
-                            cardColor:
-                                white, // Asegúrate que 'white' esté definido en tus colores
-                            textAndIconColor:
-                                primaryColorApp, // Usa tu color primario
-                            title: 'Ubicación Origen',
-                            routeName: 'search-location-create-transfer',
-                            ubicacionFija: true,
-                            isLocationDest: false,
-                          ), // Pasamos el widget del dropdown como parámetro
-                        ),
-
-                        //todo ubicacion destino
-                        LocationScannerAll(
-                          isLocationOk: context
-                              .read<CreateTransferBloc>()
-                              .isLocationDestOk,
-                          locationIsOk: context
-                              .read<CreateTransferBloc>()
-                              .locationDestIsOk,
-                          productIsOk:
-                              context.read<CreateTransferBloc>().productIsOk,
-                          quantityIsOk:
-                              context.read<CreateTransferBloc>().quantityIsOk,
-                          currentLocationName: context
-                              .read<CreateTransferBloc>()
-                              .currentUbicationDest
-                              ?.name,
-                          onLocationScanned: (value) {
-                            validateLocationDest(value);
-                          },
-                          focusNode: focusNode6,
-                          controller: _controllerLocationDestino,
-                          locationDropdown: LocationCardButtonCreateTransfer(
-                            bloc: context.read<
-                                CreateTransferBloc>(), // Tu instancia de BLoC/Controlador
-                            cardColor:
-                                white, // Asegúrate que 'white' esté definido en tus colores
-                            textAndIconColor:
-                                primaryColorApp, // Usa tu color primario
-                            title: 'Ubicación Destino',
-                            routeName: 'search-location-create-transfer',
-                            ubicacionFija: true,
-                            isLocationDest: true,
-                          ), // Pasamos el widget del dropdown como parámetro
-                        ),
-
-                        //todo: producto
-                        ProductScannerAll(
-                          isCreateTransfer: true,
-                          focusNode: focusNode2,
-                          controller: _controllerProduct,
-                          locationIsOk:
-                              context.read<CreateTransferBloc>().locationIsOk,
-                          productIsOk:
-                              context.read<CreateTransferBloc>().productIsOk,
-                          quantityIsOk:
-                              context.read<CreateTransferBloc>().quantityIsOk,
-                          isProductOk:
-                              context.read<CreateTransferBloc>().isProductOk,
-                          currentProduct:
-                              context.read<CreateTransferBloc>().currentProduct,
-                          onValidateProduct: (value) {
-                            validateProduct(value);
-                          },
-                          productDropdown:
-                              ProductDropdownCreateTransferWidget(),
-                        ),
-
-                        //todo lote
-                        Visibility(
-                          // El padre controla la visibilidad
-                          visible: context
-                                  .read<CreateTransferBloc>()
-                                  .currentProduct
-                                  ?.tracking ==
-                              "lot",
-                          child: LoteScannerWidget(
-                            routeName: 'search-lote-create-transfer',
-                            focusNode: focusNode5,
-                            controller: _controllerLote,
-                            isLoteOk:
-                                context.read<CreateTransferBloc>().isLoteOk,
-                            loteIsOk:
-                                context.read<CreateTransferBloc>().loteIsOk,
-                            locationIsOk:
-                                context.read<CreateTransferBloc>().locationIsOk,
-                            productIsOk:
-                                context.read<CreateTransferBloc>().productIsOk,
-                            quantityIsOk:
-                                context.read<CreateTransferBloc>().quantityIsOk,
-                            viewQuantity:
-                                context.read<CreateTransferBloc>().viewQuantity,
-                            currentProduct: context
-                                .read<CreateTransferBloc>()
-                                .currentProduct,
-                            currentProductLote: context
-                                .read<CreateTransferBloc>()
-                                .currentProductLote,
-                            onValidateLote: (value) {
-                              validateLote(value);
-                            },
-                          ),
-                        ),
-                      ]),
-                    ),
-                  ),
-                )
-
-                //todo: cantidad
-                ,
-                QuantityScannerWidget(
-                  size: size,
-                  isQuantityOk: context.read<CreateTransferBloc>().isQuantityOk,
-                  quantityIsOk: context.read<CreateTransferBloc>().quantityIsOk,
-                  locationIsOk: context.read<CreateTransferBloc>().locationIsOk,
-                  productIsOk: context.read<CreateTransferBloc>().productIsOk,
-                  locationDestIsOk: false,
-                  totalQuantity: 0,
-                  quantitySelected:
-                      context.read<CreateTransferBloc>().quantitySelected,
-                  unidades:
-                      context.read<CreateTransferBloc>().currentProduct?.uom ??
+                              .currentProduct
+                              ?.uom ??
                           "",
-                  controller: _controllerQuantity,
-                  manualController: cantidadController,
-                  scannerFocusNode: focusNode3,
-                  manualFocusNode: focusNode4,
-                  viewQuantity: context.read<CreateTransferBloc>().viewQuantity,
-                  onIconButtonPressed: () {
-                    debugPrint('borrando');
-                    context.read<CreateTransferBloc>().add(ShowQuantityEvent(
-                        !context.read<CreateTransferBloc>().viewQuantity));
-                    Future.delayed(const Duration(milliseconds: 100), () {
-                      FocusScope.of(context).requestFocus(focusNode3);
-                    });
-                  },
-                  onToggleViewQuantity: () {
-                    context.read<CreateTransferBloc>().add(ShowQuantityEvent(
-                        !context.read<CreateTransferBloc>().viewQuantity));
-                    cantidadController.clear();
-                    Future.delayed(const Duration(milliseconds: 100), () {
-                      FocusScope.of(context).requestFocus(focusNode4);
-                    });
-                    debugPrint('Toggle view quantity');
-                  },
-                  onValidateButton: state is ValidateStockLoading
-                      ? () {}
-                      : () {
-                          FocusScope.of(context).unfocus();
-                          _validatebuttonquantity();
-                        },
-                  onValidateScannerInput: (value) {
-                    validateQuantity(value);
-                  },
-                  onManualQuantityChanged: (value) {
-                    debugPrint('onManualQuantityChanged: $value');
-                  },
-                  onManualQuantitySubmitted: (value) {
-                    final intValue = double.parse(value);
+                      controller: _controllerQuantity,
+                      manualController: cantidadController,
+                      scannerFocusNode: focusNode3,
+                      manualFocusNode: focusNode4,
+                      viewQuantity:
+                          context.read<CreateTransferBloc>().viewQuantity,
+                      onIconButtonPressed: () {
+                        debugPrint('borrando');
+                        context.read<CreateTransferBloc>().add(
+                            ShowQuantityEvent(!context
+                                .read<CreateTransferBloc>()
+                                .viewQuantity));
+                        Future.delayed(const Duration(milliseconds: 100), () {
+                          FocusScope.of(context).requestFocus(focusNode3);
+                        });
+                      },
+                      onToggleViewQuantity: () {
+                        context.read<CreateTransferBloc>().add(
+                            ShowQuantityEvent(!context
+                                .read<CreateTransferBloc>()
+                                .viewQuantity));
+                        cantidadController.clear();
+                        Future.delayed(const Duration(milliseconds: 100), () {
+                          FocusScope.of(context).requestFocus(focusNode4);
+                        });
+                        debugPrint('Toggle view quantity');
+                      },
+                      onValidateButton: state is ValidateStockLoading
+                          ? () {}
+                          : () {
+                              FocusScope.of(context).unfocus();
+                              _validatebuttonquantity();
+                            },
+                      onValidateScannerInput: (value) {
+                        validateQuantity(value);
+                      },
+                      onManualQuantityChanged: (value) {
+                        debugPrint('onManualQuantityChanged: $value');
+                      },
+                      onManualQuantitySubmitted: (value) {
+                        final intValue = double.parse(value);
 
-                    context
-                        .read<CreateTransferBloc>()
-                        .add(ChangeQuantitySeparate(
-                          intValue,
-                          context
-                                  .read<CreateTransferBloc>()
-                                  .currentProduct
-                                  ?.productId ??
-                              0,
-                        ));
+                        context
+                            .read<CreateTransferBloc>()
+                            .add(ChangeQuantitySeparate(
+                              intValue,
+                              context
+                                      .read<CreateTransferBloc>()
+                                      .currentProduct
+                                      ?.productId ??
+                                  0,
+                            ));
 
-                    context.read<CreateTransferBloc>().add(ShowQuantityEvent(
-                        !context.read<CreateTransferBloc>().viewQuantity));
-                  },
-                  isViewCant: false,
+                        context.read<CreateTransferBloc>().add(
+                            ShowQuantityEvent(!context
+                                .read<CreateTransferBloc>()
+                                .viewQuantity));
+                      },
+                      isViewCant: false,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ));
       },
     );

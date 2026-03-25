@@ -76,7 +76,7 @@ class _PackingDetailScreenState extends State<PackingDetailScreen>
             return false;
           },
           child: Scaffold(
-            backgroundColor: Colors.white,
+            backgroundColor: primaryColorApp,
             appBar: AppBar(
               centerTitle: true,
               leading: IconButton(
@@ -223,28 +223,37 @@ class _PackingDetailScreenState extends State<PackingDetailScreen>
                 ),
               ),
             ),
-            body: Column(
-              children: [
-                const WarningWidgetCubit(isTop: false),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController, // Asignar el TabController
-                    children: [
-                      Tab1Screen(
-                        size: size,
-                        packingModel: widget.packingModel ?? PedidoPacking(),
-                        batchModel: widget.batchModel ?? BatchPackingModel(),
+            body: SafeArea(
+              child: Container(
+                color: white,
+                child: Column(
+                  children: [
+                    const WarningWidgetCubit(isTop: false),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController, // Asignar el TabController
+                        children: [
+                          Tab1Screen(
+                            size: size,
+                            packingModel:
+                                widget.packingModel ?? PedidoPacking(),
+                            batchModel:
+                                widget.batchModel ?? BatchPackingModel(),
+                          ),
+                          Tab2Screen(
+                            packingModel:
+                                widget.packingModel ?? PedidoPacking(),
+                            batchModel:
+                                widget.batchModel ?? BatchPackingModel(),
+                          ),
+                          const Tab3Screen(),
+                          const Tab4Screen(),
+                        ],
                       ),
-                      Tab2Screen(
-                        packingModel: widget.packingModel ?? PedidoPacking(),
-                        batchModel: widget.batchModel ?? BatchPackingModel(),
-                      ),
-                      const Tab3Screen(),
-                      const Tab4Screen(),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         );

@@ -179,477 +179,516 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
           .toList();
 
       return Scaffold(
-          backgroundColor: white,
-          body: Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            width: size.width * 1,
-            child:
+          backgroundColor: primaryColorApp,
+          body: SafeArea(
+            child: Container(
+              color: Colors.white,
+              margin: const EdgeInsets.only(bottom: 10),
+              width: size.width * 1,
+              child:
 
-                ///*listado de bacths
+                  ///*listado de bacths
 
-                Column(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: primaryColorApp,
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(20),
-                      bottomRight: Radius.circular(20),
+                  Column(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: primaryColorApp,
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(20),
+                        bottomRight: Radius.circular(20),
+                      ),
                     ),
-                  ),
-                  child: BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
-                      builder: (context, status) {
-                    return Column(
-                      children: [
-                        const WarningWidgetCubit(),
-                        Padding(
-                          padding: EdgeInsets.only(
-                              left: 10,
-                              right: 10,
-                              top: status != ConnectionStatus.online ? 0 : 25,
-                              bottom: 0),
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.arrow_back,
-                                        color: white),
-                                    onPressed: () {
-                                      Navigator.pushReplacementNamed(
-                                        context,
-                                        '/home',
-                                      );
-                                    },
-                                  ),
-                                  Padding(
-                                    padding:
-                                        EdgeInsets.only(left: size.width * 0.1),
-                                    child: GestureDetector(
-                                      onTap: () async {
-                                        if (state
-                                            is WmsPackingPedidoWMSLoading) {
-                                          return;
-                                        }
-
-                                        await DataBaseSqlite()
-                                            .delePacking('packing-pack');
-                                        context
-                                            .read<PackingPedidoBloc>()
-                                            .add(LoadAllPackingPedidoEvent(
-                                              true,
-                                            ));
+                    child: BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
+                        builder: (context, status) {
+                      return Column(
+                        children: [
+                          const WarningWidgetCubit(),
+                          Padding(
+                            padding:
+                                EdgeInsets.only(left: 10, right: 10, bottom: 0),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.arrow_back,
+                                          color: white),
+                                      onPressed: () {
+                                        Navigator.pushReplacementNamed(
+                                          context,
+                                          '/home',
+                                        );
                                       },
-                                      child: Row(
-                                        children: [
-                                          const Text(
-                                            'PACKING PEDIDOS',
-                                            style: TextStyle(
-                                                color: white,
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          const SizedBox(width: 5),
-                                          Icon(
-                                            Icons.refresh,
-                                            color: white,
-                                            size: 20,
-                                          ),
-                                        ],
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.only(
+                                          left: size.width * 0.1),
+                                      child: GestureDetector(
+                                        onTap: () async {
+                                          if (state
+                                              is WmsPackingPedidoWMSLoading) {
+                                            return;
+                                          }
+
+                                          await DataBaseSqlite()
+                                              .delePacking('packing-pack');
+                                          context
+                                              .read<PackingPedidoBloc>()
+                                              .add(LoadAllPackingPedidoEvent(
+                                                true,
+                                              ));
+                                        },
+                                        child: Row(
+                                          children: [
+                                            const Text(
+                                              'PACKING PEDIDOS',
+                                              style: TextStyle(
+                                                  color: white,
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                            const SizedBox(width: 5),
+                                            Icon(
+                                              Icons.refresh,
+                                              color: white,
+                                              size: 20,
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  const Spacer(),
-                                  // ✅ MENU DE FILTROS (Reemplaza al Spacer)
-                                  PopupMenuButton<String>(
-                                    icon: Icon(
-                                      Icons.more_vert,
-                                      color: white,
-                                    ),
-                                    onSelected: (value) {
-                                      switch (value) {
-                                        case 'priority_high':
-                                          bloc.add(SortPackingListEvent(
-                                              'priority', false));
-                                          break;
-                                        case 'priority_normal':
-                                          bloc.add(SortPackingListEvent(
-                                              'priority', true));
-                                          break;
-                                        case 'date_asc':
-                                          bloc.add(SortPackingListEvent(
-                                              'date', true));
-                                          break;
-                                        case 'date_desc':
-                                          bloc.add(SortPackingListEvent(
-                                              'date', false));
-                                          break;
-                                        case 'name_asc':
-                                          bloc.add(SortPackingListEvent(
-                                              'name', true));
-                                          break;
-                                        case 'name_desc':
-                                          bloc.add(SortPackingListEvent(
-                                              'name', false));
-                                          break;
-                                        case 'backorder_desc':
-                                          bloc.add(SortPackingListEvent(
-                                              'backorder', false));
-                                          break;
-                                        case 'backorder_asc':
-                                          bloc.add(SortPackingListEvent(
-                                              'backorder', true));
-                                          break;
-                                      }
-                                    },
-                                    itemBuilder: (BuildContext context) {
-                                      final currentKey = bloc.currentFilterKey;
-                                      // 2. Definimos el color de resaltado (Naranja o tu PrimaryColor)
-                                      final Color activeColor =
-                                          primaryColorApp; // O usa primaryColorApp
-                                      final Color inactiveColor = Colors.black;
+                                    const Spacer(),
+                                    // ✅ MENU DE FILTROS (Reemplaza al Spacer)
+                                    PopupMenuButton<String>(
+                                      icon: Icon(
+                                        Icons.more_vert,
+                                        color: white,
+                                      ),
+                                      onSelected: (value) {
+                                        switch (value) {
+                                          case 'priority_high':
+                                            bloc.add(SortPackingListEvent(
+                                                'priority', false));
+                                            break;
+                                          case 'priority_normal':
+                                            bloc.add(SortPackingListEvent(
+                                                'priority', true));
+                                            break;
+                                          case 'date_asc':
+                                            bloc.add(SortPackingListEvent(
+                                                'date', true));
+                                            break;
+                                          case 'date_desc':
+                                            bloc.add(SortPackingListEvent(
+                                                'date', false));
+                                            break;
+                                          case 'name_asc':
+                                            bloc.add(SortPackingListEvent(
+                                                'name', true));
+                                            break;
+                                          case 'name_desc':
+                                            bloc.add(SortPackingListEvent(
+                                                'name', false));
+                                            break;
+                                          case 'backorder_desc':
+                                            bloc.add(SortPackingListEvent(
+                                                'backorder', false));
+                                            break;
+                                          case 'backorder_asc':
+                                            bloc.add(SortPackingListEvent(
+                                                'backorder', true));
+                                            break;
+                                        }
+                                      },
+                                      itemBuilder: (BuildContext context) {
+                                        final currentKey =
+                                            bloc.currentFilterKey;
+                                        // 2. Definimos el color de resaltado (Naranja o tu PrimaryColor)
+                                        final Color activeColor =
+                                            primaryColorApp; // O usa primaryColorApp
+                                        final Color inactiveColor =
+                                            Colors.black;
 
-                                      TextStyle getStyle(String key) {
-                                        final isSelected = currentKey == key;
-                                        return TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: isSelected
-                                              ? FontWeight.bold
-                                              : FontWeight.normal,
-                                          color: isSelected
+                                        TextStyle getStyle(String key) {
+                                          final isSelected = currentKey == key;
+                                          return TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: isSelected
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                            color: isSelected
+                                                ? activeColor
+                                                : inactiveColor,
+                                          );
+                                        }
+
+                                        // 4. Icono seleccionado vs normal
+                                        Color getIconColor(String key) {
+                                          return currentKey == key
                                               ? activeColor
-                                              : inactiveColor,
-                                        );
-                                      }
+                                              : Colors.grey;
+                                        }
 
-                                      // 4. Icono seleccionado vs normal
-                                      Color getIconColor(String key) {
-                                        return currentKey == key
-                                            ? activeColor
-                                            : Colors.grey;
-                                      }
+                                        return <PopupMenuEntry<String>>[
+                                          // --- SECCIÓN PRIORIDAD ---
+                                          const PopupMenuItem<String>(
+                                            enabled: false,
+                                            height: 30,
+                                            child: Text('PRIORIDAD',
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                    color: Colors.grey)),
+                                          ),
+                                          PopupMenuItem<String>(
+                                            value: 'priority_high',
+                                            height: 40,
+                                            child: Row(children: [
+                                              Icon(Icons.warning,
+                                                  size: 16,
+                                                  color: currentKey ==
+                                                          'priority_high'
+                                                      ? Colors.red
+                                                      : Colors
+                                                          .grey), // Rojo si está seleccionado, o siempre rojo si prefieres
+                                              SizedBox(width: 8),
+                                              Text('Alta primero',
+                                                  style: getStyle(
+                                                      'priority_high')),
+                                              if (currentKey ==
+                                                  'priority_high') ...[
+                                                Spacer(),
+                                                Icon(Icons.check,
+                                                    size: 15,
+                                                    color: activeColor)
+                                              ] // Check visual
+                                            ]),
+                                          ),
+                                          PopupMenuItem<String>(
+                                            value: 'priority_normal',
+                                            height: 40,
+                                            child: Row(children: [
+                                              Icon(Icons.check_circle,
+                                                  size: 16,
+                                                  color: getIconColor(
+                                                      'priority_normal')),
+                                              SizedBox(width: 8),
+                                              Text('Normal primero',
+                                                  style: getStyle(
+                                                      'priority_normal')),
+                                              if (currentKey ==
+                                                  'priority_normal') ...[
+                                                Spacer(),
+                                                Icon(Icons.check,
+                                                    size: 15,
+                                                    color: activeColor)
+                                              ]
+                                            ]),
+                                          ),
+                                          const PopupMenuDivider(),
 
-                                      return <PopupMenuEntry<String>>[
-                                        // --- SECCIÓN PRIORIDAD ---
-                                        const PopupMenuItem<String>(
-                                          enabled: false,
-                                          height: 30,
-                                          child: Text('PRIORIDAD',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
-                                                  color: Colors.grey)),
-                                        ),
-                                        PopupMenuItem<String>(
-                                          value: 'priority_high',
-                                          height: 40,
-                                          child: Row(children: [
-                                            Icon(Icons.warning,
-                                                size: 16,
-                                                color: currentKey ==
-                                                        'priority_high'
-                                                    ? Colors.red
-                                                    : Colors
-                                                        .grey), // Rojo si está seleccionado, o siempre rojo si prefieres
-                                            SizedBox(width: 8),
-                                            Text('Alta primero',
-                                                style:
-                                                    getStyle('priority_high')),
-                                            if (currentKey ==
-                                                'priority_high') ...[
-                                              Spacer(),
-                                              Icon(Icons.check,
-                                                  size: 15, color: activeColor)
-                                            ] // Check visual
-                                          ]),
-                                        ),
-                                        PopupMenuItem<String>(
-                                          value: 'priority_normal',
-                                          height: 40,
-                                          child: Row(children: [
-                                            Icon(Icons.check_circle,
-                                                size: 16,
-                                                color: getIconColor(
-                                                    'priority_normal')),
-                                            SizedBox(width: 8),
-                                            Text('Normal primero',
-                                                style: getStyle(
-                                                    'priority_normal')),
-                                            if (currentKey ==
-                                                'priority_normal') ...[
-                                              Spacer(),
-                                              Icon(Icons.check,
-                                                  size: 15, color: activeColor)
-                                            ]
-                                          ]),
-                                        ),
-                                        const PopupMenuDivider(),
+                                          // --- SECCIÓN FECHA ---
+                                          const PopupMenuItem<String>(
+                                            enabled: false,
+                                            height: 30,
+                                            child: Text('FECHA',
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                    color: Colors.grey)),
+                                          ),
+                                          PopupMenuItem<String>(
+                                            value: 'date_asc',
+                                            height: 40,
+                                            child: Row(children: [
+                                              Icon(
+                                                  Icons.calendar_month_outlined,
+                                                  size: 16,
+                                                  color:
+                                                      getIconColor('date_asc')),
+                                              SizedBox(width: 8),
+                                              Text('Más Antiguas',
+                                                  style: getStyle('date_asc')),
+                                              if (currentKey == 'date_asc') ...[
+                                                Spacer(),
+                                                Icon(Icons.check,
+                                                    size: 15,
+                                                    color: activeColor)
+                                              ]
+                                            ]),
+                                          ),
+                                          PopupMenuItem<String>(
+                                            value: 'date_desc',
+                                            height: 40,
+                                            child: Row(children: [
+                                              Icon(
+                                                  Icons.calendar_month_outlined,
+                                                  size: 16,
+                                                  color: getIconColor(
+                                                      'date_desc')),
+                                              SizedBox(width: 8),
+                                              Text('Más Recientes',
+                                                  style: getStyle('date_desc')),
+                                              if (currentKey ==
+                                                  'date_desc') ...[
+                                                Spacer(),
+                                                Icon(Icons.check,
+                                                    size: 15,
+                                                    color: activeColor)
+                                              ]
+                                            ]),
+                                          ),
+                                          const PopupMenuDivider(),
 
-                                        // --- SECCIÓN FECHA ---
-                                        const PopupMenuItem<String>(
-                                          enabled: false,
-                                          height: 30,
-                                          child: Text('FECHA',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
-                                                  color: Colors.grey)),
-                                        ),
-                                        PopupMenuItem<String>(
-                                          value: 'date_asc',
-                                          height: 40,
-                                          child: Row(children: [
-                                            Icon(Icons.calendar_month_outlined,
-                                                size: 16,
-                                                color:
-                                                    getIconColor('date_asc')),
-                                            SizedBox(width: 8),
-                                            Text('Más Antiguas',
-                                                style: getStyle('date_asc')),
-                                            if (currentKey == 'date_asc') ...[
-                                              Spacer(),
-                                              Icon(Icons.check,
-                                                  size: 15, color: activeColor)
-                                            ]
-                                          ]),
-                                        ),
-                                        PopupMenuItem<String>(
-                                          value: 'date_desc',
-                                          height: 40,
-                                          child: Row(children: [
-                                            Icon(Icons.calendar_month_outlined,
-                                                size: 16,
-                                                color:
-                                                    getIconColor('date_desc')),
-                                            SizedBox(width: 8),
-                                            Text('Más Recientes',
-                                                style: getStyle('date_desc')),
-                                            if (currentKey == 'date_desc') ...[
-                                              Spacer(),
-                                              Icon(Icons.check,
-                                                  size: 15, color: activeColor)
-                                            ]
-                                          ]),
-                                        ),
-                                        const PopupMenuDivider(),
+                                          // --- SECCIÓN CONSECUTIVO ---
+                                          const PopupMenuItem<String>(
+                                            enabled: false,
+                                            height: 30,
+                                            child: Text('CONSECUTIVO',
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                    color: Colors.grey)),
+                                          ),
+                                          PopupMenuItem<String>(
+                                            value: 'name_asc',
+                                            height: 40,
+                                            child: Row(children: [
+                                              Icon(Icons.arrow_upward,
+                                                  size: 16,
+                                                  color:
+                                                      getIconColor('name_asc')),
+                                              SizedBox(width: 8),
+                                              Text('Consecutivo (A-Z)',
+                                                  style: getStyle('name_asc')),
+                                              if (currentKey == 'name_asc') ...[
+                                                Spacer(),
+                                                Icon(Icons.check,
+                                                    size: 15,
+                                                    color: activeColor)
+                                              ]
+                                            ]),
+                                          ),
+                                          PopupMenuItem<String>(
+                                            value: 'name_desc',
+                                            height: 40,
+                                            child: Row(children: [
+                                              Icon(Icons.arrow_downward,
+                                                  size: 16,
+                                                  color: getIconColor(
+                                                      'name_desc')),
+                                              SizedBox(width: 8),
+                                              Text('Consecutivo (Z-A)',
+                                                  style: getStyle('name_desc')),
+                                              if (currentKey ==
+                                                  'name_desc') ...[
+                                                Spacer(),
+                                                Icon(Icons.check,
+                                                    size: 15,
+                                                    color: activeColor)
+                                              ]
+                                            ]),
+                                          ),
+                                          const PopupMenuDivider(),
 
-                                        // --- SECCIÓN CONSECUTIVO ---
-                                        const PopupMenuItem<String>(
-                                          enabled: false,
-                                          height: 30,
-                                          child: Text('CONSECUTIVO',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
-                                                  color: Colors.grey)),
-                                        ),
-                                        PopupMenuItem<String>(
-                                          value: 'name_asc',
-                                          height: 40,
-                                          child: Row(children: [
-                                            Icon(Icons.arrow_upward,
-                                                size: 16,
-                                                color:
-                                                    getIconColor('name_asc')),
-                                            SizedBox(width: 8),
-                                            Text('Consecutivo (A-Z)',
-                                                style: getStyle('name_asc')),
-                                            if (currentKey == 'name_asc') ...[
-                                              Spacer(),
-                                              Icon(Icons.check,
-                                                  size: 15, color: activeColor)
-                                            ]
-                                          ]),
-                                        ),
-                                        PopupMenuItem<String>(
-                                          value: 'name_desc',
-                                          height: 40,
-                                          child: Row(children: [
-                                            Icon(Icons.arrow_downward,
-                                                size: 16,
-                                                color:
-                                                    getIconColor('name_desc')),
-                                            SizedBox(width: 8),
-                                            Text('Consecutivo (Z-A)',
-                                                style: getStyle('name_desc')),
-                                            if (currentKey == 'name_desc') ...[
-                                              Spacer(),
-                                              Icon(Icons.check,
-                                                  size: 15, color: activeColor)
-                                            ]
-                                          ]),
-                                        ),
-                                        const PopupMenuDivider(),
-
-                                        // --- SECCIÓN BACKORDER ---
-                                        const PopupMenuItem<String>(
-                                          enabled: false,
-                                          height: 30,
-                                          child: Text('BACKORDER',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
-                                                  color: Colors.grey)),
-                                        ),
-                                        PopupMenuItem<String>(
-                                          value: 'backorder_desc',
-                                          height: 40,
-                                          child: Row(children: [
-                                            Icon(Icons.file_copy,
-                                                size: 16,
-                                                color: getIconColor(
-                                                    'backorder_desc')),
-                                            SizedBox(width: 8),
-                                            Text('Con Backorder primero',
-                                                style:
-                                                    getStyle('backorder_desc')),
-                                            if (currentKey ==
-                                                'backorder_desc') ...[
-                                              Spacer(),
-                                              Icon(Icons.check,
-                                                  size: 15, color: activeColor)
-                                            ]
-                                          ]),
-                                        ),
-                                        PopupMenuItem<String>(
-                                          value: 'backorder_asc',
-                                          height: 40,
-                                          child: Row(children: [
-                                            Icon(Icons.file_copy_outlined,
-                                                size: 16,
-                                                color: getIconColor(
-                                                    'backorder_asc')),
-                                            SizedBox(width: 8),
-                                            Text('Sin Backorder primero',
-                                                style:
-                                                    getStyle('backorder_asc')),
-                                            if (currentKey ==
-                                                'backorder_asc') ...[
-                                              Spacer(),
-                                              Icon(Icons.check,
-                                                  size: 15, color: activeColor)
-                                            ]
-                                          ]),
-                                        ),
-                                      ];
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  }),
-                ),
-
-                //*barra de buscar
-
-                DynamicSearchBar(
-                  controller:
-                      context.read<PackingPedidoBloc>().searchController,
-                  hintText: "Buscar pedido",
-                  onSearchChanged: (value) {
-                    context
-                        .read<PackingPedidoBloc>()
-                        .add(SearchPedidoEvent(value));
-                  },
-                  onSearchCleared: () {
-                    final packingBloc = context.read<PackingPedidoBloc>();
-                    packingBloc.searchController.clear();
-                    packingBloc.add(SearchPedidoEvent(''));
-                    Future.delayed(const Duration(milliseconds: 100), () {
-                      if (mounted) {
-                        FocusScope.of(context).requestFocus(focusNodeBuscar);
-                      }
-                    });
-                  },
-                ),
-
-                //*buscar por scan
-                BarcodeScannerField(
-                  controller: _controllerToDo,
-                  focusNode: focusNodeBuscar,
-                  onBarcodeScanned: (value, context) {
-                    return validateBarcode(value, context);
-                  },
-                ),
-
-                //*listado de batchs
-                Expanded(
-                  child: context
-                          .read<PackingPedidoBloc>()
-                          .listOfPedidosFilters
-                          .where((batch) => batch.isTerminate == 0)
-                          .isNotEmpty
-                      ? ListView.builder(
-                          padding: const EdgeInsets.only(top: 20, bottom: 20),
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: listToShow.length,
-                          itemBuilder: (contextBuilder, index) {
-                            final List<PedidoPackingResult> inProgressBatches =
-                                context
-                                    .read<PackingPedidoBloc>()
-                                    .listOfPedidosFilters
-                                    .where((batch) => batch.isTerminate == 0)
-                                    .toList(); // Convertir a lista
-
-                            // Asegurarse de que hay batches en progreso
-                            if (inProgressBatches.isEmpty) {
-                              return const Center(
-                                  child: Text('No hay batches en progreso.'));
-                            }
-
-                            // Comprobar que el índice no está fuera de rango
-                            if (index >= inProgressBatches.length) {
-                              return const SizedBox(); // O manejar de otra forma
-                            }
-
-                            final batch = listToShow[index];
-
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 5),
-                              child: GestureDetector(
-                                onTap: () async {
-                                  _handlePackingOnTap(
-                                      context, batch, contextBuilder);
-                                },
-                                child: Card(
-                                  color: batch.isTerminate == 1
-                                      ? Colors.green[100]
-                                      : batch.isSelected == 1
-                                          ? primaryColorAppLigth
-                                          : Colors.white,
-                                  elevation: 5,
-                                  child: ListTile(
-                                    trailing: Icon(
-                                      Icons.arrow_forward_ios,
-                                      color: primaryColorApp,
+                                          // --- SECCIÓN BACKORDER ---
+                                          const PopupMenuItem<String>(
+                                            enabled: false,
+                                            height: 30,
+                                            child: Text('BACKORDER',
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                    color: Colors.grey)),
+                                          ),
+                                          PopupMenuItem<String>(
+                                            value: 'backorder_desc',
+                                            height: 40,
+                                            child: Row(children: [
+                                              Icon(Icons.file_copy,
+                                                  size: 16,
+                                                  color: getIconColor(
+                                                      'backorder_desc')),
+                                              SizedBox(width: 8),
+                                              Text('Con Backorder primero',
+                                                  style: getStyle(
+                                                      'backorder_desc')),
+                                              if (currentKey ==
+                                                  'backorder_desc') ...[
+                                                Spacer(),
+                                                Icon(Icons.check,
+                                                    size: 15,
+                                                    color: activeColor)
+                                              ]
+                                            ]),
+                                          ),
+                                          PopupMenuItem<String>(
+                                            value: 'backorder_asc',
+                                            height: 40,
+                                            child: Row(children: [
+                                              Icon(Icons.file_copy_outlined,
+                                                  size: 16,
+                                                  color: getIconColor(
+                                                      'backorder_asc')),
+                                              SizedBox(width: 8),
+                                              Text('Sin Backorder primero',
+                                                  style: getStyle(
+                                                      'backorder_asc')),
+                                              if (currentKey ==
+                                                  'backorder_asc') ...[
+                                                Spacer(),
+                                                Icon(Icons.check,
+                                                    size: 15,
+                                                    color: activeColor)
+                                              ]
+                                            ]),
+                                          ),
+                                        ];
+                                      },
                                     ),
-                                    title: Text(batch.name ?? '',
-                                        style: TextStyle(
-                                            fontSize: 14,
-                                            color: primaryColorApp,
-                                            fontWeight: FontWeight.bold)),
-                                    subtitle: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      children: [
-                                        Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(batch.zonaEntrega ?? '',
-                                              style: const TextStyle(
-                                                  fontSize: 12, color: black)),
-                                        ),
-                                        Row(
-                                          children: [
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
+                  ),
+
+                  //*barra de buscar
+
+                  DynamicSearchBar(
+                    controller:
+                        context.read<PackingPedidoBloc>().searchController,
+                    hintText: "Buscar pedido",
+                    onSearchChanged: (value) {
+                      context
+                          .read<PackingPedidoBloc>()
+                          .add(SearchPedidoEvent(value));
+                    },
+                    onSearchCleared: () {
+                      final packingBloc = context.read<PackingPedidoBloc>();
+                      packingBloc.searchController.clear();
+                      packingBloc.add(SearchPedidoEvent(''));
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        if (mounted) {
+                          FocusScope.of(context).requestFocus(focusNodeBuscar);
+                        }
+                      });
+                    },
+                  ),
+
+                  //*buscar por scan
+                  BarcodeScannerField(
+                    controller: _controllerToDo,
+                    focusNode: focusNodeBuscar,
+                    onBarcodeScanned: (value, context) {
+                      return validateBarcode(value, context);
+                    },
+                  ),
+
+                  //*listado de batchs
+                  Expanded(
+                    child: context
+                            .read<PackingPedidoBloc>()
+                            .listOfPedidosFilters
+                            .where((batch) => batch.isTerminate == 0)
+                            .isNotEmpty
+                        ? ListView.builder(
+                            padding: const EdgeInsets.only(top: 20, bottom: 20),
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            itemCount: listToShow.length,
+                            itemBuilder: (contextBuilder, index) {
+                              final List<PedidoPackingResult>
+                                  inProgressBatches = context
+                                      .read<PackingPedidoBloc>()
+                                      .listOfPedidosFilters
+                                      .where((batch) => batch.isTerminate == 0)
+                                      .toList(); // Convertir a lista
+
+                              // Asegurarse de que hay batches en progreso
+                              if (inProgressBatches.isEmpty) {
+                                return const Center(
+                                    child: Text('No hay batches en progreso.'));
+                              }
+
+                              // Comprobar que el índice no está fuera de rango
+                              if (index >= inProgressBatches.length) {
+                                return const SizedBox(); // O manejar de otra forma
+                              }
+
+                              final batch = listToShow[index];
+
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 5),
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    _handlePackingOnTap(
+                                        context, batch, contextBuilder);
+                                  },
+                                  child: Card(
+                                    color: batch.isTerminate == 1
+                                        ? Colors.green[100]
+                                        : batch.isSelected == 1
+                                            ? primaryColorAppLigth
+                                            : Colors.white,
+                                    elevation: 5,
+                                    child: ListTile(
+                                      trailing: Icon(
+                                        Icons.arrow_forward_ios,
+                                        color: primaryColorApp,
+                                      ),
+                                      title: Text(batch.name ?? '',
+                                          style: TextStyle(
+                                              fontSize: 14,
+                                              color: primaryColorApp,
+                                              fontWeight: FontWeight.bold)),
+                                      subtitle: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: [
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Text(batch.zonaEntrega ?? '',
+                                                style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: black)),
+                                          ),
+                                          Row(
+                                            children: [
+                                              Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Text("Operación: ",
+                                                    style: TextStyle(
+                                                        fontSize: 12,
+                                                        color:
+                                                            primaryColorApp)),
+                                              ),
+                                              Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(
+                                                  batch.pickingType.toString(),
+                                                  style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: black),
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          if (batch.observacion != null &&
+                                              batch
+                                                  .observacion!.isNotEmpty) ...[
                                             Align(
                                               alignment: Alignment.centerLeft,
-                                              child: Text("Operación: ",
+                                              child: Text("Observación: ",
                                                   style: TextStyle(
                                                       fontSize: 12,
                                                       color: primaryColorApp)),
@@ -657,7 +696,7 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                                             Align(
                                               alignment: Alignment.centerLeft,
                                               child: Text(
-                                                batch.pickingType.toString(),
+                                                batch.observacion.toString(),
                                                 style: TextStyle(
                                                     fontSize: 12, color: black),
                                                 maxLines: 2,
@@ -665,350 +704,344 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                                               ),
                                             ),
                                           ],
-                                        ),
-                                        if (batch.observacion != null &&
-                                            batch.observacion!.isNotEmpty) ...[
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Text("Observación: ",
-                                                style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: primaryColorApp)),
-                                          ),
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Text(
-                                              batch.observacion.toString(),
-                                              style: TextStyle(
-                                                  fontSize: 12, color: black),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                        Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Row(
-                                            children: [
-                                              Text('Prioridad: ',
-                                                  style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: primaryColorApp)),
-                                              Text(
-                                                batch.priority == '0'
-                                                    ? 'Normal'
-                                                    : 'Alta'
-                                                        "",
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: batch.priority == '0'
-                                                      ? black
-                                                      : red,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        if (batch.configPacking !=
-                                            'cluster') ...[
                                           Align(
                                             alignment: Alignment.centerLeft,
                                             child: Row(
                                               children: [
-                                                Text('Ubicacion: ',
+                                                Text('Prioridad: ',
                                                     style: TextStyle(
                                                         fontSize: 12,
                                                         color:
                                                             primaryColorApp)),
                                                 Text(
-                                                  batch.locationName ?? '',
+                                                  batch.priority == '0'
+                                                      ? 'Normal'
+                                                      : 'Alta'
+                                                          "",
                                                   style: TextStyle(
                                                     fontSize: 12,
-                                                    color: black,
+                                                    color: batch.priority == '0'
+                                                        ? black
+                                                        : red,
                                                   ),
                                                 ),
                                               ],
                                             ),
                                           ),
-                                        ],
-                                        if (batch.configPacking ==
-                                            'cluster') ...[
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Row(
-                                              children: [
-                                                Text('Ubicacion : ',
+                                          if (batch.configPacking !=
+                                              'cluster') ...[
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Row(
+                                                children: [
+                                                  Text('Ubicacion: ',
+                                                      style: TextStyle(
+                                                          fontSize: 12,
+                                                          color:
+                                                              primaryColorApp)),
+                                                  Text(
+                                                    batch.locationName ?? '',
                                                     style: TextStyle(
-                                                        fontSize: 12,
-                                                        color:
-                                                            primaryColorApp)),
-                                                Text(
-                                                  batch.locationNameCluster ??
-                                                      '',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: black,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                        Divider(
-                                          color: black,
-                                          thickness: 1,
-                                          height: 5,
-                                        ),
-                                        Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.calendar_month_sharp,
-                                                color: primaryColorApp,
-                                                size: 15,
-                                              ),
-                                              const SizedBox(width: 5),
-                                              Text(
-                                                batch.fechaCreacion != null
-                                                    ? DateFormat('dd/MM/yyyy')
-                                                        .format(DateTime.parse(
-                                                            batch.fechaCreacion
-                                                                .toString()))
-                                                    : "Sin fecha",
-                                                style: const TextStyle(
-                                                    fontSize: 12, color: black),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.receipt,
-                                                color: primaryColorApp,
-                                                size: 15,
-                                              ),
-                                              const SizedBox(width: 5),
-                                              const Text(
-                                                "Doc. Origen: ",
-                                                style: TextStyle(
-                                                    fontSize: 12, color: black),
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              Expanded(
-                                                child: Text(
-                                                  batch.referencia.toString(),
-                                                  style: TextStyle(
                                                       fontSize: 12,
-                                                      color: primaryColorApp),
-                                                  maxLines: 2,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Visibility(
-                                          visible: batch.backorderId != 0,
-                                          child: Row(
-                                            children: [
-                                              Align(
-                                                alignment: Alignment.centerLeft,
-                                                child: Icon(Icons.file_copy,
-                                                    color: primaryColorApp,
-                                                    size: 15),
-                                              ),
-                                              const SizedBox(
-                                                width: 5,
-                                              ),
-                                              Text(batch.backorderName ?? '',
-                                                  style: TextStyle(
                                                       color: black,
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.bold)),
-                                            ],
-                                          ),
-                                        ),
-                                        Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.person,
-                                                color: primaryColorApp,
-                                                size: 15,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                              const SizedBox(width: 5),
-                                              Expanded(
-                                                child: Text(
-                                                  batch.proveedor == "" ||
-                                                          batch.proveedor ==
-                                                              null
-                                                      ? "Sin proveedor"
-                                                      : batch.proveedor ?? '',
+                                            ),
+                                          ],
+                                          if (batch.configPacking ==
+                                              'cluster') ...[
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Row(
+                                                children: [
+                                                  Text('Ubicacion : ',
+                                                      style: TextStyle(
+                                                          fontSize: 12,
+                                                          color:
+                                                              primaryColorApp)),
+                                                  Text(
+                                                    batch.locationNameCluster ??
+                                                        '',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: black,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                          Divider(
+                                            color: black,
+                                            thickness: 1,
+                                            height: 5,
+                                          ),
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.calendar_month_sharp,
+                                                  color: primaryColorApp,
+                                                  size: 15,
+                                                ),
+                                                const SizedBox(width: 5),
+                                                Text(
+                                                  batch.fechaCreacion != null
+                                                      ? DateFormat('dd/MM/yyyy')
+                                                          .format(DateTime
+                                                              .parse(batch
+                                                                  .fechaCreacion
+                                                                  .toString()))
+                                                      : "Sin fecha",
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: black),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.receipt,
+                                                  color: primaryColorApp,
+                                                  size: 15,
+                                                ),
+                                                const SizedBox(width: 5),
+                                                const Text(
+                                                  "Doc. Origen: ",
                                                   style: TextStyle(
                                                       fontSize: 12,
-                                                      color: batch.proveedor ==
-                                                                  "" ||
-                                                              batch.proveedor ==
-                                                                  null
-                                                          ? red
-                                                          : black),
+                                                      color: black),
                                                   maxLines: 2,
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                 ),
-                                              ),
-                                            ],
+                                                Expanded(
+                                                  child: Text(
+                                                    batch.referencia.toString(),
+                                                    style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: primaryColorApp),
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                        Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.add,
-                                                color: primaryColorApp,
-                                                size: 15,
-                                              ),
-                                              const SizedBox(width: 5),
-                                              const Text(
-                                                "Cantidad de items: ",
-                                                style: TextStyle(
-                                                    fontSize: 12, color: black),
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              Expanded(
-                                                child: Text(
-                                                  batch.cantidadProductos
-                                                      .toString(),
+                                          Visibility(
+                                            visible: batch.backorderId != 0,
+                                            child: Row(
+                                              children: [
+                                                Align(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  child: Icon(Icons.file_copy,
+                                                      color: primaryColorApp,
+                                                      size: 15),
+                                                ),
+                                                const SizedBox(
+                                                  width: 5,
+                                                ),
+                                                Text(batch.backorderName ?? '',
+                                                    style: TextStyle(
+                                                        color: black,
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.bold)),
+                                              ],
+                                            ),
+                                          ),
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.person,
+                                                  color: primaryColorApp,
+                                                  size: 15,
+                                                ),
+                                                const SizedBox(width: 5),
+                                                Expanded(
+                                                  child: Text(
+                                                    batch.proveedor == "" ||
+                                                            batch.proveedor ==
+                                                                null
+                                                        ? "Sin proveedor"
+                                                        : batch.proveedor ?? '',
+                                                    style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: batch.proveedor ==
+                                                                    "" ||
+                                                                batch.proveedor ==
+                                                                    null
+                                                            ? red
+                                                            : black),
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.add,
+                                                  color: primaryColorApp,
+                                                  size: 15,
+                                                ),
+                                                const SizedBox(width: 5),
+                                                const Text(
+                                                  "Cantidad de items: ",
                                                   style: TextStyle(
                                                       fontSize: 12,
-                                                      color: primaryColorApp),
+                                                      color: black),
                                                   maxLines: 2,
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                 ),
-                                              ),
-                                            ],
+                                                Expanded(
+                                                  child: Text(
+                                                    batch.cantidadProductos
+                                                        .toString(),
+                                                    style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: primaryColorApp),
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                        Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.add,
-                                                color: primaryColorApp,
-                                                size: 15,
-                                              ),
-                                              const SizedBox(width: 5),
-                                              const Text(
-                                                "Cantidad de paquetes: ",
-                                                style: TextStyle(
-                                                    fontSize: 12, color: black),
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              Expanded(
-                                                child: Text(
-                                                  batch.numeroPaquetes
-                                                      .toString(),
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.add,
+                                                  color: primaryColorApp,
+                                                  size: 15,
+                                                ),
+                                                const SizedBox(width: 5),
+                                                const Text(
+                                                  "Cantidad de paquetes: ",
                                                   style: TextStyle(
                                                       fontSize: 12,
-                                                      color: primaryColorApp),
+                                                      color: black),
                                                   maxLines: 2,
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.person,
-                                                color: primaryColorApp,
-                                                size: 15,
-                                              ),
-                                              const SizedBox(width: 5),
-                                              Expanded(
-                                                child: Text(
-                                                  batch.responsable == "" ||
-                                                          batch.responsable ==
-                                                              null
-                                                      ? "Sin responsable"
-                                                      : batch.responsable ?? '',
-                                                  style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: batch.responsable ==
-                                                                  "" ||
-                                                              batch.responsable ==
-                                                                  null
-                                                          ? red
-                                                          : black),
-                                                  maxLines: 2,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
+                                                Expanded(
+                                                  child: Text(
+                                                    batch.numeroPaquetes
+                                                        .toString(),
+                                                    style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: primaryColorApp),
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
                                                 ),
-                                              ),
-                                              const Spacer(),
-                                              batch.startTimeTransfer != ""
-                                                  ? GestureDetector(
-                                                      onTap: () {
-                                                        showDialog(
-                                                            context: context,
-                                                            builder:
-                                                                (context) =>
-                                                                    DialogInfo(
-                                                                      title:
-                                                                          'Tiempo de inicio',
-                                                                      body:
-                                                                          'Este pedido fue iniciado a las ${batch.startTimeTransfer}',
-                                                                    ));
-                                                      },
-                                                      child: Icon(
-                                                        Icons.timer_sharp,
-                                                        color: primaryColorApp,
-                                                        size: 15,
-                                                      ),
-                                                    )
-                                                  : const SizedBox(),
-                                            ],
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.person,
+                                                  color: primaryColorApp,
+                                                  size: 15,
+                                                ),
+                                                const SizedBox(width: 5),
+                                                Expanded(
+                                                  child: Text(
+                                                    batch.responsable == "" ||
+                                                            batch.responsable ==
+                                                                null
+                                                        ? "Sin responsable"
+                                                        : batch.responsable ??
+                                                            '',
+                                                    style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: batch.responsable ==
+                                                                    "" ||
+                                                                batch.responsable ==
+                                                                    null
+                                                            ? red
+                                                            : black),
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                const Spacer(),
+                                                batch.startTimeTransfer != ""
+                                                    ? GestureDetector(
+                                                        onTap: () {
+                                                          showDialog(
+                                                              context: context,
+                                                              builder:
+                                                                  (context) =>
+                                                                      DialogInfo(
+                                                                        title:
+                                                                            'Tiempo de inicio',
+                                                                        body:
+                                                                            'Este pedido fue iniciado a las ${batch.startTimeTransfer}',
+                                                                      ));
+                                                        },
+                                                        child: Icon(
+                                                          Icons.timer_sharp,
+                                                          color:
+                                                              primaryColorApp,
+                                                          size: 15,
+                                                        ),
+                                                      )
+                                                    : const SizedBox(),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
-                        )
-                      : const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(height: 10),
-                              Text('No se encontraron resultados',
-                                  style: TextStyle(fontSize: 14, color: grey)),
-                              Text('Intenta con otra búsqueda',
-                                  style: TextStyle(fontSize: 12, color: grey)),
-                            ],
+                              );
+                            },
+                          )
+                        : const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(height: 10),
+                                Text('No se encontraron resultados',
+                                    style:
+                                        TextStyle(fontSize: 14, color: grey)),
+                                Text('Intenta con otra búsqueda',
+                                    style:
+                                        TextStyle(fontSize: 12, color: grey)),
+                              ],
+                            ),
                           ),
-                        ),
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ));
     });

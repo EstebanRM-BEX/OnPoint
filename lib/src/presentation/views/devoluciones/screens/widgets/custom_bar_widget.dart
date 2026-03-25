@@ -29,85 +29,78 @@ class CustomAppBar extends StatelessWidget {
           child: Column(
             children: [
               const WarningWidgetCubit(),
-              Padding(
-                padding: EdgeInsets.only(
-                  top: status != ConnectionStatus.online ? 0 : 30,
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: white),
-                      onPressed: () =>
-                          Navigator.pushReplacementNamed(context, '/home'),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: white),
+                    onPressed: () =>
+                        Navigator.pushReplacementNamed(context, '/home'),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(left: size.width * 0.15),
+                    child: const Text(
+                      "NUEVA DEVOLUCION",
+                      style: TextStyle(color: white, fontSize: 18),
                     ),
-                    Padding(
-                      padding: EdgeInsets.only(left: size.width * 0.15),
-                      child: const Text(
-                        "NUEVA DEVOLUCION",
-                        style: TextStyle(color: white, fontSize: 18),
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: white),
-                      onPressed: () {
-                        //mostramos un dialogo de confirmación
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            return BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                              child: AlertDialog(
-                                actionsAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                title: Center(
-                                    child: Text(
-                                  'Confirmar eliminación',
-                                  style: TextStyle(
-                                      color: primaryColorApp, fontSize: 16),
-                                )),
-                                content: const Text(
-                                    '¿Estás seguro de que deseas eliminar todos los datos de la devolución y comenzar de nuevo?',
-                                    style:
-                                        TextStyle(fontSize: 14, color: black)),
-                                actions: [
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: grey,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: white),
+                    onPressed: () {
+                      //mostramos un dialogo de confirmación
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                            child: AlertDialog(
+                              actionsAlignment: MainAxisAlignment.spaceBetween,
+                              title: Center(
+                                  child: Text(
+                                'Confirmar eliminación',
+                                style: TextStyle(
+                                    color: primaryColorApp, fontSize: 16),
+                              )),
+                              content: const Text(
+                                  '¿Estás seguro de que deseas eliminar todos los datos de la devolución y comenzar de nuevo?',
+                                  style: TextStyle(fontSize: 14, color: black)),
+                              actions: [
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: grey,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
                                     ),
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text('Cancelar',
-                                        style: TextStyle(color: white)),
                                   ),
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: primaryColorApp,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Cancelar',
+                                      style: TextStyle(color: white)),
+                                ),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryColorApp,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
                                     ),
-                                    onPressed: () {
-                                      // Aquí puedes agregar la lógica para mostrar ayuda
-                                      context
-                                          .read<DevolucionesBloc>()
-                                          .add(ClearValueEvent());
-                                      Navigator.pop(context);
-                                    },
-                                    child: const Text('Eliminar',
-                                        style: TextStyle(color: white)),
                                   ),
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ],
-                ),
+                                  onPressed: () {
+                                    // Aquí puedes agregar la lógica para mostrar ayuda
+                                    context
+                                        .read<DevolucionesBloc>()
+                                        .add(ClearValueEvent());
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text('Eliminar',
+                                      style: TextStyle(color: white)),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),

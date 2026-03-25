@@ -1,5 +1,6 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously, unrelated_type_equality_checks
 
@@ -523,6 +524,19 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
                                             color: white, fontSize: 18)),
                                   ),
                                   const Spacer(),
+                                  GestureDetector(
+                                    onTap: () {
+                                      ModalPrintersList.show(context,
+                                          resId:
+                                              recepcionBloc.currentProduct.id);
+                                    },
+                                    child: Icon(
+                                      Icons.print,
+                                      color: white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
                                 ],
                               ),
                             ),

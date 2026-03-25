@@ -166,7 +166,7 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
       builder: (context, state) {
         final size = MediaQuery.sizeOf(context);
         return Scaffold(
-          backgroundColor: white,
+          backgroundColor: primaryColorApp,
           floatingActionButton: FloatingActionButton(
             backgroundColor: primaryColorApp,
             onPressed: () {
@@ -179,44 +179,49 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
             },
             child: const Icon(Icons.search, color: white),
           ),
-          body: Column(
-            children: [
-              const CustomAppBar(),
-              Expanded(
-                child: Column(
-                  children: [
-                    SizedBox(height: size.height * 0.13),
-                    SizedBox(
-                      height: 150,
-                      width: 150,
-                      child: SvgPicture.asset(
-                        color: black,
-                        "assets/icons/barcode.svg",
-                        height: 150,
-                        width: 150,
-                        fit: BoxFit.cover,
-                      ),
+          body: SafeArea(
+            child: Container(
+              color: Colors.white,
+              child: Column(
+                children: [
+                  const CustomAppBar(),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        SizedBox(height: size.height * 0.13),
+                        SizedBox(
+                          height: 150,
+                          width: 150,
+                          child: SvgPicture.asset(
+                            color: black,
+                            "assets/icons/barcode.svg",
+                            height: 150,
+                            width: 150,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 20),
+                          child: Text(
+                            "Este es el módulo de información rápida de 360 software para OnPoint. Escanee un código de barras de PRODUCTO, PAQUETE, LOTE/SERIE o una UBICACIÓN para obtener toda su información.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 14, color: black),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        BarcodeScannerField(
+                          controller: _controllerSearch,
+                          focusNode: focusNode1,
+                          onBarcodeScanned: (value, context) {
+                            return validateBarcode(value);
+                          },
+                        ),
+                      ],
                     ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        "Este es el módulo de información rápida de 360 software para OnPoint. Escanee un código de barras de PRODUCTO, PAQUETE, LOTE/SERIE o una UBICACIÓN para obtener toda su información.",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 14, color: black),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    BarcodeScannerField(
-                      controller: _controllerSearch,
-                      focusNode: focusNode1,
-                      onBarcodeScanned: (value, context) {
-                        return validateBarcode(value);
-                      },
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
@@ -243,25 +248,20 @@ class CustomAppBar extends StatelessWidget {
           child: Column(
             children: [
               const WarningWidgetCubit(),
-              Padding(
-                padding: EdgeInsets.only(
-                  top: status != ConnectionStatus.online ? 0 : 25,
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: white),
-                      onPressed: () =>
-                          Navigator.pushReplacementNamed(context, '/home'),
-                    ),
-                    const Spacer(),
-                    const Text(
-                      "INFORMACIÓN RÁPIDA",
-                      style: TextStyle(color: white, fontSize: 18),
-                    ),
-                    const Spacer(),
-                  ],
-                ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: white),
+                    onPressed: () =>
+                        Navigator.pushReplacementNamed(context, '/home'),
+                  ),
+                  const Spacer(),
+                  const Text(
+                    "INFORMACIÓN RÁPIDA",
+                    style: TextStyle(color: white, fontSize: 18),
+                  ),
+                  const Spacer(),
+                ],
               ),
             ],
           ),

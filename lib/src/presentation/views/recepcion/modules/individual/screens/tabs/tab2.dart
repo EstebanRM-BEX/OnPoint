@@ -1,5 +1,6 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously, prefer_is_empty
 
@@ -350,6 +351,20 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
                                                   style: const TextStyle(
                                                       fontSize: 12,
                                                       color: black)),
+                                              const Spacer(),
+//ponemos icono de imprimir
+                                              GestureDetector(
+                                                onTap: () {
+                                                  ModalPrintersList.show(
+                                                      context,
+                                                      resId: product.idMove);
+                                                },
+                                                child: Icon(
+                                                  Icons.print,
+                                                  color: primaryColorApp,
+                                                  size: 20,
+                                                ),
+                                              ),
                                             ],
                                           ),
                                           Text(

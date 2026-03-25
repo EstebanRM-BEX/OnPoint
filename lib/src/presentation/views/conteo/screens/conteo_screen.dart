@@ -73,10 +73,8 @@ class _ConteoScreenState extends State<ConteoScreen>
               .where((element) => element.isDoneItem != 1)
               .toList();
 
-      
-
           return Scaffold(
-            backgroundColor: white,
+            backgroundColor: primaryColorApp,
             appBar: AppBar(
               centerTitle: true,
               leading: IconButton(
@@ -161,7 +159,7 @@ class _ConteoScreenState extends State<ConteoScreen>
                           radius: 12,
                           backgroundColor: green,
                           child: Text(
-                          productosContados.length.toString(),
+                            productosContados.length.toString(),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 9,
@@ -179,34 +177,35 @@ class _ConteoScreenState extends State<ConteoScreen>
                 ),
               ),
             ),
-            body: Column(
-              children: [
-                const WarningWidgetCubit(isTop: false),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController, // Asignar el TabController
-                    children: [
-                      Tab1ScreenConteo(
-                        ordenConteo: widget.ordenConteo,
+            body: SafeArea(
+              child: Container(
+                color: white,
+                child: Column(
+                  children: [
+                    const WarningWidgetCubit(isTop: false),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController, // Asignar el TabController
+                        children: [
+                          Tab1ScreenConteo(
+                            ordenConteo: widget.ordenConteo,
+                          ),
+                          Tab2ScreenConteo(
+                            ordenConteo: widget.ordenConteo,
+                          ),
+                          Tab3ScreenConteo(
+                            ordenConteo: widget.ordenConteo,
+                          ),
+                        ],
                       ),
-                      Tab2ScreenConteo(
-                        ordenConteo: widget.ordenConteo,
-                      ),
-                      Tab3ScreenConteo(
-                        ordenConteo: widget.ordenConteo,
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           );
         },
       ),
     );
   }
-
-
-
-  
 }

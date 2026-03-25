@@ -103,335 +103,347 @@ class ListRecepctionBatchScreen extends StatelessWidget {
                   element.isFinish == 0 || element.isFinish == null)
               .toList();
           return Scaffold(
-              backgroundColor: white,
-              body: SizedBox(
-                width: size.width * 1,
-                height: size.height * 1,
-                child: Column(
-                  children: [
-                    //* appbar
-                    AppBar(size: size),
+              backgroundColor: primaryColorApp,
+              body: SafeArea(
+                child: Container(
+                  color: Colors.white,
+                  width: size.width * 1,
+                  height: size.height * 1,
+                  child: Column(
+                    children: [
+                      //* appbar
+                      AppBar(size: size),
 
-                    //*barra buscar
-                    DynamicSearchBar(
-                      controller: context
-                          .read<RecepcionBatchBloc>()
-                          .searchControllerRecepcionBatch,
-                      hintText: "Buscar devolución por batch",
-                      onSearchChanged: (value) {
-                        context
+                      //*barra buscar
+                      DynamicSearchBar(
+                        controller: context
                             .read<RecepcionBatchBloc>()
-                            .add(SearchReceptionEvent(value));
-                      },
-                      onSearchCleared: () {
-                        final recepcionBloc =
-                            context.read<RecepcionBatchBloc>();
-                        recepcionBloc.add(SearchReceptionEvent(''));
-                      },
-                    ),
-                    (recepcionBatch.isEmpty)
-                        ? Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.max,
-                              children: [
-                                const Text('No hay recepciones',
-                                    style:
-                                        TextStyle(fontSize: 14, color: grey)),
-                                const Text('Intente buscar otra recepcion',
-                                    style:
-                                        TextStyle(fontSize: 12, color: grey)),
-                                Visibility(
-                                  visible: context
-                                      .read<UserBloc>()
-                                      .fabricante
-                                      .contains("Zebra"),
-                                  child: Container(
-                                    height: 60,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : Expanded(
-                            child: ListView.builder(
-                                padding: const EdgeInsets.only(top: 2),
-                                itemCount: recepcionBatch.length,
-                                itemBuilder:
-                                    (BuildContext contextList, int index) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(
-                                      left: 10,
-                                      right: 10,
+                            .searchControllerRecepcionBatch,
+                        hintText: "Buscar devolución por batch",
+                        onSearchChanged: (value) {
+                          context
+                              .read<RecepcionBatchBloc>()
+                              .add(SearchReceptionEvent(value));
+                        },
+                        onSearchCleared: () {
+                          final recepcionBloc =
+                              context.read<RecepcionBatchBloc>();
+                          recepcionBloc.add(SearchReceptionEvent(''));
+                        },
+                      ),
+                      (recepcionBatch.isEmpty)
+                          ? Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.max,
+                                children: [
+                                  const Text('No hay recepciones',
+                                      style:
+                                          TextStyle(fontSize: 14, color: grey)),
+                                  const Text('Intente buscar otra recepcion',
+                                      style:
+                                          TextStyle(fontSize: 12, color: grey)),
+                                  Visibility(
+                                    visible: context
+                                        .read<UserBloc>()
+                                        .fabricante
+                                        .contains("Zebra"),
+                                    child: Container(
+                                      height: 60,
                                     ),
-                                    child: Card(
-                                      elevation: 3,
-                                      color: recepcionBatch[index]
-                                                  .startTimeReception !=
-                                              ""
-                                          ? primaryColorAppLigth
-                                          : recepcionBatch[index].isFinish == 1
-                                              ? Colors.green[200]
-                                              : white,
-                                      child: ListTile(
-                                        trailing: Icon(Icons.arrow_forward_ios,
-                                            color: primaryColorApp),
-                                        title: Text(
-                                            recepcionBatch[index].name ?? '',
-                                            style: TextStyle(
-                                                color: primaryColorApp,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold)),
-                                        subtitle: Column(
-                                          children: [
-                                            Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Row(
-                                                children: [
-                                                  Text('Tipo de entrada: ',
-                                                      style: TextStyle(
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Expanded(
+                              child: ListView.builder(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  itemCount: recepcionBatch.length,
+                                  itemBuilder:
+                                      (BuildContext contextList, int index) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(
+                                        left: 10,
+                                        right: 10,
+                                      ),
+                                      child: Card(
+                                        elevation: 3,
+                                        color: recepcionBatch[index]
+                                                    .startTimeReception !=
+                                                ""
+                                            ? primaryColorAppLigth
+                                            : recepcionBatch[index].isFinish ==
+                                                    1
+                                                ? Colors.green[200]
+                                                : white,
+                                        child: ListTile(
+                                          trailing: Icon(
+                                              Icons.arrow_forward_ios,
+                                              color: primaryColorApp),
+                                          title: Text(
+                                              recepcionBatch[index].name ?? '',
+                                              style: TextStyle(
+                                                  color: primaryColorApp,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold)),
+                                          subtitle: Column(
+                                            children: [
+                                              Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Row(
+                                                  children: [
+                                                    Text('Tipo de entrada: ',
+                                                        style: TextStyle(
+                                                            fontSize: 12,
+                                                            color:
+                                                                primaryColorApp)),
+                                                    Text(
+                                                      recepcionBatch[index]
+                                                              .pickingType ??
+                                                          "",
+                                                      style: const TextStyle(
                                                           fontSize: 12,
-                                                          color:
-                                                              primaryColorApp)),
-                                                  Text(
-                                                    recepcionBatch[index]
-                                                            .pickingType ??
-                                                        "",
-                                                    style: const TextStyle(
-                                                        fontSize: 12,
-                                                        color: black),
-                                                  ),
-                                                ],
+                                                          color: black),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                            Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Row(
-                                                children: [
-                                                  Text('Prioridad: ',
-                                                      style: TextStyle(
-                                                          fontSize: 12,
-                                                          color:
-                                                              primaryColorApp)),
-                                                  Text(
-                                                    recepcionBatch[index]
-                                                                .priority ==
-                                                            '0'
-                                                        ? 'Normal'
-                                                        : 'Alta'
-                                                            "",
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: recepcionBatch[
-                                                                      index]
+                                              Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Row(
+                                                  children: [
+                                                    Text('Prioridad: ',
+                                                        style: TextStyle(
+                                                            fontSize: 12,
+                                                            color:
+                                                                primaryColorApp)),
+                                                    Text(
+                                                      recepcionBatch[index]
                                                                   .priority ==
                                                               '0'
-                                                          ? black
-                                                          : red,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Divider(
-                                              color: black,
-                                              thickness: 1,
-                                              height: 5,
-                                            ),
-                                            Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.calendar_month_sharp,
-                                                    color: primaryColorApp,
-                                                    size: 15,
-                                                  ),
-                                                  const SizedBox(width: 5),
-                                                  Text(
-                                                    recepcionBatch[index]
-                                                                .fechaCreacion !=
-                                                            null
-                                                        ? DateFormat(
-                                                                'dd/MM/yyyy hh:mm ')
-                                                            .format(DateTime.parse(
-                                                                recepcionBatch[
-                                                                        index]
-                                                                    .fechaCreacion!))
-                                                        : "Sin fecha",
-                                                    style: const TextStyle(
-                                                        fontSize: 12,
-                                                        color: black),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Text(
-                                                  recepcionBatch[index]
-                                                          .proveedor ??
-                                                      '',
-                                                  style: TextStyle(
-                                                    color: black,
-                                                    fontSize: 12,
-                                                  )),
-                                            ),
-                                            Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Text(
-                                                'Ubicacion destino: ',
-                                                style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: primaryColorApp),
-                                              ),
-                                            ),
-                                            Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Text(
-                                                recepcionBatch[index]
-                                                        .locationDestName ??
-                                                    '',
-                                                style: const TextStyle(
-                                                    fontSize: 12, color: black),
-                                              ),
-                                            ),
-                                            Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.person,
-                                                    color: primaryColorApp,
-                                                    size: 15,
-                                                  ),
-                                                  const SizedBox(width: 5),
-                                                  Text(
-                                                    recepcionBatch[index]
-                                                                .responsable ==
-                                                            ""
-                                                        ? 'sin responsable'
-                                                        : recepcionBatch[index]
-                                                                .responsable ??
-                                                            '',
-                                                    style: TextStyle(
+                                                          ? 'Normal'
+                                                          : 'Alta'
+                                                              "",
+                                                      style: TextStyle(
                                                         fontSize: 12,
                                                         color: recepcionBatch[
                                                                         index]
-                                                                    .responsable ==
-                                                                ""
-                                                            ? Colors.red
-                                                            : black),
-                                                  ),
-                                                  const Spacer(),
+                                                                    .priority ==
+                                                                '0'
+                                                            ? black
+                                                            : red,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              Divider(
+                                                color: black,
+                                                thickness: 1,
+                                                height: 5,
+                                              ),
+                                              Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons
+                                                          .calendar_month_sharp,
+                                                      color: primaryColorApp,
+                                                      size: 15,
+                                                    ),
+                                                    const SizedBox(width: 5),
+                                                    Text(
+                                                      recepcionBatch[index]
+                                                                  .fechaCreacion !=
+                                                              null
+                                                          ? DateFormat(
+                                                                  'dd/MM/yyyy hh:mm ')
+                                                              .format(DateTime.parse(
+                                                                  recepcionBatch[
+                                                                          index]
+                                                                      .fechaCreacion!))
+                                                          : "Sin fecha",
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: black),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(
+                                                    recepcionBatch[index]
+                                                            .proveedor ??
+                                                        '',
+                                                    style: TextStyle(
+                                                      color: black,
+                                                      fontSize: 12,
+                                                    )),
+                                              ),
+                                              Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(
+                                                  'Ubicacion destino: ',
+                                                  style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: primaryColorApp),
+                                                ),
+                                              ),
+                                              Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(
                                                   recepcionBatch[index]
-                                                              .startTimeReception !=
-                                                          ""
-                                                      ? Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .only(
-                                                                  left: 5),
-                                                          child:
-                                                              GestureDetector(
-                                                            onTap: () {
-                                                              showDialog(
-                                                                  context:
-                                                                      context,
-                                                                  builder:
-                                                                      (context) =>
-                                                                          DialogInfo(
-                                                                            title:
-                                                                                'Tiempo de inicio de operacion',
-                                                                            body:
-                                                                                'Este orden fue iniciada a las ${recepcionBatch[index].startTimeReception}',
-                                                                          ));
-                                                            },
-                                                            child: Icon(
-                                                              Icons.timer_sharp,
-                                                              color: black,
-                                                              size: 15,
+                                                          .locationDestName ??
+                                                      '',
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: black),
+                                                ),
+                                              ),
+                                              Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.person,
+                                                      color: primaryColorApp,
+                                                      size: 15,
+                                                    ),
+                                                    const SizedBox(width: 5),
+                                                    Text(
+                                                      recepcionBatch[index]
+                                                                  .responsable ==
+                                                              ""
+                                                          ? 'sin responsable'
+                                                          : recepcionBatch[
+                                                                      index]
+                                                                  .responsable ??
+                                                              '',
+                                                      style: TextStyle(
+                                                          fontSize: 12,
+                                                          color: recepcionBatch[
+                                                                          index]
+                                                                      .responsable ==
+                                                                  ""
+                                                              ? Colors.red
+                                                              : black),
+                                                    ),
+                                                    const Spacer(),
+                                                    recepcionBatch[index]
+                                                                .startTimeReception !=
+                                                            ""
+                                                        ? Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .only(
+                                                                    left: 5),
+                                                            child:
+                                                                GestureDetector(
+                                                              onTap: () {
+                                                                showDialog(
+                                                                    context:
+                                                                        context,
+                                                                    builder:
+                                                                        (context) =>
+                                                                            DialogInfo(
+                                                                              title: 'Tiempo de inicio de operacion',
+                                                                              body: 'Este orden fue iniciada a las ${recepcionBatch[index].startTimeReception}',
+                                                                            ));
+                                                              },
+                                                              child: Icon(
+                                                                Icons
+                                                                    .timer_sharp,
+                                                                color: black,
+                                                                size: 15,
+                                                              ),
                                                             ),
-                                                          ),
-                                                        )
-                                                      : const SizedBox(),
-                                                ],
+                                                          )
+                                                        : const SizedBox(),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                        onTap: () async {
-                                          bloc.add(
-                                              LoadConfigurationsUserReception());
+                                            ],
+                                          ),
+                                          onTap: () async {
+                                            bloc.add(
+                                                LoadConfigurationsUserReception());
 
-                                          debugPrint(
-                                              'ordenCompra: ${recepcionBatch[index].toMap()}');
-                                          //validamos si tiene responsable
+                                            debugPrint(
+                                                'ordenCompra: ${recepcionBatch[index].toMap()}');
+                                            //validamos si tiene responsable
 
-                                          if (recepcionBatch[index]
-                                                      .responsableId ==
-                                                  0 ||
-                                              recepcionBatch[index]
-                                                      .responsableId ==
-                                                  null) {
-                                            //no tiene responsable
-                                            showDialog(
-                                              context: context,
-                                              barrierDismissible:
-                                                  false, // No permitir que el usuario cierre el diálogo manualmente
-                                              builder: (context) =>
-                                                  DialogAsignUserWidget(
-                                                title:
-                                                    'Esta seguro de tomar esta recepcion por batch, una vez aceptada no podrá ser cancelada desde la app, una vez asignada se registrará el tiempo de inicio de la operación.',
-                                                onCancel: () {
-                                                  // Future.microtask(() =>
-                                                  //     focusNodeBuscar
-                                                  //         .requestFocus());
-                                                  Navigator.pop(context);
-                                                },
-                                                onAccepted: () async {
-                                                  bloc.searchControllerRecepcionBatch
-                                                      .clear();
+                                            if (recepcionBatch[index]
+                                                        .responsableId ==
+                                                    0 ||
+                                                recepcionBatch[index]
+                                                        .responsableId ==
+                                                    null) {
+                                              //no tiene responsable
+                                              showDialog(
+                                                context: context,
+                                                barrierDismissible:
+                                                    false, // No permitir que el usuario cierre el diálogo manualmente
+                                                builder: (context) =>
+                                                    DialogAsignUserWidget(
+                                                  title:
+                                                      'Esta seguro de tomar esta recepcion por batch, una vez aceptada no podrá ser cancelada desde la app, una vez asignada se registrará el tiempo de inicio de la operación.',
+                                                  onCancel: () {
+                                                    // Future.microtask(() =>
+                                                    //     focusNodeBuscar
+                                                    //         .requestFocus());
+                                                    Navigator.pop(context);
+                                                  },
+                                                  onAccepted: () async {
+                                                    bloc.searchControllerRecepcionBatch
+                                                        .clear();
 
-                                                  bloc.add(SearchReceptionEvent(
-                                                    '',
-                                                  ));
+                                                    bloc.add(
+                                                        SearchReceptionEvent(
+                                                      '',
+                                                    ));
 
-                                                  //asignamos el responsable a esa orden de entrada
-                                                  bloc.add(
-                                                      AssignUserToReception(
-                                                    recepcionBatch[index],
-                                                  ));
-                                                  Navigator.pop(context);
-                                                },
-                                              ),
-                                            );
-                                          } else {
-                                            //tiene ya un responsable
-                                            bloc.add(GetPorductsToEntradaBatch(
-                                                recepcionBatch[index].id ?? 0));
-                                            bloc.add(CurrentOrdenesCompraBatch(
-                                              recepcionBatch[index],
-                                            ));
-
-                                            Navigator.pushReplacementNamed(
-                                              context,
-                                              'recepcion-batch',
-                                              arguments: [
+                                                    //asignamos el responsable a esa orden de entrada
+                                                    bloc.add(
+                                                        AssignUserToReception(
+                                                      recepcionBatch[index],
+                                                    ));
+                                                    Navigator.pop(context);
+                                                  },
+                                                ),
+                                              );
+                                            } else {
+                                              //tiene ya un responsable
+                                              bloc.add(
+                                                  GetPorductsToEntradaBatch(
+                                                      recepcionBatch[index]
+                                                              .id ??
+                                                          0));
+                                              bloc.add(
+                                                  CurrentOrdenesCompraBatch(
                                                 recepcionBatch[index],
-                                                0
-                                              ],
-                                            );
-                                          }
+                                              ));
 
-                                          //cargamos los permisos del usuario
-                                        },
+                                              Navigator.pushReplacementNamed(
+                                                context,
+                                                'recepcion-batch',
+                                                arguments: [
+                                                  recepcionBatch[index],
+                                                  0
+                                                ],
+                                              );
+                                            }
+
+                                            //cargamos los permisos del usuario
+                                          },
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                }),
-                          )
-                  ],
+                                    );
+                                  }),
+                            )
+                    ],
+                  ),
                 ),
               ));
         },
@@ -464,14 +476,30 @@ class AppBar extends StatelessWidget {
         return Column(
           children: [
             const WarningWidgetCubit(),
-            Padding(
-              padding: EdgeInsets.only(
-                  bottom: 0, top: status != ConnectionStatus.online ? 0 : 25),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: white),
-                    onPressed: () {
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: white),
+                  onPressed: () {
+                    context
+                        .read<RecepcionBatchBloc>()
+                        .searchControllerRecepcionBatch
+                        .clear();
+
+                    context.read<RecepcionBatchBloc>().add(SearchReceptionEvent(
+                          '',
+                        ));
+
+                    Navigator.pushReplacementNamed(
+                      context,
+                      '/home',
+                    );
+                  },
+                ),
+                Padding(
+                  padding: EdgeInsets.only(left: size.width * 0.1),
+                  child: GestureDetector(
+                    onTap: () async {
                       context
                           .read<RecepcionBatchBloc>()
                           .searchControllerRecepcionBatch
@@ -483,49 +511,28 @@ class AppBar extends StatelessWidget {
                             '',
                           ));
 
-                      Navigator.pushReplacementNamed(
-                        context,
-                        '/home',
-                      );
+                      // await DataBaseSqlite().deleRecepcion();
+                      context
+                          .read<RecepcionBatchBloc>()
+                          .add(FetchRecepcionBatchEvent(isLoadinDialog: false));
                     },
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(left: size.width * 0.1),
-                    child: GestureDetector(
-                      onTap: () async {
-                        context
-                            .read<RecepcionBatchBloc>()
-                            .searchControllerRecepcionBatch
-                            .clear();
+                    child: Row(
+                      children: [
+                        const Text("DEVOLUCIONES BATCH",
+                            style: TextStyle(color: white, fontSize: 18)),
 
-                        context
-                            .read<RecepcionBatchBloc>()
-                            .add(SearchReceptionEvent(
-                              '',
-                            ));
-
-                        // await DataBaseSqlite().deleRecepcion();
-                        context.read<RecepcionBatchBloc>().add(
-                            FetchRecepcionBatchEvent(isLoadinDialog: false));
-                      },
-                      child: Row(
-                        children: [
-                          const Text("DEVOLUCIONES BATCH",
-                              style: TextStyle(color: white, fontSize: 18)),
-
-                          ///icono de refresh
-                          const SizedBox(width: 5),
-                          Icon(
-                            Icons.refresh,
-                            color: white,
-                            size: 20,
-                          ),
-                        ],
-                      ),
+                        ///icono de refresh
+                        const SizedBox(width: 5),
+                        Icon(
+                          Icons.refresh,
+                          color: white,
+                          size: 20,
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         );

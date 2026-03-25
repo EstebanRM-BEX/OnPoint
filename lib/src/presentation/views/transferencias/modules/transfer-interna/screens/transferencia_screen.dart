@@ -53,6 +53,7 @@ class _TransferenciaScreenState extends State<TransferenciaScreen>
             return false;
           },
           child: Scaffold(
+            backgroundColor: primaryColorApp,
             appBar: AppBar(
               centerTitle: true,
               leading: IconButton(
@@ -183,26 +184,31 @@ class _TransferenciaScreenState extends State<TransferenciaScreen>
                 ),
               ),
             ),
-            body: Column(
-              children: [
-                const WarningWidgetCubit(isTop: false),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController, // Asignar el TabController
-                    children: [
-                      Tab1ScreenTrans(
-                        transFerencia: widget.transferencia,
-                      ),
-                      Tab2ScreenTrans(
-                        transFerencia: widget.transferencia,
-                      ),
-                      Tab3ScreenTrans(
-                          // ordenCompra: widget.ordenCompra,
+            body: SafeArea(
+              child: Container(
+                color: Colors.white,
+                child: Column(
+                  children: [
+                    const WarningWidgetCubit(isTop: false),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController, // Asignar el TabController
+                        children: [
+                          Tab1ScreenTrans(
+                            transFerencia: widget.transferencia,
                           ),
-                    ],
-                  ),
+                          Tab2ScreenTrans(
+                            transFerencia: widget.transferencia,
+                          ),
+                          Tab3ScreenTrans(
+                              // ordenCompra: widget.ordenCompra,
+                              ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         );

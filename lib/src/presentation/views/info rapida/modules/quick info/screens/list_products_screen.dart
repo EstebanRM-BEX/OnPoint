@@ -125,74 +125,79 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
         return WillPopScope(
           onWillPop: () async => false,
           child: Scaffold(
-            backgroundColor: white,
-            body: Column(
-              children: [
-                _AppBarInfo(size: size),
-                //*barra de buscar
-                DynamicSearchBar(
-                  controller: bloc.searchControllerProducts,
-                  hintText: "Buscar producto",
-                  onSearchChanged: (value) {
-                    bloc.add(SearchProductEvent(value));
-                  },
-                  onSearchCleared: () {
-                    bloc.searchControllerProducts.clear();
-                    bloc.add(SearchProductEvent(''));
-
-                    Future.microtask(() {
-                      if (mounted) {
-                        FocusScope.of(context).unfocus();
-                      }
-                    });
-                  },
-                  onTap: () {},
-                ),
-                Expanded(
-                  child: bloc.productosFilters.isEmpty
-                      ? const _NoProductsMessage()
-                      : ListView.builder(
-                          itemCount: bloc.productosFilters.length,
-                          itemBuilder: (_, index) {
-                            return ProductListTile(
-                              index: index,
-                              isSelected: selectedIndex == index,
-                              onSelect: () {
-                                setState(() => selectedIndex = index);
-                              },
-                            );
-                          },
-                        ),
-                ),
-
-                if (selectedIndex != null)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        final selectedProduct =
-                            bloc.productosFilters[selectedIndex!];
-
-                        FocusScope.of(context).unfocus();
-                        bloc.add(GetInfoRapida(
-                          selectedProduct.productId.toString(),
-                          true,
-                          true,
-                          false,
-                        ));
+            backgroundColor: primaryColorApp,
+            body: SafeArea(
+              child: Container(
+                color: white,
+                child: Column(
+                  children: [
+                    _AppBarInfo(size: size),
+                    //*barra de buscar
+                    DynamicSearchBar(
+                      controller: bloc.searchControllerProducts,
+                      hintText: "Buscar producto",
+                      onSearchChanged: (value) {
+                        bloc.add(SearchProductEvent(value));
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColorApp,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        minimumSize: Size(size.width * 0.9, 40),
-                      ),
-                      child: const Text("Seleccionar",
-                          style: TextStyle(color: white)),
+                      onSearchCleared: () {
+                        bloc.searchControllerProducts.clear();
+                        bloc.add(SearchProductEvent(''));
+
+                        Future.microtask(() {
+                          if (mounted) {
+                            FocusScope.of(context).unfocus();
+                          }
+                        });
+                      },
+                      onTap: () {},
                     ),
-                  ),
-              ],
+                    Expanded(
+                      child: bloc.productosFilters.isEmpty
+                          ? const _NoProductsMessage()
+                          : ListView.builder(
+                              itemCount: bloc.productosFilters.length,
+                              itemBuilder: (_, index) {
+                                return ProductListTile(
+                                  index: index,
+                                  isSelected: selectedIndex == index,
+                                  onSelect: () {
+                                    setState(() => selectedIndex = index);
+                                  },
+                                );
+                              },
+                            ),
+                    ),
+
+                    if (selectedIndex != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            final selectedProduct =
+                                bloc.productosFilters[selectedIndex!];
+
+                            FocusScope.of(context).unfocus();
+                            bloc.add(GetInfoRapida(
+                              selectedProduct.productId.toString(),
+                              true,
+                              true,
+                              false,
+                            ));
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColorApp,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            minimumSize: Size(size.width * 0.9, 40),
+                          ),
+                          child: const Text("Seleccionar",
+                              style: TextStyle(color: white)),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
         );
@@ -310,30 +315,26 @@ class _AppBarInfo extends StatelessWidget {
         builder: (context, status) => Column(
           children: [
             const WarningWidgetCubit(),
-            Padding(
-              padding: EdgeInsets.only(
-                  top: status != ConnectionStatus.online ? 0 : 25),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: white),
-                    onPressed: () {
-                      context
-                          .read<InfoRapidaBloc>()
-                          .searchControllerProducts
-                          .clear();
-                      Navigator.pushReplacementNamed(context, 'info-rapida');
-                    },
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(left: size.width * 0.22),
-                    child: const Text('PRODUCTOS',
-                        style: TextStyle(color: white, fontSize: 18)),
-                  ),
-                  const Spacer(),
-                ],
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: white),
+                  onPressed: () {
+                    context
+                        .read<InfoRapidaBloc>()
+                        .searchControllerProducts
+                        .clear();
+                    Navigator.pushReplacementNamed(context, 'info-rapida');
+                  },
+                ),
+                Padding(
+                  padding: EdgeInsets.only(left: size.width * 0.22),
+                  child: const Text('PRODUCTOS',
+                      style: TextStyle(color: white, fontSize: 18)),
+                ),
+                const Spacer(),
+              ],
             ),
           ],
         ),

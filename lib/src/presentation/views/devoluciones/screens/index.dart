@@ -1051,7 +1051,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
         // Determina si la lista de productos está vacía
 
         return Scaffold(
-          backgroundColor: white,
+          backgroundColor: primaryColorApp,
           floatingActionButtonLocation:
               FloatingActionButtonLocation.miniEndFloat,
           floatingActionButton: FloatingActionButton(
@@ -1072,44 +1072,53 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
             backgroundColor: primaryColorApp,
             child: const Icon(Icons.add, color: white, size: 20),
           ),
-          body: Column(
-            children: [
-              const CustomAppBar(), // Tu barra de aplicación personalizada
-              Expanded(
-                child: Column(
-                  children: [
-                    BuildBarcodeInputField(
-                      focusNode: currentStep == 'location'
-                          ? focusNode2
-                          : currentStep == 'contacto'
-                              ? focusNode3
-                              : focusNode1,
-                      controller: currentStep == 'location'
-                          ? _controllerLocation
-                          : currentStep == 'contacto'
-                              ? _controllerContacto
-                              : _controllerSearch,
-                      functionValidate: (value) {
-                        switch (currentStep) {
-                          case 'location':
-                            return validateLocation(value);
-                          case 'contacto':
-                            return validateContacto(value);
-                          case 'product':
-                            return validateProducto(value);
-                          default:
-                            return;
-                        }
-                      },
-                    ),
+          body: SafeArea(
+            child: Container(
+              color: Colors.white,
+              child: Column(
+                children: [
+                  const CustomAppBar(), // Tu barra de aplicación personalizada
+                  Expanded(
+                    child: Column(
+                      children: [
+                        BuildBarcodeInputField(
+                          focusNode: currentStep == 'location'
+                              ? focusNode2
+                              : currentStep == 'contacto'
+                                  ? focusNode3
+                                  : focusNode1,
+                          controller: currentStep == 'location'
+                              ? _controllerLocation
+                              : currentStep == 'contacto'
+                                  ? _controllerContacto
+                                  : _controllerSearch,
+                          functionValidate: (value) {
+                            switch (currentStep) {
+                              case 'location':
+                                return validateLocation(value);
+                              case 'contacto':
+                                return validateContacto(value);
+                              case 'product':
+                                return validateProducto(value);
+                              default:
+                                return;
+                            }
+                          },
+                        ),
 
-                    // UI para cuando hay productos en la lista
-                    _buildProductListUI(context, devolucionesBloc,
-                        context.read<DevolucionesBloc>().productosDevolucion),
-                  ],
-                ),
+                        // UI para cuando hay productos en la lista
+                        _buildProductListUI(
+                            context,
+                            devolucionesBloc,
+                            context
+                                .read<DevolucionesBloc>()
+                                .productosDevolucion),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },

@@ -75,615 +75,592 @@ class PickDetailScreen extends StatelessWidget {
             return false;
           },
           child: Scaffold(
-              backgroundColor: Colors.white,
-              body: SizedBox(
-                width: size.width,
-                height: size.height * 1,
-                child: Column(
-                  ///apbar
+              backgroundColor: primaryColorApp,
+              body: SafeArea(
+                child: Container(
+                  color: Colors.white,
+                  width: size.width,
+                  height: size.height * 1,
+                  child: Column(
+                    ///apbar
 
-                  children: [
-                    //*appbar
-                    Container(
-                      decoration: BoxDecoration(
-                        color: bloc.pickWithProducts.pick?.isSeparate == 1
-                            ? green
-                            : primaryColorApp,
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20),
+                    children: [
+                      //*appbar
+                      Container(
+                        decoration: BoxDecoration(
+                          color: bloc.pickWithProducts.pick?.isSeparate == 1
+                              ? green
+                              : primaryColorApp,
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(20),
+                            bottomRight: Radius.circular(20),
+                          ),
                         ),
-                      ),
-                      width: double.infinity,
-                      child:
-                          BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
-                              builder: (context, status) {
-                        return Column(
-                          children: [
-                            const WarningWidgetCubit(),
-                            Padding(
-                              padding: EdgeInsets.only(
-                                  bottom: 5,
-                                  top: status != ConnectionStatus.online
-                                      ? 20
-                                      : 30),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.arrow_back,
-                                        color: white),
-                                    onPressed: () {
-                                      bloc.add(ClearSearchProudctsPickEvent());
-                                      Navigator.pushReplacementNamed(
-                                          context, 'scan-product-pick');
-                                    },
-                                  ),
-                                  Padding(
-                                    padding: EdgeInsets.only(
-                                        left: size.width * 0.25),
-                                    child: Text(
-                                        "${bloc.pickWithProducts.pick?.name}",
-                                        style: const TextStyle(
-                                            color: white, fontSize: 12)),
-                                  ),
-                                  const Spacer(),
-                                ],
+                        width: double.infinity,
+                        child: BlocBuilder<ConnectionStatusCubit,
+                            ConnectionStatus>(builder: (context, status) {
+                          return Column(
+                            children: [
+                              const WarningWidgetCubit(),
+                              Padding(
+                                padding: EdgeInsets.only(
+                                    bottom: 5,
+                                    top: status != ConnectionStatus.online
+                                        ? 20
+                                        : 30),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.arrow_back,
+                                          color: white),
+                                      onPressed: () {
+                                        bloc.add(
+                                            ClearSearchProudctsPickEvent());
+                                        Navigator.pushReplacementNamed(
+                                            context, 'scan-product-pick');
+                                      },
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.only(
+                                          left: size.width * 0.25),
+                                      child: Text(
+                                          "${bloc.pickWithProducts.pick?.name}",
+                                          style: const TextStyle(
+                                              color: white, fontSize: 12)),
+                                    ),
+                                    const Spacer(),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                        );
-                      }),
-                    ),
+                            ],
+                          );
+                        }),
+                      ),
 
-                    const SizedBox(height: 5),
-                    SizedBox(
-                      width: size.width,
-                      height: bloc.pickWithProducts.pick?.isSeparate == 1
-                          ? 140
-                          : bloc.isSearch == false
-                              ? 70
-                              : 100,
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Card(
-                                  color: white,
-                                  elevation: 2,
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        width: size.width * 0.6,
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 5),
-                                        child: Center(
-                                          child: Row(
-                                            children: [
-                                              Text(
-                                                "Unidades separadas: ${bloc.calcularUnidadesSeparadas()}%",
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: getColorForPercentage(bloc
-                                                      .calcularUnidadesSeparadas()), // Convertir a double
+                      const SizedBox(height: 5),
+                      SizedBox(
+                        width: size.width,
+                        height: bloc.pickWithProducts.pick?.isSeparate == 1
+                            ? 140
+                            : bloc.isSearch == false
+                                ? 70
+                                : 100,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Card(
+                                    color: white,
+                                    elevation: 2,
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          width: size.width * 0.6,
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 5),
+                                          child: Center(
+                                            child: Row(
+                                              children: [
+                                                Text(
+                                                  "Unidades separadas: ${bloc.calcularUnidadesSeparadas()}%",
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: getColorForPercentage(
+                                                        bloc.calcularUnidadesSeparadas()), // Convertir a double
+                                                  ),
                                                 ),
-                                              ),
-                                              const Spacer(),
-                                              //icono de ayuda
-                                              GestureDetector(
-                                                  onTap: () {
-                                                    showDialog(
-                                                      context: context,
-                                                      builder: (context) {
-                                                        return BackdropFilter(
-                                                          filter:
-                                                              ImageFilter.blur(
-                                                                  sigmaX: 5,
-                                                                  sigmaY: 5),
-                                                          child: AlertDialog(
-                                                            actionsAlignment:
-                                                                MainAxisAlignment
-                                                                    .center,
-                                                            title: Center(
-                                                              child: Text(
-                                                                  "Información",
-                                                                  style: TextStyle(
-                                                                      color:
-                                                                          primaryColorApp,
-                                                                      fontSize:
-                                                                          20)),
-                                                            ),
-                                                            content:
-                                                                const Column(
-                                                              mainAxisSize:
-                                                                  MainAxisSize
-                                                                      .min,
-                                                              children: [
-                                                                Text(
-                                                                    "El porcentaje de unidades separadas se calcula de la siguiente manera:"),
-                                                                SizedBox(
-                                                                    height: 5),
-                                                                Text(
-                                                                    "Porcentaje de unidades separadas = (Unidades separadas / Unidades totales) * 100"),
+                                                const Spacer(),
+                                                //icono de ayuda
+                                                GestureDetector(
+                                                    onTap: () {
+                                                      showDialog(
+                                                        context: context,
+                                                        builder: (context) {
+                                                          return BackdropFilter(
+                                                            filter: ImageFilter
+                                                                .blur(
+                                                                    sigmaX: 5,
+                                                                    sigmaY: 5),
+                                                            child: AlertDialog(
+                                                              actionsAlignment:
+                                                                  MainAxisAlignment
+                                                                      .center,
+                                                              title: Center(
+                                                                child: Text(
+                                                                    "Información",
+                                                                    style: TextStyle(
+                                                                        color:
+                                                                            primaryColorApp,
+                                                                        fontSize:
+                                                                            20)),
+                                                              ),
+                                                              content:
+                                                                  const Column(
+                                                                mainAxisSize:
+                                                                    MainAxisSize
+                                                                        .min,
+                                                                children: [
+                                                                  Text(
+                                                                      "El porcentaje de unidades separadas se calcula de la siguiente manera:"),
+                                                                  SizedBox(
+                                                                      height:
+                                                                          5),
+                                                                  Text(
+                                                                      "Porcentaje de unidades separadas = (Unidades separadas / Unidades totales) * 100"),
+                                                                ],
+                                                              ),
+                                                              actions: [
+                                                                ElevatedButton(
+                                                                    style: ElevatedButton
+                                                                        .styleFrom(
+                                                                      backgroundColor:
+                                                                          grey,
+                                                                      shape: RoundedRectangleBorder(
+                                                                          borderRadius:
+                                                                              BorderRadius.circular(10)),
+                                                                    ),
+                                                                    onPressed:
+                                                                        () {
+                                                                      Navigator.of(
+                                                                              context)
+                                                                          .pop();
+                                                                    },
+                                                                    child: const Text(
+                                                                        "Cerrar",
+                                                                        style: TextStyle(
+                                                                            color:
+                                                                                white))),
                                                               ],
                                                             ),
-                                                            actions: [
-                                                              ElevatedButton(
-                                                                  style: ElevatedButton
-                                                                      .styleFrom(
-                                                                    backgroundColor:
-                                                                        grey,
-                                                                    shape: RoundedRectangleBorder(
-                                                                        borderRadius:
-                                                                            BorderRadius.circular(10)),
-                                                                  ),
-                                                                  onPressed:
-                                                                      () {
-                                                                    Navigator.of(
-                                                                            context)
-                                                                        .pop();
-                                                                  },
-                                                                  child: const Text(
-                                                                      "Cerrar",
-                                                                      style: TextStyle(
-                                                                          color:
-                                                                              white))),
-                                                            ],
-                                                          ),
-                                                        );
-                                                      },
-                                                    );
-                                                  },
-                                                  child: Icon(Icons.help,
-                                                      color: primaryColorApp,
-                                                      size: 15)),
-                                            ],
+                                                          );
+                                                        },
+                                                      );
+                                                    },
+                                                    child: Icon(Icons.help,
+                                                        color: primaryColorApp,
+                                                        size: 15)),
+                                              ],
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
+                                  )
+                                ],
+                              ),
+
+                              // //*widget de busqueda
+
+                              Visibility(
+                                visible: bloc.isSearch,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
                                   ),
-                                )
-                              ],
-                            ),
-
-                            // //*widget de busqueda
-
-                            Visibility(
-                              visible: bloc.isSearch,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                ),
-                                child: Card(
-                                  color: Colors.white,
-                                  elevation: 2,
-                                  child: TextFormField(
-                                    showCursor: true,
-                                    textAlignVertical: TextAlignVertical.center,
-                                    onChanged: (value) {
-                                      bloc.add(SearchProductsPickEvent(value));
-                                    },
-                                    controller: bloc.searchController,
-                                    decoration: InputDecoration(
-                                      prefixIcon:
-                                          const Icon(Icons.search, color: grey),
-                                      suffixIcon: IconButton(
-                                          onPressed: () {
-                                            bloc.add(
-                                                ClearSearchProudctsPickEvent());
-                                            //cerramo el teclado
-                                            FocusScope.of(context).unfocus();
-                                          },
-                                          icon: const Icon(Icons.close,
-                                              color: grey)),
-                                      disabledBorder:
-                                          const OutlineInputBorder(),
-                                      hintText: "Buscar productos",
-                                      hintStyle: const TextStyle(
-                                          color: Colors.grey, fontSize: 12),
-                                      border: InputBorder.none,
+                                  child: Card(
+                                    color: Colors.white,
+                                    elevation: 2,
+                                    child: TextFormField(
+                                      showCursor: true,
+                                      textAlignVertical:
+                                          TextAlignVertical.center,
+                                      onChanged: (value) {
+                                        bloc.add(
+                                            SearchProductsPickEvent(value));
+                                      },
+                                      controller: bloc.searchController,
+                                      decoration: InputDecoration(
+                                        prefixIcon: const Icon(Icons.search,
+                                            color: grey),
+                                        suffixIcon: IconButton(
+                                            onPressed: () {
+                                              bloc.add(
+                                                  ClearSearchProudctsPickEvent());
+                                              //cerramo el teclado
+                                              FocusScope.of(context).unfocus();
+                                            },
+                                            icon: const Icon(Icons.close,
+                                                color: grey)),
+                                        disabledBorder:
+                                            const OutlineInputBorder(),
+                                        hintText: "Buscar productos",
+                                        hintStyle: const TextStyle(
+                                            color: Colors.grey, fontSize: 12),
+                                        border: InputBorder.none,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
 
-                    // *Lista de productos
-                    Expanded(
-                      // height: size.height * 0.75,
-                      child: bloc.filteredProducts.isNotEmpty
-                          ? ListView.builder(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              itemCount: bloc.filteredProducts.length,
-                              itemBuilder: (context, index) {
-                                // ✅ SOLUCIÓN 1: Verificación de límites del índice
-                                if (index < 0 ||
-                                    index >= bloc.filteredProducts.length) {
-                                  debugPrint(
-                                      '❌ Índice fuera de rango: $index de ${bloc.filteredProducts.length}');
-                                  return _buildErrorWidget(
-                                      index, bloc.filteredProducts.length);
-                                }
+                      // *Lista de productos
+                      Expanded(
+                        // height: size.height * 0.75,
+                        child: bloc.filteredProducts.isNotEmpty
+                            ? ListView.builder(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                itemCount: bloc.filteredProducts.length,
+                                itemBuilder: (context, index) {
+                                  // ✅ SOLUCIÓN 1: Verificación de límites del índice
+                                  if (index < 0 ||
+                                      index >= bloc.filteredProducts.length) {
+                                    debugPrint(
+                                        '❌ Índice fuera de rango: $index de ${bloc.filteredProducts.length}');
+                                    return _buildErrorWidget(
+                                        index, bloc.filteredProducts.length);
+                                  }
 
-                                // ✅ SOLUCIÓN 2: Acceso seguro con elementAtOrNull
-                                final productsBatch = bloc.filteredProducts
-                                    .elementAtOrNull(index);
+                                  // ✅ SOLUCIÓN 2: Acceso seguro con elementAtOrNull
+                                  final productsBatch = bloc.filteredProducts
+                                      .elementAtOrNull(index);
 
-                                // Verificación adicional por si elementAtOrNull retorna null
-                                if (productsBatch == null) {
-                                  debugPrint(
-                                      '❌ Producto nulo en índice: $index');
-                                  return _buildErrorWidget(
-                                      index, bloc.filteredProducts.length);
-                                }
+                                  // Verificación adicional por si elementAtOrNull retorna null
+                                  if (productsBatch == null) {
+                                    debugPrint(
+                                        '❌ Producto nulo en índice: $index');
+                                    return _buildErrorWidget(
+                                        index, bloc.filteredProducts.length);
+                                  }
 
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 5),
-                                  child: GestureDetector(
-                                    onTap: () async {
-                                      debugPrint("----------------");
-                                      debugPrint(
-                                          "product detail info: ${productsBatch.toMap()}");
-                                      debugPrint("----------------");
-                                    },
-                                    child: Card(
-                                        elevation: 4,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            color: productsBatch.quantity ==
-                                                    productsBatch
-                                                        .quantitySeparate
-                                                ? Colors.green[100]
-                                                : productsBatch.isSelected == 1
-                                                    ? primaryColorApp
-                                                        .withOpacity(0.3)
-                                                    : productsBatch
-                                                                .isSeparate ==
-                                                            1
-                                                        ? Colors.green[100]
-                                                        : Colors.white,
-                                          ),
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Column(
-                                            children: [
-                                              Center(
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  children: [
-                                                    Expanded(
-                                                      child: Text(
-                                                        productsBatch
-                                                                .productId ??
-                                                            '',
-                                                        style: const TextStyle(
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 5),
+                                    child: GestureDetector(
+                                      onTap: () async {
+                                        debugPrint("----------------");
+                                        debugPrint(
+                                            "product detail info: ${productsBatch.toMap()}");
+                                        debugPrint("----------------");
+                                      },
+                                      child: Card(
+                                          elevation: 4,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              color: productsBatch.quantity ==
+                                                      productsBatch
+                                                          .quantitySeparate
+                                                  ? Colors.green[100]
+                                                  : productsBatch.isSelected ==
+                                                          1
+                                                      ? primaryColorApp
+                                                          .withOpacity(0.3)
+                                                      : productsBatch
+                                                                  .isSeparate ==
+                                                              1
+                                                          ? Colors.green[100]
+                                                          : Colors.white,
+                                            ),
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Column(
+                                              children: [
+                                                Center(
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      Expanded(
+                                                        child: Text(
+                                                          productsBatch
+                                                                  .productId ??
+                                                              '',
+                                                          style: const TextStyle(
+                                                              fontSize: 12,
+                                                              color: black,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                      ),
+                                                      if (!bloc.isSearch &&
+                                                          (productsBatch
+                                                                  .quantity !=
+                                                              productsBatch
+                                                                  .quantitySeparate))
+                                                        SizedBox(
+                                                          width: 50,
+                                                          height: 50,
+                                                          child: Card(
+                                                            elevation: 2,
+                                                            color: white,
+                                                            child: IconButton(
+                                                                onPressed: () {
+                                                                  showDialog(
+                                                                      context:
+                                                                          context,
+                                                                      builder:
+                                                                          (context) {
+                                                                        bloc.editProductController.text =
+                                                                            '';
+                                                                        return DialogEditProductPickWidget(
+                                                                          productsBatch:
+                                                                              productsBatch,
+                                                                        );
+                                                                      });
+                                                                },
+                                                                icon: Icon(
+                                                                    Icons.edit,
+                                                                    size: 20,
+                                                                    color:
+                                                                        primaryColorApp)),
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 5),
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment.start,
+                                                    children: [
+                                                      SizedBox(
+                                                        height: 20,
+                                                        width: 20,
+                                                        child: SvgPicture.asset(
+                                                          color:
+                                                              primaryColorApp,
+                                                          "assets/icons/barcode.svg",
+                                                          height: 20,
+                                                          width: 20,
+                                                          fit: BoxFit.cover,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 5),
+                                                      Text(
+                                                          productsBatch.barcode,
+                                                          style:
+                                                              const TextStyle(
                                                             fontSize: 12,
                                                             color: black,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold),
-                                                        maxLines: 2,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        textAlign:
-                                                            TextAlign.center,
+                                                          )),
+                                                      if (productsBatch
+                                                                  .isSendOdoo !=
+                                                              1 &&
+                                                          productsBatch
+                                                                  .isSeparate !=
+                                                              1) ...[
+                                                        const Spacer(),
+                                                        GestureDetector(
+                                                          onTap: () {
+                                                            showDialog(
+                                                                context:
+                                                                    context,
+                                                                builder:
+                                                                    (context) {
+                                                                  return DialogoConfirmateProductLoad(
+                                                                      productsBatch:
+                                                                          productsBatch);
+                                                                });
+                                                          },
+                                                          child: Icon(
+                                                            Icons.play_circle,
+                                                            color: green,
+                                                            size: 25,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ],
+                                                  ),
+                                                ),
+                                                Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 5),
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment.start,
+                                                    children: [
+                                                      //icono de imagen
+                                                      Icon(
+                                                        Icons.image,
+                                                        color: primaryColorApp,
+                                                        size: 15,
                                                       ),
-                                                    ),
-                                                    if (!bloc.isSearch &&
-                                                        (productsBatch
-                                                                .quantity !=
-                                                            productsBatch
-                                                                .quantitySeparate))
-                                                      SizedBox(
-                                                        width: 50,
-                                                        height: 50,
+
+                                                      const SizedBox(width: 5),
+                                                      Text(
+                                                          'Imagen del producto: ',
+                                                          style:
+                                                              const TextStyle(
+                                                            fontSize: 12,
+                                                            color: black,
+                                                          )),
+                                                      GestureDetector(
+                                                        onTap: () {
+                                                          context
+                                                              .read<
+                                                                  PickingPickBloc>()
+                                                              .add(ViewProductImageEvent(
+                                                                  productsBatch
+                                                                          .idProduct ??
+                                                                      0));
+                                                        },
                                                         child: Card(
+                                                          //borde
+                                                          shape:
+                                                              RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        5),
+                                                          ),
                                                           elevation: 2,
                                                           color: white,
-                                                          child: IconButton(
-                                                              onPressed: () {
+                                                          child: Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(2.0),
+                                                            child: Icon(
+                                                              Icons.image,
+                                                              color:
+                                                                  primaryColorApp,
+                                                              size: 15,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Visibility(
+                                                  visible: bloc
+                                                          .configurations
+                                                          .result
+                                                          ?.result
+                                                          ?.showNextLocationsInDetails ==
+                                                      true,
+                                                  child: Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 8),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.location_on,
+                                                          color:
+                                                              primaryColorApp,
+                                                          size: 15,
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 5),
+                                                        const Text("Desde: ",
+                                                            style: TextStyle(
+                                                                fontSize: 12,
+                                                                color: black)),
+                                                        SizedBox(
+                                                          width:
+                                                              size.width * 0.57,
+                                                          child: Text(
+                                                              productsBatch
+                                                                      .locationId
+                                                                      ?.toString() ??
+                                                                  '',
+                                                              style: TextStyle(
+                                                                  fontSize: 12,
+                                                                  color:
+                                                                      primaryColorApp)),
+                                                        ),
+                                                        if (productsBatch
+                                                                .isPending ==
+                                                            1)
+                                                          Container(
+                                                            width: 30,
+                                                            height: 30,
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          5),
+                                                              color: Colors
+                                                                  .amber[100],
+                                                            ),
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(3),
+                                                            child:
+                                                                GestureDetector(
+                                                              onTap: () {
                                                                 showDialog(
                                                                     context:
                                                                         context,
                                                                     builder:
                                                                         (context) {
-                                                                      bloc.editProductController
-                                                                          .text = '';
-                                                                      return DialogEditProductPickWidget(
-                                                                        productsBatch:
-                                                                            productsBatch,
+                                                                      return const DialogInfo(
+                                                                        title:
+                                                                            "Producto pendiente",
+                                                                        body:
+                                                                            "Este producto fue enviado al final de la lista de picking. ",
                                                                       );
                                                                     });
                                                               },
-                                                              icon: Icon(
-                                                                  Icons.edit,
-                                                                  size: 20,
-                                                                  color:
-                                                                      primaryColorApp)),
-                                                        ),
-                                                      ),
-                                                  ],
-                                                ),
-                                              ),
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 5),
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.start,
-                                                  children: [
-                                                    SizedBox(
-                                                      height: 20,
-                                                      width: 20,
-                                                      child: SvgPicture.asset(
-                                                        color: primaryColorApp,
-                                                        "assets/icons/barcode.svg",
-                                                        height: 20,
-                                                        width: 20,
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 5),
-                                                    Text(productsBatch.barcode,
-                                                        style: const TextStyle(
-                                                          fontSize: 12,
-                                                          color: black,
-                                                        )),
-                                                    if (productsBatch
-                                                                .isSendOdoo !=
-                                                            1 &&
-                                                        productsBatch
-                                                                .isSeparate !=
-                                                            1) ...[
-                                                      const Spacer(),
-                                                      GestureDetector(
-                                                        onTap: () {
-                                                          showDialog(
-                                                              context: context,
-                                                              builder:
-                                                                  (context) {
-                                                                return DialogoConfirmateProductLoad(
-                                                                    productsBatch:
-                                                                        productsBatch);
-                                                              });
-                                                        },
-                                                        child: Icon(
-                                                          Icons.play_circle,
-                                                          color: green,
-                                                          size: 25,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ],
-                                                ),
-                                              ),
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 5),
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.start,
-                                                  children: [
-                                                    //icono de imagen
-                                                    Icon(
-                                                      Icons.image,
-                                                      color: primaryColorApp,
-                                                      size: 15,
-                                                    ),
-
-                                                    const SizedBox(width: 5),
-                                                    Text(
-                                                        'Imagen del producto: ',
-                                                        style: const TextStyle(
-                                                          fontSize: 12,
-                                                          color: black,
-                                                        )),
-                                                    GestureDetector(
-                                                      onTap: () {
-                                                        context
-                                                            .read<
-                                                                PickingPickBloc>()
-                                                            .add(ViewProductImageEvent(
-                                                                productsBatch
-                                                                        .idProduct ??
-                                                                    0));
-                                                      },
-                                                      child: Card(
-                                                        //borde
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(5),
-                                                        ),
-                                                        elevation: 2,
-                                                        color: white,
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(2.0),
-                                                          child: Icon(
-                                                            Icons.image,
-                                                            color:
-                                                                primaryColorApp,
-                                                            size: 15,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              Visibility(
-                                                visible: bloc
-                                                        .configurations
-                                                        .result
-                                                        ?.result
-                                                        ?.showNextLocationsInDetails ==
-                                                    true,
-                                                child: Padding(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(horizontal: 8),
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.location_on,
-                                                        color: primaryColorApp,
-                                                        size: 15,
-                                                      ),
-                                                      const SizedBox(width: 5),
-                                                      const Text("Desde: ",
-                                                          style: TextStyle(
-                                                              fontSize: 12,
-                                                              color: black)),
-                                                      SizedBox(
-                                                        width:
-                                                            size.width * 0.57,
-                                                        child: Text(
-                                                            productsBatch
-                                                                    .locationId
-                                                                    ?.toString() ??
-                                                                '',
-                                                            style: TextStyle(
-                                                                fontSize: 12,
-                                                                color:
-                                                                    primaryColorApp)),
-                                                      ),
-                                                      if (productsBatch
-                                                              .isPending ==
-                                                          1)
-                                                        Container(
-                                                          width: 30,
-                                                          height: 30,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        5),
-                                                            color: Colors
-                                                                .amber[100],
-                                                          ),
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(3),
-                                                          child:
-                                                              GestureDetector(
-                                                            onTap: () {
-                                                              showDialog(
-                                                                  context:
-                                                                      context,
-                                                                  builder:
-                                                                      (context) {
-                                                                    return const DialogInfo(
-                                                                      title:
-                                                                          "Producto pendiente",
-                                                                      body:
-                                                                          "Este producto fue enviado al final de la lista de picking. ",
-                                                                    );
-                                                                  });
-                                                            },
-                                                            child: SizedBox(
-                                                              height: 20,
-                                                              width: 20,
-                                                              child: SvgPicture
-                                                                  .asset(
-                                                                color:
-                                                                    primaryColorApp,
-                                                                "assets/icons/list_final.svg",
+                                                              child: SizedBox(
                                                                 height: 20,
                                                                 width: 20,
-                                                                fit: BoxFit
-                                                                    .cover,
+                                                                child:
+                                                                    SvgPicture
+                                                                        .asset(
+                                                                  color:
+                                                                      primaryColorApp,
+                                                                  "assets/icons/list_final.svg",
+                                                                  height: 20,
+                                                                  width: 20,
+                                                                  fit: BoxFit
+                                                                      .cover,
+                                                                ),
                                                               ),
                                                             ),
                                                           ),
-                                                        ),
-                                                    ],
+                                                      ],
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 8),
-                                                child: Row(
-                                                  children: [
-                                                    Icon(
-                                                      Icons.arrow_forward,
-                                                      color: primaryColorApp,
-                                                      size: 15,
-                                                    ),
-                                                    const SizedBox(width: 5),
-                                                    const Text("A:",
-                                                        style: TextStyle(
-                                                            fontSize: 12,
-                                                            color: black)),
-                                                    const SizedBox(width: 5),
-                                                    SizedBox(
-                                                      width: size.width * 0.7,
-                                                      child: Text(
-                                                          productsBatch
-                                                              .locationDestId
-                                                              .toString(),
-                                                          style: TextStyle(
-                                                              fontSize: 12,
-                                                              color:
-                                                                  primaryColorApp)),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              Visibility(
-                                                visible: productsBatch.origin !=
-                                                        "" &&
-                                                    productsBatch.origin !=
-                                                        null,
-                                                child: Padding(
+                                                Padding(
                                                   padding: const EdgeInsets
                                                       .symmetric(horizontal: 8),
                                                   child: Row(
                                                     children: [
                                                       Icon(
-                                                        Icons.file_open_sharp,
+                                                        Icons.arrow_forward,
                                                         color: primaryColorApp,
                                                         size: 15,
                                                       ),
                                                       const SizedBox(width: 5),
-                                                      Align(
-                                                        alignment: Alignment
-                                                            .centerLeft,
-                                                        child: Text(
-                                                            "Doc. origen: ",
-                                                            style: TextStyle(
-                                                                fontSize: 12,
-                                                                color: grey)),
-                                                      ),
-                                                      Align(
-                                                        alignment: Alignment
-                                                            .centerLeft,
+                                                      const Text("A:",
+                                                          style: TextStyle(
+                                                              fontSize: 12,
+                                                              color: black)),
+                                                      const SizedBox(width: 5),
+                                                      SizedBox(
+                                                        width: size.width * 0.7,
                                                         child: Text(
                                                             productsBatch
-                                                                    .origin ??
-                                                                "",
+                                                                .locationDestId
+                                                                .toString(),
                                                             style: TextStyle(
                                                                 fontSize: 12,
                                                                 color:
@@ -692,383 +669,444 @@ class PickDetailScreen extends StatelessWidget {
                                                     ],
                                                   ),
                                                 ),
-                                              ),
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
+                                                Visibility(
+                                                  visible: productsBatch
+                                                              .origin !=
+                                                          "" &&
+                                                      productsBatch.origin !=
+                                                          null,
+                                                  child: Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
                                                         horizontal: 8),
-                                                child: Row(
-                                                  children: [
-                                                    Icon(
-                                                      Icons.priority_high,
-                                                      color: primaryColorApp,
-                                                      size: 15,
-                                                    ),
-                                                    const SizedBox(width: 5),
-                                                    const Text("Priority:",
-                                                        style: TextStyle(
-                                                            fontSize: 12,
-                                                            color: black)),
-                                                    const SizedBox(width: 5),
-                                                    SizedBox(
-                                                      width: size.width * 0.5,
-                                                      child: Text(
-                                                          productsBatch
-                                                              .rimovalPriority
-                                                              .toString(),
-                                                          style: TextStyle(
-                                                              fontSize: 12,
-                                                              color:
-                                                                  primaryColorApp)),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              ExpiryDateWidget(
-                                                  expireDate: productsBatch
-                                                              .expireDate ==
-                                                          ""
-                                                      ? DateTime.now()
-                                                      : DateTime.parse(
-                                                          productsBatch
-                                                              .expireDate),
-                                                  size: size,
-                                                  isDetaild: true,
-                                                  isNoExpireDate: productsBatch
-                                                              .expireDate ==
-                                                          ""
-                                                      ? true
-                                                      : false),
-                                              if (productsBatch.lote != "" &&
-                                                  productsBatch.lote != null)
-                                                Padding(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(horizontal: 8),
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.bookmarks_sharp,
-                                                        color: primaryColorApp,
-                                                        size: 15,
-                                                      ),
-                                                      const SizedBox(width: 5),
-                                                      const Text("Lote:",
-                                                          style: TextStyle(
-                                                              fontSize: 12,
-                                                              color: black)),
-                                                      const SizedBox(width: 5),
-                                                      SizedBox(
-                                                        width:
-                                                            size.width * 0.55,
-                                                        child: Text(
-                                                            productsBatch.loteId ==
-                                                                        "" ||
-                                                                    productsBatch
-                                                                            .loteId ==
-                                                                        null
-                                                                ? 'Sin manejo por lote'
-                                                                : productsBatch
-                                                                    .lote
-                                                                    .toString(),
-                                                            style: TextStyle(
-                                                                fontSize: 12,
-                                                                color:
-                                                                    primaryColorApp)),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              Card(
-                                                elevation: 0,
-                                                color: white,
-                                                child: Padding(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(horizontal: 3),
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons
-                                                            .send_to_mobile_outlined,
-                                                        color: primaryColorApp,
-                                                        size: 15,
-                                                      ),
-                                                      const SizedBox(width: 5),
-                                                      const Text(
-                                                          "Subido a WMS:",
-                                                          style: TextStyle(
-                                                              fontSize: 12,
-                                                              color: black)),
-                                                      const SizedBox(width: 5),
-                                                      SizedBox(
-                                                        width:
-                                                            size.width * 0.25,
-                                                        child: Text(
-                                                            productsBatch
-                                                                        .isSendOdoo ==
-                                                                    null
-                                                                ? 'Sin enviar'
-                                                                : productsBatch
-                                                                            .isSendOdoo ==
-                                                                        1
-                                                                    ? 'Enviado'
-                                                                    : 'No enviado',
-                                                            style: TextStyle(
-                                                                fontSize: 12,
-                                                                color: productsBatch
-                                                                            .isSendOdoo ==
-                                                                        null
-                                                                    ? primaryColorApp
-                                                                    : productsBatch.isSendOdoo ==
-                                                                            1
-                                                                        ? green
-                                                                        : red)),
-                                                      ),
-                                                      if (productsBatch
-                                                              .isSendOdoo ==
-                                                          0)
-                                                        ElevatedButton(
-                                                            onPressed:
-                                                                () async {
-                                                              bloc.add(SendProductOdooPickEvent(
-                                                                  productsBatch,
-                                                                  (!bloc.isSearch &&
-                                                                      (productsBatch
-                                                                              .quantity !=
-                                                                          productsBatch
-                                                                              .quantitySeparate))));
-                                                            },
-                                                            style:
-                                                                ElevatedButton
-                                                                    .styleFrom(
-                                                              backgroundColor:
-                                                                  primaryColorApp,
-                                                              maximumSize:
-                                                                  const Size(
-                                                                      80, 20),
-                                                              minimumSize:
-                                                                  const Size(
-                                                                      80, 20),
-                                                              shape:
-                                                                  RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            10),
-                                                              ),
-                                                              elevation: 3,
-                                                            ),
-                                                            child: const Text(
-                                                              'Enviar',
-                                                              style: TextStyle(
-                                                                  color: white,
-                                                                  fontSize: 10),
-                                                            ))
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                              if (productsBatch.isSeparate == 1)
-                                                Padding(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(horizontal: 8),
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(Icons.timer,
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.file_open_sharp,
                                                           color:
                                                               primaryColorApp,
-                                                          size: 15),
-                                                      const SizedBox(width: 5),
-                                                      RichText(
-                                                        text: TextSpan(
-                                                          children: [
-                                                            const TextSpan(
-                                                              text:
-                                                                  "Tiempo total: ",
-                                                              style: TextStyle(
-                                                                fontSize: 12,
-                                                                color:
-                                                                    black, // color del texto antes de tiempoTotal
-                                                              ),
-                                                            ),
-                                                            TextSpan(
-                                                              text: bloc.formatSecondsToHHMMSS(
-                                                                  (productsBatch.timeSeparate ??
-                                                                              0)
-                                                                          .toDouble() ??
-                                                                      0.0),
-                                                              style: TextStyle(
-                                                                fontSize: 12,
-                                                                color:
-                                                                    primaryColorApp, // color rojo para tiempoTotal
-                                                              ),
-                                                            ),
-                                                          ],
+                                                          size: 15,
                                                         ),
-                                                      )
-                                                    ],
-                                                  ),
-                                                ),
-                                              const SizedBox(height: 5),
-                                              Card(
-                                                color: productsBatch.quantity ==
-                                                        productsBatch
-                                                            .quantitySeparate
-                                                    ? Colors.green[100]
-                                                    : productsBatch
-                                                                .quantitySeparate ==
-                                                            null
-                                                        ? Colors.red[100]
-                                                        : Colors.amber[100],
-                                                child: Padding(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 8,
-                                                      vertical: 2),
-                                                  child: Column(
-                                                    children: [
-                                                      Row(
-                                                        children: [
-                                                          Icon(
-                                                            Icons.add,
-                                                            color:
-                                                                primaryColorApp,
-                                                            size: 15,
-                                                          ),
-                                                          const SizedBox(
-                                                              width: 5),
-                                                          const Text(
-                                                              "Unidades:",
+                                                        const SizedBox(
+                                                            width: 5),
+                                                        Align(
+                                                          alignment: Alignment
+                                                              .centerLeft,
+                                                          child: Text(
+                                                              "Doc. origen: ",
                                                               style: TextStyle(
                                                                   fontSize: 12,
-                                                                  color:
-                                                                      black)),
-                                                          const SizedBox(
-                                                              width: 5),
-                                                          Text(
+                                                                  color: grey)),
+                                                        ),
+                                                        Align(
+                                                          alignment: Alignment
+                                                              .centerLeft,
+                                                          child: Text(
                                                               productsBatch
-                                                                  .quantity
-                                                                  .toString(),
+                                                                      .origin ??
+                                                                  "",
                                                               style: TextStyle(
                                                                   fontSize: 12,
                                                                   color:
                                                                       primaryColorApp)),
-                                                          const Spacer(),
-                                                          Icon(
-                                                            Icons.check,
-                                                            color:
-                                                                primaryColorApp,
-                                                            size: 15,
-                                                          ),
-                                                          const SizedBox(
-                                                              width: 5),
-                                                          const Text(
-                                                              "Separadas:",
-                                                              style: TextStyle(
-                                                                  fontSize: 12,
-                                                                  color:
-                                                                      black)),
-                                                          const SizedBox(
-                                                              width: 5),
-                                                          Text(
-                                                              productsBatch
-                                                                          .quantitySeparate ==
-                                                                      null
-                                                                  ? "0"
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                                Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(horizontal: 8),
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.priority_high,
+                                                        color: primaryColorApp,
+                                                        size: 15,
+                                                      ),
+                                                      const SizedBox(width: 5),
+                                                      const Text("Priority:",
+                                                          style: TextStyle(
+                                                              fontSize: 12,
+                                                              color: black)),
+                                                      const SizedBox(width: 5),
+                                                      SizedBox(
+                                                        width: size.width * 0.5,
+                                                        child: Text(
+                                                            productsBatch
+                                                                .rimovalPriority
+                                                                .toString(),
+                                                            style: TextStyle(
+                                                                fontSize: 12,
+                                                                color:
+                                                                    primaryColorApp)),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                ExpiryDateWidget(
+                                                    expireDate: productsBatch
+                                                                .expireDate ==
+                                                            ""
+                                                        ? DateTime.now()
+                                                        : DateTime.parse(
+                                                            productsBatch
+                                                                .expireDate),
+                                                    size: size,
+                                                    isDetaild: true,
+                                                    isNoExpireDate: productsBatch
+                                                                .expireDate ==
+                                                            ""
+                                                        ? true
+                                                        : false),
+                                                if (productsBatch.lote != "" &&
+                                                    productsBatch.lote != null)
+                                                  Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 8),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.bookmarks_sharp,
+                                                          color:
+                                                              primaryColorApp,
+                                                          size: 15,
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 5),
+                                                        const Text("Lote:",
+                                                            style: TextStyle(
+                                                                fontSize: 12,
+                                                                color: black)),
+                                                        const SizedBox(
+                                                            width: 5),
+                                                        SizedBox(
+                                                          width:
+                                                              size.width * 0.55,
+                                                          child: Text(
+                                                              productsBatch.loteId ==
+                                                                          "" ||
+                                                                      productsBatch
+                                                                              .loteId ==
+                                                                          null
+                                                                  ? 'Sin manejo por lote'
                                                                   : productsBatch
-                                                                      .quantitySeparate
+                                                                      .lote
                                                                       .toString(),
                                                               style: TextStyle(
                                                                   fontSize: 12,
                                                                   color:
                                                                       primaryColorApp)),
-                                                        ],
-                                                      ),
-                                                      Row(
-                                                        children: [
-                                                          Icon(
-                                                            Icons
-                                                                .assessment_outlined,
-                                                            color:
-                                                                primaryColorApp,
-                                                            size: 15,
-                                                          ),
-                                                          const SizedBox(
-                                                              width: 5),
-                                                          Text(
-                                                              "Unidad de medida: ${productsBatch.unidades ?? ''}",
-                                                              style:
-                                                                  const TextStyle(
-                                                                      fontSize:
-                                                                          12,
-                                                                      color:
-                                                                          black)),
-                                                        ],
-                                                      ),
-                                                      if (productsBatch
-                                                              .quantity !=
-                                                          productsBatch
-                                                              .quantitySeparate)
-                                                        Align(
-                                                          alignment: Alignment
-                                                              .centerLeft,
-                                                          child: Row(
-                                                            children: [
-                                                              Icon(
-                                                                Icons
-                                                                    .assignment_late,
-                                                                color:
-                                                                    primaryColorApp,
-                                                                size: 15,
-                                                              ),
-                                                              const SizedBox(
-                                                                  width: 5),
-                                                              Text(
-                                                                  "Novedad: ${productsBatch.observation ?? ''}",
-                                                                  style: const TextStyle(
-                                                                      fontSize:
-                                                                          12,
-                                                                      color:
-                                                                          black)),
-                                                            ],
-                                                          ),
                                                         ),
-                                                      const SizedBox(height: 5),
-                                                    ],
+                                                      ],
+                                                    ),
+                                                  ),
+                                                Card(
+                                                  elevation: 0,
+                                                  color: white,
+                                                  child: Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 3),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons
+                                                              .send_to_mobile_outlined,
+                                                          color:
+                                                              primaryColorApp,
+                                                          size: 15,
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 5),
+                                                        const Text(
+                                                            "Subido a WMS:",
+                                                            style: TextStyle(
+                                                                fontSize: 12,
+                                                                color: black)),
+                                                        const SizedBox(
+                                                            width: 5),
+                                                        SizedBox(
+                                                          width:
+                                                              size.width * 0.25,
+                                                          child: Text(
+                                                              productsBatch
+                                                                          .isSendOdoo ==
+                                                                      null
+                                                                  ? 'Sin enviar'
+                                                                  : productsBatch
+                                                                              .isSendOdoo ==
+                                                                          1
+                                                                      ? 'Enviado'
+                                                                      : 'No enviado',
+                                                              style: TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: productsBatch
+                                                                              .isSendOdoo ==
+                                                                          null
+                                                                      ? primaryColorApp
+                                                                      : productsBatch.isSendOdoo ==
+                                                                              1
+                                                                          ? green
+                                                                          : red)),
+                                                        ),
+                                                        if (productsBatch
+                                                                .isSendOdoo ==
+                                                            0)
+                                                          ElevatedButton(
+                                                              onPressed:
+                                                                  () async {
+                                                                bloc.add(SendProductOdooPickEvent(
+                                                                    productsBatch,
+                                                                    (!bloc.isSearch &&
+                                                                        (productsBatch.quantity !=
+                                                                            productsBatch.quantitySeparate))));
+                                                              },
+                                                              style:
+                                                                  ElevatedButton
+                                                                      .styleFrom(
+                                                                backgroundColor:
+                                                                    primaryColorApp,
+                                                                maximumSize:
+                                                                    const Size(
+                                                                        80, 20),
+                                                                minimumSize:
+                                                                    const Size(
+                                                                        80, 20),
+                                                                shape:
+                                                                    RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              10),
+                                                                ),
+                                                                elevation: 3,
+                                                              ),
+                                                              child: const Text(
+                                                                'Enviar',
+                                                                style: TextStyle(
+                                                                    color:
+                                                                        white,
+                                                                    fontSize:
+                                                                        10),
+                                                              ))
+                                                      ],
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        )),
-                                  ),
-                                );
-                              },
-                            )
-                          : Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                      context
-                                              .read<UserBloc>()
-                                              .fabricante
-                                              .contains("Zebra")
-                                          ? 'No se encontraron resultados'
-                                          : 'No hay productos en la lista',
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: primaryColorApp)),
-                                  Text(
-                                      bloc.isSearch
-                                          ? 'Intenta con otra búsqueda'
-                                          : 'Todos los productos han sido completados',
-                                      style: const TextStyle(
-                                          fontSize: 12, color: grey)),
-                                ],
+                                                if (productsBatch.isSeparate ==
+                                                    1)
+                                                  Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 8),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(Icons.timer,
+                                                            color:
+                                                                primaryColorApp,
+                                                            size: 15),
+                                                        const SizedBox(
+                                                            width: 5),
+                                                        RichText(
+                                                          text: TextSpan(
+                                                            children: [
+                                                              const TextSpan(
+                                                                text:
+                                                                    "Tiempo total: ",
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontSize: 12,
+                                                                  color:
+                                                                      black, // color del texto antes de tiempoTotal
+                                                                ),
+                                                              ),
+                                                              TextSpan(
+                                                                text: bloc.formatSecondsToHHMMSS(
+                                                                    (productsBatch.timeSeparate ??
+                                                                                0)
+                                                                            .toDouble() ??
+                                                                        0.0),
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontSize: 12,
+                                                                  color:
+                                                                      primaryColorApp, // color rojo para tiempoTotal
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        )
+                                                      ],
+                                                    ),
+                                                  ),
+                                                const SizedBox(height: 5),
+                                                Card(
+                                                  color: productsBatch
+                                                              .quantity ==
+                                                          productsBatch
+                                                              .quantitySeparate
+                                                      ? Colors.green[100]
+                                                      : productsBatch
+                                                                  .quantitySeparate ==
+                                                              null
+                                                          ? Colors.red[100]
+                                                          : Colors.amber[100],
+                                                  child: Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 2),
+                                                    child: Column(
+                                                      children: [
+                                                        Row(
+                                                          children: [
+                                                            Icon(
+                                                              Icons.add,
+                                                              color:
+                                                                  primaryColorApp,
+                                                              size: 15,
+                                                            ),
+                                                            const SizedBox(
+                                                                width: 5),
+                                                            const Text(
+                                                                "Unidades:",
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    color:
+                                                                        black)),
+                                                            const SizedBox(
+                                                                width: 5),
+                                                            Text(
+                                                                productsBatch
+                                                                    .quantity
+                                                                    .toString(),
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    color:
+                                                                        primaryColorApp)),
+                                                            const Spacer(),
+                                                            Icon(
+                                                              Icons.check,
+                                                              color:
+                                                                  primaryColorApp,
+                                                              size: 15,
+                                                            ),
+                                                            const SizedBox(
+                                                                width: 5),
+                                                            const Text(
+                                                                "Separadas:",
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    color:
+                                                                        black)),
+                                                            const SizedBox(
+                                                                width: 5),
+                                                            Text(
+                                                                productsBatch.quantitySeparate ==
+                                                                        null
+                                                                    ? "0"
+                                                                    : productsBatch
+                                                                        .quantitySeparate
+                                                                        .toString(),
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    color:
+                                                                        primaryColorApp)),
+                                                          ],
+                                                        ),
+                                                        Row(
+                                                          children: [
+                                                            Icon(
+                                                              Icons
+                                                                  .assessment_outlined,
+                                                              color:
+                                                                  primaryColorApp,
+                                                              size: 15,
+                                                            ),
+                                                            const SizedBox(
+                                                                width: 5),
+                                                            Text(
+                                                                "Unidad de medida: ${productsBatch.unidades ?? ''}",
+                                                                style: const TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    color:
+                                                                        black)),
+                                                          ],
+                                                        ),
+                                                        if (productsBatch
+                                                                .quantity !=
+                                                            productsBatch
+                                                                .quantitySeparate)
+                                                          Align(
+                                                            alignment: Alignment
+                                                                .centerLeft,
+                                                            child: Row(
+                                                              children: [
+                                                                Icon(
+                                                                  Icons
+                                                                      .assignment_late,
+                                                                  color:
+                                                                      primaryColorApp,
+                                                                  size: 15,
+                                                                ),
+                                                                const SizedBox(
+                                                                    width: 5),
+                                                                Text(
+                                                                    "Novedad: ${productsBatch.observation ?? ''}",
+                                                                    style: const TextStyle(
+                                                                        fontSize:
+                                                                            12,
+                                                                        color:
+                                                                            black)),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        const SizedBox(
+                                                            height: 5),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          )),
+                                    ),
+                                  );
+                                },
+                              )
+                            : Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                        context
+                                                .read<UserBloc>()
+                                                .fabricante
+                                                .contains("Zebra")
+                                            ? 'No se encontraron resultados'
+                                            : 'No hay productos en la lista',
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: primaryColorApp)),
+                                    Text(
+                                        bloc.isSearch
+                                            ? 'Intenta con otra búsqueda'
+                                            : 'Todos los productos han sido completados',
+                                        style: const TextStyle(
+                                            fontSize: 12, color: grey)),
+                                  ],
+                                ),
                               ),
-                            ),
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               )),
         );

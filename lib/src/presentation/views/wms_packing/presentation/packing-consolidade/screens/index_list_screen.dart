@@ -255,550 +255,562 @@ class _ListPackingConsolidadeScreenState
       },
       builder: (context, state) {
         return Scaffold(
-            backgroundColor: white,
-            body: Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              width: size.width * 1,
-              child: Column(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: primaryColorApp,
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(20),
-                        bottomRight: Radius.circular(20),
+            backgroundColor: primaryColorApp,
+            body: SafeArea(
+              child: Container(
+                color: Colors.white,
+                margin: const EdgeInsets.only(bottom: 10),
+                width: size.width * 1,
+                child: Column(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: primaryColorApp,
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20),
+                        ),
                       ),
-                    ),
-                    child: BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
-                        builder: (context, status) {
-                      return Column(
-                        children: [
-                          const WarningWidgetCubit(),
-                          Padding(
-                            padding: EdgeInsets.only(
-                                left: 10,
-                                right: 10,
-                                top: status != ConnectionStatus.online ? 0 : 25,
-                                bottom: 0),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.arrow_back,
-                                          color: white),
-                                      onPressed: () {
-                                        Navigator.pushReplacementNamed(
-                                          context,
-                                          '/home',
-                                        );
-                                      },
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsets.only(
-                                          left: size.width * 0.05),
-                                      child: GestureDetector(
-                                        onTap: () async {
-                                          await DataBaseSqlite().delePacking(
-                                              'packing-batch-consolidate');
-
-                                          context
-                                              .read<PackingConsolidateBloc>()
-                                              .add(
-                                                  LoadAllPackingConsolidateEvent());
+                      child:
+                          BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
+                              builder: (context, status) {
+                        return Column(
+                          children: [
+                            const WarningWidgetCubit(),
+                            Padding(
+                              padding: EdgeInsets.only(
+                                  left: 10, right: 10, bottom: 0),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.arrow_back,
+                                            color: white),
+                                        onPressed: () {
+                                          Navigator.pushReplacementNamed(
+                                            context,
+                                            '/home',
+                                          );
                                         },
-                                        child: Row(
-                                          children: [
-                                            const Text(
-                                              'PACKING CONSOLIDADO',
-                                              style: TextStyle(
-                                                  color: white,
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold),
+                                      ),
+                                      Padding(
+                                        padding: EdgeInsets.only(
+                                            left: size.width * 0.05),
+                                        child: GestureDetector(
+                                          onTap: () async {
+                                            await DataBaseSqlite().delePacking(
+                                                'packing-batch-consolidate');
+
+                                            context
+                                                .read<PackingConsolidateBloc>()
+                                                .add(
+                                                    LoadAllPackingConsolidateEvent());
+                                          },
+                                          child: Row(
+                                            children: [
+                                              const Text(
+                                                'PACKING CONSOLIDADO',
+                                                style: TextStyle(
+                                                    color: white,
+                                                    fontSize: 18,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                              const SizedBox(width: 5),
+                                              Icon(
+                                                Icons.refresh,
+                                                color: white,
+                                                size: 20,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      }),
+                    ),
+
+                    //*barra de buscar
+                    DynamicSearchBar(
+                      // 1. CONTROLADOR Y FOCO
+                      controller: context
+                          .read<PackingConsolidateBloc>()
+                          .searchController,
+                      hintText: "Buscar batch",
+                      // 2. LÓGICA DE BÚSQUEDA (onChanged)
+                      onSearchChanged: (value) {
+                        // Integra directamente la lógica del BLoC
+                        context.read<PackingConsolidateBloc>().add(
+                            SearchBatchPackingEvent(value, controller.index));
+                      },
+                      // 3. LÓGICA DE LIMPIEZA (onSearchCleared)
+                      onSearchCleared: () {
+                        //todo
+                        final packingBloc =
+                            context.read<PackingConsolidateBloc>();
+                        // 1. Disparar el evento de búsqueda vacía y apagar el teclado
+
+                        // 2. Restaurar el foco después de un breve retraso (para asegurar la UI)
+                        Future.delayed(const Duration(milliseconds: 100), () {
+                          if (mounted) {
+                            // Usamos mounted si estamos en un StatefulWidget
+                            FocusScope.of(context)
+                                .requestFocus(focusNodeBuscar);
+                          }
+                        });
+                      },
+                      // 4. LÓGICA DE ACTIVACIÓN DEL TECLADO (onTap)
+                    ),
+
+                    //*buscar por scan
+                    BarcodeScannerField(
+                      controller: _controllerToDo,
+                      focusNode: focusNodeBuscar,
+                      onBarcodeScanned: (value, context) {
+                        return validateBarcode(value, context);
+                      },
+                      // onKeyScanned: (keyLabel, type, context) {
+                      //   return context.read<PackingConsolidateBloc>().add(
+                      //         UpdateScannedValuePackEvent(keyLabel, type),
+                      //       );
+                      // },
+                    ),
+
+                    //*listado de batchs
+                    Expanded(
+                      child: context
+                              .read<PackingConsolidateBloc>()
+                              .listOfBatchsDB
+                              .where((batch) =>
+                                  batch.isSeparate == 0 ||
+                                  batch.isSeparate == null)
+                              .isNotEmpty
+                          ? ListView.builder(
+                              padding:
+                                  const EdgeInsets.only(top: 20, bottom: 20),
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              itemCount: context
+                                  .read<PackingConsolidateBloc>()
+                                  .listOfBatchsDB
+                                  .where((batch) =>
+                                      batch.isSeparate == 0 ||
+                                      batch.isSeparate == null)
+                                  .length,
+                              itemBuilder: (contextBuilder, index) {
+                                final List<BatchPackingModel>
+                                    inProgressBatches = context
+                                        .read<PackingConsolidateBloc>()
+                                        .listOfBatchsDB
+                                        .where((batch) =>
+                                            batch.isSeparate == 0 ||
+                                            batch.isSeparate == null)
+                                        .toList(); // Convertir a lista
+
+                                // Asegurarse de que hay batches en progreso
+                                if (inProgressBatches.isEmpty) {
+                                  return const Center(
+                                      child:
+                                          Text('No hay batches en progreso.'));
+                                }
+
+                                // Comprobar que el índice no está fuera de rango
+                                if (index >= inProgressBatches.length) {
+                                  return const SizedBox(); // O manejar de otra forma
+                                }
+
+                                final batch = inProgressBatches[
+                                    index]; // Acceder al batch filtrado
+
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 5),
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      _handleBatchTap(
+                                          context, batch, contextBuilder);
+                                    },
+                                    child: Card(
+                                      color: batch.isSeparate == 1
+                                          ? Colors.green[100]
+                                          : batch.isSelected == 1
+                                              ? primaryColorAppLigth
+                                              : Colors.white,
+                                      elevation: 5,
+                                      child: ListTile(
+                                        trailing: Icon(
+                                          Icons.arrow_forward_ios,
+                                          color: primaryColorApp,
+                                        ),
+                                        leading: GestureDetector(
+                                          onTap: () {
+                                            context
+                                                .read<PackingConsolidateBloc>()
+                                                .batch = batch;
+
+                                            context
+                                                .read<PackingConsolidateBloc>()
+                                                .listOfOrigins = context
+                                                    .read<
+                                                        PackingConsolidateBloc>()
+                                                    .parseOrigins() ??
+                                                [];
+
+                                            //todo
+
+                                            showDialog(
+                                                context: context,
+                                                builder: (context) =>
+                                                    BackdropFilter(
+                                                      filter: ImageFilter.blur(
+                                                          sigmaX: 5, sigmaY: 5),
+                                                      child: AlertDialog(
+                                                        actionsAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        title: Center(
+                                                            child: Text(
+                                                          "Documentos de origen",
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style: TextStyle(
+                                                              color:
+                                                                  primaryColorApp,
+                                                              fontSize: 20),
+                                                        )),
+                                                        content:
+                                                            //lista de documentos
+                                                            SizedBox(
+                                                          height: 300,
+                                                          width:
+                                                              size.width * 0.9,
+                                                          child:
+                                                              ListView.builder(
+                                                            itemCount: context
+                                                                .read<
+                                                                    PackingConsolidateBloc>()
+                                                                .listOfOrigins
+                                                                .length,
+                                                            itemBuilder:
+                                                                (context,
+                                                                    index) {
+                                                              return Card(
+                                                                color: white,
+                                                                elevation: 2,
+                                                                child: ListTile(
+                                                                  title: Text(
+                                                                      context.read<PackingConsolidateBloc>().listOfOrigins[
+                                                                          index],
+                                                                      style: const TextStyle(
+                                                                          fontSize:
+                                                                              12,
+                                                                          color:
+                                                                              black)),
+                                                                ),
+                                                              );
+                                                            },
+                                                          ),
+                                                        ),
+                                                        actions: [
+                                                          ElevatedButton(
+                                                              onPressed: () {
+                                                                Navigator.pop(
+                                                                    context);
+                                                              },
+                                                              style: ElevatedButton.styleFrom(
+                                                                  backgroundColor:
+                                                                      primaryColorApp,
+                                                                  shape: RoundedRectangleBorder(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                              10))),
+                                                              child: const Text(
+                                                                'Aceptar',
+                                                                style: TextStyle(
+                                                                    color:
+                                                                        white),
+                                                              ))
+                                                        ],
+                                                      ),
+                                                    ));
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.all(5),
+                                            decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+
+                                                //sombras
+                                                boxShadow: const [
+                                                  BoxShadow(
+                                                      color: Colors.black12,
+                                                      blurRadius: 5,
+                                                      offset: Offset(0, 2))
+                                                ]),
+                                            child: Image.asset(
+                                              "assets/icons/producto.png",
+                                              color: primaryColorApp,
+                                              width: 24,
                                             ),
-                                            const SizedBox(width: 5),
-                                            Icon(
-                                              Icons.refresh,
-                                              color: white,
-                                              size: 20,
+                                          ),
+                                        ),
+                                        title: Row(
+                                          children: [
+                                            Text(batch.name ?? '',
+                                                style: const TextStyle(
+                                                    fontSize: 14)),
+                                          ],
+                                        ),
+                                        subtitle: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          children: [
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text(
+                                                  batch.zonaEntrega ?? '',
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: black)),
+                                            ),
+                                            Row(
+                                              children: [
+                                                const Align(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  child: Text(
+                                                      "Tipo de operación:",
+                                                      style: TextStyle(
+                                                          fontSize: 12,
+                                                          color: grey)),
+                                                ),
+                                                const Spacer(),
+                                                batch.startTimePack != ""
+                                                    ? GestureDetector(
+                                                        onTap: () {
+                                                          showDialog(
+                                                              context: context,
+                                                              builder:
+                                                                  (context) =>
+                                                                      DialogInfo(
+                                                                        title:
+                                                                            'Tiempo de inicio',
+                                                                        body:
+                                                                            'Este batch fue iniciado a las ${batch.startTimePack}',
+                                                                      ));
+                                                        },
+                                                        child: Icon(
+                                                          Icons.timer_sharp,
+                                                          color:
+                                                              primaryColorApp,
+                                                          size: 15,
+                                                        ),
+                                                      )
+                                                    : const SizedBox(),
+                                              ],
+                                            ),
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text(
+                                                batch.pickingTypeId.toString(),
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: primaryColorApp),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.calendar_month_sharp,
+                                                    color: primaryColorApp,
+                                                    size: 15,
+                                                  ),
+                                                  const SizedBox(width: 5),
+                                                  Text(
+                                                    batch.scheduleddate != null
+                                                        ? DateFormat(
+                                                                'dd/MM/yyyy')
+                                                            .format(DateTime
+                                                                .parse(batch
+                                                                    .scheduleddate!))
+                                                        : "Sin fecha",
+                                                    style: const TextStyle(
+                                                        fontSize: 12),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.add,
+                                                    color: primaryColorApp,
+                                                    size: 15,
+                                                  ),
+                                                  Expanded(
+                                                    child: Text(
+                                                      'Cantidad de pedidos: ',
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: black),
+                                                      maxLines: 2,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    batch.cantidadTotalPedidos
+                                                        .toString(),
+                                                    style: const TextStyle(
+                                                        fontSize: 12,
+                                                        color: black),
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.add,
+                                                    color: primaryColorApp,
+                                                    size: 15,
+                                                  ),
+                                                  Expanded(
+                                                    child: Text(
+                                                      'Cantidad de lineas: ',
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: black),
+                                                      maxLines: 2,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    batch.cantidadTotalProductos
+                                                        .toString(),
+                                                    style: const TextStyle(
+                                                        fontSize: 12,
+                                                        color: black),
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.add,
+                                                    color: primaryColorApp,
+                                                    size: 15,
+                                                  ),
+                                                  Expanded(
+                                                    child: Text(
+                                                      'Cantidad unidades: ',
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: black),
+                                                      maxLines: 2,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    batch.unidadesProductos
+                                                        .toString(),
+                                                    style: const TextStyle(
+                                                        fontSize: 12,
+                                                        color: black),
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.person,
+                                                    color: primaryColorApp,
+                                                    size: 15,
+                                                  ),
+                                                  const SizedBox(width: 5),
+                                                  Expanded(
+                                                    child: Text(
+                                                      batch.userName == null ||
+                                                              batch.userName ==
+                                                                  ""
+                                                          ? "Sin responsable"
+                                                          : batch.userName!,
+                                                      style: TextStyle(
+                                                          fontSize: 12,
+                                                          color: batch.userName ==
+                                                                      null ||
+                                                                  batch.userName ==
+                                                                      ""
+                                                              ? red
+                                                              : black),
+                                                      maxLines: 2,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ],
                                         ),
                                       ),
                                     ),
-                                    const Spacer(),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      );
-                    }),
-                  ),
-
-                  //*barra de buscar
-                  DynamicSearchBar(
-                    // 1. CONTROLADOR Y FOCO
-                    controller:
-                        context.read<PackingConsolidateBloc>().searchController,
-                    hintText: "Buscar batch",
-                    // 2. LÓGICA DE BÚSQUEDA (onChanged)
-                    onSearchChanged: (value) {
-                      // Integra directamente la lógica del BLoC
-                      context.read<PackingConsolidateBloc>().add(
-                          SearchBatchPackingEvent(value, controller.index));
-                    },
-                    // 3. LÓGICA DE LIMPIEZA (onSearchCleared)
-                    onSearchCleared: () {
-                      //todo
-                      final packingBloc =
-                          context.read<PackingConsolidateBloc>();
-                      // 1. Disparar el evento de búsqueda vacía y apagar el teclado
-
-                      // 2. Restaurar el foco después de un breve retraso (para asegurar la UI)
-                      Future.delayed(const Duration(milliseconds: 100), () {
-                        if (mounted) {
-                          // Usamos mounted si estamos en un StatefulWidget
-                          FocusScope.of(context).requestFocus(focusNodeBuscar);
-                        }
-                      });
-                    },
-                    // 4. LÓGICA DE ACTIVACIÓN DEL TECLADO (onTap)
-                  ),
-
-                  //*buscar por scan
-                  BarcodeScannerField(
-                    controller: _controllerToDo,
-                    focusNode: focusNodeBuscar,
-                    onBarcodeScanned: (value, context) {
-                      return validateBarcode(value, context);
-                    },
-                    // onKeyScanned: (keyLabel, type, context) {
-                    //   return context.read<PackingConsolidateBloc>().add(
-                    //         UpdateScannedValuePackEvent(keyLabel, type),
-                    //       );
-                    // },
-                  ),
-
-                  //*listado de batchs
-                  Expanded(
-                    child: context
-                            .read<PackingConsolidateBloc>()
-                            .listOfBatchsDB
-                            .where((batch) =>
-                                batch.isSeparate == 0 ||
-                                batch.isSeparate == null)
-                            .isNotEmpty
-                        ? ListView.builder(
-                            padding: const EdgeInsets.only(top: 20, bottom: 20),
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            itemCount: context
-                                .read<PackingConsolidateBloc>()
-                                .listOfBatchsDB
-                                .where((batch) =>
-                                    batch.isSeparate == 0 ||
-                                    batch.isSeparate == null)
-                                .length,
-                            itemBuilder: (contextBuilder, index) {
-                              final List<BatchPackingModel> inProgressBatches =
-                                  context
-                                      .read<PackingConsolidateBloc>()
-                                      .listOfBatchsDB
-                                      .where((batch) =>
-                                          batch.isSeparate == 0 ||
-                                          batch.isSeparate == null)
-                                      .toList(); // Convertir a lista
-
-                              // Asegurarse de que hay batches en progreso
-                              if (inProgressBatches.isEmpty) {
-                                return const Center(
-                                    child: Text('No hay batches en progreso.'));
-                              }
-
-                              // Comprobar que el índice no está fuera de rango
-                              if (index >= inProgressBatches.length) {
-                                return const SizedBox(); // O manejar de otra forma
-                              }
-
-                              final batch = inProgressBatches[
-                                  index]; // Acceder al batch filtrado
-
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 5),
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    _handleBatchTap(
-                                        context, batch, contextBuilder);
-                                  },
-                                  child: Card(
-                                    color: batch.isSeparate == 1
-                                        ? Colors.green[100]
-                                        : batch.isSelected == 1
-                                            ? primaryColorAppLigth
-                                            : Colors.white,
-                                    elevation: 5,
-                                    child: ListTile(
-                                      trailing: Icon(
-                                        Icons.arrow_forward_ios,
-                                        color: primaryColorApp,
-                                      ),
-                                      leading: GestureDetector(
-                                        onTap: () {
-                                          context
-                                              .read<PackingConsolidateBloc>()
-                                              .batch = batch;
-
-                                          context
-                                              .read<PackingConsolidateBloc>()
-                                              .listOfOrigins = context
-                                                  .read<
-                                                      PackingConsolidateBloc>()
-                                                  .parseOrigins() ??
-                                              [];
-
-                                          //todo
-
-                                          showDialog(
-                                              context: context,
-                                              builder: (context) =>
-                                                  BackdropFilter(
-                                                    filter: ImageFilter.blur(
-                                                        sigmaX: 5, sigmaY: 5),
-                                                    child: AlertDialog(
-                                                      actionsAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      title: Center(
-                                                          child: Text(
-                                                        "Documentos de origen",
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        style: TextStyle(
-                                                            color:
-                                                                primaryColorApp,
-                                                            fontSize: 20),
-                                                      )),
-                                                      content:
-                                                          //lista de documentos
-                                                          SizedBox(
-                                                        height: 300,
-                                                        width: size.width * 0.9,
-                                                        child: ListView.builder(
-                                                          itemCount: context
-                                                              .read<
-                                                                  PackingConsolidateBloc>()
-                                                              .listOfOrigins
-                                                              .length,
-                                                          itemBuilder:
-                                                              (context, index) {
-                                                            return Card(
-                                                              color: white,
-                                                              elevation: 2,
-                                                              child: ListTile(
-                                                                title: Text(
-                                                                    context
-                                                                            .read<
-                                                                                PackingConsolidateBloc>()
-                                                                            .listOfOrigins[
-                                                                        index],
-                                                                    style: const TextStyle(
-                                                                        fontSize:
-                                                                            12,
-                                                                        color:
-                                                                            black)),
-                                                              ),
-                                                            );
-                                                          },
-                                                        ),
-                                                      ),
-                                                      actions: [
-                                                        ElevatedButton(
-                                                            onPressed: () {
-                                                              Navigator.pop(
-                                                                  context);
-                                                            },
-                                                            style: ElevatedButton.styleFrom(
-                                                                backgroundColor:
-                                                                    primaryColorApp,
-                                                                shape: RoundedRectangleBorder(
-                                                                    borderRadius:
-                                                                        BorderRadius.circular(
-                                                                            10))),
-                                                            child: const Text(
-                                                              'Aceptar',
-                                                              style: TextStyle(
-                                                                  color: white),
-                                                            ))
-                                                      ],
-                                                    ),
-                                                  ));
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.all(5),
-                                          decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-
-                                              //sombras
-                                              boxShadow: const [
-                                                BoxShadow(
-                                                    color: Colors.black12,
-                                                    blurRadius: 5,
-                                                    offset: Offset(0, 2))
-                                              ]),
-                                          child: Image.asset(
-                                            "assets/icons/producto.png",
-                                            color: primaryColorApp,
-                                            width: 24,
-                                          ),
-                                        ),
-                                      ),
-                                      title: Row(
-                                        children: [
-                                          Text(batch.name ?? '',
-                                              style: const TextStyle(
-                                                  fontSize: 14)),
-                                        ],
-                                      ),
-                                      subtitle: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: [
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Text(batch.zonaEntrega ?? '',
-                                                style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color: black)),
-                                          ),
-                                          Row(
-                                            children: [
-                                              const Align(
-                                                alignment: Alignment.centerLeft,
-                                                child: Text(
-                                                    "Tipo de operación:",
-                                                    style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: grey)),
-                                              ),
-                                              const Spacer(),
-                                              batch.startTimePack != ""
-                                                  ? GestureDetector(
-                                                      onTap: () {
-                                                        showDialog(
-                                                            context: context,
-                                                            builder:
-                                                                (context) =>
-                                                                    DialogInfo(
-                                                                      title:
-                                                                          'Tiempo de inicio',
-                                                                      body:
-                                                                          'Este batch fue iniciado a las ${batch.startTimePack}',
-                                                                    ));
-                                                      },
-                                                      child: Icon(
-                                                        Icons.timer_sharp,
-                                                        color: primaryColorApp,
-                                                        size: 15,
-                                                      ),
-                                                    )
-                                                  : const SizedBox(),
-                                            ],
-                                          ),
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Text(
-                                              batch.pickingTypeId.toString(),
-                                              style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: primaryColorApp),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.calendar_month_sharp,
-                                                  color: primaryColorApp,
-                                                  size: 15,
-                                                ),
-                                                const SizedBox(width: 5),
-                                                Text(
-                                                  batch.scheduleddate != null
-                                                      ? DateFormat('dd/MM/yyyy')
-                                                          .format(DateTime
-                                                              .parse(batch
-                                                                  .scheduleddate!))
-                                                      : "Sin fecha",
-                                                  style: const TextStyle(
-                                                      fontSize: 12),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.add,
-                                                  color: primaryColorApp,
-                                                  size: 15,
-                                                ),
-                                                Expanded(
-                                                  child: Text(
-                                                    'Cantidad de pedidos: ',
-                                                    style: const TextStyle(
-                                                        fontSize: 12,
-                                                        color: black),
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                                Text(
-                                                  batch.cantidadTotalPedidos
-                                                      .toString(),
-                                                  style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: black),
-                                                  maxLines: 2,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.add,
-                                                  color: primaryColorApp,
-                                                  size: 15,
-                                                ),
-                                                Expanded(
-                                                  child: Text(
-                                                    'Cantidad de lineas: ',
-                                                    style: const TextStyle(
-                                                        fontSize: 12,
-                                                        color: black),
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                                Text(
-                                                  batch.cantidadTotalProductos
-                                                      .toString(),
-                                                  style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: black),
-                                                  maxLines: 2,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.add,
-                                                  color: primaryColorApp,
-                                                  size: 15,
-                                                ),
-                                                Expanded(
-                                                  child: Text(
-                                                    'Cantidad unidades: ',
-                                                    style: const TextStyle(
-                                                        fontSize: 12,
-                                                        color: black),
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                                Text(
-                                                  batch.unidadesProductos
-                                                      .toString(),
-                                                  style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: black),
-                                                  maxLines: 2,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.person,
-                                                  color: primaryColorApp,
-                                                  size: 15,
-                                                ),
-                                                const SizedBox(width: 5),
-                                                Expanded(
-                                                  child: Text(
-                                                    batch.userName == null ||
-                                                            batch.userName == ""
-                                                        ? "Sin responsable"
-                                                        : batch.userName!,
-                                                    style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: batch.userName ==
-                                                                    null ||
-                                                                batch.userName ==
-                                                                    ""
-                                                            ? red
-                                                            : black),
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
                                   ),
-                                ),
-                              );
-                            },
-                          )
-                        : const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(height: 10),
-                                Text('No se encontraron resultados',
-                                    style:
-                                        TextStyle(fontSize: 14, color: grey)),
-                                Text('Intenta con otra búsqueda',
-                                    style:
-                                        TextStyle(fontSize: 12, color: grey)),
-                              ],
+                                );
+                              },
+                            )
+                          : const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(height: 10),
+                                  Text('No se encontraron resultados',
+                                      style:
+                                          TextStyle(fontSize: 14, color: grey)),
+                                  Text('Intenta con otra búsqueda',
+                                      style:
+                                          TextStyle(fontSize: 12, color: grey)),
+                                ],
+                              ),
                             ),
-                          ),
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ));
       },

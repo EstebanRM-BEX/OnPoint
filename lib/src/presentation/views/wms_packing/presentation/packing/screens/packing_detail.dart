@@ -50,7 +50,7 @@ class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
     return BlocConsumer<PackingPedidoBloc, PackingPedidoState>(
       listener: (context, state) {
         if (state is WmsPackingErrorState) {
-           showScrollableErrorDialog( state.error);
+          showScrollableErrorDialog(state.error);
         }
       },
       builder: (context, state) {
@@ -59,7 +59,7 @@ class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
             return false;
           },
           child: Scaffold(
-            backgroundColor: Colors.white,
+            backgroundColor: primaryColorApp,
             appBar: AppBar(
               centerTitle: true,
               leading: IconButton(
@@ -199,21 +199,26 @@ class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
                 ),
               ),
             ),
-            body: Column(
-              children: [
-                const WarningWidgetCubit(isTop: false),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController, // Asignar el TabController
-                    children: [
-                      const Tab1PedidoScreen(),
-                      const Tab2PedidoScreen(),
-                      const Tab3PedidoScreen(),
-                      const Tab4PedidoScreen(),
-                    ],
-                  ),
+            body: SafeArea(
+              child: Container(
+                color: Colors.white,
+                child: Column(
+                  children: [
+                    const WarningWidgetCubit(isTop: false),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController, // Asignar el TabController
+                        children: [
+                          const Tab1PedidoScreen(),
+                          const Tab2PedidoScreen(),
+                          const Tab3PedidoScreen(),
+                          const Tab4PedidoScreen(),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         );

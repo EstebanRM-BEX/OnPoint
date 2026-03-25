@@ -53,7 +53,7 @@ class _RecepcionScreenState extends State<RecepcionScreen>
       child: BlocBuilder<RecepcionBloc, RecepcionState>(
         builder: (context, state) {
           return Scaffold(
-            backgroundColor: white,
+            backgroundColor: primaryColorApp,
             appBar: AppBar(
               centerTitle: true,
               leading: IconButton(
@@ -82,15 +82,15 @@ class _RecepcionScreenState extends State<RecepcionScreen>
                     : 'RECEPCIÓN',
                 style: TextStyle(color: Colors.white, fontSize: 16),
               ),
-              // actions: [
-              //   IconButton(
-              //     icon: const Icon(Icons.print, color: Colors.white),
-              //     onPressed: () {
-              //       ModalPrintersList.show(context,
-              //           resId: widget.ordenCompra?.id);
-              //     },
-              //   ),
-              // ],
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.print, color: Colors.white),
+                  onPressed: () {
+                    ModalPrintersList.show(context,
+                        resId: widget.ordenCompra?.id);
+                  },
+                ),
+              ],
               bottom: TabBar(
                 controller: _tabController, // Asignar el TabController
                 indicatorWeight: 3,
@@ -191,26 +191,31 @@ class _RecepcionScreenState extends State<RecepcionScreen>
                 ),
               ),
             ),
-            body: Column(
-              children: [
-                const WarningWidgetCubit(isTop: false),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController, // Asignar el TabController
-                    children: [
-                      Tab1ScreenRecep(
-                        ordenCompra: widget.ordenCompra,
+            body: SafeArea(
+              child: Container(
+                color: Colors.white,
+                child: Column(
+                  children: [
+                    const WarningWidgetCubit(isTop: false),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController, // Asignar el TabController
+                        children: [
+                          Tab1ScreenRecep(
+                            ordenCompra: widget.ordenCompra,
+                          ),
+                          Tab2ScreenRecep(
+                            ordenCompra: widget.ordenCompra,
+                          ),
+                          Tab3ScreenRecep(
+                            ordenCompra: widget.ordenCompra,
+                          ),
+                        ],
                       ),
-                      Tab2ScreenRecep(
-                        ordenCompra: widget.ordenCompra,
-                      ),
-                      Tab3ScreenRecep(
-                        ordenCompra: widget.ordenCompra,
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           );
         },

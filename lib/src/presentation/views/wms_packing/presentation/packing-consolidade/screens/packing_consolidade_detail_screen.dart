@@ -59,7 +59,7 @@ class _PackingDetailScreenState extends State<PackingConsolidateDetailScreen>
     return BlocConsumer<PackingConsolidateBloc, PackingConsolidateState>(
       listener: (context, state) {
         if (state is PackingConsolidateError) {
-            showScrollableErrorDialog(state.error);
+          showScrollableErrorDialog(state.error);
         }
         if (state is SetPackingsOkState) {
           Get.snackbar(
@@ -77,7 +77,7 @@ class _PackingDetailScreenState extends State<PackingConsolidateDetailScreen>
             return false;
           },
           child: Scaffold(
-            backgroundColor: Colors.white,
+            backgroundColor: primaryColorApp,
             appBar: AppBar(
               centerTitle: true,
               leading: IconButton(
@@ -224,28 +224,37 @@ class _PackingDetailScreenState extends State<PackingConsolidateDetailScreen>
                 ),
               ),
             ),
-            body: Column(
-              children: [
-                const WarningWidgetCubit(isTop: false),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController, // Asignar el TabController
-                    children: [
-                      Tab1Screen(
-                        size: size,
-                        packingModel: widget.packingModel ?? PedidoPacking(),
-                        batchModel: widget.batchModel ?? BatchPackingModel(),
+            body: SafeArea(
+              child: Container(
+                color: Colors.white,
+                child: Column(
+                  children: [
+                    const WarningWidgetCubit(isTop: false),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController, // Asignar el TabController
+                        children: [
+                          Tab1Screen(
+                            size: size,
+                            packingModel:
+                                widget.packingModel ?? PedidoPacking(),
+                            batchModel:
+                                widget.batchModel ?? BatchPackingModel(),
+                          ),
+                          Tab2Screen(
+                            packingModel:
+                                widget.packingModel ?? PedidoPacking(),
+                            batchModel:
+                                widget.batchModel ?? BatchPackingModel(),
+                          ),
+                          Tab3Screen(),
+                          Tab4Screen(),
+                        ],
                       ),
-                      Tab2Screen(
-                        packingModel: widget.packingModel ?? PedidoPacking(),
-                        batchModel: widget.batchModel ?? BatchPackingModel(),
-                      ),
-                      Tab3Screen(),
-                      Tab4Screen(),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         );

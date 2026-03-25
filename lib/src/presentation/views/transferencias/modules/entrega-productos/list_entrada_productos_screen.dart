@@ -187,33 +187,31 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
           final transferBloc = context.read<TransferenciaBloc>();
 
           return Scaffold(
-            backgroundColor: white,
-            body: SizedBox(
-              width: size.width,
-              height: size.height,
-              child: Column(
-                children: [
-                  //* appbar
-                  Container(
-                    decoration: BoxDecoration(
-                      color: primaryColorApp,
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(20),
-                        bottomRight: Radius.circular(20),
+            backgroundColor: primaryColorApp,
+            body: SafeArea(
+              child: Container(
+                color: Colors.white,
+                width: size.width,
+                height: size.height,
+                child: Column(
+                  children: [
+                    //* appbar
+                    Container(
+                      decoration: BoxDecoration(
+                        color: primaryColorApp,
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20),
+                        ),
                       ),
-                    ),
-                    width: double.infinity,
-                    child: BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
-                        builder: (context, status) {
-                      return Column(
-                        children: [
-                          const WarningWidgetCubit(),
-                          Padding(
-                            padding: EdgeInsets.only(
-                                bottom: 0,
-                                top:
-                                    status != ConnectionStatus.online ? 0 : 25),
-                            child: Row(
+                      width: double.infinity,
+                      child:
+                          BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
+                              builder: (context, status) {
+                        return Column(
+                          children: [
+                            const WarningWidgetCubit(),
+                            Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 IconButton(
@@ -326,352 +324,362 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
                                 ),
                               ],
                             ),
-                          ),
-                        ],
-                      );
-                    }),
-                  ),
-                  //* barra de buscar
-                  DynamicSearchBar(
-                    controller: context
-                        .read<TransferenciaBloc>()
-                        .searchControllerTransfer,
-                    hintText: "Buscar entrega de productos",
-                    onSearchChanged: (value) {
-                      context.read<TransferenciaBloc>().add(SearchTransferEvent(
-                          value,
-                          'entrega')); // 'entrega' es el tipo de búsqueda
-                    },
-                    onSearchCleared: () {
-                      final transferenciaBloc =
-                          context.read<TransferenciaBloc>();
-                      transferenciaBloc.searchControllerTransfer.clear();
-                      transferenciaBloc.add(SearchTransferEvent('', 'entrega'));
+                          ],
+                        );
+                      }),
+                    ),
+                    //* barra de buscar
+                    DynamicSearchBar(
+                      controller: context
+                          .read<TransferenciaBloc>()
+                          .searchControllerTransfer,
+                      hintText: "Buscar entrega de productos",
+                      onSearchChanged: (value) {
+                        context.read<TransferenciaBloc>().add(
+                            SearchTransferEvent(value,
+                                'entrega')); // 'entrega' es el tipo de búsqueda
+                      },
+                      onSearchCleared: () {
+                        final transferenciaBloc =
+                            context.read<TransferenciaBloc>();
+                        transferenciaBloc.searchControllerTransfer.clear();
+                        transferenciaBloc
+                            .add(SearchTransferEvent('', 'entrega'));
 
-                      Future.microtask(() {
-                        if (mounted) {
-                          FocusScope.of(context).unfocus();
-                        }
-                      });
-                    },
-                  ),
+                        Future.microtask(() {
+                          if (mounted) {
+                            FocusScope.of(context).unfocus();
+                          }
+                        });
+                      },
+                    ),
 
-                  //*buscar por scan
-                  BarcodeScannerField(
-                    controller: _controllerToDo,
-                    focusNode: focusNodeBuscar,
-                    onBarcodeScanned: (value, context) {
-                      return validateBarcode(value, context);
-                    },
-                  ),
+                    //*buscar por scan
+                    BarcodeScannerField(
+                      controller: _controllerToDo,
+                      focusNode: focusNodeBuscar,
+                      onBarcodeScanned: (value, context) {
+                        return validateBarcode(value, context);
+                      },
+                    ),
 
-                  (transferBloc.entregaProductosBDFilters
-                          .where((element) =>
-                              element.isFinish == 0 || element.isFinish == null)
-                          .toList()
-                          .isEmpty)
-                      ? Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.max,
-                            children: [
-                              const Text('No hay transferencias',
-                                  style: TextStyle(fontSize: 14, color: grey)),
-                              const Text('Intente buscar otra transferencia',
-                                  style: TextStyle(fontSize: 12, color: grey)),
-                              Visibility(
-                                visible: context
-                                    .read<UserBloc>()
-                                    .fabricante
-                                    .contains("Zebra"),
-                                child: Container(
-                                  height: 60,
+                    (transferBloc.entregaProductosBDFilters
+                            .where((element) =>
+                                element.isFinish == 0 ||
+                                element.isFinish == null)
+                            .toList()
+                            .isEmpty)
+                        ? Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.max,
+                              children: [
+                                const Text('No hay transferencias',
+                                    style:
+                                        TextStyle(fontSize: 14, color: grey)),
+                                const Text('Intente buscar otra transferencia',
+                                    style:
+                                        TextStyle(fontSize: 12, color: grey)),
+                                Visibility(
+                                  visible: context
+                                      .read<UserBloc>()
+                                      .fabricante
+                                      .contains("Zebra"),
+                                  child: Container(
+                                    height: 60,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : Expanded(
-                          child: ListView.builder(
-                              itemCount: transferBloc.entregaProductosBDFilters
-                                  .where((element) =>
-                                      element.isFinish == 0 ||
-                                      element.isFinish == null)
-                                  .toList()
-                                  .length,
-                              itemBuilder: (context, index) {
-                                final transferenciaDetail = transferBloc
+                              ],
+                            ),
+                          )
+                        : Expanded(
+                            child: ListView.builder(
+                                itemCount: transferBloc
                                     .entregaProductosBDFilters
                                     .where((element) =>
                                         element.isFinish == 0 ||
                                         element.isFinish == null)
-                                    .toList()[index];
-                                return Padding(
-                                  padding: const EdgeInsets.only(
-                                      left: 10, right: 10, top: 5),
-                                  child: Card(
-                                    elevation: 3,
-                                    color:
-                                        transferenciaDetail.startTimeTransfer !=
-                                                ""
-                                            ? primaryColorAppLigth
-                                            : transferenciaDetail.isFinish == 1
-                                                ? Colors.green[200]
-                                                : white,
-                                    child: ListTile(
-                                      trailing: Icon(Icons.arrow_forward_ios,
-                                          color: primaryColorApp),
-                                      title: Text(
-                                        '${transferenciaDetail.name}',
-                                        style: TextStyle(
-                                            color: primaryColorApp,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                      subtitle: Column(
-                                        children: [
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Row(
-                                              children: [
-                                                Text(
-                                                  'Tipo : ',
-                                                  style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: primaryColorApp),
-                                                ),
-                                                Text(
-                                                  transferenciaDetail
-                                                          .pickingType ??
-                                                      "",
-                                                  style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: black),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Row(
-                                              children: [
-                                                Text('Prioridad: ',
+                                    .toList()
+                                    .length,
+                                itemBuilder: (context, index) {
+                                  final transferenciaDetail = transferBloc
+                                      .entregaProductosBDFilters
+                                      .where((element) =>
+                                          element.isFinish == 0 ||
+                                          element.isFinish == null)
+                                      .toList()[index];
+                                  return Padding(
+                                    padding: const EdgeInsets.only(
+                                        left: 10, right: 10, top: 5),
+                                    child: Card(
+                                      elevation: 3,
+                                      color: transferenciaDetail
+                                                  .startTimeTransfer !=
+                                              ""
+                                          ? primaryColorAppLigth
+                                          : transferenciaDetail.isFinish == 1
+                                              ? Colors.green[200]
+                                              : white,
+                                      child: ListTile(
+                                        trailing: Icon(Icons.arrow_forward_ios,
+                                            color: primaryColorApp),
+                                        title: Text(
+                                          '${transferenciaDetail.name}',
+                                          style: TextStyle(
+                                              color: primaryColorApp,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                        subtitle: Column(
+                                          children: [
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Row(
+                                                children: [
+                                                  Text(
+                                                    'Tipo : ',
                                                     style: TextStyle(
                                                         fontSize: 12,
-                                                        color:
-                                                            primaryColorApp)),
-                                                Text(
-                                                  transferenciaDetail
-                                                              .priority ==
-                                                          '0'
-                                                      ? 'Normal'
-                                                      : 'Alta'
-                                                          "",
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: transferenciaDetail
+                                                        color: primaryColorApp),
+                                                  ),
+                                                  Text(
+                                                    transferenciaDetail
+                                                            .pickingType ??
+                                                        "",
+                                                    style: const TextStyle(
+                                                        fontSize: 12,
+                                                        color: black),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Row(
+                                                children: [
+                                                  Text('Prioridad: ',
+                                                      style: TextStyle(
+                                                          fontSize: 12,
+                                                          color:
+                                                              primaryColorApp)),
+                                                  Text(
+                                                    transferenciaDetail
                                                                 .priority ==
                                                             '0'
-                                                        ? black
-                                                        : red,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Divider(
-                                            color: black,
-                                            thickness: 1,
-                                            height: 5,
-                                          ),
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.calendar_month_sharp,
-                                                  color: primaryColorApp,
-                                                  size: 15,
-                                                ),
-                                                const SizedBox(width: 5),
-                                                Text(
-                                                  transferenciaDetail
-                                                              .fechaCreacion !=
-                                                          null
-                                                      ? DateFormat(
-                                                              'dd/MM/yyyy hh:mm ')
-                                                          .format(DateTime.parse(
-                                                              transferenciaDetail
-                                                                  .fechaCreacion!))
-                                                      : "Sin fecha",
-                                                  style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: black),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Text(
-                                                transferenciaDetail.proveedor ==
-                                                        ""
-                                                    ? 'Sin proveedor'
-                                                    : transferenciaDetail
-                                                            .proveedor ??
-                                                        '',
-                                                style: TextStyle(
-                                                  color: transferenciaDetail
-                                                              .proveedor ==
-                                                          ""
-                                                      ? red
-                                                      : black,
-                                                  fontSize: 12,
-                                                )),
-                                          ),
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.shopping_cart_sharp,
-                                                  color: primaryColorApp,
-                                                  size: 15,
-                                                ),
-                                                Text(
-                                                  transferenciaDetail.origin ==
-                                                          ""
-                                                      ? 'Sin orden de compra'
-                                                      : transferenciaDetail
-                                                              .origin ??
-                                                          '',
-                                                  style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: black),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Visibility(
-                                            visible: transferenciaDetail
-                                                    .backorderId !=
-                                                0,
-                                            child: Row(
-                                              children: [
-                                                Align(
-                                                  alignment:
-                                                      Alignment.centerLeft,
-                                                  child: Icon(
-                                                      Icons.file_copy_rounded,
-                                                      color: primaryColorApp,
-                                                      size: 15),
-                                                ),
-                                                const SizedBox(
-                                                  width: 5,
-                                                ),
-                                                Text(
-                                                    transferenciaDetail
-                                                            .backorderName ??
-                                                        '',
+                                                        ? 'Normal'
+                                                        : 'Alta'
+                                                            "",
                                                     style: TextStyle(
-                                                        color: black,
-                                                        fontSize: 12,
-                                                        fontWeight:
-                                                            FontWeight.bold)),
-                                              ],
-                                            ),
-                                          ),
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.person,
-                                                  color: primaryColorApp,
-                                                  size: 15,
-                                                ),
-                                                const SizedBox(width: 5),
-                                                Text(
-                                                  transferenciaDetail
-                                                              .responsable ==
-                                                          ""
-                                                      ? 'sin responsable'
-                                                      : transferenciaDetail
-                                                              .responsable ??
-                                                          '',
-                                                  style: TextStyle(
                                                       fontSize: 12,
                                                       color: transferenciaDetail
-                                                                  .responsable ==
-                                                              ""
-                                                          ? Colors.red
-                                                          : black),
-                                                ),
-                                                const Spacer(),
-                                                transferenciaDetail
-                                                            .startTimeTransfer !=
-                                                        ""
-                                                    ? Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .only(left: 5),
-                                                        child: GestureDetector(
-                                                          onTap: () {
-                                                            showDialog(
-                                                              context: context,
-                                                              builder:
-                                                                  (context) =>
-                                                                      DialogInfo(
-                                                                title:
-                                                                    'Tiempo de inicio de operacion',
-                                                                body:
-                                                                    'Este orden fue iniciada a las ${transferenciaDetail.startTimeTransfer}',
-                                                              ),
-                                                            );
-                                                          },
-                                                          child: Icon(
-                                                            Icons.timer_sharp,
-                                                            color:
-                                                                primaryColorApp,
-                                                            size: 15,
+                                                                  .priority ==
+                                                              '0'
+                                                          ? black
+                                                          : red,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Divider(
+                                              color: black,
+                                              thickness: 1,
+                                              height: 5,
+                                            ),
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.calendar_month_sharp,
+                                                    color: primaryColorApp,
+                                                    size: 15,
+                                                  ),
+                                                  const SizedBox(width: 5),
+                                                  Text(
+                                                    transferenciaDetail
+                                                                .fechaCreacion !=
+                                                            null
+                                                        ? DateFormat(
+                                                                'dd/MM/yyyy hh:mm ')
+                                                            .format(DateTime.parse(
+                                                                transferenciaDetail
+                                                                    .fechaCreacion!))
+                                                        : "Sin fecha",
+                                                    style: const TextStyle(
+                                                        fontSize: 12,
+                                                        color: black),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text(
+                                                  transferenciaDetail
+                                                              .proveedor ==
+                                                          ""
+                                                      ? 'Sin proveedor'
+                                                      : transferenciaDetail
+                                                              .proveedor ??
+                                                          '',
+                                                  style: TextStyle(
+                                                    color: transferenciaDetail
+                                                                .proveedor ==
+                                                            ""
+                                                        ? red
+                                                        : black,
+                                                    fontSize: 12,
+                                                  )),
+                                            ),
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.shopping_cart_sharp,
+                                                    color: primaryColorApp,
+                                                    size: 15,
+                                                  ),
+                                                  Text(
+                                                    transferenciaDetail
+                                                                .origin ==
+                                                            ""
+                                                        ? 'Sin orden de compra'
+                                                        : transferenciaDetail
+                                                                .origin ??
+                                                            '',
+                                                    style: const TextStyle(
+                                                        fontSize: 12,
+                                                        color: black),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Visibility(
+                                              visible: transferenciaDetail
+                                                      .backorderId !=
+                                                  0,
+                                              child: Row(
+                                                children: [
+                                                  Align(
+                                                    alignment:
+                                                        Alignment.centerLeft,
+                                                    child: Icon(
+                                                        Icons.file_copy_rounded,
+                                                        color: primaryColorApp,
+                                                        size: 15),
+                                                  ),
+                                                  const SizedBox(
+                                                    width: 5,
+                                                  ),
+                                                  Text(
+                                                      transferenciaDetail
+                                                              .backorderName ??
+                                                          '',
+                                                      style: TextStyle(
+                                                          color: black,
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.bold)),
+                                                ],
+                                              ),
+                                            ),
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.person,
+                                                    color: primaryColorApp,
+                                                    size: 15,
+                                                  ),
+                                                  const SizedBox(width: 5),
+                                                  Text(
+                                                    transferenciaDetail
+                                                                .responsable ==
+                                                            ""
+                                                        ? 'sin responsable'
+                                                        : transferenciaDetail
+                                                                .responsable ??
+                                                            '',
+                                                    style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: transferenciaDetail
+                                                                    .responsable ==
+                                                                ""
+                                                            ? Colors.red
+                                                            : black),
+                                                  ),
+                                                  const Spacer(),
+                                                  transferenciaDetail
+                                                              .startTimeTransfer !=
+                                                          ""
+                                                      ? Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .only(
+                                                                  left: 5),
+                                                          child:
+                                                              GestureDetector(
+                                                            onTap: () {
+                                                              showDialog(
+                                                                context:
+                                                                    context,
+                                                                builder:
+                                                                    (context) =>
+                                                                        DialogInfo(
+                                                                  title:
+                                                                      'Tiempo de inicio de operacion',
+                                                                  body:
+                                                                      'Este orden fue iniciada a las ${transferenciaDetail.startTimeTransfer}',
+                                                                ),
+                                                              );
+                                                            },
+                                                            child: Icon(
+                                                              Icons.timer_sharp,
+                                                              color:
+                                                                  primaryColorApp,
+                                                              size: 15,
+                                                            ),
                                                           ),
-                                                        ),
-                                                      )
-                                                    : const SizedBox(),
-                                              ],
+                                                        )
+                                                      : const SizedBox(),
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Text(
-                                              'Ubicacion destino: ',
-                                              style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: primaryColorApp),
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text(
+                                                'Ubicacion destino: ',
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: primaryColorApp),
+                                              ),
                                             ),
-                                          ),
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Text(
-                                              transferenciaDetail
-                                                      .locationDestName ??
-                                                  'Sin ubicacion',
-                                              style: const TextStyle(
-                                                  fontSize: 12, color: black),
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text(
+                                                transferenciaDetail
+                                                        .locationDestName ??
+                                                    'Sin ubicacion',
+                                                style: const TextStyle(
+                                                    fontSize: 12, color: black),
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
+                                        onTap: () async {
+                                          _handleTransferTap(
+                                              context, transferenciaDetail);
+                                        },
                                       ),
-                                      onTap: () async {
-                                        _handleTransferTap(
-                                            context, transferenciaDetail);
-                                      },
                                     ),
-                                  ),
-                                );
-                              })),
-                  const SizedBox(height: 10),
-                ],
+                                  );
+                                })),
+                    const SizedBox(height: 10),
+                  ],
+                ),
               ),
             ),
           );
