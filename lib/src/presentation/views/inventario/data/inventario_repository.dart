@@ -181,8 +181,9 @@ class InventarioRepository {
     bool isLoadinDialog,
   ) async {
     var connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult == ConnectivityResult.none)
+    if (connectivityResult == ConnectivityResult.none) {
       return {'products': <Product>[], 'barcodes': <BarcodeInventario>[]};
+    }
 
     try {
       var response = await ApiRequestService().getInventario(

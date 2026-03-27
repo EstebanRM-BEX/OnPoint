@@ -456,8 +456,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                 icon: Icons.people,
                                                 label: 'Terceros',
                                                 count: bloc.tercerosCount,
-                                                isLoading: state is dev_bloc
-                                                    .DownloadAllTercerosLoading,
+                                                isLoading: state is dev_bloc.DownloadAllTercerosLoading || 
+                                                           state is dev_bloc.LoadTercerosFromDBLoading,
                                               );
                                             },
                                           ),
@@ -470,8 +470,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                 icon: Icons.inventory_2,
                                                 label: 'Productos',
                                                 count: bloc.productosCount,
-                                                isLoading: state
-                                                    is GetProductsLoadingInventory,
+                                                // PROTECCIÓN CONTRA RACE CONDITIONS: 
+                                                // Usamos la propiedad persistente en vez del estado transitorio
+                                                isLoading: bloc.isLoading || 
+                                                           state is GetProductsLoadingInventory || 
+                                                           state is GetProductsLoadingBD,
                                               );
                                             },
                                           ),
@@ -485,15 +488,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                     icon: Icons.location_on,
                                                     label: 'Ubicaciones',
                                                     count: bloc.locationsCount,
-                                                    isLoading: state
-                                                        is UserLocationsLoading,
+                                                    isLoading: state is UserLocationsLoading,
                                                   ),
                                                   _buildInfoItem(
                                                     icon: Icons.new_releases,
                                                     label: 'Novedades',
                                                     count: bloc.noveltiesCount,
-                                                    isLoading: state
-                                                        is UserNoveltiesLoading,
+                                                    isLoading: state is UserNoveltiesLoading,
                                                   )
                                                 ],
                                               );
