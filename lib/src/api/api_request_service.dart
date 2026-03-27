@@ -1375,6 +1375,13 @@ class ApiRequestService {
         Get.back();
       }
 
+      debugPrint("--------------------------------------------");
+      debugPrint('Petición GET a $fullImageUrl');
+      debugPrint('Cuerpo de la solicitud: $fullImageUrl');
+      debugPrint('headers: $headers');
+      debugPrint('status code: ${response.statusCode}');
+      debugPrint("--------------------------------------------");
+
       if (response.statusCode == 200) {
         return await response.stream.toBytes();
       } else {

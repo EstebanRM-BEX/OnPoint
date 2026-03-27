@@ -12,6 +12,7 @@ import 'package:wms_app/core/utils/validator_utils.dart';
 import 'package:wms_app/core/utils/widgets/dialog_loading_widget.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/login/presentation/bloc/login_bloc.dart';
+import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/src/presentation/views/inventario/screens/bloc/inventario_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
@@ -55,17 +56,11 @@ class LoginPage extends StatelessWidget {
             showScrollableErrorDialog(state.message);
           }
 
-          if (state is DeviceRegistrationSuccess) {
-            context
-                .read<UserBloc>()
-                .add(LoadUserInfoEvent()); //configuracion del usuario
-          }
-
           if (state is UserLoaded) {
+            context.read<DevolucionesBloc>().add(DownloadAllTercerosEvent());
             context
                 .read<WMSPickingBloc>()
                 .add(LoadAllNovedades(context)); //novedades
-            // context.read<UserBloc>().add(GetUbicacionesEvent()); // Separated event not needed as LoadUserInfoEvent does it
             context
                 .read<InventarioBloc>()
                 .add(GetProductsEvent(isDialogLoading: true));

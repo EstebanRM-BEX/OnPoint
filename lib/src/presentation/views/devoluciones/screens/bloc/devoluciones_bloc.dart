@@ -144,6 +144,87 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
     //meotod para obtener todos los other barcodes y product_packing de inventario
     on<FetchAllBarcodesInventarioEvent>(_onFetchAllBarcodesInventarioEvent);
+
+    on<InitializeDevolucionesData>(_onInitializeDevolucionesData);
+
+    //metodo para descargar todos los terceros
+    on<DownloadAllTercerosEvent>(_onDownloadAllTercerosEvent);
+  }
+
+  void _onDownloadAllTercerosEvent(
+      DownloadAllTercerosEvent event, Emitter<DevolucionesState> emit) async {
+    final stopwatchAPI = Stopwatch()..start();
+    try {
+      emit(DownloadAllTercerosLoading());
+
+      // 1. Petición a la API
+      final apiTerceros = await devolucionesRepository.fetAllTerceros(false);
+      stopwatchAPI.stop();
+
+      if (apiTerceros.isEmpty) {
+        emit(DownloadAllTercerosFailure(
+            'No se encontraron terceros en la nube'));
+      } else {
+        final stopwatchDB = Stopwatch()..start();
+
+        // 2. Limpieza previa de tabla local (opcional, pero recomendado para mantener consistencia)
+        await db.tercerosRepository.deleTerceros();
+
+        // 3. Inserción masiva en la base de datos local
+        await db.tercerosRepository.insertTerceros(apiTerceros);
+        stopwatchDB.stop();
+
+        // 4. Actualización en memoria
+        terceros.clear();
+        terceros = List.from(apiTerceros);
+        tercerosFilters.clear();
+        tercerosFilters = List.from(apiTerceros);
+
+        // Registro de tiempos y cantidad de datos
+        debugPrint(
+            '⏱️ TERCEROS - Tiempo API: ${stopwatchAPI.elapsedMilliseconds} ms (${(stopwatchAPI.elapsedMilliseconds / 1000).toStringAsFixed(2)} s)');
+        debugPrint(
+            '⏱️ TERCEROS - Tiempo DB: ${stopwatchDB.elapsedMilliseconds} ms (${(stopwatchDB.elapsedMilliseconds / 1000).toStringAsFixed(2)} s)');
+        debugPrint('📦 TERCEROS - Datos guardados: ${apiTerceros.length}');
+
+        emit(DownloadAllTercerosSuccess(apiTerceros));
+      }
+    } catch (e, s) {
+      debugPrint("❌ Error en _onDownloadAllTercerosEvent: $e, $s");
+      emit(DownloadAllTercerosFailure('Error al descargar terceros: $e'));
+    }
+  }
+
+  void _onInitializeDevolucionesData(
+      InitializeDevolucionesData event, Emitter<DevolucionesState> emit) async {
+    try {
+      // 1. Cargamos configuración
+      add(LoadConfigurationsUser());
+
+      // 2. Cargamos Ubicaciones desde BD
+      add(LoadLocationsEvent());
+
+      // 3. Cargamos Barcodes Inventario desde BD
+      add(FetchAllBarcodesInventarioEvent());
+
+      // 4. Cargamos Productos desde BD
+      add(GetProductsList());
+
+      //madnamos a llamar todos los terceros que estan guardados en la bd
+      final localTerceros = await db.tercerosRepository.getAllTerceros();
+
+      terceros.clear();
+      terceros = List.from(localTerceros);
+      tercerosFilters.clear();
+      tercerosFilters = List.from(localTerceros);
+      debugPrint('📦 Terceros cargados desde CACHE (BD): ${terceros.length}');
+      emit(LoadTercerosSuccess(terceros));
+
+      // 5. LÓGICA SMART PARA TERCEROS:
+      // Intentamos cargar de BD primero. Solo si está vacío, vamos a la nube.
+    } catch (e, s) {
+      debugPrint("❌ Error en _onInitializeDevolucionesData: $e, $s");
+    }
   }
 
   void _onFetchAllBarcodesInventarioEvent(FetchAllBarcodesInventarioEvent event,
@@ -537,14 +618,31 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
   void _onLoadTercerosEvent(
       LoadTercerosEvent event, Emitter<DevolucionesState> emit) async {
+    final stopwatch = Stopwatch()..start();
     try {
+      emit(LoadingLocationsState()); // O una estado de carga genérico
+
+      // 1. Limpieza de tabla local (Tabula Rasa)
+      await db.tercerosRepository.deleTerceros();
+
+      // 2. Fetch con Isolate (Optimizado en el Repositorio)
       final response = await devolucionesRepository.fetAllTerceros(true);
+
       if (response.isNotEmpty) {
+        // 3. Inserción Raw SQL Masiva
+        await db.tercerosRepository.insertTerceros(response);
+
+        // 4. Actualización inmediata des de memoria
         terceros.clear();
-        terceros = response;
+        terceros = List.from(response);
         tercerosFilters.clear();
-        tercerosFilters = terceros;
+        tercerosFilters = List.from(response);
+
         emit(LoadTercerosSuccess(response));
+
+        stopwatch.stop();
+        debugPrint(
+            '✅ ⏱️ TERCEROS - TIEMPO TOTAL OPTIMIZADO: ${stopwatch.elapsedMilliseconds} ms (${(stopwatch.elapsedMilliseconds / 1000).toStringAsFixed(2)} s)');
       } else {
         emit(LoadTercerosFailure('No se encontraron terceros'));
       }
@@ -853,7 +951,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
         debugPrint('productosDevolucion: ${productosDevolucion.length}');
 
-        emit(GetProductsSuccess(response));
+        emit(GetProductsSuccessDevo(response));
       } else {
         emit(GetProductsFailure('No se encontraron productos'));
       }

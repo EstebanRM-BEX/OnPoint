@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -140,16 +141,42 @@ class InventarioRepository {
     }
   }
 
-  Future<List<Product>> fetAllProducts(
+  // ✅ Función para procesar y aislar el json gigantesco y extraer barcodes en un SOLO paso.
+  // Al hacer todo en un solo Isolate, evitamos copiar 60,000 objetos de memoria dos veces por el canal de Flutter.
+  static Map<String, dynamic> _parseProductsAndBarcodesIsolate(String responseBody) {
+    Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
+    
+    if (jsonResponse.containsKey('result')) {
+      final List<dynamic> data = jsonResponse['result']['data'];
+      final List<Product> products = [];
+      final List<BarcodeInventario> barcodes = [];
+
+      for (final item in data) {
+        final product = Product.fromMap(item);
+        products.add(product);
+        
+        // Extracción inmediata de barcodes para ahorrar un loop extra en el futuro
+        if (product.otherBarcodes != null) {
+          barcodes.addAll(product.otherBarcodes!);
+        }
+        if (product.productPacking != null) {
+          barcodes.addAll(product.productPacking!);
+        }
+      }
+
+      return {
+        'products': products,
+        'barcodes': barcodes,
+      };
+    }
+    return {'error': jsonResponse['error'] ?? 'Unknown error', 'products': <Product>[], 'barcodes': <BarcodeInventario>[]};
+  }
+
+  Future<Map<String, dynamic>> fetAllProductsCombined(
     bool isLoadinDialog,
   ) async {
-    // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult == ConnectivityResult.none) {
-      debugPrint("Error: No hay conexión a Internet.");
-      return []; // Si no hay conexión, retornar una lista vacía
-    }
+    if (connectivityResult == ConnectivityResult.none) return {'products': <Product>[], 'barcodes': <BarcodeInventario>[]};
 
     try {
       var response = await ApiRequestService().getInventario(
@@ -157,54 +184,22 @@ class InventarioRepository {
         isunecodePath: true,
         isLoadinDialog: isLoadinDialog,
       );
+      
       if (response.statusCode < 400) {
-        // Decodifica la respuesta JSON a un mapa
-        Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-        // Accede a la clave "data" y luego a "result"
-        // Asegúrate de que 'result' exista y sea una lista
-        if (jsonResponse.containsKey('result')) {
-          List<dynamic> products = jsonResponse['result']['data'];
-          // Mapea los datos decodificados a una lista de BatchsModel
-          List<Product> productsResponse =
-              products.map((data) => Product.fromMap(data)).toList();
-
-          return productsResponse;
-        } else if (jsonResponse.containsKey('error')) {
-          if (jsonResponse['error']['code'] == 100) {
-            Get.defaultDialog(
-              title: 'Alerta',
-              titleStyle: TextStyle(color: Colors.red, fontSize: 18),
-              middleText: 'Sesion expirada, por favor inicie sesión nuevamente',
-              middleTextStyle: TextStyle(color: black, fontSize: 14),
-              backgroundColor: Colors.white,
-              radius: 10,
-              actions: [
-                ElevatedButton(
-                  onPressed: () {
-                    Get.back();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColorApp,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: Text('Aceptar', style: TextStyle(color: white)),
-                ),
-              ],
-            );
-            return [];
-          }
-        }
-      } else {}
-    } on SocketException catch (e) {
-      debugPrint('Error de red: $e');
-      return [];
+        // Un solo compute para TODO el procesamiento pesado
+        return await compute(_parseProductsAndBarcodesIsolate, response.body);
+      }
     } catch (e, s) {
-      // Manejo de otros errores
-      debugPrint('Error getProductosInventario: $e, $s');
+      debugPrint('Error fetAllProductsCombined: $e, $s');
     }
-    return [];
+    return {'products': <Product>[], 'barcodes': <BarcodeInventario>[]};
+  }
+
+  // Mantenemos la firma original por compatibilidad si otros blocs la usan, 
+  // pero internamente llamamos a la optimizada.
+  Future<List<Product>> fetAllProducts(bool isLoadinDialog) async {
+    final res = await fetAllProductsCombined(isLoadinDialog);
+    return res['products'] as List<Product>;
   }
 
   Future<List<LotesProduct>> fetchAllLotesProduct(

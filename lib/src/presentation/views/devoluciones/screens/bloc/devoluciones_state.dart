@@ -20,9 +20,9 @@ class GetProductLoading extends DevolucionesState {}
 
 class GetProductsLoading extends DevolucionesState {}
 
-class GetProductsSuccess extends DevolucionesState {
+class GetProductsSuccessDevo extends DevolucionesState {
   final List<Product> products;
-  GetProductsSuccess(this.products);
+  GetProductsSuccessDevo(this.products);
 }
 
 class GetProductsFailure extends DevolucionesState {
@@ -86,6 +86,18 @@ class LoadTercerosFailure extends DevolucionesState {
 class LoadTercerosSuccess extends DevolucionesState {
   final List<Terceros> terceros;
   LoadTercerosSuccess(this.terceros);
+}
+
+class DownloadAllTercerosLoading extends DevolucionesState {}
+
+class DownloadAllTercerosSuccess extends DevolucionesState {
+  final List<Terceros> terceros;
+  DownloadAllTercerosSuccess(this.terceros);
+}
+
+class DownloadAllTercerosFailure extends DevolucionesState {
+  final String error;
+  DownloadAllTercerosFailure(this.error);
 }
 
 class ShowKeyboardState extends DevolucionesState {

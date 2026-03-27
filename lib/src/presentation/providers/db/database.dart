@@ -65,6 +65,8 @@ import 'package:wms_app/src/presentation/providers/db/transferencia/tbl_product_
 import 'package:wms_app/src/presentation/providers/db/transferencia/tbl_product_transferencia/product_transferencia_table.dart';
 import 'package:wms_app/src/presentation/providers/db/transferencia/tbl_transferencias/transferencia_repository.dart';
 import 'package:wms_app/src/presentation/providers/db/transferencia/tbl_transferencias/transferencia_table.dart';
+import 'package:wms_app/src/presentation/providers/db/devoluciones/tbl_terceros/terceros_table.dart';
+import 'package:wms_app/src/presentation/providers/db/devoluciones/tbl_terceros/terceros_repository.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/BatchWithProducts_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/features/picking_cluster/data/models/pedido_validate_model.dart';
@@ -90,7 +92,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 24,
+      version: 25,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -160,6 +162,8 @@ class DataBaseSqlite {
     await db.execute(PedidoPackTable.createTable());
     //tabla de prductos de una devolucion
     await db.execute(ProductDevolucionTable.createTable());
+    //tabla de terceros de una devolucion
+    await db.execute(TercerosTable.createTable());
     // tabla de ordenes de conteo
     await db.execute(OrdenTable.createTable());
 
@@ -409,6 +413,14 @@ class DataBaseSqlite {
         debugPrint("Error actualizando tbl_packaging_types: $e");
       }
     }
+
+    if (oldVersion < 25) {
+      try {
+        await db.execute(TercerosTable.createTable());
+      } catch (e) {
+        debugPrint("Error actualizando a v25 (TercerosTable): $e");
+      }
+    }
   }
 
   //todo repositorios de las tablas
@@ -478,6 +490,8 @@ class DataBaseSqlite {
 
   ProductDevolucionRepository get devolucionRepository =>
       ProductDevolucionRepository(_instance);
+
+  TercerosRepository get tercerosRepository => TercerosRepository();
 
   OrdenConteoRepository get ordenRepository => OrdenConteoRepository();
 

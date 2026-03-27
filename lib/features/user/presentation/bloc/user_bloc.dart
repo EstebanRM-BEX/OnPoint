@@ -31,6 +31,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   final GetUserNovelties getUserNovelties;
   final RegisterDevice registerDevice;
 
+  List<UserLocation> locations = [];
+  List<Novedad> novelties = [];
+
   UserBloc({
     required this.getUserConfiguration,
     required this.getDeviceInfo,
@@ -131,27 +134,29 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     }
 
     // 3. Get Locations
-    final locationsResult = await getUserLocations(NoParams());
-    locationsResult.fold(
-      (failure) {
-        // We might want to show user info even if locations fail, or treat as error.
-        // For now, logging error but proceeding with empty locations if config is loaded
-        debugPrint('Failed to load locations: ${failure.message}');
-      },
-      (data) => locations = data,
-    );
+    // final locationsResult = await getUserLocations(NoParams());
+    // locationsResult.fold(
+    //   (failure) {
+    //     // We might want to show user info even if locations fail, or treat as error.
+    //     // For now, logging error but proceeding with empty locations if config is loaded
+    //     debugPrint('Failed to load locations: ${failure.message}');
+    //   },
+    //   (data) => locations = data,
+    // );
+    add(LoadUserLocationsEvent());
 
     // 4. Get Novelties
-    final noveltiesResult = await getUserNovelties(NoParams());
-    noveltiesResult.fold(
-      (failure) {
-        debugPrint('Failed to load novelties: ${failure.message}');
-      },
-      (data) {
-        novelties = data;
-        debugPrint('Novelties loaded: ${novelties.length}');
-      },
-    );
+    // final noveltiesResult = await getUserNovelties(NoParams());
+    // noveltiesResult.fold(
+    //   (failure) {
+    //     debugPrint('Failed to load novelties: ${failure.message}');
+    //   },
+    //   (data) {
+    //     novelties = data;
+    //     debugPrint('Novelties loaded: ${novelties.length}');
+    //   },
+    // );
+    add(LoadUserNoveltiesEvent());
 
     if (config != null && deviceInfo != null) {
       emit(UserLoaded(
@@ -220,6 +225,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     result.fold(
       (failure) => emit(UserLocationsError(failure.message)),
       (locations) {
+        this.locations = locations;
         debugPrint('Locations loaded: ${locations.length}');
         emit(UserLocationsLoaded(locations: locations));
       },
@@ -233,6 +239,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     result.fold(
       (failure) => emit(UserNoveltiesError(failure.message)),
       (novelties) {
+        this.novelties = novelties;
         debugPrint("novedades: ${novelties.length}");
         emit(UserNoveltiesLoaded(novelties: novelties));
       },

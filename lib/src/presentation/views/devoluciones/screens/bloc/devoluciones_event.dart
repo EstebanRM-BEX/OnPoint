@@ -140,3 +140,7 @@ class LoadConfigurationsUser extends DevolucionesEvent {
 class FetchAllBarcodesInventarioEvent extends DevolucionesEvent {
   FetchAllBarcodesInventarioEvent();
 }
+
+class InitializeDevolucionesData extends DevolucionesEvent {}
+
+class DownloadAllTercerosEvent extends DevolucionesEvent {}

@@ -547,49 +547,52 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     try {
       emit(LoadLocationsLoading());
 
-      // Verificar si las ubicaciones ya están cargadas en UserBloc
-      var userLocations = userBloc.ubicaciones;
+      // // Verificar si las ubicaciones ya están cargadas en UserBloc
+      // var userLocations = userBloc.ubicaciones;
 
-      // Si están vacías, cargar las ubicaciones desde UserBloc
-      if (userLocations.isEmpty) {
-        debugPrint('Ubicaciones vacías, cargando desde UserBloc...');
-        userBloc.add(LoadUserLocationsEvent());
+      // // Si están vacías, cargar las ubicaciones desde UserBloc
+      // if (userLocations.isEmpty) {
+      //   debugPrint('Ubicaciones vacías, cargando desde UserBloc...');
+      //   userBloc.add(LoadUserLocationsEvent());
 
-        // Esperar a que se carguen las ubicaciones
-        await for (final state in userBloc.stream) {
-          if (state is UserLocationsLoaded) {
-            userLocations = state.locations;
-            debugPrint(
-                'Ubicaciones cargadas desde UserBloc: ${userLocations.length}');
-            break;
-          } else if (state is UserLocationsError) {
-            debugPrint('Error al cargar ubicaciones: ${state.message}');
-            emit(LoadLocationsFailure(
-                'Error al cargar ubicaciones: ${state.message}'));
-            return;
-          }
-        }
-      }
+      //   // Esperar a que se carguen las ubicaciones
+      //   await for (final state in userBloc.stream) {
+      //     if (state is UserLocationsLoaded) {
+      //       userLocations = state.locations;
+      //       debugPrint(
+      //           'Ubicaciones cargadas desde UserBloc: ${userLocations.length}');
+      //       break;
+      //     } else if (state is UserLocationsError) {
+      //       debugPrint('Error al cargar ubicaciones: ${state.message}');
+      //       emit(LoadLocationsFailure(
+      //           'Error al cargar ubicaciones: ${state.message}'));
+      //       return;
+      //     }
+      //   }
+      // }
 
       // Convertir UserLocation a ResultUbicaciones
-      final List<ResultUbicaciones> convertedLocations =
-          userLocations.map((userLoc) {
-        return ResultUbicaciones(
-          id: userLoc.id,
-          name: userLoc.name,
-          idWarehouse: userLoc.idWarehouse,
-          barcode: userLoc.barcode,
-          warehouseName: userLoc.warehouseName,
-        );
-      }).toList();
+      // final List<ResultUbicaciones> convertedLocations =
+      //     userLocations.map((userLoc) {
+      //   return ResultUbicaciones(
+      //     id: userLoc.id,
+      //     name: userLoc.name,
+      //     idWarehouse: userLoc.idWarehouse,
+      //     barcode: userLoc.barcode,
+      //     warehouseName: userLoc.warehouseName,
+      //   );
+      // }).toList();
 
       ubicaciones.clear();
       ubicacionesFilters.clear();
-      debugPrint(
-          'ubicaciones length from UserBloc: ${convertedLocations.length}');
 
-      if (convertedLocations.isNotEmpty) {
-        ubicaciones = convertedLocations;
+      //CARGAMOS LAS UBICACIONES DESDE LA BASE DE DATOS LOCAL
+      final response = await db.ubicacionesRepository.getAllUbicaciones();
+      debugPrint('📍 ubicaciones: ${response.length}');
+      ubicaciones.clear();
+      ubicacionesFilters.clear();
+      if (response.isNotEmpty) {
+        ubicaciones = response;
         ubicacionesFilters = ubicaciones;
         debugPrint('ubicaciones cargadas: ${ubicaciones.length}');
         emit(LoadLocationsSuccess(ubicaciones));

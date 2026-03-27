@@ -111,6 +111,8 @@ class ProductInfoScreen extends StatelessWidget {
             backgroundColor: primaryColorApp,
             body: SafeArea(
               child: Container(
+                width: size.width * 1,
+                height: size.height * 1,
                 color: Colors.white,
                 child: SingleChildScrollView(
                   child: Column(

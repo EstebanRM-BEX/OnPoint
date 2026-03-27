@@ -5,12 +5,6 @@ import 'package:wms_app/src/presentation/providers/db/inventario/tbl_barcode/bar
 import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
 
 class BarcodesInventarioRepository {
-  // Tamaño del bloque para inserción masiva
-  static const int _batchSize = 500;
-
-  /// --------------------------------------------------------------------------
-  /// METODO OPTIMIZADO: insertOrUpdateBarcodes (Mark & Sweep)
-  /// --------------------------------------------------------------------------
   Future<void> insertOrUpdateBarcodes(
       List<BarcodeInventario> barcodesList) async {
     if (barcodesList.isEmpty) return;
@@ -19,48 +13,35 @@ class BarcodesInventarioRepository {
       Database db = await DataBaseSqlite().getDatabaseInstance();
 
       await db.transaction((txn) async {
-        // PASO 1: MARCA (Resetear flag)
-        // Marcamos TODO el inventario como no sincronizado.
-        // OJO: Esto asume que estás descargando el catálogo completo de barcodes.
-        await txn.rawUpdate(
-            'UPDATE ${BarcodesInventarioTable.tableName} SET ${BarcodesInventarioTable.columnIsSynced} = 0');
+        const int itemsPerQuery = 100;
+        final Batch batch = txn.batch();
 
-        // PASO 2: UPSERT POR LOTES (Chunking)
-        for (var i = 0; i < barcodesList.length; i += _batchSize) {
-          final end = (i + _batchSize < barcodesList.length)
-              ? i + _batchSize
+        for (var i = 0; i < barcodesList.length; i += itemsPerQuery) {
+          final end = (i + itemsPerQuery < barcodesList.length)
+              ? i + itemsPerQuery
               : barcodesList.length;
-          final batchList = barcodesList.sublist(i, end);
+          final chunk = barcodesList.sublist(i, end);
 
-          final batch = txn.batch();
+          final StringBuffer queryBuffer = StringBuffer();
+          queryBuffer.write('INSERT INTO ${BarcodesInventarioTable.tableName} (');
+          queryBuffer.write('${BarcodesInventarioTable.columnIdProduct}, ${BarcodesInventarioTable.columnBarcode}, ${BarcodesInventarioTable.columnCantidad}, ${BarcodesInventarioTable.columnIsSynced}) VALUES ');
 
-          for (final barcode in batchList) {
-            batch.insert(
-              BarcodesInventarioTable.tableName,
-              {
-                BarcodesInventarioTable.columnIdProduct: barcode.idProduct,
-                BarcodesInventarioTable.columnBarcode: barcode.barcode,
-                BarcodesInventarioTable.columnCantidad: barcode.cantidad ?? 1,
-                // ✅ Marcamos como actualizado
-                BarcodesInventarioTable.columnIsSynced: 1,
-              },
-              // ✅ Si existe (Producto + Barcode), actualiza. Si no, inserta.
-              conflictAlgorithm: ConflictAlgorithm.replace,
-            );
+          final List<dynamic> args = [];
+          for (var j = 0; j < chunk.length; j++) {
+            if (j > 0) queryBuffer.write(', ');
+            queryBuffer.write('(?,?,?,?)');
+            var barcode = chunk[j];
+            args.addAll([
+              barcode.idProduct,
+              barcode.barcode,
+              barcode.cantidad ?? 1,
+              1
+            ]);
           }
-          await batch.commit(noResult: true);
+          batch.rawInsert(queryBuffer.toString(), args);
         }
-
-        // PASO 3: BARRIDO (Limpiar basura)
-        // Borramos los códigos que ya no vienen del servidor
-        int deleted = await txn.delete(
-          BarcodesInventarioTable.tableName,
-          where: '${BarcodesInventarioTable.columnIsSynced} = ?',
-          whereArgs: [0],
-        );
-
-        debugPrint(
-            "📦 Inventario Barcodes: Procesados ${barcodesList.length} | Eliminados Obsoletos: $deleted");
+        await batch.commit(noResult: true);
+        debugPrint("📦 Inventario Barcodes: Insertados ${barcodesList.length}");
       });
     } catch (e, s) {
       debugPrint("❌ Error insertOrUpdateBarcodes: $e => $s");

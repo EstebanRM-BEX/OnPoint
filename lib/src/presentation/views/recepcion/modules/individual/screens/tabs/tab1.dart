@@ -465,29 +465,6 @@ class Tab1ScreenRecep extends StatelessWidget {
                   ),
                 ),
                 // const Spacer(),
-//btn de imprimir
-                // Padding(
-                //   padding: const EdgeInsets.symmetric(horizontal: 20),
-                //   child: ElevatedButton(
-                //       onPressed: () {
-                //         ModalPrintersList.show(context);
-                //       },
-                //       style: ElevatedButton.styleFrom(
-                //         minimumSize: Size(size.width * 0.9, 40),
-                //         backgroundColor: primaryColorApp,
-                //         shape: RoundedRectangleBorder(
-                //           borderRadius: BorderRadius.circular(10),
-                //         ),
-                //       ),
-                //       child: Row(
-                //         mainAxisAlignment: MainAxisAlignment.center,
-                //         children: [
-                //           Icon(Icons.print, color: white),
-                //           const SizedBox(width: 5),
-                //           Text('Imprimir', style: TextStyle(color: white)),
-                //         ],
-                //       )),
-                // ),
 
                 Visibility(
                   visible: context

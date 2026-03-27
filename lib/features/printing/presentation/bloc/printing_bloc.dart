@@ -83,6 +83,7 @@ class PrintingBloc extends Bloc<PrintingEvent, PrintingState> {
       reportName: selectedReport!.reportName,
       model: selectedReport!.model,
       resId: event.resId,
+      companyId: event.companyId,
     ));
 
     result.fold(

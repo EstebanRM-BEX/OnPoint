@@ -65,6 +65,8 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // ✅ INICIALIZACIÓN SMART: Carga todo lo necesario (Cache-First para Terceros)
+    context.read<DevolucionesBloc>().add(InitializeDevolucionesData());
   }
 
   @override

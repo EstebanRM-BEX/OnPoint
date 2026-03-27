@@ -88,16 +88,19 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
   void _onLoadAllNovedadesEvent(
       LoadAllNovedades event, Emitter<PickingState> emit) async {
     try {
+      emit(LoadLoadingNovedadesState());
       final response = await _databas.novedadesRepository.getAllNovedades();
       if (response != null) {
         listOfNovedades.clear();
         listOfNovedades = response;
         debugPrint("novedades: ${listOfNovedades.length}");
         emit(LoadSuccessNovedadesState(listOfNovedades: listOfNovedades));
+      } else {
+        emit(LoadFailureNovedadesState(message: 'No se encontraron novedades'));
       }
     } catch (e, s) {
       debugPrint("Error en __onLoadAllNovedadesEvent: $e, $s");
-      emit(LoadSuccessNovedadesState(listOfNovedades: []));
+      emit(LoadFailureNovedadesState(message: 'Error al cargar novedades'));
     }
   }
 

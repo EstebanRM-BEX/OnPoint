@@ -54,6 +54,7 @@ class PrintingRepositoryImpl implements PrintingRepository {
     required String reportName,
     required String model,
     required int resId,
+    required int companyId,
   }) async {
     try {
       final response = await apiService.postPrint(
@@ -71,7 +72,7 @@ class PrintingRepositoryImpl implements PrintingRepository {
                 "active_model": model,
                 "active_ids": [resId],
                 "active_id": resId,
-                "allowed_company_ids": [1],
+                "allowed_company_ids": [companyId],
                 "printer_id": printerId
               }
             },
@@ -82,12 +83,26 @@ class PrintingRepositoryImpl implements PrintingRepository {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+
+        if (jsonResponse.containsKey('error') &&
+            jsonResponse['error'] != null) {
+          final error = jsonResponse['error'];
+          final message = error is Map
+              ? (error['data']?['message'] ?? error['message'])
+              : 'Error del servidor Odoo';
+          return Left(
+              ServerFailure(message?.toString() ?? 'Error del servidor Odoo'));
+        }
+
         final result = jsonResponse['result'];
 
-        if (result['success'] == true) {
+        if (result == true || (result is Map && result['success'] == true)) {
           return const Right(true);
         } else {
-          return Left(ServerFailure(result?['message'] ?? 'Error al imprimir'));
+          final message = result is Map ? result['message'] : null;
+          final msg = result is Map ? result['msg'] : null;
+          return Left(
+              ServerFailure(message?.toString() ?? 'Error al imprimir: $msg'));
         }
       } else {
         return Left(ServerFailure('Error de servidor: ${response.statusCode}'));

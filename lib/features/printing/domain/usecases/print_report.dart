@@ -19,6 +19,7 @@ class PrintReport implements UseCase<bool, PrintReportParams> {
       reportName: params.reportName,
       model: params.model,
       resId: params.resId,
+      companyId: params.companyId,
     );
     return result.fold(
       (error) => Left(ServerFailure(error.message)),
@@ -33,6 +34,7 @@ class PrintReportParams extends Equatable {
   final String reportName;
   final String model;
   final int resId;
+  final int companyId;
 
   const PrintReportParams({
     required this.printerId,
@@ -40,8 +42,10 @@ class PrintReportParams extends Equatable {
     required this.reportName,
     required this.model,
     required this.resId,
+    required this.companyId,
   });
 
   @override
-  List<Object?> get props => [printerId, name, reportName, model, resId];
+  List<Object?> get props =>
+      [printerId, name, reportName, model, resId, companyId];
 }

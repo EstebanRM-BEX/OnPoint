@@ -87,7 +87,8 @@ class _RecepcionScreenState extends State<RecepcionScreen>
                   icon: const Icon(Icons.print, color: Colors.white),
                   onPressed: () {
                     ModalPrintersList.show(context,
-                        resId: widget.ordenCompra?.id);
+                        resId: widget.ordenCompra?.id,
+                        companyId: widget.ordenCompra?.warehouseId ?? 1);
                   },
                 ),
               ],

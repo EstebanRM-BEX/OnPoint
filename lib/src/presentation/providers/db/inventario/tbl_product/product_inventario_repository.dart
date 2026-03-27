@@ -9,9 +9,6 @@ import 'package:wms_app/src/presentation/views/inventario/models/response_produc
 import 'dart:core';
 
 class ProductInventarioRepository {
-  // Tamaño del bloque para inserción masiva
-  static const int _batchSize = 500;
-
   /// --------------------------------------------------------------------------
   /// METODO OPTIMIZADO: insertProductosInventario (Mark & Sweep)
   /// --------------------------------------------------------------------------
@@ -25,91 +22,61 @@ class ProductInventarioRepository {
       Database db = await DataBaseSqlite().getDatabaseInstance();
 
       await db.transaction((txn) async {
-        // PASO 1: MARCA (Resetear flag)
-        // Marcamos todo el inventario actual como "no sincronizado"
-        await txn.rawUpdate(
-            'UPDATE ${ProductInventarioTable.tableName} SET ${ProductInventarioTable.columnIsSynced} = 0');
+        // ✅ TÉCNICA DEFINITIVA (Raw SQL Multi-Insert):
+        // En vez de enviar 62,000 "Maps", unimos 40 filas por cada `INSERT INTO` (usando 19 params * 40 = 760 vinculaciones),
+        const int itemsPerQuery = 40;
+        final Batch batch = txn.batch();
 
-        // PASO 2: UPSERT POR LOTES (Chunking)
-        for (var i = 0; i < productosList.length; i += _batchSize) {
-          final end = (i + _batchSize < productosList.length)
-              ? i + _batchSize
+        for (var i = 0; i < productosList.length; i += itemsPerQuery) {
+          final end = (i + itemsPerQuery < productosList.length)
+              ? i + itemsPerQuery
               : productosList.length;
-          final batchList = productosList.sublist(i, end);
+          final chunk = productosList.sublist(i, end);
 
-          Batch batch = txn.batch();
+          final StringBuffer queryBuffer = StringBuffer();
+          queryBuffer.write('INSERT INTO ${ProductInventarioTable.tableName} (');
+          queryBuffer.write('${ProductInventarioTable.columnProductCode}, ${ProductInventarioTable.columnProductId}, ${ProductInventarioTable.columnProductName}, ');
+          queryBuffer.write('${ProductInventarioTable.columnBarcode}, ${ProductInventarioTable.columnProductracking}, ${ProductInventarioTable.columnLotId}, ');
+          queryBuffer.write('${ProductInventarioTable.columnLotName}, ${ProductInventarioTable.columnExpirationDate}, ${ProductInventarioTable.columnWeight}, ');
+          queryBuffer.write('${ProductInventarioTable.columnWeightUomName}, ${ProductInventarioTable.columnVolume}, ${ProductInventarioTable.columnVolumeUomName}, ');
+          queryBuffer.write('${ProductInventarioTable.columnUom}, ${ProductInventarioTable.columnLocationId}, ${ProductInventarioTable.columnLocationName}, ');
+          queryBuffer.write('${ProductInventarioTable.columnQuantity}, ${ProductInventarioTable.columnUseExpirationDate}, ${ProductInventarioTable.columnCategory}, ${ProductInventarioTable.columnIsSynced}) VALUES ');
 
-          for (var producto in batchList) {
-            // Mapeo de datos con validaciones de seguridad
-            Map<String, dynamic> productoMap = {
-              ProductInventarioTable.columnProductCode:
-                  producto.code == false ? "" : producto.code ?? '',
-              ProductInventarioTable.columnProductId: producto.productId,
-              ProductInventarioTable.columnProductName: producto.name ?? '',
-              ProductInventarioTable.columnBarcode:
-                  producto.barcode == false ? "" : producto.barcode ?? '',
-              ProductInventarioTable.columnProductracking:
-                  producto.tracking == false ? "none" : producto.tracking ?? '',
-              ProductInventarioTable.columnLotId:
-                  producto.lotId == false ? 0 : producto.lotId ?? 0,
-              ProductInventarioTable.columnLotName:
-                  producto.lotName == false ? "" : producto.lotName ?? '',
-              ProductInventarioTable.columnExpirationDate:
-                  producto.expirationDate == false
-                      ? ""
-                      : producto.expirationDate ?? '',
-              ProductInventarioTable.columnWeight:
-                  producto.weight == false ? 0 : producto.weight ?? 0,
-              ProductInventarioTable.columnWeightUomName:
-                  producto.weightUomName == false
-                      ? ""
-                      : producto.weightUomName ?? '',
-              ProductInventarioTable.columnVolume:
-                  producto.volume == false ? 0 : producto.volume ?? 0,
-              ProductInventarioTable.columnVolumeUomName:
-                  producto.volumeUomName == false
-                      ? ""
-                      : producto.volumeUomName ?? '',
-              ProductInventarioTable.columnUom:
-                  producto.uom == false ? "" : producto.uom ?? '',
-              ProductInventarioTable.columnLocationId:
-                  producto.locationId == false ? 0 : producto.locationId ?? 0,
-              ProductInventarioTable.columnLocationName:
-                  producto.locationName == false
-                      ? ""
-                      : producto.locationName ?? '',
-              ProductInventarioTable.columnQuantity:
-                  producto.quantity == false ? 0.0 : producto.quantity ?? 0.0,
-              ProductInventarioTable.columnUseExpirationDate:
-                  producto.useExpirationDate == true ? 1 : 0,
-              ProductInventarioTable.columnCategory:
-                  producto.category == false ? "" : producto.category ?? '',
+          final List<dynamic> args = [];
+          for (var j = 0; j < chunk.length; j++) {
+            if (j > 0) queryBuffer.write(', ');
+            queryBuffer.write('(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'); // 19 params
 
-              // ✅ Marcamos como sincronizado
-              ProductInventarioTable.columnIsSynced: 1,
-            };
-
-            batch.insert(
-              ProductInventarioTable.tableName,
-              productoMap,
-              // ✅ UPSERT: Si existe (Prod+Lot+Loc), actualiza. Si no, inserta.
-              conflictAlgorithm: ConflictAlgorithm.replace,
-            );
+            var producto = chunk[j];
+            args.addAll([
+              producto.code == false ? "" : producto.code ?? '',
+              producto.productId,
+              producto.name ?? '',
+              producto.barcode == false ? "" : producto.barcode ?? '',
+              producto.tracking == false ? "none" : producto.tracking ?? '',
+              producto.lotId == false ? 0 : producto.lotId ?? 0,
+              producto.lotName == false ? "" : producto.lotName ?? '',
+              producto.expirationDate == false ? "" : producto.expirationDate ?? '',
+              producto.weight == false ? 0 : producto.weight ?? 0,
+              producto.weightUomName == false ? "" : producto.weightUomName ?? '',
+              producto.volume == false ? 0 : producto.volume ?? 0,
+              producto.volumeUomName == false ? "" : producto.volumeUomName ?? '',
+              producto.uom == false ? "" : producto.uom ?? '',
+              producto.locationId == false ? 0 : producto.locationId ?? 0,
+              producto.locationName == false ? "" : producto.locationName ?? '',
+              producto.quantity == false ? 0.0 : producto.quantity ?? 0.0,
+              producto.useExpirationDate == true ? 1 : 0,
+              producto.category == false ? "" : producto.category ?? '',
+              1
+            ]);
           }
-          await batch.commit(noResult: true);
+          batch.rawInsert(queryBuffer.toString(), args);
         }
-
-        // PASO 3: BARRIDO (Limpiar basura)
-        // Borramos los productos/stock que ya no vienen del servidor
-        int deleted = await txn.delete(
-          ProductInventarioTable.tableName,
-          where: '${ProductInventarioTable.columnIsSynced} = ?',
-          whereArgs: [0],
-        );
+        await batch.commit(noResult: true);
 
         stopwatch.stop();
         debugPrint(
-            "📦 Sync Productos Inventario: Procesados ${productosList.length} | Eliminados Obsoletos: $deleted | Tiempo: ${stopwatch.elapsedMilliseconds} ms");
+            "📦 Insertados Productos Inventario: ${productosList.length} | Tiempo: ${stopwatch.elapsedMilliseconds} ms");
       });
     } catch (e, s) {
       debugPrint("❌ Error al insertar productos en inventario: $e ==> $s");

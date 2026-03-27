@@ -11,5 +11,6 @@ abstract class PrintingRepository {
     required String reportName,
     required String model,
     required int resId,
+    required int companyId,
   });
 }

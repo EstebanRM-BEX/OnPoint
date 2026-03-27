@@ -8,6 +8,8 @@ import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/home/presentation/widgets/background.dart';
 import 'package:wms_app/features/home/presentation/widgets/update_app_dialog_widget.dart';
+import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
+import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
 import 'package:wms_app/src/presentation/views/inventario/screens/bloc/inventario_bloc.dart';
@@ -105,6 +107,37 @@ class _UserPageState extends State<UserPage> {
                 Get.snackbar(
                   '360 Software Informa',
                   state.message,
+                  backgroundColor: white,
+                  colorText: primaryColorApp,
+                  icon: const Icon(Icons.error, color: Colors.red),
+                );
+              }
+            },
+          ),
+          BlocListener<DevolucionesBloc, DevolucionesState>(
+            listener: (context, state) {
+              debugPrint('state devoluciones: $state');
+              if (state is DownloadAllTercerosLoading) {
+                showDialog(
+                    context: context,
+                    builder: (context) => const DialogLoading(
+                        message: 'Descargando terceros...'));
+              }
+              if (state is DownloadAllTercerosSuccess) {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+                Get.snackbar(
+                  '360 Software Informa',
+                  "Se han descargado ${state.terceros.length} terceros",
+                  backgroundColor: white,
+                  colorText: primaryColorApp,
+                  icon: const Icon(Icons.check_circle, color: Colors.green),
+                );
+              }
+              if (state is DownloadAllTercerosFailure) {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+                Get.snackbar(
+                  '360 Software Informa',
+                  state.error,
                   backgroundColor: white,
                   colorText: primaryColorApp,
                   icon: const Icon(Icons.error, color: Colors.red),
@@ -243,6 +276,9 @@ class _UserPageState extends State<UserPage> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             ElevatedButton(
               onPressed: () {
@@ -256,6 +292,21 @@ class _UserPageState extends State<UserPage> {
                 style: TextStyle(color: white),
               ),
             ),
+            ElevatedButton(
+              onPressed: () {
+                context
+                    .read<DevolucionesBloc>()
+                    .add(DownloadAllTercerosEvent());
+              },
+              style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 30),
+                  backgroundColor: grey),
+              child: const Text(
+                "Descargar terceros",
+                style: TextStyle(color: white),
+              ),
+            ),
+
             ElevatedButton(
               onPressed: () {
                 context

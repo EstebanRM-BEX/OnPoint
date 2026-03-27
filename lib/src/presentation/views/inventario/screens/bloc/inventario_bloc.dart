@@ -2,6 +2,7 @@
 
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
@@ -514,47 +515,63 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
 
   void _onGetProducts(
       GetProductsEvent event, Emitter<InventarioState> emit) async {
+    final stopwatch = Stopwatch()..start(); // ⏱️ Inicia el cronómetro principal
+
     try {
       if (isLoading) return;
+      isLoading = true; // ✅ Bloqueo contra múltiples peticiones
       emit(GetProductsLoadingInventory());
+      
+      // Limpiamos los registros locales antes de la inserción masiva
       await db.deleInventario();
-      final response = await _inventarioRepository.fetAllProducts(
+
+      // ✅ MEJORA DEFINITIVA: Un solo viaje para traer productos Y barcodes ya mapeados.
+      final results = await _inventarioRepository.fetAllProductsCombined(
         event.isDialogLoading,
       );
+      
+      final List<Product> response = results['products'] as List<Product>;
+      final List<BarcodeInventario> allBarcodes = results['barcodes'] as List<BarcodeInventario>;
+
       if (response.isNotEmpty) {
+        debugPrint('productos a sincronizar: ${response.length}');
+
+        // ✅ OPTIMIZACIÓN 2: Insertamos directamente en BD
+        // El tiempo de SQLite ahora es el único factor relevante.
         await db.productoInventarioRepository
             .insertProductosInventario(response);
-
-        final allBarcodes =
-            _extractAllBarcodes(response).toList(growable: false);
-
-        debugPrint('productos: ${response.length}');
-
         await db.barcodesInventarioRepository
             .insertOrUpdateBarcodes(allBarcodes);
+
         emit(GetProductsSuccess(response));
-        add(GetProductsForDB());
+        
+        // Carga directa en Memoria.
+        productos.clear();
+        productosFilters.clear();
+        productos = List.from(response);
+        productosFilters = List.from(response);
+
+        isLoading = false;
+        emit(GetProductsSuccessBD(productos)); 
+        
+        stopwatch.stop();
+        debugPrint('✅ ⏱️ TIEMPO TOTAL OPTIMIZADO: ${stopwatch.elapsedMilliseconds} ms (${(stopwatch.elapsedMilliseconds / 1000).toStringAsFixed(2)} s)');
       } else {
+        isLoading = false;
         emit(GetProductsFailureInventory('No se encontraron productos'));
+        stopwatch.stop();
+        debugPrint('⚠️ ⏱️ TIEMPO TOTAL (Sin productos): ${stopwatch.elapsedMilliseconds} ms');
       }
     } catch (e, s) {
+      isLoading = false;
       emit(GetProductsFailureInventory('Error al cargar los productos'));
+      stopwatch.stop();
+      debugPrint('❌ ⏱️ TIEMPO TOTAL (Con error): ${stopwatch.elapsedMilliseconds} ms');
       debugPrint('Error en el fetch de productos: $e=>$s');
     }
   }
 
-  // Generador para todos los códigos de barras
-  Iterable<BarcodeInventario> _extractAllBarcodes(
-      List<Product> response) sync* {
-    for (final product in response) {
-      if (product.otherBarcodes != null) {
-        yield* product.otherBarcodes!;
-      }
-      if (product.productPacking != null) {
-        yield* product.productPacking!;
-      }
-    }
-  }
+  // Métodos redundantes eliminados (Movidos al Repositorio Isolate)
 
   void getPordutsAllBD() async {
     final response = await db.productoInventarioRepository.getAllProducts();
@@ -568,7 +585,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       final response = await db.productoInventarioRepository.getAllProducts();
       productos.clear();
       productosFilters.clear();
-      debugPrint('productos: ${response.length}');
+      debugPrint('productos en local db: ${response.length}');
       if (response.isNotEmpty) {
         productos = response;
         productosFilters = productos;
@@ -580,8 +597,9 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
         emit(GetProductsFailureInventory('No se encontraron productos'));
       }
     } catch (e, s) {
+      isLoading = false; // Agregado por completitud de estado
       emit(GetProductsFailureInventory('Error al cargar los productos'));
-      debugPrint('Error en el fetch de productos: $e=>$s');
+      debugPrint('Error en el fetch de productos local bd: $e=>$s');
     }
   }
 

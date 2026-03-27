@@ -357,7 +357,11 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
                                                 onTap: () {
                                                   ModalPrintersList.show(
                                                       context,
-                                                      resId: product.idMove);
+                                                      resId: product.idMove,
+                                                      companyId: widget
+                                                              .ordenCompra
+                                                              ?.warehouseId ??
+                                                          1);
                                                 },
                                                 child: Icon(
                                                   Icons.print,
