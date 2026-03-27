@@ -119,3 +119,19 @@ class DeviceInfoError extends UserState {
   @override
   List<Object?> get props => [message];
 }
+
+class LoadLocationsCountSuccess extends UserState {
+  final int count;
+  LoadLocationsCountSuccess(this.count);
+
+  @override
+  List<Object?> get props => [count];
+}
+
+class LoadNoveltiesCountSuccess extends UserState {
+  final int count;
+  LoadNoveltiesCountSuccess(this.count);
+
+  @override
+  List<Object?> get props => [count];
+}

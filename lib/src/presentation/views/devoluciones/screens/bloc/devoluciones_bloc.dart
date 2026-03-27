@@ -77,6 +77,8 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
   List<BarcodeInventario> allBarcodeInventario = [];
 
+  int tercerosCount = 0;
+
   DevolucionesRepository devolucionesRepository = DevolucionesRepository();
 
   DevolucionesBloc() : super(DevolucionesInitial()) {
@@ -149,6 +151,8 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
     //metodo para descargar todos los terceros
     on<DownloadAllTercerosEvent>(_onDownloadAllTercerosEvent);
+
+    on<LoadTercerosCountEvent>(_onLoadTercerosCountEvent);
   }
 
   void _onDownloadAllTercerosEvent(
@@ -179,6 +183,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
         terceros = List.from(apiTerceros);
         tercerosFilters.clear();
         tercerosFilters = List.from(apiTerceros);
+        tercerosCount = apiTerceros.length;
 
         // Registro de tiempos y cantidad de datos
         debugPrint(
@@ -192,6 +197,16 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     } catch (e, s) {
       debugPrint("❌ Error en _onDownloadAllTercerosEvent: $e, $s");
       emit(DownloadAllTercerosFailure('Error al descargar terceros: $e'));
+    }
+  }
+
+  void _onLoadTercerosCountEvent(
+      LoadTercerosCountEvent event, Emitter<DevolucionesState> emit) async {
+    try {
+      tercerosCount = await db.getTercerosCount();
+      emit(LoadTercerosCountSuccess(tercerosCount));
+    } catch (e) {
+      debugPrint("❌ Error en _onLoadTercerosCountEvent: $e");
     }
   }
 
@@ -522,7 +537,6 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       if (query.isEmpty) {
         ubicacionesFilters = ubicaciones;
       } else {
-        selectedAlmacen = event.almacen;
         ubicacionesFilters = ubicaciones.where((location) {
           return location.warehouseName?.toLowerCase().contains(query) ?? false;
         }).toList();

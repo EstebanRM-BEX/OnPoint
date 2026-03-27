@@ -200,3 +200,8 @@ class FetchAllBarcodesFailure extends InventarioState {
   final String error;
   FetchAllBarcodesFailure(this.error);
 }
+
+class LoadProductosCountSuccess extends InventarioState {
+  final int count;
+  LoadProductosCountSuccess(this.count);
+}

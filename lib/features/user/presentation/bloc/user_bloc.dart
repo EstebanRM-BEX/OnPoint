@@ -34,6 +34,12 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   List<UserLocation> locations = [];
   List<Novedad> novelties = [];
 
+  int locationsCount = 0;
+  int noveltiesCount = 0;
+
+  UserConfiguration? userConfiguration;
+  DeviceInfo? deviceInfo;
+
   UserBloc({
     required this.getUserConfiguration,
     required this.getDeviceInfo,
@@ -46,6 +52,8 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     on<LoadUserLocationsEvent>(_onLoadUserLocations);
     on<LoadUserNoveltiesEvent>(_onLoadUserNovelties);
     on<LoadInfoDeviceEventUser>(_onLoadInfoDeviceUser);
+    on<LoadUserLocationsCountEvent>(_onLoadUserLocationsCount);
+    on<LoadUserNoveltiesCountEvent>(_onLoadUserNoveltiesCount);
   }
 
   Future<void> _onLoadInfoDeviceUser(
@@ -70,8 +78,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     await PrefUtils.setModeloPDA(modelo);
     await PrefUtils.setFabricantePDA(fabricante);
 
-    emit(DeviceInfoLoaded(
-        deviceInfo: DeviceInfo(
+    deviceInfo = DeviceInfo(
       model: modelo,
       version: androidInfo.version.release,
       manufacturer: fabricante,
@@ -79,7 +86,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       imei: imei,
       appVersion: packageInfo.version,
       deviceId: androidInfo.id,
-    )));
+    );
+
+    emit(DeviceInfoLoaded(deviceInfo: deviceInfo!));
   }
 
   Future<void> _onLoadUserInfo(
@@ -159,9 +168,12 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     add(LoadUserNoveltiesEvent());
 
     if (config != null && deviceInfo != null) {
+      userConfiguration = config;
+      this.deviceInfo = deviceInfo;
+
       emit(UserLoaded(
-        configuration: config!,
-        deviceInfo: deviceInfo!,
+        configuration: userConfiguration!,
+        deviceInfo: this.deviceInfo!,
         locations: locations,
         novelties: novelties,
       ));
@@ -226,6 +238,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       (failure) => emit(UserLocationsError(failure.message)),
       (locations) {
         this.locations = locations;
+        locationsCount = locations.length;
         debugPrint('Locations loaded: ${locations.length}');
         emit(UserLocationsLoaded(locations: locations));
       },
@@ -240,10 +253,29 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       (failure) => emit(UserNoveltiesError(failure.message)),
       (novelties) {
         this.novelties = novelties;
-        debugPrint("novedades: ${novelties.length}");
-        emit(UserNoveltiesLoaded(novelties: novelties));
+        noveltiesCount = novelties.length;
       },
     );
+  }
+
+  Future<void> _onLoadUserLocationsCount(
+      LoadUserLocationsCountEvent event, Emitter<UserState> emit) async {
+    try {
+      locationsCount = await DataBaseSqlite().getUbicacionesCount();
+      emit(LoadLocationsCountSuccess(locationsCount));
+    } catch (e) {
+      debugPrint("❌ Error en _onLoadUserLocationsCount: $e");
+    }
+  }
+
+  Future<void> _onLoadUserNoveltiesCount(
+      LoadUserNoveltiesCountEvent event, Emitter<UserState> emit) async {
+    try {
+      noveltiesCount = await DataBaseSqlite().getNovedadesCount();
+      emit(LoadNoveltiesCountSuccess(noveltiesCount));
+    } catch (e) {
+      debugPrint("❌ Error en _onLoadUserNoveltiesCount: $e");
+    }
   }
 }
 

@@ -132,3 +132,5 @@ class SetUbicacionFijaEvent extends InventarioEvent {
 class FetchAllBarcodesInventarioEvent extends InventarioEvent {
   FetchAllBarcodesInventarioEvent();
 }
+
+class LoadProductosCountEvent extends InventarioEvent {}

@@ -81,6 +81,8 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
   ResultUbicaciones? currentUbication;
   LotesProduct? currentProductLote;
 
+  int productosCount = 0;
+
   //*configuracion del usuario //permisos
   UserConfigurationModel configurations = UserConfigurationModel();
 
@@ -138,6 +140,8 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
 
     //meotod para obtener todos los other barcodes y product_packing de inventario
     on<FetchAllBarcodesInventarioEvent>(_onFetchAllBarcodesInventarioEvent);
+
+    on<LoadProductosCountEvent>(_onLoadProductosCountEvent);
   }
 
   void _onFetchAllBarcodesInventarioEvent(FetchAllBarcodesInventarioEvent event,
@@ -156,6 +160,16 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
     } catch (e, s) {
       debugPrint("❌ Error en _onFetchAllBarcodesInventarioEvent: $e, $s");
       emit(FetchAllBarcodesFailure('Error al obtener los códigos de barras'));
+    }
+  }
+
+  void _onLoadProductosCountEvent(
+      LoadProductosCountEvent event, Emitter<InventarioState> emit) async {
+    try {
+      productosCount = await db.getProductCount();
+      emit(LoadProductosCountSuccess(productosCount));
+    } catch (e) {
+      debugPrint("❌ Error en _onLoadProductosCountEvent: $e");
     }
   }
 
@@ -521,7 +535,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       if (isLoading) return;
       isLoading = true; // ✅ Bloqueo contra múltiples peticiones
       emit(GetProductsLoadingInventory());
-      
+
       // Limpiamos los registros locales antes de la inserción masiva
       await db.deleInventario();
 
@@ -529,9 +543,10 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       final results = await _inventarioRepository.fetAllProductsCombined(
         event.isDialogLoading,
       );
-      
+
       final List<Product> response = results['products'] as List<Product>;
-      final List<BarcodeInventario> allBarcodes = results['barcodes'] as List<BarcodeInventario>;
+      final List<BarcodeInventario> allBarcodes =
+          results['barcodes'] as List<BarcodeInventario>;
 
       if (response.isNotEmpty) {
         debugPrint('productos a sincronizar: ${response.length}');
@@ -544,29 +559,31 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
             .insertOrUpdateBarcodes(allBarcodes);
 
         emit(GetProductsSuccess(response));
-        
+
         // Carga directa en Memoria.
-        productos.clear();
-        productosFilters.clear();
         productos = List.from(response);
         productosFilters = List.from(response);
+        productosCount = response.length;
 
         isLoading = false;
-        emit(GetProductsSuccessBD(productos)); 
-        
+        emit(GetProductsSuccessBD(productos));
+
         stopwatch.stop();
-        debugPrint('✅ ⏱️ TIEMPO TOTAL OPTIMIZADO: ${stopwatch.elapsedMilliseconds} ms (${(stopwatch.elapsedMilliseconds / 1000).toStringAsFixed(2)} s)');
+        debugPrint(
+            '✅ ⏱️ TIEMPO TOTAL OPTIMIZADO PIDIENDO PRODUCTOS: ${stopwatch.elapsedMilliseconds} ms (${(stopwatch.elapsedMilliseconds / 1000).toStringAsFixed(2)} s)');
       } else {
         isLoading = false;
         emit(GetProductsFailureInventory('No se encontraron productos'));
         stopwatch.stop();
-        debugPrint('⚠️ ⏱️ TIEMPO TOTAL (Sin productos): ${stopwatch.elapsedMilliseconds} ms');
+        debugPrint(
+            '⚠️ ⏱️ TIEMPO TOTAL (Sin productos): ${stopwatch.elapsedMilliseconds} ms');
       }
     } catch (e, s) {
       isLoading = false;
       emit(GetProductsFailureInventory('Error al cargar los productos'));
       stopwatch.stop();
-      debugPrint('❌ ⏱️ TIEMPO TOTAL (Con error): ${stopwatch.elapsedMilliseconds} ms');
+      debugPrint(
+          '❌ ⏱️ TIEMPO TOTAL (Con error): ${stopwatch.elapsedMilliseconds} ms');
       debugPrint('Error en el fetch de productos: $e=>$s');
     }
   }

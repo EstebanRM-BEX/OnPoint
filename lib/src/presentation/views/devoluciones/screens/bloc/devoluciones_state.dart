@@ -250,3 +250,8 @@ class FetchAllBarcodesFailure extends DevolucionesState {
   final String error;
   FetchAllBarcodesFailure(this.error);
 }
+
+class LoadTercerosCountSuccess extends DevolucionesState {
+  final int count;
+  LoadTercerosCountSuccess(this.count);
+}

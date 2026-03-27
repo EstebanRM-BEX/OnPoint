@@ -10,6 +10,7 @@ import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
 import 'package:wms_app/features/home/presentation/widgets/background.dart';
+import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/features/home/presentation/widgets/dialog_devoluciones_widget.dart';
 import 'package:wms_app/features/home/presentation/widgets/dialog_inventario_widget.dart';
 import 'package:wms_app/features/home/presentation/widgets/dialog_picking_componentes_widget.dart';
@@ -44,6 +45,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     super.initState();
     // Añadimos el observer para escuchar el ciclo de vida de la app.
     WidgetsBinding.instance.addObserver(this);
+
+    // Disparamos los eventos para obtener los conteos de la bd local
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context
+          .read<dev_bloc.DevolucionesBloc>()
+          .add(dev_bloc.LoadTercerosCountEvent());
+      context.read<InventarioBloc>().add(LoadProductosCountEvent());
+      context.read<UserBloc>().add(LoadUserLocationsCountEvent());
+      context.read<UserBloc>().add(LoadUserNoveltiesCountEvent());
+    });
   }
 
   @override
@@ -183,8 +194,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             // o si se cargó la configuración.
                             return current is HomeLoadedState ||
                                 current is ConfigurationLoadedHomeState;
-                          }, builder: (context, state) {
-                            final homeBloc = context.read<HomeBloc>();
+                          }, builder: (contextHome, state) {
+                            final homeBloc = contextHome.read<HomeBloc>();
 
                             return Card(
                               color: const Color.fromARGB(236, 255, 255, 255),
@@ -231,14 +242,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                           GestureDetector(
                                             onTap: () async {
                                               // Cargar información del usuario
-                                              context
+                                              contextHome
                                                   .read<UserBloc>()
                                                   .add(LoadUserInfoEvent());
 
                                               showDialog(
-                                                  context: context,
+                                                  context: contextHome,
                                                   barrierDismissible: false,
-                                                  builder: (context) {
+                                                  builder: (dialogContex) {
                                                     return const DialogLoading(
                                                       message:
                                                           'Cargando información del usuario...',
@@ -249,11 +260,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                               await Future.delayed(
                                                   const Duration(seconds: 1));
 
-                                              // // Cerrar diálogo y navegar a user
-                                              if (context.mounted) {
-                                                Navigator.pop(context);
-                                                Navigator.pushNamed(
-                                                    context, 'user');
+                                              // // Cerrar diálogo y navegar a user reemplazando la vista
+                                              if (contextHome.mounted) {
+                                                Get.back(); // Cierra el diálogo
+                                                Get.offNamed(AppRoutes.user);
                                               }
                                             },
                                             child: Row(
@@ -445,7 +455,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                               return _buildInfoItem(
                                                 icon: Icons.people,
                                                 label: 'Terceros',
-                                                count: bloc.terceros.length,
+                                                count: bloc.tercerosCount,
                                                 isLoading: state is dev_bloc
                                                     .DownloadAllTercerosLoading,
                                               );
@@ -459,7 +469,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                               return _buildInfoItem(
                                                 icon: Icons.inventory_2,
                                                 label: 'Productos',
-                                                count: bloc.productos.length,
+                                                count: bloc.productosCount,
                                                 isLoading: state
                                                     is GetProductsLoadingInventory,
                                               );
@@ -474,16 +484,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                   _buildInfoItem(
                                                     icon: Icons.location_on,
                                                     label: 'Ubicaciones',
-                                                    count:
-                                                        bloc.locations.length,
+                                                    count: bloc.locationsCount,
                                                     isLoading: state
                                                         is UserLocationsLoading,
                                                   ),
                                                   _buildInfoItem(
                                                     icon: Icons.new_releases,
                                                     label: 'Novedades',
-                                                    count:
-                                                        bloc.novelties.length,
+                                                    count: bloc.noveltiesCount,
                                                     isLoading: state
                                                         is UserNoveltiesLoading,
                                                   )

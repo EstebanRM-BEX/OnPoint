@@ -615,6 +615,18 @@ class DataBaseSqlite {
     }
   }
 
+  Future<int> getProductCount() async {
+    try {
+      Database db = await DataBaseSqlite().getDatabaseInstance();
+      final List<Map<String, dynamic>> result = await db.rawQuery(
+          'SELECT COUNT(*) as count FROM ${ProductInventarioTable.tableName}');
+      return result.first['count'] as int;
+    } catch (e) {
+      debugPrint("Error al contar productos de SQLite: $e");
+      return 0;
+    }
+  }
+
   Future<void> insertPedidosValidate(List<PedidoValidateModel> pedidos) async {
     try {
       final db = await getDatabaseInstance();
@@ -655,6 +667,18 @@ class DataBaseSqlite {
     } catch (e) {
       debugPrint('Error getPedidosValidate: $e');
       return [];
+    }
+  }
+
+  Future<int> getNovedadesCount() async {
+    try {
+      Database db = await DataBaseSqlite().getDatabaseInstance();
+      final List<Map<String, dynamic>> result = await db
+          .rawQuery('SELECT COUNT(*) as count FROM ${NovedadesTable.tableName}');
+      return result.first['count'] as int;
+    } catch (e) {
+      debugPrint("Error al contar novedades de SQLite: $e");
+      return 0;
     }
   }
 
@@ -751,6 +775,27 @@ class DataBaseSqlite {
   //Todo: Eliminar todos los registros
 
   //metodo para eliminar lo de conteo
+  Future<void> deleTerceros() async {
+    try {
+      Database db = await DataBaseSqlite().getDatabaseInstance();
+      await db.delete(TercerosTable.tableName);
+    } catch (e) {
+      debugPrint("Error al limpiar tabla tbl_terceros: $e");
+    }
+  }
+
+  Future<int> getTercerosCount() async {
+    try {
+      Database db = await DataBaseSqlite().getDatabaseInstance();
+      final List<Map<String, dynamic>> result = await db
+          .rawQuery('SELECT COUNT(*) as count FROM ${TercerosTable.tableName}');
+      return result.first['count'] as int;
+    } catch (e) {
+      debugPrint("Error al contar terceros de SQLite: $e");
+      return 0;
+    }
+  }
+
   Future<void> deleConteo() async {
     final db = await getDatabaseInstance();
     await db.delete(OrdenTable.tableName);
@@ -788,6 +833,23 @@ class DataBaseSqlite {
     await db.delete(PickProductsTable.tableName,
         where: '${PickProductsTable.columnTypePick} = ?', whereArgs: [typPick]);
     await deleBarcodes(typPick);
+  }
+
+  Future<void> deleteAll() async {
+    final db = await DataBaseSqlite().getDatabaseInstance();
+    await db!.delete(UbicacionesTable.tableName);
+  }
+
+  Future<int> getUbicacionesCount() async {
+    try {
+      final db = await DataBaseSqlite().getDatabaseInstance();
+      final List<Map<String, dynamic>> result = await db!
+          .rawQuery('SELECT COUNT(*) as count FROM ${UbicacionesTable.tableName}');
+      return result.first['count'] as int;
+    } catch (e) {
+      debugPrint("Error al contar ubicaciones de SQLite: $e");
+      return 0;
+    }
   }
 
   Future<void> delePickAll() async {

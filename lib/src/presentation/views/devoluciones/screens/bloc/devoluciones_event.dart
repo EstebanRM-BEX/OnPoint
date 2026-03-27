@@ -144,3 +144,5 @@ class FetchAllBarcodesInventarioEvent extends DevolucionesEvent {
 class InitializeDevolucionesData extends DevolucionesEvent {}
 
 class DownloadAllTercerosEvent extends DevolucionesEvent {}
+
+class LoadTercerosCountEvent extends DevolucionesEvent {}

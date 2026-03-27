@@ -173,10 +173,12 @@ class _UserPageState extends State<UserPage> {
                   }
                 },
                 builder: (context, state) {
+                  final bloc = context.read<UserBloc>();
                   debugPrint('state user page: $state');
+                  
                   if (state is UserLoading) {
-                    return DialogLoading(message: 'Cargando...');
-                  } else if (state is UserLoaded) {
+                    return const DialogLoading(message: 'Cargando...');
+                  } else if (bloc.userConfiguration != null && bloc.deviceInfo != null) {
                     return SizedBox(
                       width: size.width,
                       height: size.height,
@@ -190,15 +192,15 @@ class _UserPageState extends State<UserPage> {
                               _buildBackButton(context),
                               _buildUpdateCheckButton(context),
                               UserInfoCard(
-                                profile: state.configuration.result?.result ??
+                                profile: bloc.userConfiguration?.result?.result ??
                                     const UserProfile(),
-                                versionApp: state.deviceInfo.appVersion,
+                                versionApp: bloc.deviceInfo?.appVersion ?? '',
                               ),
-                              DeviceInfoCard(deviceInfo: state.deviceInfo),
-                              _buildActionButtons(context, state),
+                              DeviceInfoCard(deviceInfo: bloc.deviceInfo!),
+                              _buildActionButtons(context, bloc),
                               const SizedBox(height: 20),
                               PermissionsWidget(
-                                  profile: state.configuration.result?.result ??
+                                  profile: bloc.userConfiguration?.result?.result ??
                                       const UserProfile()),
                               const SizedBox(height: 20),
                               _buildDeleteDatabaseButton(context),
@@ -269,7 +271,7 @@ class _UserPageState extends State<UserPage> {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, UserLoaded state) {
+  Widget _buildActionButtons(BuildContext context, UserBloc bloc) {
     return Card(
       color: white,
       elevation: 2,
