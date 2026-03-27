@@ -105,13 +105,7 @@ class DialogDevoluciones extends StatelessWidget {
                 onPressed: () {
                   context
                       .read<DevolucionesBloc>()
-                      .add(LoadConfigurationsUser());
-                  context.read<DevolucionesBloc>().add(GetProductsList());
-                  context.read<DevolucionesBloc>().add(LoadLocationsEvent());
-                  context.read<DevolucionesBloc>().add(LoadTercerosEvent());
-                  context
-                      .read<DevolucionesBloc>()
-                      .add(FetchAllBarcodesInventarioEvent());
+                      .add(InitializeDevolucionesData());
                   //cerramos el dialogo
                   Navigator.pop(context);
                   Navigator.pushReplacementNamed(

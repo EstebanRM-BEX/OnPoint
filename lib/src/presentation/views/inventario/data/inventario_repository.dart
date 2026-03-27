@@ -143,9 +143,10 @@ class InventarioRepository {
 
   // ✅ Función para procesar y aislar el json gigantesco y extraer barcodes en un SOLO paso.
   // Al hacer todo en un solo Isolate, evitamos copiar 60,000 objetos de memoria dos veces por el canal de Flutter.
-  static Map<String, dynamic> _parseProductsAndBarcodesIsolate(String responseBody) {
+  static Map<String, dynamic> _parseProductsAndBarcodesIsolate(
+      String responseBody) {
     Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
-    
+
     if (jsonResponse.containsKey('result')) {
       final List<dynamic> data = jsonResponse['result']['data'];
       final List<Product> products = [];
@@ -154,7 +155,7 @@ class InventarioRepository {
       for (final item in data) {
         final product = Product.fromMap(item);
         products.add(product);
-        
+
         // Extracción inmediata de barcodes para ahorrar un loop extra en el futuro
         if (product.otherBarcodes != null) {
           barcodes.addAll(product.otherBarcodes!);
@@ -169,22 +170,27 @@ class InventarioRepository {
         'barcodes': barcodes,
       };
     }
-    return {'error': jsonResponse['error'] ?? 'Unknown error', 'products': <Product>[], 'barcodes': <BarcodeInventario>[]};
+    return {
+      'error': jsonResponse['error'] ?? 'Unknown error',
+      'products': <Product>[],
+      'barcodes': <BarcodeInventario>[]
+    };
   }
 
   Future<Map<String, dynamic>> fetAllProductsCombined(
     bool isLoadinDialog,
   ) async {
     var connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult == ConnectivityResult.none) return {'products': <Product>[], 'barcodes': <BarcodeInventario>[]};
+    if (connectivityResult == ConnectivityResult.none)
+      return {'products': <Product>[], 'barcodes': <BarcodeInventario>[]};
 
     try {
       var response = await ApiRequestService().getInventario(
-        endpoint: 'product_quants',
+        endpoint: 'product_quants/all',
         isunecodePath: true,
         isLoadinDialog: isLoadinDialog,
       );
-      
+
       if (response.statusCode < 400) {
         // Un solo compute para TODO el procesamiento pesado
         return await compute(_parseProductsAndBarcodesIsolate, response.body);
@@ -195,7 +201,7 @@ class InventarioRepository {
     return {'products': <Product>[], 'barcodes': <BarcodeInventario>[]};
   }
 
-  // Mantenemos la firma original por compatibilidad si otros blocs la usan, 
+  // Mantenemos la firma original por compatibilidad si otros blocs la usan,
   // pero internamente llamamos a la optimizada.
   Future<List<Product>> fetAllProducts(bool isLoadinDialog) async {
     final res = await fetAllProductsCombined(isLoadinDialog);

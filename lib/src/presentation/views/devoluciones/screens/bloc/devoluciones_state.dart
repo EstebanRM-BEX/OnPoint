@@ -255,3 +255,15 @@ class LoadTercerosCountSuccess extends DevolucionesState {
   final int count;
   LoadTercerosCountSuccess(this.count);
 }
+
+class LoadTercerosFromDBLoading extends DevolucionesState {}
+
+class LoadTercerosFromDBSuccess extends DevolucionesState {
+  final List<Terceros> terceros;
+  LoadTercerosFromDBSuccess(this.terceros);
+}
+
+class LoadTercerosFromDBFailure extends DevolucionesState {
+  final String error;
+  LoadTercerosFromDBFailure(this.error);
+}

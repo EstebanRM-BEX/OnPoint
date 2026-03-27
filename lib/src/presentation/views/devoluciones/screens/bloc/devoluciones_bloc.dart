@@ -153,6 +153,39 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     on<DownloadAllTercerosEvent>(_onDownloadAllTercerosEvent);
 
     on<LoadTercerosCountEvent>(_onLoadTercerosCountEvent);
+    //metodo para cargar los terceros desde la bd
+    on<LoadTercerosFromDBEvent>(_onLoadTercerosFromDBEvent);
+  }
+
+  void _onLoadTercerosFromDBEvent(
+      LoadTercerosFromDBEvent event, Emitter<DevolucionesState> emit) async {
+    try {
+      emit(LoadTercerosFromDBLoading());
+
+      // 1. Carga desde la base de datos local
+      final dbTerceros = await db.tercerosRepository.getAllTerceros();
+
+      if (dbTerceros.isEmpty) {
+        emit(LoadTercerosFromDBFailure(
+            'No se encontraron terceros en la base de datos'));
+      } else {
+        // 2. Actualización en memoria
+        terceros.clear();
+        terceros = List.from(dbTerceros);
+        tercerosFilters.clear();
+        tercerosFilters = List.from(dbTerceros);
+        tercerosCount = dbTerceros.length;
+
+        debugPrint(
+            '📦 TERCEROS - Datos cargados desde BD: ${dbTerceros.length}');
+
+        emit(LoadTercerosFromDBSuccess(dbTerceros));
+      }
+    } catch (e, s) {
+      debugPrint("❌ Error en _onLoadTercerosFromDBEvent: $e, $s");
+      emit(LoadTercerosFromDBFailure(
+          'Error al cargar terceros desde la base de datos: $e'));
+    }
   }
 
   void _onDownloadAllTercerosEvent(
@@ -226,14 +259,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       add(GetProductsList());
 
       //madnamos a llamar todos los terceros que estan guardados en la bd
-      final localTerceros = await db.tercerosRepository.getAllTerceros();
-
-      terceros.clear();
-      terceros = List.from(localTerceros);
-      tercerosFilters.clear();
-      tercerosFilters = List.from(localTerceros);
-      debugPrint('📦 Terceros cargados desde CACHE (BD): ${terceros.length}');
-      emit(LoadTercerosSuccess(terceros));
+      add(LoadTercerosFromDBEvent());
 
       // 5. LÓGICA SMART PARA TERCEROS:
       // Intentamos cargar de BD primero. Solo si está vacío, vamos a la nube.

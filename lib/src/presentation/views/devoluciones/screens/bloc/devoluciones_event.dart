@@ -146,3 +146,5 @@ class InitializeDevolucionesData extends DevolucionesEvent {}
 class DownloadAllTercerosEvent extends DevolucionesEvent {}
 
 class LoadTercerosCountEvent extends DevolucionesEvent {}
+
+class LoadTercerosFromDBEvent extends DevolucionesEvent {}
