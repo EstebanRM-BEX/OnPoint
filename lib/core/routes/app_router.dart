@@ -68,6 +68,7 @@ import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/packing_consolidate_list_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/scan_product_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/index.dart';
+import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/locations_dest_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/packing_detail.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/sacn_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/batch_detail.dart';
@@ -134,6 +135,7 @@ class AppRoutes {
   static const String listPacking = 'list-packing';
   static const String detailPackingPedido = 'detail-packing-pedido';
   static const String scanPack = 'scan-pack';
+  static const String locationsDestPacking = 'locations-dest-packing';
 
   //todo inventario
   static const String inventario = 'inventario';
@@ -390,6 +392,8 @@ class AppRoutes {
         );
       },
       scanPack: (_) => ScanPackScreen(),
+
+      locationsDestPacking: (_) => LocationDestPackingScreen(),
 
       //todo auth
       home: (_) => const HomePage(),

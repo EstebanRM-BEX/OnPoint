@@ -193,47 +193,40 @@ class _PakingListScreenState extends State<PakingListScreen>
                               return Column(
                                 children: [
                                   const WarningWidgetCubit(),
-                                  Padding(
-                                    padding: EdgeInsets.only(
-                                        // bottom: 10,
-                                        top: status != ConnectionStatus.online
-                                            ? 0
-                                            : 25),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.arrow_back,
-                                              color: white),
-                                          onPressed: () {
-                                            if (state
-                                                is BatchsPackingLoadingState) {
-                                              return;
-                                            }
-                                            context.read<WmsPackingBloc>().add(
-                                                LoadBatchPackingFromDBEvent());
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.arrow_back,
+                                            color: white),
+                                        onPressed: () {
+                                          if (state
+                                              is BatchsPackingLoadingState) {
+                                            return;
+                                          }
+                                          context.read<WmsPackingBloc>().add(
+                                              LoadBatchPackingFromDBEvent());
 
-                                            context
-                                                .read<WmsPackingBloc>()
-                                                .searchControllerPedido
-                                                .clear();
-                                            Navigator.pushReplacementNamed(
-                                              context,
-                                              'wms-packing',
-                                            );
-                                          },
-                                        ),
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                              left: size.width * 0.27),
-                                          child: const Text("PACKING",
-                                              style: TextStyle(
-                                                  color: white, fontSize: 18)),
-                                        ),
-                                        const Spacer(),
-                                      ],
-                                    ),
+                                          context
+                                              .read<WmsPackingBloc>()
+                                              .searchControllerPedido
+                                              .clear();
+                                          Navigator.pushReplacementNamed(
+                                            context,
+                                            'wms-packing',
+                                          );
+                                        },
+                                      ),
+                                      Padding(
+                                        padding: EdgeInsets.only(
+                                            left: size.width * 0.27),
+                                        child: const Text("PACKING",
+                                            style: TextStyle(
+                                                color: white, fontSize: 18)),
+                                      ),
+                                      const Spacer(),
+                                    ],
                                   ),
                                 ],
                               );

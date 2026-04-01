@@ -536,14 +536,14 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       isLoading = true; // ✅ Bloqueo contra múltiples peticiones
       emit(GetProductsLoadingInventory());
 
-      // Limpiamos los registros locales antes de la inserción masiva
-      await db.deleInventario();
+      // Lanzamos en paralelo: borrado local + petición a la API
+      // deleInventario() es O(1) con DROP+RECREATE, termina antes que la API
+      final fetchResults = await Future.wait([
+        db.deleInventario(),
+        _inventarioRepository.fetAllProductsCombined(event.isDialogLoading),
+      ]);
 
-      // ✅ MEJORA DEFINITIVA: Un solo viaje para traer productos Y barcodes ya mapeados.
-      final results = await _inventarioRepository.fetAllProductsCombined(
-        event.isDialogLoading,
-      );
-
+      final results = fetchResults[1] as Map<String, dynamic>;
       final List<Product> response = results['products'] as List<Product>;
       final List<BarcodeInventario> allBarcodes =
           results['barcodes'] as List<BarcodeInventario>;
@@ -551,12 +551,11 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       if (response.isNotEmpty) {
         debugPrint('productos a sincronizar: ${response.length}');
 
-        // ✅ OPTIMIZACIÓN 2: Insertamos directamente en BD
-        // El tiempo de SQLite ahora es el único factor relevante.
-        await db.productoInventarioRepository
-            .insertProductosInventario(response);
-        await db.barcodesInventarioRepository
-            .insertOrUpdateBarcodes(allBarcodes);
+        // Insertamos productos y barcodes en paralelo (tablas independientes)
+        await Future.wait([
+          db.productoInventarioRepository.insertProductosInventario(response),
+          db.barcodesInventarioRepository.insertOrUpdateBarcodes(allBarcodes),
+        ]);
 
         emit(GetProductsSuccess(response));
 

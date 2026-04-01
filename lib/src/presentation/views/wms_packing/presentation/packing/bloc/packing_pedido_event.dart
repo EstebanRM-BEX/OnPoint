@@ -258,3 +258,28 @@ class SortPackingListEvent extends PackingPedidoEvent {
   final bool ascending;
   SortPackingListEvent(this.field, this.ascending);
 }
+
+class LoadAllLocationsEvent extends PackingPedidoEvent {}
+
+class ExpandPackageEvent extends PackingPedidoEvent {
+  final String packageName;
+  ExpandPackageEvent(this.packageName);
+}
+
+class SelectLocationEvent extends PackingPedidoEvent {
+  final ResultUbicaciones location;
+  SelectLocationEvent(this.location);
+}
+
+class FilterUbicacionesEvent extends PackingPedidoEvent {
+  final String almacen;
+  FilterUbicacionesEvent(this.almacen);
+}
+
+class AssignLocationToPackageEvent extends PackingPedidoEvent {
+  final String packageName;
+  final String locationName;
+  final int locationId;
+  AssignLocationToPackageEvent(
+      this.packageName, this.locationName, this.locationId);
+}

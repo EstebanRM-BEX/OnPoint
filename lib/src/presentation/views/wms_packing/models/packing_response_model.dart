@@ -102,12 +102,12 @@ class BatchPackingModel {
   final String? origins;
   // cantidad_total_pedidos
   // cantidad_total_productos
-  final dynamic? cantidadTotalPedidos;
-  final dynamic? cantidadTotalProductos;
+  final dynamic cantidadTotalPedidos;
+  final dynamic cantidadTotalProductos;
   //unidades_productos
-  final dynamic? unidadesProductos;
+  final dynamic unidadesProductos;
 
-  dynamic? manejaTemperatura;
+  dynamic manejaTemperatura;
   dynamic temperatura;
 
   BatchPackingModel({
@@ -325,18 +325,27 @@ class Paquete {
   final String? name;
   final int? batchId;
   final int? pedidoId;
-  final dynamic? cantidadProductos;
+  final dynamic cantidadProductos;
+  //packing_barcode
+  final String? packingBarcode;
+  final int? locationDestId;
+  final String? locationDestName;
+  final String? locationDestBarcode;
   final List<ProductoPedido>? listaProductosInPacking;
   final bool? isSticker;
   final bool? isCertificate;
   final String? type;
-  final dynamic? consecutivo;
+  final dynamic consecutivo;
   final String? typePaquete;
-  final dynamic? peso;
+  final dynamic peso;
 
   Paquete({
     this.id,
     this.name,
+    this.packingBarcode,
+    this.locationDestId,
+    this.locationDestName,
+    this.locationDestBarcode,
     this.batchId,
     this.pedidoId,
     this.cantidadProductos,
@@ -357,6 +366,10 @@ class Paquete {
         id: json["id"],
         name: json["name"],
         batchId: json["batch_id"],
+        packingBarcode: json["packing_barcode"],
+        locationDestId: json["location_dest_id"],
+        locationDestName: json["location_dest_name"],
+        locationDestBarcode: json["location_dest_barcode"],
         pedidoId: json["pedido_id"],
         cantidadProductos: json["cantidad_productos"],
         listaProductosInPacking: json["lista_productos_in_packing"] == null
@@ -375,6 +388,10 @@ class Paquete {
         "id": id,
         "name": name,
         "batch_id": batchId,
+        "packing_barcode": packingBarcode,
+        "location_dest_id": locationDestId,
+        "location_dest_name": locationDestName,
+        "location_dest_barcode": locationDestBarcode,
         "pedido_id": pedidoId,
         "cantidad_productos": cantidadProductos,
         "lista_productos_in_packing": listaProductosInPacking == null
@@ -388,4 +405,43 @@ class Paquete {
         "type_paquete": typePaquete,
         "peso": peso,
       };
+
+  Paquete copyWith({
+    int? id,
+    String? name,
+    int? batchId,
+    int? pedidoId,
+    dynamic? cantidadProductos,
+    String? packingBarcode,
+    int? locationDestId,
+    String? locationDestName,
+    String? locationDestBarcode,
+    List<ProductoPedido>? listaProductosInPacking,
+    bool? isSticker,
+    bool? isCertificate,
+    String? type,
+    dynamic? consecutivo,
+    String? typePaquete,
+    dynamic? peso,
+  }) {
+    return Paquete(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      batchId: batchId ?? this.batchId,
+      pedidoId: pedidoId ?? this.pedidoId,
+      cantidadProductos: cantidadProductos ?? this.cantidadProductos,
+      packingBarcode: packingBarcode ?? this.packingBarcode,
+      locationDestId: locationDestId ?? this.locationDestId,
+      locationDestName: locationDestName ?? this.locationDestName,
+      locationDestBarcode: locationDestBarcode ?? this.locationDestBarcode,
+      listaProductosInPacking:
+          listaProductosInPacking ?? this.listaProductosInPacking,
+      isSticker: isSticker ?? this.isSticker,
+      isCertificate: isCertificate ?? this.isCertificate,
+      type: type ?? this.type,
+      consecutivo: consecutivo ?? this.consecutivo,
+      typePaquete: typePaquete ?? this.typePaquete,
+      peso: peso ?? this.peso,
+    );
+  }
 }

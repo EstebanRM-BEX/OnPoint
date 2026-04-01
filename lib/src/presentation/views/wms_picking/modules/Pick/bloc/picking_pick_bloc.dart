@@ -679,6 +679,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     try {
       final time = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
       debugPrint("time : $time");
+
       if (event.value == "start_time_transfer") {
         await db.pickRepository.setFieldTablePick(
           event.id,

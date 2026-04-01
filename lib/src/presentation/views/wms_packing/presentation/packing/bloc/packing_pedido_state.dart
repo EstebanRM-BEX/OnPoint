@@ -3,6 +3,11 @@ part of 'packing_pedido_bloc.dart';
 @immutable
 sealed class PackingPedidoState {}
 
+class SelectLocationState extends PackingPedidoState {
+  final ResultUbicaciones location;
+  SelectLocationState(this.location);
+}
+
 final class PackingPedidoInitial extends PackingPedidoState {}
 
 final class FetchProductLoadingState extends PackingPedidoState {}
@@ -303,4 +308,45 @@ class PackingPackSuccess extends PackingPedidoState {
   List<Object> get props => [picks, DateTime.now()];
   // Tip: Agregar DateTime.now() o UniqueKey() en props asegura que
   // Flutter redibuje aunque la lista sea "técnicamente" la misma pero en diferente orden.
+}
+
+class LoadLocationsLoading extends PackingPedidoState {}
+
+class LoadLocationsSuccess extends PackingPedidoState {
+  final List<ResultUbicaciones> ubicaciones;
+  LoadLocationsSuccess(this.ubicaciones);
+}
+
+class LoadLocationsFailure extends PackingPedidoState {
+  final String error;
+  LoadLocationsFailure(this.error);
+}
+
+class ExpandPackageState extends PackingPedidoState {
+  final String packageName;
+  ExpandPackageState(this.packageName);
+}
+
+class FilterLocationsLoading extends PackingPedidoState {}
+
+class FilterLocationsSuccess extends PackingPedidoState {
+  final List<ResultUbicaciones> locationsFilters;
+  FilterLocationsSuccess(this.locationsFilters);
+}
+
+class FilterLocationsFailure extends PackingPedidoState {
+  final String error;
+  FilterLocationsFailure(this.error);
+}
+
+class AssignLocationLoading extends PackingPedidoState {}
+
+class AssignLocationSuccess extends PackingPedidoState {
+  final String msg;
+  AssignLocationSuccess(this.msg);
+}
+
+class AssignLocationFailure extends PackingPedidoState {
+  final String error;
+  AssignLocationFailure(this.error);
 }

@@ -14,6 +14,10 @@ class PackagesTable {
   static const String columnConsecutivo = 'consecutivo';
   static const String columnTypePaquete = 'type_paquete';
   static const String columnPeso = 'peso';
+  static const String columnPackingBarcode = 'packing_barcode';
+  static const String columnLocationDestId = 'location_dest_id';
+  static const String columnLocationDestName = 'location_dest_name';
+  static const String columnLocationDestBarcode = 'location_dest_barcode';
 
   // Método para crear la tabla
   static String createTable() {
@@ -29,6 +33,10 @@ class PackagesTable {
         $columnConsecutivo TEXT,
         $columnTypePaquete TEXT,
         $columnPeso REAL,
+        $columnPackingBarcode VARCHAR(255),
+        $columnLocationDestId INTEGER,
+        $columnLocationDestName VARCHAR(255),
+        $columnLocationDestBarcode VARCHAR(255),
         FOREIGN KEY ($columnPedidoId) REFERENCES tblpedidos_packing (id)
       )
     ''';

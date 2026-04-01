@@ -21,6 +21,8 @@ import 'package:wms_app/src/presentation/views/wms_packing/models/sen_packing_re
 import 'package:wms_app/src/presentation/views/wms_packing/models/un_pack_request.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/un_packing_request.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/unpacking_response_model.dart';
+import 'package:wms_app/src/presentation/views/wms_packing/models/assign_location_pack_request.dart';
+import 'package:wms_app/src/presentation/views/wms_packing/models/response_assign_location_pack.dart';
 
 class WmsPackingRepository {
   //metodo para obtener todos los batch de packing con sus pedidos y productos
@@ -1475,5 +1477,67 @@ class WmsPackingRepository {
       debugPrint('Error en sendTemperature: $e, $s');
       return TemperatureSend(); // Retornamos un objeto vacío en caso de error de red
     }
+  }
+
+  //metodo para asignar la ubicación destino al paquete
+  Future<ResponseAssignLocationPack> assignLocationToPackage(
+    AssignLocationPackRequest request,
+    bool isLoadingDialog,
+  ) async {
+    // Verificar si el dispositivo tiene acceso a Internet
+    var connectivityResult = await Connectivity().checkConnectivity();
+
+    if (connectivityResult == ConnectivityResult.none) {
+      debugPrint("Error: No hay conexión a Internet.");
+      return ResponseAssignLocationPack(jsonrpc: "2.0", id: null, result: null);
+    }
+
+    try {
+      var response = await ApiRequestService().postPacking(
+        endpoint: 'cluster/packing/ubicacion',
+        body: request.toMap(),
+        isLoadinDialog: isLoadingDialog,
+      );
+
+      if (response.statusCode < 500) {
+        // Decodifica la respuesta JSON a un mapa
+        Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+
+        if (jsonResponse.containsKey('result')) {
+          return ResponseAssignLocationPack.fromMap(jsonResponse);
+        } else if (jsonResponse.containsKey('error')) {
+          if (jsonResponse['error']['code'] == 100) {
+            Get.defaultDialog(
+              title: 'Alerta',
+              titleStyle: const TextStyle(color: Colors.red, fontSize: 18),
+              middleText: 'Sesión expirada, por favor inicie sesión nuevamente',
+              middleTextStyle: const TextStyle(color: black, fontSize: 14),
+              backgroundColor: Colors.white,
+              radius: 10,
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Get.back();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColorApp,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text('Aceptar', style: TextStyle(color: white)),
+                ),
+              ],
+            );
+          }
+          return ResponseAssignLocationPack.fromMap(jsonResponse);
+        }
+      }
+    } on SocketException catch (e) {
+      debugPrint('Error de red: $e');
+    } catch (e, s) {
+      debugPrint('Error en assignLocationToPackage: $e, $s');
+    }
+    return ResponseAssignLocationPack(jsonrpc: "2.0", id: null, result: null);
   }
 }

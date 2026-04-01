@@ -92,7 +92,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 25,
+      version: 26,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -266,78 +266,6 @@ class DataBaseSqlite {
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
     // Migración para la versión 9
 
-    if (oldVersion < 14) {
-      //solucion para cuando la version no tiene la tabla de maestra de productos de inventario
-      debugPrint('Migrando la base de datos a la versión 14...');
-      try {
-        // Añadir la columna 'category' a la tabla ProductInventarioTable
-        await db.execute('''
-          ALTER TABLE ${ProductInventarioTable.tableName}
-          ADD COLUMN ${ProductInventarioTable.columnCategory} TEXT;
-        ''');
-        debugPrint(
-            '✅ Columna ${ProductInventarioTable.columnCategory} añadida a ${ProductInventarioTable.tableName}.');
-      } catch (e) {
-        debugPrint(
-            '❌ Error al añadir la columna ${ProductInventarioTable.columnCategory}, es posible que ya exista.');
-      }
-    }
-
-    if (oldVersion < 15) {
-      //solucion para cuabndo no tebnemos el campo de accessProductionModule en la tabla de configuraciones
-      debugPrint('Migrando la base de datos a la versión 15...');
-      try {
-        // Añadir la columna 'access_production_module' a la tabla ConfigurationsTable
-        await db.execute('''
-          ALTER TABLE ${ConfigurationsTable.tableName}
-          ADD COLUMN ${ConfigurationsTable.columnAccessProductionModule} INTEGER;
-        ''');
-        debugPrint(
-            '✅ Columna ${ConfigurationsTable.columnAccessProductionModule} añadida a ${ConfigurationsTable.tableName}.');
-      } catch (e) {
-        debugPrint(
-            '❌ Error al añadir la columna ${ConfigurationsTable.columnAccessProductionModule}, es posible que ya exista.');
-      }
-    }
-
-    if (oldVersion < 17) {
-      //observacion en picking pick
-      try {
-        await db.execute('''
-          ALTER TABLE ${PickingPickTable.columnObservacion}
-        ''');
-
-// observacion en packing pack
-        await db.execute('''
-          ADD COLUMN ${PedidoPackTable.columnObservacion} TEXT;
-        ''');
-      } catch (e) {
-        debugPrint("Error actualizando UbicacionesTable: $e");
-      }
-    }
-    if (oldVersion < 18) {
-      //añadir campo de type picking en la tabla de batch products
-      try {
-        await db.execute('''
-          ALTER TABLE tblbatch_products
-          ADD COLUMN type TEXT;
-        ''');
-      } catch (e) {
-        debugPrint("Error actualizando tblbatch_products: $e");
-      }
-    }
-    if (oldVersion < 19) {
-      //añadir campo de type batch picking en la tabla de tblbatchs
-      try {
-        await db.execute('''
-          ALTER TABLE tblbatchs
-          ADD COLUMN type TEXT;
-        ''');
-      } catch (e) {
-        debugPrint("Error actualizando tblbatchs: $e");
-      }
-    }
-
     if (oldVersion < 20) {
       //añadir campo de allow_move_excess en la tabla de configuraciones
       try {
@@ -419,6 +347,21 @@ class DataBaseSqlite {
         await db.execute(TercerosTable.createTable());
       } catch (e) {
         debugPrint("Error actualizando a v25 (TercerosTable): $e");
+      }
+    }
+
+    if (oldVersion < 26) {
+      //añadir los nuevos campos de la tabla de paquetes
+      try {
+        await db.execute('''
+          ALTER TABLE ${PackagesTable.tableName}
+          ADD COLUMN ${PackagesTable.columnPackingBarcode} VARCHAR(255);
+          ADD COLUMN ${PackagesTable.columnLocationDestId} INTEGER;
+          ADD COLUMN ${PackagesTable.columnLocationDestName} VARCHAR(255);
+          ADD COLUMN ${PackagesTable.columnLocationDestBarcode} VARCHAR(255);
+        ''');
+      } catch (e) {
+        debugPrint("Error actualizando a v26 (PackagesTable): $e");
       }
     }
   }
@@ -673,8 +616,8 @@ class DataBaseSqlite {
   Future<int> getNovedadesCount() async {
     try {
       Database db = await DataBaseSqlite().getDatabaseInstance();
-      final List<Map<String, dynamic>> result = await db
-          .rawQuery('SELECT COUNT(*) as count FROM ${NovedadesTable.tableName}');
+      final List<Map<String, dynamic>> result = await db.rawQuery(
+          'SELECT COUNT(*) as count FROM ${NovedadesTable.tableName}');
       return result.first['count'] as int;
     } catch (e) {
       debugPrint("Error al contar novedades de SQLite: $e");
@@ -843,8 +786,8 @@ class DataBaseSqlite {
   Future<int> getUbicacionesCount() async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
-      final List<Map<String, dynamic>> result = await db!
-          .rawQuery('SELECT COUNT(*) as count FROM ${UbicacionesTable.tableName}');
+      final List<Map<String, dynamic>> result = await db!.rawQuery(
+          'SELECT COUNT(*) as count FROM ${UbicacionesTable.tableName}');
       return result.first['count'] as int;
     } catch (e) {
       debugPrint("Error al contar ubicaciones de SQLite: $e");
@@ -917,8 +860,14 @@ class DataBaseSqlite {
 
   Future<void> deleInventario() async {
     final db = await getDatabaseInstance();
-    await db.delete(ProductInventarioTable.tableName);
-    await db.delete(BarcodesInventarioTable.tableName);
+    await db.transaction((txn) async {
+      await txn
+          .execute('DROP TABLE IF EXISTS ${ProductInventarioTable.tableName}');
+      await txn.execute(ProductInventarioTable.createTable());
+      await txn
+          .execute('DROP TABLE IF EXISTS ${BarcodesInventarioTable.tableName}');
+      await txn.execute(BarcodesInventarioTable.createTable());
+    });
   }
 
   Future<void> deleTrasnferencia(String type) async {

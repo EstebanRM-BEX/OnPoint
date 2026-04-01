@@ -96,6 +96,11 @@ class PackagesRepository {
                 PackagesTable.columnConsecutivo: package.consecutivo,
                 PackagesTable.columnTypePaquete: package.typePaquete,
                 PackagesTable.columnPeso: package.peso,
+                PackagesTable.columnPackingBarcode: package.packingBarcode,
+                PackagesTable.columnLocationDestId: package.locationDestId,
+                PackagesTable.columnLocationDestName: package.locationDestName,
+                PackagesTable.columnLocationDestBarcode:
+                    package.locationDestBarcode,
               },
               where: '${PackagesTable.columnId} = ?',
               whereArgs: [package.id],
@@ -118,6 +123,11 @@ class PackagesRepository {
                 PackagesTable.columnConsecutivo: package.consecutivo,
                 PackagesTable.columnTypePaquete: package.typePaquete,
                 PackagesTable.columnPeso: package.peso,
+                PackagesTable.columnPackingBarcode: package.packingBarcode,
+                PackagesTable.columnLocationDestId: package.locationDestId,
+                PackagesTable.columnLocationDestName: package.locationDestName,
+                PackagesTable.columnLocationDestBarcode:
+                    package.locationDestBarcode,
               },
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
@@ -154,6 +164,10 @@ class PackagesRepository {
         consecutivo: map[PackagesTable.columnConsecutivo],
         typePaquete: map[PackagesTable.columnTypePaquete],
         peso: map[PackagesTable.columnPeso],
+        packingBarcode: map[PackagesTable.columnPackingBarcode],
+        locationDestId: map[PackagesTable.columnLocationDestId],
+        locationDestName: map[PackagesTable.columnLocationDestName],
+        locationDestBarcode: map[PackagesTable.columnLocationDestBarcode],
       );
     }).toList();
     return productos;
@@ -220,6 +234,10 @@ class PackagesRepository {
         consecutivo: maps[0][PackagesTable.columnConsecutivo],
         typePaquete: maps[0][PackagesTable.columnTypePaquete],
         peso: maps[0][PackagesTable.columnPeso],
+        packingBarcode: maps[0][PackagesTable.columnPackingBarcode],
+        locationDestId: maps[0][PackagesTable.columnLocationDestId],
+        locationDestName: maps[0][PackagesTable.columnLocationDestName],
+        locationDestBarcode: maps[0][PackagesTable.columnLocationDestBarcode],
       );
     }
     return null;
@@ -250,6 +268,10 @@ class PackagesRepository {
         PackagesTable.columnConsecutivo: package.consecutivo,
         PackagesTable.columnTypePaquete: package.typePaquete,
         PackagesTable.columnPeso: package.peso,
+        PackagesTable.columnPackingBarcode: package.packingBarcode,
+        PackagesTable.columnLocationDestId: package.locationDestId,
+        PackagesTable.columnLocationDestName: package.locationDestName,
+        PackagesTable.columnLocationDestBarcode: package.locationDestBarcode,
       },
       where: '${PackagesTable.columnId} = ?',
       whereArgs: [package.id],

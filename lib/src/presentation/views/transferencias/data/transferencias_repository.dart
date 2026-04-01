@@ -259,7 +259,6 @@ class TransferenciasRepository {
             "transfer_id": idTransfer,
             "time": date,
             "field_name": field
-            // "field_name": "end_time_reception"
           }
         },
         isLoadinDialog: false,

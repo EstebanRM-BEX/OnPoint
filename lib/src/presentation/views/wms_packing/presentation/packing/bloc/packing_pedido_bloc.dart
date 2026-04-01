@@ -10,6 +10,7 @@ import 'package:wms_app/features/user/data/models/user_configuration_model.dart'
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
+import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_image_send_novedad_model.dart';
@@ -20,6 +21,7 @@ import 'package:wms_app/src/presentation/views/wms_packing/models/packing_respon
 import 'package:wms_app/src/presentation/views/wms_packing/models/response_packing_pedido_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/sen_pack_request.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/un_pack_request.dart';
+import 'package:wms_app/src/presentation/views/wms_packing/models/assign_location_pack_request.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 
 part 'packing_pedido_event.dart';
@@ -50,6 +52,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   //* ultima ubicacion
   String oldLocation = '';
   double quantitySelected = 0;
+  String selectedAlmacen = '';
 
   TemperatureIa resultTemperature = TemperatureIa();
 
@@ -88,7 +91,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   List<ProductoPedido> listOfProductsName = [];
 
   PedidoPackingResult currentPedidoPack = PedidoPackingResult();
-
+  ResultUbicaciones currentLocation = ResultUbicaciones();
   //*producto actual
   ProductoPedido currentProduct = ProductoPedido();
 
@@ -97,6 +100,13 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   String currentFilterKey = 'priority_high';
   //*lista de novedades
   List<Novedad> novedades = [];
+
+  List<ResultUbicaciones> ubicaciones = [];
+  List<ResultUbicaciones> ubicacionesFilters = [];
+
+  TextEditingController searchControllerLocationDest = TextEditingController();
+
+  String expandedPackage = '';
 
 //*base de datos
   DataBaseSqlite db = DataBaseSqlite();
@@ -191,6 +201,20 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         _onDeleteProductFromTemporaryPackageEvent);
     on<ViewProductImageEvent>(_onViewProductImageEvent);
 
+    //evento para cargar todas las ubicaicones desde la bd
+    on<LoadAllLocationsEvent>(_onLoadAllLocationsEvent);
+
+    on<ExpandPackageEvent>((event, emit) {
+      expandedPackage = event.packageName;
+      emit(ExpandPackageState(expandedPackage));
+    });
+
+    //evento para asignar la ubicacion desitno a un paquete
+    on<AssignLocationToPackageEvent>(_onAssignLocationToPackageEvent);
+
+    //evento para seleccionar una ubicacion
+    on<SelectLocationEvent>(_onSelectLocationEvent);
+
     on<SortPackingListEvent>((event, emit) {
       List<PedidoPackingResult> sortedList =
           List.from(this.listOfPedidosFilters);
@@ -253,6 +277,117 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       this.listOfPedidosFilters = sortedList;
       emit(PackingPackSuccess(sortedList));
     });
+  }
+
+  void _onAssignLocationToPackageEvent(
+      AssignLocationToPackageEvent event, Emitter<PackingPedidoState> emit) async {
+    try {
+      emit(AssignLocationLoading());
+
+      // Buscamos el paquete por barcode (que es lo que guardamos en expandedPackage)
+      final package = packages.firstWhere(
+        (p) =>
+            p.packingBarcode?.toLowerCase() == event.packageName.toLowerCase(),
+        orElse: () => Paquete(),
+      );
+
+      if (package.id == null) {
+        emit(AssignLocationFailure("Paquete no encontrado"));
+        return;
+      }
+
+      final request = AssignLocationPackRequest(
+        idTransferencia: currentPedidoPack.id ?? 0,
+        idPaquete: package.id!,
+        idUbicacionDestino: event.locationId,
+      );
+
+      final response =
+          await wmsPackingRepository.assignLocationToPackage(request, true);
+
+      if (response.result?.code == 200) {
+        // Actualizamos el objeto localmente en la lista
+        final index = packages.indexWhere((p) => p.id == package.id);
+        if (index != -1) {
+          final updatedPackage = package.copyWith(
+            locationDestId: event.locationId,
+            locationDestName: event.locationName,
+          );
+          packages[index] = updatedPackage;
+
+          // Persistimos en la base de datos local usando el repositorio correspondiente
+          await db.packagesRepository.updatePackageById(updatedPackage);
+        }
+
+        emit(AssignLocationSuccess(
+            response.result?.msg ?? "Ubicación asignada correctamente"));
+      } else {
+        emit(AssignLocationFailure(
+            response.result?.msg ?? "Error al asignar la ubicación"));
+      }
+    } catch (e, s) {
+      debugPrint('Error en _onAssignLocationToPackageEvent: $e, $s');
+      emit(AssignLocationFailure(e.toString()));
+    }
+  }
+
+  //*metodo para filtrar las ubicaciones
+  void _onFilterUbicacionesEvent(
+      FilterUbicacionesEvent event, Emitter<PackingPedidoState> emit) {
+    try {
+      debugPrint('Filtrando ubicaciones por almacen: ${event.almacen}');
+      emit(FilterLocationsLoading());
+      selectedAlmacen = '';
+      ubicacionesFilters = [];
+      ubicacionesFilters = ubicaciones;
+      final query = event.almacen.toLowerCase();
+      if (query.isEmpty) {
+        ubicacionesFilters = ubicaciones;
+      } else {
+        ubicacionesFilters = ubicaciones.where((location) {
+          return location.warehouseName?.toLowerCase().contains(query) ?? false;
+        }).toList();
+      }
+      emit(FilterLocationsSuccess(ubicacionesFilters));
+    } catch (e, s) {
+      debugPrint('Error en el FilterUbicacionesEvent: $e, $s');
+      emit(FilterLocationsFailure(e.toString()));
+    }
+  }
+
+  //*metodo para seleccionar una ubicacion
+  void _onSelectLocationEvent(
+      SelectLocationEvent event, Emitter<PackingPedidoState> emit) {
+    try {
+      currentLocation = event.location;
+      searchControllerLocationDest.clear();
+      scannedValue3 = '';
+      locationIsOk = true;
+      debugPrint('Ubicación seleccionada: ${currentLocation.toMap()}');
+      emit(SelectLocationState(currentLocation));
+    } catch (e, s) {
+      debugPrint("❌ Error en _onSelectLocationEvent: $e, $s");
+    }
+  }
+
+  void _onLoadAllLocationsEvent(
+      LoadAllLocationsEvent event, Emitter<PackingPedidoState> emit) async {
+    try {
+      emit(LoadLocationsLoading());
+      final response = await db.ubicacionesRepository.getAllUbicaciones();
+      ubicaciones.clear();
+      if (response.isNotEmpty) {
+        ubicaciones.addAll(response);
+        ubicacionesFilters = response;
+        debugPrint("ubicaciones bd ::: ${ubicaciones.length}");
+        emit(LoadLocationsSuccess(ubicaciones));
+      } else {
+        emit(LoadLocationsFailure('No se encontraron ubicaciones'));
+      }
+    } catch (e, s) {
+      emit(LoadLocationsFailure('Error al cargar las ubicaciones'));
+      debugPrint('Error en el fetch de ubicaciones: $e=>$s');
+    }
   }
 
   void _onViewProductImageEvent(
@@ -1782,6 +1917,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       listOfPedidosBD = batchsFromDB;
       listOfPedidosFilters.clear();
       listOfPedidosFilters = List.from(listOfPedidosBD);
+      add(LoadAllLocationsEvent());
+      currentLocation = ResultUbicaciones();
       emit(PackingPedidoLoadedFromDBState(listOfPedidos: listOfPedidosBD));
     } catch (e, s) {
       debugPrint('Error en el  _onLoadBatchsFromDBEvent: $e, $s');

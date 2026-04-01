@@ -10,6 +10,7 @@ import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/tabs/tab2.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/tabs/tab3.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/tabs/tab4.dart';
+import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/tabs/tab5.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 
 class PackingPedidoDetailScreen extends StatefulWidget {
@@ -33,7 +34,7 @@ class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
     super.initState();
     // Inicializar el TabController con la longitud de las pestañas
     _tabController = TabController(
-      length: 4,
+      length: 5,
       vsync: this,
       initialIndex: widget.initialTabIndex, // Posición inicial
     );
@@ -81,14 +82,15 @@ class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
               bottom: TabBar(
                 controller: _tabController, // Asignar el TabController
                 indicatorWeight: 3,
-                indicatorPadding: EdgeInsets.symmetric(vertical: 5),
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicatorPadding: EdgeInsets.symmetric(vertical: 2),
                 labelStyle: TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
                 unselectedLabelStyle: TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
@@ -98,7 +100,7 @@ class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
                     icon: Icon(
                       Icons.details,
                       color: Colors.white,
-                      size: 20,
+                      size: 18,
                     ),
                   ),
                   Stack(
@@ -108,7 +110,7 @@ class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
                         icon: Icon(
                           Icons.pending_actions,
                           color: Colors.white,
-                          size: 20,
+                          size: 18,
                         ),
                       ),
                       Positioned(
@@ -138,7 +140,7 @@ class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
                         icon: Icon(
                           Icons.star,
                           color: Colors.white,
-                          size: 20,
+                          size: 18,
                         ),
                       ),
                       Positioned(
@@ -168,7 +170,7 @@ class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
                         icon: Icon(
                           Icons.done,
                           color: Colors.white,
-                          size: 20,
+                          size: 18,
                         ),
                       ),
                       Positioned(
@@ -180,6 +182,36 @@ class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
                             context
                                 .read<PackingPedidoBloc>()
                                 .productsDonePacking
+                                .length
+                                .toString(),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Stack(
+                    children: [
+                      Tab(
+                        text: 'Paquetes',
+                        icon: Icon(
+                          Icons.inventory_2_outlined,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                      Positioned(
+                        right: 0,
+                        child: CircleAvatar(
+                          radius: 12,
+                          backgroundColor: green,
+                          child: Text(
+                            context
+                                .read<PackingPedidoBloc>()
+                                .packages
                                 .length
                                 .toString(),
                             style: TextStyle(
@@ -213,6 +245,7 @@ class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
                           const Tab2PedidoScreen(),
                           const Tab3PedidoScreen(),
                           const Tab4PedidoScreen(),
+                          const Tab5Screen(),
                         ],
                       ),
                     ),
