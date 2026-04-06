@@ -277,10 +277,35 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       this.listOfPedidosFilters = sortedList;
       emit(PackingPackSuccess(sortedList));
     });
+
+    //*metodo para buscar una ubicacion
+    on<SearchLocationEvent>(_onSearchLocationEvent);
   }
 
-  void _onAssignLocationToPackageEvent(
-      AssignLocationToPackageEvent event, Emitter<PackingPedidoState> emit) async {
+  void _onSearchLocationEvent(
+      SearchLocationEvent event, Emitter<PackingPedidoState> emit) async {
+    try {
+      emit(SearchLoading());
+      ubicacionesFilters = [];
+      ubicacionesFilters = ubicaciones;
+      final query = event.query.toLowerCase();
+      selectedAlmacen = '';
+      if (query.isEmpty) {
+        ubicacionesFilters = ubicaciones;
+      } else {
+        ubicacionesFilters = ubicaciones.where((location) {
+          return location.name?.toLowerCase().contains(query) ?? false;
+        }).toList();
+      }
+      emit(SearchLocationSuccess(ubicacionesFilters));
+    } catch (e, s) {
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
+      emit(SearchFailure(e.toString()));
+    }
+  }
+
+  void _onAssignLocationToPackageEvent(AssignLocationToPackageEvent event,
+      Emitter<PackingPedidoState> emit) async {
     try {
       emit(AssignLocationLoading());
 

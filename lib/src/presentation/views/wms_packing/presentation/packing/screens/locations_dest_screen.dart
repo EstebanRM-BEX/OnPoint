@@ -178,9 +178,9 @@ class _LocationDestScreenState extends State<LocationDestPackingScreen> {
                                             onPressed: () {
                                               bloc.searchControllerLocationDest
                                                   .clear();
-                                              // bloc.add(SearchLocationEvent(
-                                              //   '',
-                                              // ));
+                                              bloc.add(SearchLocationEvent(
+                                                '',
+                                              ));
                                               FocusScope.of(context).unfocus();
                                             },
                                             icon: const Icon(
@@ -196,9 +196,9 @@ class _LocationDestScreenState extends State<LocationDestPackingScreen> {
                                         border: InputBorder.none,
                                       ),
                                       onChanged: (value) {
-                                        // bloc.add(SearchLocationEvent(
-                                        //   value,
-                                        // ));
+                                        bloc.add(SearchLocationEvent(
+                                          value,
+                                        ));
                                       },
                                     ),
                                   ),
@@ -345,19 +345,22 @@ class _LocationDestScreenState extends State<LocationDestPackingScreen> {
                               final selectedLocation =
                                   bloc.ubicacionesFilters[selectedIndex!];
 
-                              // seleccionamos la ubicacion
-                              // bloc.add(SelectLocationEvent(selectedLocation));
-
                               FocusScope.of(context).unfocus();
 
                               setState(() {
                                 selectedIndex == null;
                               });
 
-                              // Navigator.pushReplacementNamed(
-                              //   context,
-                              //   'devoluciones-create',
-                              // );
+                              bloc.add(AssignLocationToPackageEvent(
+                                  bloc.expandedPackage,
+                                  selectedLocation.name ?? '',
+                                  selectedLocation.id ?? 0));
+
+                              Navigator.pushReplacementNamed(
+                                context,
+                                'detail-packing-pedido',
+                                arguments: [4],
+                              );
                             }
                             debugPrint(
                                 "selectedUbication: ${bloc.ubicacionesFilters[selectedIndex!].toMap()}");

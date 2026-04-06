@@ -283,3 +283,11 @@ class AssignLocationToPackageEvent extends PackingPedidoEvent {
   AssignLocationToPackageEvent(
       this.packageName, this.locationName, this.locationId);
 }
+
+class SearchLocationEvent extends PackingPedidoEvent {
+  final String query;
+
+  SearchLocationEvent(
+    this.query,
+  );
+}

@@ -350,3 +350,15 @@ class AssignLocationFailure extends PackingPedidoState {
   final String error;
   AssignLocationFailure(this.error);
 }
+
+class SearchLoading extends PackingPedidoState {}
+
+class SearchFailure extends PackingPedidoState {
+  final String error;
+  SearchFailure(this.error);
+}
+
+class SearchLocationSuccess extends PackingPedidoState {
+  final List<ResultUbicaciones> locations;
+  SearchLocationSuccess(this.locations);
+}
