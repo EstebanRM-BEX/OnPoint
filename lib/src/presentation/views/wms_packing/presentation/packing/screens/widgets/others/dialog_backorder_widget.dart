@@ -48,7 +48,7 @@ class DialogBackorderPack extends StatelessWidget {
                     ? '¿Estás seguro de confirmar el pedido para ser enviado?'
                     : createBackorder == "never"
                         ? '¿Estás seguro de confirmar el pedido para ser enviado?'
-                        : "Usted ha procesado cantidades de productos menores que los requeridos en el movimiento orignal.",
+                        : "Usted ha procesado cantidades de productos menores que los requeridos en el movimiento original.",
                 style: TextStyle(color: black, fontSize: 14),
                 textAlign: TextAlign.center,
               ),

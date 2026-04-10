@@ -1,5 +1,6 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -389,49 +390,61 @@ class _ScanProductPackingConsolidateScreenState
                           child: Column(
                             children: [
                               const WarningWidgetCubit(),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 25),
-                                child: Row(
-                                  children: [
-                                    IconButton(
-                                      onPressed: () {
-                                        packingBloc.quantitySelected = 0;
-                                        cantidadController.clear();
-                                        packingBloc.oldLocation = "";
+                              Row(
+                                children: [
+                                  IconButton(
+                                    onPressed: () {
+                                      packingBloc.quantitySelected = 0;
+                                      cantidadController.clear();
+                                      packingBloc.oldLocation = "";
 
-                                        context
-                                            .read<PackingConsolidateBloc>()
-                                            .add(LoadAllProductsFromPedidoEvent(
-                                              packingBloc.currentProduct
-                                                      .pedidoId ??
-                                                  0,
-                                            ));
-                                        Navigator.pushReplacementNamed(
-                                          context,
-                                          'packing-consolidate-detail',
-                                          arguments: [
-                                            widget.packingModel,
-                                            widget.batchModel,
-                                            1
-                                          ],
-                                        );
-                                      },
-                                      icon: const Icon(Icons.arrow_back,
-                                          color: Colors.white, size: 30),
-                                    ),
-                                    const Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Center(
-                                        child: Text(
-                                          "Certificación de Packing",
-                                          style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 18),
-                                        ),
+                                      context
+                                          .read<PackingConsolidateBloc>()
+                                          .add(LoadAllProductsFromPedidoEvent(
+                                            packingBloc
+                                                    .currentProduct.pedidoId ??
+                                                0,
+                                          ));
+                                      Navigator.pushReplacementNamed(
+                                        context,
+                                        'packing-consolidate-detail',
+                                        arguments: [
+                                          widget.packingModel,
+                                          widget.batchModel,
+                                          1
+                                        ],
+                                      );
+                                    },
+                                    icon: const Icon(Icons.arrow_back,
+                                        color: Colors.white, size: 30),
+                                  ),
+                                  const Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Center(
+                                      child: Text(
+                                        "Certificación de Packing",
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 18),
                                       ),
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                  const Spacer(),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.print,
+                                      color: Colors.white,
+                                      size: 25,
+                                    ),
+                                    onPressed: () {
+                                      ModalPrintersList.show(context,
+                                          resId: context
+                                              .read<PackingConsolidateBloc>()
+                                              .currentProduct
+                                              .idMove,
+                                          companyId: 1);
+                                    },
+                                  ),
+                                ],
                               ),
                             ],
                           ),

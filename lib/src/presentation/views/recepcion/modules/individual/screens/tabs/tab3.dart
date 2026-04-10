@@ -449,7 +449,7 @@ class Tab3ScreenRecep extends StatelessWidget {
                                                 child: Icon(
                                                   Icons.print,
                                                   color: primaryColorApp,
-                                                  size: 20,
+                                                  size: 25,
                                                 ),
                                               ),
                                               const SizedBox(width: 3),

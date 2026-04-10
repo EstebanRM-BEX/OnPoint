@@ -6,6 +6,7 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
@@ -299,12 +300,30 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                             title: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  "${package.name}",
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: primaryColorApp,
-                                      fontWeight: FontWeight.bold),
+                                Row(
+                                  children: [
+                                    Text(
+                                      "${package.name}",
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: primaryColorApp,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    const Spacer(),
+//ponemos icono de imprimir
+                                    GestureDetector(
+                                      onTap: () {
+                                        ModalPrintersList.show(context,
+                                            resId: package.id, companyId: 1);
+                                      },
+                                      child: Icon(
+                                        Icons.print,
+                                        color: primaryColorApp,
+                                        size: 25,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                  ],
                                 ),
                                 Row(
                                   children: [

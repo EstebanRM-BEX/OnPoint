@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/get_colors_utils.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/dialog_confirm_product_load_widget.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
@@ -172,6 +173,19 @@ class BatchDetailScreen extends StatelessWidget {
                                               color: white, fontSize: 12)),
                                     ),
                                     const Spacer(),
+                                    IconButton(
+                                      icon: const Icon(Icons.print,
+                                          color: white, size: 25),
+                                      onPressed: () {
+                                        ModalPrintersList.show(context,
+                                            resId: context
+                                                .read<BatchBloc>()
+                                                .batchWithProducts
+                                                .batch
+                                                ?.id,
+                                            companyId: 1);
+                                      },
+                                    ),
                                   ],
                                 ),
                               ),
@@ -794,6 +808,23 @@ class BatchDetailScreen extends StatelessWidget {
                                                                 fontSize: 12,
                                                                 color:
                                                                     primaryColorApp)),
+                                                      ),
+                                                      const Spacer(),
+                                                      GestureDetector(
+                                                        onTap: () {
+                                                          ModalPrintersList.show(
+                                                              context,
+                                                              resId:
+                                                                  productsBatch
+                                                                      .idMove,
+                                                              companyId: 1);
+                                                        },
+                                                        child: Icon(
+                                                          Icons.print,
+                                                          color:
+                                                              primaryColorApp,
+                                                          size: 25,
+                                                        ),
                                                       ),
                                                     ],
                                                   ),

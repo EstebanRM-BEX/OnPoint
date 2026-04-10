@@ -6,6 +6,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/get_colors_utils.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
@@ -102,37 +103,42 @@ class PickDetailScreen extends StatelessWidget {
                           return Column(
                             children: [
                               const WarningWidgetCubit(),
-                              Padding(
-                                padding: EdgeInsets.only(
-                                    bottom: 5,
-                                    top: status != ConnectionStatus.online
-                                        ? 20
-                                        : 30),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.arrow_back,
-                                          color: white),
-                                      onPressed: () {
-                                        bloc.add(
-                                            ClearSearchProudctsPickEvent());
-                                        Navigator.pushReplacementNamed(
-                                            context, 'scan-product-pick');
-                                      },
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.arrow_back,
+                                        color: white),
+                                    onPressed: () {
+                                      bloc.add(ClearSearchProudctsPickEvent());
+                                      Navigator.pushReplacementNamed(
+                                          context, 'scan-product-pick');
+                                    },
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                        left: size.width * 0.25),
+                                    child: Text(
+                                        "${bloc.pickWithProducts.pick?.name}",
+                                        style: const TextStyle(
+                                            color: white, fontSize: 12)),
+                                  ),
+                                  const Spacer(),
+                                  GestureDetector(
+                                    onTap: () {
+                                      ModalPrintersList.show(context,
+                                          resId: bloc.pickWithProducts.pick?.id,
+                                          companyId: 1);
+                                    },
+                                    child: Icon(
+                                      Icons.print,
+                                      color: white,
+                                      size: 25,
                                     ),
-                                    Padding(
-                                      padding: EdgeInsets.only(
-                                          left: size.width * 0.25),
-                                      child: Text(
-                                          "${bloc.pickWithProducts.pick?.name}",
-                                          style: const TextStyle(
-                                              color: white, fontSize: 12)),
-                                    ),
-                                    const Spacer(),
-                                  ],
-                                ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                ],
                               ),
                             ],
                           );
@@ -740,6 +746,23 @@ class PickDetailScreen extends StatelessWidget {
                                                                 fontSize: 12,
                                                                 color:
                                                                     primaryColorApp)),
+                                                      ),
+                                                      const Spacer(),
+                                                      GestureDetector(
+                                                        onTap: () {
+                                                          ModalPrintersList.show(
+                                                              context,
+                                                              resId:
+                                                                  productsBatch
+                                                                      .idMove,
+                                                              companyId: 1);
+                                                        },
+                                                        child: Icon(
+                                                          Icons.print,
+                                                          color:
+                                                              primaryColorApp,
+                                                          size: 25,
+                                                        ),
                                                       ),
                                                     ],
                                                   ),

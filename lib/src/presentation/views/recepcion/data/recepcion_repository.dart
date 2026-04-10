@@ -1003,7 +1003,7 @@ class RecepcionRepository {
     try {
       var response = await ApiRequestService().postPacking(
         endpoint:
-            'complete_recepcion', // Cambiado para que sea el endpoint correspondiente
+            'complet0000e_recepcion', // Cambiado para que sea el endpoint correspondiente
         body: {
           "params": {
             "id_recepcion": idRecepcion,

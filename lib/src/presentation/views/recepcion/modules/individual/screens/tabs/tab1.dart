@@ -518,7 +518,7 @@ class Tab1ScreenRecep extends StatelessWidget {
                                                   ? (ordenCompra?.type == 'dev')
                                                       ? '¿Estás seguro de confirmar la devolución y dejarla lista para ser enviada?'
                                                       : '¿Estás seguro de confirmar la transferencia y dejarla lista para ser enviada?'
-                                                  : "Usted ha procesado cantidades de productos menores que los requeridos en el movimiento orignal.",
+                                                  : "Usted ha procesado cantidades de productos menores que los requeridos en el movimiento original.",
                                           style: TextStyle(
                                               color: black, fontSize: 14),
                                           textAlign: TextAlign.center,
@@ -527,6 +527,37 @@ class Tab1ScreenRecep extends StatelessWidget {
                                     ],
                                   ),
                                   actions: [
+                                    ElevatedButton(
+                                        onPressed: () {
+                                          //cerrar el dialogo y abrir el de la impresion
+                                          Navigator.pop(context);
+                                          ModalPrintersList.show(context,
+                                              resId: ordeCompraBd.id,
+                                              companyId:
+                                                  ordeCompraBd.warehouseId ??
+                                                      1);
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: primaryColorApp,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            //icono de imprimir
+                                            Icon(Icons.print, color: white),
+                                            SizedBox(width: 5),
+                                            Text(
+                                              'Imprimir',
+                                              style: TextStyle(
+                                                  color: white, fontSize: 12),
+                                            ),
+                                          ],
+                                        )),
                                     Visibility(
                                       visible: (totalEnviadas !=
                                               ordeCompraBd.numeroItems)

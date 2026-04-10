@@ -366,7 +366,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
                                                 child: Icon(
                                                   Icons.print,
                                                   color: primaryColorApp,
-                                                  size: 20,
+                                                  size: 25,
                                                 ),
                                               ),
                                             ],

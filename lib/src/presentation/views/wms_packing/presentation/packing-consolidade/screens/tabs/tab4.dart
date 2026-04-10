@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/bloc/packing_consolidade_bloc.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
@@ -364,6 +365,21 @@ class Tab4Screen extends StatelessWidget {
                                                   style: const TextStyle(
                                                       fontSize: 12,
                                                       color: black)),
+                                              const Spacer(),
+                                              GestureDetector(
+                                                onTap: () {
+                                                  ModalPrintersList.show(
+                                                      context,
+                                                      resId: product.idMove,
+                                                      companyId: 1);
+                                                },
+                                                child: Icon(
+                                                  Icons.print,
+                                                  color: primaryColorApp,
+                                                  size: 25,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 10),
                                             ],
                                           ),
                                           Row(

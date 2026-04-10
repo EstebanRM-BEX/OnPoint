@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/tabs/tab1.dart';
@@ -79,6 +80,26 @@ class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
                 'PACKING - DETAIL',
                 style: TextStyle(color: Colors.white, fontSize: 16),
               ),
+              actions: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.print,
+                    color: Colors.white,
+                    size: 25,
+                  ),
+                  onPressed: () {
+                    ModalPrintersList.show(context,
+                        resId: context
+                            .read<PackingPedidoBloc>()
+                            .currentPedidoPack
+                            .id,
+                        companyId: context
+                            .read<PackingPedidoBloc>()
+                            .currentPedidoPack
+                            .warehouseId);
+                  },
+                ),
+              ],
               bottom: TabBar(
                 controller: _tabController, // Asignar el TabController
                 indicatorWeight: 3,

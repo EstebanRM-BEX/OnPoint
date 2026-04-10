@@ -632,7 +632,7 @@ class Tab1ScreenTrans extends StatelessWidget {
                                                                   .createBackorder ==
                                                               "never"
                                                           ? '¿Estás seguro de confirmar la transferencia y dejarla lista para ser enviada?'
-                                                          : "Usted ha procesado cantidades de productos menores que los requeridos en el movimiento orignal.",
+                                                          : "Usted ha procesado cantidades de productos menores que los requeridos en el movimiento original.",
                                                   style: TextStyle(
                                                       color: black,
                                                       fontSize: 14),

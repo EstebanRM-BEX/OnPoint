@@ -756,60 +756,54 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                             return Column(
                               children: [
                                 const WarningWidgetCubit(),
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 15),
-                                  child: Row(
-                                    children: [
-                                      IconButton(
-                                        onPressed: () {
-                                          cantidadController.clear();
-                                          batchBloc.searchPickController
-                                              .clear();
-                                          batchBloc.add(SearchPickEvent(
-                                            '',
-                                            batchBloc.pickWithProducts.pick
-                                                        ?.typePick ==
-                                                    'pick'
-                                                ? false
-                                                : true,
-                                          ));
-
-                                          if (batchBloc.pickWithProducts.pick
-                                                  ?.typePick ==
-                                              'pick') {
-                                            batchBloc.add(
-                                                FetchPickingPickFromDBEvent(
-                                                    false));
-                                            Navigator.pushReplacementNamed(
-                                                context, 'pick');
-                                          } else {
-                                            batchBloc.add(
-                                                FetchPickingComponentesFromDBEvent(
-                                                    false));
-                                            Navigator.pushReplacementNamed(
-                                                context, 'picking-componentes');
-                                          }
-                                        },
-                                        icon: const Icon(Icons.arrow_back,
-                                            color: Colors.white, size: 20),
-                                      ),
-                                      const Spacer(),
-                                      Align(
-                                        alignment: Alignment.center,
-                                        child: Text(
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      onPressed: () {
+                                        cantidadController.clear();
+                                        batchBloc.searchPickController.clear();
+                                        batchBloc.add(SearchPickEvent(
+                                          '',
                                           batchBloc.pickWithProducts.pick
-                                                  ?.name ??
-                                              '',
-                                          style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 14),
-                                        ),
+                                                      ?.typePick ==
+                                                  'pick'
+                                              ? false
+                                              : true,
+                                        ));
+
+                                        if (batchBloc.pickWithProducts.pick
+                                                ?.typePick ==
+                                            'pick') {
+                                          batchBloc.add(
+                                              FetchPickingPickFromDBEvent(
+                                                  false));
+                                          Navigator.pushReplacementNamed(
+                                              context, 'pick');
+                                        } else {
+                                          batchBloc.add(
+                                              FetchPickingComponentesFromDBEvent(
+                                                  false));
+                                          Navigator.pushReplacementNamed(
+                                              context, 'picking-componentes');
+                                        }
+                                      },
+                                      icon: const Icon(Icons.arrow_back,
+                                          color: Colors.white, size: 20),
+                                    ),
+                                    const Spacer(),
+                                    Align(
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        batchBloc.pickWithProducts.pick?.name ??
+                                            '',
+                                        style: const TextStyle(
+                                            color: Colors.white, fontSize: 14),
                                       ),
-                                      const Spacer(),
-                                      PopupMenuButtonPickWidget(
-                                          currentProduct: currentProduct),
-                                    ],
-                                  ),
+                                    ),
+                                    const Spacer(),
+                                    PopupMenuButtonPickWidget(
+                                        currentProduct: currentProduct),
+                                  ],
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(

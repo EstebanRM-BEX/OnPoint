@@ -1,6 +1,7 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/features/packaging_types/domain/entities/packaging_type.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously, unnecessary_null_comparison
 
@@ -575,6 +576,25 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
                                                                         12,
                                                                     color:
                                                                         black)),
+                                                        const Spacer(),
+                                                        GestureDetector(
+                                                          onTap: () {
+                                                            ModalPrintersList
+                                                                .show(context,
+                                                                    resId: product
+                                                                        .idMove,
+                                                                    companyId:
+                                                                        1);
+                                                          },
+                                                          child: Icon(
+                                                            Icons.print,
+                                                            color:
+                                                                primaryColorApp,
+                                                            size: 25,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 3),
                                                       ],
                                                     ),
                                                     Row(

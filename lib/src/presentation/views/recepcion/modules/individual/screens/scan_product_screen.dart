@@ -536,7 +536,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
                                     child: Icon(
                                       Icons.print,
                                       color: white,
-                                      size: 20,
+                                      size: 25,
                                     ),
                                   ),
                                   const SizedBox(width: 10),

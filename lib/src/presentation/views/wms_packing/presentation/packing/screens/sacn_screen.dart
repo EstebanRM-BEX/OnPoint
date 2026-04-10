@@ -1,5 +1,6 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously, avoid_print
 
@@ -390,43 +391,55 @@ class _PackingScreenState extends State<ScanPackScreen> {
                                 return Column(
                                   children: [
                                     const WarningWidgetCubit(),
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 25),
-                                      child: Row(
-                                        children: [
-                                          IconButton(
-                                            onPressed: () {
-                                              packingBloc.quantitySelected = 0;
-                                              cantidadController.clear();
-                                              packingBloc.oldLocation = "";
+                                    Row(
+                                      children: [
+                                        IconButton(
+                                          onPressed: () {
+                                            packingBloc.quantitySelected = 0;
+                                            cantidadController.clear();
+                                            packingBloc.oldLocation = "";
 
-                                              context
-                                                  .read<PackingPedidoBloc>()
-                                                  .add(LoadPedidoAndProductsEvent(
-                                                      packingBloc.currentProduct
-                                                              .pedidoId ??
-                                                          0));
-                                              Navigator.pushReplacementNamed(
-                                                context,
-                                                'detail-packing-pedido',
-                                                arguments: [1],
-                                              );
-                                            },
-                                            icon: const Icon(Icons.arrow_back,
-                                                color: Colors.white, size: 30),
+                                            context
+                                                .read<PackingPedidoBloc>()
+                                                .add(LoadPedidoAndProductsEvent(
+                                                    packingBloc.currentProduct
+                                                            .pedidoId ??
+                                                        0));
+                                            Navigator.pushReplacementNamed(
+                                              context,
+                                              'detail-packing-pedido',
+                                              arguments: [1],
+                                            );
+                                          },
+                                          icon: const Icon(Icons.arrow_back,
+                                              color: Colors.white, size: 30),
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                              left: size.width * 0.2),
+                                          child: Text(
+                                            "CERTIFICACION",
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 18),
                                           ),
-                                          Padding(
-                                            padding: EdgeInsets.only(
-                                                left: size.width * 0.2),
-                                            child: Text(
-                                              "CERTIFICACION",
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 18),
-                                            ),
+                                        ),
+                                        const Spacer(),
+                                        GestureDetector(
+                                          onTap: () {
+                                            ModalPrintersList.show(context,
+                                                resId: packingBloc
+                                                    .currentProduct.idMove,
+                                                companyId: 1);
+                                          },
+                                          child: Icon(
+                                            Icons.print,
+                                            color: white,
+                                            size: 25,
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                      ],
                                     ),
                                   ],
                                 );

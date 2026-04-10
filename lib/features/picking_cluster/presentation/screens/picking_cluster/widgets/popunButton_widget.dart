@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/cluster_picking/cluster_picking_bloc.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/batch_product.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 
 class PopupMenuButtonWidget extends StatelessWidget {
   const PopupMenuButtonWidget({
@@ -110,6 +111,9 @@ class PopupMenuButtonWidget extends StatelessWidget {
                       ),
                     );
                   });
+            } else if (value == '3') {
+              ModalPrintersList.show(context,
+                  resId: currentProduct.idMove, companyId: 1);
             }
           },
           itemBuilder: (BuildContext context) {
@@ -145,6 +149,17 @@ class PopupMenuButtonWidget extends StatelessWidget {
                     ],
                   ),
                 ),
+              PopupMenuItem<String>(
+                value: '3',
+                child: Row(
+                  children: [
+                    Icon(Icons.print, color: primaryColorApp, size: 20),
+                    const SizedBox(width: 10),
+                    const Text('Imprimir',
+                        style: TextStyle(color: black, fontSize: 14)),
+                  ],
+                ),
+              ),
             ];
           },
         );
