@@ -72,10 +72,170 @@ class Tab1ScreenRecep extends StatelessWidget {
 
           if (state is CreateBackOrderOrNotFailure) {
             Navigator.pop(context);
-            showScrollableErrorDialog(state.error);
+            if (state.result?.tipoError == 'LOTE_VENCIDO') {
+              showDialog(
+                context: context,
+                builder: (ctx) {
+                  return BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                    child: AlertDialog(
+                      backgroundColor: Colors.white,
+                      title: Text(
+                        'Lotes Vencidos',
+                        style: TextStyle(color: Colors.red, fontSize: 16),
+                        textAlign: TextAlign.center,
+                      ),
+                      content: SizedBox(
+                        width: double.maxFinite,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              state.result?.msg ?? '',
+                              style: TextStyle(
+                                  fontSize: 13, color: Colors.black87),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 10),
+                            const Divider(),
+                            Flexible(
+                              child: ListView.separated(
+                                shrinkWrap: true,
+                                itemCount: state.result?.detalles?.length ?? 0,
+                                separatorBuilder: (_, __) =>
+                                    const Divider(height: 1),
+                                itemBuilder: (_, i) {
+                                  final d = state.result!.detalles![i];
+                                  return Padding(
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 6),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(d.producto ?? '',
+                                            style: const TextStyle(
+                                                fontSize: 12,
+                                                color: primaryColorApp,
+                                                fontWeight: FontWeight.bold)),
+                                        Text('Lote: ${d.lote ?? '-'}',
+                                            style:
+                                                const TextStyle(fontSize: 12)),
+                                        Row(
+                                          children: [
+                                            Text('Vencimiento: ',
+                                                style: const TextStyle(
+                                                    fontSize: 12)),
+                                            Text(d.fechaVencimiento ?? '-',
+                                                style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.red)),
+                                          ],
+                                        ),
+                                        Text(
+                                            'Cantidad: ${d.cantidad?.toStringAsFixed(0) ?? '-'}',
+                                            style:
+                                                const TextStyle(fontSize: 12)),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      actionsAlignment: MainAxisAlignment.center,
+                      actions: [
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                            minimumSize: Size(
+                                MediaQuery.sizeOf(context).width * 0.7, 40),
+                          ),
+                          child: const Text('Cancelar',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 12)),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            final idRecepcion = context
+                                    .read<RecepcionBloc>()
+                                    .resultEntrada
+                                    .id ??
+                                0;
+                            context.read<RecepcionBloc>().add(
+                                  ConfirmarLoteVencidoEvent(
+                                    ordenCompra?.type ?? '',
+                                    idRecepcion,
+                                    false,
+                                  ),
+                                );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColorApp,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                            minimumSize: Size(
+                                MediaQuery.sizeOf(context).width * 0.7, 40),
+                          ),
+                          child: const Text('Continuar',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 12)),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  );
+                },
+              );
+            } else {
+              showScrollableErrorDialog(state.error);
+            }
           }
 
           if (state is CreateBackOrderOrNotSuccess) {
+            Get.snackbar("360 Software Informa", state.message,
+                backgroundColor: white,
+                colorText: primaryColorApp,
+                icon: Icon(Icons.error, color: Colors.green));
+            Navigator.pop(context);
+
+            if (ordenCompra?.type == 'dev') {
+              Navigator.pushReplacementNamed(
+                context,
+                'list-devoluciones',
+              );
+            } else {
+              Navigator.pushReplacementNamed(
+                context,
+                'list-ordenes-compra',
+              );
+            }
+          }
+
+          if (state is ConfirmarLoteVencidoLoading) {
+            showDialog(
+              context: context,
+              builder: (context) {
+                return const DialogLoading(
+                  message: "Confirmando lotes vencidos...",
+                );
+              },
+            );
+          }
+
+          if (state is ConfirmarLoteVencidoFailure) {
+            Navigator.pop(context);
+            showScrollableErrorDialog(state.error);
+          }
+
+          if (state is ConfirmarLoteVencidoSuccess) {
             Get.snackbar("360 Software Informa", state.message,
                 backgroundColor: white,
                 colorText: primaryColorApp,

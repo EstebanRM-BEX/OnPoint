@@ -166,7 +166,16 @@ class CreateBackOrderOrNot extends RecepcionEvent {
   final String type;
   final int idRecepcion;
   final bool isBackOrder;
-  CreateBackOrderOrNot(this.type, this.idRecepcion, this.isBackOrder);
+  final bool forzarLoteVencido;
+  CreateBackOrderOrNot(this.type, this.idRecepcion, this.isBackOrder,
+      {this.forzarLoteVencido = false});
+}
+
+class ConfirmarLoteVencidoEvent extends RecepcionEvent {
+  final String type;
+  final int idRecepcion;
+  final bool isBackOrder;
+  ConfirmarLoteVencidoEvent(this.type, this.idRecepcion, this.isBackOrder);
 }
 
 class SearchLotevent extends RecepcionEvent {

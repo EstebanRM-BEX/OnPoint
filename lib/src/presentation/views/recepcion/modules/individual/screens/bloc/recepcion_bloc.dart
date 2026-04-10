@@ -18,6 +18,7 @@ import 'package:wms_app/src/presentation/views/recepcion/models/repcion_requets_
 import 'package:wms_app/src/presentation/views/recepcion/models/response_image_send_novedad_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_temp_ia_model.dart';
+import 'package:wms_app/src/presentation/views/recepcion/models/response_validate_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 
 part 'recepcion_event.dart';
@@ -185,6 +186,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
     //*metodo para crear barckorder o no
     on<CreateBackOrderOrNot>(_onCreateBackOrder);
+    on<ConfirmarLoteVencidoEvent>(_onConfirmarLoteVencido);
 
     //metodo para buscar un lote
     on<SearchLotevent>(_onSearchLoteEvent);
@@ -742,7 +744,8 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     try {
       emit(CreateBackOrderOrNotLoading());
       final response = await _recepcionRepository.validateRecepcion(
-          event.idRecepcion, event.isBackOrder, false);
+          event.idRecepcion, event.isBackOrder, false,
+          forzarLoteVencido: event.forzarLoteVencido);
 
       if (response.result?.code == 200) {
         add(StartOrStopTimeOrder(
@@ -764,11 +767,42 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
           add(FetchOrdenesCompraOfBd());
         }
       } else {
-        emit(CreateBackOrderOrNotFailure(response.result?.msg ?? ''));
+        emit(CreateBackOrderOrNotFailure(response.result?.msg ?? '',
+            result: response.result));
       }
     } catch (e, s) {
       emit(CreateBackOrderOrNotFailure('Error al crear la backorder'));
       debugPrint('Error en el _onCreateBackOrder: $e, $s');
+    }
+  }
+
+  void _onConfirmarLoteVencido(
+      ConfirmarLoteVencidoEvent event, Emitter<RecepcionState> emit) async {
+    try {
+      emit(ConfirmarLoteVencidoLoading());
+      final response = await _recepcionRepository.confirmarLoteVencido(
+          event.idRecepcion, event.isBackOrder);
+
+      if (response.result?.code == 200) {
+        add(StartOrStopTimeOrder(event.idRecepcion, 'end_time_reception'));
+        await db.entradasRepository.setFieldTableEntrada(
+          event.idRecepcion,
+          "is_finish",
+          1,
+        );
+        emit(ConfirmarLoteVencidoSuccess(response.result?.msg ?? ''));
+
+        if (event.type == 'dev') {
+          add(FetchDevolucionesOfDB());
+        } else {
+          add(FetchOrdenesCompraOfBd());
+        }
+      } else {
+        emit(ConfirmarLoteVencidoFailure(response.result?.msg ?? ''));
+      }
+    } catch (e, s) {
+      emit(ConfirmarLoteVencidoFailure('Error al confirmar lotes vencidos'));
+      debugPrint('Error en _onConfirmarLoteVencido: $e, $s');
     }
   }
 

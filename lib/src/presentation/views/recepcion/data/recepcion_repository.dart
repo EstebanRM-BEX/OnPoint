@@ -990,8 +990,9 @@ class RecepcionRepository {
   Future<ResponseValidate> validateRecepcion(
     int idRecepcion,
     bool isBackorder,
-    bool isLoadingDialog,
-  ) async {
+    bool isLoadingDialog, {
+    bool forzarLoteVencido = false,
+  }) async {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
@@ -1003,11 +1004,12 @@ class RecepcionRepository {
     try {
       var response = await ApiRequestService().postPacking(
         endpoint:
-            'complet0000e_recepcion', // Cambiado para que sea el endpoint correspondiente
+            'complete_recepcion', // Cambiado para que sea el endpoint correspondiente
         body: {
           "params": {
             "id_recepcion": idRecepcion,
             "crear_backorder": isBackorder,
+            if (forzarLoteVencido) "forzar_lote_vencido": true,
           }
         },
         isLoadinDialog: true,
@@ -1062,6 +1064,45 @@ class RecepcionRepository {
       return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
     }
     return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
+  }
+
+  Future<ResponseValidate> confirmarLoteVencido(
+    int idRecepcion,
+    bool isBackorder,
+  ) async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      return ResponseValidate();
+    }
+    try {
+      var response = await ApiRequestService().postPacking(
+        endpoint: 'complete_recepcion/expire',
+        body: {
+          "params": {
+            "id_recepcion": idRecepcion,
+            "crear_backorder": isBackorder,
+            "confirmar_caducados": true,
+          }
+        },
+        isLoadinDialog: true,
+      );
+      if (response.statusCode <= 500) {
+        Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        if (jsonResponse.containsKey('result')) {
+          return ResponseValidate(
+            jsonrpc: jsonResponse['jsonrpc'],
+            result: jsonResponse['result'] != null
+                ? ResultValidate.fromMap(jsonResponse['result'])
+                : null,
+          );
+        }
+      }
+    } on SocketException catch (e) {
+      debugPrint('Error de red en confirmarLoteVencido: $e');
+    } catch (e, s) {
+      debugPrint('Error en confirmarLoteVencido: $e, $s');
+    }
+    return ResponseValidate();
   }
 
   //metodo para enviar la temperatura de un lote

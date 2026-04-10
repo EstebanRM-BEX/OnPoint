@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/packing_response_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/un_packing_request.dart';
@@ -365,6 +366,54 @@ class Tab1Screen extends StatelessWidget {
                                                           ),
                                                           actions: [
                                                             ElevatedButton(
+                                                                onPressed: () {
+                                                                  //cerrar el dialogo y abrir el de la impresion
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                  ModalPrintersList.show(
+                                                                      context,
+                                                                      resId:
+                                                                          packingModel?.id ??
+                                                                              0,
+                                                                      companyId:
+                                                                          1);
+                                                                },
+                                                                style: ElevatedButton
+                                                                    .styleFrom(
+                                                                  backgroundColor:
+                                                                      primaryColorApp,
+                                                                  shape:
+                                                                      RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                            10),
+                                                                  ),
+                                                                ),
+                                                                child: Row(
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
+                                                                          .center,
+                                                                  children: [
+                                                                    //icono de imprimir
+                                                                    Icon(
+                                                                        Icons
+                                                                            .print,
+                                                                        color:
+                                                                            white),
+                                                                    SizedBox(
+                                                                        width:
+                                                                            5),
+                                                                    Text(
+                                                                      'Imprimir',
+                                                                      style: TextStyle(
+                                                                          color:
+                                                                              white,
+                                                                          fontSize:
+                                                                              12),
+                                                                    ),
+                                                                  ],
+                                                                )),
+                                                            ElevatedButton(
                                                               onPressed: () {
                                                                 Navigator.pop(
                                                                     context);
@@ -372,6 +421,12 @@ class Tab1Screen extends StatelessWidget {
                                                               style:
                                                                   ElevatedButton
                                                                       .styleFrom(
+                                                                minimumSize: Size(
+                                                                    MediaQuery.of(context)
+                                                                            .size
+                                                                            .width *
+                                                                        0.9,
+                                                                    40),
                                                                 backgroundColor:
                                                                     grey,
                                                                 shape:
@@ -429,6 +484,12 @@ class Tab1Screen extends StatelessWidget {
                                                                       .styleFrom(
                                                                 backgroundColor:
                                                                     primaryColorApp,
+                                                                minimumSize: Size(
+                                                                    MediaQuery.of(context)
+                                                                            .size
+                                                                            .width *
+                                                                        0.9,
+                                                                    40),
                                                                 shape:
                                                                     RoundedRectangleBorder(
                                                                   borderRadius:

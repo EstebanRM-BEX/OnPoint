@@ -262,7 +262,20 @@ class CreateBackOrderOrNotSuccess extends RecepcionState {
 
 class CreateBackOrderOrNotFailure extends RecepcionState {
   final String error;
-  CreateBackOrderOrNotFailure(this.error);
+  final ResultValidate? result;
+  CreateBackOrderOrNotFailure(this.error, {this.result});
+}
+
+class ConfirmarLoteVencidoLoading extends RecepcionState {}
+
+class ConfirmarLoteVencidoSuccess extends RecepcionState {
+  final String message;
+  ConfirmarLoteVencidoSuccess(this.message);
+}
+
+class ConfirmarLoteVencidoFailure extends RecepcionState {
+  final String error;
+  ConfirmarLoteVencidoFailure(this.error);
 }
 
 class SearchLoading extends RecepcionState {}
