@@ -17,9 +17,26 @@ class DialogTemperaturaManual extends StatefulWidget {
 }
 
 class _DialogCapturaTemperaturaState extends State<DialogTemperaturaManual> {
+  late TextEditingController _localController;
+  late FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _localController = TextEditingController();
+    _focusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _localController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<RecepcionBloc, RecepcionState>(
+    return BlocListener<RecepcionBloc, RecepcionState>(
       listener: (context, state) {
         if (state is GetTemperatureFailure) {
           Get.snackbar("360 Software Informa", state.error,
@@ -28,75 +45,71 @@ class _DialogCapturaTemperaturaState extends State<DialogTemperaturaManual> {
               icon: Icon(Icons.error, color: Colors.red));
         }
       },
-      builder: (context, state) {
-        final bloc = context.read<RecepcionBloc>();
-        return BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: 5,
-            sigmaY: 5,
-          ),
-          child: AlertDialog(
-            title: const Center(
-              child: Text(
-                "Captura la temperatura",
-                style: TextStyle(fontSize: 16, color: black),
-              ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: 5,
+          sigmaY: 5,
+        ),
+        child: AlertDialog(
+          title: const Center(
+            child: Text(
+              "Captura la temperatura",
+              style: TextStyle(fontSize: 16, color: black),
             ),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Debes ingresar la temperatura del producto para continuar.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: black),
-                  ),
-                  const SizedBox(height: 15),
-                  //tamaño en 5mb
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Debes ingresar la temperatura del producto para continuar.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: black),
+                ),
+                const SizedBox(height: 15),
 
-                  TextFormField(
-                    showCursor: false,
-                    controller: bloc.temperatureController,
-                    keyboardType: TextInputType.number,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: black,
-                    ),
-                    decoration: InputDecorations.authInputDecoration(
-                      hintText: 'Temperatura',
-                      labelText: 'Temperatura',
-                      suffixIconButton: IconButton(
-                        onPressed: () {
-                          bloc.temperatureController.clear();
-                        },
-                        icon: Icon(
-                          Icons.clear,
-                          color: primaryColorApp,
-                          size: 20,
-                        ),
+                TextFormField(
+                  focusNode: _focusNode,
+                  controller: _localController,
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: black,
+                  ),
+                  decoration: InputDecorations.authInputDecoration(
+                    hintText: 'Temperatura',
+                    labelText: 'Temperatura',
+                    suffixIconButton: IconButton(
+                      onPressed: () {
+                        _localController.clear();
+                      },
+                      icon: Icon(
+                        Icons.clear,
+                        color: primaryColorApp,
+                        size: 20,
                       ),
                     ),
                   ),
+                ),
 
-                  const SizedBox(height: 5),
+                const SizedBox(height: 5),
 
-                  _buildTemperatureResult(bloc),
-                ],
-              ),
+                _buildTemperatureResult(context),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildTemperatureResult(RecepcionBloc bloc) {
+  Widget _buildTemperatureResult(BuildContext context) {
     return Column(
       children: [
         ElevatedButton(
           onPressed: () {
-            final text = bloc.temperatureController.text.trim();
+            final text = _localController.text.trim();
 
             if (text.isEmpty) {
               Get.snackbar(
@@ -122,7 +135,9 @@ class _DialogCapturaTemperaturaState extends State<DialogTemperaturaManual> {
               return;
             }
 
-            // Aquí puedes continuar con el envío si pasa la validación
+            final bloc = context.read<RecepcionBloc>();
+            bloc.temperatureController.text = text;
+
             bloc.add(
               SendTemperatureManualEvent(
                 moveLineId: widget.moveLineId,
@@ -139,7 +154,6 @@ class _DialogCapturaTemperaturaState extends State<DialogTemperaturaManual> {
           child: const Text("Enviar",
               style: TextStyle(fontSize: 14, color: white)),
         ),
-        //mostramos el teclado de temperatura
         const SizedBox(height: 10),
       ],
     );

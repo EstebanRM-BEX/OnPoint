@@ -39,7 +39,10 @@ class LoginPage extends StatelessWidget {
           );
         }
         if (state is LoginSuccess) {
-          context.read<UserBloc>().add(RegisterDeviceEvent());
+          context.read<UserBloc>().add(RegisterDeviceEvent(
+                user: state.user,
+                password: state.password,
+              ));
           context.read<PackagingTypeBloc>().add(SyncPackagingTypesEvent());
         }
 

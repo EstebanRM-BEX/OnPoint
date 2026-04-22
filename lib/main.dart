@@ -86,7 +86,7 @@ void main() {
     await configureDependencies();
 
     // 5. Iniciar WebSocket (Usando DI)
-    // await getIt<IWebSocketService>().connect();
+    await getIt<IWebSocketService>().connect();
     runApp(const MyApp());
   }, (error, stack) {
     // Zona de captura de errores globales

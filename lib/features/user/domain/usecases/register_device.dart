@@ -3,16 +3,17 @@ import 'package:fpdart/fpdart.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecases/usecase.dart';
+import '../entities/device_registration.dart';
 import '../repositories/user_repository.dart';
 
 @lazySingleton
-class RegisterDevice implements UseCase<void, RegisterDeviceParams> {
+class RegisterDevice implements UseCase<DeviceRegistration, RegisterDeviceParams> {
   final UserRepository repository;
 
   RegisterDevice(this.repository);
 
   @override
-  Future<Either<Failure, void>> call(RegisterDeviceParams params) async {
+  Future<Either<Failure, DeviceRegistration>> call(RegisterDeviceParams params) async {
     return await repository.registerDevice(
       params.deviceId,
       params.deviceName,

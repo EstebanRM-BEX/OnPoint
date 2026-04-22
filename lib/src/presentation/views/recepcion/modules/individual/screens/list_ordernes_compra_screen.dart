@@ -1,5 +1,6 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/core/utils/widgets/dialog_dispositivo_no_autorizado_widget.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously, must_be_immutable
 
@@ -104,20 +105,10 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
           );
         } else if (state is DeviceNotAuthorized) {
           Navigator.pop(context);
-          Get.defaultDialog(
-            title: 'Dispositivo no autorizado',
-            titleStyle: TextStyle(
-                color: primaryColorApp,
-                fontWeight: FontWeight.bold,
-                fontSize: 16),
-            middleText:
-                'Este dispositivo no está autorizado para usar la aplicación. su suscripción ha expirado o no está activa, por favor contacte con el administrador.',
-            middleTextStyle: TextStyle(color: black, fontSize: 14),
-            backgroundColor: Colors.white,
-            radius: 10,
-            barrierDismissible:
-                false, // Evita que se cierre al tocar fuera del diálogo
-            onWillPop: () async => false,
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const DialogUnauthorizedDevice(),
           );
         } else if (state is AssignUserToOrderFailure) {
           Get.snackbar(

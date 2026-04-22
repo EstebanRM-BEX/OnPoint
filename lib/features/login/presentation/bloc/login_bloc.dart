@@ -56,25 +56,8 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       // Authentication successful
       (user) async {
         debugPrint('✅ Login successful: ${user.name}');
-
-        // Save user session with encrypted password
-        final saveResult = await saveUserSession(
-          SaveSessionParams(
-            user: user,
-            password: event.password,
-          ),
-        );
-
-        saveResult.fold(
-          (failure) {
-            debugPrint('⚠️ Session save failed: ${failure.message}');
-            emit(LoginFailure('Error al guardar sesión: ${failure.message}'));
-          },
-          (_) {
-            debugPrint('💾 Session saved successfully');
-            emit(LoginSuccess(user));
-          },
-        );
+        // Session is saved only after device authorization is confirmed
+        emit(LoginSuccess(user, event.password));
       },
     );
   }

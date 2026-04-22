@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:wms_app/features/login/domain/entities/user.dart';
 
 abstract class UserEvent extends Equatable {
   const UserEvent();
@@ -10,7 +11,13 @@ abstract class UserEvent extends Equatable {
 class LoadUserInfoEvent extends UserEvent {}
 
 class RegisterDeviceEvent extends UserEvent {
-  const RegisterDeviceEvent();
+  final User? user;
+  final String? password;
+
+  const RegisterDeviceEvent({this.user, this.password});
+
+  @override
+  List<Object?> get props => [user, password];
 }
 
 class LoadUserLocationsEvent extends UserEvent {}

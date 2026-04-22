@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import '../../domain/entities/user_configuration.dart';
 
 class UserInfoCard extends StatelessWidget {
@@ -28,6 +29,14 @@ class UserInfoCard extends StatelessWidget {
             _buildInfoRow("Rol: ", profile.rol ?? ''),
             const SizedBox(height: 5),
             _buildInfoRow("Version App: ", versionApp),
+            const SizedBox(height: 5),
+            FutureBuilder<String>(
+              future: PrefUtils.getEnterprise(),
+              builder: (context, snapshot) {
+                final enterprise = snapshot.data ?? 'Cargando...';
+                return _buildInfoRow("Url: ", enterprise);
+              },
+            ),
           ],
         ),
       ),

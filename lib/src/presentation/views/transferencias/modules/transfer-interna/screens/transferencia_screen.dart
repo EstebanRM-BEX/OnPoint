@@ -25,6 +25,7 @@ class TransferenciaScreen extends StatefulWidget {
 class _TransferenciaScreenState extends State<TransferenciaScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _isProcessing = false;
 
   @override
   void initState() {
@@ -59,24 +60,34 @@ class _TransferenciaScreenState extends State<TransferenciaScreen>
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () {
-                  //volvemos a llamar las entradas que tenemos guardadas en la bd
-                  if (widget.transferencia?.type == 'entrega') {
-                    context
-                        .read<TransferenciaBloc>()
-                        .add(FetchAllEntregaDB(false));
-                    Navigator.pushReplacementNamed(
-                      context,
-                      'list-entrada-productos',
-                    );
-                  } else if (widget.transferencia?.type == 'transfer') {
-                    context
-                        .read<TransferenciaBloc>()
-                        .add(FetchAllTransferenciasDB(false));
+                  if (_isProcessing) return;
 
-                    Navigator.pushReplacementNamed(
-                      context,
-                      'transferencias',
-                    );
+                  setState(() => _isProcessing = true);
+
+                  try {
+                    //volvemos a llamar las entradas que tenemos guardadas en la bd
+                    if (widget.transferencia?.type == 'entrega') {
+                      context
+                          .read<TransferenciaBloc>()
+                          .add(FetchAllEntregaDB(false));
+                      Navigator.pushReplacementNamed(
+                        context,
+                        'list-entrada-productos',
+                      );
+                    } else if (widget.transferencia?.type == 'transfer') {
+                      context
+                          .read<TransferenciaBloc>()
+                          .add(FetchAllTransferenciasDB(false));
+
+                      Navigator.pushReplacementNamed(
+                        context,
+                        'transferencias',
+                      );
+                    }
+                  } finally {
+                    if (mounted) {
+                      setState(() => _isProcessing = false);
+                    }
                   }
                 },
               ),

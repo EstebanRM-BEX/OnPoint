@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:injectable/injectable.dart';
 import '../../../../src/api/api_request_service.dart';
+import '../models/device_registration_model.dart';
 import '../models/user_configuration_model.dart';
 import '../models/user_location_model.dart';
 import '../models/user_novelty_model.dart';
@@ -9,8 +10,8 @@ abstract class UserRemoteDataSource {
   Future<UserConfigurationModel> getUserConfiguration();
   Future<List<UserLocationModel>> getUserLocations();
   Future<List<UserNoveltyModel>> getNovelties();
-  Future<void> registerDevice(String deviceId, String deviceName,
-      String deviceModel, String versionApp);
+  Future<DeviceRegistrationModel> registerDevice(String deviceId,
+      String deviceName, String deviceModel, String versionApp);
 }
 
 @LazySingleton(as: UserRemoteDataSource)
@@ -74,8 +75,8 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   }
 
   @override
-  Future<void> registerDevice(String deviceId, String deviceName,
-      String deviceModel, String versionApp) async {
+  Future<DeviceRegistrationModel> registerDevice(String deviceId,
+      String deviceName, String deviceModel, String versionApp) async {
     final response = await apiService.postPicking(
       endpoint: 'pda/register',
       body: {
@@ -90,8 +91,15 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
       isLoadinDialog: false,
     );
 
-    if (response.statusCode >= 400) {
-      throw Exception('Failed to register device');
+    if (response.statusCode < 400) {
+      final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+      if (jsonResponse.containsKey('result') &&
+          jsonResponse['result']['code'] == 200) {
+        final Map<String, dynamic> data = jsonResponse['result']['data'];
+        return DeviceRegistrationModel.fromJson(data);
+      }
+      throw Exception(jsonResponse['result']?['msg'] ?? 'Failed to register device');
     }
+    throw Exception('Failed to register device');
   }
 }

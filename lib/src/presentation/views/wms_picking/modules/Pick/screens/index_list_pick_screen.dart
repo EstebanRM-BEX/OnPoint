@@ -34,6 +34,7 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   final FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
+  bool _isProcessing = false;
 
   @override
   void initState() {
@@ -96,6 +97,10 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
 
   void _handleTap(
       BuildContext context, BuildContext contextBuilder, dynamic batch) async {
+    if (_isProcessing) return;
+
+    setState(() => _isProcessing = true);
+
     debugPrint("Batch: ${batch.toMap()}");
     final bloc = context.read<PickingPickBloc>();
 
@@ -156,6 +161,10 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
           duration: Duration(seconds: 4),
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
     }
   }
 
@@ -282,13 +291,19 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                       ),
                                       GestureDetector(
                                         onTap: () async {
-                                          if (bloc.state
-                                                  is PickingPickLoading ||
-                                              bloc.state
-                                                  is PickingPickBDLoading) {
+                                          if (_isProcessing ||
+                                              bloc.state is PickingPickLoading ||
+                                              bloc.state is PickingPickBDLoading) {
                                             return;
                                           }
-                                          bloc.add(FetchPickingPickEvent(true));
+                                          setState(() => _isProcessing = true);
+                                          try {
+                                            bloc.add(FetchPickingPickEvent(true));
+                                          } finally {
+                                            if (mounted) {
+                                              setState(() => _isProcessing = false);
+                                            }
+                                          }
                                         },
                                         child: Padding(
                                           padding: EdgeInsets.only(
@@ -631,30 +646,42 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                         ),
                         GestureDetector(
                           onTap: () async {
-                            FocusScope.of(context).unfocus();
-                            var pickedDate =
-                                await DatePicker.showSimpleDatePicker(
-                              titleText: 'Seleccione una fecha',
-                              context,
-                              confirmText: 'Buscar',
-                              cancelText: 'Cancelar',
-                              firstDate: DateTime.now()
-                                  .subtract(const Duration(days: 30)),
-                              lastDate: DateTime.now(),
-                              dateFormat: "dd-MMMM-yyyy",
-                              locale: DateTimePickerLocale.es,
-                              looping: false,
-                            );
+                            if (_isProcessing ||
+                                context.read<PickingPickBloc>().state
+                                    is PickingLoadingState) return;
 
-                            if (pickedDate != null) {
-                              final formattedDate =
-                                  DateFormat('yyyy-MM-dd').format(pickedDate);
-                              context.read<PickingPickBloc>().add(
-                                    LoadHistoryPickEvent(true, formattedDate),
-                                  );
-                              Navigator.pushReplacementNamed(
-                                  context, 'pick-done',
-                                  arguments: [true]);
+                            setState(() => _isProcessing = true);
+
+                            try {
+                              FocusScope.of(context).unfocus();
+                              var pickedDate =
+                                  await DatePicker.showSimpleDatePicker(
+                                titleText: 'Seleccione una fecha',
+                                context,
+                                confirmText: 'Buscar',
+                                cancelText: 'Cancelar',
+                                firstDate: DateTime.now()
+                                    .subtract(const Duration(days: 30)),
+                                lastDate: DateTime.now(),
+                                dateFormat: "dd-MMMM-yyyy",
+                                locale: DateTimePickerLocale.es,
+                                looping: false,
+                              );
+
+                              if (pickedDate != null) {
+                                final formattedDate = DateFormat('yyyy-MM-dd')
+                                    .format(pickedDate);
+                                context.read<PickingPickBloc>().add(
+                                      LoadHistoryPickEvent(true, formattedDate),
+                                    );
+                                Navigator.pushReplacementNamed(
+                                    context, 'pick-done',
+                                    arguments: [true]);
+                              }
+                            } finally {
+                              if (mounted) {
+                                setState(() => _isProcessing = false);
+                              }
                             }
                           },
                           child: const Card(

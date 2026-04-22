@@ -26,6 +26,7 @@ class RecepcionScreen extends StatefulWidget {
 class _RecepcionScreenState extends State<RecepcionScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _isProcessing = false;
 
   @override
   void initState() {
@@ -59,20 +60,31 @@ class _RecepcionScreenState extends State<RecepcionScreen>
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () {
-                  //validamos que type es la recepcion
-                  if (widget.ordenCompra?.type == 'dev') {
-                    context.read<RecepcionBloc>().add(FetchDevolucionesOfDB());
-                    Navigator.pushReplacementNamed(
-                      context,
-                      'list-devoluciones',
-                    );
-                  } else {
-                    context.read<RecepcionBloc>().add(FetchOrdenesCompraOfBd());
+                  if (_isProcessing) return;
 
-                    Navigator.pushReplacementNamed(
-                      context,
-                      'list-ordenes-compra',
-                    );
+                  setState(() => _isProcessing = true);
+                  try {
+                    //validamos que type es la recepcion
+                    if (widget.ordenCompra?.type == 'dev') {
+                      context.read<RecepcionBloc>().add(FetchDevolucionesOfDB());
+                      Navigator.pushReplacementNamed(
+                        context,
+                        'list-devoluciones',
+                      );
+                    } else {
+                      context
+                          .read<RecepcionBloc>()
+                          .add(FetchOrdenesCompraOfBd());
+
+                      Navigator.pushReplacementNamed(
+                        context,
+                        'list-ordenes-compra',
+                      );
+                    }
+                  } finally {
+                    if (mounted) {
+                      setState(() => _isProcessing = false);
+                    }
                   }
                 },
               ),
@@ -86,9 +98,18 @@ class _RecepcionScreenState extends State<RecepcionScreen>
                 IconButton(
                   icon: const Icon(Icons.print, color: Colors.white),
                   onPressed: () {
-                    ModalPrintersList.show(context,
-                        resId: widget.ordenCompra?.id,
-                        companyId: widget.ordenCompra?.warehouseId ?? 1);
+                    if (_isProcessing) return;
+
+                    setState(() => _isProcessing = true);
+                    try {
+                      ModalPrintersList.show(context,
+                          resId: widget.ordenCompra?.id,
+                          companyId: widget.ordenCompra?.warehouseId ?? 1);
+                    } finally {
+                      if (mounted) {
+                        setState(() => _isProcessing = false);
+                      }
+                    }
                   },
                 ),
               ],

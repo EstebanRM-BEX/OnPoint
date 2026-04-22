@@ -4,6 +4,7 @@ import 'package:injectable/injectable.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/device_info.dart';
+import '../../domain/entities/device_registration.dart';
 import '../../domain/entities/user_configuration.dart';
 import '../../domain/entities/user_location.dart';
 import '../../domain/entities/user_novelty.dart';
@@ -96,14 +97,14 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<Either<Failure, void>> registerDevice(String deviceId,
+  Future<Either<Failure, DeviceRegistration>> registerDevice(String deviceId,
       String deviceName, String deviceModel, String versionApp) async {
     if (await _isConnected()) {
       try {
-        await remoteDataSource.registerDevice(
+        final result = await remoteDataSource.registerDevice(
             deviceId, deviceName, deviceModel, versionApp);
         debugPrint('✅ Dispositivo registrado correctamente');
-        return const Right(null);
+        return Right(result);
       } catch (e) {
         return Left(ServerFailure(e.toString()));
       }

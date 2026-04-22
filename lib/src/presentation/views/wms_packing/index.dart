@@ -33,8 +33,9 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
 
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
-  FocusNode focusNodeBuscar = FocusNode();
+  final FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
+  bool _isProcessing = false;
 
   @override
   void initState() {
@@ -121,10 +122,21 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
                       Navigator.pushReplacementNamed(context, '/home');
                     },
                     onRefresh: () async {
-                      await DataBaseSqlite().delePacking('packing-batch');
-                      context
-                          .read<WmsPackingBloc>()
-                          .add(LoadAllPackingEvent(true));
+                      if (_isProcessing ||
+                          context.read<WmsPackingBloc>().state
+                              is WmsPackingWMSLoading) return;
+
+                      setState(() => _isProcessing = true);
+                      try {
+                        await DataBaseSqlite().delePacking('packing-batch');
+                        context
+                            .read<WmsPackingBloc>()
+                            .add(LoadAllPackingEvent(true));
+                      } finally {
+                        if (mounted) {
+                          setState(() => _isProcessing = false);
+                        }
+                      }
                     },
                     showCalendar: false,
                   ),
@@ -541,37 +553,47 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
 
   void _handleBatchTap(
       BuildContext context, dynamic batch, BuildContext contextBuilder) async {
-    debugPrint('Batch seleccionado: ${batch.toMap()}');
-    context.read<WmsPackingBloc>().add(LoadConfigurationsUserPack());
+    if (_isProcessing) return;
 
-    if (batch.startTimePack != "") {
-      context.read<WmsPackingBloc>().add(LoadAllPedidosFromBatchEvent(
-            batch.id ?? 0,
-          ));
-      goBatchInfo(contextBuilder, context.read<WmsPackingBloc>(), batch);
-    } else {
-      showDialog(
-        context: context,
-        barrierDismissible:
-            false, // No permitir que el usuario cierre el diálogo manualmente
-        builder: (context) => DialogStartPackingWidget(
-          onAccepted: () async {
-            // Disparar eventos de BatchBloc
-            context.read<WmsPackingBloc>().add(LoadAllPedidosFromBatchEvent(
-                  batch.id ?? 0,
-                ));
-            // viajamos a la vista de detalles del batch con sus pedidos
+    setState(() => _isProcessing = true);
 
-            context
-                .read<WmsPackingBloc>()
-                .add(StartTimePack(batch.id ?? 0, DateTime.now()));
+    try {
+      debugPrint('Batch seleccionado: ${batch.toMap()}');
+      context.read<WmsPackingBloc>().add(LoadConfigurationsUserPack());
 
-            Navigator.pop(context);
+      if (batch.startTimePack != "") {
+        context.read<WmsPackingBloc>().add(LoadAllPedidosFromBatchEvent(
+              batch.id ?? 0,
+            ));
+        goBatchInfo(contextBuilder, context.read<WmsPackingBloc>(), batch);
+      } else {
+        showDialog(
+          context: context,
+          barrierDismissible:
+              false, // No permitir que el usuario cierre el diálogo manualmente
+          builder: (context) => DialogStartPackingWidget(
+            onAccepted: () async {
+              // Disparar eventos de BatchBloc
+              context.read<WmsPackingBloc>().add(LoadAllPedidosFromBatchEvent(
+                    batch.id ?? 0,
+                  ));
+              // viajamos a la vista de detalles del batch con sus pedidos
 
-            goBatchInfo(contextBuilder, context.read<WmsPackingBloc>(), batch);
-          },
-        ),
-      );
+              context
+                  .read<WmsPackingBloc>()
+                  .add(StartTimePack(batch.id ?? 0, DateTime.now()));
+
+              Navigator.pop(context);
+
+              goBatchInfo(contextBuilder, context.read<WmsPackingBloc>(), batch);
+            },
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
     }
   }
 }

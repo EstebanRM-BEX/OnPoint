@@ -124,6 +124,11 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
 
   void _handleDependencies() {
     debugPrint('🚼 _handleDependencies');
+
+    // No robar foco si hay un dialog u otra ruta encima de esta pantalla
+    final route = ModalRoute.of(context);
+    if (route == null || !route.isCurrent) return;
+
     final bloc = context.read<RecepcionBloc>();
 
     final hasLote = bloc.currentProduct.productTracking == "lot";

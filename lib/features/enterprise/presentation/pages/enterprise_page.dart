@@ -237,6 +237,11 @@ class _EnterprisePageState extends State<EnterprisePage> {
         FocusScope.of(context).unfocus();
         if (!_formKey.currentState!.validate()) return;
 
+        final url = _urlController.text.trimRight();
+        if (url.endsWith('/')) {
+          _urlController.text = url.substring(0, url.length - 1);
+        }
+
         try {
           final result = await InternetAddress.lookup('example.com');
           if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {

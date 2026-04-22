@@ -9,7 +9,6 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/home/presentation/widgets/background.dart';
 import 'package:wms_app/features/home/presentation/widgets/update_app_dialog_widget.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
 import 'package:wms_app/src/presentation/views/inventario/screens/bloc/inventario_bloc.dart';
@@ -175,10 +174,11 @@ class _UserPageState extends State<UserPage> {
                 builder: (context, state) {
                   final bloc = context.read<UserBloc>();
                   debugPrint('state user page: $state');
-                  
+
                   if (state is UserLoading) {
                     return const DialogLoading(message: 'Cargando...');
-                  } else if (bloc.userConfiguration != null && bloc.deviceInfo != null) {
+                  } else if (bloc.userConfiguration != null &&
+                      bloc.deviceInfo != null) {
                     return SizedBox(
                       width: size.width,
                       height: size.height,
@@ -192,16 +192,18 @@ class _UserPageState extends State<UserPage> {
                               _buildBackButton(context),
                               _buildUpdateCheckButton(context),
                               UserInfoCard(
-                                profile: bloc.userConfiguration?.result?.result ??
-                                    const UserProfile(),
+                                profile:
+                                    bloc.userConfiguration?.result?.result ??
+                                        const UserProfile(),
                                 versionApp: bloc.deviceInfo?.appVersion ?? '',
                               ),
                               DeviceInfoCard(deviceInfo: bloc.deviceInfo!),
                               _buildActionButtons(context, bloc),
                               const SizedBox(height: 20),
                               PermissionsWidget(
-                                  profile: bloc.userConfiguration?.result?.result ??
-                                      const UserProfile()),
+                                  profile:
+                                      bloc.userConfiguration?.result?.result ??
+                                          const UserProfile()),
                               const SizedBox(height: 20),
                               _buildDeleteDatabaseButton(context),
                               const SizedBox(height: 20),

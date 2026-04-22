@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/core/utils/widgets/dialog_dispositivo_no_autorizado_widget.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
@@ -31,20 +32,10 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
 
         if (state is DeviceNotAuthorized) {
           Navigator.pop(context);
-          Get.defaultDialog(
-            title: 'Dispositivo no autorizado',
-            titleStyle: TextStyle(
-                color: primaryColorApp,
-                fontWeight: FontWeight.bold,
-                fontSize: 16),
-            middleText:
-                'Este dispositivo no está autorizado para usar la aplicación. su suscripción ha expirado o no está activa, por favor contacte con el administrador.',
-            middleTextStyle: TextStyle(color: black, fontSize: 14),
-            backgroundColor: Colors.white,
-            radius: 10,
-            barrierDismissible:
-                false, // Evita que se cierre al tocar fuera del diálogo
-            onWillPop: () async => false,
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const DialogUnauthorizedDevice(),
           );
         } else if (state is NeedUpdateVersionState) {
           Get.snackbar(

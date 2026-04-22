@@ -8,6 +8,7 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/core/utils/widgets/dialog_dispositivo_no_autorizado_widget.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
@@ -137,20 +138,10 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
             Navigator.pop(context);
           } else if (state is DeviceNotAuthorized) {
             Navigator.pop(context);
-            Get.defaultDialog(
-              title: 'Dispositivo no autorizado',
-              titleStyle: TextStyle(
-                  color: primaryColorApp,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16),
-              middleText:
-                  'Este dispositivo no está autorizado para usar la aplicación. su suscripción ha expirado o no está activa, por favor contacte con el administrador.',
-              middleTextStyle: TextStyle(color: black, fontSize: 14),
-              backgroundColor: Colors.white,
-              radius: 10,
-              barrierDismissible:
-                  false, // Evita que se cierre al tocar fuera del diálogo
-              onWillPop: () async => false,
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => const DialogUnauthorizedDevice(),
             );
           } else if (state is AssignUserToTransferFailure) {
             Get.snackbar(

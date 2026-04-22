@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wms_app/core/interfaces/i_device_info_service.dart';
+import 'package:wms_app/features/login/domain/usecases/save_user_session.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
@@ -199,7 +200,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     } else {
       final deviceInfoResult = await getDeviceInfo(NoParams());
       deviceInfoResult.fold((failure) => null, (info) {
-        deviceId = info.mac;
+        deviceId = info.mac == "02:00:00:00:00:00" ? info.imei : info.mac;
         deviceModel = info.model;
         deviceName = '${info.model} ${info.manufacturer}';
         versionApp = info.appVersion;
@@ -215,15 +216,31 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         versionApp: versionApp!,
       ));
 
-      result.fold(
-        (failure) => emit(DeviceRegistrationFailure(failure.message)),
-        (_) {
-          emit(DeviceRegistrationSuccess());
+      await result.fold(
+        (failure) async => emit(DeviceRegistrationFailure(failure.message)),
+        (registration) async {
+          if (registration.isAuthorized == 'yes') {
+            // Guardar sesión solo después de que el dispositivo esté autorizado
+            if (event.user != null && event.password != null) {
+              final saveResult = await getIt<SaveUserSession>()(
+                SaveSessionParams(
+                  user: event.user!,
+                  password: event.password!,
+                ),
+              );
+              saveResult.fold(
+                (_) => debugPrint('⚠️ Session save failed after device authorization'),
+                (_) => debugPrint('💾 Session saved after device authorization'),
+              );
+            }
+            emit(DeviceRegistrationSuccess());
+            add(LoadUserInfoEvent());
+          } else {
+            emit(const DeviceRegistrationFailure(
+                'Su dispositivo no esta autorizado'));
+          }
         },
       );
-
-      // Reload info after registration?
-      add(LoadUserInfoEvent());
     } else {
       emit(const DeviceRegistrationFailure(
           "Could not get device info for registration"));

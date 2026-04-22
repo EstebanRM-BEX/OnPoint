@@ -37,8 +37,9 @@ class _ListPackingConsolidadeScreenState
   NotchBottomBarController controller = NotchBottomBarController();
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
-  FocusNode focusNodeBuscar = FocusNode();
+  final FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
+  bool _isProcessing = false;
 
   void validateBarcode(String value, BuildContext context) {
     final bloc = context.read<PackingConsolidateBloc>();
@@ -87,48 +88,60 @@ class _ListPackingConsolidadeScreenState
 
   void _handleBatchTap(
       BuildContext context, dynamic batch, BuildContext contextBuilder) async {
-    debugPrint('Batch seleccionado: ${batch.toMap()}');
-    context
-        .read<PackingConsolidateBloc>()
-        .add(LoadConfigurationsUserPackConsolidate());
+    if (_isProcessing) return;
 
-    // 2. Lógica para asignar el responsable o continuar
-    if (batch.userName == null || batch.userName == "" || batch.userName == 0) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) => DialogAsignUserWidget(
-          title:
-              'Esta seguro de tomar este batch de packing consolidado, una vez aceptado no podrá ser cancelada desde la app, una vez asignado se registrará el tiempo de inicio de la operación.',
-          onCancel: () {
-            Future.microtask(() => focusNodeBuscar.requestFocus());
-            Navigator.pop(dialogContext);
-          },
-          onAccepted: () async {
-            // Lógica para asignar el usuario
-            final packingBloc = context.read<PackingConsolidateBloc>();
-            packingBloc.add(AssignUserToBatch(batch.id ?? 0, batch));
-            packingBloc.searchController.clear();
-            packingBloc.add(LoadAllPedidosFromBatchEvent(
-              batch.id ?? 0,
-            ));
+    setState(() => _isProcessing = true);
 
-            // validamos si tiene tiempo de separacion de inicio
-            if (batch.startTimePack == "" || batch.startTimePack == null) {
-              packingBloc.add(
-                StartTimePack(batch.id ?? 0, DateTime.now()),
-              );
-            }
+    try {
+      debugPrint('Batch seleccionado: ${batch.toMap()}');
+      context
+          .read<PackingConsolidateBloc>()
+          .add(LoadConfigurationsUserPackConsolidate());
 
-            Navigator.pop(dialogContext); // Cierra el diálogo de asignación
+      // 2. Lógica para asignar el responsable o continuar
+      if (batch.userName == null ||
+          batch.userName == "" ||
+          batch.userName == 0) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => DialogAsignUserWidget(
+            title:
+                'Esta seguro de tomar este batch de packing consolidado, una vez aceptado no podrá ser cancelada desde la app, una vez asignado se registrará el tiempo de inicio de la operación.',
+            onCancel: () {
+              Future.microtask(() => focusNodeBuscar.requestFocus());
+              Navigator.pop(dialogContext);
+            },
+            onAccepted: () async {
+              // Lógica para asignar el usuario
+              final packingBloc = context.read<PackingConsolidateBloc>();
+              packingBloc.add(AssignUserToBatch(batch.id ?? 0, batch));
+              packingBloc.searchController.clear();
+              packingBloc.add(LoadAllPedidosFromBatchEvent(
+                batch.id ?? 0,
+              ));
 
-            // Después de asignar el usuario, continuar con la validación de tiempo
-          },
-        ),
-      );
-    } else {
-      // Si el responsable ya existe, validar el tiempo directamente
-      validateTime(batch, context);
+              // validamos si tiene tiempo de separacion de inicio
+              if (batch.startTimePack == "" || batch.startTimePack == null) {
+                packingBloc.add(
+                  StartTimePack(batch.id ?? 0, DateTime.now()),
+                );
+              }
+
+              Navigator.pop(dialogContext); // Cierra el diálogo de asignación
+
+              // Después de asignar el usuario, continuar con la validación de tiempo
+            },
+          ),
+        );
+      } else {
+        // Si el responsable ya existe, validar el tiempo directamente
+        validateTime(batch, context);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
     }
   }
 
@@ -301,13 +314,31 @@ class _ListPackingConsolidadeScreenState
                                             left: size.width * 0.05),
                                         child: GestureDetector(
                                           onTap: () async {
-                                            await DataBaseSqlite().delePacking(
-                                                'packing-batch-consolidate');
+                                            if (_isProcessing ||
+                                                context
+                                                        .read<
+                                                            PackingConsolidateBloc>()
+                                                        .state
+                                                    is PackingConsolidateLoading) {
+                                              return;
+                                            }
 
-                                            context
-                                                .read<PackingConsolidateBloc>()
-                                                .add(
-                                                    LoadAllPackingConsolidateEvent());
+                                            setState(() => _isProcessing = true);
+                                            try {
+                                              await DataBaseSqlite().delePacking(
+                                                  'packing-batch-consolidate');
+
+                                              context
+                                                  .read<
+                                                      PackingConsolidateBloc>()
+                                                  .add(
+                                                      LoadAllPackingConsolidateEvent());
+                                            } finally {
+                                              if (mounted) {
+                                                setState(() =>
+                                                    _isProcessing = false);
+                                              }
+                                            }
                                           },
                                           child: Row(
                                             children: [

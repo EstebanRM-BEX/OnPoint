@@ -27,6 +27,7 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
+  bool _isProcessing = false;
 
   void validateBarcode(String value, BuildContext context) {}
 
@@ -122,9 +123,20 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                           Navigator.pushReplacementNamed(context, '/home');
                         },
                         onRefresh: () async {
-                          context
-                              .read<ClusterPickingBloc>()
-                              .add(const FetchPickingClustersEvent());
+                          if (_isProcessing ||
+                              context.read<ClusterPickingBloc>().state
+                                  is PickingClustersLoading) return;
+
+                          setState(() => _isProcessing = true);
+                          try {
+                            context
+                                .read<ClusterPickingBloc>()
+                                .add(const FetchPickingClustersEvent());
+                          } finally {
+                            if (mounted) {
+                              setState(() => _isProcessing = false);
+                            }
+                          }
                         },
                         showCalendar: false,
                       ),
@@ -218,48 +230,58 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
 
   Future<void> _handleBatchSelection(
       BuildContext context, BuildContext contextBuilder, dynamic batch) async {
-    final batchBloc = context.read<ClusterPickingBloc>();
+    if (_isProcessing) return;
 
-    // 1. Mostrar diálogo de carga mientras se despachan los eventos al BLoC
-    BuildContext? loadingContext;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        loadingContext = ctx;
-        return const DialogLoading(message: 'Cargando batch...');
-      },
-    );
+    setState(() => _isProcessing = true);
 
-    await Future.delayed(const Duration(milliseconds: 400));
+    try {
+      final batchBloc = context.read<ClusterPickingBloc>();
 
-    // 3. Cerrar diálogo de carga
-    if (loadingContext != null && Navigator.canPop(loadingContext!)) {
-      Navigator.of(loadingContext!, rootNavigator: true).pop();
-    }
-
-    // 4. Definir la función de navegación
-    void navigateToBatchInfo() {
-      goBatchInfo(contextBuilder, batch);
-    }
-
-    // 5. Lógica para decidir si mostrar el diálogo de inicio o navegar directamente
-    if (batch.startTimePick != "") {
-      navigateToBatchInfo();
-    } else {
+      // 1. Mostrar diálogo de carga mientras se despachan los eventos al BLoC
+      BuildContext? loadingContext;
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => DialogStartTimeWidget(
-          onAccepted: () async {
-            batchBloc
-                .add(StartTimePick(batch.id ?? 0, DateTime.now(), 'batch'));
-            Navigator.pop(context);
-            navigateToBatchInfo();
-          },
-          title: 'Iniciar Picking',
-        ),
+        builder: (ctx) {
+          loadingContext = ctx;
+          return const DialogLoading(message: 'Cargando batch...');
+        },
       );
+
+      await Future.delayed(const Duration(milliseconds: 400));
+
+      // 3. Cerrar diálogo de carga
+      if (loadingContext != null && Navigator.canPop(loadingContext!)) {
+        Navigator.of(loadingContext!, rootNavigator: true).pop();
+      }
+
+      // 4. Definir la función de navegación
+      void navigateToBatchInfo() {
+        goBatchInfo(contextBuilder, batch);
+      }
+
+      // 5. Lógica para decidir si mostrar el diálogo de inicio o navegar directamente
+      if (batch.startTimePick != "") {
+        navigateToBatchInfo();
+      } else {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => DialogStartTimeWidget(
+            onAccepted: () async {
+              batchBloc
+                  .add(StartTimePick(batch.id ?? 0, DateTime.now(), 'batch'));
+              Navigator.pop(context);
+              navigateToBatchInfo();
+            },
+            title: 'Iniciar Picking',
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
     }
   }
 }

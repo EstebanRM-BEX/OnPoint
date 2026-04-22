@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/injection_container.dart';
+import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 
 /// Página de verificación de autenticación
 ///
@@ -17,20 +19,27 @@ class CheckAuthPage extends StatelessWidget {
       child: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthValid) {
-            // Sesión válida - ir al home
-            Navigator.pushReplacementNamed(context, '/home');
-          } else if (state is AuthNotLoggedIn || state is AuthExpired) {
-            // Sin sesión o expirada - ir al login
-            Navigator.pushReplacementNamed(context, 'enterprice');
-          } else if (state is AuthError) {
-            // Error - ir al login por seguridad
+            // Sesión válida - registrar dispositivo para verificar autorización
+            context.read<UserBloc>().add(RegisterDeviceEvent());
+          } else if (state is AuthNotLoggedIn || state is AuthExpired || state is AuthError) {
             Navigator.pushReplacementNamed(context, 'enterprice');
           }
         },
-        child: const Scaffold(
-          backgroundColor: Colors.white,
-          body: Center(
-            child: CircularProgressIndicator(),
+        child: BlocListener<UserBloc, UserState>(
+          listener: (context, state) {
+            if (state is DeviceRegistrationFailure) {
+              showScrollableErrorDialog(state.message);
+              Navigator.pushReplacementNamed(context, 'enterprice');
+            }
+            if (state is UserLoaded) {
+              Navigator.pushReplacementNamed(context, '/home');
+            }
+          },
+          child: const Scaffold(
+            backgroundColor: Colors.white,
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
           ),
         ),
       ),

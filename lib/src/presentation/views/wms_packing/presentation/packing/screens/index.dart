@@ -33,8 +33,9 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
   NotchBottomBarController controller = NotchBottomBarController();
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
-  FocusNode focusNodeBuscar = FocusNode();
+  final FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
+  bool _isProcessing = false;
 
   void validateBarcode(String value, BuildContext context) {
     final bloc = context.read<PackingPedidoBloc>();
@@ -228,18 +229,26 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                                           left: size.width * 0.1),
                                       child: GestureDetector(
                                         onTap: () async {
-                                          if (state
-                                              is WmsPackingPedidoWMSLoading) {
+                                          if (_isProcessing ||
+                                              state
+                                                  is WmsPackingPedidoWMSLoading) {
                                             return;
                                           }
 
-                                          await DataBaseSqlite()
-                                              .delePacking('packing-pack');
-                                          context
-                                              .read<PackingPedidoBloc>()
-                                              .add(LoadAllPackingPedidoEvent(
-                                                true,
-                                              ));
+                                          setState(() => _isProcessing = true);
+                                          try {
+                                            await DataBaseSqlite()
+                                                .delePacking('packing-pack');
+                                            context
+                                                .read<PackingPedidoBloc>()
+                                                .add(LoadAllPackingPedidoEvent(
+                                                  true,
+                                                ));
+                                          } finally {
+                                            if (mounted) {
+                                              setState(() => _isProcessing = false);
+                                            }
+                                          }
                                         },
                                         child: Row(
                                           children: [
@@ -1082,6 +1091,10 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
 
   void _handlePackingOnTap(
       BuildContext context, dynamic batch, BuildContext contextBuilder) async {
+    if (_isProcessing) return;
+
+    setState(() => _isProcessing = true);
+
     try {
       // 1. Cargar las configuraciones una sola vez
       context.read<PackingPedidoBloc>().add(LoadConfigurationsUser());
@@ -1123,6 +1136,10 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
           duration: Duration(seconds: 4),
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
     }
   }
 

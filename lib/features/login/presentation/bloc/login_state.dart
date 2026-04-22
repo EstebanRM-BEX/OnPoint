@@ -12,7 +12,8 @@ class LoginLoading extends LoginState {}
 /// Success state with user data
 class LoginSuccess extends LoginState {
   final User user;
-  LoginSuccess(this.user);
+  final String password;
+  LoginSuccess(this.user, this.password);
 }
 
 /// Failure state with error message
