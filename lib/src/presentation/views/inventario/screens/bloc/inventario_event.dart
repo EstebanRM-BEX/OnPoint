@@ -112,7 +112,9 @@ class SendProductInventarioEnvet extends InventarioEvent {
 class CreateLoteProduct extends InventarioEvent {
   final String nameLote;
   final String fechaCaducidad;
-  CreateLoteProduct(this.nameLote, this.fechaCaducidad);
+  final bool priorityExpiration;
+  CreateLoteProduct(
+      this.nameLote, this.fechaCaducidad, this.priorityExpiration);
 }
 
 class LoadConfigurationsUserInventory extends InventarioEvent {}

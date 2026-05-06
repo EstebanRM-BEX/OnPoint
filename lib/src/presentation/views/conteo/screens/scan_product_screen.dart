@@ -4,7 +4,6 @@ import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
@@ -360,6 +359,28 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                                 listener: (context, state) {
                               debugPrint("❤️‍🔥 state : $state");
 
+                              //VAMOSA VALIDAR SI HAY PRODUCTO CARGADOS DE LA MAESTRA
+                              if (state is GetProductsFailure) {
+                                Get.snackbar(
+                                  '360 Software Informa',
+                                  "No hay productos cargados, por favor descargue los productos desde la configuración",
+                                  backgroundColor: white,
+                                  colorText: primaryColorApp,
+                                  icon: Icon(Icons.error, color: Colors.red),
+                                );
+                              }
+
+//validar que tengamos ubicaciones cargadas
+                              if (state is LoadLocationsFailure) {
+                                Get.snackbar(
+                                  '360 Software Informa',
+                                  "No hay ubicaciones cargadas, por favor descargue las ubicaciones desde la configuración",
+                                  backgroundColor: white,
+                                  colorText: primaryColorApp,
+                                  icon: Icon(Icons.error, color: Colors.red),
+                                );
+                              }
+
                               if (state is ViewProductImageSuccess) {
                                 showImageDialog(context, state.imageUrl);
                               } else if (state is ViewProductImageFailure) {
@@ -484,45 +505,37 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                               return Column(
                                 children: [
                                   const WarningWidgetCubit(),
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 15),
-                                    child: Row(
-                                      children: [
-                                        IconButton(
-                                          onPressed: () {
-                                            cantidadController.clear();
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        onPressed: () {
+                                          cantidadController.clear();
 
-                                            context.read<ConteoBloc>().add(
-                                                ResetValuesEvent(
-                                                    resetAll: true,
-                                                    isLoading: false));
+                                          context.read<ConteoBloc>().add(
+                                              ResetValuesEvent(
+                                                  resetAll: true,
+                                                  isLoading: false));
 
-                                            Navigator.pushReplacementNamed(
-                                              context,
-                                              'conteo-detail',
-                                              arguments: [
-                                                1,
-                                                context
-                                                    .read<ConteoBloc>()
-                                                    .ordenConteo,
-                                              ],
-                                            );
-                                          },
-                                          icon: const Icon(Icons.arrow_back,
-                                              color: Colors.white, size: 20),
-                                        ),
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                              right: size.width * 0.015),
-                                          child: Text(
-                                            'CONTEO FISICO',
-                                            style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 16),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                          Navigator.pushReplacementNamed(
+                                            context,
+                                            'conteo-detail',
+                                            arguments: [
+                                              1,
+                                              context
+                                                  .read<ConteoBloc>()
+                                                  .ordenConteo,
+                                            ],
+                                          );
+                                        },
+                                        icon: const Icon(Icons.arrow_back,
+                                            color: Colors.white, size: 20),
+                                      ),
+                                      Text(
+                                        'CONTEO FISICO',
+                                        style: const TextStyle(
+                                            color: Colors.white, fontSize: 16),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               );

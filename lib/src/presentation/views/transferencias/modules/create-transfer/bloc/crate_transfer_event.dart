@@ -49,7 +49,9 @@ class ChangeProductIsOkEvent extends CreateTransferEvent {
 class CreateLoteProduct extends CreateTransferEvent {
   final String nameLote;
   final String fechaCaducidad;
-  CreateLoteProduct(this.nameLote, this.fechaCaducidad);
+  final bool priorityExpiration;
+  CreateLoteProduct(
+      this.nameLote, this.fechaCaducidad, this.priorityExpiration);
 }
 
 class SearchLotevent extends CreateTransferEvent {

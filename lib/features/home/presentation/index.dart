@@ -5,6 +5,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
+import 'package:wms_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
@@ -140,7 +141,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         return false;
       },
 
-      // 1. Segundo Listener: HomeBloc (Hijo del primero)
       child: BlocListener<HomeBloc, HomeState>(
         listener: (context, state) {
           if (state is HomeLoadErrorState) {
@@ -187,7 +187,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         const WarningWidgetCubit(),
                         Padding(
                           padding: const EdgeInsets.only(
-                              left: 10, right: 10, top: 40, bottom: 10),
+                              left: 10, right: 10, top: 25),
                           child: BlocBuilder<HomeBloc, HomeState>(
                               buildWhen: (previous, current) {
                             // Solo reconstruimos la tarjeta si el Home terminó de cargar
@@ -407,7 +407,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(15)),
                                   child: Padding(
-                                    padding: const EdgeInsets.all(10.0),
+                                    padding: const EdgeInsets.all(5.0),
                                     child: Column(
                                       children: [
                                         Row(
@@ -456,8 +456,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                 icon: Icons.people,
                                                 label: 'Terceros',
                                                 count: bloc.tercerosCount,
-                                                isLoading: state is dev_bloc.DownloadAllTercerosLoading || 
-                                                           state is dev_bloc.LoadTercerosFromDBLoading,
+                                                isLoading: state is dev_bloc
+                                                        .DownloadAllTercerosLoading ||
+                                                    state is dev_bloc
+                                                        .LoadTercerosFromDBLoading,
                                               );
                                             },
                                           ),
@@ -470,11 +472,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                 icon: Icons.inventory_2,
                                                 label: 'Productos',
                                                 count: bloc.productosCount,
-                                                // PROTECCIÓN CONTRA RACE CONDITIONS: 
+                                                // PROTECCIÓN CONTRA RACE CONDITIONS:
                                                 // Usamos la propiedad persistente en vez del estado transitorio
-                                                isLoading: bloc.isLoading || 
-                                                           state is GetProductsLoadingInventory || 
-                                                           state is GetProductsLoadingBD,
+                                                isLoading: bloc.isLoading ||
+                                                    state
+                                                        is GetProductsLoadingInventory ||
+                                                    state
+                                                        is GetProductsLoadingBD,
                                               );
                                             },
                                           ),
@@ -488,13 +492,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                     icon: Icons.location_on,
                                                     label: 'Ubicaciones',
                                                     count: bloc.locationsCount,
-                                                    isLoading: state is UserLocationsLoading,
+                                                    isLoading: state
+                                                        is UserLocationsLoading,
                                                   ),
                                                   _buildInfoItem(
                                                     icon: Icons.new_releases,
                                                     label: 'Novedades',
                                                     count: bloc.noveltiesCount,
-                                                    isLoading: state is UserNoveltiesLoading,
+                                                    isLoading: state
+                                                        is UserNoveltiesLoading,
                                                   )
                                                 ],
                                               );
@@ -876,31 +882,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     ),
                                     GestureDetector(
                                       onTap: () async {
-                                        //cargamos las ubicaciones
-                                        context
-                                            .read<InfoRapidaBloc>()
-                                            .add(GetListLocationsEvent());
-                                        //obtenemos los productos
-                                        context
-                                            .read<InfoRapidaBloc>()
-                                            .add(GetProductsList());
-                                        context
-                                            .read<InfoRapidaBloc>()
-                                            .add(LoadConfigurationsUserInfo());
+                                        // //cargamos las ubicaciones
+                                        // context
+                                        //     .read<InfoRapidaBloc>()
+                                        //     .add(GetListLocationsEvent());
+                                        // //obtenemos los productos
+                                        // context
+                                        //     .read<InfoRapidaBloc>()
+                                        //     .add(GetProductsList());
+                                        // context
+                                        //     .read<InfoRapidaBloc>()
+                                        //     .add(LoadConfigurationsUserInfo());
 
-                                        showDialog(
-                                            context: context,
-                                            builder: (context) {
-                                              return const DialogLoading(
-                                                  message:
-                                                      'Cargando interfaz...');
-                                            });
-
-                                        await Future.delayed(const Duration(
-                                            seconds:
-                                                1)); // Ajusta el tiempo si es necesario
-
-                                        Navigator.pop(context);
                                         Navigator.pushReplacementNamed(
                                           context,
                                           'info-rapida',
@@ -915,6 +908,39 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                 ),
                               ],
                             )),
+                        // Center(
+                        //   child: ElevatedButton(
+                        //     onPressed: () {
+                        //       Navigator.pushReplacementNamed(
+                        //         context,
+                        //         AppRoutes.printLabels,
+                        //       );
+                        //     },
+                        //     style: ElevatedButton.styleFrom(
+                        //       backgroundColor: white,
+                        //       shape: RoundedRectangleBorder(
+                        //         borderRadius: BorderRadius.circular(8),
+                        //       ),
+                        //       shadowColor: Colors.black26,
+                        //       elevation: 2,
+                        //       maximumSize: Size(size.width * 0.77, 40),
+                        //     ),
+                        //     child: Row(
+                        //       mainAxisAlignment: MainAxisAlignment.center,
+                        //       children: [
+                        //         Icon(Icons.print, color: primaryColorApp),
+                        //         const SizedBox(width: 5),
+                        //         Text(
+                        //           'Imprimir Etiquetas',
+                        //           style: TextStyle(
+                        //             color: primaryColorApp,
+                        //             fontWeight: FontWeight.bold,
+                        //           ),
+                        //         ),
+                        //       ],
+                        //     ),
+                        //   ),
+                        // ),
                       ],
                     ),
                   ),

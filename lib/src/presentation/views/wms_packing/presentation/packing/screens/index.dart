@@ -20,6 +20,7 @@ import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
 class ListPackingScreen extends StatefulWidget {
@@ -134,6 +135,10 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
             arguments: [0]);
       }
 
+      if (state is PackingPedidoError) {
+        showScrollableErrorDialog(state.error);
+      }
+
       // if (state is AssignUserToPedidoError) {
       //   //validamos que este un dialog abierto
       //   if (Navigator.canPop(context)) {
@@ -246,7 +251,8 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                                                 ));
                                           } finally {
                                             if (mounted) {
-                                              setState(() => _isProcessing = false);
+                                              setState(
+                                                  () => _isProcessing = false);
                                             }
                                           }
                                         },

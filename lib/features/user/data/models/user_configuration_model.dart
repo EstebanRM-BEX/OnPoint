@@ -85,6 +85,8 @@ class UserProfileModel extends UserProfile {
     super.locationManualInventory,
     super.manualProductSelectionInventory,
     super.manualProductSelectionTransfer,
+    super.allowPriorExpirationDate,
+    super.manageExpirationDateWithoutLot,
   });
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
@@ -139,6 +141,9 @@ class UserProfileModel extends UserProfile {
       manualProductSelectionInventory:
           json['manual_product_selection_inventory'],
       manualProductSelectionTransfer: json['manual_product_selection_transfer'],
+      allowPriorExpirationDate: json['allow_prior_expiration_date'],
+      manageExpirationDateWithoutLot:
+          json['manage_expiration_date_without_lot'],
     );
   }
 
@@ -189,6 +194,8 @@ class UserProfileModel extends UserProfile {
       'location_manual_inventory': locationManualInventory,
       'manual_product_selection_inventory': manualProductSelectionInventory,
       'manual_product_selection_transfer': manualProductSelectionTransfer,
+      'allow_prior_expiration_date': allowPriorExpirationDate,
+      "manage_expiration_date_without_lot": manageExpirationDateWithoutLot,
     };
   }
 }

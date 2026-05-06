@@ -108,6 +108,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
   String expandedPackage = '';
 
+  //* IDs de paquetes seleccionados (sincronizado con la UI)
+  Set<int> selectedPackageIds = {};
+
 //*base de datos
   DataBaseSqlite db = DataBaseSqlite();
   //*repositorio
@@ -209,7 +212,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       emit(ExpandPackageState(expandedPackage));
     });
 
-    //evento para asignar la ubicacion desitno a un paquete
+    //evento para asignar la ubicacion desitno a un paquete o varios
     on<AssignLocationToPackageEvent>(_onAssignLocationToPackageEvent);
 
     //evento para seleccionar una ubicacion
@@ -280,6 +283,25 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
     //*metodo para buscar una ubicacion
     on<SearchLocationEvent>(_onSearchLocationEvent);
+
+    //METODO PAR SELECIONAR UN PAQUETE
+    on<SelectPackageEvent>(_onSelectPackageEvent);
+  }
+
+  void _onSelectPackageEvent(
+      SelectPackageEvent event, Emitter<PackingPedidoState> emit) async {
+    try {
+      // Sincronizamos el set del bloc con el estado actual de la UI.
+      // La UI siempre envía la lista completa actualizada,
+      // por lo que reemplazar garantiza que las deselecciones
+      // individuales también se reflejen aquí.
+      selectedPackageIds = Set<int>.from(event.packageIds);
+      print('--------------------------->>>>>>> ${selectedPackageIds.length}');
+      emit(SelectPackageSuccess(List<int>.from(selectedPackageIds)));
+    } catch (e, s) {
+      debugPrint('Error en _onSelectPackageEvent: $e, $s');
+      emit(SelectPackageError(e.toString()));
+    }
   }
 
   void _onSearchLocationEvent(
@@ -309,40 +331,54 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     try {
       emit(AssignLocationLoading());
 
-      // Buscamos el paquete por barcode (que es lo que guardamos en expandedPackage)
-      final package = packages.firstWhere(
-        (p) =>
-            p.packingBarcode?.toLowerCase() == event.packageName.toLowerCase(),
-        orElse: () => Paquete(),
-      );
+      // Buscamos cada paquete por nombre/barcode y construimos los movimientos
+      final List<MovimientoPack> movimientos = [];
+      final List<Paquete> foundPackages = [];
 
-      if (package.id == null) {
-        emit(AssignLocationFailure("Paquete no encontrado"));
+      for (final packageName in event.packageNames) {
+        final package = packages.firstWhere(
+          (p) =>
+              (p.packingBarcode?.toLowerCase() == packageName.toLowerCase()) ||
+              (p.name?.toLowerCase() == packageName.toLowerCase()),
+          orElse: () => Paquete(),
+        );
+
+        if (package.id == null) continue;
+
+        movimientos.add(MovimientoPack(
+          idTransferencia: currentPedidoPack.id ?? 0,
+          idPaquete: package.id!,
+          idUbicacionDestino: event.locationId,
+        ));
+        foundPackages.add(package);
+      }
+
+      if (movimientos.isEmpty) {
+        emit(AssignLocationFailure("No se encontraron paquetes válidos"));
         return;
       }
 
-      final request = AssignLocationPackRequest(
-        idTransferencia: currentPedidoPack.id ?? 0,
-        idPaquete: package.id!,
-        idUbicacionDestino: event.locationId,
-      );
+      final request = AssignLocationPackRequest(movimientos: movimientos);
 
       final response =
           await wmsPackingRepository.assignLocationToPackage(request, true);
 
       if (response.result?.code == 200) {
-        // Actualizamos el objeto localmente en la lista
-        final index = packages.indexWhere((p) => p.id == package.id);
-        if (index != -1) {
-          final updatedPackage = package.copyWith(
-            locationDestId: event.locationId,
-            locationDestName: event.locationName,
-          );
-          packages[index] = updatedPackage;
-
-          // Persistimos en la base de datos local usando el repositorio correspondiente
-          await db.packagesRepository.updatePackageById(updatedPackage);
+        // Actualizamos cada paquete localmente
+        for (final package in foundPackages) {
+          final index = packages.indexWhere((p) => p.id == package.id);
+          if (index != -1) {
+            final updatedPackage = package.copyWith(
+              locationDestId: event.locationId,
+              locationDestName: event.locationName,
+            );
+            packages[index] = updatedPackage;
+            await db.packagesRepository.updatePackageById(updatedPackage);
+          }
         }
+
+        // Limpiamos la selección después de asignar la ubicación
+        selectedPackageIds.clear();
 
         emit(AssignLocationSuccess(
             response.result?.msg ?? "Ubicación asignada correctamente"));
@@ -1925,6 +1961,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           listOfPedidos: listOfPedidos,
         ));
       } else {
+        emit(PackingPedidoError(response.msg ?? 'Error desconocido'));
         debugPrint('Error resBatchs: response is null');
       }
     } catch (e, s) {

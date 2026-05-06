@@ -213,6 +213,7 @@ class ResultElementModel {
 }
 
 class ListItem {
+  final int? id;
   final int? batchId;
   final int? idMove;
   final int? pickingId;
@@ -251,6 +252,7 @@ class ListItem {
   final String? productTracking;
 
   ListItem({
+    this.id,
     this.batchId,
     this.idMove,
     this.pickingId,
@@ -290,6 +292,7 @@ class ListItem {
   });
 
   factory ListItem.fromJson(Map<String, dynamic> json) => ListItem(
+        id: json["id"],
         batchId: json["batch_id"],
         idMove: json["id_move"],
         pickingId: json["picking_id"],
@@ -344,6 +347,7 @@ class ListItem {
 
   PickingBatchItem toEntity() {
     return PickingBatchItem(
+      id: id,
       batchId: batchId,
       idMove: idMove,
       pickingId: pickingId,
@@ -384,6 +388,7 @@ class ListItem {
   }
 
   Map<String, dynamic> toJson() => {
+        "id": id,
         "batch_id": batchId,
         "id_move": idMove,
         "picking_id": pickingId,

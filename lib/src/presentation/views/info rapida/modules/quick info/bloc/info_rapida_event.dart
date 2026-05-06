@@ -35,6 +35,20 @@ class SearchProductEvent extends InfoRapidaEvent {
   );
 }
 
+class SearchProductLocationEvent extends InfoRapidaEvent {
+  final String query;
+  SearchProductLocationEvent(
+    this.query,
+  );
+}
+
+class SearchLocationProductsEvent extends InfoRapidaEvent {
+  final String query;
+  SearchLocationProductsEvent(
+    this.query,
+  );
+}
+
 class GetProductsList extends InfoRapidaEvent {
   GetProductsList();
 }
@@ -126,3 +140,5 @@ class ToggleProductMassTransferEvent extends InfoRapidaEvent {
 
   ToggleProductMassTransferEvent(this.product, this.isSelected);
 }
+
+class SelectAllAvailableProductsEvent extends InfoRapidaEvent {}

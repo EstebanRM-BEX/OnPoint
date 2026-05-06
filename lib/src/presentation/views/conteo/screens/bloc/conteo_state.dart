@@ -171,7 +171,8 @@ class CreateLoteProductSuccess extends ConteoState {}
 
 class CreateLoteProductFailure extends ConteoState {
   final String error;
-  CreateLoteProductFailure(this.error);
+  final int code;
+  CreateLoteProductFailure(this.error, this.code);
 }
 
 class SendProductConteoLoading extends ConteoState {}

@@ -60,14 +60,78 @@ class LoginPage extends StatelessWidget {
           }
 
           if (state is UserLoaded) {
-            context.read<DevolucionesBloc>().add(DownloadAllTercerosEvent());
-            context
+            final swTotal = Stopwatch()..start();
+            final swDev = Stopwatch();
+            final swNovedades = Stopwatch();
+            final swInventario = Stopwatch();
+
+            // Suscribimos ANTES de disparar los eventos para evitar race condition
+            final devFuture = context
+                .read<DevolucionesBloc>()
+                .stream
+                .firstWhere((s) =>
+                    s is DownloadAllTercerosSuccess ||
+                    s is DownloadAllTercerosFailure)
+                .timeout(const Duration(seconds: 30))
+                .then((s) {
+              swDev.stop();
+              debugPrint(
+                  '📦 [Métricas] Terceros: ${swDev.elapsedMilliseconds}ms — ${s.runtimeType}');
+              return s;
+            });
+
+            final novedadesFuture = context
                 .read<WMSPickingBloc>()
-                .add(LoadAllNovedades(context)); //novedades
+                .stream
+                .firstWhere((s) =>
+                    s is LoadSuccessNovedadesState ||
+                    s is LoadFailureNovedadesState)
+                .timeout(const Duration(seconds: 30))
+                .then((s) {
+              swNovedades.stop();
+              debugPrint(
+                  '📋 [Métricas] Novedades: ${swNovedades.elapsedMilliseconds}ms — ${s.runtimeType}');
+              return s;
+            });
+
+            final inventarioFuture = context
+                .read<InventarioBloc>()
+                .stream
+                .firstWhere((s) =>
+                    s is GetProductsSuccess || s is GetProductsFailureInventory)
+                .timeout(const Duration(seconds: 30))
+                .then((s) {
+              swInventario.stop();
+              debugPrint(
+                  '🏪 [Métricas] Inventario: ${swInventario.elapsedMilliseconds}ms — ${s.runtimeType}');
+              return s;
+            });
+
+            // Disparamos los eventos después de tener las suscripciones listas
+            swDev.start();
+            context.read<DevolucionesBloc>().add(DownloadAllTercerosEvent());
+            swNovedades.start();
+            context.read<WMSPickingBloc>().add(LoadAllNovedades(context));
+            swInventario.start();
             context
                 .read<InventarioBloc>()
-                .add(GetProductsEvent(isDialogLoading: true));
+                .add(GetProductsEvent(isDialogLoading: false));
 
+            try {
+              await Future.wait([devFuture, novedadesFuture, inventarioFuture]);
+            } catch (_) {
+              // Si alguna carga falla o expira el timeout, continuamos igual
+            }
+
+            swTotal.stop();
+            debugPrint(
+                '⏱️ [Métricas] Total paralelo: ${swTotal.elapsedMilliseconds}ms');
+            debugPrint(
+                '⏱️ [Métricas] Total secuencial estimado: ${swDev.elapsedMilliseconds + swNovedades.elapsedMilliseconds + swInventario.elapsedMilliseconds}ms');
+            debugPrint(
+                '⚡ [Métricas] Ahorro estimado: ${(swDev.elapsedMilliseconds + swNovedades.elapsedMilliseconds + swInventario.elapsedMilliseconds) - swTotal.elapsedMilliseconds}ms');
+
+            if (!context.mounted) return;
             Get.back();
             Navigator.pushReplacementNamed(context, '/home');
           }
@@ -213,8 +277,6 @@ class _LoginFormState extends State<_LoginForm> {
 
     return BlocBuilder<LoginBloc, LoginState>(
       builder: (context, state) {
-        final activeController = _getActiveController(context);
-
         return Form(
           key: formkey,
           autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -353,7 +415,7 @@ class _LoginFormState extends State<_LoginForm> {
                               ),
                             );
                       }
-                    } catch (e, s) {
+                    } catch (e) {
                       // ⚡️ CORRECCIÓN 2: Eliminado Navigator.pop().
                       // No debemos cerrar nada aquí porque el diálogo de carga NUNCA se mostró.
                       // (El diálogo solo se muestra si el evento LoginButtonPressed se dispara y el Bloc emite Loading)

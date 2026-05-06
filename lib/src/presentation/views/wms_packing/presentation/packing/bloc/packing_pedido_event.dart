@@ -277,11 +277,14 @@ class FilterUbicacionesEvent extends PackingPedidoEvent {
 }
 
 class AssignLocationToPackageEvent extends PackingPedidoEvent {
-  final String packageName;
+  final List<String> packageNames;
   final String locationName;
   final int locationId;
   AssignLocationToPackageEvent(
-      this.packageName, this.locationName, this.locationId);
+    this.packageNames,
+    this.locationName,
+    this.locationId,
+  );
 }
 
 class SearchLocationEvent extends PackingPedidoEvent {
@@ -290,4 +293,9 @@ class SearchLocationEvent extends PackingPedidoEvent {
   SearchLocationEvent(
     this.query,
   );
+}
+
+class SelectPackageEvent extends PackingPedidoEvent {
+  final List<int> packageIds;
+  SelectPackageEvent({required this.packageIds});
 }

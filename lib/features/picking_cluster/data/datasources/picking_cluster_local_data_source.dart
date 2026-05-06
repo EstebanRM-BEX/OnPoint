@@ -343,6 +343,7 @@ extension BatchModelToEntityMapping on BatchsModel {
 extension BatchItemMapping on PickingBatchItem {
   ProductsBatch toProductsBatch() {
     return ProductsBatch(
+      id: id,
       batchId: batchId,
       idMove: idMove,
       idProduct: idProduct,

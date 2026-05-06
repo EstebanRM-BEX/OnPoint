@@ -877,11 +877,11 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     try {
       emit(CreateLoteProductLoading());
       final response = await _recepcionRepository.createLote(
-        false,
-        int.parse(currentProduct.productId),
-        event.nameLote,
-        event.fechaCaducidad,
-      );
+          false,
+          int.parse(currentProduct.productId),
+          event.nameLote,
+          event.fechaCaducidad,
+          event.priorityExpiration);
 
       if (response.result?.code == 200) {
         //agregamos el nuevo lote a la lista de lotes
@@ -919,11 +919,13 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
         emit(CreateLoteProductSuccess());
       } else {
-        emit(CreateLoteProductFailure(response.result?.msg ??
-            'Error al crear el lote concactarse con el administrador'));
+        emit(CreateLoteProductFailure(
+            response.result?.msg ??
+                'Error al crear el lote concactarse con el administrador',
+            response.result?.code ?? 0));
       }
     } catch (e, s) {
-      emit(CreateLoteProductFailure('Error al crear el lote'));
+      emit(CreateLoteProductFailure('Error al crear el lote', 400));
       debugPrint('Error en el _onCreateLoteProduct: $e, $s');
     }
   }

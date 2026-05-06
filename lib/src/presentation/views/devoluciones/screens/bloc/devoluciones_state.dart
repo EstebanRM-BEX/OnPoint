@@ -192,7 +192,8 @@ class CreateLoteProductSuccess extends DevolucionesState {
 
 class CreateLoteProductFailure extends DevolucionesState {
   final String error;
-  CreateLoteProductFailure(this.error);
+  final int code;
+  CreateLoteProductFailure(this.error, this.code);
 }
 
 class GetLotesProductLoading extends DevolucionesState {}

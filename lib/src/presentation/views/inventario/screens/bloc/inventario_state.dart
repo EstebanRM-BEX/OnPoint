@@ -164,7 +164,8 @@ class CreateLoteProductSuccess extends InventarioState {}
 
 class CreateLoteProductFailure extends InventarioState {
   final String error;
-  CreateLoteProductFailure(this.error);
+  final int code;
+  CreateLoteProductFailure(this.error, this.code);
 }
 
 class ConfigurationLoadedInventory extends InventarioState {

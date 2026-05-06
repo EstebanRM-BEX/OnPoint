@@ -362,3 +362,15 @@ class SearchLocationSuccess extends PackingPedidoState {
   final List<ResultUbicaciones> locations;
   SearchLocationSuccess(this.locations);
 }
+
+class SelectPackageLoading extends PackingPedidoState {}
+
+class SelectPackageSuccess extends PackingPedidoState {
+  final List<int> packageIds;
+  SelectPackageSuccess(this.packageIds);
+}
+
+class SelectPackageError extends PackingPedidoState {
+  final String error;
+  SelectPackageError(this.error);
+}

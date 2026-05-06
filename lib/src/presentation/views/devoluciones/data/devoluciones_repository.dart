@@ -132,6 +132,7 @@ class DevolucionesRepository {
     int idProduct,
     String nameLote,
     String dateLote,
+    bool priorityExpiration,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
@@ -150,6 +151,7 @@ class DevolucionesRepository {
               "id_producto": idProduct,
               "nombre_lote": nameLote ?? "",
               "fecha_vencimiento": dateLote ?? "",
+              "priority_expiration": priorityExpiration,
             }
           });
 

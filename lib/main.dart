@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'dart:async';
+import 'package:wms_app/features/print_labels/presentation/bloc/print_labels_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_bloc.dart';
@@ -64,6 +65,7 @@ void main() {
   runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
     await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -166,6 +168,7 @@ class MyApp extends StatelessWidget {
             BlocProvider(create: (_) => getIt<LoteProductoBloc>()),
             BlocProvider(create: (_) => getIt<PackagingTypeBloc>()),
             BlocProvider(create: (_) => getIt<PrintingBloc>()),
+            BlocProvider(create: (_) => PrintLabelsBloc()),
           ],
           child: SessionTimeoutManager(
             duration: const Duration(minutes: 240),

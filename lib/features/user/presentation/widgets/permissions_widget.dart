@@ -45,6 +45,53 @@ class PermissionsWidget extends StatelessWidget {
                     icon: Icon(Icons.help, color: primaryColorApp))
               ],
             ),
+            Row(
+              children: [
+                const Text("Crear lotes con fechas a vencer: ",
+                    style: TextStyle(fontSize: 14, color: black)),
+                const Spacer(),
+                Checkbox(
+                    value: profile?.allowPriorExpirationDate ?? false,
+                    onChanged: null),
+                IconButton(
+                    onPressed: () {
+                      showDialog(
+                          context: context,
+                          builder: (context) {
+                            return const DialogInfo(
+                              title:
+                                  "Crear lotes con fechas vencidas o por vencer",
+                              body:
+                                  "permite recibir un lote con fecha de vencimiento anterior a la próxima a vencer en stock",
+                            );
+                          });
+                    },
+                    icon: Icon(Icons.help, color: primaryColorApp))
+              ],
+            ),
+            Row(
+              children: [
+                const Text("Crear lotes nuevos sin nombre : ",
+                    style: TextStyle(fontSize: 14, color: black)),
+                const Spacer(),
+                Checkbox(
+                    value: profile?.manageExpirationDateWithoutLot ?? false,
+                    onChanged: null),
+                IconButton(
+                    onPressed: () {
+                      showDialog(
+                          context: context,
+                          builder: (context) {
+                            return const DialogInfo(
+                              title: "Crear lotes nuevos sin nombre",
+                              body:
+                                  "permite crear un lote sin colocarle un nombre ",
+                            );
+                          });
+                    },
+                    icon: Icon(Icons.help, color: primaryColorApp))
+              ],
+            ),
 
             Row(
               children: [

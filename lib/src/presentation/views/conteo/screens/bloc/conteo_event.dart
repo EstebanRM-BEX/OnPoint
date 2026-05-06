@@ -129,7 +129,10 @@ class SearchLotevent extends ConteoEvent {
 class CreateLoteProduct extends ConteoEvent {
   final String nameLote;
   final String fechaCaducidad;
-  CreateLoteProduct(this.nameLote, this.fechaCaducidad);
+  final bool priorityExpiration;
+
+  CreateLoteProduct(
+      this.nameLote, this.fechaCaducidad, this.priorityExpiration);
 }
 
 class SendProductConteoEvent extends ConteoEvent {

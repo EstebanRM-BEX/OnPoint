@@ -56,6 +56,17 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Verificamos al montar la screen si los productos ya están cargados.
+    // El evento GetProductsFromDBEvent pudo haberse emitido antes de que esta
+    // screen existiera (disparado desde tab2), por lo que el listener nunca lo captó.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final bloc = context.read<ConteoBloc>();
+      // Solo para filtros que usan la maestra de productos
+      if (bloc.ordenConteo.filterType == 'location' && bloc.productos.isEmpty) {
+        bloc.add(GetProductsFromDBEvent());
+      }
+    });
   }
 
   @override
@@ -347,6 +358,28 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
                             listener: (context, state) {
                           debugPrint("❤️‍🔥 state : $state");
 
+                          //VAMOSA VALIDAR SI HAY PRODUCTO CARGADOS DE LA MAESTRA
+                          if (state is GetProductsFailure) {
+                            Get.snackbar(
+                              '360 Software Informa',
+                              "No hay productos cargados, por favor descargue los productos desde la configuración",
+                              backgroundColor: white,
+                              colorText: primaryColorApp,
+                              icon: Icon(Icons.error, color: Colors.red),
+                            );
+                          }
+
+//validar que tengamos ubicaciones cargadas
+                          if (state is LoadLocationsFailure) {
+                            Get.snackbar(
+                              '360 Software Informa',
+                              "No hay ubicaciones cargadas, por favor descargue las ubicaciones desde la configuración",
+                              backgroundColor: white,
+                              colorText: primaryColorApp,
+                              icon: Icon(Icons.error, color: Colors.red),
+                            );
+                          }
+
                           if (state is ResetValuesLoadingState) {
                             showDialog(
                               context: context,
@@ -458,58 +491,51 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
                           return Column(
                             children: [
                               const WarningWidgetCubit(),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 25),
-                                child: Row(
-                                  children: [
-                                    IconButton(
-                                      onPressed: () {
-                                        cantidadController.clear();
+                              Row(
+                                children: [
+                                  IconButton(
+                                    onPressed: () {
+                                      cantidadController.clear();
 
-                                        context.read<ConteoBloc>().add(
-                                            ResetValuesEvent(
-                                                resetAll: false,
-                                                isLoading: false));
+                                      context.read<ConteoBloc>().add(
+                                          ResetValuesEvent(
+                                              resetAll: false,
+                                              isLoading: false));
 
-                                        Navigator.pushReplacementNamed(
-                                          context,
-                                          'conteo-detail',
-                                          arguments: [
-                                            1,
-                                            context
-                                                .read<ConteoBloc>()
-                                                .ordenConteo,
-                                          ],
-                                        );
-                                      },
-                                      icon: const Icon(Icons.arrow_back,
-                                          color: Colors.white, size: 20),
-                                    ),
-                                    const Spacer(),
-                                    Padding(
-                                      padding: EdgeInsets.only(
-                                          right: size.width * 0.015),
-                                      child: Text(
-                                        'CONTEO FISICO',
-                                        style: const TextStyle(
-                                            color: Colors.white, fontSize: 16),
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    IconButton(
-                                      onPressed: () {
-                                        context.read<ConteoBloc>().add(
-                                            ResetValuesEvent(
-                                                resetAll: false,
-                                                isLoading: true));
-                                        _handleDependencies();
-                                        cantidadController.clear();
-                                      },
-                                      icon: const Icon(Icons.delete,
-                                          color: Colors.white, size: 20),
-                                    ),
-                                  ],
-                                ),
+                                      Navigator.pushReplacementNamed(
+                                        context,
+                                        'conteo-detail',
+                                        arguments: [
+                                          1,
+                                          context
+                                              .read<ConteoBloc>()
+                                              .ordenConteo,
+                                        ],
+                                      );
+                                    },
+                                    icon: const Icon(Icons.arrow_back,
+                                        color: Colors.white, size: 20),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    'CONTEO FISICO',
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 16),
+                                  ),
+                                  const Spacer(),
+                                  IconButton(
+                                    onPressed: () {
+                                      context.read<ConteoBloc>().add(
+                                          ResetValuesEvent(
+                                              resetAll: false,
+                                              isLoading: true));
+                                      _handleDependencies();
+                                      cantidadController.clear();
+                                    },
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.white, size: 20),
+                                  ),
+                                ],
                               ),
                             ],
                           );

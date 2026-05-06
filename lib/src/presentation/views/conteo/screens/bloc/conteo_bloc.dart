@@ -959,6 +959,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         currentProduct?.productId ?? 0,
         event.nameLote,
         event.fechaCaducidad,
+        event.priorityExpiration,
       );
 
       if (response.result?.code == 200) {
@@ -988,11 +989,13 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         add(SelectecLoteEvent(currentProductLote!));
         emit(CreateLoteProductSuccess());
       } else {
-        emit(CreateLoteProductFailure(response.result?.msg ??
-            'Error al crear el lote contactarse con el administrador'));
+        emit(CreateLoteProductFailure(
+            response.result?.msg ??
+                'Error al crear el lote contactarse con el administrador',
+            response.result?.code ?? 0));
       }
     } catch (e, s) {
-      emit(CreateLoteProductFailure('Error al crear el lote'));
+      emit(CreateLoteProductFailure('Error al crear el lote', 400));
       debugPrint('Error en el _onCreateLoteProduct: $e, $s');
     }
   }

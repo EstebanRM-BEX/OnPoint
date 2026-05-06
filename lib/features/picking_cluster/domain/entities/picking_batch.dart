@@ -150,6 +150,7 @@ class PickingBatch extends Equatable {
 
 /// Represents an individual item within a picking batch.
 class PickingBatchItem extends Equatable {
+  final int? id;
   final int? batchId;
   final int? idMove;
   final int? pickingId;
@@ -188,6 +189,7 @@ class PickingBatchItem extends Equatable {
   final String? productTracking;
 
   const PickingBatchItem({
+    this.id,
     this.batchId,
     this.idMove,
     this.pickingId,
@@ -228,6 +230,7 @@ class PickingBatchItem extends Equatable {
 
   @override
   List<Object?> get props => [
+        id,
         batchId,
         idMove,
         pickingId,

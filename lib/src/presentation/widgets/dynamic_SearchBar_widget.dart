@@ -16,6 +16,7 @@ class DynamicSearchBar extends StatefulWidget {
   final VoidCallback? onTap;
   final String hintText;
   final double width;
+  final FocusNode? focusNode;
 
   // Si la lógica de tu BLoC necesita un índice para saber qué lista filtrar (controller.index)
   final dynamic filterIndex;
@@ -29,6 +30,7 @@ class DynamicSearchBar extends StatefulWidget {
     this.hintText = "Buscar...",
     this.filterIndex,
     this.width = double.infinity,
+    this.focusNode,
   });
 
   @override
@@ -44,8 +46,6 @@ class _DynamicSearchBarState extends State<DynamicSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    // La lógica de Zebra se maneja aquí (asumiendo que UserBloc está disponible globalmente)
-
     return Container(
       height: 55,
       width: widget.width,
@@ -62,6 +62,7 @@ class _DynamicSearchBarState extends State<DynamicSearchBar> {
                   showCursor: true,
                   textAlignVertical: TextAlignVertical.center,
                   controller: widget.controller,
+                  focusNode: widget.focusNode,
 
                   // 💥 onChanged: Llama al callback de búsqueda
                   onChanged: (value) {
@@ -69,12 +70,7 @@ class _DynamicSearchBarState extends State<DynamicSearchBar> {
                   },
 
                   // 💥 onTap: Activa el teclado para Zebra si está desactivado
-                  onTap: context
-                          .select((UserBloc bloc) => bloc.fabricante)
-                          .contains("Zebra")
-                      ? widget.onTap
-                      : null, // ✅ Se usa la propiedad
-
+                  onTap: widget.onTap,
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.search, color: grey),
                     suffixIcon: IconButton(

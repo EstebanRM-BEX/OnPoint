@@ -68,6 +68,9 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   bool isLocationDestOk = true;
   bool locationDestIsOk = false;
 
+  List<Producto>? productosUbicacion = [];
+  List<Ubicacion>? ubicacionesProducto = [];
+
   //*configuracion del usuario //permisos
   UserConfigurationModel configurations = UserConfigurationModel();
 
@@ -89,6 +92,10 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     on<GetListLocationsEvent>(_onLoadLocations);
     //*metodo para bucar un producto
     on<SearchProductEvent>(_onSearchProductEvent);
+
+    //*metodo para bucar un producto en la lista de ubicaciones
+    on<SearchProductLocationEvent>(_onSearchLocationWithProductEvent);
+    on<SearchLocationProductsEvent>(_onSearchProductWithLocationsEvent);
 
     on<GetProductsList>(_onGetProductsBD);
 
@@ -137,6 +144,31 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     on<ActivateMassTransferEvent>(_onActivateMassTransferEvent);
 
     on<ToggleProductMassTransferEvent>(_onToggleProductMassTransferEvent);
+
+    on<SelectAllAvailableProductsEvent>(_onSelectAllAvailableProductsEvent);
+  }
+
+  void _onSelectAllAvailableProductsEvent(
+      SelectAllAvailableProductsEvent event, Emitter<InfoRapidaState> emit) {
+    final disponibles = (productosUbicacion ?? [])
+        .where((p) => p.packing != true && (p.cantidadMano ?? 0) > 0)
+        .toList();
+
+    final todosSeleccionados = disponibles.isNotEmpty &&
+        disponibles.every(
+            (p) => productosFiltersMassTransfer.any((s) => s.id == p.id));
+
+    if (todosSeleccionados) {
+      productosFiltersMassTransfer
+          .removeWhere((s) => disponibles.any((p) => p.id == s.id));
+    } else {
+      for (final producto in disponibles) {
+        if (!productosFiltersMassTransfer.any((p) => p.id == producto.id)) {
+          productosFiltersMassTransfer.add(producto);
+        }
+      }
+    }
+    emit(ToggleProductMassTransferState());
   }
 
   void _onToggleProductMassTransferEvent(
@@ -542,6 +574,48 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     }
   }
 
+  void _onSearchLocationWithProductEvent(
+      SearchProductLocationEvent event, Emitter<InfoRapidaState> emit) async {
+    try {
+      emit(SearchLoading());
+
+      final query = event.query.toLowerCase();
+      if (query.isEmpty) {
+        productosUbicacion = infoRapidaResult.result?.productos;
+      } else {
+        productosUbicacion = productosUbicacion?.where((product) {
+          return (product.producto?.toLowerCase().contains(query) ?? false) ||
+              (product.codigoBarras?.toLowerCase().contains(query) ?? false);
+        }).toList();
+      }
+      emit(SearchProductSuccess(productosFilters));
+    } catch (e, s) {
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
+      emit(SearchFailure(e.toString()));
+    }
+  }
+
+  void _onSearchProductWithLocationsEvent(
+      SearchLocationProductsEvent event, Emitter<InfoRapidaState> emit) async {
+    try {
+      emit(SearchLoading());
+
+      final query = event.query.toLowerCase();
+      if (query.isEmpty) {
+        ubicacionesProducto = infoRapidaResult.result?.ubicaciones;
+      } else {
+        ubicacionesProducto = ubicacionesProducto?.where((location) {
+          return (location.ubicacion?.toLowerCase().contains(query) ?? false) ||
+              (location.codigoBarras?.toLowerCase().contains(query) ?? false);
+        }).toList();
+      }
+      emit(SearchProductSuccess(productosFilters));
+    } catch (e, s) {
+      debugPrint('Error en el SearchLocationEvent: $e, $s');
+      emit(SearchFailure(e.toString()));
+    }
+  }
+
   void _onLoadLocations(
       GetListLocationsEvent event, Emitter<InfoRapidaState> emit) async {
     try {
@@ -624,7 +698,8 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
         ubicacionesFilters = ubicaciones;
       } else {
         ubicacionesFilters = ubicaciones.where((location) {
-          return location.name?.toLowerCase().contains(query) ?? false;
+          return (location.name?.toLowerCase().contains(query) ?? false) ||
+              (location.barcode?.toLowerCase().contains(query) ?? false);
         }).toList();
       }
       emit(SearchLocationSuccess(ubicacionesFilters));
@@ -648,11 +723,16 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
       debugPrint('barcode: ${event.barcode.trim()}');
 
       if (event.isManual) {
+        productosUbicacion = [];
+        ubicacionesProducto = [];
         infoRapida = await _infoRapidaRepository.getInfoQuickManual(
           false,
           event.barcode.trim(),
           event.isProduct,
         );
+
+        productosUbicacion = infoRapida.result?.result?.productos;
+        ubicacionesProducto = infoRapida.result?.result?.ubicaciones;
       } else {
         //validamos si la peticion es para un paquete
         if (event.barcode.contains("Caja") || event.barcode.contains("CAJA")) {

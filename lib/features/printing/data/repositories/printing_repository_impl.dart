@@ -55,6 +55,7 @@ class PrintingRepositoryImpl implements PrintingRepository {
     required String model,
     required int resId,
     required int companyId,
+    int copies = 1,
   }) async {
     try {
       final response = await apiService.postPrint(
@@ -66,7 +67,7 @@ class PrintingRepositoryImpl implements PrintingRepository {
           "params": {
             "action": {
               "type": "ir.actions.report",
-              "name": name,
+              "nameEE": name,
               "report_name": reportName,
               "context": {
                 "active_model": model,
@@ -76,7 +77,8 @@ class PrintingRepositoryImpl implements PrintingRepository {
                 "printer_id": printerId
               }
             },
-            "options": {}
+            "options": {},
+            "sticker_quantity": copies
           }
         },
       );

@@ -22,7 +22,15 @@ class ResponseAssignLocationPack {
         id: json["id"],
         result: json["result"] == null
             ? null
-            : ResultAssignLocation.fromMap(json["result"]),
+            : json["result"] is Map<String, dynamic>
+                ? ResultAssignLocation.fromMap(json["result"])
+                : json["result"] is List
+                    ? ResultAssignLocation.fromMap({
+                        "result": json["result"],
+                        "code": 200,
+                        "msg": "Éxito"
+                      })
+                    : null,
       );
 
   Map<String, dynamic> toMap() => {
@@ -35,7 +43,7 @@ class ResponseAssignLocationPack {
 class ResultAssignLocation {
   final int? code;
   final String? msg;
-  final ResultDataAssign? result;
+  final List<ResultDataAssign>? result;
 
   ResultAssignLocation({
     this.code,
@@ -49,13 +57,20 @@ class ResultAssignLocation {
         msg: json["msg"],
         result: json["result"] == null
             ? null
-            : ResultDataAssign.fromMap(json["result"]),
+            : json["result"] is List
+                ? List<ResultDataAssign>.from(json["result"].map((x) =>
+                    ResultDataAssign.fromMap(x is Map<String, dynamic> ? x : {})))
+                : json["result"] is Map<String, dynamic>
+                    ? [ResultDataAssign.fromMap(json["result"])]
+                    : [],
       );
 
   Map<String, dynamic> toMap() => {
         "code": code,
         "msg": msg,
-        "result": result?.toMap(),
+        "result": result == null
+            ? null
+            : List<dynamic>.from(result!.map((x) => x.toMap())),
       };
 }
 
@@ -72,9 +87,11 @@ class ResultDataAssign {
 
   factory ResultDataAssign.fromMap(Map<String, dynamic> json) =>
       ResultDataAssign(
-        paquete: json["paquete"],
-        nuevaUbicacion: json["nueva_ubicacion"],
-        lineasActualizadas: json["lineas_actualizadas"],
+        paquete: json["paquete"]?.toString(),
+        nuevaUbicacion: json["nueva_ubicacion"]?.toString(),
+        lineasActualizadas: json["lineas_actualizadas"] is int
+            ? json["lineas_actualizadas"]
+            : int.tryParse(json["lineas_actualizadas"]?.toString() ?? ""),
       );
 
   Map<String, dynamic> toMap() => {

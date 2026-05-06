@@ -387,6 +387,26 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
       listener: (context, state) {
         debugPrint('🔔 Estado actual: $state');
 
+        if (state is GetProductsFailure) {
+          Get.snackbar(
+            '360 Software Informa',
+            "No hay productos cargados, por favor descargue los productos desde la configuración",
+            backgroundColor: white,
+            colorText: primaryColorApp,
+            icon: Icon(Icons.error, color: Colors.red),
+          );
+        }
+
+        if (state is LoadLocationsFailure) {
+          Get.snackbar(
+            '360 Software Informa',
+            "No hay ubicaciones cargadas, por favor descargue las ubicaciones desde la configuración",
+            backgroundColor: white,
+            colorText: primaryColorApp,
+            icon: Icon(Icons.error, color: Colors.red),
+          );
+        }
+
         if (state is ValidateStockLoading) {
           showDialog(
             context: context,

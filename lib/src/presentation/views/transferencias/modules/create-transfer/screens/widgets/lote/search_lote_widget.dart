@@ -105,39 +105,31 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                               child: Column(
                                 children: [
                                   const WarningWidgetCubit(),
-                                  Padding(
-                                    padding: EdgeInsets.only(
-                                      top: connectionStatus !=
-                                              ConnectionStatus.online
-                                          ? 0
-                                          : 25,
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.arrow_back,
-                                              color: white),
-                                          onPressed: () {
-                                            Navigator.pushReplacementNamed(
-                                              context,
-                                              'create-transfer',
-                                            );
-                                          },
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.arrow_back,
+                                            color: white),
+                                        onPressed: () {
+                                          Navigator.pushReplacementNamed(
+                                            context,
+                                            'create-transfer',
+                                          );
+                                        },
+                                      ),
+                                      Padding(
+                                        padding: EdgeInsets.only(
+                                            left: size.width * 0.2),
+                                        child: const Text(
+                                          'CREAR LOTE',
+                                          style: TextStyle(
+                                              color: white, fontSize: 18),
                                         ),
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                              left: size.width * 0.2),
-                                          child: const Text(
-                                            'CREAR LOTE',
-                                            style: TextStyle(
-                                                color: white, fontSize: 18),
-                                          ),
-                                        ),
-                                        const Spacer(),
-                                      ],
-                                    ),
+                                      ),
+                                      const Spacer(),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -148,12 +140,9 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                     ),
 
                     const SizedBox(height: 10),
-                    Padding(
-                      padding:
-                          EdgeInsets.only(bottom: 5, top: viewList ? 0 : 10),
-                      child: Text(widget.currentProduct?.name ?? '',
-                          style: TextStyle(fontSize: 12, color: black)),
-                    ),
+                    Text(widget.currentProduct?.name ?? '',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, color: black)),
 
                     //todo barra buscar
                     Visibility(
@@ -672,147 +661,147 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                         ),
                       ),
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                            onPressed: () {
-                              bloc.newLoteController.clear();
-                              bloc.dateLoteController.clear();
-                              setState(() {
-                                viewList = true;
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                                backgroundColor: grey,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10))),
-                            child: Text(
-                              'CANCELAR',
-                              style: TextStyle(
-                                color: white,
-                              ),
-                            )),
-                        const SizedBox(width: 10),
-                        Visibility(
-                          visible: viewList,
-                          child: ElevatedButton(
-                              onPressed: () {
-                                //ocultamos la lista de lotes
-                                setState(() {
-                                  viewList = false;
-                                });
-                              },
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColorApp,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10))),
-                              child: Text(
-                                'CREAR LOTE',
-                                style: TextStyle(
-                                  color: white,
-                                ),
-                              )),
-                        ),
-                        Visibility(
-                          visible: !viewList,
-                          child: ElevatedButton(
-                              onPressed: () {
-                                //ocultamos la lista de lotes
-                                ///validamos que l nombre del lote no sea el mismo que ya existe en la lista
-                                if (bloc.listLotesProduct
-                                    .where((element) =>
-                                        element.name ==
-                                        bloc.newLoteController.text)
-                                    .isNotEmpty) {
-                                  Get.snackbar(
-                                    'Error al crear lote',
-                                    'El lote ya existe, por favor ingrese otro nombre',
-                                    backgroundColor: white,
-                                    colorText: primaryColorApp,
-                                    icon:
-                                        Icon(Icons.error, color: Colors.amber),
-                                  );
-                                  return;
-                                }
+                    // Row(
+                    //   mainAxisAlignment: MainAxisAlignment.center,
+                    //   children: [
+                    //     ElevatedButton(
+                    //         onPressed: () {
+                    //           bloc.newLoteController.clear();
+                    //           bloc.dateLoteController.clear();
+                    //           setState(() {
+                    //             viewList = true;
+                    //           });
+                    //         },
+                    //         style: ElevatedButton.styleFrom(
+                    //             backgroundColor: grey,
+                    //             shape: RoundedRectangleBorder(
+                    //                 borderRadius: BorderRadius.circular(10))),
+                    //         child: Text(
+                    //           'CANCELAR',
+                    //           style: TextStyle(
+                    //             color: white,
+                    //           ),
+                    //         )),
+                    //     const SizedBox(width: 10),
+                    //     Visibility(
+                    //       visible: viewList,
+                    //       child: ElevatedButton(
+                    //           onPressed: () {
+                    //             //ocultamos la lista de lotes
+                    //             setState(() {
+                    //               viewList = false;
+                    //             });
+                    //           },
+                    //           style: ElevatedButton.styleFrom(
+                    //               backgroundColor: primaryColorApp,
+                    //               shape: RoundedRectangleBorder(
+                    //                   borderRadius: BorderRadius.circular(10))),
+                    //           child: Text(
+                    //             'CREAR LOTE',
+                    //             style: TextStyle(
+                    //               color: white,
+                    //             ),
+                    //           )),
+                    //     ),
+                    //     Visibility(
+                    //       visible: !viewList,
+                    //       child: ElevatedButton(
+                    //           onPressed: () {
+                    //             //ocultamos la lista de lotes
+                    //             ///validamos que l nombre del lote no sea el mismo que ya existe en la lista
+                    //             if (bloc.listLotesProduct
+                    //                 .where((element) =>
+                    //                     element.name ==
+                    //                     bloc.newLoteController.text)
+                    //                 .isNotEmpty) {
+                    //               Get.snackbar(
+                    //                 'Error al crear lote',
+                    //                 'El lote ya existe, por favor ingrese otro nombre',
+                    //                 backgroundColor: white,
+                    //                 colorText: primaryColorApp,
+                    //                 icon:
+                    //                     Icon(Icons.error, color: Colors.amber),
+                    //               );
+                    //               return;
+                    //             }
 
-                                if (bloc.newLoteController.text.isEmpty ||
-                                    bloc.newLoteController.text == '') {
-                                  Get.snackbar(
-                                    'Error al crear lote',
-                                    'El nombre del lote no puede estar vacío',
-                                    backgroundColor: white,
-                                    colorText: primaryColorApp,
-                                    icon:
-                                        Icon(Icons.error, color: Colors.amber),
-                                  );
-                                  return;
-                                }
+                    //             if (bloc.newLoteController.text.isEmpty ||
+                    //                 bloc.newLoteController.text == '') {
+                    //               Get.snackbar(
+                    //                 'Error al crear lote',
+                    //                 'El nombre del lote no puede estar vacío',
+                    //                 backgroundColor: white,
+                    //                 colorText: primaryColorApp,
+                    //                 icon:
+                    //                     Icon(Icons.error, color: Colors.amber),
+                    //               );
+                    //               return;
+                    //             }
 
-                                //validamos que la fecha no este vacia si el producto requiere fecha de caducidad
-                                if ((bloc.currentProduct?.useExpirationDate ==
-                                            true ||
-                                        bloc.currentProduct
-                                                ?.useExpirationDate ==
-                                            1) &&
-                                    (bloc.dateLoteController.text.isEmpty ||
-                                        bloc.dateLoteController.text.isEmpty ||
-                                        bloc.dateLoteController.text == "")) {
-                                  Get.snackbar(
-                                    'Error al crear lote',
-                                    'La fecha de caducidad no puede estar vacía para este producto',
-                                    backgroundColor: white,
-                                    colorText: primaryColorApp,
-                                    icon:
-                                        Icon(Icons.error, color: Colors.amber),
-                                  );
-                                  return;
-                                }
+                    //             //validamos que la fecha no este vacia si el producto requiere fecha de caducidad
+                    //             if ((bloc.currentProduct?.useExpirationDate ==
+                    //                         true ||
+                    //                     bloc.currentProduct
+                    //                             ?.useExpirationDate ==
+                    //                         1) &&
+                    //                 (bloc.dateLoteController.text.isEmpty ||
+                    //                     bloc.dateLoteController.text.isEmpty ||
+                    //                     bloc.dateLoteController.text == "")) {
+                    //               Get.snackbar(
+                    //                 'Error al crear lote',
+                    //                 'La fecha de caducidad no puede estar vacía para este producto',
+                    //                 backgroundColor: white,
+                    //                 colorText: primaryColorApp,
+                    //                 icon:
+                    //                     Icon(Icons.error, color: Colors.amber),
+                    //               );
+                    //               return;
+                    //             }
 
-                                //validacion que la fecha del lote no puede ser menor o igual la fecha actual
-                                if (selectedDate != null) {
-                                  final now = DateTime.now();
-                                  final selectedDateOnly = DateTime(
-                                      selectedDate!.year,
-                                      selectedDate!.month,
-                                      selectedDate!.day);
-                                  final nowDateOnly =
-                                      DateTime(now.year, now.month, now.day);
+                    //             //validacion que la fecha del lote no puede ser menor o igual la fecha actual
+                    //             if (selectedDate != null) {
+                    //               final now = DateTime.now();
+                    //               final selectedDateOnly = DateTime(
+                    //                   selectedDate!.year,
+                    //                   selectedDate!.month,
+                    //                   selectedDate!.day);
+                    //               final nowDateOnly =
+                    //                   DateTime(now.year, now.month, now.day);
 
-                                  if (selectedDateOnly.isBefore(nowDateOnly) ||
-                                      selectedDateOnly
-                                          .isAtSameMomentAs(nowDateOnly)) {
-                                    Get.snackbar(
-                                      'Error al crear lote',
-                                      'La fecha de caducidad debe ser mayor a la fecha actual.\nRevise la fecha de caducidad real del producto e intente de nuevo',
-                                      backgroundColor: white,
-                                      duration: const Duration(seconds: 4),
-                                      colorText: primaryColorApp,
-                                      icon: Icon(Icons.error,
-                                          color: Colors.amber),
-                                    );
-                                    return;
-                                  }
-                                }
+                    //               if (selectedDateOnly.isBefore(nowDateOnly) ||
+                    //                   selectedDateOnly
+                    //                       .isAtSameMomentAs(nowDateOnly)) {
+                    //                 Get.snackbar(
+                    //                   'Error al crear lote',
+                    //                   'La fecha de caducidad debe ser mayor a la fecha actual.\nRevise la fecha de caducidad real del producto e intente de nuevo',
+                    //                   backgroundColor: white,
+                    //                   duration: const Duration(seconds: 4),
+                    //                   colorText: primaryColorApp,
+                    //                   icon: Icon(Icons.error,
+                    //                       color: Colors.amber),
+                    //                 );
+                    //                 return;
+                    //               }
+                    //             }
 
-                                bloc.add(CreateLoteProduct(
-                                  bloc.newLoteController.text,
-                                  bloc.dateLoteController.text,
-                                ));
-                              },
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColorApp,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10))),
-                              child: Text(
-                                'AGREGAR LOTE',
-                                style: TextStyle(
-                                  color: white,
-                                ),
-                              )),
-                        ),
-                      ],
-                    ),
+                    //             bloc.add(CreateLoteProduct(
+                    //               bloc.newLoteController.text,
+                    //               bloc.dateLoteController.text,
+                    //             ));
+                    //           },
+                    //           style: ElevatedButton.styleFrom(
+                    //               backgroundColor: primaryColorApp,
+                    //               shape: RoundedRectangleBorder(
+                    //                   borderRadius: BorderRadius.circular(10))),
+                    //           child: Text(
+                    //             'AGREGAR LOTE',
+                    //             style: TextStyle(
+                    //               color: white,
+                    //             ),
+                    //           )),
+                    //     ),
+                    //   ],
+                    // ),
                   ],
                 ),
               ),

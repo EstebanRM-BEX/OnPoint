@@ -393,11 +393,42 @@ class Tab3ScreenRecep extends StatelessWidget {
                                                     style: const TextStyle(
                                                         fontSize: 12,
                                                         color: black)),
-                                                Text("/${product.loteDate}",
-                                                    style: const TextStyle(
-                                                        fontSize: 12,
-                                                        color: black)),
                                               ],
+                                            ),
+                                          ),
+                                          Visibility(
+                                            visible: product.productTracking ==
+                                                'lot',
+                                            child: Visibility(
+                                              visible: product
+                                                          .useExpirationDate ==
+                                                      1 ||
+                                                  product.useExpirationDate ==
+                                                      true,
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.date_range,
+                                                    color: primaryColorApp,
+                                                    size: 16,
+                                                  ),
+                                                  const SizedBox(width: 5),
+                                                  Text(
+                                                    "Caducidad:",
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: primaryColorApp,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 5),
+                                                  Text(
+                                                      product.loteDate ??
+                                                          "Sin Fecha",
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: black)),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                           Row(

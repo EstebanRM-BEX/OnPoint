@@ -12,5 +12,6 @@ abstract class PrintingRepository {
     required String model,
     required int resId,
     required int companyId,
+    int copies = 1,
   });
 }

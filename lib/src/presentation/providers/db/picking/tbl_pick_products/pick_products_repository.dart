@@ -29,6 +29,7 @@ class PickProductsRepository {
               '${product.idProduct}_${product.batchId}_${product.idMove}';
 
           final data = {
+            PickProductsTable.columnId: product.id,
             PickProductsTable.columnIdProduct: product.idProduct,
             PickProductsTable.columnBatchId: product.batchId,
             PickProductsTable.columnExpireDate: product.expireDate ?? '',

@@ -204,6 +204,10 @@ class ConfigurationsRepository {
           _boolToInt(res?.allowMoveExcessProduction),
       ConfigurationsTable.columnReturnsLocationDestOption:
           res?.returnsLocationDestOption ?? 'dynamic',
+      ConfigurationsTable.columnAllowPriorExpirationDate:
+          _boolToInt(res?.allowPriorExpirationDate),
+      ConfigurationsTable.columnManageExpirationDateWithoutLot:
+          _boolToInt(res?.manageExpirationDateWithoutLot),
       // ✅ Mark as synced
       ConfigurationsTable.columnIsSynced: 1,
     };
@@ -294,6 +298,10 @@ class ConfigurationsRepository {
           returnsLocationDestOption:
               map[ConfigurationsTable.columnReturnsLocationDestOption] ??
                   'dynamic',
+          allowPriorExpirationDate: _intToBool(
+              map[ConfigurationsTable.columnAllowPriorExpirationDate]),
+          manageExpirationDateWithoutLot: _intToBool(
+              map[ConfigurationsTable.columnManageExpirationDateWithoutLot]),
         ),
       ),
     );

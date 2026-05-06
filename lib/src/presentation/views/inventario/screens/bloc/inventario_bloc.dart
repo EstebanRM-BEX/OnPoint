@@ -237,6 +237,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
         currentProduct?.productId ?? 0,
         event.nameLote,
         event.fechaCaducidad,
+        event.priorityExpiration,
       );
 
       if (response.result?.code == 200) {
@@ -264,11 +265,13 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
         add(SelectecLoteEvent(currentProductLote!));
         emit(CreateLoteProductSuccess());
       } else {
-        emit(CreateLoteProductFailure(response.result?.msg ??
-            'Error al crear el lote contactarse con el administrador'));
+        emit(CreateLoteProductFailure(
+            response.result?.msg ??
+                'Error al crear el lote concactarse con el administrador',
+            response.result?.code ?? 0));
       }
     } catch (e, s) {
-      emit(CreateLoteProductFailure('Error al crear el lote'));
+      emit(CreateLoteProductFailure('Error al crear el lote', 400));
       debugPrint('Error en el _onCreateLoteProduct: $e, $s');
     }
   }

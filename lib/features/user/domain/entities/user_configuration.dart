@@ -45,6 +45,7 @@ class UserProfile {
   final bool? manualSourceLocation;
   final bool? showOwnerField;
   final bool? manualProductSelectionTransfer;
+  final bool? allowPriorExpirationDate;
   final bool? manualSourceLocationTransfer;
   final bool? manualDestLocationTransfer;
   final bool? manualQuantityTransfer;
@@ -63,6 +64,8 @@ class UserProfile {
   final String? returnsLocationDestOption;
   final bool? locationManualInventory;
   final bool? manualProductSelectionInventory;
+  // manage_expiration_date_without_lot
+  final bool? manageExpirationDateWithoutLot;
 
   const UserProfile({
     this.id,
@@ -85,6 +88,7 @@ class UserProfile {
     this.showDetallesPack,
     this.showNextLocationsInDetailsPack,
     this.manualProductSelectionPack,
+    this.allowPriorExpirationDate,
     this.manualQuantityPack,
     this.manualSpringSelectionPack,
     this.scanProduct,
@@ -108,6 +112,7 @@ class UserProfile {
     this.returnsLocationDestOption,
     this.locationManualInventory,
     this.manualProductSelectionInventory,
+    this.manageExpirationDateWithoutLot,
   });
 
   @override
@@ -129,6 +134,7 @@ class UserProfile {
         showDetallesPack,
         showNextLocationsInDetailsPack,
         manualProductSelectionPack,
+        allowPriorExpirationDate,
         manualQuantityPack,
         manualSpringSelectionPack,
         scanProduct,
@@ -152,6 +158,7 @@ class UserProfile {
         returnsLocationDestOption,
         locationManualInventory,
         manualProductSelectionInventory,
+        manageExpirationDateWithoutLot,
       ];
 }
 

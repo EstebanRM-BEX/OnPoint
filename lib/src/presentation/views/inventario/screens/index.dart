@@ -427,7 +427,10 @@ class _InventarioScreenState extends State<InventarioScreen>
         }
 
         if (state is GetProductsFailureInventory) {
-          Navigator.pop(context);
+          // cerramos el dialogo si esta abierto
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          }
           showScrollableErrorDialog(state.error);
         }
 

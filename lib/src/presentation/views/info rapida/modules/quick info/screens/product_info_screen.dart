@@ -14,6 +14,7 @@ import 'package:wms_app/src/presentation/views/info%20rapida/modules/transfer/bl
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
+import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
 class ProductInfoScreen extends StatelessWidget {
   const ProductInfoScreen({
@@ -561,6 +562,22 @@ class ProductInfoScreen extends StatelessWidget {
                           ],
                         ),
                       ),
+                      SizedBox(
+                        width: size.width * 1,
+                        height: 55,
+                        child: DynamicSearchBar(
+                          controller: bloc.searchControllerLocation,
+                          hintText: "Buscar ubicaion",
+                          onSearchChanged: (value) {
+                            bloc.add(SearchLocationProductsEvent(value));
+                          },
+                          onSearchCleared: () {
+                            bloc.searchControllerLocation.clear();
+                            bloc.add(SearchLocationProductsEvent(''));
+                          },
+                          onTap: () {},
+                        ),
+                      ),
                       //listado de ubicaciones
                       Padding(
                         padding: const EdgeInsets.symmetric(
@@ -573,7 +590,7 @@ class ProductInfoScreen extends StatelessWidget {
                               195, // Altura fija por item para mejor rendimiento
                           cacheExtent: 500, // Precarga 500px adicionales
                           padding: const EdgeInsets.all(0),
-                          itemCount: product.ubicaciones?.length ?? 0,
+                          itemCount: bloc.ubicacionesProducto?.length ?? 0,
                           itemBuilder: (contextList, index) {
                             // Verificación de seguridad para evitar acceso a índice inválido
                             if (product.ubicaciones == null ||
@@ -581,7 +598,7 @@ class ProductInfoScreen extends StatelessWidget {
                               return const SizedBox.shrink();
                             }
 
-                            final ubicacion = product.ubicaciones?[index];
+                            final ubicacion = bloc.ubicacionesProducto?[index];
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 10),
                               child: Card(
@@ -786,13 +803,20 @@ class AppBar extends StatelessWidget {
             const WarningWidgetCubit(),
             Padding(
               padding: EdgeInsets.only(
-                  left: size.width * 0.05, right: size.width * 0.05, bottom: 5),
+                  left: size.width * 0.05,
+                  right: size.width * 0.05,
+                  bottom: 5,
+                  top: 20),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   GestureDetector(
                     onTap: () {
+                      context
+                          .read<InfoRapidaBloc>()
+                          .searchControllerLocation
+                          .clear();
                       context.read<InfoRapidaBloc>().add(IsEditEvent(false));
                       context.read<InfoRapidaBloc>().add(GetProductsList());
                       Navigator.pushReplacementNamed(

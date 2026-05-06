@@ -183,23 +183,6 @@ class Tab1PedidoScreen extends StatelessWidget {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                IconButton(
-                                  icon: Icon(
-                                    context.read<PackingPedidoBloc>().viewDetail
-                                        ? Icons.arrow_drop_up
-                                        : Icons.arrow_drop_down,
-                                    color: primaryColorApp,
-                                  ),
-                                  onPressed: () {
-                                    context.read<PackingPedidoBloc>().add(
-                                        ShowDetailvent(context
-                                            .read<PackingPedidoBloc>()
-                                            .viewDetail));
-                                  },
-                                  padding: EdgeInsets.zero,
-                                  constraints: BoxConstraints(),
-                                  iconSize: 24,
-                                ),
                               ],
                             ),
 
@@ -219,6 +202,27 @@ class Tab1PedidoScreen extends StatelessWidget {
                                               ? 'Normal'
                                               : 'Alta'
                                                   "",
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: pedidoCurrent.priority == '0'
+                                                ? black
+                                                : red,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Row(
+                                      children: [
+                                        Text('Zona de  entrega: ',
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                color: primaryColorApp)),
+                                        Text(
+                                          pedidoCurrent.zonaEntrega ??
+                                              'sin zona de  entrega',
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: pedidoCurrent.priority == '0'

@@ -33,12 +33,56 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
   final FocusNode focusNode1 = FocusNode();
   Timer? _debounce;
 
+  // Contador de las 3 cargas iniciales: ubicaciones, productos, configuración
+  int _pendingLoads = 3;
+
   @override
   void dispose() {
     _debounce?.cancel();
     focusNode1.dispose();
     _controllerSearch.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final bloc = context.read<InfoRapidaBloc>();
+
+      final bool needsLocations = bloc.ubicaciones.isEmpty;
+      final bool needsProducts = bloc.productos.isEmpty;
+      final bool needsConfig = bloc.configurations.result == null;
+
+      // Si todo ya está cargado, no hacemos nada.
+      if (!needsLocations && !needsProducts && !needsConfig) return;
+
+      int loadsCount = 0;
+      if (needsLocations) loadsCount++;
+      if (needsProducts) loadsCount++;
+      if (needsConfig) loadsCount++;
+
+      _pendingLoads = loadsCount;
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const DialogLoading(message: 'Cargando interfaz...'),
+      );
+
+      if (needsLocations) bloc.add(GetListLocationsEvent());
+      if (needsProducts) bloc.add(GetProductsList());
+      if (needsConfig) bloc.add(LoadConfigurationsUserInfo());
+    });
+  }
+
+  void _onInitLoadComplete(BuildContext context) {
+    _pendingLoads--;
+    if (_pendingLoads <= 0) {
+      _pendingLoads = 0;
+      if (Navigator.canPop(context)) Navigator.pop(context);
+    }
   }
 
   void validateBarcode(String value) {
@@ -69,7 +113,27 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
           current is InfoRapidaInitial || current is InfoRapidaLoaded,
       listener: (context, state) async {
         debugPrint('Estado actual: $state');
-        if (state is DeviceNotAuthorized) {
+
+        // Cerrar el loader inicial cuando las 3 cargas terminen
+        if (state is LoadLocationsSuccess || state is LoadLocationsFailure) {
+          _onInitLoadComplete(context);
+        } else if (state is GetProductsSuccess || state is GetProductsFailure) {
+          _onInitLoadComplete(context);
+        } else if (state is ConfigurationLoadedInfoRapida ||
+            state is ConfigurationError) {
+          _onInitLoadComplete(context);
+        }
+
+        //validar si tenemos productos cargados en la bd
+        if (state is GetProductsFailure) {
+          Get.snackbar(
+            '360 Software Informa',
+            "No hay productos cargados, por favor descargue los productos desde la configuración",
+            backgroundColor: white,
+            colorText: primaryColorApp,
+            icon: Icon(Icons.error, color: Colors.red),
+          );
+        } else if (state is DeviceNotAuthorized) {
           if (Navigator.canPop(context)) {
             Navigator.pop(context); // Cierra el loader si hubo error
           }

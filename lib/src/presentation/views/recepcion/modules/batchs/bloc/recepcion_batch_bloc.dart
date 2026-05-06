@@ -279,11 +279,12 @@ class RecepcionBatchBloc
     try {
       emit(CreateLoteProductLoading());
       final response = await _recepcionRepository.createLote(
-        false,
-        int.parse(currentProduct.productId),
-        event.nameLote,
-        event.fechaCaducidad,
-      );
+          false,
+          int.parse(currentProduct.productId),
+          event.nameLote,
+          event.fechaCaducidad,
+          // event.priorityExpiration,
+          false);
 
       if (response.result?.code == 200) {
         //agregamos el nuevo lote a la lista de lotes

@@ -60,6 +60,11 @@ class ConfigurationsTable {
   static const String columnAccessProductionModule = 'access_production_module';
   static const String columnIsSynced = 'is_synced';
 
+  static const String columnAllowPriorExpirationDate =
+      'allow_prior_expiration_date';
+  static const String columnManageExpirationDateWithoutLot =
+      'manage_expiration_date_without_lot';
+
 //allow_move_excess_production
   static const String columnAllowMoveExcessProduction =
       'allow_move_excess_production';
@@ -109,6 +114,8 @@ class ConfigurationsTable {
         $columnLocationManualInventory INTEGER,
         $columnCountQuantityInventory INTEGER,
         $columnAllowMoveExcessProduction INTEGER,
+        $columnAllowPriorExpirationDate INTEGER,
+        $columnManageExpirationDateWithoutLot INTEGER,
         $columnIsSynced INTEGER DEFAULT 0
       )
     ''';

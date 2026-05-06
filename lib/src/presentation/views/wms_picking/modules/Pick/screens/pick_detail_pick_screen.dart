@@ -754,7 +754,7 @@ class PickDetailScreen extends StatelessWidget {
                                                               context,
                                                               resId:
                                                                   productsBatch
-                                                                      .idMove,
+                                                                      .id,
                                                               companyId: 1);
                                                         },
                                                         child: Icon(

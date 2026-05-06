@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
 
 class DialogBackorderPack extends StatelessWidget {
@@ -56,6 +57,36 @@ class DialogBackorderPack extends StatelessWidget {
           ],
         ),
         actions: [
+          ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                ModalPrintersList.show(context,
+                    resId:
+                        context.read<PackingPedidoBloc>().currentPedidoPack.id,
+                    companyId: context
+                            .read<PackingPedidoBloc>()
+                            .currentPedidoPack
+                            .warehouseId ??
+                        1);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColorApp,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  //icono de imprimir
+                  Icon(Icons.print, color: white),
+                  SizedBox(width: 5),
+                  Text(
+                    'Imprimir',
+                    style: TextStyle(color: white, fontSize: 12),
+                  ),
+                ],
+              )),
           Visibility(
             visible: (totalEnviadas == "100.0" || totalEnviadas >= 100.0)
                 ? false

@@ -246,11 +246,13 @@ class CreateTransferBloc
             'productos de la bd de crear transferencia::::: ${productosCreateTransfer.length}');
         emit(GetProductsSuccessBD(response));
       } else {
-        emit(GetProductsFailure('No se encontraron productos'));
+        // Lista vacía es normal al iniciar una transferencia nueva.
+        // No emitimos GetProductsFailure para no duplicar el snackbar
+        // de error con el evento GetProductsFromDBEvent.
+        emit(GetProductsSuccessBD(const []));
       }
     } catch (e, s) {
-      emit(GetProductsFailure('Error al cargar los productos'));
-      debugPrint('Error en el fetch de productos: $e=>$s');
+      debugPrint('Error en el fetch de productos de transferencia: $e=>$s');
     }
   }
 
@@ -556,11 +558,11 @@ class CreateTransferBloc
     try {
       emit(CreateLoteProductLoading());
       final response = await _inventarioRepository.createLote(
-        false,
-        currentProduct?.productId ?? 0,
-        event.nameLote,
-        event.fechaCaducidad,
-      );
+          false,
+          currentProduct?.productId ?? 0,
+          event.nameLote,
+          event.fechaCaducidad,
+          event.priorityExpiration);
 
       if (response.result?.code == 200) {
         // 1. Capturamos el objeto del nuevo lote

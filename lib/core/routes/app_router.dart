@@ -7,6 +7,9 @@ import 'package:wms_app/features/picking_cluster/presentation/screens/scan_produ
 import 'package:wms_app/features/picking_cluster/presentation/screens/validate_screen.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/view_lote_widget.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/lote_producto.dart';
+import 'package:wms_app/features/print_labels/presentation/index.dart';
+import 'package:wms_app/features/print_labels/presentation/screens/list_products_screen.dart';
+import 'package:wms_app/features/print_labels/presentation/screens/list_locations_screen.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/conteo_screen.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/list_conteo_screen.dart';
@@ -84,6 +87,11 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/picking_compo
 import 'package:wms_app/src/presentation/views/wms_picking/modules/picking_componentes/index_list_picking_componentes_screen.dart';
 
 class AppRoutes {
+  //todo  Print Labels
+  static const String printLabels = 'print-labels';
+  static const String printLabelsProducts = 'print-labels-products';
+  static const String printLabelsLocations = 'print-labels-locations';
+
   //todo  Mapa estático de rutas
   static const String enterprice = 'enterprice';
   static const String auth = 'auth';
@@ -222,6 +230,11 @@ class AppRoutes {
   static Map<String, Widget Function(BuildContext)> get routes {
     return {
       AppRoutes.checkout: (context) => const CheckAuthPage(),
+
+      AppRoutes.printLabels: (_) => const PrintLabelsScreen(),
+      AppRoutes.printLabelsProducts: (_) => const PrintLabelsProductsScreen(),
+      AppRoutes.printLabelsLocations: (_) => const PrintLabelsLocationsScreen(),
+
       //todo conteo
       conteo: (_) => const ListConteoScreen(),
       conteoDetail: (context) {
@@ -393,7 +406,14 @@ class AppRoutes {
       },
       scanPack: (_) => ScanPackScreen(),
 
-      locationsDestPacking: (_) => LocationDestPackingScreen(),
+      locationsDestPacking: (context) {
+        final arguments =
+            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
+        final isMoreItems = arguments[0] as bool;
+        return LocationDestPackingScreen(
+          isMoreItems: isMoreItems,
+        );
+      },
 
       //todo auth
       home: (_) => const HomePage(),

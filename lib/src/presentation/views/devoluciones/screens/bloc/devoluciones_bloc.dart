@@ -464,6 +464,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
         currentProduct.productId ?? 0,
         event.nameLote ?? "",
         event.fechaCaducidad ?? "",
+        event.priorityExpiration,
       );
 
       if (response != null) {
@@ -491,13 +492,14 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
           emit(CreateLoteProductSuccess(lotesProductCurrent));
         } else {
           emit(CreateLoteProductFailure(
-              response.result?.msg ?? 'Error al crear el lote'));
+              response.result?.msg ?? 'Error al crear el lote',
+              response.result?.code ?? 0));
         }
       } else {
-        emit(CreateLoteProductFailure('Error al crear el lote'));
+        emit(CreateLoteProductFailure('Error al crear el lote', 400));
       }
     } catch (e, s) {
-      emit(CreateLoteProductFailure('Error al crear el lote'));
+      emit(CreateLoteProductFailure('Error al crear el lote', 400));
       debugPrint('Error en el _onCreateLoteProduct: $e, $s');
     }
   }

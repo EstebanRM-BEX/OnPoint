@@ -92,7 +92,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 26,
+      version: 27,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -364,6 +364,18 @@ class DataBaseSqlite {
         debugPrint("Error actualizando a v26 (PackagesTable): $e");
       }
     }
+
+    if (oldVersion < 27) {
+      try {
+        await db.execute('''
+          ALTER TABLE ${ConfigurationsTable.tableName}
+          ADD COLUMN ${ConfigurationsTable.columnAllowPriorExpirationDate} INTEGER;
+          ADD COLUMN ${ConfigurationsTable.columnManageExpirationDateWithoutLot} INTEGER;
+        ''');
+      } catch (e) {
+        debugPrint("Error actualizando a v27 (ConfigurationsTable): $e");
+      }
+    }
   }
 
   //todo repositorios de las tablas
@@ -489,6 +501,7 @@ class DataBaseSqlite {
               '${product.idProduct}_${product.batchId}_${product.idMove}';
 
           final data = {
+            "id": product.id,
             "id_product": product.idProduct,
             "type": type,
             "batch_id": product.batchId,

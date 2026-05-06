@@ -234,7 +234,8 @@ class CreateLoteProductSuccess extends RecepcionState {}
 
 class CreateLoteProductFailure extends RecepcionState {
   final String error;
-  CreateLoteProductFailure(this.error);
+  final int code;
+  CreateLoteProductFailure(this.error, this.code);
 }
 
 class CurrentOrdenesCompraState extends RecepcionState {

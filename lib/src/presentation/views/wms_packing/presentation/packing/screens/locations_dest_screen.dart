@@ -11,7 +11,9 @@ import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
 
 class LocationDestPackingScreen extends StatefulWidget {
-  const LocationDestPackingScreen({super.key});
+  const LocationDestPackingScreen({super.key, this.isMoreItems});
+
+  final bool? isMoreItems;
 
   @override
   State<LocationDestPackingScreen> createState() => _LocationDestScreenState();
@@ -351,10 +353,22 @@ class _LocationDestScreenState extends State<LocationDestPackingScreen> {
                                 selectedIndex == null;
                               });
 
+                              final packageNames = bloc.selectedPackageIds.isNotEmpty
+                                  ? bloc.packages
+                                      .where((p) =>
+                                          p.id != null &&
+                                          bloc.selectedPackageIds.contains(p.id))
+                                      .map((p) =>
+                                          p.packingBarcode ?? p.name ?? '')
+                                      .where((name) => name.isNotEmpty)
+                                      .toList()
+                                  : [bloc.expandedPackage];
+
                               bloc.add(AssignLocationToPackageEvent(
-                                  bloc.expandedPackage,
-                                  selectedLocation.name ?? '',
-                                  selectedLocation.id ?? 0));
+                                packageNames,
+                                selectedLocation.name ?? '',
+                                selectedLocation.id ?? 0,
+                              ));
 
                               Navigator.pushReplacementNamed(
                                 context,

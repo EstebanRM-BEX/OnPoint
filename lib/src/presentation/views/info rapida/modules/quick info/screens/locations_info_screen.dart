@@ -11,6 +11,7 @@ import 'package:wms_app/src/presentation/views/info%20rapida/models/info_rapida_
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/widgets/info_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
 class LocationInfoScreen extends StatelessWidget {
   final InfoRapidaResult? infoRapidaResult;
@@ -184,6 +185,22 @@ class LocationInfoScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                    SizedBox(
+                      width: size.width * 1,
+                      height: 55,
+                      child: DynamicSearchBar(
+                        controller: bloc.searchControllerProducts,
+                        hintText: "Buscar producto",
+                        onSearchChanged: (value) {
+                          bloc.add(SearchProductLocationEvent(value));
+                        },
+                        onSearchCleared: () {
+                          bloc.searchControllerProducts.clear();
+                          bloc.add(SearchProductLocationEvent(''));
+                        },
+                        onTap: () {},
+                      ),
+                    ),
                     Padding(
                       padding: const EdgeInsets.only(top: 10, left: 20),
                       child: Row(
@@ -199,6 +216,47 @@ class LocationInfoScreen extends StatelessWidget {
                             ),
                           ),
                           const Spacer(),
+                          if (context.read<InfoRapidaBloc>().isMassTransferActive)
+                            Builder(builder: (context) {
+                              final bloc = context.read<InfoRapidaBloc>();
+                              final disponibles = (bloc.productosUbicacion ?? [])
+                                  .where((p) =>
+                                      p.packing != true &&
+                                      (p.cantidadMano ?? 0) > 0)
+                                  .toList();
+                              final todosSeleccionados =
+                                  disponibles.isNotEmpty &&
+                                      disponibles.every((p) => bloc
+                                          .productosFiltersMassTransfer
+                                          .any((s) => s.id == p.id));
+                              return GestureDetector(
+                                onTap: () => bloc
+                                    .add(SelectAllAvailableProductsEvent()),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      todosSeleccionados
+                                          ? Icons.deselect
+                                          : Icons.select_all,
+                                      color: primaryColorApp,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      todosSeleccionados
+                                          ? "Deselec. todos"
+                                          : "Selec. todos",
+                                      style: TextStyle(
+                                          color: primaryColorApp,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                          if (context.read<InfoRapidaBloc>().isMassTransferActive)
+                            const SizedBox(width: 10),
                           GestureDetector(
                             onTap: () {
                               context.read<InfoRapidaBloc>().add(
@@ -237,9 +295,10 @@ class LocationInfoScreen extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           child: ListView.builder(
                               padding: const EdgeInsets.all(0),
-                              itemCount: ubicacion?.productos?.length ?? 0,
+                              itemCount: bloc.productosUbicacion?.length ?? 0,
                               itemBuilder: (context, index) {
-                                final producto = ubicacion?.productos?[index];
+                                final producto =
+                                    bloc.productosUbicacion?[index];
                                 return Card(
                                     color: white,
                                     elevation: 3,
@@ -454,6 +513,10 @@ class AppBar extends StatelessWidget {
                 children: [
                   GestureDetector(
                     onTap: () {
+                      context
+                          .read<InfoRapidaBloc>()
+                          .searchControllerProducts
+                          .clear();
                       context.read<InfoRapidaBloc>().add(IsEditEvent(false));
                       context
                           .read<InfoRapidaBloc>()

@@ -47,6 +47,7 @@ class Tab1ScreenRecep extends StatelessWidget {
             Get.snackbar("360 Software Informa", state.message,
                 backgroundColor: white,
                 colorText: primaryColorApp,
+                isDismissible: false,
                 icon: Icon(Icons.error, color: Colors.green));
           }
 
@@ -55,6 +56,7 @@ class Tab1ScreenRecep extends StatelessWidget {
             Get.snackbar("360 Software Informa", state.error,
                 backgroundColor: white,
                 colorText: primaryColorApp,
+                isDismissible: false,
                 icon: Icon(Icons.error, color: Colors.red));
           }
 

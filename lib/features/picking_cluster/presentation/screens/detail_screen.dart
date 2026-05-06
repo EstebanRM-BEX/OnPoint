@@ -629,8 +629,7 @@ class DetailClusterScreen extends StatelessWidget {
                                                   onTap: () {
                                                     ModalPrintersList.show(
                                                         context,
-                                                        resId: productsBatch
-                                                            .idMove,
+                                                        resId: productsBatch.id,
                                                         companyId: 1);
                                                   },
                                                   child: Icon(

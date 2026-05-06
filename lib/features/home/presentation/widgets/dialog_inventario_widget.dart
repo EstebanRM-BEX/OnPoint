@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
 import 'package:wms_app/src/presentation/views/inventario/screens/bloc/inventario_bloc.dart';
@@ -59,6 +60,22 @@ class DialogInventario extends StatelessWidget {
                   context
                       .read<InventarioBloc>()
                       .add(LoadConfigurationsUserInventory());
+
+                  // validamos si tenemos productos cargados si no hay productos mostramos alerta a descargar los productos
+                  if (context.read<InventarioBloc>().productos.isEmpty) {
+                    //cerramos el dialog
+                    Navigator.pop(context);
+                    //mostrar snackbar de error
+                    Get.snackbar(
+                      '360 Software Informa',
+                      "No hay productos cargados, por favor descargue los productos desde la configuración",
+                      backgroundColor: white,
+                      colorText: primaryColorApp,
+                      icon: Icon(Icons.error, color: Colors.red),
+                    );
+                    return;
+                  }
+
                   Navigator.pop(context);
                   Navigator.pushReplacementNamed(
                     context,
@@ -79,9 +96,13 @@ class DialogInventario extends StatelessWidget {
                     ))),
             ElevatedButton(
                 onPressed: () {
+                  //obtenemos las ubicaciones
                   context.read<ConteoBloc>().add(GetLocationsConteoEvent());
+                  //obtenemos los productos
                   context.read<ConteoBloc>().add(GetProductsFromDBEvent());
+                  //obtenemos los conteos
                   context.read<ConteoBloc>().add(GetConteosFromDBEvent());
+                  //cargamos la configuracion
                   context
                       .read<ConteoBloc>()
                       .add(LoadConfigurationsUserConteo());

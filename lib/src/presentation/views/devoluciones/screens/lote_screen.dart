@@ -15,7 +15,9 @@ import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart';
 
-import 'package:intl/intl.dart'; // Importamos el paquete intl
+import 'package:intl/intl.dart';
+import 'package:wms_app/src/presentation/widgets/dialog_advertencia_lote_widget.dart';
+import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart'; // Importamos el paquete intl
 
 class NewLoteScreenDevolucion extends StatefulWidget {
   const NewLoteScreenDevolucion({super.key});
@@ -83,13 +85,34 @@ class _NewLoteScreenState extends State<NewLoteScreenDevolucion> {
                             }
 
                             if (state is CreateLoteProductFailure) {
-                              Get.snackbar(
-                                'Error',
-                                state.error,
-                                backgroundColor: white,
-                                colorText: primaryColorApp,
-                                icon: Icon(Icons.check, color: Colors.red),
-                              );
+                              if (state.code == 400) {
+                                showScrollableErrorDialog(state.error);
+                              } else if (state.code == 202 &&
+                                  (context
+                                              .read<DevolucionesBloc>()
+                                              .configurations
+                                              .result
+                                              ?.result
+                                              ?.allowPriorExpirationDate ==
+                                          true ||
+                                      context
+                                              .read<DevolucionesBloc>()
+                                              .configurations
+                                              .result
+                                              ?.result
+                                              ?.allowPriorExpirationDate ==
+                                          1)) {
+                                showScrollableWarningLoteDialog(state.error,
+                                    onContinue: () {
+                                  //creamos el lote sin prioridad de caducidadz
+                                  bloc.add(CreateLoteProduct(
+                                      bloc.newLoteController.text,
+                                      bloc.dateLoteController.text,
+                                      true));
+                                });
+                              } else {
+                                showScrollableErrorDialog(state.error);
+                              }
                             }
                           }, builder: (context, status) {
                             return Column(
@@ -415,41 +438,45 @@ class _NewLoteScreenState extends State<NewLoteScreenDevolucion> {
                               // ---------------------------------------------------------
                               // 1. CAMPO: NOMBRE DEL LOTE (Mayúsculas y Sin Espacios)
                               // ---------------------------------------------------------
-                              SizedBox(
-                                height: 40,
-                                child: TextFormField(
-                                  controller: bloc.newLoteController,
-                                  style: TextStyle(color: black, fontSize: 14),
+                              if (bloc.configurations.result?.result
+                                      ?.manageExpirationDateWithoutLot ==
+                                  false)
+                                SizedBox(
+                                  height: 40,
+                                  child: TextFormField(
+                                    controller: bloc.newLoteController,
+                                    style:
+                                        TextStyle(color: black, fontSize: 14),
 
-                                  // UX: Abre el teclado en mayúsculas
-                                  textCapitalization:
-                                      TextCapitalization.characters,
+                                    // UX: Abre el teclado en mayúsculas
+                                    textCapitalization:
+                                        TextCapitalization.characters,
 
-                                  // LÓGICA: Fuerza mayúsculas y bloquea espacio
-                                  inputFormatters: [
-                                    UpperCaseTextFormatter(), // Clase auxiliar (ver abajo)
-                                    FilteringTextInputFormatter.deny(
-                                        RegExp(r'\s')),
-                                  ],
+                                    // LÓGICA: Fuerza mayúsculas y bloquea espacio
+                                    inputFormatters: [
+                                      UpperCaseTextFormatter(), // Clase auxiliar (ver abajo)
+                                      FilteringTextInputFormatter.deny(
+                                          RegExp(r'\s')),
+                                    ],
 
-                                  decoration: InputDecoration(
-                                    labelText: 'Nombre del lote',
-                                    labelStyle:
-                                        TextStyle(color: primaryColorApp),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    suffixIcon: IconButton(
-                                      onPressed: () {
-                                        bloc.newLoteController.clear();
-                                        FocusScope.of(context).unfocus();
-                                      },
-                                      icon:
-                                          const Icon(Icons.close, color: grey),
+                                    decoration: InputDecoration(
+                                      labelText: 'Nombre del lote',
+                                      labelStyle:
+                                          TextStyle(color: primaryColorApp),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      suffixIcon: IconButton(
+                                        onPressed: () {
+                                          bloc.newLoteController.clear();
+                                          FocusScope.of(context).unfocus();
+                                        },
+                                        icon: const Icon(Icons.close,
+                                            color: grey),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
 
                               const SizedBox(height: 10),
 
@@ -512,9 +539,18 @@ class _NewLoteScreenState extends State<NewLoteScreenDevolucion> {
                                           );
 
                                           if (pickedDate != null) {
-                                            final formattedDate =
-                                                DateFormat('yyyy-MM-dd hh:mm')
-                                                    .format(pickedDate);
+                                            final now = DateTime.now();
+                                            pickedDate = DateTime(
+                                              pickedDate.year,
+                                              pickedDate.month,
+                                              pickedDate.day,
+                                              now.hour,
+                                              now.minute,
+                                              now.second,
+                                            );
+                                            final formattedDate = DateFormat(
+                                                    'yyyy-MM-dd HH:mm:ss')
+                                                .format(pickedDate);
 
                                             // ✅ Actualizamos el estado para mostrar los días restantes
                                             setState(() {
@@ -664,6 +700,32 @@ class _NewLoteScreenState extends State<NewLoteScreenDevolucion> {
                         children: [
                           ElevatedButton(
                               onPressed: () {
+                                //todo reglas de la creacion lote automatico
+                                // Que el producto no maneje fecha de vencimiento "use_expiration_date": false,
+                                // y el permiso de crear lote sin nombre este activado   "manage_expiration_date_without_lot": true,
+
+                                if ((bloc.currentProduct?.useExpirationDate ==
+                                            false ||
+                                        bloc.currentProduct
+                                                ?.useExpirationDate ==
+                                            0) &&
+                                    (bloc.configurations.result?.result
+                                            ?.manageExpirationDateWithoutLot ==
+                                        true)) {
+                                  //todo creamos el lote manual sin fecha y con el nombre de la fecha actual
+
+                                  bloc.newLoteController.text =
+                                      //la fecha actual sin separar los numeros
+                                      DateFormat('ddMMyyyyHHmmss')
+                                          .format(DateTime.now());
+
+                                  bloc.add(CreateLoteProduct(
+                                    bloc.newLoteController.text,
+                                    '',
+                                    false,
+                                  ));
+                                }
+
                                 setState(() {
                                   viewList = true;
                                 });
@@ -728,27 +790,6 @@ class _NewLoteScreenState extends State<NewLoteScreenDevolucion> {
                                   }
 
                                   if (context
-                                          .read<DevolucionesBloc>()
-                                          .newLoteController
-                                          .text
-                                          .isEmpty ||
-                                      context
-                                              .read<DevolucionesBloc>()
-                                              .newLoteController
-                                              .text ==
-                                          '') {
-                                    Get.snackbar(
-                                      'Error al crear lote',
-                                      'El nombre del lote no puede estar vacío',
-                                      backgroundColor: white,
-                                      colorText: primaryColorApp,
-                                      icon: Icon(Icons.error,
-                                          color: Colors.amber),
-                                    );
-                                    return;
-                                  }
-
-                                  if (context
                                               .read<DevolucionesBloc>()
                                               .currentProduct
                                               .useExpirationDate ==
@@ -779,6 +820,42 @@ class _NewLoteScreenState extends State<NewLoteScreenDevolucion> {
                                       return;
                                     }
                                   }
+                                  if (bloc.configurations.result?.result
+                                          ?.manageExpirationDateWithoutLot ==
+                                      false) {
+                                    if (context
+                                            .read<DevolucionesBloc>()
+                                            .newLoteController
+                                            .text
+                                            .isEmpty ||
+                                        context
+                                                .read<DevolucionesBloc>()
+                                                .newLoteController
+                                                .text ==
+                                            '') {
+                                      Get.snackbar(
+                                        'Error al crear lote',
+                                        'El nombre del lote no puede estar vacío',
+                                        backgroundColor: white,
+                                        colorText: primaryColorApp,
+                                        icon: Icon(Icons.error,
+                                            color: Colors.amber),
+                                      );
+                                      return;
+                                    }
+                                  } else {
+                                    bloc.newLoteController.text =
+                                        //la fecha seleccionada sin separar los numeros
+                                        DateFormat('ddMMyyyyHHmmss').format(
+                                            DateTime(
+                                                selectedDate!.year,
+                                                selectedDate!.month,
+                                                selectedDate!.day,
+                                                DateTime.now().hour,
+                                                DateTime.now().minute,
+                                                DateTime.now().second));
+                                  }
+
                                   //validacion que la fecha del lote no puede ser menor o igual la fecha actual
                                   if (selectedDate != null) {
                                     final now = DateTime.now();
@@ -806,18 +883,17 @@ class _NewLoteScreenState extends State<NewLoteScreenDevolucion> {
                                     }
                                   }
 
-                                  context
-                                      .read<DevolucionesBloc>()
-                                      .add(CreateLoteProduct(
-                                        context
-                                            .read<DevolucionesBloc>()
-                                            .newLoteController
-                                            .text,
-                                        context
-                                            .read<DevolucionesBloc>()
-                                            .dateLoteController
-                                            .text,
-                                      ));
+                                  context.read<DevolucionesBloc>().add(
+                                      CreateLoteProduct(
+                                          context
+                                              .read<DevolucionesBloc>()
+                                              .newLoteController
+                                              .text,
+                                          context
+                                              .read<DevolucionesBloc>()
+                                              .dateLoteController
+                                              .text,
+                                          false));
                                 },
                                 style: ElevatedButton.styleFrom(
                                     backgroundColor: primaryColorApp,

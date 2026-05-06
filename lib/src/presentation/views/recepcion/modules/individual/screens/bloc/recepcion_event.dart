@@ -149,7 +149,9 @@ class SendProductToOrder extends RecepcionEvent {
 class CreateLoteProduct extends RecepcionEvent {
   final String nameLote;
   final String fechaCaducidad;
-  CreateLoteProduct(this.nameLote, this.fechaCaducidad);
+  final bool priorityExpiration;
+  CreateLoteProduct(
+      this.nameLote, this.fechaCaducidad, this.priorityExpiration);
 }
 
 class StartOrStopTimeOrder extends RecepcionEvent {
