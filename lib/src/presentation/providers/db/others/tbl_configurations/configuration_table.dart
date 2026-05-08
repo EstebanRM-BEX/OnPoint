@@ -68,6 +68,11 @@ class ConfigurationsTable {
 //allow_move_excess_production
   static const String columnAllowMoveExcessProduction =
       'allow_move_excess_production';
+
+//show_button_validate_cluster_picking
+  static const String columnShowButtonValidateClusterPicking =
+      'show_button_validate_cluster_picking';
+
   static String createTable() {
     return '''
       CREATE TABLE $tableName (
@@ -116,6 +121,7 @@ class ConfigurationsTable {
         $columnAllowMoveExcessProduction INTEGER,
         $columnAllowPriorExpirationDate INTEGER,
         $columnManageExpirationDateWithoutLot INTEGER,
+        $columnShowButtonValidateClusterPicking INTEGER,
         $columnIsSynced INTEGER DEFAULT 0
       )
     ''';

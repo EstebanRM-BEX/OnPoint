@@ -134,6 +134,31 @@ class PermissionsWidget extends StatelessWidget {
                       ),
                       Row(
                         children: [
+                          const Text("Boton validar Picking cluster : ",
+                              style: TextStyle(fontSize: 14, color: black)),
+                          const Spacer(),
+                          Checkbox(
+                              value:
+                                  profile?.showButtonValidateClusterPicking ??
+                                      false,
+                              onChanged: null),
+                          IconButton(
+                              onPressed: () {
+                                showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return const DialogInfo(
+                                        title: "Boton validar Picking cluster",
+                                        body:
+                                            "Permite mostrar el botón de validar pedido en el proceso de cluster picking en la app",
+                                      );
+                                    });
+                              },
+                              icon: Icon(Icons.help, color: primaryColorApp))
+                        ],
+                      ),
+                      Row(
+                        children: [
                           const Text(
                               "Ocultar accion de validar\npicking por pedido : ",
                               style: TextStyle(fontSize: 14, color: black)),

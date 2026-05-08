@@ -34,6 +34,7 @@ class PackagesRepository {
               PackagesTable.columnConsecutivo: package.consecutivo,
               PackagesTable.columnTypePaquete: package.typePaquete,
               PackagesTable.columnPeso: package.peso,
+              PackagesTable.columnLocationDestName: package.locationDestName,
             },
             where: '${PackagesTable.columnId} = ?',
             whereArgs: [package.id],
@@ -54,6 +55,7 @@ class PackagesRepository {
               PackagesTable.columnConsecutivo: package.consecutivo,
               PackagesTable.columnTypePaquete: package.typePaquete,
               PackagesTable.columnPeso: package.peso,
+              PackagesTable.columnLocationDestName: package.locationDestName,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );

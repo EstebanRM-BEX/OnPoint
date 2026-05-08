@@ -22,7 +22,7 @@ abstract class PickingClusterRemoteDataSource {
       int batchId, String time, String endpoint, String field, int userid);
   Future<bool> timePickingBatch(
       int batchId, String time, String endpoint, String field, String field2);
-  Future<bool> validatePedido(int idPedido, int idLocation);
+  Future<bool> validatePedido(int idPedido, int idLocation, List<int> listItems);
 }
 
 @LazySingleton(as: PickingClusterRemoteDataSource)
@@ -207,10 +207,12 @@ class PickingClusterRemoteDataSourceImpl
   }
 
   @override
-  Future<bool> validatePedido(int idPedido, int idLocation) async {
+  Future<bool> validatePedido(
+      int idPedido, int idLocation, List<int> listItems) async {
     final Map<String, dynamic> params = {
       "id_pedido": idPedido,
       "id_location": idLocation,
+      "list_items": listItems.map((id) => {"id": id}).toList(),
     };
 
     final requestBody = {

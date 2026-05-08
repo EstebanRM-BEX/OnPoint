@@ -5,7 +5,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
-import 'package:wms_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
@@ -17,7 +16,6 @@ import 'package:wms_app/features/home/presentation/widgets/dialog_inventario_wid
 import 'package:wms_app/features/home/presentation/widgets/dialog_picking_componentes_widget.dart';
 import 'package:wms_app/features/home/presentation/widgets/dialog_picking_widget.dart';
 import 'package:wms_app/features/home/presentation/widgets/widget.dart';
-import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
 import 'package:wms_app/src/presentation/views/inventario/screens/bloc/inventario_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';

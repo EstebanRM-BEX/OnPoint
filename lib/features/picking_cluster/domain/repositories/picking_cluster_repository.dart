@@ -28,7 +28,7 @@ abstract class IPickingClusterRepository {
   Future<Either<Failure, bool>> timePickingBatch(
       int batchId, String time, String endpoint, String field, String field2);
 
-  Future<Either<Failure, bool>> validatePedido(int idPedido, int idLocation);
+  Future<Either<Failure, bool>> validatePedido(int idPedido, int idLocation, List<int> listItems);
 
   // ─── Local ───────────────────────────────────────────────────────────────
   Future<Either<Failure, List<PickingBatch>>> getCachedPickingBatches();

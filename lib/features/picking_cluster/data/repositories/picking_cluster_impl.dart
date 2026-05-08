@@ -105,10 +105,10 @@ class PickingClusterRepositoryImpl implements IPickingClusterRepository {
 
   @override
   Future<Either<Failure, bool>> validatePedido(
-      int idPedido, int idLocation) async {
+      int idPedido, int idLocation, List<int> listItems) async {
     try {
-      final result =
-          await remoteDataSource.validatePedido(idPedido, idLocation);
+      final result = await remoteDataSource.validatePedido(
+          idPedido, idLocation, listItems);
       return Right(result);
     } catch (e) {
       return Left(ServerFailure(e.toString()));

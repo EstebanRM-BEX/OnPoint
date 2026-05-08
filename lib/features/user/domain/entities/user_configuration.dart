@@ -66,6 +66,8 @@ class UserProfile {
   final bool? manualProductSelectionInventory;
   // manage_expiration_date_without_lot
   final bool? manageExpirationDateWithoutLot;
+  // show_button_validate_cluster_picking
+  final bool? showButtonValidateClusterPicking;
 
   const UserProfile({
     this.id,
@@ -113,6 +115,7 @@ class UserProfile {
     this.locationManualInventory,
     this.manualProductSelectionInventory,
     this.manageExpirationDateWithoutLot,
+    this.showButtonValidateClusterPicking,
   });
 
   @override
@@ -159,6 +162,7 @@ class UserProfile {
         locationManualInventory,
         manualProductSelectionInventory,
         manageExpirationDateWithoutLot,
+        showButtonValidateClusterPicking,
       ];
 }
 

@@ -208,6 +208,8 @@ class ConfigurationsRepository {
           _boolToInt(res?.allowPriorExpirationDate),
       ConfigurationsTable.columnManageExpirationDateWithoutLot:
           _boolToInt(res?.manageExpirationDateWithoutLot),
+      ConfigurationsTable.columnShowButtonValidateClusterPicking:
+          _boolToInt(res?.showButtonValidateClusterPicking),
       // ✅ Mark as synced
       ConfigurationsTable.columnIsSynced: 1,
     };
@@ -302,6 +304,8 @@ class ConfigurationsRepository {
               map[ConfigurationsTable.columnAllowPriorExpirationDate]),
           manageExpirationDateWithoutLot: _intToBool(
               map[ConfigurationsTable.columnManageExpirationDateWithoutLot]),
+          showButtonValidateClusterPicking: _intToBool(
+              map[ConfigurationsTable.columnShowButtonValidateClusterPicking]),
         ),
       ),
     );

@@ -296,8 +296,8 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                       });
                                       // Sincronizar con el bloc
                                       bloc.add(SelectPackageEvent(
-                                        packageIds: List<int>.from(
-                                            _selectedPackageIds),
+                                        packageIds:
+                                            List<int>.from(_selectedPackageIds),
                                       ));
                                     },
                                   ),
@@ -459,7 +459,7 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                               .configPacking ==
                                           'cluster')
                                         Text(
-                                          "Ubicación: ${package.locationDestName}",
+                                          "Ubicación: ${package.locationDestName == null ? 'Sin asignar' : package.locationDestName}",
                                           style: const TextStyle(
                                               fontSize: 12, color: black),
                                         ),
@@ -502,9 +502,9 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                                   context
                                                       .read<PackingPedidoBloc>()
                                                       .add(SelectPackageEvent(
-                                                        packageIds:
-                                                            List<int>.from(
-                                                                _selectedPackageIds),
+                                                        packageIds: List<
+                                                                int>.from(
+                                                            _selectedPackageIds),
                                                       ));
                                                 },
                                               ),
@@ -747,7 +747,7 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                                               children: <TextSpan>[
                                                                 const TextSpan(
                                                                   text:
-                                                                      "Cantidad empacada: ",
+                                                                      "Cant. empacada: ",
                                                                   style: TextStyle(
                                                                       fontSize:
                                                                           12,
@@ -842,8 +842,7 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                                             ),
                                                             children: <TextSpan>[
                                                               const TextSpan(
-                                                                  text:
-                                                                      "Unidades: ",
+                                                                  text: "UND: ",
                                                                   style: TextStyle(
                                                                       fontSize:
                                                                           12,

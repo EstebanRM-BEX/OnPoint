@@ -155,11 +155,13 @@ class MarkPedidoAsValidatedEvent extends ClusterPickingEvent {
   final int batchId;
   final String namePedido;
   final bool isValidated;
+  final List<int> listIdMove;
 
   const MarkPedidoAsValidatedEvent({
     required this.batchId,
     required this.namePedido,
     required this.isValidated,
+    required this.listIdMove,
   });
 
   @override

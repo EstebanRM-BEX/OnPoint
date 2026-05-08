@@ -4,6 +4,7 @@ import 'package:injectable/injectable.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../domain/entities/printer.dart';
 import '../../domain/entities/printer_report.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import '../../domain/usecases/get_printers.dart';
 import '../../domain/usecases/print_report.dart';
 
@@ -77,6 +78,8 @@ class PrintingBloc extends Bloc<PrintingEvent, PrintingState> {
 
     emit(PrintingInProgress());
 
+    final userId = await PrefUtils.getUserId();
+
     final result = await printReport(PrintReportParams(
       printerId: selectedPrinter!.printerId,
       name: selectedReport!.name,
@@ -84,6 +87,7 @@ class PrintingBloc extends Bloc<PrintingEvent, PrintingState> {
       model: selectedReport!.model,
       resId: event.resId,
       companyId: event.companyId,
+      userId: userId,
       copies: event.copies,
     ));
 

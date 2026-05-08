@@ -92,7 +92,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 27,
+      version: 29,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -187,7 +187,8 @@ class DataBaseSqlite {
     //* tabla de productos de un batch picking
     await db.execute('''
       CREATE TABLE tblbatch_products (
-        id INTEGER PRIMARY KEY,
+        row_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER,
         type TEXT,
         pedido TEXT,
         pedido_id INTEGER,
@@ -229,6 +230,7 @@ class DataBaseSqlite {
         fecha_transaccion VARCHAR(255),
         is_send_odoo INTEGER,
         is_send_odoo_date VARCHAR(255),
+        UNIQUE(id_product, batch_id, id_move),
         FOREIGN KEY (batch_id) REFERENCES tblbatchs (id)
           )
      ''');
@@ -374,6 +376,106 @@ class DataBaseSqlite {
         ''');
       } catch (e) {
         debugPrint("Error actualizando a v27 (ConfigurationsTable): $e");
+      }
+    }
+
+    if (oldVersion < 28) {
+      // Recrear tblbatch_products: quitar id como PRIMARY KEY,
+      // agregar row_id AUTOINCREMENT y UNIQUE(id_product, batch_id, id_move)
+      // para permitir productos con mismo id de Odoo pero distinto id_move
+      try {
+        await db.execute('''
+          CREATE TABLE tblbatch_products_new (
+            row_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER,
+            type TEXT,
+            pedido TEXT,
+            pedido_id INTEGER,
+            id_product INTEGER,
+            batch_id INTEGER,
+            expire_date VARCHAR(255),
+            product_id INTEGER,
+            picking_id TEXT,
+            lot_id TEXT,
+            lote_id INTEGER,
+            id_move INTEGER,
+            location_id TEXT,
+            location_dest_id TEXT,
+            id_location_dest INTEGER,
+            quantity INTEGER,
+            barcode TEXT,
+            rimoval_priority INTEGER,
+            barcode_location_dest TEXT,
+            barcode_location TEXT,
+            quantity_separate INTEGER,
+            is_selected INTEGER,
+            is_separate INTEGER,
+            is_pending INTEGER,
+            order_product INTEGER,
+            time_separate DECIMAL(10,2),
+            time_separate_start VARCHAR(255),
+            time_separate_end VARCHAR(255),
+            origin VARCHAR(255),
+            observation TEXT,
+            unidades TEXT,
+            weight INTEGER,
+            is_muelle INTEGER,
+            muelle_id INTEGER,
+            is_location_is_ok INTEGER,
+            product_tracking TEXT,
+            product_is_ok INTEGER,
+            is_quantity_is_ok INTEGER,
+            location_dest_is_ok INTEGER,
+            fecha_transaccion VARCHAR(255),
+            is_send_odoo INTEGER,
+            is_send_odoo_date VARCHAR(255),
+            UNIQUE(id_product, batch_id, id_move),
+            FOREIGN KEY (batch_id) REFERENCES tblbatchs (id)
+          )
+        ''');
+
+        await db.execute('''
+          INSERT INTO tblbatch_products_new (
+            id, type, pedido, pedido_id, id_product, batch_id, expire_date,
+            product_id, picking_id, lot_id, lote_id, id_move, location_id,
+            location_dest_id, id_location_dest, quantity, barcode, rimoval_priority,
+            barcode_location_dest, barcode_location, quantity_separate, is_selected,
+            is_separate, is_pending, order_product, time_separate, time_separate_start,
+            time_separate_end, origin, observation, unidades, weight, is_muelle,
+            muelle_id, is_location_is_ok, product_tracking, product_is_ok,
+            is_quantity_is_ok, location_dest_is_ok, fecha_transaccion,
+            is_send_odoo, is_send_odoo_date
+          )
+          SELECT
+            id, type, pedido, pedido_id, id_product, batch_id, expire_date,
+            product_id, picking_id, lot_id, lote_id, id_move, location_id,
+            location_dest_id, id_location_dest, quantity, barcode, rimoval_priority,
+            barcode_location_dest, barcode_location, quantity_separate, is_selected,
+            is_separate, is_pending, order_product, time_separate, time_separate_start,
+            time_separate_end, origin, observation, unidades, weight, is_muelle,
+            muelle_id, is_location_is_ok, product_tracking, product_is_ok,
+            is_quantity_is_ok, location_dest_is_ok, fecha_transaccion,
+            is_send_odoo, is_send_odoo_date
+          FROM tblbatch_products
+        ''');
+
+        await db.execute('DROP TABLE tblbatch_products');
+        await db.execute(
+            'ALTER TABLE tblbatch_products_new RENAME TO tblbatch_products');
+      } catch (e) {
+        debugPrint("Error actualizando a v28 (tblbatch_products): $e");
+      }
+    }
+    //para la version 29 show_button_validate_cluster_picking
+
+    if (oldVersion < 29) {
+      try {
+        await db.execute('''
+        ALTER TABLE tblconfigurations 
+        ADD COLUMN show_button_validate_cluster_picking INTEGER
+      ''');
+      } catch (e) {
+        debugPrint("Error actualizando a v29 (tblconfigurations): $e");
       }
     }
   }
@@ -559,7 +661,7 @@ class DataBaseSqlite {
             batch.insert(
               'tblbatch_products',
               data,
-              conflictAlgorithm: ConflictAlgorithm.replace,
+              conflictAlgorithm: ConflictAlgorithm.ignore,
             );
           }
         }

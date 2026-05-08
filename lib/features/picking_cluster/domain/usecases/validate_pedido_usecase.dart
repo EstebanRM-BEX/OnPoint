@@ -12,13 +12,19 @@ class ValidatePedidoUseCase implements UseCase<bool, ValidatePedidoParams> {
 
   @override
   Future<Either<Failure, bool>> call(ValidatePedidoParams params) async {
-    return await repository.validatePedido(params.idPedido, params.idLocation);
+    return await repository.validatePedido(
+        params.idPedido, params.idLocation, params.listItems);
   }
 }
 
 class ValidatePedidoParams {
   final int idPedido;
   final int idLocation;
+  final List<int> listItems;
 
-  ValidatePedidoParams({required this.idPedido, required this.idLocation});
+  ValidatePedidoParams({
+    required this.idPedido,
+    required this.idLocation,
+    required this.listItems,
+  });
 }

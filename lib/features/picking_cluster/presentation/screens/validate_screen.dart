@@ -57,10 +57,16 @@ class _ValidateScreenState extends State<ValidateScreen> {
 
     // ✅ Pedido encontrado → despachar evento y salir
     if (pedido.idPedido != null) {
+      final listIdMove = bloc.filteredProducts
+          .where((p) => p.pedidoId == pedido.idPedido)
+          .map((p) => p.idMove ?? 0)
+          .toList();
+
       bloc.add(MarkPedidoAsValidatedEvent(
         batchId: pedido.batchId ?? 0,
         namePedido: pedido.namePedido ?? '',
         isValidated: true,
+        listIdMove: listIdMove,
       ));
       Future.microtask(() => focusNodeBuscar.requestFocus());
       return;
@@ -223,6 +229,10 @@ class _ValidateScreenState extends State<ValidateScreen> {
                                     break;
                                   case 'salir':
                                     // Regresar al listado de batch
+                                    context
+                                        .read<ClusterPickingBloc>()
+                                        .add(FetchPickingClustersEvent());
+
                                     Navigator.pushReplacementNamed(
                                       context,
                                       'picking-cluster',
@@ -378,7 +388,17 @@ class _ValidateScreenState extends State<ValidateScreen> {
               ),
             ],
           ),
-          trailing: _buildTrailing(pedido, bloc),
+          trailing:
+              // (context
+              //             .read<ClusterPickingBloc>()
+              //             .configurations
+              //             .result
+              //             ?.result
+              //             ?.showButtonValidateClusterPicking ==
+              //         true)
+              //     ? _buildTrailing(pedido, products, bloc)
+              // : null,
+              _buildTrailing(pedido, products, bloc),
           children: [
             Container(
               color: white,
@@ -406,7 +426,8 @@ class _ValidateScreenState extends State<ValidateScreen> {
     );
   }
 
-  Widget _buildTrailing(PedidoValidate pedido, ClusterPickingBloc bloc) {
+  Widget _buildTrailing(PedidoValidate pedido, List<BatchProduct> products,
+      ClusterPickingBloc bloc) {
     final bool isValidated = pedido.isValidated ?? false;
 
     if (isValidated) {
@@ -455,6 +476,7 @@ class _ValidateScreenState extends State<ValidateScreen> {
                     batchId: pedido.batchId ?? 0,
                     namePedido: pedido.namePedido ?? '',
                     isValidated: true,
+                    listIdMove: products.map((p) => p.idMove ?? 0).toList(),
                   ));
                   Navigator.pop(context);
                 },
@@ -474,12 +496,6 @@ class _ValidateScreenState extends State<ValidateScreen> {
             ],
           ),
         );
-
-        // bloc.add(MarkPedidoAsValidatedEvent(
-        //   batchId: pedido.batchId ?? 0,
-        //   namePedido: pedido.namePedido ?? '',
-        //   isValidated: true,
-        // ));
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryColorApp,

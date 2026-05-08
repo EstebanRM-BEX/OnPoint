@@ -87,6 +87,8 @@ class UserProfileModel extends UserProfile {
     super.manualProductSelectionTransfer,
     super.allowPriorExpirationDate,
     super.manageExpirationDateWithoutLot,
+    // show_button_validate_cluster_picking
+    super.showButtonValidateClusterPicking,
   });
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
@@ -144,6 +146,8 @@ class UserProfileModel extends UserProfile {
       allowPriorExpirationDate: json['allow_prior_expiration_date'],
       manageExpirationDateWithoutLot:
           json['manage_expiration_date_without_lot'],
+      showButtonValidateClusterPicking:
+          json['show_button_validate_cluster_picking'],
     );
   }
 
@@ -196,6 +200,7 @@ class UserProfileModel extends UserProfile {
       'manual_product_selection_transfer': manualProductSelectionTransfer,
       'allow_prior_expiration_date': allowPriorExpirationDate,
       "manage_expiration_date_without_lot": manageExpirationDateWithoutLot,
+      "show_button_validate_cluster_picking": showButtonValidateClusterPicking,
     };
   }
 }

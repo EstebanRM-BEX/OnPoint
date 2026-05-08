@@ -948,6 +948,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         consecutivo: responsePacking.result?.result?[0].consecutivo ?? 0,
         typePaquete: event.packagingType.name,
         peso: event.peso,
+        locationDestName: currentPedidoPack.locationDestName ?? '',
       );
 
       packages.add(paquete);

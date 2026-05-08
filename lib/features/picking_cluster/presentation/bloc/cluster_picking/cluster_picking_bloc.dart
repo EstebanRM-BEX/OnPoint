@@ -1076,7 +1076,13 @@ class ClusterPickingBloc
   void _onMarkPedidoAsValidated(MarkPedidoAsValidatedEvent event,
       Emitter<ClusterPickingState> emit) async {
     try {
-      // 1. Obtener los ids del pedido y la ubicación para validar con el backend
+      print("📦 EventoMarkPedidoAsValidated recibido:");
+      print("  - batchId: ${event.batchId}");
+      print("  - namePedido: ${event.namePedido}");
+      print("  - isValidated: ${event.isValidated}");
+      print("  - listIdMove: ${event.listIdMove.length}");
+
+      // // 1. Obtener los ids del pedido y la ubicación para validar con el backend
       final pedidoToValidate = pedidosValidate.firstWhere(
         (p) => p.namePedido == event.namePedido,
         orElse: () => const PedidoValidate(),
@@ -1087,6 +1093,7 @@ class ClusterPickingBloc
           idPedido: pedidoToValidate.idPedido ?? 0,
           idLocation: pedidoToValidate.idMuelle ??
               0, // idMuelle es lo pedido como idLocation
+          listItems: event.listIdMove,
         ),
       );
 
