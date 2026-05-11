@@ -71,6 +71,7 @@ class ResultUbicaciones {
   String? locationName;
   int? idWarehouse;
   String? warehouseName;
+  bool? isADockAlter;
 
   ResultUbicaciones({
     this.id,
@@ -80,6 +81,7 @@ class ResultUbicaciones {
     this.locationName,
     this.idWarehouse,
     this.warehouseName,
+    this.isADockAlter,
   });
 
   factory ResultUbicaciones.fromMap(Map<String, dynamic> json) =>
@@ -91,6 +93,8 @@ class ResultUbicaciones {
         locationName: json["location_name"],
         idWarehouse: json["id_warehouse"],
         warehouseName: json["warehouse_name"],
+        //is_a_dock_alter
+        isADockAlter: json["is_a_dock_alter"],
       );
 
   Map<String, dynamic> toMap() => {
@@ -101,5 +105,6 @@ class ResultUbicaciones {
         "location_name": locationName,
         "id_warehouse": idWarehouse,
         "warehouse_name": warehouseName,
+        "is_a_dock_alter": isADockAlter,
       };
 }

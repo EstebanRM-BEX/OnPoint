@@ -694,7 +694,7 @@ class Tab1ScreenRecep extends StatelessWidget {
                                           //cerrar el dialogo y abrir el de la impresion
                                           Navigator.pop(context);
                                           ModalPrintersList.show(context,
-                                              resId: ordeCompraBd.id,
+                                              resIds: [ordeCompraBd.id],
                                               companyId:
                                                   ordeCompraBd.warehouseId ??
                                                       1);

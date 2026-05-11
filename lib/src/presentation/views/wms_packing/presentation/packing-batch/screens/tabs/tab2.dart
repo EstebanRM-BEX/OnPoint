@@ -524,8 +524,10 @@ class _Tab2ScreenState extends State<Tab2Screen> {
                                                           onTap: () {
                                                             ModalPrintersList
                                                                 .show(context,
-                                                                    resId: product
-                                                                        .idMove,
+                                                                    resIds: [
+                                                                      product
+                                                                          .idMove
+                                                                    ],
                                                                     companyId:
                                                                         1);
                                                           },

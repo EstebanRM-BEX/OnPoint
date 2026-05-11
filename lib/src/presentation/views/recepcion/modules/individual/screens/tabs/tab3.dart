@@ -472,7 +472,7 @@ class Tab3ScreenRecep extends StatelessWidget {
                                                 onTap: () {
                                                   ModalPrintersList.show(
                                                       context,
-                                                      resId: product.idMove,
+                                                      resIds: [product.idMove],
                                                       companyId: ordenCompra
                                                               ?.warehouseId ??
                                                           1);

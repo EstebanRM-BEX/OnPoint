@@ -53,7 +53,7 @@ class PrintingRepositoryImpl implements PrintingRepository {
     required String name,
     required String reportName,
     required String model,
-    required int resId,
+    required List<int> resIds,
     required int companyId,
     required int userId,
     int copies = 1,
@@ -72,8 +72,8 @@ class PrintingRepositoryImpl implements PrintingRepository {
               "report_name": reportName,
               "context": {
                 "active_model": model,
-                "active_ids": [resId],
-                "active_id": resId,
+                "active_ids": resIds,
+                "active_id": resIds.first,
                 "allowed_company_ids": [companyId],
                 "printer_id": printerId
               }

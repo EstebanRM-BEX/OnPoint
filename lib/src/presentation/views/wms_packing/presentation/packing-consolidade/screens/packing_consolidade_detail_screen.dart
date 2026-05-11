@@ -113,7 +113,7 @@ class _PackingDetailScreenState extends State<PackingConsolidateDetailScreen>
                   ),
                   onPressed: () {
                     ModalPrintersList.show(context,
-                        resId: widget.packingModel?.id, companyId: 1);
+                        resIds: [widget.packingModel?.id], companyId: 1);
                   },
                 ),
               ],

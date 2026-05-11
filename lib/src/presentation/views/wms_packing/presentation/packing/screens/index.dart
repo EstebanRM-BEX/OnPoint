@@ -242,8 +242,8 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
 
                                           setState(() => _isProcessing = true);
                                           try {
-                                            await DataBaseSqlite()
-                                                .delePacking('packing-pack');
+                                            // await DataBaseSqlite()
+                                            //     .delePacking('packing-pack');
                                             context
                                                 .read<PackingPedidoBloc>()
                                                 .add(LoadAllPackingPedidoEvent(

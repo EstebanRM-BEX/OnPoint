@@ -92,7 +92,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 29,
+      version: 30,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -476,6 +476,17 @@ class DataBaseSqlite {
       ''');
       } catch (e) {
         debugPrint("Error actualizando a v29 (tblconfigurations): $e");
+      }
+    }
+
+    if (oldVersion < 30) {
+      try {
+        await db.execute('''
+        ALTER TABLE tblUbicaciones 
+        ADD COLUMN is_a_dock_alter INTEGER
+      ''');
+      } catch (e) {
+        debugPrint("Error actualizando a v30 (tblUbicaciones): $e");
       }
     }
   }

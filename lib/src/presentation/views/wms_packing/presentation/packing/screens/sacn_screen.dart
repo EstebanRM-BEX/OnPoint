@@ -428,8 +428,10 @@ class _PackingScreenState extends State<ScanPackScreen> {
                                         GestureDetector(
                                           onTap: () {
                                             ModalPrintersList.show(context,
-                                                resId: packingBloc
-                                                    .currentProduct.idMove,
+                                                resIds: [
+                                                  packingBloc
+                                                      .currentProduct.idMove
+                                                ],
                                                 companyId: 1);
                                           },
                                           child: Icon(

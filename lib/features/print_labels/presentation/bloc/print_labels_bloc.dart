@@ -22,6 +22,7 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
   TextEditingController rangeEndController = TextEditingController();
 
   List<ResultUbicaciones> ubicacionesRange = [];
+  List<Product> productosSelected = [];
 
   DataBaseSqlite db = DataBaseSqlite();
 
@@ -34,6 +35,8 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
     on<SearchRangeLocationEvent>(_onSearchRangeLocationEvent);
     on<RemoveRangeLocationEvent>(_onRemoveRangeLocationEvent);
     on<AddRangeLocationEvent>(_onAddRangeLocationEvent);
+    on<AddSelectedProductEvent>(_onAddSelectedProductEvent);
+    on<RemoveSelectedProductEvent>(_onRemoveSelectedProductEvent);
   }
 
   void _onLoadLocations(
@@ -162,13 +165,28 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
 
   void _onAddRangeLocationEvent(
       AddRangeLocationEvent event, Emitter<PrintLabelsState> emit) {
-    final alreadyAdded =
-        ubicacionesRange.any((l) => l.id == event.location.id);
+    final alreadyAdded = ubicacionesRange.any((l) => l.id == event.location.id);
     if (!alreadyAdded) {
       ubicacionesRange = [...ubicacionesRange, event.location];
-      ubicacionesRange
-          .sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
+      ubicacionesRange.sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
     }
     emit(SearchRangeLocationSuccess(ubicacionesRange));
+  }
+
+  void _onAddSelectedProductEvent(
+      AddSelectedProductEvent event, Emitter<PrintLabelsState> emit) {
+    final alreadyAdded = productosSelected.any((p) => p.productId == event.product.productId);
+    if (!alreadyAdded) {
+      productosSelected = [...productosSelected, event.product];
+      productosSelected.sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
+    }
+    emit(SearchProductSuccess(productosFilters));
+  }
+
+  void _onRemoveSelectedProductEvent(
+      RemoveSelectedProductEvent event, Emitter<PrintLabelsState> emit) {
+    productosSelected =
+        productosSelected.where((p) => p.productId != event.productId).toList();
+    emit(SearchProductSuccess(productosFilters));
   }
 }

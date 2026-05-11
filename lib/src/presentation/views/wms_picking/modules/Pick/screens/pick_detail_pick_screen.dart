@@ -128,7 +128,9 @@ class PickDetailScreen extends StatelessWidget {
                                   GestureDetector(
                                     onTap: () {
                                       ModalPrintersList.show(context,
-                                          resId: bloc.pickWithProducts.pick?.id,
+                                          resIds: [
+                                            bloc.pickWithProducts.pick?.id
+                                          ],
                                           companyId: 1);
                                     },
                                     child: Icon(
@@ -750,12 +752,13 @@ class PickDetailScreen extends StatelessWidget {
                                                       const Spacer(),
                                                       GestureDetector(
                                                         onTap: () {
-                                                          ModalPrintersList.show(
-                                                              context,
-                                                              resId:
-                                                                  productsBatch
-                                                                      .id,
-                                                              companyId: 1);
+                                                          ModalPrintersList
+                                                              .show(context,
+                                                                  resIds: [
+                                                                    productsBatch
+                                                                        .id
+                                                                  ],
+                                                                  companyId: 1);
                                                         },
                                                         child: Icon(
                                                           Icons.print,

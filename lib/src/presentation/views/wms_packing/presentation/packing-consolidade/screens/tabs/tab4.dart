@@ -370,7 +370,7 @@ class Tab4Screen extends StatelessWidget {
                                                 onTap: () {
                                                   ModalPrintersList.show(
                                                       context,
-                                                      resId: product.idMove,
+                                                      resIds: [product.idMove],
                                                       companyId: 1);
                                                 },
                                                 child: Icon(

@@ -7,22 +7,30 @@ import '../../domain/entities/printer_report.dart';
 import '../bloc/printing_bloc.dart';
 
 class ModalPrintersList extends StatefulWidget {
-  final dynamic resId;
+  final List<dynamic> resIds;
   final String? model;
   final dynamic companyId;
 
-  const ModalPrintersList(
-      {super.key, this.resId, this.model, required this.companyId});
+  const ModalPrintersList({
+    super.key,
+    required this.resIds,
+    this.model,
+    required this.companyId,
+  });
 
-  static Future<void> show(BuildContext context,
-      {dynamic resId, String? model, required dynamic companyId}) {
+  static Future<void> show(
+    BuildContext context, {
+    required List<dynamic> resIds,
+    String? model,
+    required dynamic companyId,
+  }) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (context) =>
-          ModalPrintersList(resId: resId, model: model, companyId: companyId),
+          ModalPrintersList(resIds: resIds, model: model, companyId: companyId),
     );
   }
 
@@ -38,7 +46,6 @@ class _ModalPrintersListState extends State<ModalPrintersList> {
     super.initState();
     context.read<PrintingBloc>().add(LoadPrintersEvent());
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -117,8 +124,8 @@ class _ModalPrintersListState extends State<ModalPrintersList> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Row(
                       children: [
                         const Icon(Icons.copy_outlined,
@@ -192,14 +199,11 @@ class _ModalPrintersListState extends State<ModalPrintersList> {
                                   ? state.printers
                                   : (state is PrintSuccess)
                                       ? state.printers
-                                      : context
-                                          .read<PrintingBloc>()
-                                          .printers;
+                                      : context.read<PrintingBloc>().printers;
 
                           if (printerList.isEmpty) {
                             return const Center(
-                                child:
-                                    Text('No hay impresoras disponibles'));
+                                child: Text('No hay impresoras disponibles'));
                           }
 
                           return ListView.builder(
@@ -210,7 +214,7 @@ class _ModalPrintersListState extends State<ModalPrintersList> {
                               final printer = printerList[index];
                               return _PrinterExpansionTile(
                                 printer: printer,
-                                resId: widget.resId,
+                                resIds: widget.resIds,
                                 model: widget.model,
                                 companyId: widget.companyId,
                                 copies: _copies,
@@ -234,14 +238,14 @@ class _ModalPrintersListState extends State<ModalPrintersList> {
 
 class _PrinterExpansionTile extends StatelessWidget {
   final Printer printer;
-  final dynamic resId;
+  final List<dynamic> resIds;
   final String? model;
   final dynamic companyId;
   final int copies;
 
   const _PrinterExpansionTile({
     required this.printer,
-    this.resId,
+    required this.resIds,
     this.model,
     required this.companyId,
     required this.copies,
@@ -275,7 +279,7 @@ class _PrinterExpansionTile extends StatelessWidget {
           return _ReportTile(
             printer: printer,
             report: report,
-            resId: resId,
+            resIds: resIds,
             model: model,
             companyId: companyId,
             copies: copies,
@@ -289,7 +293,7 @@ class _PrinterExpansionTile extends StatelessWidget {
 class _ReportTile extends StatelessWidget {
   final Printer printer;
   final PrinterReport report;
-  final dynamic resId;
+  final List<dynamic> resIds;
   final String? model;
   final dynamic companyId;
   final int copies;
@@ -297,7 +301,7 @@ class _ReportTile extends StatelessWidget {
   const _ReportTile({
     required this.printer,
     required this.report,
-    this.resId,
+    required this.resIds,
     this.model,
     required this.companyId,
     required this.copies,
@@ -336,7 +340,7 @@ class _ReportTile extends StatelessWidget {
                             .read<PrintingBloc>()
                             .add(SelectReportEvent(report));
                         context.read<PrintingBloc>().add(ExecutePrintEvent(
-                            resId: int.parse(resId.toString()),
+                            resIds: List<int>.from(resIds),
                             companyId: int.parse(companyId.toString()),
                             copies: copies));
                         print(printer.hostmachine);

@@ -118,10 +118,12 @@ class DetailClusterScreen extends StatelessWidget {
                                 GestureDetector(
                                   onTap: () {
                                     ModalPrintersList.show(context,
-                                        resId: context
-                                            .read<ClusterPickingBloc>()
-                                            .currentBatch
-                                            ?.id,
+                                        resIds: [
+                                          context
+                                              .read<ClusterPickingBloc>()
+                                              .currentBatch
+                                              ?.id
+                                        ],
                                         companyId: 1);
                                   },
                                   child: Icon(
@@ -629,8 +631,9 @@ class DetailClusterScreen extends StatelessWidget {
                                                   onTap: () {
                                                     ModalPrintersList.show(
                                                         context,
-                                                        resId: productsBatch
-                                                            .idMove,
+                                                        resIds: [
+                                                          productsBatch.idMove
+                                                        ],
                                                         companyId: 1);
                                                   },
                                                   child: Icon(

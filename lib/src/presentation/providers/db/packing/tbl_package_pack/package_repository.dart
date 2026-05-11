@@ -279,4 +279,22 @@ class PackagesRepository {
       whereArgs: [package.id],
     );
   }
+
+  // Elimina todos los paquetes de un pedido específico
+  Future<int> deletePackagesByPedidoId(int pedidoId, String type) async {
+    try {
+      Database db = await DataBaseSqlite().getDatabaseInstance();
+      final int result = await db.delete(
+        PackagesTable.tableName,
+        where:
+            '${PackagesTable.columnPedidoId} = ? AND ${PackagesTable.columnType} = ?',
+        whereArgs: [pedidoId, type],
+      );
+      debugPrint('🗑️ Paquetes eliminados del pedido $pedidoId: $result');
+      return result;
+    } catch (e, s) {
+      debugPrint('Error deletePackagesByPedidoId: $e ==> $s');
+      return 0;
+    }
+  }
 }

@@ -6,7 +6,9 @@ import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously, unnecessary_null_comparison
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
+import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -446,12 +448,20 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
                                                   debugPrint(
                                                       "Producto seleccionado: ${product.toMap()}");
                                                   // validamos si este articulo se encuentra en la lista de productos preparados
-                                                  if (context
-                                                      .read<PackingPedidoBloc>()
-                                                      .productsDone
-                                                      .any((doneProduct) =>
-                                                          doneProduct.idMove ==
-                                                          product.idMove)) {
+                                                  // Los duplicados (isProductSplit==1) comparten idMove con el original certificado,
+                                                  // por eso se excluyen del bloqueo — ellos aún están pendientes de separar.
+                                                  final bool esDuplicado =
+                                                      product.isProductSplit ==
+                                                          1;
+                                                  if (!esDuplicado &&
+                                                      context
+                                                          .read<
+                                                              PackingPedidoBloc>()
+                                                          .productsDone
+                                                          .any((doneProduct) =>
+                                                              doneProduct
+                                                                  .idMove ==
+                                                              product.idMove)) {
                                                     // Mostramos el error
                                                     ScaffoldMessenger.of(
                                                             context)
@@ -551,12 +561,16 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
                                                         ),
                                                       ],
                                                     ),
-                                                    Text(
-                                                      "${product.locationId}",
-                                                      style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: black,
-                                                      ),
+                                                    Row(
+                                                      children: [
+                                                        Text(
+                                                          "${product.locationId}",
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: black,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
                                                     Row(
                                                       children: [
@@ -581,8 +595,10 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
                                                           onTap: () {
                                                             ModalPrintersList
                                                                 .show(context,
-                                                                    resId: product
-                                                                        .idMove,
+                                                                    resIds: [
+                                                                      product
+                                                                          .idMove
+                                                                    ],
                                                                     companyId:
                                                                         1);
                                                           },

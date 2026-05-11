@@ -18,7 +18,7 @@ class PrintReport implements UseCase<bool, PrintReportParams> {
       name: params.name,
       reportName: params.reportName,
       model: params.model,
-      resId: params.resId,
+      resIds: params.resIds,
       companyId: params.companyId,
       userId: params.userId,
       copies: params.copies,
@@ -35,7 +35,7 @@ class PrintReportParams extends Equatable {
   final String name;
   final String reportName;
   final String model;
-  final int resId;
+  final List<int> resIds;
   final int companyId;
   final int userId;
   final int copies;
@@ -45,7 +45,7 @@ class PrintReportParams extends Equatable {
     required this.name,
     required this.reportName,
     required this.model,
-    required this.resId,
+    required this.resIds,
     required this.companyId,
     required this.userId,
     this.copies = 1,
@@ -53,5 +53,5 @@ class PrintReportParams extends Equatable {
 
   @override
   List<Object?> get props =>
-      [printerId, name, reportName, model, resId, companyId, userId, copies];
+      [printerId, name, reportName, model, resIds, companyId, userId, copies];
 }

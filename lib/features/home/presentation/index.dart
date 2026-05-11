@@ -38,6 +38,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
+  final PageController _modulePageController = PageController();
+  int _currentModulePage = 0;
   bool _isExpanded = true;
   @override
   void initState() {
@@ -138,7 +140,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       onWillPop: () async {
         return false;
       },
-
       child: BlocListener<HomeBloc, HomeState>(
         listener: (context, state) {
           if (state is HomeLoadErrorState) {
@@ -391,554 +392,506 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         ),
                         // const SizedBox(height: 20),
                         Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                            ),
-                            width: size.width,
-                            // height: size.height * 0.5,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                //resumen de datos
-                                Card(
-                                  elevation: 3,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(15)),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(5.0),
-                                    child: Column(
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Icon(Icons.storage,
-                                                    color: primaryColorApp,
-                                                    size: 12),
-                                                const SizedBox(width: 8),
-                                                Text('Resumen de Datos',
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 12,
-                                                        color:
-                                                            primaryColorApp)),
-                                              ],
-                                            ),
-                                            GestureDetector(
-                                              onTap: () {
-                                                setState(() {
-                                                  _isExpanded = !_isExpanded;
-                                                });
-                                              },
-                                              child: Icon(
-                                                _isExpanded
-                                                    ? Icons.expand_less
-                                                    : Icons.expand_more,
-                                                color: primaryColorApp,
-                                                size: 18,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        if (_isExpanded) ...[
-                                          const Divider(),
-                                          BlocBuilder<dev_bloc.DevolucionesBloc,
-                                              dev_bloc.DevolucionesState>(
-                                            builder: (context, state) {
-                                              final bloc = context.read<
-                                                  dev_bloc.DevolucionesBloc>();
-                                              return _buildInfoItem(
-                                                icon: Icons.people,
-                                                label: 'Terceros',
-                                                count: bloc.tercerosCount,
-                                                isLoading: state is dev_bloc
-                                                        .DownloadAllTercerosLoading ||
-                                                    state is dev_bloc
-                                                        .LoadTercerosFromDBLoading,
-                                              );
-                                            },
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                          ),
+                          width: size.width,
+                          // height: size.height * 0.5,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              //resumen de datos
+                              Card(
+                                elevation: 3,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15)),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(5.0),
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Icon(Icons.storage,
+                                                  color: primaryColorApp,
+                                                  size: 12),
+                                              const SizedBox(width: 8),
+                                              Text('Resumen de Datos',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 12,
+                                                      color: primaryColorApp)),
+                                            ],
                                           ),
-                                          BlocBuilder<InventarioBloc,
-                                              InventarioState>(
-                                            builder: (context, state) {
-                                              final bloc = context
-                                                  .read<InventarioBloc>();
-                                              return _buildInfoItem(
-                                                icon: Icons.inventory_2,
-                                                label: 'Productos',
-                                                count: bloc.productosCount,
-                                                // PROTECCIÓN CONTRA RACE CONDITIONS:
-                                                // Usamos la propiedad persistente en vez del estado transitorio
-                                                isLoading: bloc.isLoading ||
-                                                    state
-                                                        is GetProductsLoadingInventory ||
-                                                    state
-                                                        is GetProductsLoadingBD,
-                                              );
+                                          GestureDetector(
+                                            onTap: () {
+                                              setState(() {
+                                                _isExpanded = !_isExpanded;
+                                              });
                                             },
-                                          ),
-                                          BlocBuilder<UserBloc, UserState>(
-                                            builder: (context, state) {
-                                              final bloc =
-                                                  context.read<UserBloc>();
-                                              return Column(
-                                                children: [
-                                                  _buildInfoItem(
-                                                    icon: Icons.location_on,
-                                                    label: 'Ubicaciones',
-                                                    count: bloc.locationsCount,
-                                                    isLoading: state
-                                                        is UserLocationsLoading,
-                                                  ),
-                                                  _buildInfoItem(
-                                                    icon: Icons.new_releases,
-                                                    label: 'Novedades',
-                                                    count: bloc.noveltiesCount,
-                                                    isLoading: state
-                                                        is UserNoveltiesLoading,
-                                                  )
-                                                ],
-                                              );
-                                            },
+                                            child: Icon(
+                                              _isExpanded
+                                                  ? Icons.expand_less
+                                                  : Icons.expand_more,
+                                              color: primaryColorApp,
+                                              size: 18,
+                                            ),
                                           ),
                                         ],
+                                      ),
+                                      if (_isExpanded) ...[
+                                        const Divider(),
+                                        BlocBuilder<dev_bloc.DevolucionesBloc,
+                                            dev_bloc.DevolucionesState>(
+                                          builder: (context, state) {
+                                            final bloc = context.read<
+                                                dev_bloc.DevolucionesBloc>();
+                                            return _buildInfoItem(
+                                              icon: Icons.people,
+                                              label: 'Terceros',
+                                              count: bloc.tercerosCount,
+                                              isLoading: state is dev_bloc
+                                                      .DownloadAllTercerosLoading ||
+                                                  state is dev_bloc
+                                                      .LoadTercerosFromDBLoading,
+                                            );
+                                          },
+                                        ),
+                                        BlocBuilder<InventarioBloc,
+                                            InventarioState>(
+                                          builder: (context, state) {
+                                            final bloc =
+                                                context.read<InventarioBloc>();
+                                            return _buildInfoItem(
+                                              icon: Icons.inventory_2,
+                                              label: 'Productos',
+                                              count: bloc.productosCount,
+                                              // PROTECCIÓN CONTRA RACE CONDITIONS:
+                                              // Usamos la propiedad persistente en vez del estado transitorio
+                                              isLoading: bloc.isLoading ||
+                                                  state
+                                                      is GetProductsLoadingInventory ||
+                                                  state is GetProductsLoadingBD,
+                                            );
+                                          },
+                                        ),
+                                        BlocBuilder<UserBloc, UserState>(
+                                          builder: (context, state) {
+                                            final bloc =
+                                                context.read<UserBloc>();
+                                            return Column(
+                                              children: [
+                                                _buildInfoItem(
+                                                  icon: Icons.location_on,
+                                                  label: 'Ubicaciones',
+                                                  count: bloc.locationsCount,
+                                                  isLoading: state
+                                                      is UserLocationsLoading,
+                                                ),
+                                                _buildInfoItem(
+                                                  icon: Icons.new_releases,
+                                                  label: 'Novedades',
+                                                  count: bloc.noveltiesCount,
+                                                  isLoading: state
+                                                      is UserNoveltiesLoading,
+                                                )
+                                              ],
+                                            );
+                                          },
+                                        ),
                                       ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              // ── Módulos deslizables (estilo home de celular) ──
+                              SizedBox(
+                                height: 340,
+                                child: PageView(
+                                  controller: _modulePageController,
+                                  onPageChanged: (index) {
+                                    setState(() => _currentModulePage = index);
+                                  },
+                                  children: [
+                                    // ── Página 1: Los 9 módulos ──
+                                    Wrap(
+                                      alignment: WrapAlignment.center,
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () async {
+                                            final String rol =
+                                                await PrefUtils.getUserRol();
+                                            if (rol == 'picking' ||
+                                                rol == 'admin') {
+                                              context
+                                                  .read<BatchBloc>()
+                                                  .add(LoadAllNovedadesEvent());
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      DialogPicking(
+                                                          contextHome:
+                                                              context));
+                                            } else if (rol == '' ||
+                                                rol == null) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(const SnackBar(
+                                                      content: Text(
+                                                          'Cargue la configuración de su usuario'),
+                                                      duration: Duration(
+                                                          seconds: 4)));
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(const SnackBar(
+                                                      content: Text(
+                                                          'Su usuario no tiene permisos para acceder a este módulo'),
+                                                      duration: Duration(
+                                                          seconds: 4)));
+                                            }
+                                          },
+                                          child: ImteModule(
+                                              urlImg: 'picking.svg',
+                                              title: 'Picking'),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () async {
+                                            final String rol =
+                                                await PrefUtils.getUserRol();
+                                            if (rol == 'packing' ||
+                                                rol == 'admin') {
+                                              context.read<WmsPackingBloc>().add(
+                                                  LoadAllNovedadesPackingEvent());
+                                              context
+                                                  .read<PackingPedidoBloc>()
+                                                  .add(
+                                                      LoadAllNovedadesPackEvent());
+                                              context
+                                                  .read<
+                                                      PackingConsolidateBloc>()
+                                                  .add(
+                                                      LoadAllNovedadesPackingConsolidateEvent());
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      DialogPacking(
+                                                          contextHome:
+                                                              context));
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(const SnackBar(
+                                                      content: Text(
+                                                          'Su usuario no tiene permisos para acceder a este módulo'),
+                                                      duration: Duration(
+                                                          seconds: 4)));
+                                            }
+                                          },
+                                          child: ImteModule(
+                                              urlImg: 'packing.svg',
+                                              title: 'Packing'),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () async {
+                                            final rol = context
+                                                .read<HomeBloc>()
+                                                .userRol;
+                                            if (rol == 'reception' ||
+                                                rol == 'admin') {
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      DialogDevoluciones(
+                                                          contextHome:
+                                                              context));
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(const SnackBar(
+                                                      content: Text(
+                                                          'Su usuario no tiene permisos para acceder a este módulo'),
+                                                      duration: Duration(
+                                                          seconds: 2)));
+                                            }
+                                          },
+                                          child: ImteModule(
+                                              urlImg: 'devoluciones.svg',
+                                              title: 'Devoluciones'),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () async {
+                                            final rol = context
+                                                .read<HomeBloc>()
+                                                .userRol;
+                                            if (rol == 'reception' ||
+                                                rol == 'admin') {
+                                              context
+                                                  .read<RecepcionBloc>()
+                                                  .add(GetLocationsDestEvent());
+                                              context.read<RecepcionBloc>().add(
+                                                  LoadAllNovedadesOrderEvent());
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      const DialogLoading(
+                                                          message:
+                                                              'Cargando recepciones...'));
+                                              await Future.delayed(
+                                                  const Duration(seconds: 1));
+                                              Navigator.pop(context);
+                                              Navigator.pushReplacementNamed(
+                                                  context,
+                                                  'list-ordenes-compra');
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(const SnackBar(
+                                                      content: Text(
+                                                          'Su usuario no tiene permisos para acceder a este módulo'),
+                                                      duration: Duration(
+                                                          seconds: 2)));
+                                            }
+                                          },
+                                          child: ImteModule(
+                                              urlImg: 'recepcion.svg',
+                                              title: 'Recepción'),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () async {
+                                            final rol = context
+                                                .read<HomeBloc>()
+                                                .userRol;
+                                            if (rol == 'transfer' ||
+                                                rol == 'admin') {
+                                              if (context
+                                                  .read<UserBloc>()
+                                                  .ubicaciones
+                                                  .isEmpty) {
+                                                context.read<UserBloc>().add(
+                                                    LoadUserLocationsEvent());
+                                              }
+                                              context.read<TransferenciaBloc>().add(
+                                                  LoadAllNovedadesTransferEvent());
+                                              context
+                                                  .read<TransferenciaBloc>()
+                                                  .add(LoadLocations());
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      const DialogLoading(
+                                                          message:
+                                                              'Cargando interfaz...'));
+                                              await Future.delayed(
+                                                  const Duration(seconds: 1));
+                                              Navigator.pop(context);
+                                              Navigator.pushReplacementNamed(
+                                                  context, 'transferencias');
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(const SnackBar(
+                                                      content: Text(
+                                                          'Su usuario no tiene permisos para acceder a este módulo'),
+                                                      duration: Duration(
+                                                          seconds: 4)));
+                                            }
+                                          },
+                                          child: ImteModule(
+                                              urlImg: 'transferencia.svg',
+                                              title: 'Transferencia'),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () async {
+                                            final rol = context
+                                                .read<HomeBloc>()
+                                                .userRol;
+                                            if (rol == 'inventory' ||
+                                                rol == 'admin') {
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      DialogInventario(
+                                                          contextHome:
+                                                              context));
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(const SnackBar(
+                                                      content: Text(
+                                                          'Su usuario no tiene permisos para acceder a este módulo'),
+                                                      duration: Duration(
+                                                          seconds: 4)));
+                                            }
+                                          },
+                                          child: ImteModule(
+                                              urlImg: 'inventario.svg',
+                                              title: 'Inventario'),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () async {
+                                            final homeConfig = context
+                                                .read<HomeBloc>()
+                                                .configurations
+                                                .result
+                                                ?.result;
+                                            final userConfig = context
+                                                .read<UserBloc>()
+                                                .configurations;
+                                            final hasAccess = homeConfig
+                                                    ?.accessProductionModule ??
+                                                userConfig
+                                                    ?.accessProductionModule ??
+                                                false;
+                                            if (hasAccess) {
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      DialogPickingComponentes(
+                                                          contextHome:
+                                                              context));
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(const SnackBar(
+                                                      content: Text(
+                                                          'Su usuario no tiene permisos para acceder a este módulo'),
+                                                      duration: Duration(
+                                                          seconds: 4)));
+                                            }
+                                          },
+                                          child: ImteModule(
+                                              urlImg: 'pc.svg',
+                                              title: 'Picking\nComponentes'),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () async {
+                                            final homeConfig = context
+                                                .read<HomeBloc>()
+                                                .configurations
+                                                .result
+                                                ?.result;
+                                            final userConfig = context
+                                                .read<UserBloc>()
+                                                .configurations;
+                                            final hasAccess = homeConfig
+                                                    ?.accessProductionModule ??
+                                                userConfig
+                                                    ?.accessProductionModule ??
+                                                false;
+                                            if (hasAccess) {
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      const DialogLoading(
+                                                          message:
+                                                              'Cargando entrega de productos...'));
+                                              await Future.delayed(
+                                                  const Duration(seconds: 1));
+                                              Navigator.pop(context);
+                                              Navigator.pushReplacementNamed(
+                                                  context,
+                                                  'list-entrada-productos');
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(const SnackBar(
+                                                      content: Text(
+                                                          'Su usuario no tiene permisos para acceder a este módulo'),
+                                                      duration: Duration(
+                                                          seconds: 4)));
+                                            }
+                                          },
+                                          child: ImteModule(
+                                              urlImg: 'entrega.svg',
+                                              title: 'Entrada\nProductos'),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () async {
+                                            Navigator.pushReplacementNamed(
+                                                context, 'info-rapida');
+                                          },
+                                          child: const ImteModule(
+                                              urlImg: 'info.svg',
+                                              title: 'Info Rapida'),
+                                        ),
+                                      ],
+                                    ),
+                                    // ── Página 2: Imprimir Etiquetas ──
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () {
+                                            Navigator.pushReplacementNamed(
+                                                context, AppRoutes.printLabels);
+                                          },
+                                          child: Card(
+                                            color: const Color.fromARGB(
+                                                215, 255, 255, 255),
+                                            elevation: 5,
+                                            child: SizedBox(
+                                              height: 100,
+                                              width: 100,
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  //icono de printer
+                                                  SizedBox(
+                                                    height: 40,
+                                                    width: 40,
+                                                    child: Image.asset(
+                                                      "assets/icons/labels.png",
+                                                      color: Colors.black,
+                                                      width: 50,
+                                                      height: 50,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  const Text(
+                                                    'Impresion de\nEtiquetas',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      color: primaryColorApp,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // ── Indicadores de página (dots) ──
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(
+                                  2,
+                                  (i) => AnimatedContainer(
+                                    duration: const Duration(milliseconds: 250),
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 4),
+                                    width: _currentModulePage == i ? 16 : 7,
+                                    height: 7,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(4),
+                                      color: _currentModulePage == i
+                                          ? Theme.of(context).primaryColor
+                                          : Colors.grey.shade400,
                                     ),
                                   ),
                                 ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () async {
-                                        // context
-                                        //     .read<UserBloc>()
-                                        //     .add(LoadInfoDeviceEventUser());
-                                        final String rol =
-                                            await PrefUtils.getUserRol();
-
-                                        if (rol == 'picking' ||
-                                            rol == 'admin') {
-                                          context
-                                              .read<BatchBloc>()
-                                              .add(LoadAllNovedadesEvent()); //
-                                          showDialog(
-                                            context: context,
-                                            builder: (context) {
-                                              return DialogPicking(
-                                                contextHome: context,
-                                              );
-                                            },
-                                          );
-                                        } else if (rol == '' || rol == null) {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                  "Cargue la configuración de su usuario"),
-                                              duration: Duration(seconds: 4),
-                                            ),
-                                          );
-                                        } else {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                  "Su usuario no tiene permisos para acceder a este módulo"),
-                                              duration: Duration(seconds: 4),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      child: ImteModule(
-                                        urlImg: "picking.svg",
-                                        title: 'Picking',
-                                      ),
-                                    ),
-                                    GestureDetector(
-                                      onTap: () async {
-                                        // context
-                                        //     .read<UserBloc>()
-                                        //     .add(LoadInfoDeviceEventUser());
-                                        final String rol =
-                                            await PrefUtils.getUserRol();
-
-                                        if (rol == 'packing' ||
-                                            rol == 'admin') {
-                                          context.read<WmsPackingBloc>().add(
-                                              LoadAllNovedadesPackingEvent());
-
-                                          context
-                                              .read<PackingPedidoBloc>()
-                                              .add(LoadAllNovedadesPackEvent());
-                                          context
-                                              .read<PackingConsolidateBloc>()
-                                              .add(
-                                                  LoadAllNovedadesPackingConsolidateEvent());
-
-                                          showDialog(
-                                            context: context,
-                                            builder: (context) {
-                                              return DialogPacking(
-                                                contextHome: context,
-                                              );
-                                            },
-                                          );
-                                        } else {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                  "Su usuario no tiene permisos para acceder a este módulo"),
-                                              duration: Duration(seconds: 4),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      child: ImteModule(
-                                        urlImg: "packing.svg",
-                                        title: 'Packing',
-                                      ),
-                                    ),
-                                    GestureDetector(
-                                      onTap: () async {
-                                        final rol = context
-                                            .read<HomeBloc>()
-                                            .userRol; // Obtenemos el rol
-                                        if (rol == 'reception' ||
-                                            rol == 'admin') {
-                                          {
-                                            showDialog(
-                                                context: context,
-                                                builder: (context) {
-                                                  return DialogDevoluciones(
-                                                    contextHome: context,
-                                                  );
-                                                });
-                                          }
-                                        } else {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                  "Su usuario no tiene permisos para acceder a este módulo"),
-                                              duration: Duration(seconds: 2),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      child: ImteModule(
-                                        urlImg: "devoluciones.svg",
-                                        title: 'Devoluciones',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () async {
-                                        // context
-                                        //     .read<UserBloc>()
-                                        //     .add(LoadInfoDeviceEventUser());
-                                        final rol = context
-                                            .read<HomeBloc>()
-                                            .userRol; // Obtenemos el rol
-                                        if (rol == 'reception' ||
-                                            rol == 'admin') {
-                                          //pedir ubicaciones
-                                          context
-                                              .read<RecepcionBloc>()
-                                              .add(GetLocationsDestEvent());
-
-                                          //pedir las novedades
-                                          context.read<RecepcionBloc>().add(
-                                              LoadAllNovedadesOrderEvent());
-
-                                          showDialog(
-                                              context: context,
-                                              builder: (context) {
-                                                return const DialogLoading(
-                                                    message:
-                                                        'Cargando recepciones...');
-                                              });
-
-                                          await Future.delayed(const Duration(
-                                              seconds:
-                                                  1)); // Ajusta el tiempo si es necesario
-
-                                          Navigator.pop(context);
-                                          Navigator.pushReplacementNamed(
-                                            context,
-                                            'list-ordenes-compra',
-                                          );
-                                        } else {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                  "Su usuario no tiene permisos para acceder a este módulo"),
-                                              duration: Duration(seconds: 2),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      child: ImteModule(
-                                        // count: count,
-                                        urlImg: "recepcion.svg",
-                                        title: 'Recepción',
-                                      ),
-                                    ),
-                                    GestureDetector(
-                                      onTap: () async {
-                                        final rol = context
-                                            .read<HomeBloc>()
-                                            .userRol; // Obtenemos el rol
-                                        if (rol == 'transfer' ||
-                                            rol == 'admin') {
-                                          if (context
-                                              .read<UserBloc>()
-                                              .ubicaciones
-                                              .isEmpty) {
-                                            context
-                                                .read<UserBloc>()
-                                                .add(LoadUserLocationsEvent());
-                                          }
-
-                                          context.read<TransferenciaBloc>().add(
-                                              LoadAllNovedadesTransferEvent());
-                                          context
-                                              .read<TransferenciaBloc>()
-                                              .add(LoadLocations());
-
-                                          showDialog(
-                                              context: context,
-                                              builder: (context) {
-                                                return const DialogLoading(
-                                                    message:
-                                                        'Cargando interfaz...');
-                                              });
-
-                                          await Future.delayed(const Duration(
-                                              seconds:
-                                                  1)); // Ajusta el tiempo si es necesario
-
-                                          Navigator.pop(context);
-
-                                          Navigator.pushReplacementNamed(
-                                            context,
-                                            'transferencias',
-                                          );
-                                        } else {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                  "Su usuario no tiene permisos para acceder a este módulo"),
-                                              duration: Duration(seconds: 4),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      child: ImteModule(
-                                        // count: count,
-                                        urlImg: "transferencia.svg",
-                                        title: 'Transferencia',
-                                      ),
-                                    ),
-                                    GestureDetector(
-                                      onTap: () async {
-                                        final rol = context
-                                            .read<HomeBloc>()
-                                            .userRol; // Obtenemos el rol
-                                        if (rol == 'inventory' ||
-                                            rol == 'admin') {
-                                          showDialog(
-                                              context: context,
-                                              builder: (context) {
-                                                return DialogInventario(
-                                                  contextHome: context,
-                                                );
-                                              });
-                                        } else {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                  "Su usuario no tiene permisos para acceder a este módulo"),
-                                              duration: Duration(seconds: 4),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      child: ImteModule(
-                                        urlImg: "inventario.svg",
-                                        title: 'Inventario',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () async {
-                                        // Check configurations from HomeBloc first, fallback to UserBloc
-                                        final homeConfig = context
-                                            .read<HomeBloc>()
-                                            .configurations
-                                            .result
-                                            ?.result;
-                                        final userConfig = context
-                                            .read<UserBloc>()
-                                            .configurations;
-
-                                        final hasAccess = homeConfig
-                                                ?.accessProductionModule ??
-                                            userConfig
-                                                ?.accessProductionModule ??
-                                            false;
-
-                                        if (hasAccess) {
-                                          showDialog(
-                                            context: context,
-                                            builder: (context) {
-                                              return DialogPickingComponentes(
-                                                contextHome: context,
-                                              );
-                                            },
-                                          );
-                                        } else {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                  "Su usuario no tiene permisos para acceder a este módulo"),
-                                              duration: Duration(seconds: 4),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      child: ImteModule(
-                                        urlImg: "pc.svg",
-                                        title: 'Picking\nComponentes',
-                                      ),
-                                    ),
-                                    GestureDetector(
-                                      onTap: () async {
-                                        // Check configurations from HomeBloc first, fallback to UserBloc
-                                        final homeConfig = context
-                                            .read<HomeBloc>()
-                                            .configurations
-                                            .result
-                                            ?.result;
-                                        final userConfig = context
-                                            .read<UserBloc>()
-                                            .configurations;
-
-                                        final hasAccess = homeConfig
-                                                ?.accessProductionModule ??
-                                            userConfig
-                                                ?.accessProductionModule ??
-                                            false;
-
-                                        if (hasAccess) {
-                                          showDialog(
-                                              context: context,
-                                              builder: (context) {
-                                                return const DialogLoading(
-                                                    message:
-                                                        'Cargando entrega de productos...');
-                                              });
-                                          await Future.delayed(const Duration(
-                                              seconds:
-                                                  1)); // Ajusta el tiempo si es necesario
-                                          Navigator.pop(context);
-                                          Navigator.pushReplacementNamed(
-                                            context,
-                                            'list-entrada-productos',
-                                          );
-                                        } else {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                  "Su usuario no tiene permisos para acceder a este módulo"),
-                                              duration: Duration(seconds: 4),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      child: ImteModule(
-                                        urlImg: "entrega.svg",
-                                        title: 'Entrada\nProductos',
-                                      ),
-                                    ),
-                                    GestureDetector(
-                                      onTap: () async {
-                                        // //cargamos las ubicaciones
-                                        // context
-                                        //     .read<InfoRapidaBloc>()
-                                        //     .add(GetListLocationsEvent());
-                                        // //obtenemos los productos
-                                        // context
-                                        //     .read<InfoRapidaBloc>()
-                                        //     .add(GetProductsList());
-                                        // context
-                                        //     .read<InfoRapidaBloc>()
-                                        //     .add(LoadConfigurationsUserInfo());
-
-                                        Navigator.pushReplacementNamed(
-                                          context,
-                                          'info-rapida',
-                                        );
-                                      },
-                                      child: const ImteModule(
-                                        urlImg: "info.svg",
-                                        title: 'Info Rapida',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            )),
-                        // Center(
-                        //   child: ElevatedButton(
-                        //     onPressed: () {
-                        //       Navigator.pushReplacementNamed(
-                        //         context,
-                        //         AppRoutes.printLabels,
-                        //       );
-                        //     },
-                        //     style: ElevatedButton.styleFrom(
-                        //       backgroundColor: white,
-                        //       shape: RoundedRectangleBorder(
-                        //         borderRadius: BorderRadius.circular(8),
-                        //       ),
-                        //       shadowColor: Colors.black26,
-                        //       elevation: 2,
-                        //       maximumSize: Size(size.width * 0.77, 40),
-                        //     ),
-                        //     child: Row(
-                        //       mainAxisAlignment: MainAxisAlignment.center,
-                        //       children: [
-                        //         Icon(Icons.print, color: primaryColorApp),
-                        //         const SizedBox(width: 5),
-                        //         Text(
-                        //           'Imprimir Etiquetas',
-                        //           style: TextStyle(
-                        //             color: primaryColorApp,
-                        //             fontWeight: FontWeight.bold,
-                        //           ),
-                        //         ),
-                        //       ],
-                        //     ),
-                        //   ),
-                        // ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -948,7 +901,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           ),
         ),
       ),
-      // ),
     );
   }
 

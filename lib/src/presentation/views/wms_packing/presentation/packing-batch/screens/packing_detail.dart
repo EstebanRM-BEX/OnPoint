@@ -108,7 +108,7 @@ class _PackingDetailScreenState extends State<PackingDetailScreen>
                   icon: const Icon(Icons.print, color: Colors.white),
                   onPressed: () {
                     ModalPrintersList.show(context,
-                        resId: widget.packingModel?.id, companyId: 1);
+                        resIds: [widget.packingModel?.id], companyId: 1);
                   },
                 ),
               ],

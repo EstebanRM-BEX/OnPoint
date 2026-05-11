@@ -52,6 +52,10 @@ class UbicacionesRepository {
                 UbicacionesTable.columnLocationName: item.locationName,
                 UbicacionesTable.columnIdWarehouse: item.idWarehouse,
                 UbicacionesTable.columnWarehouseName: item.warehouseName,
+                // is_a_dock_alter
+                UbicacionesTable.columnIsADock:
+                    item.isADockAlter == true ? 1 : 0,
+
                 // ✅ IMPORTANTE: Marcamos este registro como actualizado
                 UbicacionesTable.columnIsSynced: 1,
               },
@@ -99,6 +103,7 @@ class UbicacionesRepository {
           UbicacionesTable.columnLocationName: item.locationName,
           UbicacionesTable.columnIdWarehouse: item.idWarehouse,
           UbicacionesTable.columnWarehouseName: item.warehouseName,
+          UbicacionesTable.columnIsADock: item.isADockAlter == true ? 1 : 0,
           UbicacionesTable.columnIsSynced: 1,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
@@ -148,6 +153,23 @@ class UbicacionesRepository {
     }
   }
 
+  Future<List<ResultUbicaciones>> getAllUbicacionesByParams(
+      String params) async {
+    try {
+      final db = await DataBaseSqlite().getDatabaseInstance();
+      final List<Map<String, dynamic>> maps = await db!.query(
+        UbicacionesTable.tableName,
+        where: '${UbicacionesTable.columnIsADock} = ?',
+        whereArgs: [1], // 1 representa 'true' en SQLite
+      );
+
+      return maps.map((map) => _mapToModel(map)).toList();
+    } catch (e) {
+      debugPrint("Error getAllUbicacionesByParams: $e");
+      return [];
+    }
+  }
+
   /// Helper para mapear de SQL a Modelo (Evita repetir código)
   ResultUbicaciones _mapToModel(Map<String, dynamic> map) {
     return ResultUbicaciones(
@@ -158,6 +180,7 @@ class UbicacionesRepository {
       locationName: map[UbicacionesTable.columnLocationName],
       idWarehouse: map[UbicacionesTable.columnIdWarehouse],
       warehouseName: map[UbicacionesTable.columnWarehouseName],
+      isADockAlter: map[UbicacionesTable.columnIsADock] == 1 ? true : false,
     );
   }
 

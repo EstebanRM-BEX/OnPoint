@@ -435,7 +435,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       LoadAllLocationsEvent event, Emitter<PackingPedidoState> emit) async {
     try {
       emit(LoadLocationsLoading());
-      final response = await db.ubicacionesRepository.getAllUbicaciones();
+      final response = await db.ubicacionesRepository
+          .getAllUbicacionesByParams('is_a_dock_alter');
       ubicaciones.clear();
       if (response.isNotEmpty) {
         ubicaciones.addAll(response);
@@ -1045,7 +1046,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           'packing-pack');
 
       final productUpdate = await db.productosPedidosRepository
-          .getProductoPedidoById(event.pedidoId, event.idMove, 'packing-pack');
+          .getProductoPedidoPendingById(
+              event.pedidoId, event.idMove, 'packing-pack');
 
       debugPrint('productUpdate :${productUpdate.toMap()}');
 
@@ -1127,7 +1129,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           'packing-pack');
 
       final productUpdate = await db.productosPedidosRepository
-          .getProductoPedidoById(event.pedidoId, event.idMove, 'packing-pack');
+          .getProductoPedidoPendingById(
+              event.pedidoId, event.idMove, 'packing-pack');
 
       debugPrint('productUpdate :${productUpdate.toMap()}');
 
@@ -1465,8 +1468,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   void _onChangeQuantityIsOkEvent(
       ChangeIsOkQuantity event, Emitter<PackingPedidoState> emit) async {
     if (event.isOk) {
-      //actualizamos la cantidad del producto a true
-      await db.productosPedidosRepository.setFieldTableProductosPedidos(
+      //actualizamos la cantidad del producto a true (solo el row pendiente)
+      await db.productosPedidosRepository.setFieldTableProductosPedidos3(
           event.pedidoId,
           event.productId,
           "is_quantity_is_ok",
@@ -1500,8 +1503,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   void _onChangeProductIsOkEvent(
       ChangeProductIsOkEvent event, Emitter<PackingPedidoState> emit) async {
     if (event.productIsOk) {
-      //agregamos el tiempo de inicio
-      await db.productosPedidosRepository.setFieldTableProductosPedidos(
+      //agregamos el tiempo de inicio (solo el row pendiente, no el original certificado)
+      await db.productosPedidosRepository.setFieldTableProductosPedidos3(
           event.pedidoId,
           event.productId,
           "time_separate_start",
@@ -1509,8 +1512,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           event.idMove,
           'packing-pack');
 
-      //actualizamos el producto a true
-      await db.productosPedidosRepository.setFieldTableProductosPedidos(
+      //actualizamos el producto a true (solo el row pendiente)
+      await db.productosPedidosRepository.setFieldTableProductosPedidos3(
           event.pedidoId,
           event.productId,
           "product_is_ok",
@@ -1547,16 +1550,16 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       //actualizamos el estado del pedido como seleccionado
       await db.pedidoPackRepository
           .updatePedidoPackField(event.pedidoId, "is_selected", 1);
-      // actualizamo el valor de que he seleccionado el producto
-      await db.productosPedidosRepository.setFieldTableProductosPedidos(
+      // actualizamo el valor de que he seleccionado el producto (solo el row pendiente)
+      await db.productosPedidosRepository.setFieldTableProductosPedidos3(
           event.pedidoId,
           event.productId,
           "is_selected",
           1,
           currentProduct.idMove ?? 0,
           'packing-pack');
-      //*actualizamos la ubicacion del producto a true
-      await db.productosPedidosRepository.setFieldTableProductosPedidos(
+      //*actualizamos la ubicacion del producto a true (solo el row pendiente)
+      await db.productosPedidosRepository.setFieldTableProductosPedidos3(
           event.pedidoId,
           event.productId,
           "is_location_is_ok",
@@ -1891,6 +1894,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         listOfPedidos.addAll(response.result!);
         listOfPedidosBD.addAll(response.result!);
 
+        // Paso 1: eliminar pedidos huérfanos (no presentes en la API)
+        await _cleanOrphanPedidos(listOfPedidos);
+
         if ((response.updateVersion ?? false) == true) {
           emit(NeedUpdateVersionState());
         }
@@ -1954,6 +1960,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           debugPrint('otherBarcodes    pack : ${otherBarcodesToInsert.length}');
           debugPrint('paquetes: pack: ${otherBarcodesToInsert.length}');
 
+          // Paso 2: reconciliar cantidades de productos parcialmente procesados
+          await _reconcileProductQuantities(listOfPedidos);
+
           // //* Carga los batches desde la base de datos
           add(LoadPackingPedidoFromDBEvent());
         }
@@ -1968,6 +1977,72 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     } catch (e, s) {
       debugPrint('Error en el  _onLoadAllPackingEvent: $e, $s');
       emit(PackingPedidoError(e.toString()));
+    }
+  }
+
+  /// Elimina de la BD los pedidos que ya no vienen en la respuesta de la API,
+  /// junto con sus productos, barcodes y paquetes asociados.
+  Future<void> _cleanOrphanPedidos(
+      List<PedidoPackingResult> apiPedidos) async {
+    try {
+      final apiIds =
+          apiPedidos.map((p) => p.id).whereType<int>().toSet();
+      final dbPedidos = await db.pedidoPackRepository.getAllPedidosPack();
+
+      for (final dbPedido in dbPedidos) {
+        if (dbPedido.id == null || apiIds.contains(dbPedido.id)) continue;
+
+        final pedidoId = dbPedido.id!;
+        debugPrint('🗑️ Eliminando pedido huérfano: $pedidoId');
+
+        // Eliminar barcodes → productos → paquetes → pedido (en ese orden por FK)
+        await db.barcodesPackagesRepository
+            .deleteBarcodesByPedidoId(pedidoId, 'packing-pack');
+        await db.productosPedidosRepository
+            .deleteProductosByPedidoId(pedidoId, 'packing-pack');
+        await db.packagesRepository
+            .deletePackagesByPedidoId(pedidoId, 'packing-pack');
+        await db.pedidoPackRepository.deletePedidoPack(pedidoId);
+      }
+    } catch (e, s) {
+      debugPrint('Error en _cleanOrphanPedidos: $e, $s');
+    }
+  }
+
+  /// Después de insertar los datos frescos de la API, ajusta la cantidad
+  /// del row pendiente de cada producto que haya sido parcialmente separado.
+  ///
+  /// Fórmula: cantidad_pendiente = cantidad_api - SUM(quantity_separate de rows is_separate=1)
+  Future<void> _reconcileProductQuantities(
+      List<PedidoPackingResult> apiPedidos) async {
+    try {
+      for (final apiPedido in apiPedidos) {
+        if (apiPedido.id == null || apiPedido.listaProductos == null) continue;
+
+        for (final apiProduct in apiPedido.listaProductos!) {
+          if (apiProduct.idMove == null || apiProduct.quantity == null) continue;
+
+          final totalSeparated = await db.productosPedidosRepository
+              .getTotalSeparatedQtyByMove(
+                  apiPedido.id!, apiProduct.idMove!, 'packing-pack');
+
+          if (totalSeparated <= 0) continue; // Nada separado, nada que ajustar
+
+          final apiQty =
+              double.tryParse(apiProduct.quantity.toString()) ?? 0.0;
+          final newPendingQty = apiQty - totalSeparated;
+
+          if (newPendingQty > 0) {
+            await db.productosPedidosRepository.updatePendingProductQuantity(
+                apiPedido.id!, apiProduct.idMove!, newPendingQty, 'packing-pack');
+            debugPrint(
+                '✅ Reconciliado idMove=${apiProduct.idMove}: '
+                'api=$apiQty, separado=$totalSeparated, pendiente=$newPendingQty');
+          }
+        }
+      }
+    } catch (e, s) {
+      debugPrint('Error en _reconcileProductQuantities: $e, $s');
     }
   }
 

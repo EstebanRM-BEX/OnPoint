@@ -64,6 +64,7 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
         locationName: e.locationName,
         idWarehouse: e.idWarehouse,
         warehouseName: e.warehouseName,
+        isADockAlter: e.isADockAlter,
       );
     }).toList();
 

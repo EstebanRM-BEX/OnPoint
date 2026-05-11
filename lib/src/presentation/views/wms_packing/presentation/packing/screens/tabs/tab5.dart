@@ -385,7 +385,7 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                           GestureDetector(
                                             onTap: () {
                                               ModalPrintersList.show(context,
-                                                  resId: package.id,
+                                                  resIds: [package.id],
                                                   companyId: 1);
                                             },
                                             child: Icon(

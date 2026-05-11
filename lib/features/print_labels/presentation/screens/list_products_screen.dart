@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
+
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/print_labels/presentation/bloc/print_labels_bloc.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 
 class PrintLabelsProductsScreen extends StatefulWidget {
   const PrintLabelsProductsScreen({super.key});
 
   @override
-  State<PrintLabelsProductsScreen> createState() => _PrintLabelsProductsScreenState();
+  State<PrintLabelsProductsScreen> createState() =>
+      _PrintLabelsProductsScreenState();
 }
 
 class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
-  int? selectedIndex;
-
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
@@ -60,29 +60,36 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
                           : ListView.builder(
                               itemCount: bloc.productosFilters.length,
                               itemBuilder: (_, index) {
+                                final product = bloc.productosFilters[index];
+                                final alreadyAdded = bloc.productosSelected.any(
+                                    (p) => p.productId == product.productId);
                                 return ProductListTile(
                                   index: index,
-                                  isSelected: selectedIndex == index,
-                                  onSelect: () {
-                                    setState(() => selectedIndex = index);
+                                  isAdded: alreadyAdded,
+                                  onAddRemove: () {
+                                    if (alreadyAdded) {
+                                      bloc.add(RemoveSelectedProductEvent(
+                                          product.productId!));
+                                    } else {
+                                      bloc.add(
+                                          AddSelectedProductEvent(product));
+                                    }
                                   },
                                 );
                               },
                             ),
                     ),
-                    if (selectedIndex != null)
+                    if (bloc.productosSelected.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         child: ElevatedButton(
                           onPressed: () {
-                            final selectedProduct = bloc.productosFilters[selectedIndex!];
                             FocusScope.of(context).unfocus();
-                            Get.snackbar(
-                              'Aviso',
-                              'Próximamente: Imprimir etiqueta para ${selectedProduct.name}',
-                              backgroundColor: white,
-                              colorText: primaryColorApp,
-                            );
+                            ModalPrintersList.show(context,
+                                resIds: bloc.productosSelected
+                                    .map((e) => e.productId!)
+                                    .toList(),
+                                companyId: 1);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColorApp,
@@ -110,13 +117,13 @@ class ProductListTile extends StatelessWidget {
   const ProductListTile({
     super.key,
     required this.index,
-    required this.isSelected,
-    required this.onSelect,
+    required this.isAdded,
+    required this.onAddRemove,
   });
 
   final int index;
-  final bool isSelected;
-  final VoidCallback onSelect;
+  final bool isAdded;
+  final VoidCallback onAddRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -124,24 +131,38 @@ class ProductListTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: GestureDetector(
-        onTap: onSelect,
+        onTap: onAddRemove,
         child: Card(
           elevation: 3,
-          color: isSelected ? Colors.green[100] : white,
+          color: isAdded ? Colors.green[100] : white,
           child: Padding(
             padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                _buildProductRow('Nombre', bloc.productosFilters[index].name, isError: false),
-                _buildProductRow(
-                    'Barcode',
-                    bloc.productosFilters[index].barcode,
-                    isError: bloc.productosFilters[index].barcode == null ||
-                        bloc.productosFilters[index].barcode!.isEmpty),
-                _buildProductRow('Code', bloc.productosFilters[index].code,
-                    isError: bloc.productosFilters[index].code == null ||
-                        bloc.productosFilters[index].code!.isEmpty),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildProductRow(
+                          'Nombre', bloc.productosFilters[index].name,
+                          isError: false),
+                      _buildProductRow(
+                          'Barcode', bloc.productosFilters[index].barcode,
+                          isError: bloc.productosFilters[index].barcode ==
+                                  null ||
+                              bloc.productosFilters[index].barcode!.isEmpty),
+                      _buildProductRow(
+                          'Code', bloc.productosFilters[index].code,
+                          isError: bloc.productosFilters[index].code == null ||
+                              bloc.productosFilters[index].code!.isEmpty),
+                    ],
+                  ),
+                ),
+                Icon(
+                  isAdded ? Icons.check_circle : Icons.add_circle_outline,
+                  color: isAdded ? Colors.green : primaryColorApp,
+                  size: 24,
+                ),
               ],
             ),
           ),
@@ -151,7 +172,8 @@ class ProductListTile extends StatelessWidget {
   }
 
   Widget _buildProductRow(String label, String? value, {bool isError = false}) {
-    final displayValue = (value == null || value.isEmpty) ? 'Sin ${label.toLowerCase()}' : value;
+    final displayValue =
+        (value == null || value.isEmpty) ? 'Sin ${label.toLowerCase()}' : value;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -199,7 +221,10 @@ class _AppBarInfo extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.arrow_back, color: white),
                   onPressed: () {
-                    context.read<PrintLabelsBloc>().searchControllerProducts.clear();
+                    context
+                        .read<PrintLabelsBloc>()
+                        .searchControllerProducts
+                        .clear();
                     Navigator.pushReplacementNamed(context, 'print-labels');
                   },
                 ),

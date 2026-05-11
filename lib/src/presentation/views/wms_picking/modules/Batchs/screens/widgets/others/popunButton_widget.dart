@@ -114,7 +114,7 @@ class PopupMenuButtonWidget extends StatelessWidget {
                   });
             } else if (value == '3') {
               ModalPrintersList.show(context,
-                  resId: currentProduct.idMove, companyId: 1);
+                  resIds: [currentProduct.idMove], companyId: 1);
             }
           },
           itemBuilder: (BuildContext context) {

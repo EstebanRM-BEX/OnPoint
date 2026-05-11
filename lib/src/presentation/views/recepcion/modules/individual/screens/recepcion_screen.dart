@@ -66,7 +66,9 @@ class _RecepcionScreenState extends State<RecepcionScreen>
                   try {
                     //validamos que type es la recepcion
                     if (widget.ordenCompra?.type == 'dev') {
-                      context.read<RecepcionBloc>().add(FetchDevolucionesOfDB());
+                      context
+                          .read<RecepcionBloc>()
+                          .add(FetchDevolucionesOfDB());
                       Navigator.pushReplacementNamed(
                         context,
                         'list-devoluciones',
@@ -103,7 +105,7 @@ class _RecepcionScreenState extends State<RecepcionScreen>
                     setState(() => _isProcessing = true);
                     try {
                       ModalPrintersList.show(context,
-                          resId: widget.ordenCompra?.id,
+                          resIds: [widget.ordenCompra?.id],
                           companyId: widget.ordenCompra?.warehouseId ?? 1);
                     } finally {
                       if (mounted) {

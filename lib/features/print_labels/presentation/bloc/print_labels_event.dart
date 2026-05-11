@@ -34,3 +34,13 @@ class AddRangeLocationEvent extends PrintLabelsEvent {
   final ResultUbicaciones location;
   AddRangeLocationEvent(this.location);
 }
+
+class AddSelectedProductEvent extends PrintLabelsEvent {
+  final Product product;
+  AddSelectedProductEvent(this.product);
+}
+
+class RemoveSelectedProductEvent extends PrintLabelsEvent {
+  final int productId;
+  RemoveSelectedProductEvent(this.productId);
+}

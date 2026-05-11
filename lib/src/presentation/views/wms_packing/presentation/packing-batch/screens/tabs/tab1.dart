@@ -372,9 +372,10 @@ class Tab1Screen extends StatelessWidget {
                                                                       context);
                                                                   ModalPrintersList.show(
                                                                       context,
-                                                                      resId:
-                                                                          packingModel?.id ??
-                                                                              0,
+                                                                      resIds: [
+                                                                        packingModel?.id ??
+                                                                            0
+                                                                      ],
                                                                       companyId:
                                                                           1);
                                                                 },

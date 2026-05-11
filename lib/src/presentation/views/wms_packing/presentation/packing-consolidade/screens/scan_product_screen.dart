@@ -437,10 +437,12 @@ class _ScanProductPackingConsolidateScreenState
                                     ),
                                     onPressed: () {
                                       ModalPrintersList.show(context,
-                                          resId: context
-                                              .read<PackingConsolidateBloc>()
-                                              .currentProduct
-                                              .idMove,
+                                          resIds: [
+                                            context
+                                                .read<PackingConsolidateBloc>()
+                                                .currentProduct
+                                                .idMove
+                                          ],
                                           companyId: 1);
                                     },
                                   ),

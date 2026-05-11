@@ -10,7 +10,7 @@ abstract class PrintingRepository {
     required String name,
     required String reportName,
     required String model,
-    required int resId,
+    required List<int> resIds,
     required int companyId,
     required int userId,
     int copies = 1,

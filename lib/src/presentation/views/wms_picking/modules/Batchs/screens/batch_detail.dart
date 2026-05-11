@@ -178,11 +178,13 @@ class BatchDetailScreen extends StatelessWidget {
                                           color: white, size: 25),
                                       onPressed: () {
                                         ModalPrintersList.show(context,
-                                            resId: context
-                                                .read<BatchBloc>()
-                                                .batchWithProducts
-                                                .batch
-                                                ?.id,
+                                            resIds: [
+                                              context
+                                                  .read<BatchBloc>()
+                                                  .batchWithProducts
+                                                  .batch
+                                                  ?.id
+                                            ],
                                             companyId: 1);
                                       },
                                     ),
@@ -812,12 +814,13 @@ class BatchDetailScreen extends StatelessWidget {
                                                       const Spacer(),
                                                       GestureDetector(
                                                         onTap: () {
-                                                          ModalPrintersList.show(
-                                                              context,
-                                                              resId:
-                                                                  productsBatch
-                                                                      .idMove,
-                                                              companyId: 1);
+                                                          ModalPrintersList
+                                                              .show(context,
+                                                                  resIds: [
+                                                                    productsBatch
+                                                                        .idMove
+                                                                  ],
+                                                                  companyId: 1);
                                                         },
                                                         child: Icon(
                                                           Icons.print,

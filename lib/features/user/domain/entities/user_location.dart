@@ -8,6 +8,7 @@ class UserLocation extends Equatable {
   final String? warehouseName;
   final int? locationId;
   final String? locationName;
+  final bool? isADockAlter;
 
   const UserLocation({
     required this.id,
@@ -17,9 +18,18 @@ class UserLocation extends Equatable {
     this.warehouseName,
     this.locationId,
     this.locationName,
+    this.isADockAlter,
   });
 
   @override
-  List<Object?> get props =>
-      [id, name, idWarehouse, barcode, warehouseName, locationId, locationName];
+  List<Object?> get props => [
+        id,
+        name,
+        idWarehouse,
+        barcode,
+        warehouseName,
+        locationId,
+        locationName,
+        isADockAlter,
+      ];
 }

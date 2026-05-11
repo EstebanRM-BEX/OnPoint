@@ -61,8 +61,9 @@ class DialogBackorderPack extends StatelessWidget {
               onPressed: () {
                 Navigator.pop(context);
                 ModalPrintersList.show(context,
-                    resId:
-                        context.read<PackingPedidoBloc>().currentPedidoPack.id,
+                    resIds: [
+                      context.read<PackingPedidoBloc>().currentPedidoPack.id
+                    ],
                     companyId: context
                             .read<PackingPedidoBloc>()
                             .currentPedidoPack
@@ -88,11 +89,12 @@ class DialogBackorderPack extends StatelessWidget {
                 ],
               )),
           Visibility(
-            visible: (totalEnviadas == "100.0" || totalEnviadas >= 100.0)
-                ? false
-                : createBackorder == "never" || createBackorder == "always"
-                    ? false
-                    : true,
+            visible: createBackorder == "ask" &&
+                (context
+                        .read<PackingPedidoBloc>()
+                        .listOfProductosProgress
+                        .isNotEmpty ||
+                    (double.tryParse(totalEnviadas.toString()) ?? 0.0) < 100.0),
             child: ElevatedButton(
               onPressed: () {
                 context.read<PackingPedidoBloc>().add(CreateBackPackOrNot(

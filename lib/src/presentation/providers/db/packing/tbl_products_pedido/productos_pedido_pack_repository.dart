@@ -98,7 +98,8 @@ class ProductosPedidosRepository {
             return double.tryParse(value.toString()) ?? 0.0;
           }
 
-          Map<String, dynamic> dataMap = {
+          // Campos que vienen de la API y son válidos tanto para INSERT como UPDATE
+          Map<String, dynamic> dataMapBase = {
             ProductosPedidosTable.columnProductId:
                 producto.productId is List && producto.productId.length > 1
                     ? producto.productId[1]
@@ -149,15 +150,15 @@ class ProductosPedidosRepository {
             ProductosPedidosTable.columnImage: producto.image ?? '',
             ProductosPedidosTable.columnImageNovedad:
                 producto.imageNovedad ?? '',
-            ProductosPedidosTable.columnTimeSeparate:
-                producto.timeSeparate ?? 0,
             ProductosPedidosTable.columnProductCode: producto.productCode ?? '',
           };
 
           if (existingProducto.isNotEmpty) {
+            // En UPDATE no sobreescribimos time_separate: es calculado localmente
+            // por _onSetPickingsEvent y no viene de la API.
             await txn.update(
               ProductosPedidosTable.tableName,
-              dataMap,
+              dataMapBase,
               where:
                   '${ProductosPedidosTable.columnIdProduct} = ? AND ${ProductosPedidosTable.columnBatchId} = ? AND ${ProductosPedidosTable.columnPedidoId} = ? AND ${ProductosPedidosTable.columnIdMove} = ?',
               whereArgs: [
@@ -168,9 +169,14 @@ class ProductosPedidosRepository {
               ],
             );
           } else {
+            // En INSERT sí lo incluimos (valor inicial 0 para productos nuevos)
             await txn.insert(
               ProductosPedidosTable.tableName,
-              dataMap,
+              {
+                ...dataMapBase,
+                ProductosPedidosTable.columnTimeSeparate:
+                    producto.timeSeparate ?? 0,
+              },
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
           }
@@ -381,6 +387,31 @@ class ProductosPedidosRepository {
     } else {
       throw Exception(
           'ProductoPedido no encontrado con pedidoId: $pedidoId y idMove: $idMove');
+    }
+  }
+
+  // Obtiene el producto pendiente (is_certificate IS NULL) para calcular correctamente
+  // el tiempo de separación cuando existen duplicados con el mismo idMove.
+  Future<ProductoPedido> getProductoPedidoPendingById(
+      int pedidoId, int idMove, String type) async {
+    debugPrint(
+        '🔍 getProductoPedidoPendingById: pedidoId=$pedidoId  idMove=$idMove');
+    final db = await DataBaseSqlite().getDatabaseInstance();
+
+    final List<Map<String, dynamic>> maps = await db.rawQuery(
+      'SELECT * FROM ${ProductosPedidosTable.tableName} '
+      'WHERE ${ProductosPedidosTable.columnPedidoId} = ? '
+      'AND ${ProductosPedidosTable.columnIdMove} = ? '
+      'AND ${ProductosPedidosTable.columnType} = ? '
+      'AND ${ProductosPedidosTable.columnIsCertificate} IS NULL',
+      [pedidoId, idMove, type],
+    );
+
+    if (maps.isNotEmpty) {
+      return ProductoPedido.fromMap(maps.first);
+    } else {
+      // Fallback: retornar cualquier row con ese idMove
+      return getProductoPedidoById(pedidoId, idMove, type);
     }
   }
 
@@ -663,16 +694,20 @@ class ProductosPedidosRepository {
   }
 
   // Incrementar cantidad de producto separado para empaque
+  // Solo afecta el row pendiente (is_certificate IS NULL) para no pisar el original certificado.
   Future<int?> incremenQtytProductSeparatePacking(int pedidoId, int productId,
       int idMove, dynamic quantity, String type) async {
     Database db = await DataBaseSqlite().getDatabaseInstance();
     return await db.transaction((txn) async {
-      final result = await txn.query(
-        ProductosPedidosTable.tableName,
-        columns: ['${ProductosPedidosTable.columnQuantitySeparate}'],
-        where:
-            '${ProductosPedidosTable.columnPedidoId} = ? AND ${ProductosPedidosTable.columnIdProduct} = ? AND ${ProductosPedidosTable.columnIdMove} = ? AND ${ProductosPedidosTable.columnType} = ?',
-        whereArgs: [pedidoId, productId, idMove, type],
+      final result = await txn.rawQuery(
+        'SELECT ${ProductosPedidosTable.columnQuantitySeparate} '
+        'FROM ${ProductosPedidosTable.tableName} '
+        'WHERE ${ProductosPedidosTable.columnPedidoId} = ? '
+        'AND ${ProductosPedidosTable.columnIdProduct} = ? '
+        'AND ${ProductosPedidosTable.columnIdMove} = ? '
+        'AND ${ProductosPedidosTable.columnType} = ? '
+        'AND ${ProductosPedidosTable.columnIsCertificate} IS NULL',
+        [pedidoId, productId, idMove, type],
       );
 
       if (result.isNotEmpty) {
@@ -680,12 +715,15 @@ class ProductosPedidosRepository {
             (result.first[ProductosPedidosTable.columnQuantitySeparate]);
 
         dynamic newQty = currentQty + quantity;
-        return await txn.update(
-          ProductosPedidosTable.tableName,
-          {ProductosPedidosTable.columnQuantitySeparate: newQty},
-          where:
-              '${ProductosPedidosTable.columnPedidoId} = ? AND ${ProductosPedidosTable.columnIdProduct} = ? AND ${ProductosPedidosTable.columnIdMove} = ? AND ${ProductosPedidosTable.columnType} = ?',
-          whereArgs: [pedidoId, productId, idMove, type],
+        return await txn.rawUpdate(
+          'UPDATE ${ProductosPedidosTable.tableName} '
+          'SET ${ProductosPedidosTable.columnQuantitySeparate} = ? '
+          'WHERE ${ProductosPedidosTable.columnPedidoId} = ? '
+          'AND ${ProductosPedidosTable.columnIdProduct} = ? '
+          'AND ${ProductosPedidosTable.columnIdMove} = ? '
+          'AND ${ProductosPedidosTable.columnType} = ? '
+          'AND ${ProductosPedidosTable.columnIsCertificate} IS NULL',
+          [newQty, pedidoId, productId, idMove, type],
         );
       }
       return null; // No encontrado
@@ -774,6 +812,76 @@ class ProductosPedidosRepository {
       debugPrint("Error al eliminar productos del tipo $type: $e ==> $s");
       return 0;
       ;
+    }
+  }
+
+  // Elimina todos los productos de un pedido específico
+  Future<int> deleteProductosByPedidoId(int pedidoId, String type) async {
+    try {
+      Database db = await DataBaseSqlite().getDatabaseInstance();
+      final int result = await db.delete(
+        ProductosPedidosTable.tableName,
+        where:
+            '${ProductosPedidosTable.columnPedidoId} = ? AND ${ProductosPedidosTable.columnType} = ?',
+        whereArgs: [pedidoId, type],
+      );
+      debugPrint('🗑️ Productos eliminados del pedido $pedidoId: $result');
+      return result;
+    } catch (e, s) {
+      debugPrint('Error deleteProductosByPedidoId: $e ==> $s');
+      return 0;
+    }
+  }
+
+  // Suma la cantidad separada de todos los rows ya procesados (is_separate=1) de un producto.
+  // Se usa para reconciliar la cantidad pendiente cuando llegan datos frescos de la API.
+  Future<double> getTotalSeparatedQtyByMove(
+      int pedidoId, int idMove, String type) async {
+    try {
+      Database db = await DataBaseSqlite().getDatabaseInstance();
+      final result = await db.rawQuery(
+        'SELECT SUM(${ProductosPedidosTable.columnQuantitySeparate}) as total '
+        'FROM ${ProductosPedidosTable.tableName} '
+        'WHERE ${ProductosPedidosTable.columnPedidoId} = ? '
+        'AND ${ProductosPedidosTable.columnIdMove} = ? '
+        'AND ${ProductosPedidosTable.columnType} = ? '
+        'AND ${ProductosPedidosTable.columnIsSeparate} = 1 '
+        'AND ${ProductosPedidosTable.columnIsSelected} = 1 '
+        'AND ${ProductosPedidosTable.columnQuantitySeparate} IS NOT NULL '
+        'AND ${ProductosPedidosTable.columnQuantitySeparate} > 0 '
+        'AND ${ProductosPedidosTable.columnTimeSeparateStart} IS NOT NULL '
+        'AND ${ProductosPedidosTable.columnIsQuantityIsOk} = 1',
+        [pedidoId, idMove, type],
+      );
+      if (result.isNotEmpty && result.first['total'] != null) {
+        return (result.first['total'] as num).toDouble();
+      }
+      return 0.0;
+    } catch (e, s) {
+      debugPrint('Error getTotalSeparatedQtyByMove: $e ==> $s');
+      return 0.0;
+    }
+  }
+
+  // Actualiza la cantidad del row pendiente (is_certificate IS NULL) tras reconciliación.
+  Future<int> updatePendingProductQuantity(
+      int pedidoId, int idMove, double newQuantity, String type) async {
+    try {
+      Database db = await DataBaseSqlite().getDatabaseInstance();
+      final int rows = await db.rawUpdate(
+        'UPDATE ${ProductosPedidosTable.tableName} '
+        'SET ${ProductosPedidosTable.columnQuantity} = ? '
+        'WHERE ${ProductosPedidosTable.columnPedidoId} = ? '
+        'AND ${ProductosPedidosTable.columnIdMove} = ? '
+        'AND ${ProductosPedidosTable.columnType} = ? '
+        'AND ${ProductosPedidosTable.columnIsCertificate} IS NULL',
+        [newQuantity, pedidoId, idMove, type],
+      );
+      debugPrint('✅ updatePendingProductQuantity: idMove=$idMove, qty=$newQuantity, rows=$rows');
+      return rows;
+    } catch (e, s) {
+      debugPrint('Error updatePendingProductQuantity: $e ==> $s');
+      return 0;
     }
   }
 }

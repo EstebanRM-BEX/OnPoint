@@ -1,5 +1,7 @@
 // ignore_for_file: unrelated_type_equality_checks, avoid_print
 
+import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -173,7 +175,17 @@ class Tab3PedidoScreen extends StatelessWidget {
                                   const EdgeInsets.symmetric(horizontal: 8),
                               child: GestureDetector(
                                 onTap: () {
-                                  debugPrint("Producto: ${product.toJson()}");
+                                  // Convertimos el objeto a un String JSON con sangría (Pretty Print)
+                                  String prettyJson =
+                                      const JsonEncoder.withIndent('  ')
+                                          .convert(product.toMap());
+
+                                  // Usamos developer.log para mostrarlo completo
+                                  developer.log(
+                                    prettyJson,
+                                    name:
+                                        'LOG_PRODUCTO', // Etiqueta para filtrar en la consola
+                                  );
                                 },
                                 child: Card(
                                     color: product.isSeparate == 1

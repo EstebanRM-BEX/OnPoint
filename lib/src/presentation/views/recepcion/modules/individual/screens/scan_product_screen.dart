@@ -532,8 +532,9 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
                                   GestureDetector(
                                     onTap: () {
                                       ModalPrintersList.show(context,
-                                          resId: recepcionBloc
-                                              .currentProduct.idMove,
+                                          resIds: [
+                                            recepcionBloc.currentProduct.idMove
+                                          ],
                                           companyId:
                                               widget.ordenCompra?.warehouseId ??
                                                   1);

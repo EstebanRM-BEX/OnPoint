@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/print_labels/presentation/bloc/print_labels_bloc.dart';
@@ -154,7 +155,17 @@ class _PrintLabelsLocationsScreenState
                                             size: 20,
                                           ),
                                           onPressed: alreadyAdded
-                                              ? null
+                                              ? () {
+                                                  if (selectedLocation?.id ==
+                                                      location.id) {
+                                                    setState(() {
+                                                      selectedLocation = null;
+                                                    });
+                                                  }
+                                                  bloc.add(
+                                                      RemoveRangeLocationEvent(
+                                                          location.id!));
+                                                }
                                               : () => bloc.add(
                                                   AddRangeLocationEvent(
                                                       location)),
@@ -193,13 +204,23 @@ class _PrintLabelsLocationsScreenState
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           child: ElevatedButton(
                             onPressed: () {
-                              FocusScope.of(context).unfocus();
-                              Get.snackbar(
-                                'Aviso',
-                                'Próximamente: Imprimir etiquetas del rango',
-                                backgroundColor: white,
-                                colorText: primaryColorApp,
-                              );
+                              //validamso que tengamos ubicaciones encontradas
+                              if (bloc.ubicacionesRange.isEmpty) {
+                                Get.snackbar(
+                                  'Aviso',
+                                  'No se encontraron ubicaciones',
+                                  backgroundColor: white,
+                                  colorText: primaryColorApp,
+                                );
+                              } else {
+                                ModalPrintersList.show(context,
+                                    resIds:
+                                        //todos los ids de las ubicaciones encontradas
+                                        bloc.ubicacionesRange
+                                            .map((e) => e.id)
+                                            .toList(),
+                                    companyId: 1);
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: primaryColorApp,
@@ -259,8 +280,7 @@ class _AppBarInfo extends StatelessWidget {
                             .read<PrintLabelsBloc>()
                             .searchControllerLocation
                             .clear();
-                        Navigator.pushReplacementNamed(
-                            context, 'print-labels');
+                        Navigator.pushReplacementNamed(context, 'print-labels');
                       },
                     )
                   else
@@ -368,6 +388,33 @@ class _RangeSearchSection extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               if (bloc.ubicacionesRange.isNotEmpty) {
+                bloc.ubicacionesRange = [];
+                bloc.add(SearchRangeLocationEvent('', ''));
+                return;
+              }
+
+              //valdiar que tengamos una ubicacion en inicio
+              if (bloc.rangeStartController.text.isEmpty) {
+                Get.snackbar(
+                  '360 Software Informa',
+                  "Ingrese una ubicación de inicio",
+                  backgroundColor: white,
+                  colorText: primaryColorApp,
+                  icon: const Icon(Icons.error, color: Colors.red),
+                );
+                return;
+              }
+              // if (bloc.rangeEndController.text.isEmpty) {
+              //   ScaffoldMessenger.of(context).showSnackBar(
+              //     SnackBar(
+              //       content: Text("Ingrese una ubicación final"),
+              //       backgroundColor: Colors.red,
+              //     ),
+              //   );
+              //   return;
+              // }
+
+              if (bloc.ubicacionesRange.isNotEmpty) {
                 bloc.rangeStartController.clear();
                 bloc.rangeEndController.clear();
                 bloc.add(SearchRangeLocationEvent('', ''));
@@ -398,30 +445,30 @@ class _RangeSearchSection extends StatelessWidget {
               const SizedBox(width: 10),
             ],
           ),
-          if (bloc.ubicacionesRange.isNotEmpty) ...[
-            const SizedBox(height: 5),
-            GestureDetector(
-              onTap: () {},
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: onAddLocations,
-                  icon: const Icon(Icons.add_location_alt_outlined,
-                      size: 16, color: primaryColorApp),
-                  label: const Text(
-                    'Agregar ubicaciones',
-                    style: TextStyle(color: primaryColorApp, fontSize: 11),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: primaryColorApp),
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+          const SizedBox(height: 5),
+          GestureDetector(
+            onTap: () {},
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onAddLocations,
+                icon: const Icon(Icons.add_location_alt_outlined,
+                    size: 16, color: primaryColorApp),
+                label: const Text(
+                  'Agregar ubicaciones',
+                  style: TextStyle(color: primaryColorApp, fontSize: 11),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: primaryColorApp),
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
               ),
             ),
+          ),
+          if (bloc.ubicacionesRange.isNotEmpty) ...[
             const SizedBox(height: 3),
             Align(
               alignment: Alignment.centerLeft,
@@ -491,6 +538,9 @@ class _RangeSearchSection extends StatelessWidget {
                                 TextButton(
                                   onPressed: () {
                                     Get.back();
+                                    if (selectedLocationId == location.id) {
+                                      onLocationSelected(location);
+                                    }
                                     bloc.add(
                                       RemoveRangeLocationEvent(
                                         location.id!,

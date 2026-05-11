@@ -85,7 +85,7 @@ class PrintingBloc extends Bloc<PrintingEvent, PrintingState> {
       name: selectedReport!.name,
       reportName: selectedReport!.reportName,
       model: selectedReport!.model,
-      resId: event.resId,
+      resIds: event.resIds,
       companyId: event.companyId,
       userId: userId,
       copies: event.copies,

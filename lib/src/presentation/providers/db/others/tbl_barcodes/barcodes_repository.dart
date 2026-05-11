@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/others/tbl_barcodes/barcodes_table.dart';
+import 'package:wms_app/src/presentation/providers/db/packing/tbl_products_pedido/productos_pedido_pack_table.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 
 class BarcodesRepository {
@@ -231,6 +232,46 @@ class BarcodesRepository {
     } catch (e) {
       debugPrint("Error al obtener los barcodes: $e");
       return [];
+    }
+  }
+
+  // Elimina todos los barcodes asociados a los productos de un pedido específico.
+  // Hace un JOIN implícito a través de (batch_id, id_move, id_product) de tblproductos_pedidos.
+  Future<void> deleteBarcodesByPedidoId(
+      int pedidoId, String barcodeType) async {
+    try {
+      final db = await DataBaseSqlite().getDatabaseInstance();
+
+      // Obtener los identificadores únicos de los productos del pedido
+      final products = await db.rawQuery(
+        'SELECT DISTINCT '
+        '${ProductosPedidosTable.columnBatchId}, '
+        '${ProductosPedidosTable.columnIdMove}, '
+        '${ProductosPedidosTable.columnIdProduct} '
+        'FROM ${ProductosPedidosTable.tableName} '
+        'WHERE ${ProductosPedidosTable.columnPedidoId} = ? '
+        'AND ${ProductosPedidosTable.columnType} = ?',
+        [pedidoId, barcodeType],
+      );
+
+      for (final p in products) {
+        await db.delete(
+          BarcodesPackagesTable.tableName,
+          where: '${BarcodesPackagesTable.columnBatchId} = ? '
+              'AND ${BarcodesPackagesTable.columnIdMove} = ? '
+              'AND ${BarcodesPackagesTable.columnIdProduct} = ? '
+              'AND ${BarcodesPackagesTable.columnBarcodeType} = ?',
+          whereArgs: [
+            p[ProductosPedidosTable.columnBatchId],
+            p[ProductosPedidosTable.columnIdMove],
+            p[ProductosPedidosTable.columnIdProduct],
+            barcodeType,
+          ],
+        );
+      }
+      debugPrint('🗑️ Barcodes eliminados para pedido $pedidoId ($barcodeType)');
+    } catch (e, s) {
+      debugPrint('Error deleteBarcodesByPedidoId: $e ==> $s');
     }
   }
 }

@@ -26,12 +26,12 @@ class SelectReportEvent extends PrintingEvent {
 }
 
 class ExecutePrintEvent extends PrintingEvent {
-  final int resId;
+  final List<int> resIds;
   final int companyId;
   final int copies;
   const ExecutePrintEvent(
-      {required this.resId, required this.companyId, this.copies = 1});
+      {required this.resIds, required this.companyId, this.copies = 1});
 
   @override
-  List<Object?> get props => [resId, companyId, copies];
+  List<Object?> get props => [resIds, companyId, copies];
 }

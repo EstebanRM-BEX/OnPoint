@@ -56,7 +56,7 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
       final bool needsConfig = bloc.configurations.result == null;
 
       // Si todo ya está cargado, no hacemos nada.
-      if (!needsLocations && !needsProducts && !needsConfig) return;
+      // if (!needsLocations && !needsProducts && !needsConfig) return;
 
       int loadsCount = 0;
       if (needsLocations) loadsCount++;

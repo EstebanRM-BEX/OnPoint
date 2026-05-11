@@ -9,6 +9,7 @@ class UserLocationModel extends UserLocation {
     required super.locationName,
     super.barcode,
     super.warehouseName,
+    super.isADockAlter,
   });
 
   factory UserLocationModel.fromJson(Map<String, dynamic> json) {
@@ -22,6 +23,8 @@ class UserLocationModel extends UserLocation {
       locationId: json['location_id'],
       locationName: json['location_name'],
       warehouseName: json['warehouse_name'],
+      //is_a_dock_alter
+      isADockAlter: json['is_a_dock_alter'],
     );
   }
 
@@ -34,6 +37,8 @@ class UserLocationModel extends UserLocation {
       'location_id': locationId,
       'location_name': locationName,
       'warehouse_name': warehouseName,
+      //is_a_dock_alter
+      'is_a_dock_alter': isADockAlter,
     };
   }
 }

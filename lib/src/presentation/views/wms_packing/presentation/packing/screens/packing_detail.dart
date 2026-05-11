@@ -89,10 +89,9 @@ class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
                   ),
                   onPressed: () {
                     ModalPrintersList.show(context,
-                        resId: context
-                            .read<PackingPedidoBloc>()
-                            .currentPedidoPack
-                            .id,
+                        resIds: [
+                          context.read<PackingPedidoBloc>().currentPedidoPack.id
+                        ],
                         companyId: context
                             .read<PackingPedidoBloc>()
                             .currentPedidoPack
