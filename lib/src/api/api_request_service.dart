@@ -16,21 +16,21 @@ import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/core/utils/widgets/dialog_loading_widget.dart'; // Para extraer la extensión del filename
+import 'package:wms_app/core/utils/widgets/dialog_loading_widget.dart';
 
 class ApiRequestService {
   static final ApiRequestService _instance = ApiRequestService._internal();
 
-  factory ApiRequestService() {
-    return _instance;
-  }
+  factory ApiRequestService() => _instance;
 
   ApiRequestService._internal();
 
   late String unencodePath;
   late HttpResponseHandler httpHandler;
 
-  // Agregar un método de inicialización para configurar los parámetros requeridos.
+  // Instancia reutilizada — evita crear un nuevo objeto en cada llamada
+  final Connectivity _connectivity = Connectivity();
+
   void initialize({
     required String unencodePath,
     required HttpResponseHandler httpHandler,
@@ -39,872 +39,27 @@ class ApiRequestService {
     this.httpHandler = httpHandler;
   }
 
-  //todo: _setHeaders
-  Future<Map<String, String>> _setHeaders(Map<String, String>? headers) async {
-    headers ??= <String, String>{};
+  // ─── Helpers privados ────────────────────────────────────────────────────────
 
-    headers.putIfAbsent('X-localization', () => "es");
-    headers.putIfAbsent(HttpHeaders.acceptHeader, () => 'application/json');
-    // 'Cache-Control': 'no-cache',
-    headers.putIfAbsent('Pragma', () => 'no-cache');
-    headers.putIfAbsent('Expires', () => '0');
-    return headers;
+  /// Extrae el session_id de la cookie almacenada. Centraliza la lógica que
+  /// antes estaba copy-paste en 10+ métodos.
+  String _extractSessionId(String cookie) {
+    for (final part in cookie.split(',')) {
+      if (part.contains('session_id=')) {
+        return part.split(';')[0].trim();
+      }
+    }
+    return '';
   }
 
-  // //todo: post
-
-  Future<http.Response> post({
-    required String endpoint,
-    required Map<String, dynamic>? body,
-    required bool isLoadinDialog,
-    required bool isunecodePath,
-  }) async {
-    // Convertir el cuerpo a JSON si no es nulo
-    final bodyJson = jsonEncode(body);
-
-    var url = await PrefUtils.getEnterprise();
-
-    try {
-      var connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        // Si no hay conexión, retornar una lista vacía
-        debugPrint('🔴 Error de red en [POST]: No hay conexión');
-        Get.snackbar('Error de red', 'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ));
-      } else {
-        final result = await InternetAddress.lookup('example.com');
-        if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-          if (isLoadinDialog) {
-            // Mostrar el diálogo de carga con Get.dialog
-            Get.dialog(
-              DialogLoadingNetwork(titel: endpoint),
-              barrierDismissible:
-                  false, // No permitir cerrar tocando fuera del diálogo
-            );
-          }
-
-          url =
-              url + (isunecodePath ? '$unencodePath/$endpoint' : '/$endpoint');
-
-          Map<String, String> headers = {
-            'Content-Type': 'application/json',
-          };
-
-          // Intentar hacer la solicitud HTTP
-          final response =
-              await http.post(Uri.parse(url), body: bodyJson, headers: headers);
-
-          // Cerrar el diálogo de carga cuando la solicitud se haya completado
-          if (isLoadinDialog) {
-            Get.back();
-          }
-          if (response.headers.containsKey('set-cookie')) {
-            debugPrint("set-cookie: ${response.headers['set-cookie']}");
-            await PrefUtils.setCookie(response.headers['set-cookie']!);
-          }
-
-          debugPrint("--------------------------------------------");
-          debugPrint('Petición POST a $endpoint');
-          debugPrint('Cuerpo de la solicitud: $url');
-          debugPrint('headers: $headers');
-          debugPrint('status code: ${response.statusCode}');
-          debugPrint("--------------------------------------------");
-
-          return response;
-        } else {
-          debugPrint('🔴 Error de red en [POST]: Fallo lookup');
-          Get.snackbar(
-            'Error de red',
-            'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ),
-          );
-        }
-      }
-      return http.Response('Error de red', 404);
-    } on SocketException catch (e) {
-      // Manejo de error de red
-      debugPrint('Error de red: $e');
-      debugPrint('🔴 Error de red en [POST]: SocketException $e');
-      Get.snackbar(
-        'Error de red',
-        'No se pudo conectar al servidor',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        duration: const Duration(seconds: 5),
-        leftBarIndicatorColor: yellow,
-        icon: Icon(
-          Icons.error,
-          color: primaryColorApp,
-        ),
-      );
-      // Cerrar el diálogo de carga incluso en caso de error de red
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
-    } catch (e) {
-      // Manejo de otros errores
-      debugPrint('Error desconocido en la solicitud: $e');
-      // Cerrar el diálogo de carga incluso en caso de otros errores
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
-    }
+  /// Verifica conectividad local (WiFi / Mobile). No hace DNS lookup externo
+  /// para no añadir latencia innecesaria a cada petición.
+  Future<bool> _isConnected() async {
+    final result = await _connectivity.checkConnectivity();
+    return result != ConnectivityResult.none;
   }
 
-  Future<http.Response> searchEnterprice({required String enterprice}) async {
-    var url = "$enterprice/web/database/list";
-
-    try {
-      var connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        // Si no hay conexión, retornar una lista vacía
-        debugPrint('🔴 Error de red en [searchEnterprice]: No hay conexión');
-        Get.snackbar('Error de red', 'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ));
-        return http.Response('Error de red', 404);
-      }
-
-      // Opción 1: Si el servidor espera JSON en el body
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({"params": {}}), // Convertir a JSON string
-      );
-      return response;
-    } on SocketException catch (e) {
-      debugPrint('Error de red: $e');
-      _showNetworkErrorSnackbar();
-      rethrow;
-    } catch (e, s) {
-      debugPrint('Error desconocido en la solicitud: $e - $s');
-      _showNetworkErrorSnackbar();
-      rethrow;
-    }
-  }
-
-  Future<http.Response> postMultipartImage({
-    required String endpoint,
-    required File imageFile,
-    required bool isLoadinDialog,
-  }) async {
-    final urlBase = 'http://34.127.73.152:5005';
-    final fullUrl = Uri.parse('$urlBase/$endpoint');
-
-    try {
-      // 1) Verificar conexión de red
-      final connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        debugPrint('🔴 Error de red en [postMultipartImage]: No hay conexión');
-        Get.snackbar(
-          'Error de red',
-          'No se pudo conectar al servidor',
-          backgroundColor: white,
-          colorText: primaryColorApp,
-          duration: const Duration(seconds: 5),
-          leftBarIndicatorColor: yellow,
-          icon: Icon(Icons.error, color: primaryColorApp),
-        );
-        return http.Response('Error de red', 404);
-      }
-
-      // 2) Verificar resolución de DNS
-      final result = await InternetAddress.lookup('example.com');
-      if (result.isEmpty || result[0].rawAddress.isEmpty) {
-        return http.Response('No se pudo resolver DNS', 404);
-      }
-
-      // 3) Mostrar diálogo de carga (si aplica)
-      if (isLoadinDialog) {
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
-      }
-
-      // 4) Extraer extensión de la imagen para definir el MIME
-      final extension = p.extension(imageFile.path).toLowerCase(); // ej: ".jpg"
-      String subtype;
-      if (extension == '.png') {
-        subtype = 'png';
-      } else {
-        // Por defecto asumimos JPEG para .jpg o .jpeg
-        subtype = 'jpeg';
-      }
-
-      // 5) Crear MultipartRequest y forzar el contentType correcto
-      final request = http.MultipartRequest('POST', fullUrl);
-      request.files.add(await http.MultipartFile.fromPath(
-        'image',
-        imageFile.path,
-        contentType: MediaType('image', 'jpeg'),
-      ));
-      request.headers.addAll({
-        'Accept': 'application/json',
-        'Content-Type': 'multipart/form-data',
-      });
-
-      // 6) Enviar la petición
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      // 7) Cerrar diálogo de carga
-      if (isLoadinDialog) {
-        Get.back();
-      }
-
-      // 8) Imprimir para debugging
-      debugPrint('--------------------------------------------');
-      debugPrint('Petición MULTIPART a $endpoint');
-      debugPrint('status code: ${response.statusCode}');
-      debugPrint('respuesta: ${response.body}');
-      debugPrint('--------------------------------------------');
-
-      return response;
-    } catch (e, s) {
-      // 9) En caso de error, cerrar diálogo y loguear
-      if (isLoadinDialog) Get.back();
-      debugPrint("Error en postMultipartImage: $e\n$s");
-      return http.Response('Error en la solicitud: $e', 500);
-    }
-  }
-
-  Future<http.Response> postMultipart({
-    required String endpoint,
-    required File imageFile,
-    required int idMoveLine,
-    required dynamic temperature,
-    required bool isLoadinDialog,
-  }) async {
-    final urlBase = await PrefUtils.getEnterprise();
-    final fullUrl = Uri.parse('$urlBase/api/$endpoint');
-    final cookie = await PrefUtils.getCookie(); // 👈 Obtener cookie almacenada
-
-    try {
-      final connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        debugPrint('🔴 Error de red en [postMultipart]: No hay conexión');
-        Get.snackbar(
-          'Error de red',
-          'No se pudo conectar al servidor',
-          backgroundColor: white,
-          colorText: primaryColorApp,
-          duration: const Duration(seconds: 5),
-          leftBarIndicatorColor: yellow,
-          icon: Icon(Icons.error, color: primaryColorApp),
-        );
-        return http.Response('Error de red', 404);
-      }
-
-      final result = await InternetAddress.lookup('example.com');
-      if (result.isEmpty || result[0].rawAddress.isEmpty) {
-        return http.Response('No se pudo resolver DNS', 404);
-      }
-
-      if (isLoadinDialog) {
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
-      }
-
-      final extension = p.extension(imageFile.path).toLowerCase();
-      final subtype = extension == '.png' ? 'png' : 'jpeg';
-
-      final request = http.MultipartRequest('POST', fullUrl);
-
-      // 🔧 Cambia 'image' por 'image_data' como espera el backend
-      request.files.add(await http.MultipartFile.fromPath(
-        'image_data',
-        imageFile.path,
-        contentType: MediaType('image', subtype),
-      ));
-
-      // 🔧 Campos con nombres exactos que el backend espera
-      request.fields['move_line_id'] = idMoveLine.toString();
-      request.fields['temperatura'] = temperature.toString();
-
-      // 🔐 Agrega la cookie (como en Postman)
-      request.headers.addAll({
-        'Cookie': cookie,
-      });
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (isLoadinDialog) {
-        Get.back();
-      }
-
-      debugPrint('--------------------------------------------');
-      debugPrint('Petición MULTIPART a $endpoint');
-      debugPrint('status code: ${response.statusCode}');
-      debugPrint('respuesta: ${response.body}');
-      debugPrint('--------------------------------------------');
-
-      return response;
-    } catch (e, s) {
-      if (isLoadinDialog) Get.back();
-      debugPrint("Error en postMultipart: $e\n$s");
-      return http.Response('Error en la solicitud: $e', 500);
-    }
-  }
-
-  Future<http.Response> postMultipartManual({
-    required String endpoint,
-    required int idMoveLine,
-    required dynamic temperature,
-    required bool isLoadinDialog,
-  }) async {
-    final urlBase = await PrefUtils.getEnterprise();
-    final fullUrl = Uri.parse('$urlBase/api/$endpoint');
-    final cookie = await PrefUtils.getCookie(); // 👈 Obtener cookie almacenada
-
-    try {
-      final connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        debugPrint('🔴 Error de red en [postMultipartManual]: No hay conexión');
-        Get.snackbar(
-          'Error de red',
-          'No se pudo conectar al servidor',
-          backgroundColor: white,
-          colorText: primaryColorApp,
-          duration: const Duration(seconds: 5),
-          leftBarIndicatorColor: yellow,
-          icon: Icon(Icons.error, color: primaryColorApp),
-        );
-        return http.Response('Error de red', 404);
-      }
-
-      final result = await InternetAddress.lookup('example.com');
-      if (result.isEmpty || result[0].rawAddress.isEmpty) {
-        return http.Response('No se pudo resolver DNS', 404);
-      }
-
-      if (isLoadinDialog) {
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
-      }
-
-      final request = http.MultipartRequest('POST', fullUrl);
-
-      // 🔧 Cambia 'image' por 'image_data' como espera el backend
-
-      // 🔧 Campos con nombres exactos que el backend espera
-      request.fields['move_line_id'] = idMoveLine.toString();
-      request.fields['temperatura'] = temperature.toString();
-
-      // 🔐 Agrega la cookie (como en Postman)
-      request.headers.addAll({
-        'Cookie': cookie,
-      });
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (isLoadinDialog) {
-        Get.back();
-      }
-
-      debugPrint('--------------------------------------------');
-      debugPrint('Petición MULTIPART a $endpoint');
-      debugPrint('status code: ${response.statusCode}');
-      debugPrint('respuesta: ${response.body}');
-      debugPrint('--------------------------------------------');
-
-      return response;
-    } catch (e, s) {
-      if (isLoadinDialog) Get.back();
-      debugPrint("Error en postMultipart: $e\n$s");
-      return http.Response('Error en la solicitud: $e', 500);
-    }
-  }
-
-  Future<http.Response> postMultipartDynamic({
-    required String endpoint,
-    required File imageFile,
-    required Map<String, dynamic> fields, // Campos dinámicos
-    bool isLoadingDialog = false,
-  }) async {
-    final urlBase = await PrefUtils.getEnterprise();
-    final fullUrl = Uri.parse('$urlBase/api/$endpoint');
-    final cookie = await PrefUtils.getCookie();
-
-    try {
-      final connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        debugPrint(
-            '🔴 Error de red en [postMultipartDynamic]: No hay conexión');
-        Get.snackbar(
-          'Error de red',
-          'No se pudo conectar al servidor',
-          backgroundColor: white,
-          colorText: primaryColorApp,
-          duration: const Duration(seconds: 5),
-          leftBarIndicatorColor: yellow,
-          icon: Icon(Icons.error, color: primaryColorApp),
-        );
-        return http.Response('Error de red', 404);
-      }
-
-      final result = await InternetAddress.lookup('example.com');
-      if (result.isEmpty || result[0].rawAddress.isEmpty) {
-        return http.Response('No se pudo resolver DNS', 404);
-      }
-
-      if (isLoadingDialog) {
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
-      }
-
-      final extension = p.extension(imageFile.path).toLowerCase();
-      final subtype = extension == '.png' ? 'png' : 'jpeg';
-
-      final request = http.MultipartRequest('POST', fullUrl);
-
-      // ✅ Imagen
-      request.files.add(await http.MultipartFile.fromPath(
-        'image_data',
-        imageFile.path,
-        contentType: MediaType('image', subtype),
-      ));
-
-      // ✅ Campos dinámicos
-      fields.forEach((key, value) {
-        if (value != null) {
-          request.fields[key] = value.toString();
-        }
-      });
-
-      request.headers['Cookie'] = cookie;
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (isLoadingDialog) {
-        Get.back();
-      }
-
-      debugPrint('--------------------------------------------');
-      debugPrint('Petición MULTIPART a $endpoint');
-      debugPrint('status code: ${response.statusCode}');
-      debugPrint('respuesta: ${response.body}');
-      debugPrint('--------------------------------------------');
-
-      return response;
-    } catch (e, s) {
-      if (isLoadingDialog) Get.back();
-      debugPrint("Error en postMultipartDynamic: $e\n$s");
-      return http.Response('Error en la solicitud: $e', 500);
-    }
-  }
-
-  Future<http.Response> postPicking({
-    required String endpoint,
-    required Map<String, dynamic>? body,
-    required bool isLoadinDialog,
-    required bool isunecodePath,
-  }) async {
-    var url = await PrefUtils.getEnterprise();
-    var cookie = await PrefUtils.getCookie();
-
-    // Extraer el session_id de la cookie
-    String sessionId = '';
-    List<String> cookies = cookie.split(',');
-    for (var c in cookies) {
-      if (c.contains('session_id=')) {
-        sessionId = c.split(';')[0].trim();
-        break; // Detener la búsqueda después de encontrar el session_id
-      }
-    }
-
-    debugPrint("body: $body");
-
-    var headers = {
-      'Content-Type': 'application/json',
-      'Cookie': '$sessionId',
-    };
-
-    try {
-      var connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        // Si no hay conexión, retornar una lista vacía
-        debugPrint('🔴 Error de red en [postPicking]: No hay conexión');
-        Get.snackbar('Error de red', 'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ));
-      } else {
-        final result = await InternetAddress.lookup('example.com');
-        if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-          if (isLoadinDialog) {
-            // Mostrar el diálogo de carga con Get.dialog
-            Get.dialog(
-              DialogLoadingNetwork(titel: endpoint),
-              barrierDismissible:
-                  false, // No permitir cerrar tocando fuera del diálogo
-            );
-          }
-
-          url =
-              url + (isunecodePath ? '$unencodePath/$endpoint' : '/$endpoint');
-
-          // Intentar hacer la solicitud HTTP
-          var request = http.Request('POST', Uri.parse(url));
-          request.body = json.encode(body);
-          request.headers.addAll(headers);
-
-          final response =
-              await request.send().timeout(const Duration(seconds: 100));
-
-          // Cerrar el diálogo de carga cuando la solicitud se haya completado
-          if (isLoadinDialog) {
-            Get.back();
-          }
-
-          debugPrint("--------------------------------------------");
-          debugPrint('Petición POST a $endpoint');
-          debugPrint('url: $url');
-          debugPrint('Cuerpo de la solicitud: ${jsonDecode(request.body)}');
-          debugPrint('headers: $headers');
-          debugPrint('status code: ${response.statusCode}');
-          debugPrint("--------------------------------------------");
-
-          return http.Response.fromStream(response);
-        } else {
-          debugPrint('🔴 Error de red en [postPicking]: Fallo lookup');
-          Get.snackbar(
-            'Error de red',
-            'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ),
-          );
-        }
-      }
-      return http.Response('Error de red', 404);
-    } on TimeoutException catch (e, s) {
-      debugPrint('La solicitud superó el tiempo de espera: $e => $s');
-      return http.Response('La solicitud superó el tiempo de espera', 408);
-    } on SocketException catch (e) {
-      // Manejo de error de red
-      debugPrint('Error de red: $e');
-      debugPrint('🔴 Error de red en [postPicking]: SocketException $e');
-      Get.snackbar(
-        'Error de red',
-        'No se pudo conectar al servidor',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        duration: const Duration(seconds: 5),
-        leftBarIndicatorColor: yellow,
-        icon: Icon(
-          Icons.error,
-          color: primaryColorApp,
-        ),
-      );
-      // Cerrar el diálogo de carga incluso en caso de error de red
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
-    } catch (e, s) {
-      // Manejo de otros errores
-      debugPrint('Error desconocido en la solicitud: $e \n $s');
-      // Cerrar el diálogo de carga incluso en caso de otros errores
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
-    }
-  }
-
-  Future<http.Response> postPacking({
-    required String endpoint,
-    required Map<String, dynamic>? body,
-    required bool isLoadinDialog,
-  }) async {
-    var url = await PrefUtils.getEnterprise();
-    var cookie = await PrefUtils.getCookie();
-
-    // Extraer el session_id de la cookie
-    String sessionId = '';
-    List<String> cookies = cookie.split(',');
-    for (var c in cookies) {
-      if (c.contains('session_id=')) {
-        sessionId = c.split(';')[0].trim();
-        break; // Detener la búsqueda después de encontrar el session_id
-      }
-    }
-
-    var headers = {
-      'Content-Type': 'application/json',
-      'Cookie': '$sessionId',
-    };
-
-    debugPrint(headers.toString());
-
-    bool loadingDialogOpened = false;
-    try {
-      var connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        // Si no hay conexión, retornar una lista vacía
-        debugPrint('🔴 Error de red en [postPacking]: No hay conexión');
-        Get.snackbar('Error de red', 'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ));
-      } else {
-        final result = await InternetAddress.lookup('example.com');
-        if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-          if (isLoadinDialog) {
-            // Mostrar el diálogo de carga con Get.dialog
-            Get.dialog(
-              DialogLoadingNetwork(titel: endpoint),
-              barrierDismissible:
-                  false, // No permitir cerrar tocando fuera del diálogo
-            );
-            loadingDialogOpened = true;
-          }
-
-          url = '$url$unencodePath/$endpoint';
-
-          // Intentar hacer la solicitud HTTP
-          var request = http.Request('POST', Uri.parse(url));
-          request.body = json.encode(body);
-          request.headers.addAll(headers);
-
-          debugPrint("==== BODY ====");
-          debugPrint(jsonEncode(body));
-          debugPrint("==== URL ====");
-          debugPrint(url);
-          debugPrint("==== HEADERS ====");
-          debugPrint(headers.toString());
-
-          final response = await request.send();
-
-          // Cerrar el diálogo de carga cuando la solicitud se haya completado
-          if (loadingDialogOpened) {
-            Get.back();
-            loadingDialogOpened = false;
-          }
-
-          debugPrint("--------------------------------------------");
-          debugPrint('Petición POST a $endpoint');
-          debugPrint('url: $url');
-          debugPrint('Cuerpo de la solicitud: ${jsonDecode(request.body)}');
-          debugPrint('headers: $headers');
-          debugPrint('status code: ${response.statusCode}');
-          debugPrint("--------------------------------------------");
-
-          return http.Response.fromStream(response);
-        } else {
-          debugPrint('🔴 Error de red en [postPacking]: Fallo lookup');
-          Get.snackbar(
-            'Error de red',
-            'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ),
-          );
-        }
-      }
-      return http.Response('Error de red', 404);
-    } on SocketException catch (e) {
-      // Manejo de error de red
-      debugPrint('Error de red: $e');
-      debugPrint('🔴 Error de red en [postPacking]: SocketException $e');
-      Get.snackbar(
-        'Error de red',
-        'No se pudo conectar al servidor',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        duration: const Duration(seconds: 5),
-        leftBarIndicatorColor: yellow,
-        icon: Icon(
-          Icons.error,
-          color: primaryColorApp,
-        ),
-      );
-      // Solo cerrar el diálogo si fue abierto (evita cerrar pantallas no deseadas)
-      if (loadingDialogOpened) Get.back();
-      return http.Response('Error de red', 404);
-    } catch (e) {
-      // Manejo de otros errores
-      debugPrint('Error desconocido en la solicitud: $e');
-      // Cerrar el diálogo de carga incluso en caso de otros errores
-      if (loadingDialogOpened) Get.back();
-      rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
-    }
-  }
-
-  Future<http.Response> postPrint({
-    required String endpoint,
-    required Map<String, dynamic>? body,
-    required bool isLoadinDialog,
-  }) async {
-    var url = await PrefUtils.getEnterprise();
-    var cookie = await PrefUtils.getCookie();
-
-    // Extraer el session_id de la cookie
-    String sessionId = '';
-    List<String> cookies = cookie.split(',');
-    for (var c in cookies) {
-      if (c.contains('session_id=')) {
-        sessionId = c.split(';')[0].trim();
-        break; // Detener la búsqueda después de encontrar el session_id
-      }
-    }
-
-    var headers = {
-      'Content-Type': 'application/json',
-      'Cookie': '$sessionId',
-    };
-
-    debugPrint(headers.toString());
-
-    try {
-      var connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        // Si no hay conexión, retornar una lista vacía
-        debugPrint('🔴 Error de red en [postPacking]: No hay conexión');
-        Get.snackbar('Error de red', 'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ));
-      } else {
-        final result = await InternetAddress.lookup('example.com');
-        if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-          if (isLoadinDialog) {
-            // Mostrar el diálogo de carga con Get.dialog
-            Get.dialog(
-              DialogLoadingNetwork(titel: endpoint),
-              barrierDismissible:
-                  false, // No permitir cerrar tocando fuera del diálogo
-            );
-          }
-
-          url = '$url/$endpoint';
-
-          print('✅✅✅✅✅✅ url: $url');
-
-          // Intentar hacer la solicitud HTTP
-          var request = http.Request('POST', Uri.parse(url));
-          request.body = json.encode(body);
-          request.headers.addAll(headers);
-
-          debugPrint("==== BODY ====");
-          debugPrint(jsonEncode(body));
-          debugPrint("==== URL ====");
-          debugPrint(url);
-          debugPrint("==== HEADERS ====");
-          debugPrint(headers.toString());
-
-          final response = await request.send();
-
-          // Cerrar el diálogo de carga cuando la solicitud se haya completado
-          if (isLoadinDialog) {
-            Get.back();
-          }
-
-          debugPrint("--------------------------------------------");
-          debugPrint('Petición POST a $endpoint');
-          debugPrint('url: $url');
-          debugPrint('Cuerpo de la solicitud: ${jsonDecode(request.body)}');
-          debugPrint('headers: $headers');
-          debugPrint('status code: ${response.statusCode}');
-          debugPrint("--------------------------------------------");
-
-          return http.Response.fromStream(response);
-        } else {
-          debugPrint('🔴 Error de red en [postPacking]: Fallo lookup');
-          Get.snackbar(
-            'Error de red',
-            'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ),
-          );
-        }
-      }
-      return http.Response('Error de red', 404);
-    } on SocketException catch (e) {
-      // Manejo de error de red
-      debugPrint('Error de red: $e');
-      debugPrint('🔴 Error de red en [postPacking]: SocketException $e');
-      Get.snackbar(
-        'Error de red',
-        'No se pudo conectar al servidor',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        duration: const Duration(seconds: 5),
-        leftBarIndicatorColor: yellow,
-        icon: Icon(
-          Icons.error,
-          color: primaryColorApp,
-        ),
-      );
-      // Cerrar el diálogo de carga incluso en caso de error de red
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
-    } catch (e) {
-      // Manejo de otros errores
-      debugPrint('Error desconocido en la solicitud: $e');
-      // Cerrar el diálogo de carga incluso en caso de otros errores
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
-    }
-  }
-
-  void _showNetworkErrorSnackbar() {
-    debugPrint('🔴 EJECUTANDO SNACKBAR EN: _showNetworkErrorSnackbar');
+  void _showNetworkError() {
     Get.snackbar(
       'Error de red',
       'No se pudo conectar al servidor',
@@ -916,120 +71,430 @@ class ApiRequestService {
     );
   }
 
+  // ─── Métodos públicos ─────────────────────────────────────────────────────────
+
+  Future<http.Response> post({
+    required String endpoint,
+    required Map<String, dynamic>? body,
+    required bool isLoadinDialog,
+    required bool isunecodePath,
+  }) async {
+    if (!await _isConnected()) {
+      debugPrint('🔴 [POST] Sin conexión');
+      _showNetworkError();
+      return http.Response('Error de red', 404);
+    }
+
+    var url = await PrefUtils.getEnterprise();
+    url = url + (isunecodePath ? '$unencodePath/$endpoint' : '/$endpoint');
+    final headers = {'Content-Type': 'application/json'};
+
+    try {
+      if (isLoadinDialog) Get.dialog(DialogLoadingNetwork(titel: endpoint), barrierDismissible: false);
+
+      final response = await http.post(Uri.parse(url), body: jsonEncode(body), headers: headers);
+
+      if (isLoadinDialog) Get.back();
+
+      if (response.headers.containsKey('set-cookie')) {
+        await PrefUtils.setCookie(response.headers['set-cookie']!);
+      }
+
+      debugPrint('✅ POST $endpoint → ${response.statusCode}');
+      return response;
+    } on SocketException catch (e) {
+      debugPrint('🔴 [POST] SocketException: $e');
+      if (isLoadinDialog) Get.back();
+      _showNetworkError();
+      rethrow;
+    } catch (e) {
+      debugPrint('🔴 [POST] Error: $e');
+      if (isLoadinDialog) Get.back();
+      rethrow;
+    }
+  }
+
+  Future<http.Response> searchEnterprice({required String enterprice}) async {
+    final url = "$enterprice/web/database/list";
+
+    if (!await _isConnected()) {
+      debugPrint('🔴 [searchEnterprice] Sin conexión');
+      _showNetworkError();
+      return http.Response('Error de red', 404);
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({"params": {}}),
+      );
+      return response;
+    } on SocketException catch (e) {
+      debugPrint('🔴 [searchEnterprice] SocketException: $e');
+      _showNetworkError();
+      rethrow;
+    } catch (e, s) {
+      debugPrint('🔴 [searchEnterprice] Error: $e - $s');
+      _showNetworkError();
+      rethrow;
+    }
+  }
+
+  Future<http.Response> postMultipartImage({
+    required String endpoint,
+    required File imageFile,
+    required bool isLoadinDialog,
+  }) async {
+    if (!await _isConnected()) {
+      debugPrint('🔴 [postMultipartImage] Sin conexión');
+      _showNetworkError();
+      return http.Response('Error de red', 404);
+    }
+
+    const urlBase = 'http://34.127.73.152:5005';
+    final fullUrl = Uri.parse('$urlBase/$endpoint');
+    final ext = p.extension(imageFile.path).toLowerCase();
+    final subtype = ext == '.png' ? 'png' : 'jpeg';
+
+    try {
+      if (isLoadinDialog) Get.dialog(DialogLoadingNetwork(titel: endpoint), barrierDismissible: false);
+
+      final request = http.MultipartRequest('POST', fullUrl);
+      request.files.add(await http.MultipartFile.fromPath(
+        'image',
+        imageFile.path,
+        contentType: MediaType('image', subtype),
+      ));
+      request.headers.addAll({'Accept': 'application/json'});
+
+      final response = await http.Response.fromStream(await request.send());
+
+      if (isLoadinDialog) Get.back();
+      debugPrint('✅ MULTIPART $endpoint → ${response.statusCode}');
+      return response;
+    } catch (e, s) {
+      if (isLoadinDialog) Get.back();
+      debugPrint('🔴 [postMultipartImage] Error: $e\n$s');
+      return http.Response('Error en la solicitud: $e', 500);
+    }
+  }
+
+  Future<http.Response> postMultipart({
+    required String endpoint,
+    required File imageFile,
+    required int idMoveLine,
+    required dynamic temperature,
+    required bool isLoadinDialog,
+  }) async {
+    if (!await _isConnected()) {
+      debugPrint('🔴 [postMultipart] Sin conexión');
+      _showNetworkError();
+      return http.Response('Error de red', 404);
+    }
+
+    final urlBase = await PrefUtils.getEnterprise();
+    final cookie = await PrefUtils.getCookie();
+    final fullUrl = Uri.parse('$urlBase/api/$endpoint');
+    final ext = p.extension(imageFile.path).toLowerCase();
+    final subtype = ext == '.png' ? 'png' : 'jpeg';
+
+    try {
+      if (isLoadinDialog) Get.dialog(DialogLoadingNetwork(titel: endpoint), barrierDismissible: false);
+
+      final request = http.MultipartRequest('POST', fullUrl);
+      request.files.add(await http.MultipartFile.fromPath(
+        'image_data',
+        imageFile.path,
+        contentType: MediaType('image', subtype),
+      ));
+      request.fields['move_line_id'] = idMoveLine.toString();
+      request.fields['temperatura'] = temperature.toString();
+      request.headers['Cookie'] = cookie;
+
+      final response = await http.Response.fromStream(await request.send());
+
+      if (isLoadinDialog) Get.back();
+      debugPrint('✅ MULTIPART $endpoint → ${response.statusCode}');
+      return response;
+    } catch (e, s) {
+      if (isLoadinDialog) Get.back();
+      debugPrint('🔴 [postMultipart] Error: $e\n$s');
+      return http.Response('Error en la solicitud: $e', 500);
+    }
+  }
+
+  Future<http.Response> postMultipartManual({
+    required String endpoint,
+    required int idMoveLine,
+    required dynamic temperature,
+    required bool isLoadinDialog,
+  }) async {
+    if (!await _isConnected()) {
+      debugPrint('🔴 [postMultipartManual] Sin conexión');
+      _showNetworkError();
+      return http.Response('Error de red', 404);
+    }
+
+    final urlBase = await PrefUtils.getEnterprise();
+    final cookie = await PrefUtils.getCookie();
+    final fullUrl = Uri.parse('$urlBase/api/$endpoint');
+
+    try {
+      if (isLoadinDialog) Get.dialog(DialogLoadingNetwork(titel: endpoint), barrierDismissible: false);
+
+      final request = http.MultipartRequest('POST', fullUrl);
+      request.fields['move_line_id'] = idMoveLine.toString();
+      request.fields['temperatura'] = temperature.toString();
+      request.headers['Cookie'] = cookie;
+
+      final response = await http.Response.fromStream(await request.send());
+
+      if (isLoadinDialog) Get.back();
+      debugPrint('✅ MULTIPART MANUAL $endpoint → ${response.statusCode}');
+      return response;
+    } catch (e, s) {
+      if (isLoadinDialog) Get.back();
+      debugPrint('🔴 [postMultipartManual] Error: $e\n$s');
+      return http.Response('Error en la solicitud: $e', 500);
+    }
+  }
+
+  Future<http.Response> postMultipartDynamic({
+    required String endpoint,
+    required File imageFile,
+    required Map<String, dynamic> fields,
+    bool isLoadingDialog = false,
+  }) async {
+    if (!await _isConnected()) {
+      debugPrint('🔴 [postMultipartDynamic] Sin conexión');
+      _showNetworkError();
+      return http.Response('Error de red', 404);
+    }
+
+    final urlBase = await PrefUtils.getEnterprise();
+    final cookie = await PrefUtils.getCookie();
+    final fullUrl = Uri.parse('$urlBase/api/$endpoint');
+    final ext = p.extension(imageFile.path).toLowerCase();
+    final subtype = ext == '.png' ? 'png' : 'jpeg';
+
+    try {
+      if (isLoadingDialog) Get.dialog(DialogLoadingNetwork(titel: endpoint), barrierDismissible: false);
+
+      final request = http.MultipartRequest('POST', fullUrl);
+      request.files.add(await http.MultipartFile.fromPath(
+        'image_data',
+        imageFile.path,
+        contentType: MediaType('image', subtype),
+      ));
+      fields.forEach((key, value) {
+        if (value != null) request.fields[key] = value.toString();
+      });
+      request.headers['Cookie'] = cookie;
+
+      final response = await http.Response.fromStream(await request.send());
+
+      if (isLoadingDialog) Get.back();
+      debugPrint('✅ MULTIPART DYNAMIC $endpoint → ${response.statusCode}');
+      return response;
+    } catch (e, s) {
+      if (isLoadingDialog) Get.back();
+      debugPrint('🔴 [postMultipartDynamic] Error: $e\n$s');
+      return http.Response('Error en la solicitud: $e', 500);
+    }
+  }
+
+  Future<http.Response> postPicking({
+    required String endpoint,
+    required Map<String, dynamic>? body,
+    required bool isLoadinDialog,
+    required bool isunecodePath,
+  }) async {
+    if (!await _isConnected()) {
+      debugPrint('🔴 [postPicking] Sin conexión');
+      _showNetworkError();
+      return http.Response('Error de red', 404);
+    }
+
+    var url = await PrefUtils.getEnterprise();
+    final cookie = await PrefUtils.getCookie();
+    final sessionId = _extractSessionId(cookie);
+    url = url + (isunecodePath ? '$unencodePath/$endpoint' : '/$endpoint');
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Cookie': sessionId,
+    };
+
+    try {
+      if (isLoadinDialog) Get.dialog(DialogLoadingNetwork(titel: endpoint), barrierDismissible: false);
+
+      final request = http.Request('POST', Uri.parse(url));
+      request.body = json.encode(body);
+      request.headers.addAll(headers);
+
+      final streamed = await request.send().timeout(const Duration(seconds: 100));
+      final response = await http.Response.fromStream(streamed);
+
+      if (isLoadinDialog) Get.back();
+      debugPrint('✅ POST PICKING $endpoint → ${response.statusCode}');
+      return response;
+    } on TimeoutException catch (e) {
+      debugPrint('🔴 [postPicking] Timeout: $e');
+      if (isLoadinDialog) Get.back();
+      return http.Response('La solicitud superó el tiempo de espera', 408);
+    } on SocketException catch (e) {
+      debugPrint('🔴 [postPicking] SocketException: $e');
+      if (isLoadinDialog) Get.back();
+      _showNetworkError();
+      rethrow;
+    } catch (e, s) {
+      debugPrint('🔴 [postPicking] Error: $e\n$s');
+      if (isLoadinDialog) Get.back();
+      rethrow;
+    }
+  }
+
+  Future<http.Response> postPacking({
+    required String endpoint,
+    required Map<String, dynamic>? body,
+    required bool isLoadinDialog,
+  }) async {
+    if (!await _isConnected()) {
+      debugPrint('🔴 [postPacking] Sin conexión');
+      _showNetworkError();
+      return http.Response('Error de red', 404);
+    }
+
+    var url = await PrefUtils.getEnterprise();
+    final cookie = await PrefUtils.getCookie();
+    final sessionId = _extractSessionId(cookie);
+    url = '$url$unencodePath/$endpoint';
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Cookie': sessionId,
+    };
+
+    bool loadingDialogOpened = false;
+    try {
+      if (isLoadinDialog) {
+        Get.dialog(DialogLoadingNetwork(titel: endpoint), barrierDismissible: false);
+        loadingDialogOpened = true;
+      }
+
+      final request = http.Request('POST', Uri.parse(url));
+      request.body = json.encode(body);
+      request.headers.addAll(headers);
+
+      final response = await http.Response.fromStream(await request.send());
+
+      if (loadingDialogOpened) {
+        Get.back();
+        loadingDialogOpened = false;
+      }
+
+      debugPrint('✅ POST PACKING $endpoint → ${response.statusCode}');
+      return response;
+    } on SocketException catch (e) {
+      debugPrint('🔴 [postPacking] SocketException: $e');
+      if (loadingDialogOpened) Get.back();
+      _showNetworkError();
+      return http.Response('Error de red', 404);
+    } catch (e) {
+      debugPrint('🔴 [postPacking] Error: $e');
+      if (loadingDialogOpened) Get.back();
+      rethrow;
+    }
+  }
+
+  Future<http.Response> postPrint({
+    required String endpoint,
+    required Map<String, dynamic>? body,
+    required bool isLoadinDialog,
+  }) async {
+    if (!await _isConnected()) {
+      debugPrint('🔴 [postPrint] Sin conexión');
+      _showNetworkError();
+      return http.Response('Error de red', 404);
+    }
+
+    var url = await PrefUtils.getEnterprise();
+    final cookie = await PrefUtils.getCookie();
+    final sessionId = _extractSessionId(cookie);
+    url = '$url/$endpoint';
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Cookie': sessionId,
+    };
+
+    try {
+      if (isLoadinDialog) Get.dialog(DialogLoadingNetwork(titel: endpoint), barrierDismissible: false);
+
+      final request = http.Request('POST', Uri.parse(url));
+      request.body = json.encode(body);
+      request.headers.addAll(headers);
+
+      final response = await http.Response.fromStream(await request.send());
+
+      if (isLoadinDialog) Get.back();
+      debugPrint('✅ POST PRINT $endpoint → ${response.statusCode}');
+      return response;
+    } on SocketException catch (e) {
+      debugPrint('🔴 [postPrint] SocketException: $e');
+      if (isLoadinDialog) Get.back();
+      _showNetworkError();
+      rethrow;
+    } catch (e) {
+      debugPrint('🔴 [postPrint] Error: $e');
+      if (isLoadinDialog) Get.back();
+      rethrow;
+    }
+  }
+
   Future<http.Response> getInfo({
     required String endpoint,
     required Map<String, dynamic>? body,
     required bool isLoadinDialog,
   }) async {
-    var url = await PrefUtils.getEnterprise();
-    var cookie = await PrefUtils.getCookie();
-
-    // Extraer el session_id de la cookie
-    String sessionId = '';
-    List<String> cookies = cookie.split(',');
-    for (var c in cookies) {
-      if (c.contains('session_id=')) {
-        sessionId = c.split(';')[0].trim();
-        break; // Detener la búsqueda después de encontrar el session_id
-      }
+    if (!await _isConnected()) {
+      debugPrint('🔴 [getInfo] Sin conexión');
+      _showNetworkError();
+      return http.Response('Error de red', 404);
     }
 
-    var headers = {
+    var url = await PrefUtils.getEnterprise();
+    final cookie = await PrefUtils.getCookie();
+    final sessionId = _extractSessionId(cookie);
+    url = '$url$unencodePath/$endpoint';
+
+    final headers = {
       'Content-Type': 'application/json',
-      'Cookie': '$sessionId',
+      'Cookie': sessionId,
     };
 
     try {
-      var connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        // Si no hay conexión, retornar una lista vacía
-        debugPrint('🔴 Error de red en [getInfo]: No hay conexión');
-        Get.snackbar('Error de red', 'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ));
-      } else {
-        final result = await InternetAddress.lookup('example.com');
-        if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-          if (isLoadinDialog) {
-            // Mostrar el diálogo de carga con Get.dialog
-            Get.dialog(
-              DialogLoadingNetwork(titel: endpoint),
-              barrierDismissible:
-                  false, // No permitir cerrar tocando fuera del diálogo
-            );
-          }
+      if (isLoadinDialog) Get.dialog(DialogLoadingNetwork(titel: endpoint), barrierDismissible: false);
 
-          url = '$url$unencodePath/$endpoint';
+      final request = http.Request('GET', Uri.parse(url));
+      request.body = json.encode(body);
+      request.headers.addAll(headers);
 
-          // Intentar hacer la solicitud HTTP
-          var request = http.Request('GET', Uri.parse(url));
-          request.body = json.encode(body);
-          request.headers.addAll(headers);
+      final response = await http.Response.fromStream(await request.send());
 
-          final response = await request.send();
-
-          // Cerrar el diálogo de carga cuando la solicitud se haya completado
-          if (isLoadinDialog) {
-            Get.back();
-          }
-
-          debugPrint("--------------------------------------------");
-          debugPrint('Petición GET a $endpoint');
-          debugPrint('url: $url');
-          debugPrint('Cuerpo de la solicitud: ${jsonDecode(request.body)}');
-          debugPrint('headers: $headers');
-          debugPrint('status code: ${response.statusCode}');
-          debugPrint("--------------------------------------------");
-
-          return http.Response.fromStream(response);
-        } else {
-          debugPrint('🔴 Error de red en [getInfo]: Fallo lookup');
-          Get.snackbar(
-            'Error de red',
-            'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ),
-          );
-        }
-      }
-      return http.Response('Error de red', 404);
+      if (isLoadinDialog) Get.back();
+      debugPrint('✅ GET INFO $endpoint → ${response.statusCode}');
+      return response;
     } on SocketException catch (e) {
-      // Manejo de error de red
-      debugPrint('Error de red: $e');
-      debugPrint('🔴 Error de red en [getInfo]: SocketException $e');
-      Get.snackbar(
-        'Error de red',
-        'No se pudo conectar al servidor',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        duration: const Duration(seconds: 5),
-        leftBarIndicatorColor: yellow,
-        icon: Icon(
-          Icons.error,
-          color: primaryColorApp,
-        ),
-      );
-      // Cerrar el diálogo de carga incluso en caso de error de red
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
+      debugPrint('🔴 [getInfo] SocketException: $e');
+      if (isLoadinDialog) Get.back();
+      _showNetworkError();
+      rethrow;
     } catch (e) {
-      // Manejo de otros errores
-      debugPrint('Error desconocido en la solicitud: $e');
-      // Cerrar el diálogo de carga incluso en caso de otros errores
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
+      debugPrint('🔴 [getInfo] Error: $e');
+      if (isLoadinDialog) Get.back();
+      rethrow;
     }
   }
 
@@ -1038,125 +503,49 @@ class ApiRequestService {
     required bool isLoadinDialog,
     required bool isunecodePath,
   }) async {
-    var url = await PrefUtils.getEnterprise();
-    var cookie = await PrefUtils.getCookie();
-
-    // Extraer el session_id de la cookie
-    String sessionId = '';
-    List<String> cookies = cookie.split(',');
-    for (var c in cookies) {
-      if (c.contains('session_id=')) {
-        sessionId = c.split(';')[0].trim();
-        break; // Detener la búsqueda después de encontrar el session_id
-      }
-    }
-
-    if (sessionId == "" || sessionId == null) {
-      debugPrint('🔴 Error de red en [GET]: Session ID vacio/nulo');
-      // Get.snackbar('Error de red', 'No se pudo conectar al servidor',
-      //     backgroundColor: white,
-      //     colorText: primaryColorApp,
-      //     duration: const Duration(seconds: 5),
-      //     leftBarIndicatorColor: yellow,
-      //     icon: Icon(
-      //       Icons.error,
-      //       color: primaryColorApp,
-      //     ));
+    if (!await _isConnected()) {
+      debugPrint('🔴 [GET] Sin conexión');
+      _showNetworkError();
       return http.Response('Error de red', 404);
     }
 
-    var headers = {
+    var url = await PrefUtils.getEnterprise();
+    final cookie = await PrefUtils.getCookie();
+    final sessionId = _extractSessionId(cookie);
+
+    if (sessionId.isEmpty) {
+      debugPrint('🔴 [GET] Session ID vacío');
+      return http.Response('Error de red', 404);
+    }
+
+    url = url + (isunecodePath ? '$unencodePath/$endpoint' : '/$endpoint');
+
+    final headers = {
       'Content-Type': 'application/json',
-      'Cookie': '$sessionId',
+      'Cookie': sessionId,
     };
 
     try {
-      var connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        // Si no hay conexión, retornar una lista vacía
-        debugPrint('🔴 Error de red en [GET]: No hay conexión');
-        Get.snackbar('Error de red', 'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ));
-      } else {
-        final result = await InternetAddress.lookup('example.com');
-        if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-          if (isLoadinDialog) {
-            // Mostrar el diálogo de carga con Get.dialog
-            Get.dialog(
-              DialogLoadingNetwork(titel: endpoint),
-              barrierDismissible:
-                  false, // No permitir cerrar tocando fuera del diálogo
-            );
-          }
+      if (isLoadinDialog) Get.dialog(DialogLoadingNetwork(titel: endpoint), barrierDismissible: false);
 
-          url =
-              url + (isunecodePath ? '$unencodePath/$endpoint' : '/$endpoint');
-          // Intentar hacer la solicitud HTTP
-          var request = http.Request('GET', Uri.parse(url));
-          request.body = json.encode({"params": {}});
-          request.headers.addAll(headers);
-          final response = await request.send();
-          // Cerrar el diálogo de carga cuando la solicitud se haya completado
-          if (isLoadinDialog) {
-            Get.back();
-          }
-          debugPrint("--------------------------------------------");
-          debugPrint('Petición GET a $endpoint');
-          debugPrint('Cuerpo de la solicitud: $url');
-          debugPrint('headers: $headers');
-          debugPrint('status code: ${response.statusCode}');
-          debugPrint("--------------------------------------------");
+      final request = http.Request('GET', Uri.parse(url));
+      request.body = json.encode({"params": {}});
+      request.headers.addAll(headers);
 
-          return http.Response.fromStream(response);
-        } else {
-          debugPrint('🔴 Error de red en [GET]: Fallo lookup');
-          Get.snackbar(
-            'Error de red',
-            'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ),
-          );
-        }
-      }
-      return http.Response('Error de red', 404);
+      final response = await http.Response.fromStream(await request.send());
+
+      if (isLoadinDialog) Get.back();
+      debugPrint('✅ GET $endpoint → ${response.statusCode}');
+      return response;
     } on SocketException catch (e) {
-      // Manejo de error de red
-      debugPrint('Error de red: $e');
-      debugPrint('🔴 Error de red en [GET]: SocketException $e');
-      Get.snackbar(
-        'Error de red',
-        'No se pudo conectar al servidor',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        duration: const Duration(seconds: 5),
-        leftBarIndicatorColor: yellow,
-        icon: Icon(
-          Icons.error,
-          color: primaryColorApp,
-        ),
-      );
-      // Cerrar el diálogo de carga incluso en caso de error de red
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
+      debugPrint('🔴 [GET] SocketException: $e');
+      if (isLoadinDialog) Get.back();
+      _showNetworkError();
+      rethrow;
     } catch (e) {
-      // Manejo de otros errores
-      debugPrint('Error desconocido en la solicitud: $e');
-      // Cerrar el diálogo de carga incluso en caso de otros errores
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
+      debugPrint('🔴 [GET] Error: $e');
+      if (isLoadinDialog) Get.back();
+      rethrow;
     }
   }
 
@@ -1165,137 +554,59 @@ class ApiRequestService {
     required bool isLoadinDialog,
     required bool isunecodePath,
   }) async {
-    var url = await PrefUtils.getEnterprise();
-    var cookie = await PrefUtils.getCookie();
-
-    // Extraer el session_id de la cookie
-    String sessionId = '';
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    List<String> cookies = cookie.split(',');
-    for (var c in cookies) {
-      if (c.contains('session_id=')) {
-        sessionId = c.split(';')[0].trim();
-        break; // Detener la búsqueda después de encontrar el session_id
-      }
-    }
-
-    if (sessionId == "" || sessionId == null) {
-      debugPrint('🔴 Error de red en [getValidation]: Session ID vacio/nulo');
-      Get.snackbar('Error de red', 'No se pudo conectar al servidor',
-          backgroundColor: white,
-          colorText: primaryColorApp,
-          duration: const Duration(seconds: 5),
-          leftBarIndicatorColor: yellow,
-          icon: Icon(
-            Icons.error,
-            color: primaryColorApp,
-          ));
+    if (!await _isConnected()) {
+      debugPrint('🔴 [getValidation] Sin conexión');
+      _showNetworkError();
       return http.Response('Error de red', 404);
     }
 
-    var headers = {
+    var url = await PrefUtils.getEnterprise();
+    final cookie = await PrefUtils.getCookie();
+    final sessionId = _extractSessionId(cookie);
+
+    if (sessionId.isEmpty) {
+      debugPrint('🔴 [getValidation] Session ID vacío');
+      _showNetworkError();
+      return http.Response('Error de red', 404);
+    }
+
+    final packageInfo = await PackageInfo.fromPlatform();
+    final mac = await PrefUtils.getMacPDA();
+    final imei = await PrefUtils.getImeiPDA();
+
+    url = url + (isunecodePath ? '$unencodePath/$endpoint' : '/$endpoint');
+
+    final headers = {
       'Content-Type': 'application/json',
-      'Cookie': '$sessionId',
+      'Cookie': sessionId,
     };
 
     try {
-      var connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        // Si no hay conexión, retornar una lista vacía
-        debugPrint('🔴 Error de red en [getValidation]: No hay conexión');
-        Get.snackbar('Error de red', 'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ));
-      } else {
-        final result = await InternetAddress.lookup('example.com');
-        if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-          if (isLoadinDialog) {
-            // Mostrar el diálogo de carga con Get.dialog
-            Get.dialog(
-              DialogLoadingNetwork(titel: endpoint),
-              barrierDismissible:
-                  false, // No permitir cerrar tocando fuera del diálogo
-            );
-          }
+      if (isLoadinDialog) Get.dialog(DialogLoadingNetwork(titel: endpoint), barrierDismissible: false);
 
-//obtenemos la mac o el device id del dispositivo
-          final mac = await PrefUtils.getMacPDA();
-          final imei = await PrefUtils.getImeiPDA();
-
-          url =
-              url + (isunecodePath ? '$unencodePath/$endpoint' : '/$endpoint');
-          // Intentar hacer la solicitud HTTP
-          var request = http.Request('GET', Uri.parse(url));
-          request.body = json.encode({
-            "params": {
-              "device_id": mac == "02:00:00:00:00:00" ? imei : mac,
-              "version_app": packageInfo.version,
-            }
-          });
-
-          request.headers.addAll(headers);
-          final response = await request.send();
-          // Cerrar el diálogo de carga cuando la solicitud se haya completado
-          if (isLoadinDialog) {
-            Get.back();
-          }
-          debugPrint("--------------------------------------------");
-          debugPrint('Petición GET Validation a $endpoint');
-          debugPrint('Cuerpo de la solicitud: $url');
-          debugPrint('headers: $headers');
-          debugPrint('Cuerpo de la solicitud: ${jsonDecode(request.body)}');
-          debugPrint('status code: ${response.statusCode}');
-          debugPrint("--------------------------------------------");
-
-          return http.Response.fromStream(response);
-        } else {
-          debugPrint('🔴 Error de red en [getValidation]: Fallo lookup');
-          Get.snackbar(
-            'Error de red',
-            'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ),
-          );
+      final request = http.Request('GET', Uri.parse(url));
+      request.body = json.encode({
+        "params": {
+          "device_id": mac == "02:00:00:00:00:00" ? imei : mac,
+          "version_app": packageInfo.version,
         }
-      }
-      return http.Response('Error de red', 404);
+      });
+      request.headers.addAll(headers);
+
+      final response = await http.Response.fromStream(await request.send());
+
+      if (isLoadinDialog) Get.back();
+      debugPrint('✅ GET VALIDATION $endpoint → ${response.statusCode}');
+      return response;
     } on SocketException catch (e) {
-      // Manejo de error de red
-      debugPrint('Error de red: $e');
-      debugPrint('🔴 Error de red en [getValidation]: SocketException $e');
-      Get.snackbar(
-        'Error de red',
-        'No se pudo conectar al servidor',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        duration: const Duration(seconds: 5),
-        leftBarIndicatorColor: yellow,
-        icon: Icon(
-          Icons.error,
-          color: primaryColorApp,
-        ),
-      );
-      // Cerrar el diálogo de carga incluso en caso de error de red
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
+      debugPrint('🔴 [getValidation] SocketException: $e');
+      if (isLoadinDialog) Get.back();
+      _showNetworkError();
+      rethrow;
     } catch (e) {
-      // Manejo de otros errores
-      debugPrint('Error desconocido en la solicitud: $e');
-      // Cerrar el diálogo de carga incluso en caso de otros errores
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
+      debugPrint('🔴 [getValidation] Error: $e');
+      if (isLoadinDialog) Get.back();
+      rethrow;
     }
   }
 
@@ -1303,17 +614,13 @@ class ApiRequestService {
     required String fullImageUrl,
     bool isLoadinDialog = false,
   }) async {
-    var sessionCookie = await PrefUtils.getCookie();
-
-    // Extraer session_id de la cookie
-    String sessionId = '';
-    List<String> cookies = sessionCookie.split(',');
-    for (var c in cookies) {
-      if (c.contains('session_id=')) {
-        sessionId = c.split(';')[0].trim();
-        break;
-      }
+    if (!await _isConnected()) {
+      _showNetworkError();
+      return null;
     }
+
+    final cookie = await PrefUtils.getCookie();
+    final sessionId = _extractSessionId(cookie);
 
     if (sessionId.isEmpty) {
       Get.snackbar(
@@ -1328,70 +635,23 @@ class ApiRequestService {
       return null;
     }
 
-    final headers = {
-      'Cookie': sessionId,
-    };
-
     try {
-      final connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        Get.snackbar(
-          'Sin conexión',
-          'No se detectó conexión a internet',
-          backgroundColor: white,
-          colorText: primaryColorApp,
-          duration: const Duration(seconds: 5),
-          leftBarIndicatorColor: yellow,
-          icon: Icon(Icons.wifi_off, color: primaryColorApp),
-        );
-        return null;
-      }
-
-      final result = await InternetAddress.lookup('example.com');
-      if (result.isEmpty || result[0].rawAddress.isEmpty) {
-        Get.snackbar(
-          'Error de red',
-          'No se pudo resolver la conexión a internet',
-          backgroundColor: white,
-          colorText: primaryColorApp,
-          duration: const Duration(seconds: 5),
-          leftBarIndicatorColor: yellow,
-          icon: Icon(Icons.error, color: primaryColorApp),
-        );
-        return null;
-      }
-
-      if (isLoadinDialog) {
-        Get.dialog(
-          DialogLoadingNetwork(titel: 'view_image'),
-          barrierDismissible:
-              false, // No permitir cerrar tocando fuera del diálogo
-        );
-      }
+      if (isLoadinDialog) Get.dialog(DialogLoadingNetwork(titel: 'view_image'), barrierDismissible: false);
 
       final request = http.Request('GET', Uri.parse(fullImageUrl));
-      request.headers.addAll(headers);
+      request.headers['Cookie'] = sessionId;
 
-      final response = await request.send();
+      final streamed = await request.send();
 
-      if (isLoadinDialog) {
-        Get.back();
-      }
+      if (isLoadinDialog) Get.back();
 
-      debugPrint("--------------------------------------------");
-      debugPrint('Petición GET a $fullImageUrl');
-      debugPrint('Cuerpo de la solicitud: $fullImageUrl');
-      debugPrint('headers: $headers');
-      debugPrint('status code: ${response.statusCode}');
-      debugPrint("--------------------------------------------");
-
-      if (response.statusCode == 200) {
-        return await response.stream.toBytes();
+      if (streamed.statusCode == 200) {
+        return await streamed.stream.toBytes();
       } else {
-        debugPrint('Error al obtener imagen: ${response.statusCode}');
+        debugPrint('🔴 [fetchImage] Status: ${streamed.statusCode}');
         Get.snackbar(
           'Error',
-          'No se pudo cargar la imagen (${response.statusCode})',
+          'No se pudo cargar la imagen (${streamed.statusCode})',
           backgroundColor: white,
           colorText: primaryColorApp,
           duration: const Duration(seconds: 5),
@@ -1401,7 +661,7 @@ class ApiRequestService {
       }
     } catch (e) {
       if (isLoadinDialog) Get.back();
-      debugPrint('Excepción al obtener la imagen: $e');
+      debugPrint('🔴 [fetchImage] Error: $e');
       Get.snackbar(
         'Error inesperado',
         'Ocurrió un error al cargar la imagen',
@@ -1418,131 +678,52 @@ class ApiRequestService {
     required bool isLoadinDialog,
     required bool isunecodePath,
   }) async {
-    var url = await PrefUtils.getEnterprise();
-    var cookie = await PrefUtils.getCookie();
-
-    // Extraer el session_id de la cookie
-    String sessionId = '';
-    List<String> cookies = cookie.split(',');
-    for (var c in cookies) {
-      if (c.contains('session_id=')) {
-        sessionId = c.split(';')[0].trim();
-        break; // Detener la búsqueda después de encontrar el session_id
-      }
-    }
-
-    if (sessionId == "" || sessionId == null) {
-      debugPrint('🔴 Error de red en [getInventario]: Session ID vacio/nulo');
-      Get.snackbar('Error de red', 'No se pudo conectar al servidor',
-          backgroundColor: white,
-          colorText: primaryColorApp,
-          duration: const Duration(seconds: 5),
-          leftBarIndicatorColor: yellow,
-          icon: Icon(
-            Icons.error,
-            color: primaryColorApp,
-          ));
+    if (!await _isConnected()) {
+      debugPrint('🔴 [getInventario] Sin conexión');
+      _showNetworkError();
       return http.Response('Error de red', 404);
     }
 
-    var headers = {
+    var url = await PrefUtils.getEnterprise();
+    final cookie = await PrefUtils.getCookie();
+    final sessionId = _extractSessionId(cookie);
+
+    if (sessionId.isEmpty) {
+      debugPrint('🔴 [getInventario] Session ID vacío');
+      _showNetworkError();
+      return http.Response('Error de red', 404);
+    }
+
+    url = url + (isunecodePath ? '/op$unencodePath/$endpoint' : '/$endpoint');
+
+    final headers = {
       'Content-Type': 'application/json',
-      'Cookie': '$sessionId',
+      'Cookie': sessionId,
     };
 
     try {
-      var connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        // Si no hay conexión, retornar una lista vacía
-        debugPrint('🔴 Error de red en [getInventario]: No hay conexión');
-        Get.snackbar('Error de red', 'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ));
-      } else {
-        final result = await InternetAddress.lookup('example.com');
-        if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-          if (isLoadinDialog) {
-            // Mostrar el diálogo de carga con Get.dialog
-            Get.dialog(
-              DialogLoadingNetwork(titel: endpoint),
-              barrierDismissible:
-                  false, // No permitir cerrar tocando fuera del diálogo
-            );
-          }
+      if (isLoadinDialog) Get.dialog(DialogLoadingNetwork(titel: endpoint), barrierDismissible: false);
 
-          url = url +
-              (isunecodePath ? '/op$unencodePath/$endpoint' : '/$endpoint');
-          // Intentar hacer la solicitud HTTP
-          var request = http.Request('GET', Uri.parse(url));
-          request.body = json.encode({
-            "params": {
-              // "warehouse_id": idWarehouse,
-            }
-          });
-          request.headers.addAll(headers);
-          final response = await request.send().timeout(
-                const Duration(seconds: 100),
-              );
-          // Cerrar el diálogo de carga cuando la solicitud se haya completado
-          if (isLoadinDialog) {
-            Get.back();
-          }
-          debugPrint("--------------------------------------------");
-          debugPrint('Petición GET a $endpoint');
-          debugPrint('Cuerpo de la solicitud: $url');
-          debugPrint('headers: $headers');
-          debugPrint('status code: ${response.statusCode}');
-          debugPrint("--------------------------------------------");
+      final request = http.Request('GET', Uri.parse(url));
+      request.body = json.encode({"params": {}});
+      request.headers.addAll(headers);
 
-          return http.Response.fromStream(response);
-        } else {
-          debugPrint('🔴 Error de red en [getInventario]: Fallo lookup');
-          Get.snackbar(
-            'Error de red',
-            'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ),
-          );
-        }
-      }
-      return http.Response('Error de red', 404);
-    } on SocketException catch (e) {
-      // Manejo de error de red
-      debugPrint('Error de red: $e');
-      debugPrint('🔴 Error de red en [getInventario]: SocketException $e');
-      Get.snackbar(
-        'Error de red',
-        'No se pudo conectar al servidor',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        duration: const Duration(seconds: 5),
-        leftBarIndicatorColor: yellow,
-        icon: Icon(
-          Icons.error,
-          color: primaryColorApp,
-        ),
+      final response = await http.Response.fromStream(
+        await request.send().timeout(const Duration(seconds: 100)),
       );
-      // Cerrar el diálogo de carga incluso en caso de error de red
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
+
+      if (isLoadinDialog) Get.back();
+      debugPrint('✅ GET INVENTARIO $endpoint → ${response.statusCode}');
+      return response;
+    } on SocketException catch (e) {
+      debugPrint('🔴 [getInventario] SocketException: $e');
+      if (isLoadinDialog) Get.back();
+      _showNetworkError();
+      rethrow;
     } catch (e) {
-      // Manejo de otros errores
-      debugPrint('Error desconocido en la solicitud: $e');
-      // Cerrar el diálogo de carga incluso en caso de otros errores
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
+      debugPrint('🔴 [getInventario] Error: $e');
+      if (isLoadinDialog) Get.back();
+      rethrow;
     }
   }
 
@@ -1552,127 +733,52 @@ class ApiRequestService {
     required bool isunecodePath,
     required Map<String, dynamic>? body,
   }) async {
-    var url = await PrefUtils.getEnterprise();
-    var cookie = await PrefUtils.getCookie();
-
-    // Extraer el session_id de la cookie
-    String sessionId = '';
-    List<String> cookies = cookie.split(',');
-    for (var c in cookies) {
-      if (c.contains('session_id=')) {
-        sessionId = c.split(';')[0].trim();
-        break; // Detener la búsqueda después de encontrar el session_id
-      }
-    }
-
-    if (sessionId == "" || sessionId == null) {
-      debugPrint('🔴 Error de red en [postInventario]: Session ID vacio/nulo');
-      Get.snackbar('Error de red', 'No se pudo conectar al servidor',
-          backgroundColor: white,
-          colorText: primaryColorApp,
-          duration: const Duration(seconds: 5),
-          leftBarIndicatorColor: yellow,
-          icon: Icon(
-            Icons.error,
-            color: primaryColorApp,
-          ));
+    if (!await _isConnected()) {
+      debugPrint('🔴 [postInventario] Sin conexión');
+      _showNetworkError();
       return http.Response('Error de red', 404);
     }
 
-    var headers = {
+    var url = await PrefUtils.getEnterprise();
+    final cookie = await PrefUtils.getCookie();
+    final sessionId = _extractSessionId(cookie);
+
+    if (sessionId.isEmpty) {
+      debugPrint('🔴 [postInventario] Session ID vacío');
+      _showNetworkError();
+      return http.Response('Error de red', 404);
+    }
+
+    url = url + (isunecodePath ? '/op$unencodePath/$endpoint' : '/$endpoint');
+
+    final headers = {
       'Content-Type': 'application/json',
-      'Cookie': '$sessionId',
+      'Cookie': sessionId,
     };
 
     try {
-      var connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        // Si no hay conexión, retornar una lista vacía
-        debugPrint('🔴 Error de red en [postInventario]: No hay conexión');
-        Get.snackbar('Error de red', 'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ));
-      } else {
-        final result = await InternetAddress.lookup('example.com');
-        if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-          if (isLoadinDialog) {
-            // Mostrar el diálogo de carga con Get.dialog
-            Get.dialog(
-              DialogLoadingNetwork(titel: endpoint),
-              barrierDismissible:
-                  false, // No permitir cerrar tocando fuera del diálogo
-            );
-          }
+      if (isLoadinDialog) Get.dialog(DialogLoadingNetwork(titel: endpoint), barrierDismissible: false);
 
-          url = url +
-              (isunecodePath ? '/op$unencodePath/$endpoint' : '/$endpoint');
-          // Intentar hacer la solicitud HTTP
-          var request = http.Request('GET', Uri.parse(url));
-          request.body = json.encode(body);
-          request.headers.addAll(headers);
-          final response = await request.send().timeout(
-                const Duration(seconds: 100),
-              );
-          // Cerrar el diálogo de carga cuando la solicitud se haya completado
-          if (isLoadinDialog) {
-            Get.back();
-          }
-          debugPrint("--------------------------------------------");
-          debugPrint('Petición GET a $endpoint');
-          debugPrint('Cuerpo de la solicitud: $url');
-          debugPrint('headers: $headers');
-          debugPrint('status code: ${response.statusCode}');
-          debugPrint("--------------------------------------------");
+      final request = http.Request('GET', Uri.parse(url));
+      request.body = json.encode(body);
+      request.headers.addAll(headers);
 
-          return http.Response.fromStream(response);
-        } else {
-          debugPrint('🔴 Error de red en [postInventario]: Fallo lookup');
-          Get.snackbar(
-            'Error de red',
-            'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ),
-          );
-        }
-      }
-      return http.Response('Error de red', 404);
-    } on SocketException catch (e) {
-      // Manejo de error de red
-      debugPrint('Error de red: $e');
-      debugPrint('🔴 Error de red en [postInventario]: SocketException $e');
-      Get.snackbar(
-        'Error de red',
-        'No se pudo conectar al servidor',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        duration: const Duration(seconds: 5),
-        leftBarIndicatorColor: yellow,
-        icon: Icon(
-          Icons.error,
-          color: primaryColorApp,
-        ),
+      final response = await http.Response.fromStream(
+        await request.send().timeout(const Duration(seconds: 100)),
       );
-      // Cerrar el diálogo de carga incluso en caso de error de red
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
+
+      if (isLoadinDialog) Get.back();
+      debugPrint('✅ POST INVENTARIO $endpoint → ${response.statusCode}');
+      return response;
+    } on SocketException catch (e) {
+      debugPrint('🔴 [postInventario] SocketException: $e');
+      if (isLoadinDialog) Get.back();
+      _showNetworkError();
+      rethrow;
     } catch (e) {
-      // Manejo de otros errores
-      debugPrint('Error desconocido en la solicitud: $e');
-      // Cerrar el diálogo de carga incluso en caso de otros errores
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
+      debugPrint('🔴 [postInventario] Error: $e');
+      if (isLoadinDialog) Get.back();
+      rethrow;
     }
   }
 
@@ -1683,134 +789,50 @@ class ApiRequestService {
     required String field,
     required String date,
   }) async {
-    var url = await PrefUtils.getEnterprise();
-    var cookie = await PrefUtils.getCookie();
-
-    // Extraer el session_id de la cookie
-    String sessionId = '';
-    List<String> cookies = cookie.split(',');
-    for (var c in cookies) {
-      if (c.contains('session_id=')) {
-        sessionId = c.split(';')[0].trim();
-        break; // Detener la búsqueda después de encontrar el session_id
-      }
-    }
-
-    if (sessionId == "" || sessionId == null) {
-      debugPrint('🔴 Error de red en [getHistory]: Session ID vacio/nulo');
-      Get.snackbar('Error de red', 'No se pudo conectar al servidor',
-          backgroundColor: white,
-          colorText: primaryColorApp,
-          duration: const Duration(seconds: 5),
-          leftBarIndicatorColor: yellow,
-          icon: Icon(
-            Icons.error,
-            color: primaryColorApp,
-          ));
+    if (!await _isConnected()) {
+      debugPrint('🔴 [getHistory] Sin conexión');
+      _showNetworkError();
       return http.Response('Error de red', 404);
     }
 
-    var headers = {
+    var url = await PrefUtils.getEnterprise();
+    final cookie = await PrefUtils.getCookie();
+    final sessionId = _extractSessionId(cookie);
+
+    if (sessionId.isEmpty) {
+      debugPrint('🔴 [getHistory] Session ID vacío');
+      _showNetworkError();
+      return http.Response('Error de red', 404);
+    }
+
+    url = url + (isunecodePath ? '$unencodePath/$endpoint' : '/$endpoint');
+
+    final headers = {
       'Content-Type': 'application/json',
-      'Cookie': '$sessionId',
+      'Cookie': sessionId,
     };
 
     try {
-      var connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        // Si no hay conexión, retornar una lista vacía
-        debugPrint('🔴 Error de red en [getHistory]: No hay conexión');
-        Get.snackbar('Error de red', 'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ));
-      } else {
-        final result = await InternetAddress.lookup('example.com');
-        if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-          if (isLoadinDialog) {
-            // Mostrar el diálogo de carga con Get.dialog
-            Get.dialog(
-              DialogLoadingNetwork(titel: endpoint),
-              barrierDismissible:
-                  false, // No permitir cerrar tocando fuera del diálogo
-            );
-          }
+      if (isLoadinDialog) Get.dialog(DialogLoadingNetwork(titel: endpoint), barrierDismissible: false);
 
-          url =
-              url + (isunecodePath ? '$unencodePath/$endpoint' : '/$endpoint');
+      final request = http.Request('GET', Uri.parse(url));
+      request.body = json.encode({"params": {"$field": "$date"}});
+      request.headers.addAll(headers);
 
-          //
+      final response = await http.Response.fromStream(await request.send());
 
-          // Intentar hacer la solicitud HTTP
-
-          var request = http.Request('GET', Uri.parse(url));
-          request.body = json.encode({
-            "params": {"$field": "$date"}
-          });
-
-          request.headers.addAll(headers);
-
-          final response = await request.send();
-
-          // Cerrar el diálogo de carga cuando la solicitud se haya completado
-          if (isLoadinDialog) {
-            Get.back();
-          }
-
-          debugPrint("--------------------------------------------");
-          debugPrint('Petición GET a $endpoint');
-          debugPrint('Cuerpo de la solicitud: $url');
-          debugPrint('headers: $headers');
-          debugPrint('status code: ${response.statusCode}');
-          debugPrint("--------------------------------------------");
-          return http.Response.fromStream(response);
-        } else {
-          debugPrint('🔴 Error de red en [getHistory]: Fallo lookup');
-          Get.snackbar(
-            'Error de red',
-            'No se pudo conectar al servidor',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            duration: const Duration(seconds: 5),
-            leftBarIndicatorColor: yellow,
-            icon: Icon(
-              Icons.error,
-              color: primaryColorApp,
-            ),
-          );
-        }
-      }
-      return http.Response('Error de red', 404);
+      if (isLoadinDialog) Get.back();
+      debugPrint('✅ GET HISTORY $endpoint → ${response.statusCode}');
+      return response;
     } on SocketException catch (e) {
-      // Manejo de error de red
-      debugPrint('Error de red: $e');
-      debugPrint('🔴 Error de red en [getHistory]: SocketException $e');
-      Get.snackbar(
-        'Error de red',
-        'No se pudo conectar al servidor',
-        backgroundColor: white,
-        colorText: primaryColorApp,
-        duration: const Duration(seconds: 5),
-        leftBarIndicatorColor: yellow,
-        icon: Icon(
-          Icons.error,
-          color: primaryColorApp,
-        ),
-      );
-      // Cerrar el diálogo de carga incluso en caso de error de red
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
+      debugPrint('🔴 [getHistory] SocketException: $e');
+      if (isLoadinDialog) Get.back();
+      _showNetworkError();
+      rethrow;
     } catch (e) {
-      // Manejo de otros errores
-      debugPrint('Error desconocido en la solicitud: $e');
-      // Cerrar el diálogo de carga incluso en caso de otros errores
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
+      debugPrint('🔴 [getHistory] Error: $e');
+      if (isLoadinDialog) Get.back();
+      rethrow;
     }
   }
 }

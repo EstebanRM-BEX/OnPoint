@@ -121,6 +121,36 @@ class ClusterPickingBloc
   bool _isProcessing = false; // Bandera para controlar el estado del proceso
   bool isProcessing = false; // Bandera para controlar el estado del proceso
 
+  // Carga los lotes del producto actual si su tracking es "lot".
+  // Centraliza la lógica que estaba duplicada 4 veces en distintos handlers.
+  Future<void> _loadLotesForCurrentProduct() async {
+    listLotesProduct = [];
+    listLotesProductFilters = [];
+
+    if (currentProduct == null || currentProduct?.productTracking != "lot") return;
+
+    final result = await getLotesProductoUseCase(
+      GetLotesProductoParams(productId: currentProduct?.idProduct ?? 0),
+    );
+
+    result.fold(
+      (failure) => debugPrint("Error cargando lotes: ${failure.message}"),
+      (lotes) {
+        listLotesProduct = lotes
+            .map((lote) => LoteProducto(
+                  id: lote.id,
+                  name: lote.name,
+                  quantity: lote.quantity,
+                  expirationDate: lote.expirationDate,
+                  productId: lote.productId,
+                  productName: lote.productName,
+                ))
+            .toList();
+        listLotesProductFilters = List.from(listLotesProduct);
+      },
+    );
+  }
+
   ClusterPickingBloc({
     required this.getPickingClusterData,
     required this.getLocalPickingClusterData,
@@ -302,31 +332,7 @@ class ClusterPickingBloc
 
       //si el producto maneja lote
       //verificamos si el producto maneja lote
-      if (currentProduct != null && currentProduct?.productTracking == "lot") {
-        final productId = currentProduct?.idProduct ?? 0;
-        final result = await getLotesProductoUseCase(
-          GetLotesProductoParams(productId: productId),
-        );
-
-        result.fold(
-          (failure) {
-            debugPrint("Error cargando lotes: ${failure.message}");
-          },
-          (lotes) {
-            listLotesProduct = lotes
-                .map((lote) => LoteProducto(
-                      id: lote.id,
-                      name: lote.name,
-                      quantity: lote.quantity,
-                      expirationDate: lote.expirationDate,
-                      productId: lote.productId,
-                      productName: lote.productName,
-                    ))
-                .toList();
-            listLotesProductFilters = List.from(listLotesProduct);
-          },
-        );
-      }
+      await _loadLotesForCurrentProduct();
 
       if (currentBatch != null) {
         add(FetchBatchProductsEvent(currentBatch!));
@@ -487,32 +493,7 @@ class ClusterPickingBloc
       isPedidoValidateOk = true;
       isProductOk = true;
 
-      //verificamos si el producto maneja lote
-      if (currentProduct != null && currentProduct?.productTracking == "lot") {
-        final productId = currentProduct?.idProduct ?? 0;
-        final result = await getLotesProductoUseCase(
-          GetLotesProductoParams(productId: productId),
-        );
-
-        result.fold(
-          (failure) {
-            debugPrint("Error cargando lotes: ${failure.message}");
-          },
-          (lotes) {
-            listLotesProduct = lotes
-                .map((lote) => LoteProducto(
-                      id: lote.id,
-                      name: lote.name,
-                      quantity: lote.quantity,
-                      expirationDate: lote.expirationDate,
-                      productId: lote.productId,
-                      productName: lote.productName,
-                    ))
-                .toList();
-            listLotesProductFilters = List.from(listLotesProduct);
-          },
-        );
-      }
+      await _loadLotesForCurrentProduct();
 
       add(FetchBarcodesProductEvent());
 
@@ -675,33 +656,7 @@ class ClusterPickingBloc
         listLotesProduct = [];
         listLotesProductFilters = [];
 
-        //verificamos si el producto maneja lote
-        if (currentProduct != null &&
-            currentProduct?.productTracking == "lot") {
-          final productId = currentProduct?.idProduct ?? 0;
-          final result = await getLotesProductoUseCase(
-            GetLotesProductoParams(productId: productId),
-          );
-
-          result.fold(
-            (failure) {
-              debugPrint("Error cargando lotes: ${failure.message}");
-            },
-            (lotes) {
-              listLotesProduct = lotes
-                  .map((lote) => LoteProducto(
-                        id: lote.id,
-                        name: lote.name,
-                        quantity: lote.quantity,
-                        expirationDate: lote.expirationDate,
-                        productId: lote.productId,
-                        productName: lote.productName,
-                      ))
-                  .toList();
-              listLotesProductFilters = List.from(listLotesProduct);
-            },
-          );
-        }
+        await _loadLotesForCurrentProduct();
 
         await setClusterBatchProductFieldUseCase
             .call(SetClusterBatchProductFieldParams(
@@ -1533,31 +1488,7 @@ class ClusterPickingBloc
     listLotesProduct = [];
     listLotesProductFilters = [];
 
-    if (currentProduct != null && currentProduct?.productTracking == "lot") {
-      final productId = currentProduct?.idProduct ?? 0;
-      final result = await getLotesProductoUseCase(
-        GetLotesProductoParams(productId: productId),
-      );
-
-      result.fold(
-        (failure) {
-          debugPrint("Error cargando lotes: ${failure.message}");
-        },
-        (lotes) {
-          listLotesProduct = lotes
-              .map((lote) => LoteProducto(
-                    id: lote.id,
-                    name: lote.name,
-                    quantity: lote.quantity,
-                    expirationDate: lote.expirationDate,
-                    productId: lote.productId,
-                    productName: lote.productName,
-                  ))
-              .toList();
-          listLotesProductFilters = List.from(listLotesProduct);
-        },
-      );
-    }
+    await _loadLotesForCurrentProduct();
   }
 
   Future<void> _onLoadCurrentProduct(
