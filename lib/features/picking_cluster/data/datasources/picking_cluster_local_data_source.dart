@@ -39,12 +39,12 @@ class PickingClusterLocalDataSourceImpl
   @override
   Future<void> cachePickingBatches(List<PickingBatch> batches) async {
     try {
+      // Siempre limpiar antes de insertar, incluso si la lista está vacía
+      await DataBaseSqlite().delePicking('cluster');
+
       if (batches.isNotEmpty) {
         int userId = await PrefUtils.getUserId();
         final batchModels = batches.map((b) => b.toBatchsModel()).toList();
-
-        // Limpiar datos existentes antes de insertar
-        await DataBaseSqlite().delePicking('cluster');
 
         await DataBaseSqlite()
             .batchPickingRepository

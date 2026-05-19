@@ -890,6 +890,21 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     try {
       if (event.productos.isEmpty) return;
 
+      // Verificar conectividad real antes de intentar la petición
+      bool isConnected = false;
+      try {
+        final result = await InternetAddress.lookup('google.com')
+            .timeout(const Duration(seconds: 3));
+        isConnected = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+      } catch (_) {
+        isConnected = false;
+      }
+
+      if (!isConnected) {
+        emit(WmsPackingErrorState('No hay conexión a internet'));
+        return;
+      }
+
       emit(WmsPackingLoadingState());
 
       final idOperario = await PrefUtils.getUserId();
@@ -941,6 +956,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       final paquete = Paquete(
         id: responsePacking.result?.result?[0].idPaquete ?? 0,
         name: responsePacking.result?.result?[0].namePaquete ?? '',
+        packingBarcode: responsePacking.result?.result?[0].packingBarcode ?? '',
         batchId: event.productos[0].batchId,
         pedidoId: event.productos[0].pedidoId,
         cantidadProductos: event.productos.length,
@@ -1809,6 +1825,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
         emit(AssignUserToPedidoLoaded(
           id: event.id,
+          pedido: event.pedido,
         ));
       } else {
         emit(AssignUserToPedidoError(
@@ -1982,11 +1999,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
   /// Elimina de la BD los pedidos que ya no vienen en la respuesta de la API,
   /// junto con sus productos, barcodes y paquetes asociados.
-  Future<void> _cleanOrphanPedidos(
-      List<PedidoPackingResult> apiPedidos) async {
+  Future<void> _cleanOrphanPedidos(List<PedidoPackingResult> apiPedidos) async {
     try {
-      final apiIds =
-          apiPedidos.map((p) => p.id).whereType<int>().toSet();
+      final apiIds = apiPedidos.map((p) => p.id).whereType<int>().toSet();
       final dbPedidos = await db.pedidoPackRepository.getAllPedidosPack();
 
       for (final dbPedido in dbPedidos) {
@@ -2020,7 +2035,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         if (apiPedido.id == null || apiPedido.listaProductos == null) continue;
 
         for (final apiProduct in apiPedido.listaProductos!) {
-          if (apiProduct.idMove == null || apiProduct.quantity == null) continue;
+          if (apiProduct.idMove == null || apiProduct.quantity == null)
+            continue;
 
           final totalSeparated = await db.productosPedidosRepository
               .getTotalSeparatedQtyByMove(
@@ -2028,15 +2044,16 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
           if (totalSeparated <= 0) continue; // Nada separado, nada que ajustar
 
-          final apiQty =
-              double.tryParse(apiProduct.quantity.toString()) ?? 0.0;
+          final apiQty = double.tryParse(apiProduct.quantity.toString()) ?? 0.0;
           final newPendingQty = apiQty - totalSeparated;
 
           if (newPendingQty > 0) {
             await db.productosPedidosRepository.updatePendingProductQuantity(
-                apiPedido.id!, apiProduct.idMove!, newPendingQty, 'packing-pack');
-            debugPrint(
-                '✅ Reconciliado idMove=${apiProduct.idMove}: '
+                apiPedido.id!,
+                apiProduct.idMove!,
+                newPendingQty,
+                'packing-pack');
+            debugPrint('✅ Reconciliado idMove=${apiProduct.idMove}: '
                 'api=$apiQty, separado=$totalSeparated, pendiente=$newPendingQty');
           }
         }

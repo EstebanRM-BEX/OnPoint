@@ -31,17 +31,35 @@ class _ValidateScreenState extends State<ValidateScreen> {
   ThemeData? _cardTheme;
 
   @override
+  void initState() {
+    super.initState();
+    focusNodeBuscar.addListener(_onFocusChange);
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _cardTheme ??= Theme.of(context).copyWith(dividerColor: Colors.transparent);
-    FocusScope.of(context).requestFocus(focusNodeBuscar);
+    if (mounted) FocusScope.of(context).requestFocus(focusNodeBuscar);
   }
 
   @override
   void dispose() {
+    focusNodeBuscar.removeListener(_onFocusChange);
     focusNodeBuscar.dispose();
     _controllerToDo.dispose();
     super.dispose();
+  }
+
+  // Restaura el foco al scanner cuando se pierde, siempre que no haya un diálogo encima.
+  void _onFocusChange() {
+    if (!focusNodeBuscar.hasFocus && mounted) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+          focusNodeBuscar.requestFocus();
+        }
+      });
+    }
   }
 
   void validateBarcode(String value, BuildContext context) {
@@ -68,14 +86,14 @@ class _ValidateScreenState extends State<ValidateScreen> {
         isValidated: true,
         listIdMove: listIdMove,
       ));
-      Future.microtask(() => focusNodeBuscar.requestFocus());
+      Future.microtask(() { if (mounted) focusNodeBuscar.requestFocus(); });
       return;
     }
 
     // ❌ No encontrado → feedback de error
     _vibrationService.vibrate();
     _audioService.playErrorSound();
-    Future.microtask(() => focusNodeBuscar.requestFocus());
+    Future.microtask(() { if (mounted) focusNodeBuscar.requestFocus(); });
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Código no encontrado en la lista')),
@@ -99,6 +117,7 @@ class _ValidateScreenState extends State<ValidateScreen> {
               showProgressIndicator: true,
               duration: const Duration(seconds: 5),
             );
+            Future.microtask(() { if (mounted) focusNodeBuscar.requestFocus(); });
           }
 
           if (state is PickingClustersLoading) {
@@ -133,6 +152,7 @@ class _ValidateScreenState extends State<ValidateScreen> {
               showProgressIndicator: true,
               duration: Duration(seconds: 5),
             );
+            Future.microtask(() { if (mounted) focusNodeBuscar.requestFocus(); });
           }
         },
         builder: (context, state) {
@@ -388,17 +408,16 @@ class _ValidateScreenState extends State<ValidateScreen> {
               ),
             ],
           ),
-          trailing:
-              // (context
-              //             .read<ClusterPickingBloc>()
-              //             .configurations
-              //             .result
-              //             ?.result
-              //             ?.showButtonValidateClusterPicking ==
-              //         true)
-              //     ? _buildTrailing(pedido, products, bloc)
-              // : null,
-              _buildTrailing(pedido, products, bloc),
+          trailing: (context
+                      .read<ClusterPickingBloc>()
+                      .configurations
+                      .result
+                      ?.result
+                      ?.showButtonValidateClusterPicking ==
+                  true)
+              ? _buildTrailing(pedido, products, bloc)
+              : null,
+          // _buildTrailing(pedido, products, bloc),
           children: [
             Container(
               color: white,
@@ -457,7 +476,10 @@ class _ValidateScreenState extends State<ValidateScreen> {
                 style: TextStyle(fontSize: 14, color: black)),
             actions: [
               ElevatedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  Navigator.pop(context);
+                  Future.microtask(() { if (mounted) focusNodeBuscar.requestFocus(); });
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: grey,
                   padding:
@@ -479,6 +501,7 @@ class _ValidateScreenState extends State<ValidateScreen> {
                     listIdMove: products.map((p) => p.idMove ?? 0).toList(),
                   ));
                   Navigator.pop(context);
+                  Future.microtask(() { if (mounted) focusNodeBuscar.requestFocus(); });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryColorApp,

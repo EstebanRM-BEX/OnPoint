@@ -1684,6 +1684,12 @@ class ClusterPickingBloc
                     config.result?.result?.locationManualInventory,
                 manualProductSelectionInventory:
                     config.result?.result?.manualProductSelectionInventory,
+                allowPriorExpirationDate:
+                    config.result?.result?.allowPriorExpirationDate,
+                manageExpirationDateWithoutLot:
+                    config.result?.result?.manageExpirationDateWithoutLot,
+                showButtonValidateClusterPicking:
+                    config.result?.result?.showButtonValidateClusterPicking,
               )
             : null,
       ),

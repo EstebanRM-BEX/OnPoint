@@ -35,6 +35,10 @@ class PackagesRepository {
               PackagesTable.columnTypePaquete: package.typePaquete,
               PackagesTable.columnPeso: package.peso,
               PackagesTable.columnLocationDestName: package.locationDestName,
+              PackagesTable.columnPackingBarcode: package.packingBarcode,
+              PackagesTable.columnLocationDestId: package.locationDestId,
+              PackagesTable.columnLocationDestBarcode:
+                  package.locationDestBarcode,
             },
             where: '${PackagesTable.columnId} = ?',
             whereArgs: [package.id],
@@ -56,6 +60,10 @@ class PackagesRepository {
               PackagesTable.columnTypePaquete: package.typePaquete,
               PackagesTable.columnPeso: package.peso,
               PackagesTable.columnLocationDestName: package.locationDestName,
+              PackagesTable.columnPackingBarcode: package.packingBarcode,
+              PackagesTable.columnLocationDestId: package.locationDestId,
+              PackagesTable.columnLocationDestBarcode:
+                  package.locationDestBarcode,
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
           );

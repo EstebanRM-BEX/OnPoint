@@ -49,11 +49,13 @@ class AssignUserToPedidoLoading extends PackingPedidoState {}
 
 class AssignUserToPedidoLoaded extends PackingPedidoState {
   final int id;
-  AssignUserToPedidoLoaded({required this.id});
+  final PedidoPackingResult pedido;
+  AssignUserToPedidoLoaded({required this.id, required this.pedido});
 }
 
 class AssignUserToPedidoError extends PackingPedidoState {
   final String error;
+
   AssignUserToPedidoError(this.error);
 }
 

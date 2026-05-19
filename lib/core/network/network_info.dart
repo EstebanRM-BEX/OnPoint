@@ -22,46 +22,84 @@ class NetworkInfoImpl implements NetworkInfo {
   final Connectivity connectivity;
   final _controller = StreamController<ConnectionStatus>.broadcast();
 
-  // Keep a reference to the subscription to cancel it if needed (though singleton usually lives forever)
-  // ignore: unused_field
+  static const int _maxRetries = 3;
+  static const Duration _retryDelay = Duration(milliseconds: 500);
+  static const Duration _debounceDelay = Duration(seconds: 1);
+  static const Duration _lookupTimeout = Duration(seconds: 5);
+  static const Duration _periodicInterval = Duration(seconds: 15);
+
   StreamSubscription<List<ConnectivityResult>>? _connectionSubscription;
+  Timer? _debounceTimer;
+  Timer? _periodicTimer;
+
+  ConnectionStatus _lastStatus = ConnectionStatus.online;
 
   NetworkInfoImpl(this.connectivity) {
     _connectionSubscription = connectivity.onConnectivityChanged.listen((_) {
-      _checkInternetConnection();
+      _debounceTimer?.cancel();
+      _debounceTimer = Timer(_debounceDelay, () {
+        _checkInternetConnectionWithRetry();
+      });
     });
-    // Initial check
-    _checkInternetConnection();
+
+    // Verificación periódica para detectar intermitencia sin eventos de red
+    _periodicTimer = Timer.periodic(_periodicInterval, (_) {
+      _checkInternetConnectionWithRetry();
+    });
+
+    // Verificación inicial
+    _checkInternetConnectionWithRetry();
   }
 
   @override
   Future<bool> get isConnected async {
-    return await _checkInternetConnection();
+    return await _checkInternetConnectionWithRetry();
   }
 
   @override
   Stream<ConnectionStatus> get onStatusChanged => _controller.stream;
 
-  Future<bool> _checkInternetConnection() async {
-    try {
-      // Small delay to allow network to settle if switching networks
-      await Future.delayed(const Duration(milliseconds: 500));
-      final result = await InternetAddress.lookup('google.com');
-      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-        _controller.add(ConnectionStatus.online);
+  Future<bool> _checkInternetConnectionWithRetry() async {
+    for (int attempt = 1; attempt <= _maxRetries; attempt++) {
+      final connected = await _lookup();
+      if (connected) {
+        _emitIfChanged(ConnectionStatus.online);
         return true;
-      } else {
-        _controller.add(ConnectionStatus.offline);
-        return false;
       }
+      if (attempt < _maxRetries) {
+        await Future.delayed(_retryDelay);
+      }
+    }
+    _emitIfChanged(ConnectionStatus.offline);
+    return false;
+  }
+
+  /// Solo emite al stream si el estado cambió, evitando rebuilds innecesarios
+  /// en la UI por el timer periódico cuando la conexión es estable.
+  void _emitIfChanged(ConnectionStatus status) {
+    if (_lastStatus != status) {
+      _lastStatus = status;
+      _controller.add(status);
+    }
+  }
+
+  Future<bool> _lookup() async {
+    try {
+      final result = await InternetAddress.lookup('google.com')
+          .timeout(_lookupTimeout);
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
     } on SocketException catch (_) {
-      _controller.add(ConnectionStatus.offline);
+      return false;
+    } on TimeoutException catch (_) {
       return false;
     }
   }
 
+  @override
   @disposeMethod
   void dispose() {
+    _debounceTimer?.cancel();
+    _periodicTimer?.cancel();
     _connectionSubscription?.cancel();
     _controller.close();
   }

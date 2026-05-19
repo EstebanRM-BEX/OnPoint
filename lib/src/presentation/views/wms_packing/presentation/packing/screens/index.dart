@@ -139,19 +139,19 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
         showScrollableErrorDialog(state.error);
       }
 
-      // if (state is AssignUserToPedidoError) {
-      //   //validamos que este un dialog abierto
-      //   if (Navigator.canPop(context)) {
-      //     Navigator.pop(context);
-      //   }
-      //   Get.snackbar(
-      //     '360 Software Informa',
-      //     state.error,
-      //     backgroundColor: white,
-      //     colorText: primaryColorApp,
-      //     icon: Icon(Icons.error, color: Colors.red),
-      //   );
-      // }
+      if (state is AssignUserToPedidoError) {
+        //validamos que este un dialog abierto
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+        Get.snackbar(
+          '360 Software Informa',
+          state.error,
+          backgroundColor: white,
+          colorText: primaryColorApp,
+          icon: Icon(Icons.error, color: Colors.red),
+        );
+      }
 
       if (state is AssignUserToPedidoLoading) {
         // mostramos un dialogo de carga y despues
@@ -168,6 +168,9 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
       if (state is AssignUserToPedidoLoaded) {
         // cerramos el dialogo de carga
         // Navigator.pop(context);
+
+        validateTime(state.pedido, context);
+
         context.read<PackingPedidoBloc>().add(LoadConfigurationsUser());
         //traemos el pedido y los productos
         context.read<PackingPedidoBloc>().add(LoadPedidoAndProductsEvent(
@@ -1120,13 +1123,13 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
             onAccepted: () async {
               // Lógica para asignar el usuario
               final packingBloc = context.read<PackingPedidoBloc>();
-              packingBloc.add(AssignUserToPedido(batch.id ?? 0));
+              packingBloc.add(AssignUserToPedido(batch.id ?? 0, batch));
               packingBloc.searchController.clear();
 
               Navigator.pop(dialogContext); // Cierra el diálogo de asignación
 
               // Después de asignar el usuario, continuar con la validación de tiempo
-              validateTime(batch, context);
+              // validateTime(batch, context);
             },
           ),
         );

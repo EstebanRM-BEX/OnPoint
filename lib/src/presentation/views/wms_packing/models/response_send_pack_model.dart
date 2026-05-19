@@ -76,6 +76,7 @@ class ResultElementPack {
   final dynamic? peso;
   final List<ListItem>? listItem;
   final dynamic consecutivo;
+  final String? packingBarcode;
 
   ResultElementPack({
     this.idPaquete,
@@ -87,6 +88,7 @@ class ResultElementPack {
     this.peso,
     this.listItem,
     this.consecutivo,
+    this.packingBarcode,
   });
 
   factory ResultElementPack.fromJson(String str) =>
@@ -94,7 +96,8 @@ class ResultElementPack {
 
   String toJson() => json.encode(toMap());
 
-  factory ResultElementPack.fromMap(Map<String, dynamic> json) => ResultElementPack(
+  factory ResultElementPack.fromMap(Map<String, dynamic> json) =>
+      ResultElementPack(
         idPaquete: json["id_paquete"],
         namePaquete: json["name_paquete"],
         idBatch: json["id_batch"],
@@ -107,6 +110,7 @@ class ResultElementPack {
             : List<ListItem>.from(
                 json["list_item"]!.map((x) => ListItem.fromMap(x))),
         consecutivo: json["consecutivo"],
+        packingBarcode: json["packing_barcode"],
       );
 
   Map<String, dynamic> toMap() => {
@@ -121,6 +125,7 @@ class ResultElementPack {
             ? []
             : List<dynamic>.from(listItem!.map((x) => x.toMap())),
         "consecutivo": consecutivo,
+        "packing_barcode": packingBarcode,
       };
 }
 

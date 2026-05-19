@@ -92,7 +92,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 30,
+      version: 31,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -372,10 +372,17 @@ class DataBaseSqlite {
         await db.execute('''
           ALTER TABLE ${ConfigurationsTable.tableName}
           ADD COLUMN ${ConfigurationsTable.columnAllowPriorExpirationDate} INTEGER;
+        ''');
+      } catch (e) {
+        debugPrint("Error actualizando a v27 columnAllowPriorExpirationDate: $e");
+      }
+      try {
+        await db.execute('''
+          ALTER TABLE ${ConfigurationsTable.tableName}
           ADD COLUMN ${ConfigurationsTable.columnManageExpirationDateWithoutLot} INTEGER;
         ''');
       } catch (e) {
-        debugPrint("Error actualizando a v27 (ConfigurationsTable): $e");
+        debugPrint("Error actualizando a v27 columnManageExpirationDateWithoutLot: $e");
       }
     }
 
@@ -482,11 +489,31 @@ class DataBaseSqlite {
     if (oldVersion < 30) {
       try {
         await db.execute('''
-        ALTER TABLE tblUbicaciones 
+        ALTER TABLE tblUbicaciones
         ADD COLUMN is_a_dock_alter INTEGER
       ''');
       } catch (e) {
         debugPrint("Error actualizando a v30 (tblUbicaciones): $e");
+      }
+    }
+
+    if (oldVersion < 31) {
+      // Migración defensiva: garantiza columnas que pudieron fallar en migraciones
+      // anteriores por el bug de múltiples statements en un solo execute()
+      final columnsToEnsure = {
+        ConfigurationsTable.columnAllowPriorExpirationDate: 'INTEGER',
+        ConfigurationsTable.columnManageExpirationDateWithoutLot: 'INTEGER',
+        ConfigurationsTable.columnShowButtonValidateClusterPicking: 'INTEGER',
+      };
+      for (final entry in columnsToEnsure.entries) {
+        try {
+          await db.execute('''
+            ALTER TABLE ${ConfigurationsTable.tableName}
+            ADD COLUMN ${entry.key} ${entry.value}
+          ''');
+        } catch (e) {
+          // Columna ya existe, ignorar
+        }
       }
     }
   }

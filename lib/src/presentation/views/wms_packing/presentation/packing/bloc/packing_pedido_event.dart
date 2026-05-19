@@ -21,7 +21,8 @@ class SearchPedidoEvent extends PackingPedidoEvent {
 
 class AssignUserToPedido extends PackingPedidoEvent {
   final int id;
-  AssignUserToPedido(this.id);
+  final dynamic pedido;
+  AssignUserToPedido(this.id, this.pedido);
 }
 
 class StartOrStopTimePedido extends PackingPedidoEvent {

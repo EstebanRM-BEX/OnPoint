@@ -671,6 +671,7 @@ class ApiRequestService {
 
     debugPrint(headers.toString());
 
+    bool loadingDialogOpened = false;
     try {
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
@@ -695,6 +696,7 @@ class ApiRequestService {
               barrierDismissible:
                   false, // No permitir cerrar tocando fuera del diálogo
             );
+            loadingDialogOpened = true;
           }
 
           url = '$url$unencodePath/$endpoint';
@@ -714,8 +716,9 @@ class ApiRequestService {
           final response = await request.send();
 
           // Cerrar el diálogo de carga cuando la solicitud se haya completado
-          if (isLoadinDialog) {
+          if (loadingDialogOpened) {
             Get.back();
+            loadingDialogOpened = false;
           }
 
           debugPrint("--------------------------------------------");
@@ -760,14 +763,14 @@ class ApiRequestService {
           color: primaryColorApp,
         ),
       );
-      // Cerrar el diálogo de carga incluso en caso de error de red
-      Get.back();
-      rethrow; // Re-lanzamos la excepción para que sea manejada en el repositorio
+      // Solo cerrar el diálogo si fue abierto (evita cerrar pantallas no deseadas)
+      if (loadingDialogOpened) Get.back();
+      return http.Response('Error de red', 404);
     } catch (e) {
       // Manejo de otros errores
       debugPrint('Error desconocido en la solicitud: $e');
       // Cerrar el diálogo de carga incluso en caso de otros errores
-      Get.back();
+      if (loadingDialogOpened) Get.back();
       rethrow; // Re-lanzamos la excepción para manejarla en el repositorio
     }
   }

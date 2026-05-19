@@ -37,6 +37,14 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
   }
 
   @override
+  void dispose() {
+    focusNodeBuscar.unfocus();
+    focusNodeBuscar.dispose();
+    _controllerToDo.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
@@ -127,11 +135,13 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                               context.read<ClusterPickingBloc>().state
                                   is PickingClustersLoading) return;
 
-                          setState(() => _isProcessing = true);
+                          if (mounted) setState(() => _isProcessing = true);
                           try {
-                            context
-                                .read<ClusterPickingBloc>()
-                                .add(const FetchPickingClustersEvent());
+                            if (mounted) {
+                              context
+                                  .read<ClusterPickingBloc>()
+                                  .add(const FetchPickingClustersEvent());
+                            }
                           } finally {
                             if (mounted) {
                               setState(() => _isProcessing = false);
