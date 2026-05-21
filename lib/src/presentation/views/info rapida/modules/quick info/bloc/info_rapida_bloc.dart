@@ -146,6 +146,8 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     on<ToggleProductMassTransferEvent>(_onToggleProductMassTransferEvent);
 
     on<SelectAllAvailableProductsEvent>(_onSelectAllAvailableProductsEvent);
+
+    on<InitInfoRapidaEvent>(_onInitInfoRapida);
   }
 
   void _onSelectAllAvailableProductsEvent(
@@ -771,6 +773,44 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
       }
     } catch (e) {
       emit(InfoRapidaError());
+    }
+  }
+
+  Future<void> _onInitInfoRapida(
+      InitInfoRapidaEvent event, Emitter<InfoRapidaState> emit) async {
+    try {
+      emit(InitInfoRapidaLoading());
+
+      // Lanzar las 3 queries en paralelo antes de hacer await a cualquiera
+      final locationsFuture = db.ubicacionesRepository.getAllUbicaciones();
+      final productsFuture = db.productoInventarioRepository.getAllUniqueProducts();
+      final configFuture = _fetchConfig();
+
+      final locs = await locationsFuture;
+      final prods = await productsFuture;
+      final config = await configFuture;
+
+      ubicaciones = locs;
+      ubicacionesFilters = locs;
+      productos = prods;
+      productosFilters = prods;
+      if (config != null) configurations = config;
+
+      debugPrint(
+          '✅ InitInfoRapida: ${locs.length} ubicaciones | ${prods.length} productos');
+      emit(InitInfoRapidaSuccess());
+    } catch (e, s) {
+      debugPrint('❌ Error en InitInfoRapidaEvent: $e => $s');
+      emit(InitInfoRapidaFailure(e.toString()));
+    }
+  }
+
+  Future<UserConfigurationModel?> _fetchConfig() async {
+    try {
+      final userId = await PrefUtils.getUserId();
+      return await db.configurationsRepository.getConfiguration(userId);
+    } catch (_) {
+      return null;
     }
   }
 

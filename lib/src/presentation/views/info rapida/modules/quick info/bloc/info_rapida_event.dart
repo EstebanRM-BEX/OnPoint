@@ -142,3 +142,5 @@ class ToggleProductMassTransferEvent extends InfoRapidaEvent {
 }
 
 class SelectAllAvailableProductsEvent extends InfoRapidaEvent {}
+
+class InitInfoRapidaEvent extends InfoRapidaEvent {}

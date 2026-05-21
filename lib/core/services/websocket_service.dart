@@ -6,6 +6,10 @@ import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/src/presentation/providers/db/inventario/tbl_barcode/barcodes_inventario_repository.dart';
+import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/product_inventario_repository.dart';
+import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/product_inventario_table.dart';
+import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
 
 @LazySingleton(as: IWebSocketService)
 class WebSocketService implements IWebSocketService {
@@ -99,14 +103,22 @@ class WebSocketService implements IWebSocketService {
         },
         onDone: () {
           _resetConnectionState();
-          debugPrint("⚠️ WebSocket: Desconectado por el servidor (onDone).");
+          print('🔴 ══════════════ WEBSOCKET CERRADO ══════════════');
+          print('⚠️  El servidor cerró la conexión (onDone)');
+          print('═════════════════════════════════════════════════');
         },
         onError: (error) {
           _resetConnectionState();
-          debugPrint("❌ WebSocket Error: $error");
+          print('🔴 ══════════════ WEBSOCKET ERROR ════════════════');
+          print('❌ Error: $error');
+          print('═════════════════════════════════════════════════');
         },
       );
 
+      print('🟢 ══════════════ WEBSOCKET CONECTADO ══════════════');
+      print('🔗 URL: $socketUrl');
+      print('🍪 Session: $sessionId');
+      print('════════════════════════════════════════════════════');
       debugPrint("✅ WebSocket: Conexión física establecida.");
 
       // 7. Intentar suscripción automática
@@ -143,29 +155,163 @@ class WebSocketService implements IWebSocketService {
 
   /// Procesa cada mensaje que llega del servidor
   void _handleMessage(dynamic data) {
+    print('');
+    print('🟢 ══════════════ WEBSOCKET MESSAGE ══════════════');
+    print('📥 RAW: $data');
+    print('════════════════════════════════════════════════════');
+    print('');
+
     try {
-      // Intentamos decodificar para ver si es la confirmación de suscripción
-      final Map<String, dynamic> decodedData = jsonDecode(data);
+      final dynamic decoded = jsonDecode(data);
 
-      // Mostrar el mensaje formateado
-      debugPrint("📦 Contenido JSON:");
-      debugPrint(const JsonEncoder.withIndent('  ').convert(decodedData));
+      if (decoded is List) {
+        // Mensajes de notificación del servidor (ej. actualizaciones de producto)
+        for (final item in decoded) {
+          if (item is! Map<String, dynamic>) continue;
+          final msg = item['message'];
+          if (msg is! Map<String, dynamic>) continue;
+          if (msg['type'] != 'notification') continue;
+          final payload = msg['payload'];
+          if (payload is! Map<String, dynamic>) continue;
+          if (payload['action'] == 'update') {
+            final wsData = payload['data'];
+            if (wsData is Map<String, dynamic>) {
+              _handleProductUpdate(wsData);
+            }
+          }
+        }
+      } else if (decoded is Map<String, dynamic>) {
+        debugPrint("📦 Contenido JSON:");
+        debugPrint(const JsonEncoder.withIndent('  ').convert(decoded));
 
-      // --- VALIDACIÓN DE SUSCRIPCIÓN ---
-      // Aquí buscamos el evento que confirma que el servidor aceptó la suscripción.
-      if (decodedData['event_name'] == 'subscription_succeeded' ||
-          decodedData['event_name'] == 'subscribe_success') {
-        _isSubscribed = true;
+        if (decoded['event_name'] == 'subscription_succeeded' ||
+            decoded['event_name'] == 'subscribe_success') {
+          _isSubscribed = true;
+        }
       }
     } catch (e) {
-      // Si falla el jsonDecode es porque llegó un dato plano o corrupto
-      debugPrint("📦 Contenido RAW (no es JSON válido):");
-      debugPrint(data.toString());
+      debugPrint("📦 Contenido RAW (no es JSON válido): ${data.toString()}");
     }
 
-    // Pasamos el mensaje a la UI (Bloc/Cubit)
     if (!_messageController.isClosed) {
       _messageController.add(data);
+    }
+  }
+
+  /// Compara el producto recibido por WS con SQLite y actualiza los campos que cambiaron
+  Future<void> _handleProductUpdate(Map<String, dynamic> wsData) async {
+    final int? productId = wsData['product_id'] as int?;
+    if (productId == null) return;
+
+    final productRepo = ProductInventarioRepository();
+    final Product? current = await productRepo.getProductById(productId);
+
+    if (current == null) {
+      debugPrint(
+          "⚠️ WS Update: producto_id=$productId no existe en BD local, ignorando.");
+      return;
+    }
+
+    final String label = '"${current.name}" (id: $productId)';
+    final Map<String, dynamic> updatedFields = {};
+
+    // Compara un campo simple (como string) y registra si cambió
+    void check(
+        String fieldName, String column, dynamic storedVal, dynamic wsVal) {
+      final String stored = storedVal?.toString() ?? '';
+      final String incoming = wsVal?.toString() ?? '';
+      if (stored != incoming) {
+        updatedFields[column] = wsVal;
+        print('🔄 Producto $label — "$fieldName": "$stored" → "$incoming"');
+      }
+    }
+
+    check('name', ProductInventarioTable.columnProductName, current.name,
+        wsData['name']);
+    check('code', ProductInventarioTable.columnProductCode, current.code,
+        wsData['code']);
+    check('barcode', ProductInventarioTable.columnBarcode, current.barcode,
+        wsData['barcode']);
+    check('tracking', ProductInventarioTable.columnProductracking,
+        current.tracking, wsData['tracking']);
+    check('uom', ProductInventarioTable.columnUom, current.uom, wsData['uom']);
+    check('weight', ProductInventarioTable.columnWeight, current.weight,
+        wsData['weight']);
+    check('weight_uom_name', ProductInventarioTable.columnWeightUomName,
+        current.weightUomName, wsData['weight_uom_name']);
+    check('volume', ProductInventarioTable.columnVolume, current.volume,
+        wsData['volume']);
+    check('volume_uom_name', ProductInventarioTable.columnVolumeUomName,
+        current.volumeUomName, wsData['volume_uom_name']);
+    check('category', ProductInventarioTable.columnCategory, current.category,
+        wsData['category']);
+    check('location_id', ProductInventarioTable.columnLocationId,
+        current.locationId, wsData['location_id']);
+    check('location_name', ProductInventarioTable.columnLocationName,
+        current.locationName, wsData['location_name']);
+    check('lot_id', ProductInventarioTable.columnLotId, current.lotId,
+        wsData['lot_id']);
+    check('lot_name', ProductInventarioTable.columnLotName, current.lotName,
+        wsData['lot_name']);
+    check('quantity', ProductInventarioTable.columnQuantity, current.quantity,
+        wsData['quantity']);
+    check('expiration_time', ProductInventarioTable.columnExpirationDate,
+        current.expirationTime, wsData['expiration_time']);
+
+    // use_expiration_date: SQLite guarda 0/1, WS envía bool — normalizar antes de comparar
+    final int storedUseExp =
+        (current.useExpirationDate == true || current.useExpirationDate == 1)
+            ? 1
+            : 0;
+    final int wsUseExp = wsData['use_expiration_date'] == true ? 1 : 0;
+    if (storedUseExp != wsUseExp) {
+      updatedFields[ProductInventarioTable.columnUseExpirationDate] = wsUseExp;
+      print(
+          '🔄 Producto $label — "use_expiration_date": "$storedUseExp" → "$wsUseExp"');
+    }
+
+    if (updatedFields.isNotEmpty) {
+      await productRepo.updateProductFields(productId, updatedFields);
+      print(
+          '✅ Producto $label — ${updatedFields.length} campo(s) actualizado(s) en BD.');
+    } else {
+      print('✅ Producto $label — sin cambios de campos.');
+    }
+
+    // ── Barcodes ──────────────────────────────────────────────────────────────
+    final barcodesRepo = BarcodesInventarioRepository();
+    final List<BarcodeInventario> storedBarcodes =
+        await barcodesRepo.getBarcodesProduct(productId);
+    final List<dynamic> wsBarcodes =
+        wsData['other_barcodes'] as List<dynamic>? ?? [];
+
+    // Índice de barcodes actuales: barcode → cantidad
+    final Map<String, dynamic> storedMap = {
+      for (final b in storedBarcodes) b.barcode.toString(): b.cantidad,
+    };
+
+    final List<BarcodeInventario> toInsert = [];
+
+    for (final wb in wsBarcodes) {
+      if (wb is! Map<String, dynamic>) continue;
+      final String wsBarcode = wb['barcode']?.toString() ?? '';
+      if (wsBarcode.isEmpty) continue;
+      final dynamic wsCantidad = wb['cantidad'];
+
+      if (!storedMap.containsKey(wsBarcode)) {
+        toInsert.add(BarcodeInventario(
+            barcode: wsBarcode, idProduct: productId, cantidad: wsCantidad));
+        print(
+            '🔄 Producto $label — nuevo barcode: "$wsBarcode" (cantidad: $wsCantidad)');
+      } else if (storedMap[wsBarcode].toString() != wsCantidad.toString()) {
+        await barcodesRepo.updateBarcodeCantidad(productId, wsBarcode, wsCantidad);
+        print(
+            '🔄 Producto $label — barcode "$wsBarcode" cantidad: "${storedMap[wsBarcode]}" → "$wsCantidad"');
+      }
+    }
+
+    if (toInsert.isNotEmpty) {
+      await barcodesRepo.insertOrUpdateBarcodes(toInsert);
     }
   }
 
@@ -173,13 +319,6 @@ class WebSocketService implements IWebSocketService {
   @override
   void sendMessage(dynamic data) {
     if (_isConnected && _channel != null) {
-      // Intentar mostrar como JSON formateado si es posible
-      try {
-        final decoded = jsonDecode(data);
-      } catch (e) {
-        (data.toString());
-      }
-
       _channel!.sink.add(data);
     } else {
       debugPrint("⚠️ WebSocket: No se pudo enviar mensaje (Desconectado).");

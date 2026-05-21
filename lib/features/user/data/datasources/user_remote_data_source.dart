@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:injectable/injectable.dart';
+import '../../../../core/error/exceptions.dart';
 import '../../../../src/api/api_request_service.dart';
 import '../models/device_registration_model.dart';
 import '../models/user_configuration_model.dart';
@@ -30,9 +31,19 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
 
     if (response.statusCode < 400) {
       final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-      return UserConfigurationModel.fromJson(jsonResponse);
+      final config = UserConfigurationModel.fromJson(jsonResponse);
+
+      final code = config.result?.code;
+      if (code != 200) {
+        final msg = config.result?.msg?.toString().isNotEmpty == true
+            ? config.result!.msg.toString()
+            : 'No tienes permisos para acceder a la aplicación';
+        throw ServerException(msg);
+      }
+
+      return config;
     } else {
-      throw Exception('Failed to load user configuration');
+      throw ServerException('Error del servidor: ${response.statusCode}');
     }
   }
 

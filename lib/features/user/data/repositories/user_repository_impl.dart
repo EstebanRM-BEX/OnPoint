@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:injectable/injectable.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/device_info.dart';
 import '../../domain/entities/device_registration.dart';
@@ -30,6 +31,8 @@ class UserRepositoryImpl implements UserRepository {
         final remoteConfig = await remoteDataSource.getUserConfiguration();
         await localDataSource.cacheUserConfiguration(remoteConfig);
         return Right(remoteConfig);
+      } on ServerException catch (e) {
+        return Left(ServerFailure(e.message));
       } catch (e) {
         return Left(ServerFailure(e.toString()));
       }

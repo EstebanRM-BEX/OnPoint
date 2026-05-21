@@ -90,6 +90,22 @@ class BarcodesInventarioRepository {
     }
   }
 
+  Future<void> updateBarcodeCantidad(
+      int productId, String barcode, dynamic cantidad) async {
+    try {
+      Database db = await DataBaseSqlite().getDatabaseInstance();
+      await db.update(
+        BarcodesInventarioTable.tableName,
+        {BarcodesInventarioTable.columnCantidad: cantidad},
+        where:
+            '${BarcodesInventarioTable.columnIdProduct} = ? AND ${BarcodesInventarioTable.columnBarcode} = ?',
+        whereArgs: [productId, barcode],
+      );
+    } catch (e, s) {
+      debugPrint("Error al actualizar cantidad del barcode: $e ==> $s");
+    }
+  }
+
   /// Helper privado para mapear
   BarcodeInventario _mapToModel(Map<String, dynamic> map) {
     return BarcodeInventario(

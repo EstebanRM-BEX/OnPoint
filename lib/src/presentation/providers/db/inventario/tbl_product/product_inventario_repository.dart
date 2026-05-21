@@ -209,4 +209,20 @@ class ProductInventarioRepository {
       debugPrint("Error al actualizar producto: $e ==> $s");
     }
   }
+
+  Future<void> updateProductFields(
+      int productId, Map<String, dynamic> fields) async {
+    if (fields.isEmpty) return;
+    try {
+      Database db = await DataBaseSqlite().getDatabaseInstance();
+      await db.update(
+        ProductInventarioTable.tableName,
+        {...fields, ProductInventarioTable.columnIsSynced: 1},
+        where: '${ProductInventarioTable.columnProductId} = ?',
+        whereArgs: [productId],
+      );
+    } catch (e, s) {
+      debugPrint("Error al actualizar campos del producto $productId: $e ==> $s");
+    }
+  }
 }

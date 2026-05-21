@@ -240,3 +240,12 @@ class ActivateMassTransferState extends InfoRapidaState {
 class ToggleProductMassTransferState extends InfoRapidaState {
   ToggleProductMassTransferState();
 }
+
+class InitInfoRapidaLoading extends InfoRapidaState {}
+
+class InitInfoRapidaSuccess extends InfoRapidaState {}
+
+class InitInfoRapidaFailure extends InfoRapidaState {
+  final String error;
+  InitInfoRapidaFailure(this.error);
+}

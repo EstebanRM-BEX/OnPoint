@@ -1,8 +1,22 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/ubicaciones_table.dart';
+
+List<ResultUbicaciones> _parseUbicacionesMap(List<Map<String, dynamic>> maps) {
+  return maps.map((map) => ResultUbicaciones(
+        id: map[UbicacionesTable.columnId],
+        name: map[UbicacionesTable.columnName],
+        barcode: map[UbicacionesTable.columnBarcode],
+        locationId: map[UbicacionesTable.columnLocationId],
+        locationName: map[UbicacionesTable.columnLocationName],
+        idWarehouse: map[UbicacionesTable.columnIdWarehouse],
+        warehouseName: map[UbicacionesTable.columnWarehouseName],
+        isADockAlter: map[UbicacionesTable.columnIsADock] == 1,
+      )).toList();
+}
 
 class UbicacionesRepository {
   // Tamaño del bloque para procesar. 500 es un balance seguro entre velocidad y consumo de RAM.
@@ -139,14 +153,13 @@ class UbicacionesRepository {
     }
   }
 
-  // Obtener todas (Con advertencia de memoria)
   Future<List<ResultUbicaciones>> getAllUbicaciones() async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
       final List<Map<String, dynamic>> maps =
           await db!.query(UbicacionesTable.tableName);
-
-      return maps.map((map) => _mapToModel(map)).toList();
+      if (maps.isEmpty) return [];
+      return await compute(_parseUbicacionesMap, maps);
     } catch (e) {
       debugPrint("Error getAllUbicaciones: $e");
       return [];
