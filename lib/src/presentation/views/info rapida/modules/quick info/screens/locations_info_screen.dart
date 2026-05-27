@@ -536,7 +536,7 @@ class AppBar extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.only(left: size.width * 0.1),
+                    padding: EdgeInsets.only(left: size.width * 0.1, top: 30),
                     child: const Text("INFORMACIÓN RÁPIDA",
                         style: TextStyle(color: white, fontSize: 18)),
                   ),

@@ -84,14 +84,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       }
     }
 
-    // 2. 🚀 OPTIMIZACIÓN FINAL: Post-Frame Callback
-    // Esperamos a que el primer frame se haya dibujado completamente
-    // antes de saturar el hilo con peticiones a BLoCs.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _onDataUser();
-      }
-    });
   }
 
   @override
@@ -126,10 +118,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         });
       }
     }
-  }
-
-  void _onDataUser() async {
-    context.read<HomeBloc>().add(HomeLoadData());
   }
 
   @override
@@ -810,7 +798,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                               urlImg: 'info.svg',
                                               title: 'Info Rapida'),
                                         ),
-                                      ],
+                                         ],
                                     ),
                                     // ── Página 2: Imprimir Etiquetas ──
                                     Row(
@@ -863,6 +851,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                             ),
                                           ),
                                         ),
+                                      
                                       ],
                                     ),
                                   ],

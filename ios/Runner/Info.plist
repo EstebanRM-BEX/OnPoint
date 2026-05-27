@@ -47,5 +47,13 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>UIFileSharingEnabled</key>
+		<true/>
+		<key>LSSupportsOpeningDocumentsInPlace</key>
+		<true/>
+		<key>NSCameraUsageDescription</key>
+		<string>Necesario para enviar imágenes al asistente IA</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Necesario para seleccionar imágenes para el asistente IA</string>
 	</dict>
 </plist>

@@ -84,7 +84,7 @@ class PickProductsRepository {
             batch.insert(
               _table,
               data,
-              conflictAlgorithm: ConflictAlgorithm.replace,
+              conflictAlgorithm: ConflictAlgorithm.ignore,
             );
           }
         }

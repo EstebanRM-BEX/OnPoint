@@ -1,9 +1,13 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/data/info_rapida_repository.dart';
@@ -51,6 +55,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   bool isExpanded = false;
 
   bool isAscending = true;
+  bool isInitialized = false;
 
   bool isMassTransferActive = false;
   ResultUbicaciones? currentUbicationDest;
@@ -76,6 +81,8 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
 
   //repositorio de inventario
   InventarioRepository inventarioRepository = InventarioRepository();
+
+  StreamSubscription<dynamic>? _wsSubscription;
 
   InfoRapidaBloc({required this.userBloc}) : super(InfoRapidaInitial()) {
     on<InfoRapidaEvent>((event, emit) {});
@@ -148,6 +155,10 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     on<SelectAllAvailableProductsEvent>(_onSelectAllAvailableProductsEvent);
 
     on<InitInfoRapidaEvent>(_onInitInfoRapida);
+
+    on<_WsProductUpdateEvent>(_onWsProductUpdate);
+
+    _wsSubscription = getIt<IWebSocketService>().messages.listen(_onRawWsMessage);
   }
 
   void _onSelectAllAvailableProductsEvent(
@@ -798,11 +809,80 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
 
       debugPrint(
           '✅ InitInfoRapida: ${locs.length} ubicaciones | ${prods.length} productos');
+      isInitialized = true;
       emit(InitInfoRapidaSuccess());
     } catch (e, s) {
       debugPrint('❌ Error en InitInfoRapidaEvent: $e => $s');
       emit(InitInfoRapidaFailure(e.toString()));
     }
+  }
+
+  @override
+  Future<void> close() {
+    _wsSubscription?.cancel();
+    return super.close();
+  }
+
+  // Recibe el mensaje raw del WebSocket y despacha el evento interno
+  void _onRawWsMessage(dynamic data) {
+    try {
+      final dynamic decoded = jsonDecode(data as String);
+      if (decoded is! List) return;
+      for (final item in decoded) {
+        if (item is! Map<String, dynamic>) continue;
+        final msg = item['message'];
+        if (msg is! Map<String, dynamic>) continue;
+        if (msg['type'] != 'notification') continue;
+        final payload = msg['payload'];
+        if (payload is! Map<String, dynamic>) continue;
+        if (payload['action'] == 'update') {
+          final wsData = payload['data'];
+          if (wsData is Map<String, dynamic>) {
+            add(_WsProductUpdateEvent(wsData));
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  // Actualiza el producto en las listas en memoria (O(n), sin tocar SQLite)
+  void _onWsProductUpdate(
+      _WsProductUpdateEvent event, Emitter<InfoRapidaState> emit) {
+    final int? productId = event.wsData['product_id'] as int?;
+    if (productId == null) return;
+
+    final int idx = productos.indexWhere((p) => p.productId == productId);
+    if (idx == -1) return;
+
+    final Product p = productos[idx];
+    final Map<String, dynamic> d = event.wsData;
+
+    if (d.containsKey('name')) p.name = d['name']?.toString();
+    if (d.containsKey('code')) p.code = d['code'];
+    if (d.containsKey('barcode')) p.barcode = d['barcode'];
+    if (d.containsKey('tracking')) p.tracking = d['tracking']?.toString();
+    if (d.containsKey('uom')) p.uom = d['uom'];
+    if (d.containsKey('weight')) p.weight = (d['weight'] as num?)?.toDouble();
+    if (d.containsKey('weight_uom_name')) p.weightUomName = d['weight_uom_name'];
+    if (d.containsKey('volume')) p.volume = (d['volume'] as num?)?.toDouble();
+    if (d.containsKey('volume_uom_name')) p.volumeUomName = d['volume_uom_name'];
+    if (d.containsKey('category')) p.category = d['category'];
+    if (d.containsKey('location_id')) p.locationId = d['location_id'] as int?;
+    if (d.containsKey('location_name')) p.locationName = d['location_name']?.toString();
+    if (d.containsKey('lot_id')) p.lotId = d['lot_id'];
+    if (d.containsKey('lot_name')) p.lotName = d['lot_name'];
+    if (d.containsKey('quantity')) p.quantity = d['quantity'];
+    if (d.containsKey('expiration_time')) p.expirationTime = d['expiration_time'];
+    if (d.containsKey('use_expiration_date')) {
+      p.useExpirationDate = d['use_expiration_date'] == true ? 1 : 0;
+    }
+
+    // Sincronizar productosFilters si contiene ese producto
+    final int fIdx = productosFilters.indexWhere((p) => p.productId == productId);
+    if (fIdx != -1) productosFilters[fIdx] = p;
+
+    debugPrint('🔄 InfoRapidaBloc: producto id=$productId actualizado en memoria vía WS.');
+    emit(WsProductSyncedState(productId));
   }
 
   Future<UserConfigurationModel?> _fetchConfig() async {

@@ -1,16 +1,3 @@
-
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        // Asegúrate de usar una versión de AGP compatible con Gradle 8.3
-        classpath 'com.android.tools.build:gradle:7.4.2'  // Versión recomendada para Gradle 8.x
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.21"  // Actualiza si es necesario
-    }
-}
-
 plugins {
     id "com.android.application"
     // START: FlutterFire Configuration
@@ -23,33 +10,31 @@ plugins {
 
 android {
     namespace = "com.example.appwms"
-    compileSdk = 35
-    ndkVersion = "25.1.8937393"
+    compileSdk = 36
+    ndkVersion = "27.3.13750724"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+        coreLibraryDesugaringEnabled = true
     }
 
-    // Otras configuraciones...
     packagingOptions {
         exclude("META-INF/DEPENDENCIES")
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = '11'
     }
 
     defaultConfig {
         applicationId = "com.example.appwms"
-        minSdkVersion = 23
+        minSdkVersion = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled true
-        
     }
-
 
     buildTypes {
         release {
@@ -57,9 +42,12 @@ android {
             debuggable false
         }
     }
-
 }
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
 }

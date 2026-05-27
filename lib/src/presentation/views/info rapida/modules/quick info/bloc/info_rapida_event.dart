@@ -144,3 +144,9 @@ class ToggleProductMassTransferEvent extends InfoRapidaEvent {
 class SelectAllAvailableProductsEvent extends InfoRapidaEvent {}
 
 class InitInfoRapidaEvent extends InfoRapidaEvent {}
+
+// Evento interno — solo lo dispara el listener del WebSocket dentro del BLoC
+class _WsProductUpdateEvent extends InfoRapidaEvent {
+  final Map<String, dynamic> wsData;
+  _WsProductUpdateEvent(this.wsData);
+}

@@ -273,7 +273,7 @@ class ProductsBatch {
   final int? muelleId;
   final dynamic locationDestId;
   final dynamic idLocationDest;
-  final dynamic quantity; // Cambiado a double
+  final dynamic quantity; 
   final List<Barcodes>? productPacking;
   final List<Barcodes>? otherBarcode;
   final String? productTracking;

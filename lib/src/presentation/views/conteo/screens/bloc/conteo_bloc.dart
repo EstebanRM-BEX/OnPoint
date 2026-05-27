@@ -468,9 +468,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       ubicacionesFiltersSearch = ubicaciones;
       final query = event.query.toLowerCase();
       if (query.isEmpty) {
-        ubicacionesFiltersSearch = ubicaciones;
+        ubicacionesFiltersSearch = ubicacionesFilters;
       } else {
-        ubicacionesFiltersSearch = ubicaciones.where((location) {
+        ubicacionesFiltersSearch = ubicacionesFilters.where((location) {
           return location.name?.toLowerCase().contains(query) ?? false;
         }).toList();
       }

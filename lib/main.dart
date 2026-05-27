@@ -108,7 +108,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     void logOut() async {
-      debugPrint("⏳ Sesión expirada por inactividad.");
+      debugPrint("��� Sesión expirada por inactividad.");
       final contextWithProviders = navigatorKey.currentContext;
       if (contextWithProviders != null) {
         PrefUtils.clearPrefs();

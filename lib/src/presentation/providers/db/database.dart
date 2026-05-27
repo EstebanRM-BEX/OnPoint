@@ -92,7 +92,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 31,
+      version: 33,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -183,6 +183,16 @@ class DataBaseSqlite {
     await db.execute(BatchPackingConsolidateTable.createTable());
 
     await db.execute(PedidosPackingConsolidateTable.createTable());
+
+    // tabla de historial de conversación del asistente IA
+    await db.execute('''
+      CREATE TABLE tbl_ia_historial (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        role TEXT NOT NULL,
+        text TEXT NOT NULL,
+        timestamp INTEGER NOT NULL
+      )
+    ''');
 
     //* tabla de productos de un batch picking
     await db.execute('''
@@ -514,6 +524,172 @@ class DataBaseSqlite {
         } catch (e) {
           // Columna ya existe, ignorar
         }
+      }
+    }
+
+    if (oldVersion < 32) {
+      try {
+        await db.execute('''
+          CREATE TABLE tbl_ia_historial (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            role TEXT NOT NULL,
+            text TEXT NOT NULL,
+            timestamp INTEGER NOT NULL
+          )
+        ''');
+      } catch (e) {
+        debugPrint("Error actualizando a v32 (tbl_ia_historial): $e");
+      }
+    }
+
+    if (oldVersion < 33) {
+      // Recrear tbl_pick_products: quitar id como PRIMARY KEY,
+      // agregar row_id AUTOINCREMENT y UNIQUE(id_product, batch_id, id_move)
+      // para permitir productos con mismo id de Odoo pero distinto id_move
+      try {
+        await db.execute('''
+          CREATE TABLE tbl_pick_products_new (
+            ${PickProductsTable.columnRowId} INTEGER PRIMARY KEY AUTOINCREMENT,
+            ${PickProductsTable.columnId} INTEGER,
+            ${PickProductsTable.columnIdProduct} INTEGER,
+            ${PickProductsTable.columnBatchId} INTEGER,
+            ${PickProductsTable.columnExpireDate} VARCHAR(255),
+            ${PickProductsTable.columnProductId} INTEGER,
+            ${PickProductsTable.columnPickingId} TEXT,
+            ${PickProductsTable.columnLote} TEXT,
+            ${PickProductsTable.columnLoteId} INTEGER,
+            ${PickProductsTable.columnIdMove} INTEGER,
+            ${PickProductsTable.columnLocationId} TEXT,
+            ${PickProductsTable.columnLocationDestId} TEXT,
+            ${PickProductsTable.columnIdLocationDest} INTEGER,
+            ${PickProductsTable.columnQuantity} REAL,
+            ${PickProductsTable.columnBarcode} TEXT,
+            ${PickProductsTable.columnRimovalPriority} INTEGER,
+            ${PickProductsTable.columnBarcodeLocationDest} TEXT,
+            ${PickProductsTable.columnBarcodeLocation} TEXT,
+            ${PickProductsTable.columnQuantitySeparate} REAL,
+            ${PickProductsTable.columnIsSelected} INTEGER,
+            ${PickProductsTable.columnIsSeparate} INTEGER,
+            ${PickProductsTable.columnIsPending} INTEGER,
+            ${PickProductsTable.columnOrderProduct} INTEGER,
+            ${PickProductsTable.columnTimeSeparate} DECIMAL(10,2),
+            ${PickProductsTable.columnTimeSeparateStart} VARCHAR(255),
+            ${PickProductsTable.columnTimeSeparateEnd} VARCHAR(255),
+            ${PickProductsTable.columnOrigin} VARCHAR(255),
+            ${PickProductsTable.columnObservation} TEXT,
+            ${PickProductsTable.columnUnidades} TEXT,
+            ${PickProductsTable.columnWeight} REAL,
+            ${PickProductsTable.columnIsMuelle} INTEGER,
+            ${PickProductsTable.columnMuelleId} INTEGER,
+            ${PickProductsTable.columnIsLocationIsOk} INTEGER,
+            ${PickProductsTable.columnProductIsOk} INTEGER,
+            ${PickProductsTable.columnIsQuantityIsOk} INTEGER,
+            ${PickProductsTable.columnLocationDestIsOk} INTEGER,
+            ${PickProductsTable.columnFechaTransaccion} VARCHAR(255),
+            ${PickProductsTable.columnIsSendOdoo} INTEGER,
+            ${PickProductsTable.columnIsSendOdooDate} VARCHAR(255),
+            ${PickProductsTable.columnProductCode} TEXT,
+            ${PickProductsTable.columnProductTracking} TEXT,
+            ${PickProductsTable.columnTypePick} TEXT,
+            UNIQUE(${PickProductsTable.columnIdProduct}, ${PickProductsTable.columnBatchId}, ${PickProductsTable.columnIdMove}),
+            FOREIGN KEY (${PickProductsTable.columnBatchId}) REFERENCES tbl_picking_pick (id)
+          )
+        ''');
+
+        await db.execute('''
+          INSERT INTO tbl_pick_products_new (
+            ${PickProductsTable.columnId},
+            ${PickProductsTable.columnIdProduct},
+            ${PickProductsTable.columnBatchId},
+            ${PickProductsTable.columnExpireDate},
+            ${PickProductsTable.columnProductId},
+            ${PickProductsTable.columnPickingId},
+            ${PickProductsTable.columnLote},
+            ${PickProductsTable.columnLoteId},
+            ${PickProductsTable.columnIdMove},
+            ${PickProductsTable.columnLocationId},
+            ${PickProductsTable.columnLocationDestId},
+            ${PickProductsTable.columnIdLocationDest},
+            ${PickProductsTable.columnQuantity},
+            ${PickProductsTable.columnBarcode},
+            ${PickProductsTable.columnRimovalPriority},
+            ${PickProductsTable.columnBarcodeLocationDest},
+            ${PickProductsTable.columnBarcodeLocation},
+            ${PickProductsTable.columnQuantitySeparate},
+            ${PickProductsTable.columnIsSelected},
+            ${PickProductsTable.columnIsSeparate},
+            ${PickProductsTable.columnIsPending},
+            ${PickProductsTable.columnOrderProduct},
+            ${PickProductsTable.columnTimeSeparate},
+            ${PickProductsTable.columnTimeSeparateStart},
+            ${PickProductsTable.columnTimeSeparateEnd},
+            ${PickProductsTable.columnOrigin},
+            ${PickProductsTable.columnObservation},
+            ${PickProductsTable.columnUnidades},
+            ${PickProductsTable.columnWeight},
+            ${PickProductsTable.columnIsMuelle},
+            ${PickProductsTable.columnMuelleId},
+            ${PickProductsTable.columnIsLocationIsOk},
+            ${PickProductsTable.columnProductIsOk},
+            ${PickProductsTable.columnIsQuantityIsOk},
+            ${PickProductsTable.columnLocationDestIsOk},
+            ${PickProductsTable.columnFechaTransaccion},
+            ${PickProductsTable.columnIsSendOdoo},
+            ${PickProductsTable.columnIsSendOdooDate},
+            ${PickProductsTable.columnProductCode},
+            ${PickProductsTable.columnProductTracking},
+            ${PickProductsTable.columnTypePick}
+          )
+          SELECT
+            ${PickProductsTable.columnId},
+            ${PickProductsTable.columnIdProduct},
+            ${PickProductsTable.columnBatchId},
+            ${PickProductsTable.columnExpireDate},
+            ${PickProductsTable.columnProductId},
+            ${PickProductsTable.columnPickingId},
+            ${PickProductsTable.columnLote},
+            ${PickProductsTable.columnLoteId},
+            ${PickProductsTable.columnIdMove},
+            ${PickProductsTable.columnLocationId},
+            ${PickProductsTable.columnLocationDestId},
+            ${PickProductsTable.columnIdLocationDest},
+            ${PickProductsTable.columnQuantity},
+            ${PickProductsTable.columnBarcode},
+            ${PickProductsTable.columnRimovalPriority},
+            ${PickProductsTable.columnBarcodeLocationDest},
+            ${PickProductsTable.columnBarcodeLocation},
+            ${PickProductsTable.columnQuantitySeparate},
+            ${PickProductsTable.columnIsSelected},
+            ${PickProductsTable.columnIsSeparate},
+            ${PickProductsTable.columnIsPending},
+            ${PickProductsTable.columnOrderProduct},
+            ${PickProductsTable.columnTimeSeparate},
+            ${PickProductsTable.columnTimeSeparateStart},
+            ${PickProductsTable.columnTimeSeparateEnd},
+            ${PickProductsTable.columnOrigin},
+            ${PickProductsTable.columnObservation},
+            ${PickProductsTable.columnUnidades},
+            ${PickProductsTable.columnWeight},
+            ${PickProductsTable.columnIsMuelle},
+            ${PickProductsTable.columnMuelleId},
+            ${PickProductsTable.columnIsLocationIsOk},
+            ${PickProductsTable.columnProductIsOk},
+            ${PickProductsTable.columnIsQuantityIsOk},
+            ${PickProductsTable.columnLocationDestIsOk},
+            ${PickProductsTable.columnFechaTransaccion},
+            ${PickProductsTable.columnIsSendOdoo},
+            ${PickProductsTable.columnIsSendOdooDate},
+            ${PickProductsTable.columnProductCode},
+            ${PickProductsTable.columnProductTracking},
+            ${PickProductsTable.columnTypePick}
+          FROM ${PickProductsTable.tableName}
+        ''');
+
+        await db.execute('DROP TABLE ${PickProductsTable.tableName}');
+        await db.execute(
+            'ALTER TABLE tbl_pick_products_new RENAME TO ${PickProductsTable.tableName}');
+      } catch (e) {
+        debugPrint("Error actualizando a v33 (tbl_pick_products): $e");
       }
     }
   }

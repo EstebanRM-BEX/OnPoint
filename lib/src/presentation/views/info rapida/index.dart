@@ -49,12 +49,7 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
       if (!mounted) return;
       final bloc = context.read<InfoRapidaBloc>();
 
-      final bool needsLoad = bloc.ubicaciones.isEmpty ||
-          bloc.productos.isEmpty ||
-          bloc.configurations.result == null;
-
-      // Si todo ya está en caché, no mostrar diálogo ni recargar
-      if (!needsLoad) return;
+      if (bloc.isInitialized) return;
 
       showDialog(
         context: context,

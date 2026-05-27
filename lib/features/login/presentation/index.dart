@@ -78,7 +78,7 @@ class LoginPage extends StatelessWidget {
               debugPrint(
                   '📦 [Métricas] Terceros: ${swDev.elapsedMilliseconds}ms — ${s.runtimeType}');
               return s;
-            });
+            }).catchError((_) => DownloadAllTercerosFailure(''));
 
             final novedadesFuture = context
                 .read<WMSPickingBloc>()
@@ -92,7 +92,7 @@ class LoginPage extends StatelessWidget {
               debugPrint(
                   '📋 [Métricas] Novedades: ${swNovedades.elapsedMilliseconds}ms — ${s.runtimeType}');
               return s;
-            });
+            }).catchError((_) => LoadFailureNovedadesState(message: ''));
 
             final inventarioFuture = context
                 .read<InventarioBloc>()
@@ -105,7 +105,7 @@ class LoginPage extends StatelessWidget {
               debugPrint(
                   '🏪 [Métricas] Inventario: ${swInventario.elapsedMilliseconds}ms — ${s.runtimeType}');
               return s;
-            });
+            }).catchError((_) => GetProductsFailureInventory(''));
 
             // Disparamos los eventos después de tener las suscripciones listas
             swDev.start();

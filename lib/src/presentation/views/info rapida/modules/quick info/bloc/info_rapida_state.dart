@@ -249,3 +249,9 @@ class InitInfoRapidaFailure extends InfoRapidaState {
   final String error;
   InitInfoRapidaFailure(this.error);
 }
+
+// Emitido cuando el WebSocket actualizó un producto en la lista en memoria
+class WsProductSyncedState extends InfoRapidaState {
+  final int productId;
+  WsProductSyncedState(this.productId);
+}

@@ -85,6 +85,8 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/history/scree
 import 'package:wms_app/src/presentation/views/wms_picking/modules/history/screens/list_batchs_history_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/picking_componentes/batch/index_list_picking_componentes_batchs_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/picking_componentes/index_list_picking_componentes_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:wms_app/injection_container.dart';
 
 class AppRoutes {
   //todo  Print Labels
@@ -217,6 +219,9 @@ class AppRoutes {
   static const String searchLocationCreateMassTransfer =
       'search-location-create-mass-transfer';
 
+  //todo: asistente ia
+  static const String asistenteIa = 'asistente-ia';
+
   //todo: conteo
   static const String conteo = 'conteo';
   static const String conteoDetail = 'conteo-detail';
@@ -229,6 +234,8 @@ class AppRoutes {
 
   static Map<String, Widget Function(BuildContext)> get routes {
     return {
+    
+
       AppRoutes.checkout: (context) => const CheckAuthPage(),
 
       AppRoutes.printLabels: (_) => const PrintLabelsScreen(),

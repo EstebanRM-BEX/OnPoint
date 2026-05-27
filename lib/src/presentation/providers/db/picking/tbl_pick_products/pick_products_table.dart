@@ -2,6 +2,7 @@ class PickProductsTable {
   static const String tableName = 'tbl_pick_products';
 
   // Columnas
+  static const String columnRowId = 'row_id';
   static const String columnId = 'id';
   static const String columnIdProduct = 'id_product';
   static const String columnBatchId = 'batch_id';
@@ -51,7 +52,8 @@ class PickProductsTable {
   static String createTable() {
     return '''
       CREATE TABLE $tableName (
-        $columnId INTEGER PRIMARY KEY,
+        $columnRowId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $columnId INTEGER,
         $columnIdProduct INTEGER,
         $columnBatchId INTEGER,
         $columnExpireDate VARCHAR(255),
@@ -92,6 +94,7 @@ class PickProductsTable {
         $columnProductCode TEXT,
         $columnProductTracking TEXT,
         $columnTypePick TEXT,
+        UNIQUE($columnIdProduct, $columnBatchId, $columnIdMove),
         FOREIGN KEY ($columnBatchId) REFERENCES tbl_picking_pick (id)
       )
     ''';
