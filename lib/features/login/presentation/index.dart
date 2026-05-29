@@ -61,96 +61,58 @@ class LoginPage extends StatelessWidget {
           }
 
           if (state is UserLoaded) {
-            final swTotal = Stopwatch()..start();
-            final swDev = Stopwatch();
-            final swNovedades = Stopwatch();
-            final swInventario = Stopwatch();
+            if (!context.mounted) return;
 
-            // Suscribimos ANTES de disparar los eventos para evitar race condition
-            final devFuture = context
-                .read<DevolucionesBloc>()
-                .stream
-                .firstWhere((s) =>
-                    s is DownloadAllTercerosSuccess ||
-                    s is DownloadAllTercerosFailure)
-                .timeout(const Duration(seconds: 30))
-                .then((s) {
-              swDev.stop();
-              debugPrint(
-                  '📦 [Métricas] Terceros: ${swDev.elapsedMilliseconds}ms — ${s.runtimeType}');
-              return s;
-            }).catchError((_) => DownloadAllTercerosFailure(''));
+            // ── PASO 1: Configuraciones ───────────────────────────────
+            context.read<HomeBloc>().add(LoadConfigurationsEvent());
 
-            final novedadesFuture = context
-                .read<WMSPickingBloc>()
-                .stream
-                .firstWhere((s) =>
-                    s is LoadSuccessNovedadesState ||
-                    s is LoadFailureNovedadesState)
-                .timeout(const Duration(seconds: 30))
-                .then((s) {
-              swNovedades.stop();
-              debugPrint(
-                  '📋 [Métricas] Novedades: ${swNovedades.elapsedMilliseconds}ms — ${s.runtimeType}');
-              return s;
-            }).catchError((_) => LoadFailureNovedadesState(message: ''));
-
-            final inventarioFuture = context
-                .read<InventarioBloc>()
-                .stream
-                .firstWhere((s) =>
-                    s is GetProductsSuccess || s is GetProductsFailureInventory)
-                .timeout(const Duration(seconds: 30))
-                .then((s) {
-              swInventario.stop();
-              debugPrint(
-                  '🏪 [Métricas] Inventario: ${swInventario.elapsedMilliseconds}ms — ${s.runtimeType}');
-              return s;
-            }).catchError((_) => GetProductsFailureInventory(''));
-
-            // Disparamos los eventos después de tener las suscripciones listas
-            swDev.start();
-            context.read<DevolucionesBloc>().add(DownloadAllTercerosEvent());
-            swNovedades.start();
-            context.read<WMSPickingBloc>().add(LoadAllNovedades(context));
-            swInventario.start();
-            context
-                .read<InventarioBloc>()
-                .add(GetProductsEvent(isDialogLoading: false));
-
+            HomeState? configState;
             try {
-              await Future.wait([devFuture, novedadesFuture, inventarioFuture]);
+              configState = await context
+                  .read<HomeBloc>()
+                  .stream
+                  .firstWhere((s) =>
+                      s is ConfigurationLoadedHomeState ||
+                      s is ConfigurationErrorHomeState)
+                  .timeout(const Duration(seconds: 15));
             } catch (_) {
-              // Si alguna carga falla o expira el timeout, continuamos igual
+              configState = null;
             }
 
-            swTotal.stop();
             debugPrint(
-                '⏱️ [Métricas] Total paralelo: ${swTotal.elapsedMilliseconds}ms');
-            debugPrint(
-                '⏱️ [Métricas] Total secuencial estimado: ${swDev.elapsedMilliseconds + swNovedades.elapsedMilliseconds + swInventario.elapsedMilliseconds}ms');
-            debugPrint(
-                '⚡ [Métricas] Ahorro estimado: ${(swDev.elapsedMilliseconds + swNovedades.elapsedMilliseconds + swInventario.elapsedMilliseconds) - swTotal.elapsedMilliseconds}ms');
+                '⚙️ [Login] Configuraciones: ${configState?.runtimeType}');
 
             if (!context.mounted) return;
 
-            // Verificar versión de la app antes de ir a home
+            // ── PASO 2: Versión de la app ─────────────────────────────
             context.read<HomeBloc>().add(AppVersionEvent());
 
             HomeState? versionState;
             try {
-              versionState = await context.read<HomeBloc>().stream
+              versionState = await context
+                  .read<HomeBloc>()
+                  .stream
                   .firstWhere((s) =>
                       s is AppVersionUpdateState ||
                       s is AppVersionLoadedState ||
                       s is AppVersionLoadErrorState)
                   .timeout(const Duration(seconds: 10));
             } catch (_) {
-              // Timeout o error → continuar a home sin bloquear
               versionState = null;
             }
 
+            debugPrint('📱 [Login] Versión: ${versionState?.runtimeType}');
+
             if (!context.mounted) return;
+
+            // ── PASO 3: Pre-cargas en background (fire & forget) ──────
+            context.read<DevolucionesBloc>().add(DownloadAllTercerosEvent());
+            context.read<WMSPickingBloc>().add(LoadAllNovedades(context));
+            context
+                .read<InventarioBloc>()
+                .add(GetProductsEvent(isDialogLoading: false));
+
+            // ── PASO 4: Navegar ───────────────────────────────────────
             Get.back();
 
             if (versionState is AppVersionUpdateState) {
