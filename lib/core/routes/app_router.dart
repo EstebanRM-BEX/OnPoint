@@ -50,6 +50,7 @@ import 'package:wms_app/src/presentation/views/recepcion/modules/individual/scre
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart';
 import 'package:wms_app/src/presentation/views/pages.dart';
 import 'package:wms_app/features/enterprise/presentation/pages/enterprise_page.dart';
+import 'package:wms_app/features/login/presentation/screens/update_required_screen.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/detail_create_tranfer_screen.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/scan_product_create_transfer_screen.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/location/location_search_widget.dart';
@@ -85,8 +86,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/history/scree
 import 'package:wms_app/src/presentation/views/wms_picking/modules/history/screens/list_batchs_history_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/picking_componentes/batch/index_list_picking_componentes_batchs_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/picking_componentes/index_list_picking_componentes_screen.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wms_app/injection_container.dart';
 
 class AppRoutes {
   //todo  Print Labels
@@ -98,6 +97,7 @@ class AppRoutes {
   static const String enterprice = 'enterprice';
   static const String auth = 'auth';
   static const String checkout = 'checkout';
+  static const String updateRequired = 'update-required';
 
   //todo  WMS Picking
   static const String wmsPicking = 'wms-picking';
@@ -132,14 +132,10 @@ class AppRoutes {
   static const String packingDetail = 'packing-detail';
 
   //todo packing consolidade
-  static const String listPackingConsolidade =
-      'list-packing-consolidade'; // lista de batchs de packing consolidados
-  static const String packingConsolidateList =
-      'pedido-packing-consolidate-list'; // lista de pedidos consolidados por batch packing
-  static const String packingConsolidateDetail =
-      'packing-consolidate-detail'; // detalles ya del pedido consolidado a separar
-  static const String scanProductConsolidate =
-      'scan-product-consolidate'; // pantalla de escaneo de productos para consolidar
+  static const String listPackingConsolidade = 'list-packing-consolidade';
+  static const String packingConsolidateList = 'pedido-packing-consolidate-list';
+  static const String packingConsolidateDetail = 'packing-consolidate-detail';
+  static const String scanProductConsolidate = 'scan-product-consolidate';
 
   //todo packing por pedido
   static const String listPacking = 'list-packing';
@@ -161,16 +157,11 @@ class AppRoutes {
   static const String scanProductTransfer = 'scan-product-transfer';
   static const String searchLocationDestTrans = 'seacrh-locationsDest-trans';
 
-//todo create transfer
+  //todo create transfer
   static const String createTransfer = 'create-transfer';
-  static const String searchLocationCreateTransfer =
-      'search-location-create-transfer';
-  //search-product-create-transfer
-  static const String searchProductsCreateTransfer =
-      'search-product-create-transfer';
-
+  static const String searchLocationCreateTransfer = 'search-location-create-transfer';
+  static const String searchProductsCreateTransfer = 'search-product-create-transfer';
   static const String searchLoteCreateTransfer = 'search-lote-create-transfer';
-
   static const String detailCreateTransfer = 'detail-create-transfer';
 
   //todo entrada de productos
@@ -191,10 +182,8 @@ class AppRoutes {
   //todo recepcion batch
   static const String listReceptionBatch = 'list-recepction-batch';
   static const String recepcionBatch = 'recepcion-batch';
-  static const String scanProductReceptionBatch =
-      'scan-product-reception-batch';
-  static const String locationDestReceptionBatchSearch =
-      'search-location-recep-batch';
+  static const String scanProductReceptionBatch = 'scan-product-reception-batch';
+  static const String locationDestReceptionBatchSearch = 'search-location-recep-batch';
   static const String newLoteRecepBatch = 'new-lote-recep-batch';
 
   //todo new lote
@@ -204,6 +193,7 @@ class AppRoutes {
   static const String devolucionesCreate = 'devoluciones-create';
   static const String terceros = 'terceros';
   static const String ubicacionesDevoluciones = 'ubicaciones-devoluciones';
+
   //todo info rapida
   static const String infoRapida = 'info-rapida';
   static const String productInfo = 'product-info';
@@ -212,12 +202,9 @@ class AppRoutes {
   static const String transferInfo = 'transfer-info';
   static const String listLocation = 'list-location';
   static const String listProduct = 'list-product';
-  static const String searchLocationDestTransInfo =
-      'search-locations-dest-trans-info';
+  static const String searchLocationDestTransInfo = 'search-locations-dest-trans-info';
   static const String createMassTransfer = 'create-mass-transfer';
-
-  static const String searchLocationCreateMassTransfer =
-      'search-location-create-mass-transfer';
+  static const String searchLocationCreateMassTransfer = 'search-location-create-mass-transfer';
 
   //todo: asistente ia
   static const String asistenteIa = 'asistente-ia';
@@ -232,11 +219,44 @@ class AppRoutes {
   static const String searchProductConteo = 'search-product-conteo';
   static const String searchLoteConteo = 'search-lote-conteo';
 
+  // ─── Helpers de extracción segura de argumentos ───────────────────────────
+
+  /// Extrae de forma segura la lista de argumentos de la ruta actual.
+  /// Devuelve null si no hay argumentos o si no son una List<dynamic>.
+  static List<dynamic>? _args(BuildContext context) {
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is List<dynamic>) return args;
+    return null;
+  }
+
+  /// Extrae el argumento en [index] con el tipo [T].
+  /// Devuelve null si la lista es null, el índice está fuera de rango,
+  /// o el valor no es del tipo esperado.
+  static T? _arg<T>(List<dynamic>? args, int index) {
+    if (args == null || args.length <= index) return null;
+    final value = args[index];
+    return value is T ? value : null;
+  }
+
+  /// Pantalla de fallback cuando los argumentos obligatorios son inválidos.
+  /// Navega de vuelta a home en el siguiente frame para evitar quedar en
+  /// una pantalla vacía.
+  static Widget _invalidArgs(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) {
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
+      }
+    });
+    return const Scaffold(body: SizedBox.shrink());
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+
   static Map<String, Widget Function(BuildContext)> get routes {
     return {
-    
 
       AppRoutes.checkout: (context) => const CheckAuthPage(),
+      AppRoutes.updateRequired: (_) => const UpdateRequiredScreen(),
 
       AppRoutes.printLabels: (_) => const PrintLabelsScreen(),
       AppRoutes.printLabelsProducts: (_) => const PrintLabelsProductsScreen(),
@@ -244,36 +264,34 @@ class AppRoutes {
 
       //todo conteo
       conteo: (_) => const ListConteoScreen(),
+
       conteoDetail: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final initialTabIndex = arguments[0] as int;
-        final ordenConteo = arguments[1] as DatumConteo;
+        final args = _args(context);
+        final initialTabIndex = _arg<int>(args, 0);
+        final ordenConteo = _arg<DatumConteo>(args, 1);
+        if (initialTabIndex == null || ordenConteo == null) return _invalidArgs(context);
         return ConteoScreen(
           initialTabIndex: initialTabIndex,
           ordenConteo: ordenConteo,
         );
       },
+
       scanProductConteo: (_) => const ScanProductConteoScreen(),
+
       newLoteOrden: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final currentProduct = arguments[0] as CountedLine?;
-        return NewLoteOrdenScreen(
-          currentProduct: currentProduct,
-        );
+        final args = _args(context);
+        final currentProduct = _arg<CountedLine>(args, 0);
+        return NewLoteOrdenScreen(currentProduct: currentProduct);
       },
 
       newProductConteo: (_) => const NewProductConteoScreen(),
       searchLocationConteo: (_) => const SearchLocationConteoScreen(),
       searchProductConteo: (_) => const SearchProductConteoScreen(),
+
       searchLoteConteo: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final currentProduct = arguments[0] as CountedLine?;
-        return SearchLoteConteoScreen(
-          currentProduct: currentProduct,
-        );
+        final args = _args(context);
+        final currentProduct = _arg<CountedLine>(args, 0);
+        return SearchLoteConteoScreen(currentProduct: currentProduct);
       },
 
       // todo Global
@@ -287,27 +305,27 @@ class AppRoutes {
       historyLits: (_) => const HistoryListScreen(),
       historyDetail: (_) => const HistoryDetailScreen(),
       pick: (_) => const IndexListPickScreen(),
+
       pickDone: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final isFromPick = arguments[0] as bool;
+        final args = _args(context);
+        final isFromPick = _arg<bool>(args, 0);
+        if (isFromPick == null) return _invalidArgs(context);
         return IndexListPickDoneScreen(isFromPick: isFromPick);
       },
+
       scanProductPick: (_) => const ScanProductPickScreen(),
       pickDetail: (_) => const PickDetailScreen(),
+
       detailPickDone: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final isFromPick = arguments[0] as bool;
+        final args = _args(context);
+        final isFromPick = _arg<bool>(args, 0);
+        if (isFromPick == null) return _invalidArgs(context);
         return DetailPickDoneScreen(isFromPick: isFromPick);
       },
 
       //todo picking componentes
       pickingComponentes: (_) => IndexListPickComponentsScreen(),
-      //por batch
-      pickingComponentesBatch: (context) {
-        return PickingCompoBatchScreen();
-      },
+      pickingComponentesBatch: (_) => PickingCompoBatchScreen(),
 
       //todo picking cluster
       pickingCluster: (_) => const PickingClusterScreen(),
@@ -316,10 +334,10 @@ class AppRoutes {
       validateCluster: (_) => const ValidateScreen(),
 
       selectLoteCluster: (context) {
-        final args =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final lotes = args[0] as List<LoteProducto>;
-        final suggestedLoteId = args[1] as int?;
+        final args = _args(context);
+        final lotes = _arg<List<LoteProducto>>(args, 0);
+        final suggestedLoteId = _arg<int>(args, 1);
+        if (lotes == null) return _invalidArgs(context);
         return ViewLoteScreen(
           lotes: lotes,
           suggestedLoteId: suggestedLoteId,
@@ -330,19 +348,15 @@ class AppRoutes {
       wmsPacking: (_) => const WmsPackingScreen(),
 
       packingList: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final batchModel = arguments[0] as BatchPackingModel?;
-        return PakingListScreen(
-          batchModel: batchModel,
-        );
+        final args = _args(context);
+        final batchModel = _arg<BatchPackingModel>(args, 0);
+        return PakingListScreen(batchModel: batchModel);
       },
 
       packing: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final packingModel = arguments[0] as PedidoPacking?;
-        final batchModel = arguments[1] as BatchPackingModel?;
+        final args = _args(context);
+        final packingModel = _arg<PedidoPacking>(args, 0);
+        final batchModel = _arg<BatchPackingModel>(args, 1);
         return PackingScreen(
           packingModel: packingModel,
           batchModel: batchModel,
@@ -350,12 +364,11 @@ class AppRoutes {
       },
 
       packingDetail: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final packingModel = arguments[0] as PedidoPacking?;
-        final batchModel = arguments[1] as BatchPackingModel?;
-        final initialTabIndex = arguments[2] as int;
-
+        final args = _args(context);
+        final packingModel = _arg<PedidoPacking>(args, 0);
+        final batchModel = _arg<BatchPackingModel>(args, 1);
+        final initialTabIndex = _arg<int>(args, 2);
+        if (initialTabIndex == null) return _invalidArgs(context);
         return PackingDetailScreen(
           packingModel: packingModel,
           batchModel: batchModel,
@@ -367,21 +380,17 @@ class AppRoutes {
       listPackingConsolidade: (_) => ListPackingConsolidadeScreen(),
 
       packingConsolidateList: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final batchModel = arguments[0] as BatchPackingModel?;
-        return PackingConsolidateListScreen(
-          batchModel: batchModel,
-        );
+        final args = _args(context);
+        final batchModel = _arg<BatchPackingModel>(args, 0);
+        return PackingConsolidateListScreen(batchModel: batchModel);
       },
 
       packingConsolidateDetail: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final packingModel = arguments[0] as PedidoPacking?;
-        final batchModel = arguments[1] as BatchPackingModel?;
-        final initialTabIndex = arguments[2] as int;
-
+        final args = _args(context);
+        final packingModel = _arg<PedidoPacking>(args, 0);
+        final batchModel = _arg<BatchPackingModel>(args, 1);
+        final initialTabIndex = _arg<int>(args, 2);
+        if (initialTabIndex == null) return _invalidArgs(context);
         return PackingConsolidateDetailScreen(
           packingModel: packingModel,
           batchModel: batchModel,
@@ -390,36 +399,32 @@ class AppRoutes {
       },
 
       scanProductConsolidate: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final packingModel = arguments[0] as PedidoPacking?;
-        final batchModel = arguments[1] as BatchPackingModel?;
+        final args = _args(context);
+        final packingModel = _arg<PedidoPacking>(args, 0);
+        final batchModel = _arg<BatchPackingModel>(args, 1);
         return ScanProductPackingConsolidateScreen(
           packingModel: packingModel,
           batchModel: batchModel,
         );
       },
 
-      //todo packign por pedido
+      //todo packing por pedido
       listPacking: (_) => ListPackingScreen(),
 
       detailPackingPedido: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final initialTabIndex = arguments[0] as int;
-        return PackingPedidoDetailScreen(
-          initialTabIndex: initialTabIndex,
-        );
+        final args = _args(context);
+        final initialTabIndex = _arg<int>(args, 0);
+        if (initialTabIndex == null) return _invalidArgs(context);
+        return PackingPedidoDetailScreen(initialTabIndex: initialTabIndex);
       },
+
       scanPack: (_) => ScanPackScreen(),
 
       locationsDestPacking: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final isMoreItems = arguments[0] as bool;
-        return LocationDestPackingScreen(
-          isMoreItems: isMoreItems,
-        );
+        final args = _args(context);
+        final isMoreItems = _arg<bool>(args, 0);
+        if (isMoreItems == null) return _invalidArgs(context);
+        return LocationDestPackingScreen(isMoreItems: isMoreItems);
       },
 
       //todo auth
@@ -428,70 +433,56 @@ class AppRoutes {
 
       //todo  inventario
       inventario: (_) => const InventarioScreen(),
-
       searchLocation: (_) => const SearchLocationScreen(),
       searchProduct: (_) => const SearchProductScreen(),
+
       newLoteInventario: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final currentProduct = arguments[0] as Product?;
-        return NewLoteInventarioScreen(
-          currentProduct: currentProduct,
+        final args = _args(context);
+        final currentProduct = _arg<Product>(args, 0);
+        return NewLoteInventarioScreen(currentProduct: currentProduct);
+      },
+
+      locationDestSearch: (context) {
+        final args = _args(context);
+        final ordenCompraArg = _arg<ResultEntrada>(args, 0);
+        final currentProducArg = _arg<LineasTransferencia>(args, 1);
+        return LocationDestRecepScreen(
+          ordenCompra: ordenCompraArg,
+          currentProduct: currentProducArg,
         );
       },
 
-      //BUSCADOR UBICACION DESTINO
-      locationDestSearch: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final ordenCompraArg = arguments[0] as ResultEntrada?;
-        final currentProducArg = arguments[1] as LineasTransferencia?;
-        return LocationDestRecepScreen(
-            ordenCompra: ordenCompraArg, currentProduct: currentProducArg);
-      },
-
       // todo Recepcion
-
       scanProductOrder: (context) {
-        final arguments =
-            ModalRoute.of(context)?.settings.arguments as List<dynamic>?;
-
-        // Asignación segura con verificación de tipo
-        final ResultEntrada? ordenCompraArg =
-            (arguments != null && arguments.isNotEmpty)
-                ? arguments[0] as ResultEntrada?
-                : null;
-        final LineasTransferencia? currentProducArg =
-            (arguments != null && arguments.length > 1)
-                ? arguments[1] as LineasTransferencia?
-                : null;
-
+        final args = _args(context);
+        final ordenCompraArg = _arg<ResultEntrada>(args, 0);
+        final currentProducArg = _arg<LineasTransferencia>(args, 1);
         return ScanProductOrderScreen(
-            ordenCompra: ordenCompraArg, currentProduct: currentProducArg);
+          ordenCompra: ordenCompraArg,
+          currentProduct: currentProducArg,
+        );
       },
 
       scanProductTransfer: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final currentProducArg = arguments[0] as LineasTransferenciaTrans?;
+        final args = _args(context);
+        final currentProducArg = _arg<LineasTransferenciaTrans>(args, 0);
         return ScanProductTrasnferScreen(currentProduct: currentProducArg);
       },
 
       searchLocationDestTrans: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final currentProducArg = arguments[0] as LineasTransferenciaTrans?;
+        final args = _args(context);
+        final currentProducArg = _arg<LineasTransferenciaTrans>(args, 0);
         return LocationDestTransScreen(currentProduct: currentProducArg);
       },
 
       recepcion: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final ordenCompraArg = arguments[0] as ResultEntrada?;
-        final initialTabIndexArg = arguments[1] as int?;
+        final args = _args(context);
+        final ordenCompraArg = _arg<ResultEntrada>(args, 0);
+        final initialTabIndexArg = _arg<int>(args, 1);
         return RecepcionScreen(
-            ordenCompra: ordenCompraArg,
-            initialTabIndex: initialTabIndexArg ?? 0);
+          ordenCompra: ordenCompraArg,
+          initialTabIndex: initialTabIndexArg ?? 0,
+        );
       },
 
       listOrdenesCompra: (_) => ListOrdenesCompraScreen(),
@@ -503,95 +494,83 @@ class AppRoutes {
       listReceptionBatch: (_) => const ListRecepctionBatchScreen(),
 
       recepcionBatch: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final recepcionBatch = arguments[0] as ReceptionBatch?;
-        final initialTabIndexArg = arguments[1] as int?;
+        final args = _args(context);
+        final recepcionBatchArg = _arg<ReceptionBatch>(args, 0);
+        final initialTabIndexArg = _arg<int>(args, 1);
         return RecepcionBatchScreen(
-            recepcionBatch: recepcionBatch,
-            initialTabIndex: initialTabIndexArg ?? 0);
+          recepcionBatch: recepcionBatchArg,
+          initialTabIndex: initialTabIndexArg ?? 0,
+        );
       },
 
       scanProductReceptionBatch: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final recepcionBatch = arguments[0] as ReceptionBatch?;
-        final currentProducArg = arguments[1] as LineasRecepcionBatch?;
+        final args = _args(context);
+        final recepcionBatchArg = _arg<ReceptionBatch>(args, 0);
+        final currentProducArg = _arg<LineasRecepcionBatch>(args, 1);
         return ScanProductRceptionBatchScreen(
-            ordenCompra: recepcionBatch, currentProduct: currentProducArg);
+          ordenCompra: recepcionBatchArg,
+          currentProduct: currentProducArg,
+        );
       },
 
       locationDestReceptionBatchSearch: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final recepcionBatch = arguments[0] as ReceptionBatch?;
-        final currentProducArg = arguments[1] as LineasRecepcionBatch?;
+        final args = _args(context);
+        final recepcionBatchArg = _arg<ReceptionBatch>(args, 0);
+        final currentProducArg = _arg<LineasRecepcionBatch>(args, 1);
         return LocationDestRecepBatchScreen(
-            ordenCompra: recepcionBatch, currentProduct: currentProducArg);
+          ordenCompra: recepcionBatchArg,
+          currentProduct: currentProducArg,
+        );
       },
 
-      //todo lote por batch
       newLoteRecepBatch: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final ordenCompraArg = arguments[0] as ReceptionBatch?;
-        final currentProducArg = arguments[1] as LineasRecepcionBatch?;
+        final args = _args(context);
+        final ordenCompraArg = _arg<ReceptionBatch>(args, 0);
+        final currentProducArg = _arg<LineasRecepcionBatch>(args, 1);
         return NewLoteRecepBatchScreen(
-            ordenCompra: ordenCompraArg, currentProduct: currentProducArg);
+          ordenCompra: ordenCompraArg,
+          currentProduct: currentProducArg,
+        );
       },
 
-      //todo lote
       newLote: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final ordenCompraArg = arguments[0] as ResultEntrada?;
-        final currentProducArg = arguments[1] as LineasTransferencia?;
+        final args = _args(context);
+        final ordenCompraArg = _arg<ResultEntrada>(args, 0);
+        final currentProducArg = _arg<LineasTransferencia>(args, 1);
         return NewLoteScreen(
-            ordenCompra: ordenCompraArg, currentProduct: currentProducArg);
+          ordenCompra: ordenCompraArg,
+          currentProduct: currentProducArg,
+        );
       },
 
       //todo info rapida
       infoRapida: (_) => const InfoRapidaScreen(),
-
-      productInfo: (context) {
-        return ProductInfoScreen();
-      },
+      productInfo: (_) => ProductInfoScreen(),
 
       locationInfo: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final info = arguments[0] as InfoRapidaResult?;
-        return LocationInfoScreen(
-          infoRapidaResult: info,
-        );
+        final args = _args(context);
+        final info = _arg<InfoRapidaResult>(args, 0);
+        return LocationInfoScreen(infoRapidaResult: info);
       },
+
       paqueteInfo: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final info = arguments[0] as InfoRapidaResult?;
-        return PaqueteInfoScreen(
-          infoRapidaResult: info,
-        );
+        final args = _args(context);
+        final info = _arg<InfoRapidaResult>(args, 0);
+        return PaqueteInfoScreen(infoRapidaResult: info);
       },
 
       createMassTransfer: (_) => const CreateMassTrasferScreen(),
 
       searchLocationCreateMassTransfer: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final isLocationDest = arguments[0] as bool?;
-        return SearchLocationCreateMassTransfercreen(
-          isLocationDest: isLocationDest ?? false,
-        );
+        final args = _args(context);
+        final isLocationDest = _arg<bool>(args, 0) ?? false;
+        return SearchLocationCreateMassTransfercreen(isLocationDest: isLocationDest);
       },
 
-      //todo transfer info
       transferInfo: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        // Asegurarnos de que la lista tenga al menos dos elementos
-        final info = arguments[0] as InfoResult?;
-        final ubi = arguments[1] as Ubicacion?;
+        final args = _args(context);
+        final info = _arg<InfoResult>(args, 0);
+        final ubi = _arg<Ubicacion>(args, 1);
         return TransferInfoScreen(
           infoRapidaResult: info,
           ubicacion: ubi,
@@ -599,43 +578,28 @@ class AppRoutes {
       },
 
       createTransfer: (_) => const CreateTransferScreen(),
+
       searchLocationCreateTransfer: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        // Asegurarnos de que la lista tenga al menos dos elementos
-        final isLocationDest = arguments[0] as bool?;
-        return SearchLocationCreateTransfercreen(
-          isLocationDest: isLocationDest ?? false,
-        );
+        final args = _args(context);
+        final isLocationDest = _arg<bool>(args, 0) ?? false;
+        return SearchLocationCreateTransfercreen(isLocationDest: isLocationDest);
       },
 
       searchLoteCreateTransfer: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final currentProduct = arguments[0] as Product?;
-        return SearchLoteCreateTransferScreen(
-          currentProduct: currentProduct,
-        );
+        final args = _args(context);
+        final currentProduct = _arg<Product>(args, 0);
+        return SearchLoteCreateTransferScreen(currentProduct: currentProduct);
       },
 
-      detailCreateTransfer: (context) {
-        return DetailCreateTransferScreen();
-      },
-
+      detailCreateTransfer: (_) => DetailCreateTransferScreen(),
       searchProductsCreateTransfer: (_) => SearchProductCreateTransferScreen(),
-
-      listLocation: (_) {
-        return ListLocationsScreen();
-      },
-      listProduct: (_) {
-        return ListProductsScreen();
-      },
+      listLocation: (_) => ListLocationsScreen(),
+      listProduct: (_) => ListProductsScreen(),
 
       searchLocationDestTransInfo: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final info = arguments[0] as InfoResult?;
-        final ubi = arguments[1] as Ubicacion?;
+        final args = _args(context);
+        final info = _arg<InfoResult>(args, 0);
+        final ubi = _arg<Ubicacion>(args, 1);
         return LocationDestTransfInfoScreen(
           infoRapidaResult: info,
           ubicacion: ubi,
@@ -643,20 +607,15 @@ class AppRoutes {
       },
 
       //todo entrada de productos
-      entradaProductos: (_) {
-        return ListEntradaProductsScreen();
-      },
+      entradaProductos: (_) => ListEntradaProductsScreen(),
 
       //todo transferencias
-      transferencias: (_) {
-        return ListTransferenciasScreen();
-      },
+      transferencias: (_) => ListTransferenciasScreen(),
 
       transferenciaDetail: (context) {
-        final arguments =
-            ModalRoute.of(context)!.settings.arguments as List<dynamic>;
-        final transferencia = arguments[0] as ResultTransFerencias?;
-        final initialTabIndexArg = arguments[1] as int?;
+        final args = _args(context);
+        final transferencia = _arg<ResultTransFerencias>(args, 0);
+        final initialTabIndexArg = _arg<int>(args, 1);
         return TransferenciaScreen(
           transferencia: transferencia,
           initialTabIndex: initialTabIndexArg ?? 0,

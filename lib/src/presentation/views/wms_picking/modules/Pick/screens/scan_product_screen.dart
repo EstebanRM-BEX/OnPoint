@@ -90,7 +90,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
           },
         );
         Future.delayed(const Duration(seconds: 1), () {
-          Navigator.pop(context);
+          if (mounted) Navigator.of(context, rootNavigator: true).pop();
         });
       }
     }
@@ -650,8 +650,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
 
                             if (state is CurrentProductChangedState) {
                               Future.delayed(const Duration(seconds: 1), () {
-                                // _handleDependencies();
-                                Navigator.pop(context);
+                                if (mounted) Navigator.of(context, rootNavigator: true).pop();
                               });
                             }
 
@@ -704,7 +703,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                             if (state is ChangeLocationIsOkState) {
                               //cambiamos el foco
                               Future.delayed(const Duration(seconds: 1), () {
-                                FocusScope.of(context).requestFocus(focusNode2);
+                                if (mounted) FocusScope.of(context).requestFocus(focusNode2);
                               });
                               _handleDependencies();
                             }
@@ -713,7 +712,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                             if (state is ChangeProductIsOkState) {
                               //cambiamos el foco a cantidad
                               Future.delayed(const Duration(seconds: 1), () {
-                                FocusScope.of(context).requestFocus(focusNode3);
+                                if (mounted) FocusScope.of(context).requestFocus(focusNode3);
                               });
                               _handleDependencies();
                             }
@@ -1156,9 +1155,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                                           const Duration(
                                                               milliseconds:
                                                                   100), () {
-                                                        FocusScope.of(context)
-                                                            .requestFocus(
-                                                                focusNode4);
+                                                        if (mounted) FocusScope.of(context).requestFocus(focusNode4);
                                                       });
                                                     }
                                                   : null,
@@ -1221,8 +1218,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                         Future.delayed(
                                             const Duration(milliseconds: 100),
                                             () {
-                                          FocusScope.of(context)
-                                              .requestFocus(focusNode3);
+                                          if (mounted) FocusScope.of(context).requestFocus(focusNode3);
                                         });
                                       },
                                       icon: const Icon(Icons.clear),
@@ -1422,7 +1418,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
 
           // Esperar 1 segundo y mover el foco
           await Future.delayed(const Duration(seconds: 1));
-          FocusScope.of(context).requestFocus(focusNode5);
+          if (mounted) FocusScope.of(context).requestFocus(focusNode5);
         } else {
           // Si no estamos en la última posición, cambiamos el producto actual
           batchBloc.add(ChangeCurrentProduct(

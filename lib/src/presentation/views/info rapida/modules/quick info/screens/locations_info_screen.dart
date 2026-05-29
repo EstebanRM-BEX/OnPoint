@@ -20,19 +20,6 @@ class LocationInfoScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bloc = context.read<InfoRapidaBloc>();
-
-    final ubicacion = bloc.infoRapidaResult.result;
-    // barcodeController
-    TextEditingController barcodeController = TextEditingController(
-      text: ubicacion?.codigoBarras ?? '',
-    );
-
-    // nameController
-    TextEditingController nameController = TextEditingController(
-      text: ubicacion?.nombre ?? '',
-    );
-
     final size = MediaQuery.sizeOf(context);
     return BlocConsumer<InfoRapidaBloc, InfoRapidaState>(
       listener: (context, state) {
@@ -65,6 +52,14 @@ class LocationInfoScreen extends StatelessWidget {
         }
       },
       builder: (context, state) {
+        final bloc = context.read<InfoRapidaBloc>();
+        final ubicacion = bloc.infoRapidaResult.result;
+        final barcodeController = TextEditingController(
+          text: ubicacion?.codigoBarras ?? '',
+        );
+        final nameController = TextEditingController(
+          text: ubicacion?.nombre ?? '',
+        );
         return WillPopScope(
           onWillPop: () async {
             return false;

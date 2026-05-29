@@ -23,6 +23,7 @@ class HistoryListScreen extends StatelessWidget {
     FocusNode focusNodeBuscar = FocusNode();
 
     void validateBarcode(String value, BuildContext context) {
+      if (!context.mounted) return;
       final bloc = context.read<WMSPickingBloc>();
       final scan = (bloc.scannedToDo.isEmpty ? value : bloc.scannedToDo)
           .trim()

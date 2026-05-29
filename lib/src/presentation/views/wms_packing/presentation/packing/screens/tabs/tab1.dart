@@ -162,7 +162,8 @@ class Tab1PedidoScreen extends StatelessWidget {
               backgroundColor: white,
               body: Column(
                 children: [
-                  Container(
+                  Expanded(
+                    child: Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     width: double.infinity,
@@ -600,6 +601,7 @@ class Tab1PedidoScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                  ),
                   ),
                 ],
               ),

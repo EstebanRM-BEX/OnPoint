@@ -62,17 +62,22 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
                               itemBuilder: (_, index) {
                                 final product = bloc.productosFilters[index];
                                 final alreadyAdded = bloc.productosSelected.any(
-                                    (p) => p.productId == product.productId);
+                                  (p) => p.productId == product.productId,
+                                );
                                 return ProductListTile(
                                   index: index,
                                   isAdded: alreadyAdded,
                                   onAddRemove: () {
                                     if (alreadyAdded) {
-                                      bloc.add(RemoveSelectedProductEvent(
-                                          product.productId!));
+                                      bloc.add(
+                                        RemoveSelectedProductEvent(
+                                          product.productId!,
+                                        ),
+                                      );
                                     } else {
                                       bloc.add(
-                                          AddSelectedProductEvent(product));
+                                        AddSelectedProductEvent(product),
+                                      );
                                     }
                                   },
                                 );
@@ -85,11 +90,13 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
                         child: ElevatedButton(
                           onPressed: () {
                             FocusScope.of(context).unfocus();
-                            ModalPrintersList.show(context,
-                                resIds: bloc.productosSelected
-                                    .map((e) => e.productId!)
-                                    .toList(),
-                                companyId: 1);
+                            ModalPrintersList.show(
+                              context,
+                              resIds: bloc.productosSelected
+                                  .map((e) => e.productId!)
+                                  .toList(),
+                              companyId: 1,
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColorApp,
@@ -98,8 +105,10 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
                             ),
                             minimumSize: Size(size.width * 0.9, 40),
                           ),
-                          child: const Text("Imprimir Etiqueta",
-                              style: TextStyle(color: white)),
+                          child: const Text(
+                            "Imprimir Etiqueta",
+                            style: TextStyle(color: white),
+                          ),
                         ),
                       ),
                   ],
@@ -127,53 +136,65 @@ class ProductListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bloc = context.read<PrintLabelsBloc>();
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: GestureDetector(
-        onTap: onAddRemove,
-        child: Card(
-          elevation: 3,
-          color: isAdded ? Colors.green[100] : white,
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildProductRow(
-                          'Nombre', bloc.productosFilters[index].name,
-                          isError: false),
-                      _buildProductRow(
-                          'Barcode', bloc.productosFilters[index].barcode,
-                          isError: bloc.productosFilters[index].barcode ==
-                                  null ||
-                              bloc.productosFilters[index].barcode!.isEmpty),
-                      _buildProductRow(
-                          'Code', bloc.productosFilters[index].code,
-                          isError: bloc.productosFilters[index].code == null ||
-                              bloc.productosFilters[index].code!.isEmpty),
-                    ],
-                  ),
+    return BlocBuilder<PrintLabelsBloc, PrintLabelsState>(
+      builder: (context, state) {
+        final bloc = context.read<PrintLabelsBloc>();
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: GestureDetector(
+            onTap: onAddRemove,
+            child: Card(
+              elevation: 3,
+              color: isAdded ? Colors.green[100] : white,
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildProductRow(
+                            'Nombre',
+                            bloc.productosFilters[index].name,
+                            isError: false,
+                          ),
+                          _buildProductRow(
+                            'Barcode',
+                            bloc.productosFilters[index].barcode,
+                            isError:
+                                bloc.productosFilters[index].barcode == null ||
+                                bloc.productosFilters[index].barcode!.isEmpty,
+                          ),
+                          _buildProductRow(
+                            'Code',
+                            bloc.productosFilters[index].code,
+                            isError:
+                                bloc.productosFilters[index].code == null ||
+                                bloc.productosFilters[index].code!.isEmpty,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      isAdded ? Icons.check_circle : Icons.add_circle_outline,
+                      color: isAdded ? Colors.green : primaryColorApp,
+                      size: 24,
+                    ),
+                  ],
                 ),
-                Icon(
-                  isAdded ? Icons.check_circle : Icons.add_circle_outline,
-                  color: isAdded ? Colors.green : primaryColorApp,
-                  size: 24,
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   Widget _buildProductRow(String label, String? value, {bool isError = false}) {
-    final displayValue =
-        (value == null || value.isEmpty) ? 'Sin ${label.toLowerCase()}' : value;
+    final displayValue = (value == null || value.isEmpty)
+        ? 'Sin ${label.toLowerCase()}'
+        : value;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -230,8 +251,10 @@ class _AppBarInfo extends StatelessWidget {
                 ),
                 Padding(
                   padding: EdgeInsets.only(left: size.width * 0.22),
-                  child: const Text('PRODUCTOS',
-                      style: TextStyle(color: white, fontSize: 18)),
+                  child: const Text(
+                    'PRODUCTOS',
+                    style: TextStyle(color: white, fontSize: 18),
+                  ),
                 ),
                 const Spacer(),
               ],
@@ -252,8 +275,10 @@ class _NoProductsMessage extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: const [
         Text('No hay productos', style: TextStyle(fontSize: 14, color: grey)),
-        Text('No tiene productos en la base de datos',
-            style: TextStyle(fontSize: 12, color: grey)),
+        Text(
+          'No tiene productos en la base de datos',
+          style: TextStyle(fontSize: 12, color: grey),
+        ),
         SizedBox(height: 60),
       ],
     );

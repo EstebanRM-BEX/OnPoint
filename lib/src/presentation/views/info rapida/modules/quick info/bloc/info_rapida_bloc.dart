@@ -728,6 +728,8 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
 
     try {
       infoRapidaResult = InfoRapidaResult();
+      searchControllerLocation.clear();
+      searchControllerProducts.clear();
 
       InfoRapida infoRapida; // Defínelo fuera del if
 
@@ -767,6 +769,8 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
 
       if (infoRapida.result?.code == 200) {
         infoRapidaResult = infoRapida.result!;
+        productosUbicacion = infoRapidaResult.result?.productos;
+        ubicacionesProducto = infoRapidaResult.result?.ubicaciones;
 
         emit(InfoRapidaLoaded(infoRapidaResult, infoRapida.result!.type!));
       } else {

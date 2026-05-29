@@ -31,6 +31,7 @@ class IndexListPickDoneScreen extends StatelessWidget {
     final size = MediaQuery.of(context).size;
 
     void validateBarcode(String value, BuildContext context) {
+      if (!context.mounted) return;
       final bloc = context.read<PickingPickBloc>();
       final scan = (bloc.scannedValue5.isEmpty ? value : bloc.scannedValue5)
           .trim()

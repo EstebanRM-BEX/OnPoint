@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
+import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_bloc.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_event.dart';
 import 'package:wms_app/injection_container.dart';
@@ -132,8 +133,31 @@ class LoginPage extends StatelessWidget {
                 '⚡ [Métricas] Ahorro estimado: ${(swDev.elapsedMilliseconds + swNovedades.elapsedMilliseconds + swInventario.elapsedMilliseconds) - swTotal.elapsedMilliseconds}ms');
 
             if (!context.mounted) return;
+
+            // Verificar versión de la app antes de ir a home
+            context.read<HomeBloc>().add(AppVersionEvent());
+
+            HomeState? versionState;
+            try {
+              versionState = await context.read<HomeBloc>().stream
+                  .firstWhere((s) =>
+                      s is AppVersionUpdateState ||
+                      s is AppVersionLoadedState ||
+                      s is AppVersionLoadErrorState)
+                  .timeout(const Duration(seconds: 10));
+            } catch (_) {
+              // Timeout o error → continuar a home sin bloquear
+              versionState = null;
+            }
+
+            if (!context.mounted) return;
             Get.back();
-            Navigator.pushReplacementNamed(context, '/home');
+
+            if (versionState is AppVersionUpdateState) {
+              Navigator.pushReplacementNamed(context, 'update-required');
+            } else {
+              Navigator.pushReplacementNamed(context, '/home');
+            }
           }
 
           if (state is UserError) {

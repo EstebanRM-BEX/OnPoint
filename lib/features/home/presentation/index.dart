@@ -627,6 +627,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                               'Cargando recepciones...'));
                                               await Future.delayed(
                                                   const Duration(seconds: 1));
+                                              if (!mounted) return;
                                               Navigator.pop(context);
                                               Navigator.pushReplacementNamed(
                                                   context,
@@ -671,6 +672,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                               'Cargando interfaz...'));
                                               await Future.delayed(
                                                   const Duration(seconds: 1));
+                                              if (!mounted) return;
                                               Navigator.pop(context);
                                               Navigator.pushReplacementNamed(
                                                   context, 'transferencias');
@@ -772,6 +774,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                               'Cargando entrega de productos...'));
                                               await Future.delayed(
                                                   const Duration(seconds: 1));
+                                              if (!mounted) return;
                                               Navigator.pop(context);
                                               Navigator.pushReplacementNamed(
                                                   context,

@@ -892,7 +892,7 @@ class DataBaseSqlite {
       Database db = await DataBaseSqlite().getDatabaseInstance();
       final List<Map<String, dynamic>> result = await db.rawQuery(
           'SELECT COUNT(*) as count FROM ${ProductInventarioTable.tableName}');
-      return result.first['count'] as int;
+      return result.isNotEmpty ? (result.first['count'] as int? ?? 0) : 0;
     } catch (e) {
       debugPrint("Error al contar productos de SQLite: $e");
       return 0;
@@ -947,7 +947,7 @@ class DataBaseSqlite {
       Database db = await DataBaseSqlite().getDatabaseInstance();
       final List<Map<String, dynamic>> result = await db.rawQuery(
           'SELECT COUNT(*) as count FROM ${NovedadesTable.tableName}');
-      return result.first['count'] as int;
+      return result.isNotEmpty ? (result.first['count'] as int? ?? 0) : 0;
     } catch (e) {
       debugPrint("Error al contar novedades de SQLite: $e");
       return 0;
@@ -1061,7 +1061,7 @@ class DataBaseSqlite {
       Database db = await DataBaseSqlite().getDatabaseInstance();
       final List<Map<String, dynamic>> result = await db
           .rawQuery('SELECT COUNT(*) as count FROM ${TercerosTable.tableName}');
-      return result.first['count'] as int;
+      return result.isNotEmpty ? (result.first['count'] as int? ?? 0) : 0;
     } catch (e) {
       debugPrint("Error al contar terceros de SQLite: $e");
       return 0;
@@ -1117,7 +1117,7 @@ class DataBaseSqlite {
       final db = await DataBaseSqlite().getDatabaseInstance();
       final List<Map<String, dynamic>> result = await db!.rawQuery(
           'SELECT COUNT(*) as count FROM ${UbicacionesTable.tableName}');
-      return result.first['count'] as int;
+      return result.isNotEmpty ? (result.first['count'] as int? ?? 0) : 0;
     } catch (e) {
       debugPrint("Error al contar ubicaciones de SQLite: $e");
       return 0;

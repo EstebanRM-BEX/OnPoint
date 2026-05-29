@@ -23,60 +23,6 @@ class ProductInfoScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bloc = context.read<InfoRapidaBloc>();
-    final product = bloc.infoRapidaResult.result;
-
-    // Verificación de seguridad: Si no hay producto, mostrar error y volver
-    if (product == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No se pudo cargar la información del producto'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      });
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    // referenceController
-    TextEditingController referenceController = TextEditingController(
-      text: product.referencia ?? '',
-    );
-
-    //unidade de medida
-    TextEditingController uomController = TextEditingController(
-      text: product.unidadMedida ?? '',
-    );
-
-    // priceController
-    TextEditingController priceController = TextEditingController(
-      text: product.precio != null ? '${product.precio}' : '',
-    );
-    // pesoController
-    TextEditingController pesoController = TextEditingController(
-      text: product.peso != null ? '${product.peso}' : '',
-    );
-    // volumenController
-    TextEditingController volumenController = TextEditingController(
-      text: product.volumen != null ? '${product.volumen}' : '',
-    );
-
-    // barcodeController
-    TextEditingController barcodeController = TextEditingController(
-      text: product.codigoBarras ?? '',
-    );
-
-    // nameController
-    TextEditingController nameController = TextEditingController(
-      text: product.nombre ?? '',
-    );
-
     final size = MediaQuery.sizeOf(context);
     return BlocConsumer<InfoRapidaBloc, InfoRapidaState>(
       listener: (context, state) {
@@ -104,6 +50,48 @@ class ProductInfoScreen extends StatelessWidget {
         }
       },
       builder: (context, state) {
+        final bloc = context.read<InfoRapidaBloc>();
+        final product = bloc.infoRapidaResult.result;
+
+        if (product == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('No se pudo cargar la información del producto'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final referenceController = TextEditingController(
+          text: product.referencia ?? '',
+        );
+        final uomController = TextEditingController(
+          text: product.unidadMedida ?? '',
+        );
+        final priceController = TextEditingController(
+          text: product.precio != null ? '${product.precio}' : '',
+        );
+        final pesoController = TextEditingController(
+          text: product.peso != null ? '${product.peso}' : '',
+        );
+        final volumenController = TextEditingController(
+          text: product.volumen != null ? '${product.volumen}' : '',
+        );
+        final barcodeController = TextEditingController(
+          text: product.codigoBarras ?? '',
+        );
+        final nameController = TextEditingController(
+          text: product.nombre ?? '',
+        );
+
         return WillPopScope(
           onWillPop: () async {
             return false;

@@ -122,63 +122,63 @@ class MyApp extends StatelessWidget {
           ?.pushNamedAndRemoveUntil('enterprice', (route) => false);
     }
 
-    return GetMaterialApp(
-      navigatorKey: navigatorKey,
-      debugShowCheckedModeBanner: false,
-      initialRoute: AppRoutes.checkout,
-      routes: AppRoutes.routes,
-      supportedLocales: const [Locale('es', 'ES')],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => getIt<ConnectionStatusCubit>()),
+        BlocProvider(create: (_) => getIt<UserBloc>()),
+        BlocProvider(create: (_) => RecepcionBloc()),
+        BlocProvider(create: (_) => TransferenciaBloc()),
+        BlocProvider(create: (_) => getIt<HomeBloc>()),
+        BlocProvider(create: (_) => getIt<LoginBloc>()),
+        BlocProvider(create: (_) => WMSPickingBloc()),
+        BlocProvider(create: (_) => BatchBloc()),
+        BlocProvider(create: (_) => WmsPackingBloc()),
+        BlocProvider(create: (_) => TransferInfoBloc()),
+        BlocProvider(
+            create: (context) =>
+                InfoRapidaBloc(userBloc: context.read<UserBloc>())),
+        BlocProvider(create: (_) => InventarioBloc()),
+        BlocProvider(create: (_) => PickingPickBloc()),
+        BlocProvider(create: (_) => RecepcionBatchBloc()),
+        BlocProvider(create: (_) => PackingPedidoBloc()),
+        BlocProvider(create: (_) => DevolucionesBloc()),
+        BlocProvider(create: (_) => ConteoBloc()),
+        BlocProvider(create: (_) => CreateTransferBloc()),
+        BlocProvider(create: (_) => PackingConsolidateBloc()),
+        BlocProvider(create: (_) => getIt<EnterpriseBloc>()),
+        BlocProvider(create: (_) => getIt<ClusterPickingBloc>()),
+        BlocProvider(create: (_) => getIt<LoteProductoBloc>()),
+        BlocProvider(create: (_) => getIt<PackagingTypeBloc>()),
+        BlocProvider(create: (_) => getIt<PrintingBloc>()),
+        BlocProvider(create: (_) => PrintLabelsBloc()),
       ],
-      theme: ThemeData(
-        scaffoldBackgroundColor: Colors.grey[300],
-        appBarTheme: AppBarTheme(elevation: 0, color: primaryColorApp),
-        colorScheme: ColorScheme.light(
-          primary: primaryColorApp,
-          secondary: primaryColorApp,
+      child: GetMaterialApp(
+        navigatorKey: navigatorKey,
+        debugShowCheckedModeBanner: false,
+        initialRoute: AppRoutes.checkout,
+        routes: AppRoutes.routes,
+        supportedLocales: const [Locale('es', 'ES')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        theme: ThemeData(
+          scaffoldBackgroundColor: Colors.grey[300],
+          appBarTheme: AppBarTheme(elevation: 0, color: primaryColorApp),
+          colorScheme: ColorScheme.light(
+            primary: primaryColorApp,
+            secondary: primaryColorApp,
+          ),
         ),
-      ),
-      builder: (context, navigator) {
-        return MultiBlocProvider(
-          providers: [
-            BlocProvider(create: (_) => getIt<ConnectionStatusCubit>()),
-            BlocProvider(create: (_) => getIt<UserBloc>()),
-            BlocProvider(create: (_) => RecepcionBloc()),
-            BlocProvider(create: (_) => TransferenciaBloc()),
-            BlocProvider(create: (_) => getIt<HomeBloc>()),
-            BlocProvider(create: (_) => getIt<LoginBloc>()),
-            BlocProvider(create: (_) => WMSPickingBloc()),
-            BlocProvider(create: (_) => BatchBloc()),
-            BlocProvider(create: (_) => WmsPackingBloc()),
-            BlocProvider(create: (_) => TransferInfoBloc()),
-            BlocProvider(
-                create: (context) =>
-                    InfoRapidaBloc(userBloc: context.read<UserBloc>())),
-            BlocProvider(create: (_) => InventarioBloc()),
-            BlocProvider(create: (_) => PickingPickBloc()),
-            BlocProvider(create: (_) => RecepcionBatchBloc()),
-            BlocProvider(create: (_) => PackingPedidoBloc()),
-            BlocProvider(create: (_) => DevolucionesBloc()),
-            BlocProvider(create: (_) => ConteoBloc()),
-            BlocProvider(create: (_) => CreateTransferBloc()),
-            BlocProvider(create: (_) => PackingConsolidateBloc()),
-            BlocProvider(create: (_) => getIt<EnterpriseBloc>()),
-            BlocProvider(create: (_) => getIt<ClusterPickingBloc>()),
-            BlocProvider(create: (_) => getIt<LoteProductoBloc>()),
-            BlocProvider(create: (_) => getIt<PackagingTypeBloc>()),
-            BlocProvider(create: (_) => getIt<PrintingBloc>()),
-            BlocProvider(create: (_) => PrintLabelsBloc()),
-          ],
-          child: SessionTimeoutManager(
+        builder: (context, navigator) {
+          return SessionTimeoutManager(
             duration: const Duration(minutes: 240),
             onSessionExpired: logOut,
             child: navigator ?? const SizedBox.shrink(),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
