@@ -266,3 +266,6 @@ class ViewProductImageFailure extends ConteoState {
   final String error;
   ViewProductImageFailure(this.error);
 }
+
+
+class LoadNewProductLoading extends ConteoState {}

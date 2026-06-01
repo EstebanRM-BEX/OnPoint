@@ -6,6 +6,7 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
+import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 
 class SearchProductConteoScreen extends StatefulWidget {
   const SearchProductConteoScreen({super.key});
@@ -18,10 +19,44 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
   String? selectedProductKey;
 
   @override
+  void initState() {
+    super.initState();
+    // LoadNewProductLoading se emite ANTES de que esta pantalla exista,
+    // por eso el listener del BlocConsumer nunca lo ve.
+    // Se verifica el estado actual del bloc al montar la pantalla.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final state = context.read<ConteoBloc>().state;
+      if (state is LoadNewProductLoading) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              const DialogLoading(message: "Cargando productos..."),
+        );
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
 
-    return BlocBuilder<ConteoBloc, ConteoState>(
+    return BlocConsumer<ConteoBloc, ConteoState>(
+      listener: (context, state) {
+        print('State: $state');
+        if (state is LoadNewProductLoading) {
+          print('Cargando productos...');
+          showDialog(context: context, builder: (context) => const DialogLoading(message: "Cargando productos..."));
+        }
+        if (state is LoadNewProductSuccess) {
+          print('Productos cargados correctamente');
+          //validsmos que tengamos un dialogo de carga de productos abierto
+          if (Navigator.of(context).canPop()) {
+            Navigator.pop(context);
+          }
+        }
+      },
       builder: (context, state) {
         final bloc = context.read<ConteoBloc>();
 

@@ -64,6 +64,8 @@ class LoginPage extends StatelessWidget {
             if (!context.mounted) return;
 
             // ── PASO 1: Configuraciones ───────────────────────────────
+            // Recargar datos del nuevo usuario (nombre, email, rol) en HomeBloc
+            context.read<HomeBloc>().add(HomeLoadData());
             context.read<HomeBloc>().add(LoadConfigurationsEvent());
 
             HomeState? configState;

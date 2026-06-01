@@ -133,7 +133,7 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
           (hasLote ? bloc.loteIsOk : true) &&
           bloc.quantityIsOk &&
           !bloc.locationDestIsOk &&
-          !bloc.viewQuantity
+          !bloc.viewQuantity,
     };
 
     //mostrar las variables
@@ -162,12 +162,7 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
 
   @override
   void dispose() {
-    for (final node in [
-      focusNode1,
-      focusNode2,
-      focusNode3,
-      focusNode4,
-    ]) {
+    for (final node in [focusNode1, focusNode2, focusNode3, focusNode4]) {
       node.dispose();
     }
     WidgetsBinding.instance.removeObserver(this);
@@ -180,30 +175,190 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
     return scan.isEmpty ? manual.trim().toLowerCase() : scan;
   }
 
-  void validateLote(String value) {
+  // void validateLote(String value) {
+  //   final bloc = context.read<ConteoBloc>();
+  //   final scan = value.trim().toLowerCase();
+  //   debugPrint('scan lote: $scan');
+  //   _controllerLote.clear();
+  //   //tengo una lista de lotes el cual quiero validar si el scan es igual a alguno de los lotes
+  //   LotesProduct? matchedLote = bloc.listLotesProduct.firstWhere(
+  //     (lotes) => lotes.name?.toLowerCase() == scan.trim(),
+  //     orElse: () =>
+  //         LotesProduct(), // Si no se encuentra ningún match, devuelve null
+  //   );
+
+  //   if (matchedLote.name != null) {
+  //     debugPrint('lote encontrado: ${matchedLote.name}');
+  //     bloc.add(ValidateFieldsEvent(field: "lote", isOk: true));
+  //     bloc.add(SelectecLoteEvent(matchedLote));
+  //     Future.microtask(() => focusNode5.requestFocus());
+  //   } else {
+  //     _vibrationService.vibrate();
+  //     _audioService.playErrorSound();
+  //     debugPrint('lote no encontrado');
+  //     bloc.add(ValidateFieldsEvent(field: "lote", isOk: false));
+  //     Future.microtask(() => focusNode5.requestFocus());
+  //   }
+  // }
+
+void validateLote(String value) {
     final bloc = context.read<ConteoBloc>();
     final scan = value.trim().toLowerCase();
     debugPrint('scan lote: $scan');
     _controllerLote.clear();
-    //tengo una lista de lotes el cual quiero validar si el scan es igual a alguno de los lotes
-    LotesProduct? matchedLote = bloc.listLotesProduct.firstWhere(
-        (lotes) => lotes.name?.toLowerCase() == scan.trim(),
-        orElse: () =>
-            LotesProduct() // Si no se encuentra ningún match, devuelve null
+
+    //validamos si el lote escaneado es el sugerido por el producto
+    if (bloc.currentProduct.lotName != null) {
+      if (bloc.currentProduct.lotName?.toLowerCase() == scan.trim()) {
+        bloc.add(ValidateFieldsEvent(field: "lote", isOk: true));
+        //buscamos el lote en la lista de lotes
+        LotesProduct? matchedLote = bloc.listLotesProduct.firstWhere(
+          (lotes) =>
+              lotes.name?.toLowerCase() ==
+              bloc.currentProduct.lotName?.toLowerCase(),
+          orElse: () =>
+              LotesProduct(), // Si no se encuentra ningún match, devuelve null
+        );
+        if (matchedLote.name != null) {
+          bloc.add(SelectecLoteEvent(matchedLote));
+          Future.microtask(() => focusNode5.requestFocus());
+        }
+        return;
+      } else {
+        //tengo una lista de lotes el cual quiero validar si el scan es igual a alguno de los lotes
+        LotesProduct? matchedLote = bloc.listLotesProduct.firstWhere(
+          (lotes) => lotes.name?.toLowerCase() == scan.trim(),
+          orElse: () =>
+              LotesProduct(), // Si no se encuentra ningún match, devuelve null
         );
 
-    if (matchedLote.name != null) {
-      debugPrint('lote encontrado: ${matchedLote.name}');
-      bloc.add(ValidateFieldsEvent(field: "lote", isOk: true));
-      bloc.add(SelectecLoteEvent(matchedLote));
-      Future.microtask(() => focusNode5.requestFocus());
-    } else {
-      _vibrationService.vibrate();
-      _audioService.playErrorSound();
-      debugPrint('lote no encontrado');
-      bloc.add(ValidateFieldsEvent(field: "lote", isOk: false));
-      Future.microtask(() => focusNode5.requestFocus());
+        if (matchedLote.name != null) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Center(
+                child: Text(
+                  'Lote no sugerido',
+                  style: TextStyle(fontSize: 16, color: primaryColorApp),
+                ),
+              ),
+              content: Text(
+               'El lote $scan no es el sugerido por el producto, lote sugerido ${bloc.currentProduct.lotName}, ¿desea continuar con el lote escaneado?',
+                style: TextStyle(fontSize: 14, color: black),
+              ),
+              actions: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: grey,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancelar', style: TextStyle(color: white)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColorApp,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () {
+                    //tengo una lista de lotes el cual quiero validar si el scan es igual a alguno de los lotes
+                    LotesProduct?
+                    matchedLote = bloc.listLotesProduct.firstWhere(
+                      (lotes) => lotes.name?.toLowerCase() == scan.trim(),
+                      orElse: () =>
+                          LotesProduct(), // Si no se encuentra ningún match, devuelve null
+                    );
+
+                    if (matchedLote.name != null) {
+                      debugPrint('lote encontrado: ${matchedLote.name}');
+                      bloc.add(ValidateFieldsEvent(field: "lote", isOk: true));
+                      bloc.add(SelectecLoteEvent(matchedLote));
+                      Future.microtask(() => focusNode5.requestFocus());
+                      Navigator.pop(context);
+                      return;
+                    } else {
+                      _vibrationService.vibrate();
+                      _audioService.playErrorSound();
+                      debugPrint('lote no encontrado');
+                      bloc.add(ValidateFieldsEvent(field: "lote", isOk: false));
+                      Future.microtask(() => focusNode5.requestFocus());
+                      Navigator.pop(context);
+                      return;
+                    }
+                  },
+                  child: Text('Continuar', style: TextStyle(color: white)),
+                ),
+              ],
+            ),
+          );
+
+          return;
+        } else {
+          //dialogo para decir que este lote no se encuentra en la lista que si desea crearlo
+
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Center(
+                child: Text(
+                  'Lote no encontrado',
+                  style: TextStyle(fontSize: 16, color: primaryColorApp),
+                ),
+              ),
+              content: Text(
+                'El lote $scan no se encuentra en la lista, ¿Desea crearlo?',
+                style: TextStyle(fontSize: 14, color: black),
+              ),
+              actions: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: grey,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancelar', style: TextStyle(color: white)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColorApp,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pushReplacementNamed(
+                      context,
+                      'search-lote-conteo',
+                      arguments: [context
+                                    .read<ConteoBloc>()
+                                    .currentProduct],
+                    );
+                  },
+                  child: Text('Crear', style: TextStyle(color: white)),
+                ),
+              ],
+            ),
+          );
+
+          // _vibrationService.vibrate();
+          // _audioService.playErrorSound();
+          // debugPrint('lote no encontrado');
+          // bloc.add(ValidateFieldsEvent(field: "lote", isOk: false));
+          // Future.microtask(() => focusNode5.requestFocus());
+          // Navigator.pop(context);
+          return;
+        }
+
+        //mostramos un dialogo de confirmacion donde el lote no es el sugerido por el producto si desea continuar con el lote escaneado
+      }
     }
+    return;
   }
 
   void validateLocation(String value) {
@@ -215,8 +370,15 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
 
     if (scan == product.locationBarcode?.toLowerCase()) {
       bloc.add(ValidateFieldsEvent(field: "location", isOk: true));
-      bloc.add(ChangeLocationIsOkEvent(false, ResultUbicaciones(),
-          product.productId ?? 0, product.orderId ?? 0, product.idMove ?? 0));
+      bloc.add(
+        ChangeLocationIsOkEvent(
+          false,
+          ResultUbicaciones(),
+          product.productId ?? 0,
+          product.orderId ?? 0,
+          product.idMove ?? 0,
+        ),
+      );
       bloc.oldLocation = product.locationId.toString();
       Future.microtask(() => focusNode1.requestFocus());
     } else {
@@ -236,15 +398,17 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
 
     if (scan == product.productBarcode?.toLowerCase()) {
       bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
-      bloc.add(ChangeProductIsOkEvent(
-        false,
-        Product(),
-        product.orderId ?? 0,
-        true,
-        product.productId ?? 0,
-        0,
-        product.idMove ?? 0,
-      ));
+      bloc.add(
+        ChangeProductIsOkEvent(
+          false,
+          Product(),
+          product.orderId ?? 0,
+          true,
+          product.productId ?? 0,
+          0,
+          product.idMove ?? 0,
+        ),
+      );
     } else {
       final isOk = validateScannedBarcode(scan, product, bloc, true);
       if (!isOk) {
@@ -257,51 +421,64 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
     Future.microtask(() => focusNode2.requestFocus());
   }
 
-  bool validateScannedBarcode(String scannedBarcode, CountedLine currentProduct,
-      ConteoBloc bloc, bool isProduct) {
+  bool validateScannedBarcode(
+    String scannedBarcode,
+    CountedLine currentProduct,
+    ConteoBloc bloc,
+    bool isProduct,
+  ) {
     // Buscar el barcode que coincida con el valor escaneado
     Barcodes? matchedBarcode = bloc.listOfBarcodes.firstWhere(
-        (barcode) => barcode.barcode?.toLowerCase() == scannedBarcode,
-        orElse: () =>
-            Barcodes() // Si no se encuentra ningún match, devuelve null
-        );
+      (barcode) => barcode.barcode?.toLowerCase() == scannedBarcode,
+      orElse: () =>
+          Barcodes(), // Si no se encuentra ningún match, devuelve null
+    );
     if (matchedBarcode.barcode != null) {
       if (isProduct) {
         bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
 
-        bloc.add(ChangeQuantitySeparate(
-          false,
-          0,
-          currentProduct.productId ?? 0,
-          currentProduct.orderId ?? 0,
-          currentProduct.idMove ?? 0,
-        ));
+        bloc.add(
+          ChangeQuantitySeparate(
+            false,
+            0,
+            currentProduct.productId ?? 0,
+            currentProduct.orderId ?? 0,
+            currentProduct.idMove ?? 0,
+          ),
+        );
 
-        bloc.add(ChangeProductIsOkEvent(
-          false,
-          Product(),
-          currentProduct.orderId ?? 0,
-          true,
-          currentProduct.productId ?? 0,
-          0,
-          currentProduct.idMove ?? 0,
-        ));
+        bloc.add(
+          ChangeProductIsOkEvent(
+            false,
+            Product(),
+            currentProduct.orderId ?? 0,
+            true,
+            currentProduct.productId ?? 0,
+            0,
+            currentProduct.idMove ?? 0,
+          ),
+        );
 
-        bloc.add(ChangeIsOkQuantity(
-          currentProduct.orderId ?? 0,
-          true,
-          currentProduct.productId ?? 0,
-          currentProduct.idMove ?? 0,
-        ));
+        bloc.add(
+          ChangeIsOkQuantity(
+            currentProduct.orderId ?? 0,
+            true,
+            currentProduct.productId ?? 0,
+            currentProduct.idMove ?? 0,
+          ),
+        );
 
         return true;
       } else {
-        bloc.add(AddQuantitySeparate(
+        bloc.add(
+          AddQuantitySeparate(
             currentProduct.productId ?? 0,
             currentProduct.orderId ?? 0,
             matchedBarcode.idMove ?? 0,
             matchedBarcode.cantidad,
-            false));
+            false,
+          ),
+        );
       }
       _vibrationService.vibrate();
       _audioService.playErrorSound();
@@ -323,8 +500,15 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
     final currentProduct = bloc.currentProduct;
 
     if (scan == currentProduct.productBarcode?.toLowerCase()) {
-      bloc.add(AddQuantitySeparate(currentProduct.productId ?? 0,
-          currentProduct.orderId ?? 0, currentProduct.idMove ?? 0, 1, false));
+      bloc.add(
+        AddQuantitySeparate(
+          currentProduct.productId ?? 0,
+          currentProduct.orderId ?? 0,
+          currentProduct.idMove ?? 0,
+          1,
+          false,
+        ),
+      );
       Future.microtask(() => focusNode3.requestFocus());
     } else {
       validateScannedBarcode(scan, currentProduct, bloc, false);
@@ -343,20 +527,20 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
       child: BlocBuilder<ConteoBloc, ConteoState>(
         builder: (context, state) {
           return Scaffold(
-              backgroundColor: primaryColorApp,
-              body: SafeArea(
-                child: Container(
-                  color: white,
-                  child: Column(
-                    children: [
-                      //todo: barra info
-                      BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
-                        builder: (context, status) {
-                          return Container(
-                            width: size.width,
-                            color: primaryColorApp,
-                            child: BlocConsumer<ConteoBloc, ConteoState>(
-                                listener: (context, state) {
+            backgroundColor: primaryColorApp,
+            body: SafeArea(
+              child: Container(
+                color: white,
+                child: Column(
+                  children: [
+                    //todo: barra info
+                    BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
+                      builder: (context, status) {
+                        return Container(
+                          width: size.width,
+                          color: primaryColorApp,
+                          child: BlocConsumer<ConteoBloc, ConteoState>(
+                            listener: (context, state) {
                               debugPrint("❤️‍🔥 state : $state");
 
                               //VAMOSA VALIDAR SI HAY PRODUCTO CARGADOS DE LA MAESTRA
@@ -370,7 +554,7 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                                 );
                               }
 
-//validar que tengamos ubicaciones cargadas
+                              //validar que tengamos ubicaciones cargadas
                               if (state is LoadLocationsFailure) {
                                 Get.snackbar(
                                   '360 Software Informa',
@@ -394,24 +578,33 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                               // * validamos en todo cambio de estado de cantidad separada
 
                               if (state is SendProductConteoSuccess) {
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(
-                                  duration: const Duration(milliseconds: 1000),
-                                  content:
-                                      Text(state.response.result?.msg ?? ""),
-                                  backgroundColor: Colors.green[200],
-                                ));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    duration: const Duration(
+                                      milliseconds: 1000,
+                                    ),
+                                    content: Text(
+                                      state.response.result?.msg ?? "",
+                                    ),
+                                    backgroundColor: Colors.green[200],
+                                  ),
+                                );
                                 //limpiamos los valores pa volver a iniciar con otro producto
                                 cantidadController.clear();
-                                context.read<ConteoBloc>().add(ResetValuesEvent(
-                                    resetAll: true, isLoading: false));
+                                context.read<ConteoBloc>().add(
+                                  ResetValuesEvent(
+                                    resetAll: true,
+                                    isLoading: false,
+                                  ),
+                                );
 
                                 context.read<ConteoBloc>().add(
-                                      LoadConteoAndProductsEvent(
-                                          ordenConteoId: state.response.result
-                                                  ?.data?.orderId ??
-                                              0),
-                                    );
+                                  LoadConteoAndProductsEvent(
+                                    ordenConteoId:
+                                        state.response.result?.data?.orderId ??
+                                        0,
+                                  ),
+                                );
 
                                 Navigator.pushReplacementNamed(
                                   context,
@@ -424,84 +617,76 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                               }
 
                               if (state is ChangeLoteIsOkState) {
-                                //cambiamos el foco a cantidad cuando hemos seleccionado un lote
-                                Future.delayed(const Duration(seconds: 1), () {
-                                  FocusScope.of(context)
-                                      .requestFocus(focusNode3);
+                                Future.microtask(() {
+                                  if (mounted) FocusScope.of(context).requestFocus(focusNode3);
                                 });
                                 _handleFocusAccordingToState();
                               }
 
                               if (state is ChangeQuantitySeparateStateError) {
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(
-                                  duration: const Duration(milliseconds: 1000),
-                                  content: Text(state.msg),
-                                  backgroundColor: Colors.red[200],
-                                ));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    duration: const Duration(
+                                      milliseconds: 1000,
+                                    ),
+                                    content: Text(state.msg),
+                                    backgroundColor: Colors.red[200],
+                                  ),
+                                );
                               }
 
                               if (state is ValidateFieldsStateError) {
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(
-                                  duration: const Duration(milliseconds: 1000),
-                                  content: Text(state.msg),
-                                  backgroundColor: Colors.red[200],
-                                ));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    duration: const Duration(
+                                      milliseconds: 1000,
+                                    ),
+                                    content: Text(state.msg),
+                                    backgroundColor: Colors.red[200],
+                                  ),
+                                );
                               }
 
                               //*estado cando la ubicacion de origen es cambiada
                               if (state is ChangeLocationIsOkState) {
-                                //cambiamos el foco
-                                Future.delayed(const Duration(seconds: 1), () {
-                                  FocusScope.of(context)
-                                      .requestFocus(focusNode2);
+                                Future.microtask(() {
+                                  if (mounted) FocusScope.of(context).requestFocus(focusNode2);
                                 });
                                 _handleFocusAccordingToState();
                               }
 
                               //*estado cuando el producto es leido ok
                               if (state is ChangeProductOrderIsOkState) {
-                                // Verificamos si el producto tiene lote para saber a dónde mover el foco
-                                if (context
+                                final hasLot = context
                                         .read<ConteoBloc>()
                                         .currentProduct
                                         .productTracking ==
-                                    "lot") {
-                                  // Si la pantalla sigue activa, movemos el foco
-                                  Future.delayed(const Duration(seconds: 1),
-                                      () {
-                                    if (mounted) {
-                                      FocusScope.of(context)
-                                          .requestFocus(focusNode5);
-                                    }
-                                  });
-                                } else {
-                                  // Si no tiene lote, movemos el foco a otro lugar
-                                  Future.delayed(const Duration(seconds: 1),
-                                      () {
-                                    if (mounted) {
-                                      FocusScope.of(context)
-                                          .requestFocus(focusNode3);
-                                    }
-                                  });
-                                }
+                                    "lot";
+                                Future.microtask(() {
+                                  if (mounted) {
+                                    FocusScope.of(context).requestFocus(
+                                      hasLot ? focusNode5 : focusNode3,
+                                    );
+                                  }
+                                });
 
                                 _handleFocusAccordingToState();
                               } else if (state is ProductAlreadySentState) {
                                 //mostramos un dialogo DialogValidateProductSendWidget
 
                                 showDialog(
-                                    context: context,
-                                    builder: (context) {
-                                      return DialogValidateProductSendWidget(
-                                          productExist: state.productExist,
-                                          product: state.product,
-                                          cantidadController:
-                                              cantidadController);
-                                    });
+                                  context: context,
+                                  builder: (context) {
+                                    return DialogValidateProductSendWidget(
+                                      productExist: state.productExist,
+                                      product: state.product,
+                                      cantidadController: cantidadController,
+                                    );
+                                  },
+                                );
                               }
-                            }, builder: (context, status) {
+                            },
+                            builder: (context, status) {
                               return Column(
                                 children: [
                                   const WarningWidgetCubit(),
@@ -512,9 +697,11 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                                           cantidadController.clear();
 
                                           context.read<ConteoBloc>().add(
-                                              ResetValuesEvent(
-                                                  resetAll: true,
-                                                  isLoading: false));
+                                            ResetValuesEvent(
+                                              resetAll: true,
+                                              isLoading: false,
+                                            ),
+                                          );
 
                                           Navigator.pushReplacementNamed(
                                             context,
@@ -527,408 +714,456 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                                             ],
                                           );
                                         },
-                                        icon: const Icon(Icons.arrow_back,
-                                            color: Colors.white, size: 20),
+                                        icon: const Icon(
+                                          Icons.arrow_back,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
                                       ),
                                       Text(
                                         'CONTEO FISICO',
                                         style: const TextStyle(
-                                            color: Colors.white, fontSize: 16),
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ],
                               );
-                            }),
-                          );
-                        },
-                      ),
-                      //todo: scaners
-                      Expanded(
-                          child: Container(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: SingleChildScrollView(
-                                  child: Column(children: [
-                                //todo : ubicacion de origen
-
-                                LocationScannerWidget(
-                                  isLocationOk:
-                                      context.read<ConteoBloc>().isLocationOk,
-                                  locationIsOk:
-                                      context.read<ConteoBloc>().locationIsOk,
-                                  productIsOk:
-                                      context.read<ConteoBloc>().productIsOk,
-                                  quantityIsOk:
-                                      context.read<ConteoBloc>().quantityIsOk,
-                                  locationDestIsOk: false,
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                    //todo: scaners
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              //todo : ubicacion de origen
+                              LocationScannerWidget(
+                                isLocationOk: context
+                                    .read<ConteoBloc>()
+                                    .isLocationOk,
+                                locationIsOk: context
+                                    .read<ConteoBloc>()
+                                    .locationIsOk,
+                                productIsOk: context
+                                    .read<ConteoBloc>()
+                                    .productIsOk,
+                                quantityIsOk: context
+                                    .read<ConteoBloc>()
+                                    .quantityIsOk,
+                                locationDestIsOk: false,
+                                currentLocationId: context
+                                    .read<ConteoBloc>()
+                                    .currentProduct
+                                    .locationName
+                                    .toString(),
+                                onValidateLocation: (value) {
+                                  validateLocation(value);
+                                },
+                                onKeyScanned: (keyLabel) {},
+                                focusNode: focusNode1,
+                                controller: _controllerLocation,
+                                locationDropdown: LocationDropdownConteoWidget(
+                                  selectedLocation: selectedLocation,
+                                  positionsOrigen: context
+                                      .read<ConteoBloc>()
+                                      .positionsOrigen,
                                   currentLocationId: context
                                       .read<ConteoBloc>()
                                       .currentProduct
                                       .locationName
                                       .toString(),
-                                  onValidateLocation: (value) {
-                                    validateLocation(value);
-                                  },
-                                  onKeyScanned: (keyLabel) {},
-                                  focusNode: focusNode1,
-                                  controller: _controllerLocation,
-                                  locationDropdown:
-                                      LocationDropdownConteoWidget(
-                                    selectedLocation: selectedLocation,
-                                    positionsOrigen: context
-                                        .read<ConteoBloc>()
-                                        .positionsOrigen,
-                                    currentLocationId: context
-                                        .read<ConteoBloc>()
-                                        .currentProduct
-                                        .locationName
-                                        .toString(),
-                                    conteoBloc: context.read<ConteoBloc>(),
-                                    currentProduct: context
-                                        .read<ConteoBloc>()
-                                        .currentProduct,
-                                    isPDA: !context
-                                        .read<UserBloc>()
-                                        .fabricante
-                                        .contains("Zebra"),
-                                  ),
-                                ),
-
-                                // todo: Producto
-
-                                ProductScannerWidget(
-                                  isViewLote: false,
-                                  isProductOk:
-                                      context.read<ConteoBloc>().isProductOk,
-                                  productIsOk:
-                                      context.read<ConteoBloc>().productIsOk,
-                                  locationIsOk:
-                                      context.read<ConteoBloc>().locationIsOk,
-                                  quantityIsOk:
-                                      context.read<ConteoBloc>().quantityIsOk,
-                                  locationDestIsOk: false,
-                                  category: context
+                                  conteoBloc: context.read<ConteoBloc>(),
+                                  currentProduct: context
                                       .read<ConteoBloc>()
-                                      .currentProduct
-                                      .categoryName
-                                      .toString(),
+                                      .currentProduct,
+                                  isPDA: !context
+                                      .read<UserBloc>()
+                                      .fabricante
+                                      .contains("Zebra"),
+                                ),
+                              ),
+
+                              // todo: Producto
+                              ProductScannerWidget(
+                                isViewLote: false,
+                                isProductOk: context
+                                    .read<ConteoBloc>()
+                                    .isProductOk,
+                                productIsOk: context
+                                    .read<ConteoBloc>()
+                                    .productIsOk,
+                                locationIsOk: context
+                                    .read<ConteoBloc>()
+                                    .locationIsOk,
+                                quantityIsOk: context
+                                    .read<ConteoBloc>()
+                                    .quantityIsOk,
+                                locationDestIsOk: false,
+                                category: context
+                                    .read<ConteoBloc>()
+                                    .currentProduct
+                                    .categoryName
+                                    .toString(),
+                                currentProductId: context
+                                    .read<ConteoBloc>()
+                                    .currentProduct
+                                    .productName
+                                    .toString(),
+                                barcode: context
+                                    .read<ConteoBloc>()
+                                    .currentProduct
+                                    .productBarcode,
+                                lotId: context
+                                    .read<ConteoBloc>()
+                                    .currentProduct
+                                    .lotName,
+                                origin: "",
+                                expireDate: context
+                                    .read<ConteoBloc>()
+                                    .currentProduct
+                                    .fechaVencimiento,
+                                size: size,
+                                onValidateProduct: (value) {
+                                  validateProduct(value); // tu función actual
+                                },
+                                onKeyScanned: (keyLabel) {},
+                                focusNode: focusNode2,
+                                controller: _controllerProduct,
+                                productDropdown: ProductDropdownConteoWidget(
+                                  selectedProduct:
+                                      selectedLocation, // o selectedProduct
+                                  listOfProductsName: context
+                                      .read<ConteoBloc>()
+                                      .listOfProductsName,
                                   currentProductId: context
                                       .read<ConteoBloc>()
                                       .currentProduct
                                       .productName
                                       .toString(),
-                                  barcode: context
+                                  conteoBloc: context.read<ConteoBloc>(),
+                                  currentProduct: context
                                       .read<ConteoBloc>()
-                                      .currentProduct
-                                      .productBarcode,
-                                  lotId: context
-                                      .read<ConteoBloc>()
-                                      .currentProduct
-                                      .lotName,
-                                  origin: "",
-                                  expireDate: context
-                                      .read<ConteoBloc>()
-                                      .currentProduct
-                                      .fechaVencimiento,
-                                  size: size,
-                                  onValidateProduct: (value) {
-                                    validateProduct(value); // tu función actual
-                                  },
-                                  onKeyScanned: (keyLabel) {},
-                                  focusNode: focusNode2,
-                                  controller: _controllerProduct,
-                                  productDropdown: ProductDropdownConteoWidget(
-                                    selectedProduct:
-                                        selectedLocation, // o selectedProduct
-                                    listOfProductsName: context
-                                        .read<ConteoBloc>()
-                                        .listOfProductsName,
-                                    currentProductId: context
+                                      .currentProduct,
+                                ),
+                                expiryWidget: Container(),
+                                listOfBarcodes: context
+                                    .read<ConteoBloc>()
+                                    .listOfBarcodes,
+                                onBarcodesDialogTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return DialogBarcodes(
+                                        listOfBarcodes: context
+                                            .read<ConteoBloc>()
+                                            .listOfBarcodes,
+                                      );
+                                    },
+                                  );
+                                },
+                                onViewImgProduct: () {
+                                  context.read<ConteoBloc>().add(
+                                    ViewProductImageEvent(
+                                      context
+                                              .read<ConteoBloc>()
+                                              .currentProduct
+                                              .productId ??
+                                          0,
+                                    ),
+                                  );
+                                },
+                              ),
+
+                              //todo: lotes
+                              Visibility(
+                                visible:
+                                    context
                                         .read<ConteoBloc>()
                                         .currentProduct
-                                        .productName
-                                        .toString(),
-                                    conteoBloc: context.read<ConteoBloc>(),
-                                    currentProduct: context
-                                        .read<ConteoBloc>()
-                                        .currentProduct,
-                                  ),
-                                  expiryWidget: Container(),
-                                  listOfBarcodes:
-                                      context.read<ConteoBloc>().listOfBarcodes,
-                                  onBarcodesDialogTap: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return DialogBarcodes(
-                                          listOfBarcodes: context
-                                              .read<ConteoBloc>()
-                                              .listOfBarcodes,
-                                        );
-                                      },
-                                    );
-                                  },
-                                  onViewImgProduct: () {
-                                    context.read<ConteoBloc>().add(
-                                        ViewProductImageEvent(context
-                                                .read<ConteoBloc>()
-                                                .currentProduct
-                                                .productId ??
-                                            0));
-                                  },
-                                ),
-
-                                //todo: lotes
-
-                                Visibility(
-                                  visible: context
-                                          .read<ConteoBloc>()
-                                          .currentProduct
-                                          .productTracking ==
-                                      "lot",
-                                  child: Row(
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10),
-                                        child: Container(
-                                          width: 10,
-                                          height: 10,
-                                          decoration: BoxDecoration(
-                                            color: context
-                                                    .read<ConteoBloc>()
-                                                    .loteIsOk
-                                                ? green
-                                                : yellow,
-                                            shape: BoxShape.circle,
-                                          ),
+                                        .productTracking ==
+                                    "lot",
+                                child: Row(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                      ),
+                                      child: Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: BoxDecoration(
+                                          color:
+                                              context
+                                                  .read<ConteoBloc>()
+                                                  .loteIsOk
+                                              ? green
+                                              : yellow,
+                                          shape: BoxShape.circle,
                                         ),
                                       ),
-                                      Card(
-                                        color:
-                                            context.read<ConteoBloc>().isLoteOk
-                                                ? context
-                                                        .read<ConteoBloc>()
-                                                        .loteIsOk
-                                                    ? Colors.green[100]
-                                                    : Colors.grey[300]
-                                                : Colors.red[200],
-                                        elevation: 5,
-                                        child: Container(
-                                            width: size.width * 0.85,
-                                            padding: const EdgeInsets.only(
-                                                left: 10,
-                                                right: 10,
-                                                bottom: 10),
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.min,
+                                    ),
+                                    Card(
+                                      color: context.read<ConteoBloc>().isLoteOk
+                                          ? context.read<ConteoBloc>().loteIsOk
+                                                ? Colors.green[100]
+                                                : Colors.grey[300]
+                                          : Colors.red[200],
+                                      elevation: 5,
+                                      child: Container(
+                                        width: size.width * 0.85,
+                                        padding: const EdgeInsets.only(
+                                          left: 10,
+                                          right: 10,
+                                          bottom: 10,
+                                        ),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Row(
                                               children: [
+                                                Text(
+                                                  'Lote del producto',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: primaryColorApp,
+                                                  ),
+                                                ),
+                                                const Spacer(),
+                                                SizedBox(
+                                                  height: 20,
+                                                  width: 20,
+                                                  child: SvgPicture.asset(
+                                                    color: primaryColorApp,
+                                                    "assets/icons/barcode.svg",
+                                                    height: 20,
+                                                    width: 20,
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () {
+                                                    //validamos que el producto ya esta escaneado y la ubicacion tambien
+                                                    if (context
+                                                            .read<ConteoBloc>()
+                                                            .productIsOk &&
+                                                        context
+                                                            .read<ConteoBloc>()
+                                                            .locationIsOk) {
+                                                      Navigator.pushReplacementNamed(
+                                                        context,
+                                                        'new-lote-orden',
+                                                        arguments: [
+                                                          context
+                                                              .read<
+                                                                ConteoBloc
+                                                              >()
+                                                              .currentProduct,
+                                                        ],
+                                                      );
+                                                    }
+                                                  },
+                                                  icon: Icon(
+                                                    Icons.arrow_forward_ios,
+                                                    color: primaryColorApp,
+                                                    size: 20,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.start,
+                                              children: [
+                                                LoteScannerWidget(
+                                                  controller: _controllerLote,
+                                                  focusNode: focusNode5,
+
+                                                  enabled:
+                                                      context
+                                                          .read<ConteoBloc>()
+                                                          .locationIsOk && //true
+                                                      context
+                                                          .read<ConteoBloc>()
+                                                          .productIsOk && //true
+                                                      !context
+                                                          .read<ConteoBloc>()
+                                                          .loteIsOk && //false
+                                                      !context
+                                                          .read<ConteoBloc>()
+                                                          .quantityIsOk && //false
+                                                      !context
+                                                          .read<ConteoBloc>()
+                                                          .viewQuantity,
+                                                  onValidateLote: validateLote,
+                                                  hintText:
+                                                      context
+                                                                  .read<
+                                                                    ConteoBloc
+                                                                  >()
+                                                                  .currentProductLote
+                                                                  ?.name ==
+                                                              "" ||
+                                                          context
+                                                                  .read<
+                                                                    ConteoBloc
+                                                                  >()
+                                                                  .currentProductLote
+                                                                  ?.name ==
+                                                              null
+                                                      ? 'Esperando escaneo'
+                                                      : context
+                                                                .read<
+                                                                  ConteoBloc
+                                                                >()
+                                                                .currentProductLote
+                                                                ?.name ??
+                                                            "",
+                                                ),
                                                 Row(
                                                   children: [
                                                     Text(
-                                                      'Lote del producto',
+                                                      'Sugerido: ',
                                                       style: TextStyle(
-                                                          fontSize: 14,
-                                                          color:
-                                                              primaryColorApp),
-                                                    ),
-                                                    const Spacer(),
-                                                    SizedBox(
-                                                      height: 20,
-                                                      width: 20,
-                                                      child: SvgPicture.asset(
                                                         color: primaryColorApp,
-                                                        "assets/icons/barcode.svg",
-                                                        height: 20,
-                                                        width: 20,
-                                                        fit: BoxFit.cover,
                                                       ),
                                                     ),
-                                                    IconButton(
-                                                        onPressed: () {
-                                                          //validamos que el producto ya esta escaneado y la ubicacion tambien
-                                                          if (context
-                                                                  .read<
-                                                                      ConteoBloc>()
-                                                                  .productIsOk &&
-                                                              context
-                                                                  .read<
-                                                                      ConteoBloc>()
-                                                                  .locationIsOk) {
-                                                            Navigator
-                                                                .pushReplacementNamed(
-                                                              context,
-                                                              'new-lote-orden',
-                                                              arguments: [
-                                                                context
-                                                                    .read<
-                                                                        ConteoBloc>()
-                                                                    .currentProduct
-                                                              ],
-                                                            );
-                                                          }
-                                                        },
-                                                        icon: Icon(
-                                                          Icons
-                                                              .arrow_forward_ios,
-                                                          color:
-                                                              primaryColorApp,
-                                                          size: 20,
-                                                        ))
+                                                    Text(
+                                                      context
+                                                              .read<
+                                                                ConteoBloc
+                                                              >()
+                                                              .currentProduct
+                                                              .lotName ??
+                                                          "Sin lote",
+                                                      style: TextStyle(
+                                                        color: black,
+                                                      ),
+                                                    ),
                                                   ],
                                                 ),
-                                                Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.start,
-                                                  children: [
-                                                    LoteScannerWidget(
-                                                      controller:
-                                                          _controllerLote,
-                                                      focusNode: focusNode5,
-                                                      enabled: context
-                                                              .read<
-                                                                  ConteoBloc>()
-                                                              .locationIsOk && //true
-                                                          context
-                                                              .read<
-                                                                  ConteoBloc>()
-                                                              .productIsOk && //true
-                                                          !context
-                                                              .read<
-                                                                  ConteoBloc>()
-                                                              .loteIsOk && //false
-                                                          !context
-                                                              .read<
-                                                                  ConteoBloc>()
-                                                              .quantityIsOk && //false
-                                                          !context
-                                                              .read<
-                                                                  ConteoBloc>()
-                                                              .viewQuantity,
-                                                      onValidateLote:
-                                                          validateLote,
-                                                      hintText: context
-                                                                      .read<
-                                                                          ConteoBloc>()
-                                                                      .currentProductLote
-                                                                      ?.name ==
-                                                                  "" ||
-                                                              context
-                                                                      .read<
-                                                                          ConteoBloc>()
-                                                                      .currentProductLote
-                                                                      ?.name ==
-                                                                  null
-                                                          ? 'Esperando escaneo'
-                                                          : context
-                                                                  .read<
-                                                                      ConteoBloc>()
-                                                                  .currentProductLote
-                                                                  ?.name ??
-                                                              "",
-                                                    ),
-                                                    ExpirationBadgeWidget(
-                                                      expirationDate: context
-                                                          .read<ConteoBloc>()
-                                                          .currentProductLote
-                                                          ?.expirationDate,
-                                                    ),
-                                                  ],
-                                                )
+                                                ExpirationBadgeWidget(
+                                                  expirationDate: context
+                                                      .read<ConteoBloc>()
+                                                      .currentProductLote
+                                                      ?.expirationDate,
+                                                ),
                                               ],
-                                            )),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              ])))),
-                      //todo: cantidad
-                      QuantityScannerWidget(
-                        size: size,
-                        isQuantityOk: context.read<ConteoBloc>().isQuantityOk,
-                        quantityIsOk: context.read<ConteoBloc>().quantityIsOk,
-                        locationIsOk: context.read<ConteoBloc>().locationIsOk,
-                        productIsOk: context.read<ConteoBloc>().productIsOk,
-                        locationDestIsOk: false,
-                        totalQuantity: context
-                            .read<ConteoBloc>()
-                            .currentProduct
-                            .quantityInventory,
-                        quantitySelected:
-                            context.read<ConteoBloc>().quantitySelected,
-                        unidades:
-                            context.read<ConteoBloc>().currentProduct.uom ?? "",
-                        controller: _controllerQuantity,
-                        manualController: cantidadController,
-                        scannerFocusNode: focusNode3,
-                        manualFocusNode: focusNode4,
-                        viewQuantity: context.read<ConteoBloc>().viewQuantity,
-                        onIconButtonPressed: () {
-                          debugPrint('borrando');
-                          context.read<ConteoBloc>().add(ShowQuantityEvent(
-                              !context.read<ConteoBloc>().viewQuantity));
-                          Future.delayed(const Duration(milliseconds: 100), () {
-                            FocusScope.of(context).requestFocus(focusNode3);
-                          });
-                        },
-                        onToggleViewQuantity: () {
-                          context.read<ConteoBloc>().add(ShowQuantityEvent(
-                              !context.read<ConteoBloc>().viewQuantity));
-                          cantidadController.clear();
-                          Future.delayed(const Duration(milliseconds: 100), () {
-                            FocusScope.of(context).requestFocus(focusNode4);
-                          });
-                          debugPrint('Toggle view quantity');
-                        },
-                        onValidateButton: () {
-                          FocusScope.of(context).unfocus();
-                          _validatebuttonquantity();
-                        },
-                        onValidateScannerInput: (value) {
-                          validateQuantity(value);
-                        },
-                        onManualQuantityChanged: (value) {
-                          debugPrint('onManualQuantityChanged: $value');
-                        },
-                        onManualQuantitySubmitted: (value) {
-                          final intValue = double.parse(value);
-
-                          context.read<ConteoBloc>().add(ChangeQuantitySeparate(
-                              false,
-                              intValue,
-                              context
-                                      .read<ConteoBloc>()
-                                      .currentProduct
-                                      .productId ??
-                                  0,
-                              context
-                                      .read<ConteoBloc>()
-                                      .currentProduct
-                                      .orderId ??
-                                  0,
-                              context
-                                      .read<ConteoBloc>()
-                                      .currentProduct
-                                      .idMove ??
-                                  0));
-
-                          context.read<ConteoBloc>().add(ShowQuantityEvent(
-                              !context.read<ConteoBloc>().viewQuantity));
-                        },
-                        isViewCant: context
-                                    .read<ConteoBloc>()
-                                    .ordenConteo
-                                    .mostrarCantidad ==
-                                1
-                            ? true
-                            : false,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                    //todo: cantidad
+                    QuantityScannerWidget(
+                      size: size,
+                      isQuantityOk: context.read<ConteoBloc>().isQuantityOk,
+                      quantityIsOk: context.read<ConteoBloc>().quantityIsOk,
+                      locationIsOk: context.read<ConteoBloc>().locationIsOk,
+                      productIsOk: context.read<ConteoBloc>().productIsOk,
+                      locationDestIsOk: false,
+                      totalQuantity: context
+                          .read<ConteoBloc>()
+                          .currentProduct
+                          .quantityInventory,
+                      quantitySelected: context
+                          .read<ConteoBloc>()
+                          .quantitySelected,
+                      unidades:
+                          context.read<ConteoBloc>().currentProduct.uom ?? "",
+                      controller: _controllerQuantity,
+                      manualController: cantidadController,
+                      scannerFocusNode: focusNode3,
+                      manualFocusNode: focusNode4,
+                      viewQuantity: context.read<ConteoBloc>().viewQuantity,
+                      onIconButtonPressed: () {
+                        debugPrint('borrando');
+                        context.read<ConteoBloc>().add(
+                          ShowQuantityEvent(
+                            !context.read<ConteoBloc>().viewQuantity,
+                          ),
+                        );
+                        Future.delayed(const Duration(milliseconds: 100), () {
+                          FocusScope.of(context).requestFocus(focusNode3);
+                        });
+                      },
+                      onToggleViewQuantity: () {
+                        context.read<ConteoBloc>().add(
+                          ShowQuantityEvent(
+                            !context.read<ConteoBloc>().viewQuantity,
+                          ),
+                        );
+                        cantidadController.clear();
+                        Future.delayed(const Duration(milliseconds: 100), () {
+                          FocusScope.of(context).requestFocus(focusNode4);
+                        });
+                        debugPrint('Toggle view quantity');
+                      },
+                      onValidateButton: () {
+                        FocusScope.of(context).unfocus();
+                        _validatebuttonquantity();
+                      },
+                      onValidateScannerInput: (value) {
+                        validateQuantity(value);
+                      },
+                      onManualQuantityChanged: (value) {
+                        debugPrint('onManualQuantityChanged: $value');
+                      },
+                      onManualQuantitySubmitted: (value) {
+                        final intValue = double.parse(value);
+
+                        context.read<ConteoBloc>().add(
+                          ChangeQuantitySeparate(
+                            false,
+                            intValue,
+                            context
+                                    .read<ConteoBloc>()
+                                    .currentProduct
+                                    .productId ??
+                                0,
+                            context.read<ConteoBloc>().currentProduct.orderId ??
+                                0,
+                            context.read<ConteoBloc>().currentProduct.idMove ??
+                                0,
+                          ),
+                        );
+
+                        context.read<ConteoBloc>().add(
+                          ShowQuantityEvent(
+                            !context.read<ConteoBloc>().viewQuantity,
+                          ),
+                        );
+                      },
+                      isViewCant:
+                          context
+                                  .read<ConteoBloc>()
+                                  .ordenConteo
+                                  .mostrarCantidad ==
+                              1
+                          ? true
+                          : false,
+                    ),
+                  ],
                 ),
-              ));
+              ),
+            ),
+          );
         },
       ),
     );
@@ -1001,17 +1236,21 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
         );
         return;
       } else {
-        double cantidad = double.parse(cantidadController.text.isEmpty
-            ? bloc.quantitySelected.toString()
-            : cantidadController.text);
+        double cantidad = double.parse(
+          cantidadController.text.isEmpty
+              ? bloc.quantitySelected.toString()
+              : cantidadController.text,
+        );
 
         debugPrint("cantidad: $cantidad");
         bloc.add(SendProductConteoEvent(false, cantidad, bloc.currentProduct));
       }
     } else {
-      double cantidad = double.parse(cantidadController.text.isEmpty
-          ? bloc.quantitySelected.toString()
-          : cantidadController.text);
+      double cantidad = double.parse(
+        cantidadController.text.isEmpty
+            ? bloc.quantitySelected.toString()
+            : cantidadController.text,
+      );
       debugPrint("cantidad: $cantidad");
       bloc.add(SendProductConteoEvent(false, cantidad, bloc.currentProduct));
     }

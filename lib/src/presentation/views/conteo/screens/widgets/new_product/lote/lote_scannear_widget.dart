@@ -17,6 +17,7 @@ class LoteScannerWidget extends StatefulWidget {
   final FocusNode focusNode;
   final TextEditingController controller;
   final String routeName;
+  final String lotId;
 
   const LoteScannerWidget({
     Key? key,
@@ -32,6 +33,7 @@ class LoteScannerWidget extends StatefulWidget {
     required this.focusNode,
     required this.controller,
     required this.routeName,
+    required this.lotId,
   }) : super(key: key);
 
   @override
@@ -104,7 +106,24 @@ class _LoteScannerWidgetState extends State<LoteScannerWidget> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     _buildZebraInput(),
+                     if (widget.lotId != "") ...[
+                        Text('Lote/serie:',
+                            style: TextStyle(
+                                fontSize: 13, color: primaryColorApp)),
+                        const SizedBox(width: 5),
+                        Text(
+                            widget.lotId == "" || widget.lotId == null
+                                ? "Sin lote"
+                                : widget.lotId ?? "",
+                            style: TextStyle(
+                                fontSize: 13,
+                                color:
+                                    widget.lotId == "" || widget.lotId == null
+                                        ? red
+                                        : black)),
+                      ],
                     _buildExpirationDate(expirationDate),
+                    
                   ],
                 )
               ],
@@ -202,7 +221,7 @@ class _LoteScannerWidgetState extends State<LoteScannerWidget> {
       child: Row(
         children: [
           Text(
-            'Fecha caducidad: ',
+            'Caducidad: ',
             style: TextStyle(fontSize: 14, color: black),
           ),
           Text(

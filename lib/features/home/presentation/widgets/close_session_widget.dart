@@ -3,8 +3,10 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
@@ -61,12 +63,14 @@ class CloseSession extends StatelessWidget {
               // Mostrar el diálogo de carga
               showDialog(
                 context: context,
-                barrierDismissible:
-                    false, // No permitir que el usuario cierre el diálogo manualmente
+                barrierDismissible: false,
                 builder: (context) => const DialogLoading(
                   message: 'Cerrando sesión...',
                 ),
               );
+
+              // Limpiar estado en memoria del HomeBloc antes de navegar
+              context.read<HomeBloc>().add(ClearDataEvent());
 
               PrefUtils.clearPrefs();
               getIt<IStorageService>().removeUrlWebsite();

@@ -471,7 +471,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         ubicacionesFiltersSearch = ubicacionesFilters;
       } else {
         ubicacionesFiltersSearch = ubicacionesFilters.where((location) {
-          return location.name?.toLowerCase().contains(query) ?? false;
+          final name = (location.name ?? '').toLowerCase();
+          final barcode = (location.barcode ?? '').toLowerCase();
+          return name.contains(query) || barcode.contains(query);
         }).toList();
       }
       emit(SearchLocationSuccess(ubicacionesFiltersSearch));
@@ -484,135 +486,56 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   void _onLoadNewProductEvent(
       LoadNewProductEvent event, Emitter<ConteoState> emit) async {
     try {
-      //vamos a cargar la informacion pa crear un nuevo producto
-      //todo: para este filtro solo podemos crear un producto con las ubicaciones de la orden de conteo y los productos de la orden
+      emit(LoadNewProductLoading());
+      ubicacionesFilters.clear();
+      ubicacionesFiltersSearch.clear();
+      productosFilters.clear();
+      productosFiltersSearch.clear();
+
       if (ordenConteo.filterType == 'combined') {
-        //llenamos el listado de ubicacioones
-        ubicacionesFilters.clear();
-        ubicacionesFiltersSearch.clear();
-        ubicacionesFilters = ubicacionesConteo.map((allowed) {
-          return ResultUbicaciones(
-            id: allowed.id ?? 0,
-            name: allowed.name ?? '',
-            barcode: allowed.barcode ?? '',
-            locationId: allowed.id ?? 0,
-            locationName: allowed.name ?? '',
-            idWarehouse: 0,
-            warehouseName: '',
-          );
-        }).toList();
-        ubicacionesFiltersSearch = ubicacionesFilters;
-        //llenamos la lista de productos
-        productosFilters.clear();
-        productosFiltersSearch.clear();
-
         final productsOrder = await db.productoOrdenConteoRepository
             .getProductosByOrderId(ordenConteo.id ?? 0);
 
-        productosFilters = productsOrder.map((product) {
-          return Product(
-            productId: product.productId,
-            name: product.productName,
-            code: product.productCode,
-            category: product.categoryName,
-            lotId: product.lotId,
-            lotName: product.lotName,
-            barcode: product.productBarcode,
-            otherBarcodes: [],
-            productPacking: [],
-            tracking: product.productTracking,
-            useExpirationDate:
-                product.fechaVencimiento?.isNotEmpty ?? true ? true : false,
-            expirationTime: "",
-            weight: product.weight,
-            weightUomName: "",
-            volume: 0,
-            volumeUomName: '',
-            expirationDate: product.fechaVencimiento,
-            uom: product.uom,
-            locationId: product.locationId ?? 0,
-            locationName: product.locationName ?? '',
-            quantity: 0, // Inicializamos la cantidad en 0
-          );
-        }).toList();
-        productosFiltersSearch = productosFilters;
-      } else if (ordenConteo.filterType == "location") {
-        add(GetProductsFromDBEvent());
-        //las ubicaciones que llegan en la orden
-        ubicacionesFilters.clear();
-        ubicacionesFiltersSearch.clear();
-        ubicacionesFilters = ubicacionesConteo.map((allowed) {
-          return ResultUbicaciones(
-            id: allowed.id ?? 0,
-            name: allowed.name ?? '',
-            barcode: allowed.barcode ?? '',
-            locationId: allowed.id ?? 0,
-            locationName: allowed.name ?? '',
-            idWarehouse: 0,
-            warehouseName: '',
-          );
-        }).toList();
-        ubicacionesFiltersSearch = ubicacionesFilters;
+        ubicacionesFilters = _mapAllowedToResultUbicaciones(ubicacionesConteo);
+        productosFilters = _mapOrderProductsToProduct(productsOrder);
 
-        //cargammos la lista de productos de la maestra
-        productosFilters.clear();
-        productosFiltersSearch.clear();
-        //asignamos todos los productos de la maestra a la lista de filtros
-        productosFilters = productos;
-        productosFiltersSearch = productos;
+      } else if (ordenConteo.filterType == 'location') {
+        // Iniciamos ambas queries en paralelo antes de awaitar cualquiera
+        final locationsFuture = Future.value(
+            _mapAllowedToResultUbicaciones(ubicacionesConteo));
+        final productsFuture =
+            db.productoInventarioRepository.getAllProducts();
 
-        //filtro por ubicacion
-      } else if (ordenConteo.filterType == "category" ||
-          ordenConteo.filterType == "product") {
-        //filtro por categoria o producto
-        add(GetLocationsConteoEvent());
-        //cargammos la lista de productos de la orden
-        productosFilters.clear();
-        productosFiltersSearch.clear();
+        ubicacionesFilters = await locationsFuture;
+        final allProducts = await productsFuture;
+        productos
+          ..clear()
+          ..addAll(allProducts);
+        productosFilters = List.of(productos);
 
-        final productsOrder = await db.productoOrdenConteoRepository
+      } else if (ordenConteo.filterType == 'category' ||
+          ordenConteo.filterType == 'product') {
+        // Ambas queries en paralelo — evita la race condition del add() anterior
+        final locationsFuture = db.ubicacionesRepository.getAllUbicaciones();
+        final productsFuture = db.productoOrdenConteoRepository
             .getProductosByOrderId(ordenConteo.id ?? 0);
 
-        productosFilters = productsOrder.map((product) {
-          return Product(
-            productId: product.productId,
-            name: product.productName,
-            code: product.productCode,
-            category: product.categoryName,
-            lotId: product.lotId,
-            lotName: product.lotName,
-            barcode: product.productBarcode,
-            otherBarcodes: [],
-            productPacking: [],
-            tracking: product.productTracking,
-            useExpirationDate:
-                product.fechaVencimiento?.isNotEmpty ?? true ? true : false,
-            expirationTime: "",
-            weight: product.weight,
-            weightUomName: "",
-            volume: 0,
-            volumeUomName: '',
-            expirationDate: product.fechaVencimiento,
-            uom: product.uom,
-            locationId: product.locationId ?? 0,
-            locationName: product.locationName ?? '',
-            quantity: 0, // Inicializamos la cantidad en 0
-          );
-        }).toList();
-        productosFiltersSearch = productosFilters;
+        final allLocations = await locationsFuture;
+        final productsOrder = await productsFuture;
 
-        //llenamos el listado de ubicacioones de la maestra
-        ubicacionesFilters.clear();
-        ubicacionesFiltersSearch.clear();
+        ubicaciones
+          ..clear()
+          ..addAll(allLocations);
 
-        ubicacionesFiltersSearch = ubicaciones;
-        ubicacionesFilters = ubicaciones;
+        ubicacionesFilters = List.of(ubicaciones);
+        productosFilters = _mapOrderProductsToProduct(productsOrder);
       }
+
+      ubicacionesFiltersSearch = List.of(ubicacionesFilters);
+      productosFiltersSearch = List.of(productosFilters);
 
       debugPrint("ubicacionesFilters: ${ubicacionesFilters.length}");
       debugPrint("productosFilters: ${productosFilters.length}");
-
-      //cargamos las ubicaciones de la maestra
 
       emit(LoadNewProductSuccess());
     } catch (e) {
@@ -620,7 +543,6 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
           'Error al cargar los datos para el nuevo producto'));
     }
   }
-
   void _onLoadLocations(
       GetLocationsConteoEvent event, Emitter<ConteoState> emit) async {
     try {
@@ -1003,8 +925,6 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   void _onSearchLoteEvent(
       SearchLotevent event, Emitter<ConteoState> emit) async {
     try {
-      emit(SearchLoading());
-      listLotesProductFilters = [];
       listLotesProductFilters = listLotesProduct;
       final query = event.query.toLowerCase();
       if (query.isEmpty) {
@@ -1665,6 +1585,49 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     for (final orden in ordenes) {
       if (orden.allowedCategories != null) yield* orden.allowedCategories!;
     }
+  }
+
+  List<ResultUbicaciones> _mapAllowedToResultUbicaciones(List<Allowed> allowed) {
+    return allowed
+        .map((a) => ResultUbicaciones(
+              id: a.id ?? 0,
+              name: a.name ?? '',
+              barcode: a.barcode ?? '',
+              locationId: a.id ?? 0,
+              locationName: a.name ?? '',
+              idWarehouse: 0,
+              warehouseName: '',
+            ))
+        .toList();
+  }
+
+  List<Product> _mapOrderProductsToProduct(List<dynamic> productsOrder) {
+    return productsOrder
+        .map((product) => Product(
+              productId: product.productId,
+              name: product.productName,
+              code: product.productCode,
+              category: product.categoryName,
+              lotId: product.lotId,
+              lotName: product.lotName,
+              barcode: product.productBarcode,
+              otherBarcodes: [],
+              productPacking: [],
+              tracking: product.productTracking,
+              useExpirationDate:
+                  product.fechaVencimiento?.isNotEmpty ?? true ? true : false,
+              expirationTime: '',
+              weight: product.weight,
+              weightUomName: '',
+              volume: 0,
+              volumeUomName: '',
+              expirationDate: product.fechaVencimiento,
+              uom: product.uom,
+              locationId: product.locationId ?? 0,
+              locationName: product.locationName ?? '',
+              quantity: 0,
+            ))
+        .toList();
   }
 
   getProduct() async {

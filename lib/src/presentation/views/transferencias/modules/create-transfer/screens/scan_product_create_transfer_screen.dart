@@ -174,10 +174,10 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     _controllerLocation.clear();
 
     ResultUbicaciones? matchedUbicacion = bloc.ubicacionesFilters.firstWhere(
-        (ubicacion) => ubicacion.barcode?.toLowerCase() == scan.trim(),
-        orElse: () =>
-            ResultUbicaciones() // Si no se encuentra ningún match, devuelve null
-        );
+      (ubicacion) => ubicacion.barcode?.toLowerCase() == scan.trim(),
+      orElse: () =>
+          ResultUbicaciones(), // Si no se encuentra ningún match, devuelve null
+    );
 
     if (matchedUbicacion.barcode != null) {
       debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
@@ -201,10 +201,10 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     _controllerLocationDestino.clear();
 
     ResultUbicaciones? matchedUbicacion = bloc.ubicacionesFilters.firstWhere(
-        (ubicacion) => ubicacion.barcode?.toLowerCase() == scan.trim(),
-        orElse: () =>
-            ResultUbicaciones() // Si no se encuentra ningún match, devuelve null
-        );
+      (ubicacion) => ubicacion.barcode?.toLowerCase() == scan.trim(),
+      orElse: () =>
+          ResultUbicaciones(), // Si no se encuentra ningún match, devuelve null
+    );
 
     if (matchedUbicacion.barcode != null) {
       debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
@@ -278,7 +278,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     }
   }
 
-// Función auxiliar para eliminar caracteres especiales que causan problemas
+  // Función auxiliar para eliminar caracteres especiales que causan problemas
   String _normalizeLote(String? text) {
     if (text == null) return '';
     // Convertir a minúsculas y luego reemplazar guiones bajos y guiones por un string vacío
@@ -289,8 +289,8 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     final bloc = context.read<CreateTransferBloc>();
 
     // Normalizamos el scan de entrada
-    final rawScan =
-        (bloc.scannedValue4.isEmpty ? value : bloc.scannedValue4).trim();
+    final rawScan = (bloc.scannedValue4.isEmpty ? value : bloc.scannedValue4)
+        .trim();
     final scan = _normalizeLote(rawScan); // <-- Usamos la nueva función aquí
 
     debugPrint('scan lote normalizado: $scan');
@@ -298,9 +298,10 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
 
     // Buscar el lote
     LotesProduct? matchedLote = bloc.listLotesProduct.firstWhere(
-        // ✅ Normalizamos el nombre del lote ANTES de la comparación
-        (lotes) => _normalizeLote(lotes.name) == scan,
-        orElse: () => LotesProduct());
+      // ✅ Normalizamos el nombre del lote ANTES de la comparación
+      (lotes) => _normalizeLote(lotes.name) == scan,
+      orElse: () => LotesProduct(),
+    );
 
     if (matchedLote.name != null) {
       debugPrint('lote encontrado: ${matchedLote.name}');
@@ -330,11 +331,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
       bloc.add(AddQuantitySeparate(currentProduct?.productId ?? 0, 1, false));
       Future.microtask(() => focusNode3.requestFocus());
     } else {
-      validateScannedBarcode(
-        scan,
-        currentProduct ?? Product(),
-        bloc,
-      );
+      validateScannedBarcode(scan, currentProduct ?? Product(), bloc);
       Future.microtask(() => focusNode3.requestFocus());
     }
   }
@@ -363,14 +360,20 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
 
     // 2. Buscar el barcode normalizado
     BarcodeInventario? matchedBarcode = bloc.listOfBarcodes.firstWhere(
-        // ✅ Normalizar el barcode de la lista antes de comparar
-        (barcode) => _normalizeScan(barcode.barcode) == normalizedScan,
-        orElse: () => BarcodeInventario());
+      // ✅ Normalizar el barcode de la lista antes de comparar
+      (barcode) => _normalizeScan(barcode.barcode) == normalizedScan,
+      orElse: () => BarcodeInventario(),
+    );
 
     if (matchedBarcode.barcode != null) {
       // Éxito
-      bloc.add(AddQuantitySeparate(
-          currentProduct.productId ?? 0, matchedBarcode.cantidad, false));
+      bloc.add(
+        AddQuantitySeparate(
+          currentProduct.productId ?? 0,
+          matchedBarcode.cantidad,
+          false,
+        ),
+      );
       return true;
     }
 
@@ -435,7 +438,6 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
           }
           showScrollableErrorDialog(state.error);
         } else
-
         //estado para cuando estamos agregando un producto a la transferencia
         if (state is ProductAddingToTransferLoadingState) {
           showDialog(
@@ -497,17 +499,21 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
             });
             _handleDependencies();
           } else if (state is ChangeQuantitySeparateStateError) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              duration: const Duration(milliseconds: 1000),
-              content: Text(state.msg),
-              backgroundColor: Colors.red[200],
-            ));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                duration: const Duration(milliseconds: 1000),
+                content: Text(state.msg),
+                backgroundColor: Colors.red[200],
+              ),
+            );
           } else if (state is ValidateFieldsStateError) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              duration: const Duration(milliseconds: 1000),
-              content: Text(state.msg),
-              backgroundColor: Colors.red[200],
-            ));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                duration: const Duration(milliseconds: 1000),
+                content: Text(state.msg),
+                backgroundColor: Colors.red[200],
+              ),
+            );
           } else if (state is ClearDataCreateTransferLoadingState) {
             showDialog(
               context: context,
@@ -522,25 +528,24 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
       },
       builder: (context, state) {
         return Scaffold(
-            backgroundColor: primaryColorApp,
-            body: SafeArea(
-              child: Container(
-                color: Colors.white,
-                child: Column(
-                  children: [
-                    //*AppBar
-                    Container(
-                      decoration: BoxDecoration(
-                        color: primaryColorApp,
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20),
-                        ),
+          backgroundColor: primaryColorApp,
+          body: SafeArea(
+            child: Container(
+              color: Colors.white,
+              child: Column(
+                children: [
+                  //*AppBar
+                  Container(
+                    decoration: BoxDecoration(
+                      color: primaryColorApp,
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(20),
+                        bottomRight: Radius.circular(20),
                       ),
-                      width: double.infinity,
-                      child:
-                          BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
-                              builder: (context, status) {
+                    ),
+                    width: double.infinity,
+                    child: BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
+                      builder: (context, status) {
                         return Column(
                           children: [
                             const WarningWidgetCubit(),
@@ -548,8 +553,10 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.arrow_back,
-                                      color: white),
+                                  icon: const Icon(
+                                    Icons.arrow_back,
+                                    color: white,
+                                  ),
                                   onPressed: () {
                                     Navigator.pushReplacementNamed(
                                       context,
@@ -558,26 +565,33 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                                   },
                                 ),
                                 Padding(
-                                  padding:
-                                      EdgeInsets.only(left: size.width * 0.12),
-                                  child: const Text("CREAR TRANSFERENCIA",
-                                      style: TextStyle(
-                                          color: white, fontSize: 18)),
+                                  padding: EdgeInsets.only(
+                                    left: size.width * 0.12,
+                                  ),
+                                  child: const Text(
+                                    "CREAR TRANSFERENCIA",
+                                    style: TextStyle(
+                                      color: white,
+                                      fontSize: 18,
+                                    ),
+                                  ),
                                 ),
                                 const Spacer(),
-                                PopupMenuCreateTransferWidget()
+                                PopupMenuCreateTransferWidget(),
                               ],
                             ),
                           ],
                         );
-                      }),
+                      },
                     ),
+                  ),
 
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: SingleChildScrollView(
-                          child: Column(children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
                             //todo ubicacion de origen
                             LocationScannerAll(
                               isLocationOk: context
@@ -601,10 +615,11 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                               },
                               focusNode: focusNode1,
                               controller: _controllerLocation,
-                              locationDropdown:
-                                  LocationCardButtonCreateTransfer(
-                                bloc: context.read<
-                                    CreateTransferBloc>(), // Tu instancia de BLoC/Controlador
+                              locationDropdown: LocationCardButtonCreateTransfer(
+                                bloc: context
+                                    .read<
+                                      CreateTransferBloc
+                                    >(), // Tu instancia de BLoC/Controlador
                                 cardColor:
                                     white, // Asegúrate que 'white' esté definido en tus colores
                                 textAndIconColor:
@@ -639,10 +654,11 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                               },
                               focusNode: focusNode6,
                               controller: _controllerLocationDestino,
-                              locationDropdown:
-                                  LocationCardButtonCreateTransfer(
-                                bloc: context.read<
-                                    CreateTransferBloc>(), // Tu instancia de BLoC/Controlador
+                              locationDropdown: LocationCardButtonCreateTransfer(
+                                bloc: context
+                                    .read<
+                                      CreateTransferBloc
+                                    >(), // Tu instancia de BLoC/Controlador
                                 cardColor:
                                     white, // Asegúrate que 'white' esté definido en tus colores
                                 textAndIconColor:
@@ -684,7 +700,8 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                             //todo lote
                             Visibility(
                               // El padre controla la visibilidad
-                              visible: context
+                              visible:
+                                  context
                                       .read<CreateTransferBloc>()
                                       .currentProduct
                                       ?.tracking ==
@@ -693,10 +710,12 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                                 routeName: 'search-lote-create-transfer',
                                 focusNode: focusNode5,
                                 controller: _controllerLote,
-                                isLoteOk:
-                                    context.read<CreateTransferBloc>().isLoteOk,
-                                loteIsOk:
-                                    context.read<CreateTransferBloc>().loteIsOk,
+                                isLoteOk: context
+                                    .read<CreateTransferBloc>()
+                                    .isLoteOk,
+                                loteIsOk: context
+                                    .read<CreateTransferBloc>()
+                                    .loteIsOk,
                                 locationIsOk: context
                                     .read<CreateTransferBloc>()
                                     .locationIsOk,
@@ -718,98 +737,114 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                                 onValidateLote: (value) {
                                   validateLote(value);
                                 },
+                                lotId:
+                                    context
+                                        .read<CreateTransferBloc>()
+                                        .currentProduct
+                                        ?.lotName
+                                        .toString() ??
+                                    'Sin lote',
                               ),
                             ),
-                          ]),
+                          ],
                         ),
                       ),
-                    )
+                    ),
+                  ),
 
-                    //todo: cantidad
-                    ,
-                    QuantityScannerWidget(
-                      size: size,
-                      isQuantityOk:
-                          context.read<CreateTransferBloc>().isQuantityOk,
-                      quantityIsOk:
-                          context.read<CreateTransferBloc>().quantityIsOk,
-                      locationIsOk:
-                          context.read<CreateTransferBloc>().locationIsOk,
-                      productIsOk:
-                          context.read<CreateTransferBloc>().productIsOk,
-                      locationDestIsOk: false,
-                      totalQuantity: 0,
-                      quantitySelected:
-                          context.read<CreateTransferBloc>().quantitySelected,
-                      unidades: context
-                              .read<CreateTransferBloc>()
-                              .currentProduct
-                              ?.uom ??
-                          "",
-                      controller: _controllerQuantity,
-                      manualController: cantidadController,
-                      scannerFocusNode: focusNode3,
-                      manualFocusNode: focusNode4,
-                      viewQuantity:
-                          context.read<CreateTransferBloc>().viewQuantity,
-                      onIconButtonPressed: () {
-                        debugPrint('borrando');
-                        context.read<CreateTransferBloc>().add(
-                            ShowQuantityEvent(!context
-                                .read<CreateTransferBloc>()
-                                .viewQuantity));
-                        Future.delayed(const Duration(milliseconds: 100), () {
-                          FocusScope.of(context).requestFocus(focusNode3);
-                        });
-                      },
-                      onToggleViewQuantity: () {
-                        context.read<CreateTransferBloc>().add(
-                            ShowQuantityEvent(!context
-                                .read<CreateTransferBloc>()
-                                .viewQuantity));
-                        cantidadController.clear();
-                        Future.delayed(const Duration(milliseconds: 100), () {
-                          FocusScope.of(context).requestFocus(focusNode4);
-                        });
-                        debugPrint('Toggle view quantity');
-                      },
-                      onValidateButton: state is ValidateStockLoading
-                          ? () {}
-                          : () {
-                              FocusScope.of(context).unfocus();
-                              _validatebuttonquantity();
-                            },
-                      onValidateScannerInput: (value) {
-                        validateQuantity(value);
-                      },
-                      onManualQuantityChanged: (value) {
-                        debugPrint('onManualQuantityChanged: $value');
-                      },
-                      onManualQuantitySubmitted: (value) {
-                        final intValue = double.parse(value);
-
+                  //todo: cantidad
+                  QuantityScannerWidget(
+                    size: size,
+                    isQuantityOk: context
+                        .read<CreateTransferBloc>()
+                        .isQuantityOk,
+                    quantityIsOk: context
+                        .read<CreateTransferBloc>()
+                        .quantityIsOk,
+                    locationIsOk: context
+                        .read<CreateTransferBloc>()
+                        .locationIsOk,
+                    productIsOk: context.read<CreateTransferBloc>().productIsOk,
+                    locationDestIsOk: false,
+                    totalQuantity: 0,
+                    quantitySelected: context
+                        .read<CreateTransferBloc>()
+                        .quantitySelected,
+                    unidades:
                         context
                             .read<CreateTransferBloc>()
-                            .add(ChangeQuantitySeparate(
-                              intValue,
-                              context
-                                      .read<CreateTransferBloc>()
-                                      .currentProduct
-                                      ?.productId ??
-                                  0,
-                            ));
+                            .currentProduct
+                            ?.uom ??
+                        "",
+                    controller: _controllerQuantity,
+                    manualController: cantidadController,
+                    scannerFocusNode: focusNode3,
+                    manualFocusNode: focusNode4,
+                    viewQuantity: context
+                        .read<CreateTransferBloc>()
+                        .viewQuantity,
+                    onIconButtonPressed: () {
+                      debugPrint('borrando');
+                      context.read<CreateTransferBloc>().add(
+                        ShowQuantityEvent(
+                          !context.read<CreateTransferBloc>().viewQuantity,
+                        ),
+                      );
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        FocusScope.of(context).requestFocus(focusNode3);
+                      });
+                    },
+                    onToggleViewQuantity: () {
+                      context.read<CreateTransferBloc>().add(
+                        ShowQuantityEvent(
+                          !context.read<CreateTransferBloc>().viewQuantity,
+                        ),
+                      );
+                      cantidadController.clear();
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        FocusScope.of(context).requestFocus(focusNode4);
+                      });
+                      debugPrint('Toggle view quantity');
+                    },
+                    onValidateButton: state is ValidateStockLoading
+                        ? () {}
+                        : () {
+                            FocusScope.of(context).unfocus();
+                            _validatebuttonquantity();
+                          },
+                    onValidateScannerInput: (value) {
+                      validateQuantity(value);
+                    },
+                    onManualQuantityChanged: (value) {
+                      debugPrint('onManualQuantityChanged: $value');
+                    },
+                    onManualQuantitySubmitted: (value) {
+                      final intValue = double.parse(value);
 
-                        context.read<CreateTransferBloc>().add(
-                            ShowQuantityEvent(!context
-                                .read<CreateTransferBloc>()
-                                .viewQuantity));
-                      },
-                      isViewCant: false,
-                    ),
-                  ],
-                ),
+                      context.read<CreateTransferBloc>().add(
+                        ChangeQuantitySeparate(
+                          intValue,
+                          context
+                                  .read<CreateTransferBloc>()
+                                  .currentProduct
+                                  ?.productId ??
+                              0,
+                        ),
+                      );
+
+                      context.read<CreateTransferBloc>().add(
+                        ShowQuantityEvent(
+                          !context.read<CreateTransferBloc>().viewQuantity,
+                        ),
+                      );
+                    },
+                    isViewCant: false,
+                  ),
+                ],
               ),
-            ));
+            ),
+          ),
+        );
       },
     );
   }
@@ -895,16 +930,20 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
         );
         return;
       } else {
-        double cantidad = double.parse(cantidadController.text.isEmpty
-            ? bloc.quantitySelected.toString()
-            : cantidadController.text);
+        double cantidad = double.parse(
+          cantidadController.text.isEmpty
+              ? bloc.quantitySelected.toString()
+              : cantidadController.text,
+        );
         //validamos el stock del producto con lote antes de agregar a la transferencia
         bloc.add(ValidateStockProductEvent(cantidad));
       }
     } else {
-      double cantidad = double.parse(cantidadController.text.isEmpty
-          ? bloc.quantitySelected.toString()
-          : cantidadController.text);
+      double cantidad = double.parse(
+        cantidadController.text.isEmpty
+            ? bloc.quantitySelected.toString()
+            : cantidadController.text,
+      );
       debugPrint("cantidad: $cantidad");
       bloc.add(ValidateStockProductEvent(cantidad));
     }

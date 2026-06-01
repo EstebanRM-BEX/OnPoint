@@ -251,15 +251,24 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       LoadUserLocationsEvent event, Emitter<UserState> emit) async {
     emit(UserLocationsLoading());
     final result = await getUserLocations(NoParams());
+    bool success = false;
     result.fold(
       (failure) => emit(UserLocationsError(failure.message)),
       (locations) {
         this.locations = locations;
-        locationsCount = locations.length;
-        debugPrint('Locations loaded: ${locations.length}');
+        debugPrint('Locations loaded from API: ${locations.length}');
+        success = true;
         emit(UserLocationsLoaded(locations: locations));
       },
     );
+    if (success) {
+      try {
+        locationsCount = await DataBaseSqlite().getUbicacionesCount();
+        debugPrint('Locations saved in DB: $locationsCount');
+      } catch (e) {
+        debugPrint("❌ Error getting locations count from DB: $e");
+      }
+    }
   }
 
   Future<void> _onLoadUserNovelties(

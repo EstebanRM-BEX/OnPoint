@@ -61,11 +61,11 @@ class DialogInventario extends StatelessWidget {
                       .read<InventarioBloc>()
                       .add(LoadConfigurationsUserInventory());
 
-                  // validamos si tenemos productos cargados si no hay productos mostramos alerta a descargar los productos
-                  if (context.read<InventarioBloc>().productos.isEmpty) {
-                    //cerramos el dialog
+                  // validamos si tenemos productos cargados usando productosCount
+                  // (ya cargado desde BD en initState del home) en vez de la lista
+                  // en memoria, que aún no se ha poblado por GetProductsForDB().
+                  if (context.read<InventarioBloc>().productosCount == 0) {
                     Navigator.pop(context);
-                    //mostrar snackbar de error
                     Get.snackbar(
                       '360 Software Informa',
                       "No hay productos cargados, por favor descargue los productos desde la configuración",

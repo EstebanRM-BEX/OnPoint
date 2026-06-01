@@ -212,17 +212,8 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
       );
 
       if (ubicacionEncontrada.isNotEmpty) {
-        bloc.add(
-            ExpandLocationEvent(ubicacionEncontrada)); // Expande por nombre
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_scrollController.hasClients) {
-            _scrollController.animateTo(
-              0.0, // Posición 0 (El inicio absoluto)
-              duration: const Duration(milliseconds: 500), // Medio segundo
-              curve: Curves.easeOut, // Animación suave
-            );
-          }
-        });
+        bloc.add(ExpandLocationEvent(ubicacionEncontrada));
+        _scrollToTop();
       }
 
       _controllerToLocation.clear();
@@ -234,6 +225,16 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
       Future.microtask(() => focusNode1.requestFocus());
       debugPrint("Ubicación no válida (barcode): $scan");
     }
+  }
+
+  // Espera a que el AnimatedCrossFade (200ms) termine de expandir antes de
+  // saltar al tope. jumpTo es instantáneo: no hay animación que se
+  // desincronice si el contenido sigue cambiando de tamaño.
+  void _scrollToTop() {
+    Future.delayed(const Duration(milliseconds: 250), () {
+      if (!mounted || !_scrollController.hasClients) return;
+      _scrollController.jumpTo(0.0);
+    });
   }
 
 // Método para agrupar productos por ubicación
@@ -341,6 +342,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenConteo> {
                                   } else {
                                     conteoBloc
                                         .add(ExpandLocationEvent(ubicacion));
+                                    _scrollToTop();
                                     Future.microtask(
                                         () => focusNode1.requestFocus());
                                   }

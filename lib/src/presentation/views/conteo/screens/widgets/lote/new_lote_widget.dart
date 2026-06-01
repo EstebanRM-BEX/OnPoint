@@ -12,6 +12,7 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
+import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart';
 
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
@@ -31,13 +32,57 @@ class NewLoteOrdenScreen extends StatefulWidget {
 
 class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
   bool viewList = true;
-  DateTime? selectedDate; // Para almacenar la fecha seleccionada
-  int? selectedIndex; // Para almacenar el índice del lote seleccionado
+  DateTime? selectedDate;
+  int? selectedIndex;
+  final FocusNode _searchFocusNode = FocusNode();
+  final FocusNode _loteFocusNode = FocusNode();
+
+  List<LotesProduct> _allLotes = [];
+  List<LotesProduct> _filteredLotes = [];
+  int? _suggestedLoteId;
 
   @override
   void initState() {
     super.initState();
     viewList = true;
+    _initLotes();
+  }
+
+  void _initLotes() {
+    final bloc = context.read<ConteoBloc>();
+    _suggestedLoteId = bloc.currentProduct.lotId;
+
+    var lotes = List<LotesProduct>.from(bloc.listLotesProduct);
+
+    // Mueve el lote sugerido al índice 0
+    if (_suggestedLoteId != null && _suggestedLoteId != 0) {
+      final idx = lotes.indexWhere((l) => l.id == _suggestedLoteId);
+      if (idx != -1) {
+        final suggested = lotes.removeAt(idx);
+        lotes.insert(0, suggested);
+      }
+    }
+
+    _allLotes = lotes;
+    _filteredLotes = List.from(_allLotes);
+  }
+
+  void _filterLotes(String query) {
+    final q = query.toLowerCase().trim();
+    setState(() {
+      _filteredLotes = q.isEmpty
+          ? List.from(_allLotes)
+          : _allLotes
+                .where((l) => (l.name ?? '').toLowerCase().contains(q))
+                .toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchFocusNode.dispose();
+    _loteFocusNode.dispose();
+    super.dispose();
   }
 
   // Función para mostrar el selector de fecha y hora
@@ -70,7 +115,9 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                             if (state is CreateLoteProductSuccess) {
                               Navigator.pop(context);
                               Navigator.pushReplacementNamed(
-                                  context, 'scan-product-conteo');
+                                context,
+                                'scan-product-conteo',
+                              );
                             }
 
                             if (state is CreateLoteProductLoading) {
@@ -104,14 +151,19 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                                               ?.result
                                               ?.allowPriorExpirationDate ==
                                           1)) {
-                                showScrollableWarningLoteDialog(state.error,
-                                    onContinue: () {
-                                  //creamos el lote sin prioridad de caducidadz
-                                  bloc.add(CreateLoteProduct(
-                                      bloc.newLoteController.text,
-                                      bloc.dateLoteController.text,
-                                      true));
-                                });
+                                showScrollableWarningLoteDialog(
+                                  state.error,
+                                  onContinue: () {
+                                    //creamos el lote sin prioridad de caducidadz
+                                    bloc.add(
+                                      CreateLoteProduct(
+                                        bloc.newLoteController.text,
+                                        bloc.dateLoteController.text,
+                                        true,
+                                      ),
+                                    );
+                                  },
+                                );
                               } else {
                                 showScrollableErrorDialog(state.error);
                               }
@@ -132,7 +184,8 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                                   const WarningWidgetCubit(),
                                   Padding(
                                     padding: EdgeInsets.only(
-                                      top: connectionStatus !=
+                                      top:
+                                          connectionStatus !=
                                               ConnectionStatus.online
                                           ? 0
                                           : 35,
@@ -142,20 +195,27 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         IconButton(
-                                          icon: const Icon(Icons.arrow_back,
-                                              color: white),
+                                          icon: const Icon(
+                                            Icons.arrow_back,
+                                            color: white,
+                                          ),
                                           onPressed: () {
                                             Navigator.pushReplacementNamed(
-                                                context, 'scan-product-conteo');
+                                              context,
+                                              'scan-product-conteo',
+                                            );
                                           },
                                         ),
                                         Padding(
                                           padding: EdgeInsets.only(
-                                              left: size.width * 0.2),
+                                            left: size.width * 0.2,
+                                          ),
                                           child: const Text(
                                             'CREAR LOTE',
                                             style: TextStyle(
-                                                color: white, fontSize: 18),
+                                              color: white,
+                                              fontSize: 18,
+                                            ),
                                           ),
                                         ),
                                         const Spacer(),
@@ -171,9 +231,11 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                     ),
 
                     const SizedBox(height: 10),
-                    Text(widget.currentProduct?.productName ?? '',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12, color: black)),
+                    Text(
+                      widget.currentProduct?.productName ?? '',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: black),
+                    ),
 
                     //184170
 
@@ -181,277 +243,300 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                     Visibility(
                       visible: viewList,
                       child: SizedBox(
-                          height: 55,
-                          width: size.width * 1,
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                              left: 10,
-                              right: 10,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: size.width * 0.9,
-                                  child: Card(
-                                    color: Colors.white,
-                                    elevation: 3,
-                                    child: TextFormField(
-                                      style:
-                                          TextStyle(color: black, fontSize: 14),
-                                      textAlignVertical:
-                                          TextAlignVertical.center,
-                                      controller: context
-                                          .read<ConteoBloc>()
-                                          .searchControllerLote,
-                                      showCursor: true,
-                                      decoration: InputDecoration(
-                                        prefixIcon: const Icon(
-                                          Icons.search,
+                        height: 55,
+                        width: size.width * 1,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 10, right: 10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: size.width * 0.9,
+                                child: Card(
+                                  color: Colors.white,
+                                  elevation: 3,
+                                  child: TextFormField(
+                                    focusNode: _searchFocusNode,
+                                    style: TextStyle(
+                                      color: black,
+                                      fontSize: 14,
+                                    ),
+                                    textAlignVertical: TextAlignVertical.center,
+                                    controller: context
+                                        .read<ConteoBloc>()
+                                        .searchControllerLote,
+                                    showCursor: true,
+                                    decoration: InputDecoration(
+                                      prefixIcon: const Icon(
+                                        Icons.search,
+                                        color: grey,
+                                        size: 20,
+                                      ),
+                                      suffixIcon: IconButton(
+                                        onPressed: () {
+                                          context
+                                              .read<ConteoBloc>()
+                                              .searchControllerLote
+                                              .clear();
+                                          _filterLotes('');
+                                          FocusScope.of(context).unfocus();
+                                        },
+                                        icon: const Icon(
+                                          Icons.close,
                                           color: grey,
                                           size: 20,
                                         ),
-                                        suffixIcon: IconButton(
-                                            onPressed: () {
-                                              context
-                                                  .read<ConteoBloc>()
-                                                  .searchControllerLote
-                                                  .clear();
-                                              context
-                                                  .read<ConteoBloc>()
-                                                  .add(SearchLotevent(
-                                                    '',
-                                                  ));
-
-                                              FocusScope.of(context).unfocus();
-                                            },
-                                            icon: const Icon(
-                                              Icons.close,
-                                              color: grey,
-                                              size: 20,
-                                            )),
-                                        disabledBorder:
-                                            const OutlineInputBorder(),
-                                        hintText: "Buscar lote",
-                                        hintStyle: const TextStyle(
-                                            color: Colors.grey, fontSize: 14),
-                                        border: InputBorder.none,
                                       ),
-                                      onChanged: (value) {
-                                        context
-                                            .read<ConteoBloc>()
-                                            .add(SearchLotevent(
-                                              value,
-                                            ));
-                                      },
+                                      disabledBorder:
+                                          const OutlineInputBorder(),
+                                      hintText: "Buscar lote",
+                                      hintStyle: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 14,
+                                      ),
+                                      border: InputBorder.none,
                                     ),
+                                    onChanged: _filterLotes,
                                   ),
                                 ),
-                              ],
-                            ),
-                          )),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
 
                     const SizedBox(height: 10),
                     if (viewList)
                       Expanded(
-                          child: ListView.builder(
-                              itemCount: bloc.listLotesProductFilters.length,
-                              itemBuilder: (context, index) {
-                                bool isSelected = selectedIndex == index;
-                                // 1. Obtener el dato crudo
-                                final rawDate = bloc
-                                    .listLotesProductFilters[index]
-                                    .expirationDate;
-                                bool isExpired = false;
-                                int?
-                                    daysLeft; // Variable para guardar los días restantes
+                        child: ListView.builder(
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.manual,
+                          itemCount: _filteredLotes.length,
+                          itemBuilder: (context, index) {
+                            final loteData = _filteredLotes[index];
+                            final bool isSelected = selectedIndex == index;
+                            final bool isSuggested =
+                                _suggestedLoteId != null &&
+                                _suggestedLoteId != 0 &&
+                                loteData.id == _suggestedLoteId;
+                            final rawDate = loteData.expirationDate;
+                            bool isExpired = false;
+                            int? daysLeft;
 
-                                if (rawDate != null &&
-                                    rawDate != false &&
-                                    rawDate.toString().isNotEmpty) {
-                                  DateTime? expiration =
-                                      DateTime.tryParse(rawDate.toString());
-
-                                  if (expiration != null) {
-                                    final now = DateTime.now();
-
-                                    // Normalizamos las fechas (Solo Año, Mes, Día) para que la hora no afecte
-                                    final dateExpiration = DateTime(
-                                        expiration.year,
-                                        expiration.month,
-                                        expiration.day);
-                                    final dateNow =
-                                        DateTime(now.year, now.month, now.day);
-
-                                    // Calculamos la diferencia
-                                    final difference = dateExpiration
-                                        .difference(dateNow)
-                                        .inDays;
-
-                                    if (difference < 0) {
-                                      isExpired = true; // Ya pasó la fecha
-                                    } else {
-                                      daysLeft =
-                                          difference; // Guardamos cuántos días faltan
-                                    }
-                                  }
+                            if (rawDate != null &&
+                                rawDate != false &&
+                                rawDate.toString().isNotEmpty) {
+                              final expiration = DateTime.tryParse(
+                                rawDate.toString(),
+                              );
+                              if (expiration != null) {
+                                final now = DateTime.now();
+                                final dateExpiration = DateTime(
+                                  expiration.year,
+                                  expiration.month,
+                                  expiration.day,
+                                );
+                                final dateNow = DateTime(
+                                  now.year,
+                                  now.month,
+                                  now.day,
+                                );
+                                final difference = dateExpiration
+                                    .difference(dateNow)
+                                    .inDays;
+                                if (difference < 0) {
+                                  isExpired = true;
+                                } else {
+                                  daysLeft = difference;
                                 }
+                              }
+                            }
 
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 0),
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedIndex =
-                                            isSelected ? null : index;
-                                      });
-                                    },
-                                    child: Card(
-                                      elevation: 3,
-                                      color: isSelected
-                                          ? Colors.green[100]
-                                          : Colors.white,
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 5),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 0,
+                              ),
+                              child: GestureDetector(
+                                onTap: () {
+                                  _searchFocusNode.unfocus();
+                                  setState(() {
+                                    selectedIndex = isSelected ? null : index;
+                                  });
+                                },
+                                child: Card(
+                                  elevation: 3,
+                                  color: isSelected
+                                      ? Colors.green[100]
+                                      : Colors.white,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 5,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // Nombre + badge Sugerido
+                                        Row(
                                           children: [
                                             Text(
-                                              'Lote: ${bloc.listLotesProductFilters[index].name}',
+                                              'Lote: ${loteData.name}',
                                               style: TextStyle(
-                                                  color: primaryColorApp,
-                                                  fontSize: 12),
+                                                color: primaryColorApp,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
-                                            if (bloc
-                                                    .listLotesProductFilters[
-                                                        index]
-                                                    .expirationDate !=
-                                                "") ...[
-                                              Row(
-                                                children: [
-                                                  const Text(
-                                                      'Fecha de caducidad: ',
-                                                      style: TextStyle(
-                                                          color: Colors.black,
-                                                          fontSize: 12)),
-                                                  Text(
-                                                    '${rawDate == false ? 'Sin fecha' : rawDate}',
-                                                    style: TextStyle(
-                                                      color:
-                                                          (rawDate == false ||
-                                                                  isExpired)
-                                                              ? Colors.red
-                                                              : Colors.black,
-                                                      fontSize: 12,
-                                                      fontWeight: isExpired
-                                                          ? FontWeight.bold
-                                                          : FontWeight.normal,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-
-                                            // --- SECCIÓN DE ESTADO DEL LOTE ---
-
-                                            // CASO 1: LOTE VENCIDO
-                                            if (isExpired) ...[
-                                              const SizedBox(height: 5),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.all(4),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.red[50],
-                                                  borderRadius:
-                                                      BorderRadius.circular(4),
-                                                  border: Border.all(
-                                                      color:
-                                                          Colors.red.shade200),
-                                                ),
-                                                child: Row(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: const [
-                                                    Icon(
-                                                        Icons
-                                                            .warning_amber_rounded,
-                                                        color: Colors.red,
-                                                        size: 16),
-                                                    SizedBox(width: 5),
-                                                    Text("¡LOTE VENCIDO!",
-                                                        style: TextStyle(
-                                                            color: Colors.red,
-                                                            fontSize: 12,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold)),
-                                                  ],
-                                                ),
-                                              ),
-                                            ]
-                                            // CASO 2: POR VENCER (Mostrar días restantes)
-                                            else if (daysLeft != null) ...[
-                                              const SizedBox(height: 5),
+                                            if (isSuggested) ...[
+                                              const SizedBox(width: 8),
                                               Container(
                                                 padding:
                                                     const EdgeInsets.symmetric(
-                                                        horizontal: 6,
-                                                        vertical: 2),
+                                                      horizontal: 6,
+                                                      vertical: 2,
+                                                    ),
                                                 decoration: BoxDecoration(
-                                                  // Si faltan menos de 15 días: Fondo Naranja suave, sino Azul suave
-                                                  color: daysLeft! < 15
-                                                      ? Colors.orange[50]
-                                                      : Colors.blue[50],
+                                                  color: Colors.green[50],
                                                   borderRadius:
                                                       BorderRadius.circular(4),
                                                   border: Border.all(
-                                                      color: daysLeft! < 15
-                                                          ? Colors
-                                                              .orange.shade300
-                                                          : Colors
-                                                              .blue.shade200),
+                                                    color:
+                                                        Colors.green.shade300,
+                                                  ),
                                                 ),
-                                                child: Row(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    Icon(
-                                                        Icons
-                                                            .av_timer, // Icono de cronómetro
-                                                        // Si faltan menos de 15 días: Naranja, sino Azul
-                                                        color: daysLeft! < 15
-                                                            ? Colors.orange[800]
-                                                            : Colors.blue[700],
-                                                        size: 16),
-                                                    const SizedBox(width: 5),
-                                                    Text(
-                                                      daysLeft == 0
-                                                          ? "Vence hoy"
-                                                          : "Vence en $daysLeft días",
-                                                      style: TextStyle(
-                                                        color: daysLeft! < 15
-                                                            ? Colors.orange[900]
-                                                            : Colors.blue[900],
-                                                        fontSize: 12,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                      ),
-                                                    ),
-                                                  ],
+                                                child: const Text(
+                                                  'Sugerido',
+                                                  style: TextStyle(
+                                                    color: Colors.green,
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
                                                 ),
                                               ),
                                             ],
                                           ],
                                         ),
-                                      ),
+                                        if (rawDate != null &&
+                                            rawDate != '') ...[
+                                          Row(
+                                            children: [
+                                              const Text(
+                                                'Fecha de caducidad: ',
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                              Text(
+                                                '${rawDate == false ? 'Sin fecha' : rawDate}',
+                                                style: TextStyle(
+                                                  color:
+                                                      (rawDate == false ||
+                                                          isExpired)
+                                                      ? Colors.red
+                                                      : Colors.black,
+                                                  fontSize: 12,
+                                                  fontWeight: isExpired
+                                                      ? FontWeight.bold
+                                                      : FontWeight.normal,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                        // CASO 1: LOTE VENCIDO
+                                        if (isExpired) ...[
+                                          const SizedBox(height: 5),
+                                          Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red[50],
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              border: Border.all(
+                                                color: Colors.red.shade200,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: const [
+                                                Icon(
+                                                  Icons.warning_amber_rounded,
+                                                  color: Colors.red,
+                                                  size: 16,
+                                                ),
+                                                SizedBox(width: 5),
+                                                Text(
+                                                  '¡LOTE VENCIDO!',
+                                                  style: TextStyle(
+                                                    color: Colors.red,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ]
+                                        // CASO 2: POR VENCER
+                                        else if (daysLeft != null) ...[
+                                          const SizedBox(height: 5),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: daysLeft < 15
+                                                  ? Colors.orange[50]
+                                                  : Colors.blue[50],
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              border: Border.all(
+                                                color: daysLeft < 15
+                                                    ? Colors.orange.shade300
+                                                    : Colors.blue.shade200,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.av_timer,
+                                                  color: daysLeft < 15
+                                                      ? Colors.orange[800]
+                                                      : Colors.blue[700],
+                                                  size: 16,
+                                                ),
+                                                const SizedBox(width: 5),
+                                                Text(
+                                                  daysLeft == 0
+                                                      ? 'Vence hoy'
+                                                      : 'Vence en $daysLeft días',
+                                                  style: TextStyle(
+                                                    color: daysLeft < 15
+                                                        ? Colors.orange[900]
+                                                        : Colors.blue[900],
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ],
                                     ),
                                   ),
-                                );
-                              })),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     //todo crear lote
                     Visibility(
                       visible: !viewList,
@@ -465,12 +550,17 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                             // ---------------------------------------------------------
                             // 1. CAMPO: NOMBRE DEL LOTE (Mayúsculas y Sin Espacios)
                             // ---------------------------------------------------------
-                            if (bloc.configurations.result?.result
+                            if (bloc
+                                    .configurations
+                                    .result
+                                    ?.result
                                     ?.manageExpirationDateWithoutLot ==
                                 false)
                               SizedBox(
                                 height: 40,
                                 child: TextFormField(
+                                  focusNode: _loteFocusNode,
+                                  autofocus: true,
                                   controller: bloc.newLoteController,
                                   style: TextStyle(color: black, fontSize: 14),
 
@@ -482,13 +572,14 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                                   inputFormatters: [
                                     UpperCaseTextFormatter(), // Clase auxiliar (ver abajo)
                                     FilteringTextInputFormatter.deny(
-                                        RegExp(r'\s')),
+                                      RegExp(r'\s'),
+                                    ),
                                   ],
-
                                   decoration: InputDecoration(
                                     labelText: 'Nombre del lote',
-                                    labelStyle:
-                                        TextStyle(color: primaryColorApp),
+                                    labelStyle: TextStyle(
+                                      color: primaryColorApp,
+                                    ),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
                                     ),
@@ -497,8 +588,10 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                                         bloc.newLoteController.clear();
                                         FocusScope.of(context).unfocus();
                                       },
-                                      icon:
-                                          const Icon(Icons.close, color: grey),
+                                      icon: const Icon(
+                                        Icons.close,
+                                        color: grey,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -510,7 +603,8 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                             // 2. CAMPO: FECHA DE CADUCIDAD
                             // ---------------------------------------------------------
                             Visibility(
-                              visible: bloc.currentProduct.useExpirationDate ==
+                              visible:
+                                  bloc.currentProduct.useExpirationDate ==
                                       true ||
                                   bloc.currentProduct.useExpirationDate == 1,
                               child: Column(
@@ -518,8 +612,10 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                                   SizedBox(
                                     height: 40,
                                     child: TextFormField(
-                                      style:
-                                          TextStyle(color: black, fontSize: 14),
+                                      style: TextStyle(
+                                        color: black,
+                                        fontSize: 14,
+                                      ),
                                       controller: bloc.dateLoteController,
                                       readOnly:
                                           true, // Para evitar escritura manual
@@ -533,35 +629,42 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                                             });
                                             FocusScope.of(context).unfocus();
                                           },
-                                          icon: const Icon(Icons.close,
-                                              color: grey),
+                                          icon: const Icon(
+                                            Icons.close,
+                                            color: grey,
+                                          ),
                                         ),
                                         labelText: 'Fecha de caducidad',
-                                        labelStyle:
-                                            TextStyle(color: primaryColorApp),
+                                        labelStyle: TextStyle(
+                                          color: primaryColorApp,
+                                        ),
                                         border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                         ),
                                       ),
                                       onTap: () async {
                                         FocusScope.of(context).unfocus();
 
                                         // Tu selector de fecha actual
-                                        var pickedDate = await DatePicker
-                                            .showSimpleDatePicker(
-                                          titleText: 'Seleccione una fecha',
-                                          context,
-                                          confirmText: 'Seleccionar',
-                                          cancelText: 'Cancelar',
-                                          firstDate: DateTime.now().subtract(
-                                              const Duration(days: 30)),
-                                          lastDate: DateTime.now()
-                                              .add(const Duration(days: 2000)),
-                                          dateFormat: "dd-MMMM-yyyy",
-                                          locale: DateTimePickerLocale.es,
-                                          looping: false,
-                                        );
+                                        var pickedDate =
+                                            await DatePicker.showSimpleDatePicker(
+                                              titleText: 'Seleccione una fecha',
+                                              context,
+                                              confirmText: 'Seleccionar',
+                                              cancelText: 'Cancelar',
+                                              firstDate: DateTime.now()
+                                                  .subtract(
+                                                    const Duration(days: 30),
+                                                  ),
+                                              lastDate: DateTime.now().add(
+                                                const Duration(days: 2000),
+                                              ),
+                                              dateFormat: "dd-MMMM-yyyy",
+                                              locale: DateTimePickerLocale.es,
+                                              looping: false,
+                                            );
 
                                         if (pickedDate != null) {
                                           final now = DateTime.now();
@@ -573,9 +676,9 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                                             now.minute,
                                             now.second,
                                           );
-                                          final formattedDate =
-                                              DateFormat('yyyy-MM-dd HH:mm:ss')
-                                                  .format(pickedDate);
+                                          final formattedDate = DateFormat(
+                                            'yyyy-MM-dd HH:mm:ss',
+                                          ).format(pickedDate);
 
                                           // ✅ Actualizamos el estado para mostrar los días restantes
                                           setState(() {
@@ -598,11 +701,15 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                                         // A. Cálculos (Normalizando fecha para ignorar horas)
                                         final now = DateTime.now();
                                         final dateExpiration = DateTime(
-                                            selectedDate!.year,
-                                            selectedDate!.month,
-                                            selectedDate!.day);
+                                          selectedDate!.year,
+                                          selectedDate!.month,
+                                          selectedDate!.day,
+                                        );
                                         final dateNow = DateTime(
-                                            now.year, now.month, now.day);
+                                          now.year,
+                                          now.month,
+                                          now.day,
+                                        );
 
                                         final daysLeft = dateExpiration
                                             .difference(dateNow)
@@ -642,21 +749,27 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                                         return Container(
                                           width: double.infinity,
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 10, vertical: 8),
+                                            horizontal: 10,
+                                            vertical: 8,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: bgColor,
-                                            borderRadius:
-                                                BorderRadius.circular(8),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
                                             border: Border.all(
-                                                color:
-                                                    textColor.withOpacity(0.3)),
+                                              color: textColor.withOpacity(0.3),
+                                            ),
                                           ),
                                           child: Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.center,
                                             children: [
-                                              Icon(icon,
-                                                  color: textColor, size: 18),
+                                              Icon(
+                                                icon,
+                                                color: textColor,
+                                                size: 18,
+                                              ),
                                               const SizedBox(width: 8),
                                               Text(
                                                 text,
@@ -685,32 +798,84 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         child: ElevatedButton(
                           onPressed: () {
-                            // Aquí puedes manejar la lógica de lo que suceda cuando se seleccione el lote
-                            var selectedLote = context
-                                .read<ConteoBloc>()
-                                .listLotesProductFilters[selectedIndex!];
+                            final selectedLote = _filteredLotes[selectedIndex!];
+                            final isSuggested =
+                                _suggestedLoteId != null &&
+                                _suggestedLoteId != 0 &&
+                                selectedLote.id == _suggestedLoteId;
 
-                            context
-                                .read<ConteoBloc>()
-                                .add(SelectecLoteEvent(selectedLote));
+                            void confirmSelection() {
+                              context.read<ConteoBloc>().add(
+                                SelectecLoteEvent(selectedLote),
+                              );
+                              Navigator.pushReplacementNamed(
+                                context,
+                                'scan-product-conteo',
+                              );
+                              Get.snackbar(
+                                'Lote Seleccionado',
+                                'Has seleccionado el lote: ${selectedLote.name}',
+                                backgroundColor: white,
+                                colorText: primaryColorApp,
+                                icon: const Icon(
+                                  Icons.check,
+                                  color: Colors.green,
+                                ),
+                              );
+                            }
 
-                            Navigator.pushReplacementNamed(
-                              context,
-                              'scan-product-conteo',
-                            );
-
-                            Get.snackbar(
-                              'Lote Seleccionado',
-                              'Has seleccionado el lote: ${selectedLote.name}',
-                              backgroundColor: white,
-                              colorText: primaryColorApp,
-                              icon: Icon(Icons.check, color: Colors.green),
-                            );
+                            if (isSuggested) {
+                              confirmSelection();
+                            } else {
+                              showDialog(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  backgroundColor: Colors.white,
+                                  title: const Text(
+                                    '360 Software Informa',
+                                    style: TextStyle(
+                                      color: Colors.orange,
+                                      fontSize: 16,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  content: Text(
+                                    'El lote seleccionado (${selectedLote.name}) es diferente al lote sugerido.\n¿Desea continuar con este lote?',
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx),
+                                      child: const Text('Cancelar'),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(ctx);
+                                        confirmSelection();
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: primaryColorApp,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'Continuar',
+                                        style: TextStyle(color: white),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColorApp,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                           child: Text(
                             'Seleccionar lote',
@@ -725,222 +890,296 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           ElevatedButton(
-                              onPressed: () {
-                                context
-                                    .read<ConteoBloc>()
-                                    .newLoteController
-                                    .clear();
-                                context
-                                    .read<ConteoBloc>()
-                                    .dateLoteController
-                                    .clear();
-                                setState(() {
-                                  viewList = true;
-                                });
-                              },
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: grey,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10))),
-                              child: Text(
-                                'CANCELAR',
-                                style: TextStyle(
-                                  color: white,
-                                ),
-                              )),
+                            onPressed: () {
+                              context
+                                  .read<ConteoBloc>()
+                                  .newLoteController
+                                  .clear();
+                              context
+                                  .read<ConteoBloc>()
+                                  .dateLoteController
+                                  .clear();
+                              setState(() {
+                                viewList = true;
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: grey,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: Text(
+                              'CANCELAR',
+                              style: TextStyle(color: white),
+                            ),
+                          ),
                           const SizedBox(width: 10),
                           Visibility(
                             visible: viewList,
                             child: ElevatedButton(
-                                onPressed: () {
-                                  //todo reglas de la creacion lote automatico
-                                  // Que el producto no maneje fecha de vencimiento "use_expiration_date": false,
-                                  // y el permiso de crear lote sin nombre este activado   "manage_expiration_date_without_lot": true,
+                              onPressed: () {
+                                //todo reglas de la creacion lote automatico
+                                // Que el producto no maneje fecha de vencimiento "use_expiration_date": false,
+                                // y el permiso de crear lote sin nombre este activado   "manage_expiration_date_without_lot": true,
 
-                                  if ((widget.currentProduct
-                                                  ?.useExpirationDate ==
-                                              false ||
-                                          widget.currentProduct
-                                                  ?.useExpirationDate ==
-                                              0) &&
-                                      (bloc.configurations.result?.result
-                                              ?.manageExpirationDateWithoutLot ==
-                                          true)) {
-                                    //todo creamos el lote manual sin fecha y con el nombre de la fecha actual
+                                if ((widget.currentProduct?.useExpirationDate ==
+                                            false ||
+                                        widget.currentProduct
+                                                ?.useExpirationDate ==
+                                            0) &&
+                                    (bloc.configurations.result?.result
+                                            ?.manageExpirationDateWithoutLot ==
+                                        true)) {
+                                  final nombreLote = DateFormat('ddMMyyyyHHmmss')
+                                      .format(DateTime.now());
 
-                                    bloc.newLoteController.text =
-                                        //la fecha actual sin separar los numeros
-                                        DateFormat('ddMMyyyyHHmmss')
-                                            .format(DateTime.now());
-
-                                    bloc.add(CreateLoteProduct(
-                                      bloc.newLoteController.text,
-                                      '',
-                                      false,
-                                    ));
-                                  }
-
-                                  //ocultamos la lista de lotes
-                                  setState(() {
-                                    viewList = false;
+                                  showDialog<bool>(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      backgroundColor: Colors.white,
+                                      title: const Text(
+                                        '360 Software Informa',
+                                        style: TextStyle(
+                                            color: Colors.orange, fontSize: 16),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      content: Text(
+                                        'Se creará el lote "$nombreLote" sin fecha de vencimiento.\n¿Desea continuar?',
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, false),
+                                          child: const Text('Cancelar'),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, true),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: primaryColorApp,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                          child: const Text('Crear lote',
+                                              style: TextStyle(color: white)),
+                                        ),
+                                      ],
+                                    ),
+                                  ).then((confirmed) {
+                                    if (confirmed == true && mounted) {
+                                      bloc.newLoteController.text = nombreLote;
+                                      bloc.add(CreateLoteProduct(
+                                          nombreLote, '', false));
+                                    }
                                   });
-                                },
-                                style: ElevatedButton.styleFrom(
-                                    backgroundColor: primaryColorApp,
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10))),
-                                child: Text(
-                                  'CREAR LOTE',
-                                  style: TextStyle(
-                                    color: white,
-                                  ),
-                                )),
+
+                                  return; // no abre el formulario manual
+                                }
+
+                                //ocultamos la lista de lotes (formulario manual)
+                                setState(() {
+                                  viewList = false;
+                                });
+
+                                // Foco automático al campo nombre si está visible
+                                if (bloc.configurations.result?.result
+                                        ?.manageExpirationDateWithoutLot ==
+                                    false) {
+                                  Future.delayed(
+                                      const Duration(milliseconds: 100), () {
+                                    if (mounted) _loteFocusNode.requestFocus();
+                                  });
+                                }
+
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColorApp,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: Text(
+                                'CREAR LOTE',
+                                style: TextStyle(color: white),
+                              ),
+                            ),
                           ),
                           Visibility(
                             visible: !viewList,
                             child: ElevatedButton(
-                                onPressed: () {
-                                  //ocultamos la lista de lotes
-                                  ///validamos que l nombre del lote no sea el mismo que ya existe en la lista
-                                  if (context
-                                      .read<ConteoBloc>()
-                                      .listLotesProduct
-                                      .where((element) =>
-                                          element.name ==
-                                          context
-                                              .read<ConteoBloc>()
-                                              .newLoteController
-                                              .text)
-                                      .isNotEmpty) {
+                              onPressed: () {
+                                final conteoBloc = context.read<ConteoBloc>();
+                                final nombreLote =
+                                    conteoBloc.newLoteController.text.trim();
+                                final fechaLote =
+                                    conteoBloc.dateLoteController.text.trim();
+                                final requiresExpiration =
+                                    conteoBloc.currentProduct.useExpirationDate ==
+                                            true ||
+                                        conteoBloc.currentProduct
+                                                .useExpirationDate ==
+                                            1;
+                                final manageWithoutLot = conteoBloc
+                                    .configurations
+                                    .result
+                                    ?.result
+                                    ?.manageExpirationDateWithoutLot;
+
+                                // Validar nombre duplicado
+                                if (conteoBloc.listLotesProduct
+                                    .any((e) => e.name == nombreLote)) {
+                                  Get.snackbar(
+                                    'Error al crear lote',
+                                    'El lote ya existe, por favor ingrese otro nombre',
+                                    backgroundColor: white,
+                                    colorText: primaryColorApp,
+                                    icon: Icon(Icons.error, color: Colors.amber),
+                                  );
+                                  return;
+                                }
+                                // Validar fecha vacía si el producto requiere fecha
+                                if (requiresExpiration && fechaLote.isEmpty) {
+                                  Get.snackbar(
+                                    'Error al crear lote',
+                                    'La fecha de caducidad no puede estar vacía para este producto',
+                                    backgroundColor: white,
+                                    colorText: primaryColorApp,
+                                    icon: Icon(Icons.error, color: Colors.amber),
+                                  );
+                                  return;
+                                }
+
+                                // Validar o generar nombre del lote
+                                String nombreFinal = nombreLote;
+                                if (manageWithoutLot == false) {
+                                  if (nombreLote.isEmpty) {
                                     Get.snackbar(
                                       'Error al crear lote',
-                                      'El lote ya existe, por favor ingrese otro nombre',
+                                      'El nombre del lote no puede estar vacío',
                                       backgroundColor: white,
                                       colorText: primaryColorApp,
-                                      icon: Icon(Icons.error,
-                                          color: Colors.amber),
+                                      icon:
+                                          Icon(Icons.error, color: Colors.amber),
                                     );
                                     return;
                                   }
-                                  //validamos que la fecha no este vacia si el producto requiere fecha de caducidad
-                                  if ((context
-                                                  .read<ConteoBloc>()
-                                                  .currentProduct
-                                                  .useExpirationDate ==
-                                              true ||
-                                          context
-                                                  .read<ConteoBloc>()
-                                                  .currentProduct
-                                                  .useExpirationDate ==
-                                              1) &&
-                                      (context
-                                              .read<ConteoBloc>()
-                                              .dateLoteController
-                                              .text
-                                              .isEmpty ||
-                                          context
-                                                  .read<ConteoBloc>()
-                                                  .dateLoteController
-                                                  .text ==
-                                              "")) {
+                                } else {
+                                  if (selectedDate == null) {
                                     Get.snackbar(
                                       'Error al crear lote',
-                                      'La fecha de caducidad no puede estar vacía para este producto',
+                                      'Debe seleccionar una fecha de caducidad',
                                       backgroundColor: white,
                                       colorText: primaryColorApp,
-                                      icon: Icon(Icons.error,
-                                          color: Colors.amber),
+                                      icon:
+                                          Icon(Icons.error, color: Colors.amber),
                                     );
                                     return;
                                   }
-                                  //validacion nombre lote no vacio
-                                  if (bloc.configurations.result?.result
-                                          ?.manageExpirationDateWithoutLot ==
-                                      false) {
-                                    if (context
-                                            .read<ConteoBloc>()
-                                            .newLoteController
-                                            .text
-                                            .isEmpty ||
-                                        context
-                                                .read<ConteoBloc>()
-                                                .newLoteController
-                                                .text ==
-                                            '') {
-                                      Get.snackbar(
-                                        'Error al crear lote',
-                                        'El nombre del lote no puede estar vacío',
-                                        backgroundColor: white,
-                                        colorText: primaryColorApp,
-                                        icon: Icon(Icons.error,
-                                            color: Colors.amber),
-                                      );
-                                      return;
-                                    }
-                                  } else {
-                                    bloc.newLoteController.text =
-                                        //la fecha seleccionada sin separar los numeros
-                                        DateFormat('ddMMyyyyHHmmss').format(
-                                            DateTime(
-                                                selectedDate!.year,
-                                                selectedDate!.month,
-                                                selectedDate!.day,
-                                                DateTime.now().hour,
-                                                DateTime.now().minute,
-                                                DateTime.now().second));
+                                  nombreFinal =
+                                      DateFormat('ddMMyyyyHHmmss').format(
+                                    DateTime(
+                                      selectedDate!.year,
+                                      selectedDate!.month,
+                                      selectedDate!.day,
+                                      DateTime.now().hour,
+                                      DateTime.now().minute,
+                                      DateTime.now().second,
+                                    ),
+                                  );
+                                  conteoBloc.newLoteController.text = nombreFinal;
+                                }
+
+                                // Validar que la fecha no sea pasada o igual a hoy
+                                if (selectedDate != null) {
+                                  final now = DateTime.now();
+                                  final soloFechaSeleccionada = DateTime(
+                                      selectedDate!.year,
+                                      selectedDate!.month,
+                                      selectedDate!.day);
+                                  final soloHoy =
+                                      DateTime(now.year, now.month, now.day);
+
+                                  if (soloFechaSeleccionada
+                                          .isBefore(soloHoy) ||
+                                      soloFechaSeleccionada
+                                          .isAtSameMomentAs(soloHoy)) {
+                                    Get.snackbar(
+                                      'Error al crear lote',
+                                      'La fecha de caducidad debe ser mayor a la fecha actual.',
+                                      backgroundColor: white,
+                                      duration: const Duration(seconds: 4),
+                                      colorText: primaryColorApp,
+                                      icon:
+                                          Icon(Icons.error, color: Colors.amber),
+                                    );
+                                    return;
                                   }
+                                }
 
-                                  //validacion que la fecha del lote no puede ser menor o igual la fecha actual
-                                  if (selectedDate != null) {
-                                    final now = DateTime.now();
-                                    final selectedDateOnly = DateTime(
-                                        selectedDate!.year,
-                                        selectedDate!.month,
-                                        selectedDate!.day);
-                                    final nowDateOnly =
-                                        DateTime(now.year, now.month, now.day);
+                                // Todas las validaciones pasaron — mostrar confirmación
+                                final nombreParaCrear = nombreFinal;
+                                final fechaParaCrear = fechaLote;
 
-                                    if (selectedDateOnly
-                                            .isBefore(nowDateOnly) ||
-                                        selectedDateOnly
-                                            .isAtSameMomentAs(nowDateOnly)) {
-                                      Get.snackbar(
-                                        'Error al crear lote',
-                                        'La fecha de caducidad debe ser mayor a la fecha actual.\nRevise la fecha de caducidad real del producto e intente de nuevo',
-                                        backgroundColor: white,
-                                        duration: const Duration(seconds: 4),
-                                        colorText: primaryColorApp,
-                                        icon: Icon(Icons.error,
-                                            color: Colors.amber),
-                                      );
-                                      return;
-                                    }
-                                  }
-
-                                  context.read<ConteoBloc>().add(
-                                      CreateLoteProduct(
-                                          context
-                                              .read<ConteoBloc>()
-                                              .newLoteController
-                                              .text,
-                                          context
-                                              .read<ConteoBloc>()
-                                              .dateLoteController
-                                              .text,
-                                          false));
-                                },
-                                style: ElevatedButton.styleFrom(
-                                    backgroundColor: primaryColorApp,
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10))),
-                                child: Text(
-                                  'AGREGAR LOTE',
-                                  style: TextStyle(
-                                    color: white,
+                                showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    backgroundColor: Colors.white,
+                                    title: const Text(
+                                      '360 Software Informa',
+                                      style: TextStyle(
+                                          color: Colors.orange, fontSize: 16),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    content: Text(
+                                      '¿Está seguro que desea crear el lote "$nombreParaCrear"?',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, false),
+                                        child: const Text('Cancelar'),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.pop(ctx, true);
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: primaryColorApp,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                        child: const Text('Crear lote',
+                                            style: TextStyle(color: white)),
+                                      ),
+                                    ],
                                   ),
-                                )),
+                                ).then((confirmed) {
+                                  if (confirmed == true && mounted) {
+                                    context.read<ConteoBloc>().add(
+                                          CreateLoteProduct(
+                                              nombreParaCrear, fechaParaCrear, false),
+                                        );
+                                  }
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColorApp,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: Text(
+                                'AGREGAR LOTE',
+                                style: TextStyle(color: white),
+                              ),
+                            ),
                           ),
                         ],
                       ),
