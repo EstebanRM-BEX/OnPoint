@@ -201,7 +201,8 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     on<FetchPickingComponentesEvent>(_onFetchPickingComponentesEvent);
 
     on<FetchPickingComponentesFromDBEvent>(
-        _onFetchPickingComponentesFromDBEvent);
+      _onFetchPickingComponentesFromDBEvent,
+    );
 
     //*obtener todos los pick de componentes desde el historial de odoo
     on<LoadHistoryPickComponentEvent>(_onLoadHistoryPickComponentEvent);
@@ -218,8 +219,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
             final String pB = b.priority ?? '0';
             // Si es ascendente: 0 -> 1 (Normal primero).
             // Si es descendente: 1 -> 0 (Alta primero).
-            currentFilterKey =
-                event.ascending ? 'priority_normal' : 'priority_high';
+            currentFilterKey = event.ascending
+                ? 'priority_normal'
+                : 'priority_high';
 
             return event.ascending ? pA.compareTo(pB) : pB.compareTo(pA);
 
@@ -235,8 +237,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
             // 0 = No tiene
             final int valA = hasBackorderA ? 1 : 0;
             final int valB = hasBackorderB ? 1 : 0;
-            currentFilterKey =
-                event.ascending ? 'backorder_asc' : 'backorder_desc';
+            currentFilterKey = event.ascending
+                ? 'backorder_asc'
+                : 'backorder_desc';
             // Si es ascendente (true): 0 va primero (Sin backorder -> Con backorder)
             // Si es descendente (false): 1 va primero (Con backorder -> Sin backorder)
             return event.ascending
@@ -271,13 +274,17 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     });
   }
   void _onViewProductImageEvent(
-      ViewProductImageEvent event, Emitter<PickingPickState> emit) async {
+    ViewProductImageEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
-      final response =
-          await inventarioRepository.viewUrlImageProduct(event.idProduct, true);
+      final response = await inventarioRepository.viewUrlImageProduct(
+        event.idProduct,
+        true,
+      );
 
       if (response.result?.code == 200) {
         if (response.result?.result == null ||
@@ -296,8 +303,10 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     }
   }
 
-  void _onLoadHistoryPickComponentEvent(LoadHistoryPickComponentEvent event,
-      Emitter<PickingPickState> emit) async {
+  void _onLoadHistoryPickComponentEvent(
+    LoadHistoryPickComponentEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       debugPrint('date: ${event.date}');
       emit(PickingLoadingState());
@@ -324,7 +333,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   }
 
   void _onLoadHistoryPickEvent(
-      LoadHistoryPickEvent event, Emitter<PickingPickState> emit) async {
+    LoadHistoryPickEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       debugPrint('date: ${event.date}');
       emit(PickingLoadingState());
@@ -351,7 +362,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   }
 
   void _onLoadHistoryBatchIdEvent(
-      LoadHistoryPickIdEvent event, Emitter<PickingPickState> emit) async {
+    LoadHistoryPickIdEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       emit(PickingLoadingState());
 
@@ -375,7 +388,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
   //metodo para cargar un producto seleccionado
   void _onLoadSelectedProductEvent(
-      LoadSelectedProductEvent event, Emitter<PickingPickState> emit) async {
+    LoadSelectedProductEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       //limpiamos la busqueda
       add(ClearSearchProudctsPickEvent());
@@ -398,7 +413,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
   //*evento para obtener todos los muelles disponibles
   void _onFetchMuellesEvent(
-      FetchMuellesEvent event, Emitter<PickingPickState> emit) async {
+    FetchMuellesEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       emit(MuellesLoadingState());
       submuelles.clear();
@@ -406,8 +423,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       if (response != null) {
         // Filtramos los muelles
         submuelles = response
-            .where((muelle) =>
-                muelle.locationId == pickWithProducts.pick?.muelleId)
+            .where(
+              (muelle) => muelle.locationId == pickWithProducts.pick?.muelleId,
+            )
             .toList();
 
         debugPrint("submuelles: ${submuelles.length}");
@@ -422,18 +440,28 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   }
 
   void _onValidateConfirmEvent(
-      ValidateConfirmEvent event, Emitter<PickingPickState> emit) async {
+    ValidateConfirmEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       emit(ValidateConfirmLoading());
       final response = await repository.confirmationValidate(
-          event.idPick, event.isBackOrder, event.isLoadinDialog);
+        event.idPick,
+        event.isBackOrder,
+        event.isLoadinDialog,
+      );
 
       if (response.result?.code == 200) {
-        add(PickingOkEvent(
-            pickWithProducts.pick?.id ?? 0, currentProduct.idProduct ?? 0));
+        add(
+          PickingOkEvent(
+            pickWithProducts.pick?.id ?? 0,
+            currentProduct.idProduct ?? 0,
+          ),
+        );
         add(FetchPickingPickEvent(false));
-        emit(ValidateConfirmSuccess(
-            event.isBackOrder, response.result?.msg ?? ""));
+        emit(
+          ValidateConfirmSuccess(event.isBackOrder, response.result?.msg ?? ""),
+        );
       } else {
         emit(ValidateConfirmFailure(response.result?.msg ?? ''));
       }
@@ -443,13 +471,16 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     }
   }
 
-  void _onFetchPickingComponentesEvent(FetchPickingComponentesEvent event,
-      Emitter<PickingPickState> emit) async {
+  void _onFetchPickingComponentesEvent(
+    FetchPickingComponentesEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     emit(PickingPickCompoLoading());
     try {
       // Aquí llamas a tu repositorio para obtener los datos
-      final result = await pickingPickRepository
-          .resPickingComponentes(event.isLoadinDialog);
+      final result = await pickingPickRepository.resPickingComponentes(
+        event.isLoadinDialog,
+      );
 
       listOfPickCompo = [];
       listOfPickCompoFiltered = [];
@@ -459,37 +490,42 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       }
 
       if (result.result?.isNotEmpty == true) {
-        await db.pickRepository
-            .insertAllPickingPicks(result.result!, 'pick-componentes');
+        await db.pickRepository.insertAllPickingPicks(
+          result.result!,
+          'pick-componentes',
+        );
 
         // Convertir el mapa en una lista de productos únicos con cantidades sumadas
-        final productsIterable =
-            _extractAllProducts(result.result!).toList(growable: false);
+        final productsIterable = _extractAllProducts(
+          result.result!,
+        ).toList(growable: false);
 
-        final sentProductsIterable =
-            _getAllSentProducts(result.result!).toList(growable: false);
+        final sentProductsIterable = _getAllSentProducts(
+          result.result!,
+        ).toList(growable: false);
 
-        final allBarcodes =
-            _extractAllBarcodes(result.result!).toList(growable: false);
+        final allBarcodes = _extractAllBarcodes(
+          result.result!,
+        ).toList(growable: false);
 
         debugPrint('productsToInsert: ${productsIterable.length}');
         debugPrint('sentProductsIterable: ${sentProductsIterable.length}');
         debugPrint('allBarcodes: ${allBarcodes.length}');
 
         // Enviar la lista agrupada a insertBatchProducts
-        await db.pickProductsRepository
-            .insertPickProducts(productsIterable, 'pick-componentes');
-        await db.pickProductsRepository
-            .insertPickProducts(sentProductsIterable, 'pick-componentes');
+        await db.pickProductsRepository.insertPickProducts(
+          productsIterable,
+          'pick-componentes',
+        );
+        await db.pickProductsRepository.insertPickProducts(
+          sentProductsIterable,
+          'pick-componentes',
+        );
 
         if (allBarcodes.isNotEmpty) {
           // Enviar la lista agrupada a insertBarcodesPackageProduct
-          await DataBaseSqlite()
-              .barcodesPackagesRepository
-              .insertOrUpdateBarcodes(
-                allBarcodes,
-                'pick-componentes',
-              );
+          await DataBaseSqlite().barcodesPackagesRepository
+              .insertOrUpdateBarcodes(allBarcodes, 'pick-componentes');
         }
 
         add(FetchPickingComponentesFromDBEvent(true));
@@ -505,8 +541,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   }
 
   void _onFetchPickingComponentesFromDBEvent(
-      FetchPickingComponentesFromDBEvent event,
-      Emitter<PickingPickState> emit) async {
+    FetchPickingComponentesFromDBEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     emit(PickingPickCompoBDLoading());
     try {
       // Aquí llamas a tu repositorio para obtener los datos
@@ -528,7 +565,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   }
 
   void _onCreateBackOrder(
-      CreateBackOrderOrNot event, Emitter<PickingPickState> emit) async {
+    CreateBackOrderOrNot event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       emit(CreateBackOrderOrNotLoading());
 
@@ -536,23 +575,33 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       debugPrint('idPick: ${event.idPick}');
 
       final response = await repository.validateTransfer(
-          event.idPick, event.isBackOrder, false);
+        event.idPick,
+        event.isBackOrder,
+        false,
+      );
 
       if (response.result?.code == 200) {
-        add(StartOrStopTimeTransfer(
-          event.idPick,
-          'end_time_transfer',
-        ));
+        add(StartOrStopTimeTransfer(event.idPick, 'end_time_transfer'));
 
         if (event.isExternalProduct == true) {
           add(LoadHistoryPickIdEvent(false, event.idPick));
         } else {
           add(ValidateFieldsEvent(field: "locationDest", isOk: true));
-          add(ChangeLocationDestIsOkEvent(true, currentProduct.idProduct ?? 0,
-              pickWithProducts.pick?.id ?? 0, currentProduct.idMove ?? 0));
+          add(
+            ChangeLocationDestIsOkEvent(
+              true,
+              currentProduct.idProduct ?? 0,
+              pickWithProducts.pick?.id ?? 0,
+              currentProduct.idMove ?? 0,
+            ),
+          );
           isSearch = true;
-          add(PickingOkEvent(
-              pickWithProducts.pick?.id ?? 0, currentProduct.idProduct ?? 0));
+          add(
+            PickingOkEvent(
+              pickWithProducts.pick?.id ?? 0,
+              currentProduct.idProduct ?? 0,
+            ),
+          );
           //eliminamos el pick de la lista actual
           await db.pickRepository.deletePickById(event.idPick);
           //eliminamos de la lista en memoria
@@ -561,19 +610,27 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
           //pedimos los nuevos picks
           add(FetchPickingPickEvent(false));
         }
-        emit(CreateBackOrderOrNotSuccess(
-            event.isBackOrder, response.result?.msg ?? ""));
+        emit(
+          CreateBackOrderOrNotSuccess(
+            event.isBackOrder,
+            response.result?.msg ?? "",
+          ),
+        );
       } else {
-        emit(CreateBackOrderOrNotFailure(
-          response.result?.msg ?? '',
-          event.isBackOrder,
-        ));
+        emit(
+          CreateBackOrderOrNotFailure(
+            response.result?.msg ?? '',
+            event.isBackOrder,
+          ),
+        );
       }
     } catch (e, s) {
-      emit(CreateBackOrderOrNotFailure(
-        'Error al crear la backorder',
-        event.isBackOrder,
-      ));
+      emit(
+        CreateBackOrderOrNotFailure(
+          'Error al crear la backorder',
+          event.isBackOrder,
+        ),
+      );
       debugPrint('Error en el _onCreateBackOrder: $e, $s');
     }
   }
@@ -582,33 +639,39 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     try {
       emit(CreateBackOrderOrNotLoading());
 
-      add(StartOrStopTimeTransfer(
-        event.idPick,
-        'end_time_transfer',
-      ));
+      add(StartOrStopTimeTransfer(event.idPick, 'end_time_transfer'));
 
       add(ValidateFieldsEvent(field: "locationDest", isOk: true));
-      add(ChangeLocationDestIsOkEvent(true, currentProduct.idProduct ?? 0,
-          pickWithProducts.pick?.id ?? 0, currentProduct.idMove ?? 0));
+      add(
+        ChangeLocationDestIsOkEvent(
+          true,
+          currentProduct.idProduct ?? 0,
+          pickWithProducts.pick?.id ?? 0,
+          currentProduct.idMove ?? 0,
+        ),
+      );
       isSearch = true;
 
-      add(PickingOkEvent(
-          pickWithProducts.pick?.id ?? 0, currentProduct.idProduct ?? 0));
+      add(
+        PickingOkEvent(
+          pickWithProducts.pick?.id ?? 0,
+          currentProduct.idProduct ?? 0,
+        ),
+      );
       //pedimos los nuevos picks
       add(FetchPickingPickEvent(false));
 
       emit(PickOkEventSuccess('Pick cerrado correctamente'));
     } catch (e, s) {
-      emit(CreateBackOrderOrNotFailure(
-        'Error al crear la backorder',
-        false,
-      ));
+      emit(CreateBackOrderOrNotFailure('Error al crear la backorder', false));
       debugPrint('Error en el _onCreateBackOrder: $e, $s');
     }
   }
 
   void _onSearchPickEvent(
-      SearchPickEvent event, Emitter<PickingPickState> emit) async {
+    SearchPickEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       final query = event.query.toLowerCase();
 
@@ -675,7 +738,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
   //metodo para empezar o terminar el tiempo
   void _onStartOrStopTimeTransfer(
-      StartOrStopTimeTransfer event, Emitter<PickingPickState> emit) async {
+    StartOrStopTimeTransfer event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       final time = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
       debugPrint("time : $time");
@@ -686,11 +751,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
           "start_time_transfer",
           time,
         );
-        await db.pickRepository.setFieldTablePick(
-          event.id,
-          "is_selected",
-          1,
-        );
+        await db.pickRepository.setFieldTablePick(event.id, "is_selected", 1);
       } else if (event.value == "end_time_transfer") {
         await db.pickRepository.setFieldTablePick(
           event.id,
@@ -718,7 +779,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
   //*metodo para obtener los permisos del usuario
   void _onAssignUserToTransfer(
-      AssignUserToTransfer event, Emitter<PickingPickState> emit) async {
+    AssignUserToTransfer event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       int userId = await PrefUtils.getUserId();
       String nameUser = await PrefUtils.getUserName();
@@ -743,23 +806,17 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
           "responsable",
           nameUser,
         );
-        await db.pickRepository.setFieldTablePick(
-          event.id,
-          "is_selected",
-          1,
-        );
+        await db.pickRepository.setFieldTablePick(event.id, "is_selected", 1);
 
-        add(StartOrStopTimeTransfer(
-          event.id,
-          "start_time_transfer",
-        ));
+        add(StartOrStopTimeTransfer(event.id, "start_time_transfer"));
 
-        emit(AssignUserToPickSuccess(
-          event.id,
-        ));
+        emit(AssignUserToPickSuccess(event.id));
       } else {
-        emit(AssignUserToPickError(
-            "La recepción ya tiene un responsable asignado"));
+        emit(
+          AssignUserToPickError(
+            "La recepción ya tiene un responsable asignado",
+          ),
+        );
       }
     } catch (e, s) {
       emit(AssignUserToPickError('Error al asignar el usuario'));
@@ -769,23 +826,29 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
   //*evento para editar un producto
   void _onEditProductEvent(
-      LoadProductEditEvent event, Emitter<PickingPickState> emit) async {
+    LoadProductEditEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
-      final response = await db.pickProductsRepository
-          .getPickWithProducts(pickWithProducts.pick?.id ?? 0);
+      final response = await db.pickProductsRepository.getPickWithProducts(
+        pickWithProducts.pick?.id ?? 0,
+      );
       if (response?.products?.isEmpty == true) {
-        emit(ProductEditError());
+        emit(ProductEditError('Error al enviar el producto'));
         return;
       }
       final List<ProductsBatch> products = response!.products!
-          .where((product) =>
-              product.quantitySeparate != product.quantity ||
-              product.isSendOdoo == 0)
+          .where(
+            (product) =>
+                product.quantitySeparate != product.quantity ||
+                product.isSendOdoo == 0,
+          )
           .toList();
       filteredProducts.clear();
       filteredProducts.addAll(products);
-      emit(LoadProductsBatchSuccesStateBD(
-          listOfProductsBatch: filteredProducts));
+      emit(
+        LoadProductsBatchSuccesStateBD(listOfProductsBatch: filteredProducts),
+      );
     } catch (e, s) {
       debugPrint("❌ Error en el _onEditProductEvent: $e -> $s");
     }
@@ -793,11 +856,16 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
   ///* evento para finalizar la separacion
   void _onPickingOkEvent(
-      PickingOkEvent event, Emitter<PickingPickState> emit) async {
+    PickingOkEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       emit(PickingOkLoading());
-      await db.pickRepository
-          .setFieldTablePick(event.batchId, 'is_separate', 1);
+      await db.pickRepository.setFieldTablePick(
+        event.batchId,
+        'is_separate',
+        1,
+      );
 
       emit(PickingOkState());
     } catch (e, s) {
@@ -808,117 +876,206 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
   //*evento para enviar un producto a odoo editado
   void _onSendProductEditOdooEvent(
-      SendProductEditOdooEvent event, Emitter<PickingPickState> emit) async {
+    SendProductEditOdooEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       emit(LoadingSendProductEdit());
-      bool responseEdit = await sendProuctEditOdoo(
-        event.product,
-        event.cantidad,
+      // bool responseEdit = await sendProuctEditOdoo(
+      //   event.product,
+      //   event.cantidad,
+      // );
+
+      final product = await db.pickProductsRepository.getProductPick(
+        event.product.batchId ?? 0,
+        event.product.idProduct ?? 0,
+        event.product.idMove ?? 0,
       );
-      if (responseEdit) {
-        final response = await db.pickProductsRepository
-            .getPickWithProducts(pickWithProducts.pick?.id ?? 0);
-        final List<ProductsBatch> products = response!.products!
-            .where((product) => product.quantitySeparate != product.quantity)
-            .toList();
-        pickWithProducts.products = response.products;
-        filteredProducts.clear();
-        filteredProducts.addAll(products);
+
+      //todo: tiempor por batch
+      // Calcular la diferencia
+      // Obtener la diferencia en segundos
+      final userid = await PrefUtils.getUserId();
+
+      //asignamos timepo total si esta en null
+      if (product?.timeSeparate == null) {
+        await db.setFieldTableBatchProducts(
+          event.product.batchId ?? 0,
+          event.product.idProduct ?? 0,
+          'time_separate',
+          30,
+          event.product.idMove ?? 0,
+          'pick',
+        );
+      }
+
+      DateTime fechaTransaccion = DateTime.now();
+      String fechaFormateada = formatoFecha(fechaTransaccion);
+
+      final response = await repository.sendProductTransferPick(
+        TransferRequest(
+          idTransferencia: currentProduct.batchId ?? 0,
+          listItems: [
+            ListItem(
+              idMove: product?.idMove ?? 0,
+              idProducto: product?.idProduct ?? 0,
+              // idLote: product?.loteId ?? 0,
+              idLote: 0,
+              idUbicacionDestino: product?.muelleId ?? 0,
+              cantidadEnviada: event.cantidad,
+              idOperario: userid,
+              timeLine: product?.timeSeparate == null
+                  ? 30.0
+                  : product?.timeSeparate.toDouble(),
+              fechaTransaccion: product?.fechaTransaccion ?? fechaFormateada,
+              observacion: (event.cantidad == product?.quantity)
+                  ? 'Sin novedad'
+                  : product?.observation == "Sin novedad"
+                  ? 'Sin novedad'
+                  : product?.observation ?? 'Sin novedad',
+              dividida: false,
+            ),
+          ],
+        ),
+        false,
+      );
+
+      if (response.result?.code == 200) {
+        //recorremos todos los resultados de la respuesta
+        for (var resultProduct in response.result!.result!) {
+          await db.pickProductsRepository.setFieldTablePickProducts(
+            resultProduct.idTransferencia ?? 0,
+            resultProduct.idProduct ?? 0,
+            'is_send_odoo',
+            1,
+            resultProduct.idMove ?? 0,
+          );
+        }
+       
         emit(ProductEditOk());
       } else {
-        emit(ProductEditError());
+        //elementos que no se pudieron enviar a odoo
+        await db.setFieldTableBatchProducts(
+          product?.batchId ?? 0,
+          product?.idProduct ?? 0,
+          'is_send_odoo',
+          0,
+          product?.idMove ?? 0,
+          'pick',
+        );
+        emit(
+          ProductEditError(
+            response.result?.msg ?? 'Error al enviar el producto',
+          ),
+        );
       }
+
+      // if (responseEdit) {
+      //   final response = await db.pickProductsRepository
+      //       .getPickWithProducts(pickWithProducts.pick?.id ?? 0);
+      //   final List<ProductsBatch> products = response!.products!
+      //       .where((product) => product.quantitySeparate != product.quantity)
+      //       .toList();
+      //   pickWithProducts.products = response.products;
+      //   filteredProducts.clear();
+      //   filteredProducts.addAll(products);
+      //   emit(ProductEditOk());
+      // } else {
+      //   emit(ProductEditError());
+      // }
     } catch (e, s) {
       debugPrint("❌ Error en el SendProductEditOdooEvent :$e->$s");
     }
   }
 
-  Future<bool> sendProuctEditOdoo(
-    ProductsBatch productEdit,
-    dynamic cantidad,
-  ) async {
-    //traemos un producto de la base de datos  ya anteriormente guardado
-    final product = await db.pickProductsRepository.getProductPick(
-        productEdit.batchId ?? 0,
-        productEdit.idProduct ?? 0,
-        productEdit.idMove ?? 0);
+  // Future<bool> sendProuctEditOdoo(
+  //   ProductsBatch productEdit,
+  //   dynamic cantidad,
+  // ) async {
+  //   //traemos un producto de la base de datos  ya anteriormente guardado
+  //   final product = await db.pickProductsRepository.getProductPick(
+  //       productEdit.batchId ?? 0,
+  //       productEdit.idProduct ?? 0,
+  //       productEdit.idMove ?? 0);
 
-    //todo: tiempor por batch
-    // Calcular la diferencia
-    // Obtener la diferencia en segundos
-    final userid = await PrefUtils.getUserId();
+  //   //todo: tiempor por batch
+  //   // Calcular la diferencia
+  //   // Obtener la diferencia en segundos
+  //   final userid = await PrefUtils.getUserId();
 
-    //asignamos timepo total si esta en null
-    if (product?.timeSeparate == null) {
-      await db.setFieldTableBatchProducts(
-          productEdit.batchId ?? 0,
-          productEdit.idProduct ?? 0,
-          'time_separate',
-          30,
-          productEdit.idMove ?? 0,
-          'pick');
-    }
+  //   //asignamos timepo total si esta en null
+  //   if (product?.timeSeparate == null) {
+  //     await db.setFieldTableBatchProducts(
+  //         productEdit.batchId ?? 0,
+  //         productEdit.idProduct ?? 0,
+  //         'time_separate',
+  //         30,
+  //         productEdit.idMove ?? 0,
+  //         'pick');
+  //   }
 
-    DateTime fechaTransaccion = DateTime.now();
-    String fechaFormateada = formatoFecha(fechaTransaccion);
+  //   DateTime fechaTransaccion = DateTime.now();
+  //   String fechaFormateada = formatoFecha(fechaTransaccion);
 
-    final response = await repository.sendProductTransferPick(
-      TransferRequest(
-        idTransferencia: currentProduct.batchId ?? 0,
-        listItems: [
-          ListItem(
-            idMove: product?.idMove ?? 0,
-            idProducto: product?.idProduct ?? 0,
-            // idLote: product?.loteId ?? 0,
-            idLote: 0,
-            idUbicacionDestino: product?.muelleId ?? 0,
-            cantidadEnviada: cantidad,
-            idOperario: userid,
-            timeLine: product?.timeSeparate == null
-                ? 30.0
-                : product?.timeSeparate.toDouble(),
-            fechaTransaccion: product?.fechaTransaccion ?? fechaFormateada,
-            observacion: (cantidad == product?.quantity)
-                ? 'Sin novedad'
-                : product?.observation == ""
-                    ? 'Sin novedad'
-                    : product?.observation ?? '',
-            dividida: false,
-          ),
-        ],
-      ),
-      false,
-    );
+  //   final response = await repository.sendProductTransferPick(
+  //     TransferRequest(
+  //       idTransferencia: currentProduct.batchId ?? 0,
+  //       listItems: [
+  //         ListItem(
+  //           idMove: product?.idMove ?? 0,
+  //           idProducto: product?.idProduct ?? 0,
+  //           // idLote: product?.loteId ?? 0,
+  //           idLote: 0,
+  //           idUbicacionDestino: product?.muelleId ?? 0,
+  //           cantidadEnviada: cantidad,
+  //           idOperario: userid,
+  //           timeLine: product?.timeSeparate == null
+  //               ? 30.0
+  //               : product?.timeSeparate.toDouble(),
+  //           fechaTransaccion: product?.fechaTransaccion ?? fechaFormateada,
+  //           observacion: (cantidad == product?.quantity)
+  //               ? 'Sin novedad'
+  //               : product?.observation == ""
+  //                   ? 'Sin novedad'
+  //                   : product?.observation ?? '',
+  //           dividida: false,
+  //         ),
+  //       ],
+  //     ),
+  //     false,
+  //   );
 
-    if (response.result?.code == 200) {
-      //recorremos todos los resultados de la respuesta
-      for (var resultProduct in response.result!.result!) {
-        await db.pickProductsRepository.setFieldTablePickProducts(
-          resultProduct.idTransferencia ?? 0,
-          resultProduct.idProduct ?? 0,
-          'is_send_odoo',
-          1,
-          resultProduct.idMove ?? 0,
-        );
-      }
+  //   if (response.result?.code == 200) {
+  //     //recorremos todos los resultados de la respuesta
+  //     for (var resultProduct in response.result!.result!) {
+  //       await db.pickProductsRepository.setFieldTablePickProducts(
+  //         resultProduct.idTransferencia ?? 0,
+  //         resultProduct.idProduct ?? 0,
+  //         'is_send_odoo',
+  //         1,
+  //         resultProduct.idMove ?? 0,
+  //       );
+  //     }
 
-      return true;
-    } else {
-      //elementos que no se pudieron enviar a odoo
-      await db.setFieldTableBatchProducts(
-        product?.batchId ?? 0,
-        product?.idProduct ?? 0,
-        'is_send_odoo',
-        0,
-        product?.idMove ?? 0,
-        'pick',
-      );
-      return false;
-    }
-  }
+  //     return true;
+  //   } else {
+  //     //elementos que no se pudieron enviar a odoo
+  //     await db.setFieldTableBatchProducts(
+  //       product?.batchId ?? 0,
+  //       product?.idProduct ?? 0,
+  //       'is_send_odoo',
+  //       0,
+  //       product?.idMove ?? 0,
+  //       'pick',
+  //     );
+  //     return false;
+  //   }
+  // }
 
   void _onSendProductOdooEvent(
-      SendProductOdooPickEvent event, Emitter<PickingPickState> emit) async {
+    SendProductOdooPickEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     if (_isProcessing) {
       // Si ya está en proceso, no ejecutamos nada
       return;
@@ -960,7 +1117,8 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
               timeLine: event.product.timeSeparate == null
                   ? 30.0
                   : event.product.timeSeparate.toDouble(),
-              fechaTransaccion: event.product.fechaTransaccion == "" ||
+              fechaTransaccion:
+                  event.product.fechaTransaccion == "" ||
                       event.product.fechaTransaccion == null
                   ? fechaFormateada
                   : event.product.fechaTransaccion ?? "",
@@ -984,17 +1142,20 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
           event.product.idMove ?? 0,
         );
 
-        final response = await db.pickProductsRepository
-            .getPickWithProducts(pickWithProducts.pick?.id ?? 0);
+        final response = await db.pickProductsRepository.getPickWithProducts(
+          pickWithProducts.pick?.id ?? 0,
+        );
 
         debugPrint('isEdit: ${event.isEdit}');
 
         final List<ProductsBatch> products = event.isEdit
             ? response!.products!
-                .where((product) =>
-                    product.quantitySeparate != product.quantity ||
-                    product.isSendOdoo == 0)
-                .toList()
+                  .where(
+                    (product) =>
+                        product.quantitySeparate != product.quantity ||
+                        product.isSendOdoo == 0,
+                  )
+                  .toList()
             : response!.products!;
 
         pickWithProducts.products = response.products;
@@ -1017,7 +1178,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
             'pick',
           );
 
-//actualizamos la lista de productos
+          //actualizamos la lista de productos
 
           add(FetchPickWithProductsEvent(pickWithProducts.pick?.id ?? 0));
           emit(SendProductPickOdooSuccess());
@@ -1037,8 +1198,40 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         DateTime fechaTransaccion = DateTime.now();
         String fechaFormateada = formatoFecha(fechaTransaccion);
 
-        emit(SendProductPickOdooError(
-          response.result?.msg ?? 'Error al enviar el producto',
+        emit(
+          SendProductPickOdooError(
+            response.result?.msg ?? 'Error al enviar el producto',
+            // TransferRequest(
+            //   idTransferencia: currentProduct.batchId ?? 0,
+            //   listItems: [
+            //     ListItem(
+            //       idMove: event.product.idMove ?? 0,
+            //       idProducto: event.product.idProduct ?? 0,
+            //       idLote: event.product.loteId ?? 0,
+            //       idUbicacionDestino: event.product.muelleId ?? 0,
+            //       cantidadEnviada: event.product.quantitySeparate ?? 0,
+            //       idOperario: userid,
+            //       timeLine: event.product.timeSeparate == null
+            //           ? 30.0
+            //           : event.product.timeSeparate.toDouble(),
+            //       fechaTransaccion: event.product.fechaTransaccion == "" ||
+            //               event.product.fechaTransaccion == null
+            //           ? fechaFormateada
+            //           : event.product.fechaTransaccion ?? "",
+            //       observacion: event.product.observation ?? 'Sin novedad',
+            //       dividida: false,
+            //     ),
+            //   ],
+            // ),
+          ),
+        );
+      }
+    } catch (e, s) {
+      DateTime fechaTransaccion = DateTime.now();
+      String fechaFormateada = formatoFecha(fechaTransaccion);
+      emit(
+        SendProductPickOdooError(
+          s.toString(),
           // TransferRequest(
           //   idTransferencia: currentProduct.batchId ?? 0,
           //   listItems: [
@@ -1061,36 +1254,8 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
           //     ),
           //   ],
           // ),
-        ));
-      }
-    } catch (e, s) {
-      DateTime fechaTransaccion = DateTime.now();
-      String fechaFormateada = formatoFecha(fechaTransaccion);
-      emit(SendProductPickOdooError(
-        s.toString(),
-        // TransferRequest(
-        //   idTransferencia: currentProduct.batchId ?? 0,
-        //   listItems: [
-        //     ListItem(
-        //       idMove: event.product.idMove ?? 0,
-        //       idProducto: event.product.idProduct ?? 0,
-        //       idLote: event.product.loteId ?? 0,
-        //       idUbicacionDestino: event.product.muelleId ?? 0,
-        //       cantidadEnviada: event.product.quantitySeparate ?? 0,
-        //       idOperario: userid,
-        //       timeLine: event.product.timeSeparate == null
-        //           ? 30.0
-        //           : event.product.timeSeparate.toDouble(),
-        //       fechaTransaccion: event.product.fechaTransaccion == "" ||
-        //               event.product.fechaTransaccion == null
-        //           ? fechaFormateada
-        //           : event.product.fechaTransaccion ?? "",
-        //       observacion: event.product.observation ?? 'Sin novedad',
-        //       dividida: false,
-        //     ),
-        //   ],
-        // ),
-      ));
+        ),
+      );
       debugPrint("❌ Error en el SendProductOdooEvent: $e ->$s");
     } finally {
       _isProcessing =
@@ -1098,8 +1263,10 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     }
   }
 
-  void _onClearSearchEvent(ClearSearchProudctsPickEvent event,
-      Emitter<PickingPickState> emit) async {
+  void _onClearSearchEvent(
+    ClearSearchProudctsPickEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       searchController.clear();
       filteredProducts.clear();
@@ -1112,7 +1279,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   }
 
   void _onSearchBacthEvent(
-      SearchProductsPickEvent event, Emitter<PickingPickState> emit) async {
+    SearchProductsPickEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     final query = event.query.toLowerCase();
 
     if (query.isEmpty) {
@@ -1122,14 +1291,15 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       await sortProductsByLocationId();
     } else {
       filteredProducts = pickWithProducts.products!.where((batch) {
-        final queryLower =
-            query.toLowerCase(); // Normalizar el query una sola vez
+        final queryLower = query
+            .toLowerCase(); // Normalizar el query una sola vez
         // Se normalizan todos los campos a buscar
         final productId = batch.productId?.toLowerCase() ?? '';
         final barcode = batch.barcode?.toLowerCase() ?? '';
         final productCode = batch.productCode?.toLowerCase() ?? '';
         final location = batch.locationId?.toLowerCase() ?? '';
-        final origin = batch.origin?.toLowerCase() ??
+        final origin =
+            batch.origin?.toLowerCase() ??
             ''; // Se obtiene el valor del campo origin
 
         // 🔎 ¡Depura aquí!
@@ -1145,13 +1315,16 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
             origin.contains(queryLower); // El filtro para origin
       }).toList();
     }
-    emit(LoadProductsPickSuccesState(
-        listOfProductsBatch: filteredProducts)); // Emitir la lista filtrada
+    emit(
+      LoadProductsPickSuccesState(listOfProductsBatch: filteredProducts),
+    ); // Emitir la lista filtrada
   }
 
   //*evento para dejar pendiente la separacion
   void _onPickingPendingEvent(
-      ProductPendingEvent event, Emitter<PickingPickState> emit) async {
+    ProductPendingEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       emit(ProductPendingLoading());
       if (filteredProducts.isEmpty) {
@@ -1159,44 +1332,49 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       }
       //cambiamos el estado del producto a pendiente
       await db.pickProductsRepository.setFieldTablePickProducts(
-          pickWithProducts.pick?.id ?? 0,
-          event.product.idProduct ?? 0,
-          'is_pending',
-          1,
-          event.product.idMove ?? 0);
+        pickWithProducts.pick?.id ?? 0,
+        event.product.idProduct ?? 0,
+        'is_pending',
+        1,
+        event.product.idMove ?? 0,
+      );
 
       //deseleccionamos el producto actual
       if (event.product.productIsOk == 1) {
         await db.pickProductsRepository.setFieldTablePickProducts(
-            pickWithProducts.pick?.id ?? 0,
-            event.product.idProduct ?? 0,
-            'product_is_ok',
-            0,
-            event.product.idMove ?? 0);
-      }
-
-      //marcamos el producto con la ubicacion no leida
-      await db.pickProductsRepository.setFieldTablePickProducts(
-          pickWithProducts.pick?.id ?? 0,
-          event.product.idProduct ?? 0,
-          'is_location_is_ok',
-          0,
-          event.product.idMove ?? 0);
-
-      //marcamos el producto como no leido
-      await db.pickProductsRepository.setFieldTablePickProducts(
-          pickWithProducts.pick?.id ?? 0,
-          event.product.idProduct ?? 0,
-          'is_quantity_is_ok',
-          0,
-          event.product.idMove ?? 0);
-      //product_is_ok
-      await db.pickProductsRepository.setFieldTablePickProducts(
           pickWithProducts.pick?.id ?? 0,
           event.product.idProduct ?? 0,
           'product_is_ok',
           0,
-          event.product.idMove ?? 0);
+          event.product.idMove ?? 0,
+        );
+      }
+
+      //marcamos el producto con la ubicacion no leida
+      await db.pickProductsRepository.setFieldTablePickProducts(
+        pickWithProducts.pick?.id ?? 0,
+        event.product.idProduct ?? 0,
+        'is_location_is_ok',
+        0,
+        event.product.idMove ?? 0,
+      );
+
+      //marcamos el producto como no leido
+      await db.pickProductsRepository.setFieldTablePickProducts(
+        pickWithProducts.pick?.id ?? 0,
+        event.product.idProduct ?? 0,
+        'is_quantity_is_ok',
+        0,
+        event.product.idMove ?? 0,
+      );
+      //product_is_ok
+      await db.pickProductsRepository.setFieldTablePickProducts(
+        pickWithProducts.pick?.id ?? 0,
+        event.product.idProduct ?? 0,
+        'product_is_ok',
+        0,
+        event.product.idMove ?? 0,
+      );
 
       //ordenamos los productos por ubicacion
       await sortProductsByLocationId();
@@ -1210,7 +1388,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
   //*metodo pra cambiar la novedad
   void _onSelectNovedadEvent(
-      SelectNovedadEvent event, Emitter<PickingPickState> emit) {
+    SelectNovedadEvent event,
+    Emitter<PickingPickState> emit,
+  ) {
     try {
       selectedNovedad = event.novedad;
       emit(SelectNovedadStateSuccess(event.novedad));
@@ -1222,7 +1402,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
   //*evento para establecer un proceso en ejecucion
   void _onSetIsProcessingEvent(
-      SetIsProcessingEvent event, Emitter<PickingPickState> emit) {
+    SetIsProcessingEvent event,
+    Emitter<PickingPickState> emit,
+  ) {
     try {
       isProcessing = event.isProcessing;
       emit(SetIsProcessingState(isProcessing));
@@ -1232,11 +1414,15 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   }
 
   void _onAssignSubmuelleEvent(
-      AssignSubmuelleEvent event, Emitter<PickingPickState> emit) async {
+    AssignSubmuelleEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       //realizamos la peticion para ocupar el muelle
       final responseMuele = await repositoryBatch.ocuparMuelle(
-          idMuelle: event.muelle.id ?? 0, isFull: event.isOccupied);
+        idMuelle: event.muelle.id ?? 0,
+        isFull: event.isOccupied,
+      );
 
       if (responseMuele.result?.code != 200) {
         emit(SubMuelleOcupadoError(responseMuele.result?.msg ?? ''));
@@ -1246,34 +1432,38 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       // Primero, actualizamos la base de datos para todos los productos
       for (var product in event.productsSeparate) {
         await db.pickProductsRepository.setFieldTablePickProducts(
-            product.batchId ?? 0,
-            product.idProduct ?? 0,
-            'is_muelle',
-            1,
-            product.idMove ?? 0);
+          product.batchId ?? 0,
+          product.idProduct ?? 0,
+          'is_muelle',
+          1,
+          product.idMove ?? 0,
+        );
 
         // Actualizamos el muelle del producto
         await db.pickProductsRepository.setFieldTablePickProducts(
-            product.batchId ?? 0,
-            product.idProduct ?? 0,
-            'muelle_id',
-            event.muelle.id ?? 0,
-            product.idMove ?? 0);
+          product.batchId ?? 0,
+          product.idProduct ?? 0,
+          'muelle_id',
+          event.muelle.id ?? 0,
+          product.idMove ?? 0,
+        );
 
         // Actualizamos el nombre del muelle del producto
         await db.pickProductsRepository.setFieldStringTablePickProducts(
-            product.batchId ?? 0,
-            product.idProduct ?? 0,
-            'location_dest_id',
-            event.muelle.completeName ?? '',
-            product.idMove ?? 0);
+          product.batchId ?? 0,
+          product.idProduct ?? 0,
+          'location_dest_id',
+          event.muelle.completeName ?? '',
+          product.idMove ?? 0,
+        );
         //Actualizamos el barcode del muelle del producto
         await db.pickProductsRepository.setFieldStringTablePickProducts(
-            product.batchId ?? 0,
-            product.idProduct ?? 0,
-            'barcode_location_dest',
-            event.muelle.barcode ?? '',
-            product.idMove ?? 0);
+          product.batchId ?? 0,
+          product.idProduct ?? 0,
+          'barcode_location_dest',
+          event.muelle.barcode ?? '',
+          product.idMove ?? 0,
+        );
       }
 
       // Después, enviamos la petición a Odoo con todos los productos en una sola vez
@@ -1286,27 +1476,31 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         String fechaFormateada = formatoFecha(fechaTransaccion);
 
         // Creamos los Item a enviar
-        itemsToSend.add(ListItem(
-          idMove: product.idMove ?? 0,
-          idProducto: product.idProduct ?? 0,
-          idLote: product.loteId ?? 0,
-          idUbicacionDestino: event.muelle.id ?? 0,
-          cantidadEnviada: (product.quantitySeparate ?? 0) > (product.quantity)
-              ? product.quantity
-              : product.quantitySeparate ?? 0,
-          idOperario: userid,
-          timeLine: product.timeSeparate == null
-              ? 30.0
-              : product.timeSeparate.toDouble(),
-          fechaTransaccion:
-              product.fechaTransaccion == "" || product.fechaTransaccion == null
-                  ? fechaFormateada
-                  : product.fechaTransaccion ?? "",
-          observacion: product.observation == ""
-              ? 'Sin novedad'
-              : product.observation ?? "",
-          dividida: false,
-        ));
+        itemsToSend.add(
+          ListItem(
+            idMove: product.idMove ?? 0,
+            idProducto: product.idProduct ?? 0,
+            idLote: product.loteId ?? 0,
+            idUbicacionDestino: event.muelle.id ?? 0,
+            cantidadEnviada:
+                (product.quantitySeparate ?? 0) > (product.quantity)
+                ? product.quantity
+                : product.quantitySeparate ?? 0,
+            idOperario: userid,
+            timeLine: product.timeSeparate == null
+                ? 30.0
+                : product.timeSeparate.toDouble(),
+            fechaTransaccion:
+                product.fechaTransaccion == "" ||
+                    product.fechaTransaccion == null
+                ? fechaFormateada
+                : product.fechaTransaccion ?? "",
+            observacion: product.observation == ""
+                ? 'Sin novedad'
+                : product.observation ?? "",
+            dividida: false,
+          ),
+        );
       }
       final response = await repository.sendProductTransferPick(
         TransferRequest(
@@ -1317,10 +1511,13 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       );
       if (response.result?.code == 200) {
         add(FetchPickWithProductsEvent(event.productsSeparate[0].batchId ?? 0));
-        emit(SubMuelleEditSusses(
+        emit(
+          SubMuelleEditSusses(
             '(${response.result?.result?.length ?? 0}) productos agregados al submuelle:\n' // Doble salto o dos puntos
             '${event.muelle.completeName}\n' // Nombre en su propia línea
-            'correctamente'));
+            'correctamente',
+          ),
+        );
       } else {
         emit(SubMuelleEditFail('Error al asignar el submuelle'));
       }
@@ -1332,7 +1529,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
   //*evento para seleccionar un submuelle
   void _onSelectecSubMuelle(
-      SelectedSubMuelleEvent event, Emitter<PickingPickState> emit) {
+    SelectedSubMuelleEvent event,
+    Emitter<PickingPickState> emit,
+  ) {
     try {
       subMuelleSelected = Muelles();
       subMuelleSelected = event.subMuelleSlected;
@@ -1344,7 +1543,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
   //*evento para ver la cantidad
   void _onShowQuantityEvent(
-      ShowQuantityEvent event, Emitter<PickingPickState> emit) {
+    ShowQuantityEvent event,
+    Emitter<PickingPickState> emit,
+  ) {
     try {
       viewQuantity = !viewQuantity;
       emit(ShowQuantityState(viewQuantity));
@@ -1355,16 +1556,19 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
   //*metodo para cambiar la cantidad seleccionada
   void _onChangeQuantitySelectedEvent(
-      ChangeQuantitySeparate event, Emitter<PickingPickState> emit) async {
+    ChangeQuantitySeparate event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       if (event.quantity > 0) {
         quantitySelected = event.quantity;
         await db.pickProductsRepository.setFieldTablePickProducts(
-            pickWithProducts.pick?.id ?? 0,
-            event.productId,
-            'quantity_separate',
-            event.quantity,
-            event.idMove);
+          pickWithProducts.pick?.id ?? 0,
+          event.productId,
+          'quantity_separate',
+          event.quantity,
+          event.idMove,
+        );
       }
       emit(ChangeQuantitySeparateStateSuccess(quantitySelected));
     } catch (e, s) {
@@ -1375,17 +1579,20 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
   //*evento para aumentar la cantidad
   void _onAddQuantitySeparateEvent(
-      AddQuantitySeparate event, Emitter<PickingPickState> emit) async {
+    AddQuantitySeparate event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       if (quantitySelected > (currentProduct.quantity ?? 0)) {
         return;
       } else {
         quantitySelected = quantitySelected + event.quantity;
         await db.pickProductsRepository.incremenQtyProductSeparate(
-            pickWithProducts.pick?.id ?? 0,
-            event.productId,
-            event.idMove,
-            event.quantity);
+          pickWithProducts.pick?.id ?? 0,
+          event.productId,
+          event.idMove,
+          event.quantity,
+        );
         emit(ChangeQuantitySeparateStateSuccess(quantitySelected));
       }
     } catch (e, s) {
@@ -1395,7 +1602,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   }
 
   void _onValidateFields(
-      ValidateFieldsEvent event, Emitter<PickingPickState> emit) {
+    ValidateFieldsEvent event,
+    Emitter<PickingPickState> emit,
+  ) {
     try {
       switch (event.field) {
         case 'location':
@@ -1421,7 +1630,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   //*metodo para cambiar el producto actual
 
   void _onChangeCurrentProduct(
-      ChangeCurrentProduct event, Emitter<PickingPickState> emit) async {
+    ChangeCurrentProduct event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       viewQuantity = false;
       emit(CurrentProductChangedStateLoading());
@@ -1429,42 +1640,47 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       // --- 1. Lógica de Marcado del Producto Actual (Pre-Envío) ---
       // Estas acciones se ejecutan sin importar si Odoo tiene éxito, ya que son locales.
       await db.pickProductsRepository.setFieldTablePickProducts(
-          pickWithProducts.pick?.id ?? 0,
-          event.currentProduct.idProduct ?? 0,
-          'is_selected',
-          0,
-          currentProduct.idMove ?? 0);
+        pickWithProducts.pick?.id ?? 0,
+        event.currentProduct.idProduct ?? 0,
+        'is_selected',
+        0,
+        currentProduct.idMove ?? 0,
+      );
 
       // Cálculo de tiempo (Tu lógica original de cálculo de diferencia)
       DateTime dateTimeActuality = DateTime.parse(DateTime.now().toString());
       await db.pickProductsRepository.endStopwatchProduct(
-          pickWithProducts.pick?.id ?? 0,
-          dateTimeActuality.toString(),
-          currentProduct.idProduct ?? 0,
-          currentProduct.idMove ?? 0);
+        pickWithProducts.pick?.id ?? 0,
+        dateTimeActuality.toString(),
+        currentProduct.idProduct ?? 0,
+        currentProduct.idMove ?? 0,
+      );
 
       final starTimeProduct = await db.pickProductsRepository
           .getFieldTableProductsPick(
-              currentProduct.batchId ?? 0,
-              currentProduct.idProduct ?? 0,
-              currentProduct.idMove ?? 0,
-              "time_separate_start");
+            currentProduct.batchId ?? 0,
+            currentProduct.idProduct ?? 0,
+            currentProduct.idMove ?? 0,
+            "time_separate_start",
+          );
 
       DateTime dateTimeStartProduct =
           starTimeProduct == "null" || starTimeProduct.isEmpty
-              ? DateTime.parse(DateTime.now().toString())
-              : DateTime.parse(starTimeProduct);
+          ? DateTime.parse(DateTime.now().toString())
+          : DateTime.parse(starTimeProduct);
 
-      Duration differenceProduct =
-          dateTimeActuality.difference(dateTimeStartProduct);
+      Duration differenceProduct = dateTimeActuality.difference(
+        dateTimeStartProduct,
+      );
       double secondsDifferenceProduct =
           differenceProduct.inMilliseconds / 1000.0;
 
       await db.pickProductsRepository.totalStopwatchProduct(
-          pickWithProducts.pick?.id ?? 0,
-          currentProduct.idProduct ?? 0,
-          currentProduct.idMove ?? 0,
-          secondsDifferenceProduct);
+        pickWithProducts.pick?.id ?? 0,
+        currentProduct.idProduct ?? 0,
+        currentProduct.idMove ?? 0,
+        secondsDifferenceProduct,
+      );
 
       // --- 2. PUNTO DE CONTROL CRÍTICO: Envío a Odoo ---
       // El 'await' aquí garantiza que el código ESPERA la respuesta antes de continuar.
@@ -1473,8 +1689,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       if (response.success == false) {
         // Si el envío falla (response.success es false, gracias a tu función SendResult),
         // EMITIMOS EL ERROR y SALIMOS DE LA FUNCIÓN. El currentProduct NO se actualiza.
-        emit(SendProductPickOdooError(
-            response.message)); // Usamos el mensaje de error de la respuesta
+        emit(
+          SendProductPickOdooError(response.message),
+        ); // Usamos el mensaje de error de la respuesta
         return;
       }
 
@@ -1482,8 +1699,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
       // La lista filtrada se debe re-evaluar o re-obtener si es necesario.
       // Asumo que 'filteredProducts' está disponible y actualizado.
-      final nextProducts =
-          filteredProducts.where((product) => product.isSeparate == 0).toList();
+      final nextProducts = filteredProducts
+          .where((product) => product.isSeparate == 0)
+          .toList();
 
       if (nextProducts.isNotEmpty) {
         // Restablecemos los estados de la UI para el nuevo producto
@@ -1514,9 +1732,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
       // --- 4. Emisión del Estado Final y Actualización de Lista ---
 
-      emit(CurrentProductChangedState(
-        currentProduct: currentProduct,
-      ));
+      emit(CurrentProductChangedState(currentProduct: currentProduct));
 
       // Forzar la actualización de la lista de productos
       add(FetchPickWithProductsEvent(pickWithProducts.pick?.id ?? 0));
@@ -1524,8 +1740,11 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       return;
     } catch (e, s) {
       // Manejo de cualquier excepción inesperada (conexión, base de datos)
-      emit(CurrentProductChangedStateError(
-          'Error crítico al procesar el cambio de producto.'));
+      emit(
+        CurrentProductChangedStateError(
+          'Error crítico al procesar el cambio de producto.',
+        ),
+      );
       debugPrint("❌ Error en el ChangeCurrentProduct $e ->$s");
     }
   }
@@ -1536,12 +1755,13 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       DateTime dateTimeActuality = DateTime.parse(DateTime.now().toString());
       //traemos un producto de la base de datos  ya anteriormente guardado
       final product = await db.pickProductsRepository.getProductPick(
-          pickWithProducts.pick?.id ?? 0,
-          currentProduct.idProduct ?? 0,
-          currentProduct.idMove ?? 0);
+        pickWithProducts.pick?.id ?? 0,
+        currentProduct.idProduct ?? 0,
+        currentProduct.idMove ?? 0,
+      );
 
       double secondsDifference = 0.0;
-// Verificación si la fecha de inicio es nula o vacía
+      // Verificación si la fecha de inicio es nula o vacía
       // Si `startTime` tiene un valor, continúa con el cálculo
       try {
         // Calcular la diferencia entre la fecha actual y la fecha de inicio
@@ -1571,19 +1791,21 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
               idLote: product?.loteId ?? 0,
               idUbicacionDestino: product?.muelleId ?? 0,
 
-              cantidadEnviada: (product?.quantitySeparate ?? 0.0) >
+              cantidadEnviada:
+                  (product?.quantitySeparate ?? 0.0) >
                       (product?.quantity ??
                           0.0) // Asegura que ambos lados sean numéricos
                   ? (product?.quantitySeparate ?? 0.0)
                   //  (product?.quantity ??
                   //     0.0) // Si es verdadero, usa quantity, pero también con ?? 0.0
                   : (product?.quantitySeparate ??
-                      0.0), // Si es falso, usa quantitySeparate
+                        0.0), // Si es falso, usa quantitySeparate
               idOperario: userid,
               timeLine: product?.timeSeparate == null
                   ? 30.0
                   : product?.timeSeparate.toDouble(),
-              fechaTransaccion: product?.fechaTransaccion == "" ||
+              fechaTransaccion:
+                  product?.fechaTransaccion == "" ||
                       product?.fechaTransaccion == null
                   ? fechaFormateada
                   : product?.fechaTransaccion ?? "",
@@ -1609,7 +1831,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
           );
         }
         return SendResult(
-            success: true, message: 'Producto enviado exitosamente');
+          success: true,
+          message: 'Producto enviado exitosamente',
+        );
       } else {
         quantityIsOk = true;
         //elementos que no se pudieron enviar a odoo
@@ -1621,8 +1845,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
           product?.idMove ?? 0,
         );
         return SendResult(
-            success: false,
-            message: response.result?.msg ?? 'Error al enviar el producto');
+          success: false,
+          message: response.result?.msg ?? 'Error al enviar el producto',
+        );
       }
     } catch (e, s) {
       debugPrint("❌ Error en el sendProuctOdoo $e ->$s ");
@@ -1632,16 +1857,21 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
   //*metodo para validar la cantidad del producto
   void _onChangeQuantityIsOkEvent(
-      ChangeIsOkQuantity event, Emitter<PickingPickState> emit) async {
+    ChangeIsOkQuantity event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       if (event.isOk) {
-        await db.pickProductsRepository.setFieldTablePickProducts(event.batchId,
-            event.productId, 'is_quantity_is_ok', 1, event.idMove);
+        await db.pickProductsRepository.setFieldTablePickProducts(
+          event.batchId,
+          event.productId,
+          'is_quantity_is_ok',
+          1,
+          event.idMove,
+        );
       }
       quantityIsOk = event.isOk;
-      emit(ChangeQuantityIsOkState(
-        quantityIsOk,
-      ));
+      emit(ChangeQuantityIsOkState(quantityIsOk));
     } catch (e, s) {
       debugPrint("❌ Error en el ChangeIsOkQuantity $e ->$s");
     }
@@ -1650,7 +1880,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   //*metodo para validar la ubicacion de origen
 
   void _onChangeLocationIsOkEvent(
-      ChangeLocationIsOkEvent event, Emitter<PickingPickState> emit) async {
+    ChangeLocationIsOkEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       if (isLocationOk) {
         await db.pickProductsRepository.setFieldTablePickProducts(
@@ -1661,12 +1893,13 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
           event.idMove,
         );
         // cuando se lea la ubicacion se selecciona el batch
-        await db.pickRepository
-            .setFieldTablePick(event.batchId, 'is_selected', 1);
+        await db.pickRepository.setFieldTablePick(
+          event.batchId,
+          'is_selected',
+          1,
+        );
         locationIsOk = true;
-        emit(ChangeLocationIsOkState(
-          locationIsOk,
-        ));
+        emit(ChangeLocationIsOkState(locationIsOk));
       }
     } catch (e, s) {
       debugPrint("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
@@ -1675,16 +1908,21 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
   //*metodo para validar la ubicacion de destino
   void _onChangeLocationDestIsOkEvent(
-      ChangeLocationDestIsOkEvent event, Emitter<PickingPickState> emit) async {
+    ChangeLocationDestIsOkEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       if (event.locationDestIsOk) {
-        await db.pickProductsRepository.setFieldTablePickProducts(event.batchId,
-            event.productId, 'location_dest_is_ok', 1, event.idMove);
+        await db.pickProductsRepository.setFieldTablePickProducts(
+          event.batchId,
+          event.productId,
+          'location_dest_is_ok',
+          1,
+          event.idMove,
+        );
       }
       locationDestIsOk = event.locationDestIsOk;
-      emit(ChangeLocationDestIsOkState(
-        locationDestIsOk,
-      ));
+      emit(ChangeLocationDestIsOkState(locationDestIsOk));
     } catch (e, s) {
       debugPrint("❌ Error en el ChangeLocationDestIsOkEvent $e ->$s");
     }
@@ -1693,7 +1931,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   //*metodo para validar el producto
 
   void _onChangeProductIsOkEvent(
-      ChangeProductIsOkEvent event, Emitter<PickingPickState> emit) async {
+    ChangeProductIsOkEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       if (event.productIsOk) {
         //empezamos el tiempo de separacion del batch y del producto
@@ -1715,19 +1955,32 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
           event.idMove,
         );
 
-        await db.pickProductsRepository.setFieldTablePickProducts(event.batchId,
-            event.productId, 'is_quantity_is_ok', 1, event.idMove);
+        await db.pickProductsRepository.setFieldTablePickProducts(
+          event.batchId,
+          event.productId,
+          'is_quantity_is_ok',
+          1,
+          event.idMove,
+        );
         quantityIsOk = event.productIsOk;
 
         await db.pickProductsRepository.setFieldTablePickProducts(
-            event.batchId, event.productId, 'is_selected', 1, event.idMove);
+          event.batchId,
+          event.productId,
+          'is_selected',
+          1,
+          event.idMove,
+        );
         await db.pickProductsRepository.setFieldTablePickProducts(
-            event.batchId, event.productId, 'product_is_ok', 1, event.idMove);
+          event.batchId,
+          event.productId,
+          'product_is_ok',
+          1,
+          event.idMove,
+        );
       }
       productIsOk = event.productIsOk;
-      emit(ChangeProductIsOkState(
-        productIsOk,
-      ));
+      emit(ChangeProductIsOkState(productIsOk));
     } catch (e, s) {
       debugPrint("❌ Error en el ChangeProductIsOkEvent $e ->$s");
     }
@@ -1735,12 +1988,15 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
   //* metodo para cargar la configuracion del usuario
   void _onLoadConfigurationsUserEvent(
-      LoadConfigurationsUser event, Emitter<PickingPickState> emit) async {
+    LoadConfigurationsUser event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       emit(ConfigurationLoading());
       int userId = await PrefUtils.getUserId();
-      final response =
-          await db.configurationsRepository.getConfiguration(userId);
+      final response = await db.configurationsRepository.getConfiguration(
+        userId,
+      );
 
       if (response != null) {
         emit(ConfigurationPickingLoaded(response));
@@ -1753,15 +2009,18 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     }
   }
 
-//* metodo para cargar las variables de la vista dependiendo del estado de los productos y del batch
+  //* metodo para cargar las variables de la vista dependiendo del estado de los productos y del batch
   void _onLoadDataInfoEvent(
-      LoadDataInfoEvent event, Emitter<PickingPickState> emit) {
+    LoadDataInfoEvent event,
+    Emitter<PickingPickState> emit,
+  ) {
     try {
       emit(LoadDataInfoLoading());
 
       // 🔍 Filtrar productos con isSeparate == 0
-      final separatedProducts =
-          filteredProducts.where((p) => p.isSeparate == 0).toList();
+      final separatedProducts = filteredProducts
+          .where((p) => p.isSeparate == 0)
+          .toList();
 
       if (separatedProducts.length != 0) {
         currentProduct = separatedProducts.first;
@@ -1773,8 +2032,8 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         productIsOk = currentProduct.productIsOk == false
             ? false
             : currentProduct.productIsOk == 1
-                ? true
-                : false;
+            ? true
+            : false;
         locationDestIsOk = currentProduct.locationDestIsOk == 1 ? true : false;
         quantityIsOk = currentProduct.isQuantityIsOk == 1 ? true : false;
         index = pickWithProducts.pick?.indexList ?? 0;
@@ -1791,7 +2050,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
   //*evento para obtener los barcodes de un producto por paquete
   void _onFetchBarcodesProductEvent(
-      FetchBarcodesProductEvent event, Emitter<PickingPickState> emit) async {
+    FetchBarcodesProductEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       listOfBarcodes.clear();
 
@@ -1811,13 +2072,16 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   }
 
   void _onFetchPickWithProductsEvent(
-      FetchPickWithProductsEvent event, Emitter<PickingPickState> emit) async {
+    FetchPickWithProductsEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       debugPrint('Fetching pick with ID: ${event.pickId}');
       pickWithProducts = PickWithProducts();
 
-      final response =
-          await db.pickProductsRepository.getPickWithProducts(event.pickId);
+      final response = await db.pickProductsRepository.getPickWithProducts(
+        event.pickId,
+      );
 
       if (response != null) {
         pickWithProducts = response;
@@ -1842,8 +2106,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
         add(FetchBarcodesProductEvent());
 
-        emit(LoadProductsBatchSuccesStateBD(
-            listOfProductsBatch: filteredProducts));
+        emit(
+          LoadProductsBatchSuccesStateBD(listOfProductsBatch: filteredProducts),
+        );
       } else {
         pickWithProducts = PickWithProducts();
         emit(EmptyProductsPick());
@@ -1945,12 +2210,14 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       }
 
       // Filtrar los productos con isPending == 1
-      List<ProductsBatch> pendingProducts =
-          products.where((product) => product.isPending == 1).toList();
+      List<ProductsBatch> pendingProducts = products
+          .where((product) => product.isPending == 1)
+          .toList();
 
       // Filtrar los productos que no están pendientes
-      List<ProductsBatch> nonPendingProducts =
-          products.where((product) => product.isPending != 1).toList();
+      List<ProductsBatch> nonPendingProducts = products
+          .where((product) => product.isPending != 1)
+          .toList();
 
       // Concatenar los productos no pendientes con los productos pendientes al final
       filteredProducts.clear();
@@ -1964,9 +2231,11 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     }
   }
 
-//*evento para obtener todas las novedades
+  //*evento para obtener todas las novedades
   void _onLoadAllNovedadesEvent(
-      LoadAllNovedadesPickEvent event, Emitter<PickingPickState> emit) async {
+    LoadAllNovedadesPickEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     try {
       final response = await db.novedadesRepository.getAllNovedades();
       novedades.clear();
@@ -1981,13 +2250,13 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   }
 
   void _onFetchPickingPickFromDBEvent(
-      FetchPickingPickFromDBEvent event, Emitter<PickingPickState> emit) async {
+    FetchPickingPickFromDBEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     emit(PickingPickBDLoading());
     try {
       // Aquí llamas a tu repositorio para obtener los datos
-      final result = await db.pickRepository.getAllPickingPicks(
-        'pick',
-      );
+      final result = await db.pickRepository.getAllPickingPicks('pick');
       listOfPick.clear();
       listOfPickFiltered.clear();
 
@@ -2011,7 +2280,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   }
 
   void _onFetchPickingPickEvent(
-      FetchPickingPickEvent event, Emitter<PickingPickState> emit) async {
+    FetchPickingPickEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
     emit(PickingPickLoading());
     try {
       await DataBaseSqlite().delePick('pick');
@@ -2028,34 +2299,37 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       if (result.result?.isNotEmpty == true) {
         await db.pickRepository.insertAllPickingPicks(result.result!, 'pick');
         // Convertir el mapa en una lista de productos únicos con cantidades sumadas
-        final productsIterable =
-            _extractAllProducts(result.result!).toList(growable: false);
+        final productsIterable = _extractAllProducts(
+          result.result!,
+        ).toList(growable: false);
 
-        final sentProductsIterable =
-            _getAllSentProducts(result.result!).toList(growable: false);
+        final sentProductsIterable = _getAllSentProducts(
+          result.result!,
+        ).toList(growable: false);
 
-        final allBarcodes =
-            _extractAllBarcodes(result.result!).toList(growable: false);
+        final allBarcodes = _extractAllBarcodes(
+          result.result!,
+        ).toList(growable: false);
 
         debugPrint('productsToInsert: ${productsIterable.length}');
         debugPrint('sentProductsIterable: ${sentProductsIterable.length}');
         debugPrint('allBarcodes: ${allBarcodes.length}');
 
         // Enviar la lista agrupada a insertBatchProducts
-        await db.pickProductsRepository
-            .insertPickProducts(productsIterable, 'pick');
+        await db.pickProductsRepository.insertPickProducts(
+          productsIterable,
+          'pick',
+        );
 
-        await db.pickProductsRepository
-            .insertPickProducts(sentProductsIterable, 'pick');
+        await db.pickProductsRepository.insertPickProducts(
+          sentProductsIterable,
+          'pick',
+        );
 
         if (allBarcodes.isNotEmpty) {
           // Enviar la lista agrupada a insertBarcodesPackageProduct
-          await DataBaseSqlite()
-              .barcodesPackagesRepository
-              .insertOrUpdateBarcodes(
-                allBarcodes,
-                'pick',
-              );
+          await DataBaseSqlite().barcodesPackagesRepository
+              .insertOrUpdateBarcodes(allBarcodes, 'pick');
         }
 
         add(FetchPickingPickFromDBEvent(true));
@@ -2124,7 +2398,8 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       int seconds = totalSeconds % 60;
 
       // Formatear en 00:00:00
-      String formattedTime = '${hours.toString().padLeft(2, '0')}:'
+      String formattedTime =
+          '${hours.toString().padLeft(2, '0')}:'
           '${minutes.toString().padLeft(2, '0')}:'
           '${seconds.toString().padLeft(2, '0')}';
 
@@ -2173,9 +2448,6 @@ class SendResult {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'success': success,
-      'message': message,
-    };
+    return {'success': success, 'message': message};
   }
 }

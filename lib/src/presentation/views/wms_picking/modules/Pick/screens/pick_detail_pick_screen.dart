@@ -39,6 +39,10 @@ class PickDetailScreen extends StatelessWidget {
           );
         }
 
+        if(state is ProductEditError){
+          showScrollableErrorDialog(state.error);
+        }
+
         if (state is SendProductPickOdooLoading) {
           showDialog(
               context: context,

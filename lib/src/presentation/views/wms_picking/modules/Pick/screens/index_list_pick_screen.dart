@@ -20,6 +20,7 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/response_pick_model.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
 class IndexListPickScreen extends StatefulWidget {
@@ -82,7 +83,8 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
 
     if (pick.id != null) {
       debugPrint(
-          '🔎 pick encontrado : ${pick.id} ${pick.name} - ${pick.zonaEntrega}');
+        '🔎 pick encontrado : ${pick.id} ${pick.name} - ${pick.zonaEntrega}',
+      );
       processBatch(pick);
       return;
     } else {
@@ -96,7 +98,10 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
   }
 
   void _handleTap(
-      BuildContext context, BuildContext contextBuilder, dynamic batch) async {
+    BuildContext context,
+    BuildContext contextBuilder,
+    dynamic batch,
+  ) async {
     if (_isProcessing) return;
 
     setState(() => _isProcessing = true);
@@ -135,10 +140,9 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
           builder: (dialogContext) => DialogStartTimeWidget(
             title: 'Iniciar Pick',
             onAccepted: () async {
-              bloc.add(StartOrStopTimeTransfer(
-                batch.id ?? 0,
-                'start_time_transfer',
-              ));
+              bloc.add(
+                StartOrStopTimeTransfer(batch.id ?? 0, 'start_time_transfer'),
+              );
               Navigator.pop(dialogContext);
             },
           ),
@@ -149,11 +153,7 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
       bloc.add(FetchPickWithProductsEvent(batch.id ?? 0));
       bloc.add(LoadConfigurationsUser());
 
-      _goBatchInfo(
-        contextBuilder,
-        bloc,
-        batch,
-      );
+      _goBatchInfo(contextBuilder, bloc, batch);
     } catch (e) {
       ScaffoldMessenger.of(contextBuilder).showSnackBar(
         const SnackBar(
@@ -176,9 +176,7 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const DialogLoading(
-        message: 'Cargando interfaz...',
-      ),
+      builder: (_) => const DialogLoading(message: 'Cargando interfaz...'),
     );
 
     await Future.delayed(const Duration(seconds: 1));
@@ -186,8 +184,11 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
 
     if (batch.isSeparate != 1) {
       batchBloc.searchPickController.clear();
-      Navigator.pushReplacementNamed(context, 'scan-product-pick',
-          arguments: [true]);
+      Navigator.pushReplacementNamed(
+        context,
+        'scan-product-pick',
+        arguments: [true],
+      );
     }
   }
 
@@ -214,33 +215,33 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
           }
 
           if (state is AssignUserToPickError) {
-            Get.snackbar(
-              '360 Software Informa',
-              state.error,
-              backgroundColor: white,
-              colorText: primaryColorApp,
-              icon: Icon(Icons.error, color: Colors.red),
-            );
+            //cerramos algun dialogo si esta abierto
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+            showScrollableErrorDialog(state.error);
           }
 
           if (state is AssignUserToPickLoading) {
             showDialog(
               context: context,
               barrierDismissible: false,
-              builder: (_) => const DialogLoading(
-                message: 'Cargando interfaz...',
-              ),
+              builder: (_) =>
+                  const DialogLoading(message: 'Cargando interfaz...'),
             );
           }
 
           if (state is AssignUserToPickSuccess) {
             Navigator.pop(context);
-            context
-                .read<PickingPickBloc>()
-                .add(FetchPickWithProductsEvent(state.id));
+            context.read<PickingPickBloc>().add(
+              FetchPickWithProductsEvent(state.id),
+            );
             context.read<PickingPickBloc>().add(LoadConfigurationsUser());
-            Navigator.pushReplacementNamed(context, 'scan-product-pick',
-                arguments: [true]);
+            Navigator.pushReplacementNamed(
+              context,
+              'scan-product-pick',
+              arguments: [true],
+            );
           }
         },
         builder: (context, state) {
@@ -266,364 +267,501 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                           bottomRight: Radius.circular(20),
                         ),
                       ),
-                      child:
-                          BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
-                              builder: (context, status) {
-                        return Column(
-                          children: [
-                            const WarningWidgetCubit(),
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                  left: 10, right: 10, bottom: 0),
-                              child: Column(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.arrow_back,
-                                            color: white),
-                                        onPressed: () {
-                                          Navigator.pushReplacementNamed(
-                                              context, '/home');
-                                        },
-                                      ),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          if (_isProcessing ||
-                                              bloc.state is PickingPickLoading ||
-                                              bloc.state is PickingPickBDLoading) {
-                                            return;
-                                          }
-                                          setState(() => _isProcessing = true);
-                                          try {
-                                            bloc.add(FetchPickingPickEvent(true));
-                                          } finally {
-                                            if (mounted) {
-                                              setState(() => _isProcessing = false);
+                      child: BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
+                        builder: (context, status) {
+                          return Column(
+                            children: [
+                              const WarningWidgetCubit(),
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 10,
+                                  right: 10,
+                                  bottom: 0,
+                                ),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.arrow_back,
+                                            color: white,
+                                          ),
+                                          onPressed: () {
+                                            Navigator.pushReplacementNamed(
+                                              context,
+                                              '/home',
+                                            );
+                                          },
+                                        ),
+                                        GestureDetector(
+                                          onTap: () async {
+                                            if (_isProcessing ||
+                                                bloc.state
+                                                    is PickingPickLoading ||
+                                                bloc.state
+                                                    is PickingPickBDLoading) {
+                                              return;
                                             }
-                                          }
-                                        },
-                                        child: Padding(
-                                          padding: EdgeInsets.only(
-                                              left: size.width * 0.15),
-                                          child: Row(
-                                            children: [
-                                              const Text(
-                                                'PICK PEDIDO',
-                                                style: TextStyle(
+                                            setState(
+                                              () => _isProcessing = true,
+                                            );
+                                            try {
+                                              bloc.add(
+                                                FetchPickingPickEvent(true),
+                                              );
+                                            } finally {
+                                              if (mounted) {
+                                                setState(
+                                                  () => _isProcessing = false,
+                                                );
+                                              }
+                                            }
+                                          },
+                                          child: Padding(
+                                            padding: EdgeInsets.only(
+                                              left: size.width * 0.15,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                const Text(
+                                                  'PICK PEDIDO',
+                                                  style: TextStyle(
                                                     color: white,
                                                     fontSize: 18,
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                              const SizedBox(width: 5),
-                                              const Icon(
-                                                Icons.refresh,
-                                                color: white,
-                                                size: 20,
-                                              ),
-                                            ],
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 5),
+                                                const Icon(
+                                                  Icons.refresh,
+                                                  color: white,
+                                                  size: 20,
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      const Spacer(),
-                                      PopupMenuButton<String>(
-                                        icon: const Icon(Icons.more_vert,
-                                            color: white, size: 24),
-                                        onSelected: (value) {
-                                          switch (value) {
-                                            case 'priority_high':
-                                              bloc.add(SortPickListEvent(
-                                                  'priority', false));
-                                              break;
-                                            case 'priority_normal':
-                                              bloc.add(SortPickListEvent(
-                                                  'priority', true));
-                                              break;
-                                            case 'date_asc':
-                                              bloc.add(SortPickListEvent(
-                                                  'date', true));
-                                              break;
-                                            case 'date_desc':
-                                              bloc.add(SortPickListEvent(
-                                                  'date', false));
-                                              break;
-                                            case 'name_asc':
-                                              bloc.add(SortPickListEvent(
-                                                  'name', true));
-                                              break;
-                                            case 'name_desc':
-                                              bloc.add(SortPickListEvent(
-                                                  'name', false));
-                                              break;
-                                            case 'backorder_desc':
-                                              bloc.add(SortPickListEvent(
-                                                  'backorder', false));
-                                              break;
-                                            case 'backorder_asc':
-                                              bloc.add(SortPickListEvent(
-                                                  'backorder', true));
-                                              break;
-                                          }
-                                        },
-                                        itemBuilder: (BuildContext context) {
-                                          final currentKey =
-                                              bloc.currentFilterKey;
-                                          const Color activeColor =
-                                              primaryColorApp;
-                                          const Color inactiveColor = black;
+                                        const Spacer(),
+                                        PopupMenuButton<String>(
+                                          icon: const Icon(
+                                            Icons.more_vert,
+                                            color: white,
+                                            size: 24,
+                                          ),
+                                          onSelected: (value) {
+                                            switch (value) {
+                                              case 'priority_high':
+                                                bloc.add(
+                                                  SortPickListEvent(
+                                                    'priority',
+                                                    false,
+                                                  ),
+                                                );
+                                                break;
+                                              case 'priority_normal':
+                                                bloc.add(
+                                                  SortPickListEvent(
+                                                    'priority',
+                                                    true,
+                                                  ),
+                                                );
+                                                break;
+                                              case 'date_asc':
+                                                bloc.add(
+                                                  SortPickListEvent(
+                                                    'date',
+                                                    true,
+                                                  ),
+                                                );
+                                                break;
+                                              case 'date_desc':
+                                                bloc.add(
+                                                  SortPickListEvent(
+                                                    'date',
+                                                    false,
+                                                  ),
+                                                );
+                                                break;
+                                              case 'name_asc':
+                                                bloc.add(
+                                                  SortPickListEvent(
+                                                    'name',
+                                                    true,
+                                                  ),
+                                                );
+                                                break;
+                                              case 'name_desc':
+                                                bloc.add(
+                                                  SortPickListEvent(
+                                                    'name',
+                                                    false,
+                                                  ),
+                                                );
+                                                break;
+                                              case 'backorder_desc':
+                                                bloc.add(
+                                                  SortPickListEvent(
+                                                    'backorder',
+                                                    false,
+                                                  ),
+                                                );
+                                                break;
+                                              case 'backorder_asc':
+                                                bloc.add(
+                                                  SortPickListEvent(
+                                                    'backorder',
+                                                    true,
+                                                  ),
+                                                );
+                                                break;
+                                            }
+                                          },
+                                          itemBuilder: (BuildContext context) {
+                                            final currentKey =
+                                                bloc.currentFilterKey;
+                                            const Color activeColor =
+                                                primaryColorApp;
+                                            const Color inactiveColor = black;
 
-                                          TextStyle getStyle(String key) {
-                                            final isSelected =
-                                                currentKey == key;
-                                            return TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: isSelected
-                                                  ? FontWeight.bold
-                                                  : FontWeight.normal,
-                                              color: isSelected
+                                            TextStyle getStyle(String key) {
+                                              final isSelected =
+                                                  currentKey == key;
+                                              return TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: isSelected
+                                                    ? FontWeight.bold
+                                                    : FontWeight.normal,
+                                                color: isSelected
+                                                    ? activeColor
+                                                    : inactiveColor,
+                                              );
+                                            }
+
+                                            Color getIconColor(String key) {
+                                              return currentKey == key
                                                   ? activeColor
-                                                  : inactiveColor,
-                                            );
-                                          }
+                                                  : Colors.grey;
+                                            }
 
-                                          Color getIconColor(String key) {
-                                            return currentKey == key
-                                                ? activeColor
-                                                : Colors.grey;
-                                          }
-
-                                          return <PopupMenuEntry<String>>[
-                                            const PopupMenuItem<String>(
-                                              enabled: false,
-                                              height: 30,
-                                              child: Text('PRIORIDAD',
+                                            return <PopupMenuEntry<String>>[
+                                              const PopupMenuItem<String>(
+                                                enabled: false,
+                                                height: 30,
+                                                child: Text(
+                                                  'PRIORIDAD',
                                                   style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 12,
-                                                      color: Colors.grey)),
-                                            ),
-                                            PopupMenuItem<String>(
-                                              value: 'priority_high',
-                                              height: 40,
-                                              child: Row(children: [
-                                                Icon(Icons.warning,
-                                                    size: 16,
-                                                    color: currentKey ==
-                                                            'priority_high'
-                                                        ? Colors.red
-                                                        : Colors.grey),
-                                                const SizedBox(width: 8),
-                                                Text('Alta primero',
-                                                    style: getStyle(
-                                                        'priority_high')),
-                                                if (currentKey ==
-                                                    'priority_high') ...[
-                                                  const Spacer(),
-                                                  const Icon(Icons.check,
-                                                      size: 15,
-                                                      color: activeColor)
-                                                ]
-                                              ]),
-                                            ),
-                                            PopupMenuItem<String>(
-                                              value: 'priority_normal',
-                                              height: 40,
-                                              child: Row(children: [
-                                                Icon(Icons.check_circle,
-                                                    size: 16,
-                                                    color: getIconColor(
-                                                        'priority_normal')),
-                                                const SizedBox(width: 8),
-                                                Text('Normal primero',
-                                                    style: getStyle(
-                                                        'priority_normal')),
-                                                if (currentKey ==
-                                                    'priority_normal') ...[
-                                                  const Spacer(),
-                                                  const Icon(Icons.check,
-                                                      size: 15,
-                                                      color: activeColor)
-                                                ]
-                                              ]),
-                                            ),
-                                            const PopupMenuDivider(),
-                                            const PopupMenuItem<String>(
-                                              enabled: false,
-                                              height: 30,
-                                              child: Text('FECHA',
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                              ),
+                                              PopupMenuItem<String>(
+                                                value: 'priority_high',
+                                                height: 40,
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.warning,
+                                                      size: 16,
+                                                      color:
+                                                          currentKey ==
+                                                              'priority_high'
+                                                          ? Colors.red
+                                                          : Colors.grey,
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      'Alta primero',
+                                                      style: getStyle(
+                                                        'priority_high',
+                                                      ),
+                                                    ),
+                                                    if (currentKey ==
+                                                        'priority_high') ...[
+                                                      const Spacer(),
+                                                      const Icon(
+                                                        Icons.check,
+                                                        size: 15,
+                                                        color: activeColor,
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                              ),
+                                              PopupMenuItem<String>(
+                                                value: 'priority_normal',
+                                                height: 40,
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.check_circle,
+                                                      size: 16,
+                                                      color: getIconColor(
+                                                        'priority_normal',
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      'Normal primero',
+                                                      style: getStyle(
+                                                        'priority_normal',
+                                                      ),
+                                                    ),
+                                                    if (currentKey ==
+                                                        'priority_normal') ...[
+                                                      const Spacer(),
+                                                      const Icon(
+                                                        Icons.check,
+                                                        size: 15,
+                                                        color: activeColor,
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                              ),
+                                              const PopupMenuDivider(),
+                                              const PopupMenuItem<String>(
+                                                enabled: false,
+                                                height: 30,
+                                                child: Text(
+                                                  'FECHA',
                                                   style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 12,
-                                                      color: Colors.grey)),
-                                            ),
-                                            PopupMenuItem<String>(
-                                              value: 'date_asc',
-                                              height: 40,
-                                              child: Row(children: [
-                                                Icon(
-                                                    Icons
-                                                        .calendar_month_outlined,
-                                                    size: 16,
-                                                    color: getIconColor(
-                                                        'date_asc')),
-                                                const SizedBox(width: 8),
-                                                Text('Más Antiguas',
-                                                    style:
-                                                        getStyle('date_asc')),
-                                                if (currentKey ==
-                                                    'date_asc') ...[
-                                                  const Spacer(),
-                                                  const Icon(Icons.check,
-                                                      size: 15,
-                                                      color: activeColor)
-                                                ]
-                                              ]),
-                                            ),
-                                            PopupMenuItem<String>(
-                                              value: 'date_desc',
-                                              height: 40,
-                                              child: Row(children: [
-                                                Icon(
-                                                    Icons
-                                                        .calendar_month_outlined,
-                                                    size: 16,
-                                                    color: getIconColor(
-                                                        'date_desc')),
-                                                const SizedBox(width: 8),
-                                                Text('Más Recientes',
-                                                    style:
-                                                        getStyle('date_desc')),
-                                                if (currentKey ==
-                                                    'date_desc') ...[
-                                                  const Spacer(),
-                                                  const Icon(Icons.check,
-                                                      size: 15,
-                                                      color: activeColor)
-                                                ]
-                                              ]),
-                                            ),
-                                            const PopupMenuDivider(),
-                                            const PopupMenuItem<String>(
-                                              enabled: false,
-                                              height: 30,
-                                              child: Text('CONSECUTIVO',
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                              ),
+                                              PopupMenuItem<String>(
+                                                value: 'date_asc',
+                                                height: 40,
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons
+                                                          .calendar_month_outlined,
+                                                      size: 16,
+                                                      color: getIconColor(
+                                                        'date_asc',
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      'Más Antiguas',
+                                                      style: getStyle(
+                                                        'date_asc',
+                                                      ),
+                                                    ),
+                                                    if (currentKey ==
+                                                        'date_asc') ...[
+                                                      const Spacer(),
+                                                      const Icon(
+                                                        Icons.check,
+                                                        size: 15,
+                                                        color: activeColor,
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                              ),
+                                              PopupMenuItem<String>(
+                                                value: 'date_desc',
+                                                height: 40,
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons
+                                                          .calendar_month_outlined,
+                                                      size: 16,
+                                                      color: getIconColor(
+                                                        'date_desc',
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      'Más Recientes',
+                                                      style: getStyle(
+                                                        'date_desc',
+                                                      ),
+                                                    ),
+                                                    if (currentKey ==
+                                                        'date_desc') ...[
+                                                      const Spacer(),
+                                                      const Icon(
+                                                        Icons.check,
+                                                        size: 15,
+                                                        color: activeColor,
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                              ),
+                                              const PopupMenuDivider(),
+                                              const PopupMenuItem<String>(
+                                                enabled: false,
+                                                height: 30,
+                                                child: Text(
+                                                  'CONSECUTIVO',
                                                   style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 12,
-                                                      color: Colors.grey)),
-                                            ),
-                                            PopupMenuItem<String>(
-                                              value: 'name_asc',
-                                              height: 40,
-                                              child: Row(children: [
-                                                Icon(Icons.arrow_upward,
-                                                    size: 16,
-                                                    color: getIconColor(
-                                                        'name_asc')),
-                                                const SizedBox(width: 8),
-                                                Text('Consecutivo (A-Z)',
-                                                    style:
-                                                        getStyle('name_asc')),
-                                                if (currentKey ==
-                                                    'name_asc') ...[
-                                                  const Spacer(),
-                                                  const Icon(Icons.check,
-                                                      size: 15,
-                                                      color: activeColor)
-                                                ]
-                                              ]),
-                                            ),
-                                            PopupMenuItem<String>(
-                                              value: 'name_desc',
-                                              height: 40,
-                                              child: Row(children: [
-                                                Icon(Icons.arrow_downward,
-                                                    size: 16,
-                                                    color: getIconColor(
-                                                        'name_desc')),
-                                                const SizedBox(width: 8),
-                                                Text('Consecutivo (Z-A)',
-                                                    style:
-                                                        getStyle('name_desc')),
-                                                if (currentKey ==
-                                                    'name_desc') ...[
-                                                  const Spacer(),
-                                                  const Icon(Icons.check,
-                                                      size: 15,
-                                                      color: activeColor)
-                                                ]
-                                              ]),
-                                            ),
-                                            const PopupMenuDivider(),
-                                            const PopupMenuItem<String>(
-                                              enabled: false,
-                                              height: 30,
-                                              child: Text('BACKORDER',
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                              ),
+                                              PopupMenuItem<String>(
+                                                value: 'name_asc',
+                                                height: 40,
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.arrow_upward,
+                                                      size: 16,
+                                                      color: getIconColor(
+                                                        'name_asc',
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      'Consecutivo (A-Z)',
+                                                      style: getStyle(
+                                                        'name_asc',
+                                                      ),
+                                                    ),
+                                                    if (currentKey ==
+                                                        'name_asc') ...[
+                                                      const Spacer(),
+                                                      const Icon(
+                                                        Icons.check,
+                                                        size: 15,
+                                                        color: activeColor,
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                              ),
+                                              PopupMenuItem<String>(
+                                                value: 'name_desc',
+                                                height: 40,
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.arrow_downward,
+                                                      size: 16,
+                                                      color: getIconColor(
+                                                        'name_desc',
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      'Consecutivo (Z-A)',
+                                                      style: getStyle(
+                                                        'name_desc',
+                                                      ),
+                                                    ),
+                                                    if (currentKey ==
+                                                        'name_desc') ...[
+                                                      const Spacer(),
+                                                      const Icon(
+                                                        Icons.check,
+                                                        size: 15,
+                                                        color: activeColor,
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                              ),
+                                              const PopupMenuDivider(),
+                                              const PopupMenuItem<String>(
+                                                enabled: false,
+                                                height: 30,
+                                                child: Text(
+                                                  'BACKORDER',
                                                   style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 12,
-                                                      color: Colors.grey)),
-                                            ),
-                                            PopupMenuItem<String>(
-                                              value: 'backorder_desc',
-                                              height: 40,
-                                              child: Row(children: [
-                                                Icon(Icons.file_copy,
-                                                    size: 16,
-                                                    color: getIconColor(
-                                                        'backorder_desc')),
-                                                const SizedBox(width: 8),
-                                                Text('Con Backorder primero',
-                                                    style: getStyle(
-                                                        'backorder_desc')),
-                                                if (currentKey ==
-                                                    'backorder_desc') ...[
-                                                  const Spacer(),
-                                                  const Icon(Icons.check,
-                                                      size: 15,
-                                                      color: activeColor)
-                                                ]
-                                              ]),
-                                            ),
-                                            PopupMenuItem<String>(
-                                              value: 'backorder_asc',
-                                              height: 40,
-                                              child: Row(children: [
-                                                Icon(Icons.file_copy_outlined,
-                                                    size: 16,
-                                                    color: getIconColor(
-                                                        'backorder_asc')),
-                                                const SizedBox(width: 8),
-                                                Text('Sin Backorder primero',
-                                                    style: getStyle(
-                                                        'backorder_asc')),
-                                                if (currentKey ==
-                                                    'backorder_asc') ...[
-                                                  const Spacer(),
-                                                  const Icon(Icons.check,
-                                                      size: 15,
-                                                      color: activeColor)
-                                                ]
-                                              ]),
-                                            ),
-                                          ];
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                              ),
+                                              PopupMenuItem<String>(
+                                                value: 'backorder_desc',
+                                                height: 40,
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.file_copy,
+                                                      size: 16,
+                                                      color: getIconColor(
+                                                        'backorder_desc',
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      'Con Backorder primero',
+                                                      style: getStyle(
+                                                        'backorder_desc',
+                                                      ),
+                                                    ),
+                                                    if (currentKey ==
+                                                        'backorder_desc') ...[
+                                                      const Spacer(),
+                                                      const Icon(
+                                                        Icons.check,
+                                                        size: 15,
+                                                        color: activeColor,
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                              ),
+                                              PopupMenuItem<String>(
+                                                value: 'backorder_asc',
+                                                height: 40,
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.file_copy_outlined,
+                                                      size: 16,
+                                                      color: getIconColor(
+                                                        'backorder_asc',
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      'Sin Backorder primero',
+                                                      style: getStyle(
+                                                        'backorder_asc',
+                                                      ),
+                                                    ),
+                                                    if (currentKey ==
+                                                        'backorder_asc') ...[
+                                                      const Spacer(),
+                                                      const Icon(
+                                                        Icons.check,
+                                                        size: 15,
+                                                        color: activeColor,
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                              ),
+                                            ];
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                        );
-                      }),
+                            ],
+                          );
+                        },
+                      ),
                     ),
                     Row(
                       children: [
@@ -637,18 +775,22 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                           onSearchCleared: () {
                             bloc.searchPickController.clear();
                             bloc.add(SearchPickEvent('', false));
-                            Future.delayed(const Duration(milliseconds: 100),
-                                () {
-                              FocusScope.of(context)
-                                  .requestFocus(focusNodeBuscar);
-                            });
+                            Future.delayed(
+                              const Duration(milliseconds: 100),
+                              () {
+                                FocusScope.of(
+                                  context,
+                                ).requestFocus(focusNodeBuscar);
+                              },
+                            );
                           },
                         ),
                         GestureDetector(
                           onTap: () async {
                             if (_isProcessing ||
                                 context.read<PickingPickBloc>().state
-                                    is PickingLoadingState) return;
+                                    is PickingLoadingState)
+                              return;
 
                             setState(() => _isProcessing = true);
 
@@ -656,27 +798,31 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                               FocusScope.of(context).unfocus();
                               var pickedDate =
                                   await DatePicker.showSimpleDatePicker(
-                                titleText: 'Seleccione una fecha',
-                                context,
-                                confirmText: 'Buscar',
-                                cancelText: 'Cancelar',
-                                firstDate: DateTime.now()
-                                    .subtract(const Duration(days: 30)),
-                                lastDate: DateTime.now(),
-                                dateFormat: "dd-MMMM-yyyy",
-                                locale: DateTimePickerLocale.es,
-                                looping: false,
-                              );
+                                    titleText: 'Seleccione una fecha',
+                                    context,
+                                    confirmText: 'Buscar',
+                                    cancelText: 'Cancelar',
+                                    firstDate: DateTime.now().subtract(
+                                      const Duration(days: 30),
+                                    ),
+                                    lastDate: DateTime.now(),
+                                    dateFormat: "dd-MMMM-yyyy",
+                                    locale: DateTimePickerLocale.es,
+                                    looping: false,
+                                  );
 
                               if (pickedDate != null) {
-                                final formattedDate = DateFormat('yyyy-MM-dd')
-                                    .format(pickedDate);
+                                final formattedDate = DateFormat(
+                                  'yyyy-MM-dd',
+                                ).format(pickedDate);
                                 context.read<PickingPickBloc>().add(
-                                      LoadHistoryPickEvent(true, formattedDate),
-                                    );
+                                  LoadHistoryPickEvent(true, formattedDate),
+                                );
                                 Navigator.pushReplacementNamed(
-                                    context, 'pick-done',
-                                    arguments: [true]);
+                                  context,
+                                  'pick-done',
+                                  arguments: [true],
+                                );
                               }
                             } finally {
                               if (mounted) {
@@ -708,12 +854,15 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                       },
                     ),
                     Expanded(
-                      child: bloc.listOfPickFiltered
+                      child:
+                          bloc.listOfPickFiltered
                               .where((batch) => batch.isSeparate == 0)
                               .isNotEmpty
                           ? ListView.builder(
                               padding: EdgeInsets.only(
-                                  top: 10, bottom: size.height * 0.15),
+                                top: 10,
+                                bottom: size.height * 0.15,
+                              ),
                               physics: const AlwaysScrollableScrollPhysics(),
                               itemCount: listToShow.length,
                               itemBuilder: (contextBuilder, index) {
@@ -726,24 +875,30 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                   ),
                                   child: GestureDetector(
                                     onTap: () => _handleTap(
-                                        context, contextBuilder, batch),
+                                      context,
+                                      contextBuilder,
+                                      batch,
+                                    ),
                                     child: Card(
                                       color: batch.isSeparate == 1
                                           ? Colors.green[100]
                                           : batch.isSelected == 1
-                                              ? primaryColorAppLigth
-                                              : Colors.white,
+                                          ? primaryColorAppLigth
+                                          : Colors.white,
                                       elevation: 3,
                                       child: ListTile(
                                         trailing: Icon(
                                           Icons.arrow_forward_ios,
                                           color: primaryColorApp,
                                         ),
-                                        title: Text(batch.name ?? '',
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: primaryColorApp,
-                                                fontWeight: FontWeight.bold)),
+                                        title: Text(
+                                          batch.name ?? '',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: primaryColorApp,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                         subtitle: Column(
                                           mainAxisAlignment:
                                               MainAxisAlignment.start,
@@ -754,10 +909,12 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                                   alignment:
                                                       Alignment.centerLeft,
                                                   child: Text(
-                                                      batch.zonaEntrega ?? '',
-                                                      style: const TextStyle(
-                                                          fontSize: 12,
-                                                          color: black)),
+                                                    batch.zonaEntrega ?? '',
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: black,
+                                                    ),
+                                                  ),
                                                 ),
                                               ],
                                             ),
@@ -766,11 +923,13 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                                 Align(
                                                   alignment:
                                                       Alignment.centerLeft,
-                                                  child: Text("Operación: ",
-                                                      style: TextStyle(
-                                                          fontSize: 12,
-                                                          color:
-                                                              primaryColorApp)),
+                                                  child: Text(
+                                                    "Operación: ",
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: primaryColorApp,
+                                                    ),
+                                                  ),
                                                 ),
                                                 Align(
                                                   alignment:
@@ -779,8 +938,9 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                                     batch.pickingType
                                                         .toString(),
                                                     style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: black),
+                                                      fontSize: 12,
+                                                      color: black,
+                                                    ),
                                                     maxLines: 2,
                                                     overflow:
                                                         TextOverflow.ellipsis,
@@ -789,23 +949,27 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                               ],
                                             ),
                                             if (batch.observacion != null &&
-                                                batch.observacion!
+                                                batch
+                                                    .observacion!
                                                     .isNotEmpty) ...[
                                               Align(
                                                 alignment: Alignment.centerLeft,
-                                                child: Text("Observación: ",
-                                                    style: TextStyle(
-                                                        fontSize: 12,
-                                                        color:
-                                                            primaryColorApp)),
+                                                child: Text(
+                                                  "Observación: ",
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: primaryColorApp,
+                                                  ),
+                                                ),
                                               ),
                                               Align(
                                                 alignment: Alignment.centerLeft,
                                                 child: Text(
                                                   batch.observacion.toString(),
                                                   style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: black),
+                                                    fontSize: 12,
+                                                    color: black,
+                                                  ),
                                                   maxLines: 2,
                                                   overflow:
                                                       TextOverflow.ellipsis,
@@ -816,22 +980,24 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                               alignment: Alignment.centerLeft,
                                               child: Row(
                                                 children: [
-                                                  Text('Prioridad: ',
-                                                      style: TextStyle(
-                                                          fontSize: 12,
-                                                          color:
-                                                              primaryColorApp)),
+                                                  Text(
+                                                    'Prioridad: ',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: primaryColorApp,
+                                                    ),
+                                                  ),
                                                   Text(
                                                     batch.priority == '0'
                                                         ? 'Normal'
                                                         : 'Alta'
-                                                            "",
+                                                              "",
                                                     style: TextStyle(
                                                       fontSize: 12,
                                                       color:
                                                           batch.priority == '0'
-                                                              ? black
-                                                              : red,
+                                                          ? black
+                                                          : red,
                                                     ),
                                                   ),
                                                 ],
@@ -855,14 +1021,18 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                                   Text(
                                                     batch.fechaCreacion != null
                                                         ? DateFormat(
-                                                                'dd/MM/yyyy')
-                                                            .format(DateTime
-                                                                .parse(batch
-                                                                    .fechaCreacion!))
+                                                            'dd/MM/yyyy',
+                                                          ).format(
+                                                            DateTime.parse(
+                                                              batch
+                                                                  .fechaCreacion!,
+                                                            ),
+                                                          )
                                                         : "Sin fecha",
                                                     style: const TextStyle(
-                                                        color: black,
-                                                        fontSize: 12),
+                                                      color: black,
+                                                      fontSize: 12,
+                                                    ),
                                                   ),
                                                 ],
                                               ),
@@ -882,14 +1052,15 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                                       batch.proveedor == ""
                                                           ? "Sin contacto"
                                                           : batch.proveedor ??
-                                                              '',
+                                                                '',
                                                       style: TextStyle(
-                                                          fontSize: 12,
-                                                          color:
-                                                              batch.proveedor ==
-                                                                      ""
-                                                                  ? red
-                                                                  : black),
+                                                        fontSize: 12,
+                                                        color:
+                                                            batch.proveedor ==
+                                                                ""
+                                                            ? red
+                                                            : black,
+                                                      ),
                                                       maxLines: 2,
                                                       overflow:
                                                           TextOverflow.ellipsis,
@@ -911,8 +1082,9 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                                   const Text(
                                                     "Doc. Origen: ",
                                                     style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: black),
+                                                      fontSize: 12,
+                                                      color: black,
+                                                    ),
                                                     maxLines: 2,
                                                     overflow:
                                                         TextOverflow.ellipsis,
@@ -921,9 +1093,9 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                                     child: Text(
                                                       batch.origin.toString(),
                                                       style: TextStyle(
-                                                          fontSize: 12,
-                                                          color:
-                                                              primaryColorApp),
+                                                        fontSize: 12,
+                                                        color: primaryColorApp,
+                                                      ),
                                                       maxLines: 2,
                                                       overflow:
                                                           TextOverflow.ellipsis,
@@ -939,20 +1111,22 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                                   Align(
                                                     alignment:
                                                         Alignment.centerLeft,
-                                                    child: Icon(Icons.file_copy,
-                                                        color: primaryColorApp,
-                                                        size: 15),
+                                                    child: Icon(
+                                                      Icons.file_copy,
+                                                      color: primaryColorApp,
+                                                      size: 15,
+                                                    ),
                                                   ),
-                                                  const SizedBox(
-                                                    width: 5,
-                                                  ),
+                                                  const SizedBox(width: 5),
                                                   Text(
-                                                      batch.backorderName ?? '',
-                                                      style: TextStyle(
-                                                          color: black,
-                                                          fontSize: 12,
-                                                          fontWeight:
-                                                              FontWeight.bold)),
+                                                    batch.backorderName ?? '',
+                                                    style: TextStyle(
+                                                      color: black,
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
                                                 ],
                                               ),
                                             ),
@@ -969,8 +1143,9 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                                   const Text(
                                                     "Cantidad de lineas: ",
                                                     style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: black),
+                                                      fontSize: 12,
+                                                      color: black,
+                                                    ),
                                                     maxLines: 2,
                                                     overflow:
                                                         TextOverflow.ellipsis,
@@ -980,9 +1155,9 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                                       batch.numeroLineas
                                                           .toString(),
                                                       style: TextStyle(
-                                                          fontSize: 12,
-                                                          color:
-                                                              primaryColorApp),
+                                                        fontSize: 12,
+                                                        color: primaryColorApp,
+                                                      ),
                                                       maxLines: 2,
                                                       overflow:
                                                           TextOverflow.ellipsis,
@@ -1004,8 +1179,9 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                                   const Text(
                                                     "Cantidad unidades: ",
                                                     style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: black),
+                                                      fontSize: 12,
+                                                      color: black,
+                                                    ),
                                                     maxLines: 2,
                                                     overflow:
                                                         TextOverflow.ellipsis,
@@ -1015,9 +1191,9 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                                       batch.numeroItems
                                                           .toString(),
                                                       style: TextStyle(
-                                                          fontSize: 12,
-                                                          color:
-                                                              primaryColorApp),
+                                                        fontSize: 12,
+                                                        color: primaryColorApp,
+                                                      ),
                                                       maxLines: 2,
                                                       overflow:
                                                           TextOverflow.ellipsis,
@@ -1041,14 +1217,15 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                                       batch.responsable == ""
                                                           ? "Sin responsable"
                                                           : batch.responsable ??
-                                                              '',
+                                                                '',
                                                       style: TextStyle(
-                                                          fontSize: 12,
-                                                          color:
-                                                              batch.responsable ==
-                                                                      ""
-                                                                  ? red
-                                                                  : black),
+                                                        fontSize: 12,
+                                                        color:
+                                                            batch.responsable ==
+                                                                ""
+                                                            ? red
+                                                            : black,
+                                                      ),
                                                       maxLines: 2,
                                                       overflow:
                                                           TextOverflow.ellipsis,
@@ -1059,16 +1236,17 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                                       ? GestureDetector(
                                                           onTap: () {
                                                             showDialog(
-                                                                context:
+                                                              context: context,
+                                                              builder:
+                                                                  (
                                                                     context,
-                                                                builder:
-                                                                    (context) =>
-                                                                        DialogInfo(
-                                                                          title:
-                                                                              'Tiempo de inicio',
-                                                                          body:
-                                                                              'Este Pick fue iniciado a las ${batch.startTimeTransfer}',
-                                                                        ));
+                                                                  ) => DialogInfo(
+                                                                    title:
+                                                                        'Tiempo de inicio',
+                                                                    body:
+                                                                        'Este Pick fue iniciado a las ${batch.startTimeTransfer}',
+                                                                  ),
+                                                            );
                                                           },
                                                           child: Icon(
                                                             Icons.timer_sharp,
@@ -1094,12 +1272,14 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   SizedBox(height: 10),
-                                  Text('No se encontraron resultados',
-                                      style:
-                                          TextStyle(fontSize: 18, color: grey)),
-                                  Text('Intenta con otra búsqueda',
-                                      style:
-                                          TextStyle(fontSize: 14, color: grey)),
+                                  Text(
+                                    'No se encontraron resultados',
+                                    style: TextStyle(fontSize: 18, color: grey),
+                                  ),
+                                  Text(
+                                    'Intenta con otra búsqueda',
+                                    style: TextStyle(fontSize: 14, color: grey),
+                                  ),
                                 ],
                               ),
                             ),

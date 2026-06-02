@@ -100,7 +100,7 @@ class DatumConteo {
 
   final List<Allowed>? allowedCategories;
   final List<Allowed>? allowedLocations;
-  final List<dynamic>? allowedProducts;
+  final List<Allowed>? allowedProducts;
 
   final List<CountedLine>? countedLines;
   final List<CountedLine>? countedLinesDone;
@@ -172,9 +172,10 @@ class DatumConteo {
             ? []
             : List<Allowed>.from(
                 json["allowed_locations"]!.map((x) => Allowed.fromMap(x))),
-        allowedProducts: json["allowed_products"] == null
+        allowedProducts:  json["allowed_products"] == null
             ? []
-            : List<dynamic>.from(json["allowed_products"]!.map((x) => x)),
+            : List<Allowed>.from(
+                json["allowed_products"]!.map((x) => Allowed.fromMap(x))),
         countedLines: json["counted_lines"] == null
             ? []
             : List<CountedLine>.from(

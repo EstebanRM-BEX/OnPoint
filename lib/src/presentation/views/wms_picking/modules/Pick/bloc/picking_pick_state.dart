@@ -219,7 +219,10 @@ class LoadingSendProductEdit extends PickingPickState {}
 
 class ProductEditOk extends PickingPickState {}
 
-class ProductEditError extends PickingPickState {}
+class ProductEditError extends PickingPickState {
+  final String error;
+  ProductEditError(this.error);
+}
 
 //*estados para finalizar la separacion
 class PickingOkState extends PickingPickState {}

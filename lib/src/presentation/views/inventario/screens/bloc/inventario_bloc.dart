@@ -1,6 +1,7 @@
 // ignore_for_file: unnecessary_null_comparison
 
 import 'package:bloc/bloc.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
@@ -90,13 +91,17 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
     on<InventarioEvent>((event, emit) {});
 
     //*metodo para cargar las ubicaciones
-    on<GetLocationsEvent>(_onLoadLocations);
+    on<GetLocationsEvent>(_onLoadLocations,
+        transformer: restartable());
     //metodo para buscar una ubicacion
-    on<SearchLocationEvent>(_onSearchLocationEvent);
+    on<SearchLocationEvent>(_onSearchLocationEvent,
+        transformer: droppable());
     //metodo para buscar un lote
-    on<SearchLotevent>(_onSearchLoteEvent);
+    on<SearchLotevent>(_onSearchLoteEvent,
+        transformer: droppable());
     //*metodo para bucar un producto
-    on<SearchProductEvent>(_onSearchProductEvent);
+    on<SearchProductEvent>(_onSearchProductEvent,
+        transformer: droppable());
 
     on<ValidateFieldsEvent>(_onValidateFields);
 
@@ -105,8 +110,10 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
     on<ChangeProductIsOkEvent>(_onChangeProductIsOkEvent);
     on<ChangeIsOkQuantity>(_onChangeQuantityIsOkEvent);
     //*traermos todos los productos del inventario
-    on<GetProductsEvent>(_onGetProducts);
-    on<GetProductsForDB>(_onGetProductsBD);
+    on<GetProductsEvent>(_onGetProducts,
+        transformer: restartable());
+    on<GetProductsForDB>(_onGetProductsBD,
+        transformer: droppable());
 
     //*limpiamos los campos y el estado
     on<CleanFieldsEent>(_onCleanFields);
@@ -737,5 +744,20 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       emit(LoadLocationsFailure('Error al cargar las ubicaciones'));
       debugPrint('Error en el fetch de ubicaciones: $e=>$s');
     }
+  }
+
+  @override
+  Future<void> close() {
+    searchControllerLocation.dispose();
+    searchControllerProducts.dispose();
+    searchControllerLote.dispose();
+    newLoteController.dispose();
+    dateLoteController.dispose();
+    controllerLocation.dispose();
+    controllerLote.dispose();
+    controllerProduct.dispose();
+    controllerQuantity.dispose();
+    cantidadController.dispose();
+    return super.close();
   }
 }

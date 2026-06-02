@@ -1,6 +1,7 @@
 // ignore_for_file: unrelated_type_equality_checks
 
 import 'package:bloc/bloc.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
@@ -29,6 +30,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   List<DatumConteo> ordenesDeConteo = [];
   List<DatumConteo> ordenesDeConteoOriginals = [];
   List<CountedLine> lineasContadas = [];
+  List<Allowed> productosOrdenConteo = [];
   List<Allowed> ubicacionesConteo = [];
   List<Allowed> categoriasConteo = [];
   List<Barcodes> listOfBarcodes = [];
@@ -150,7 +152,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
 
     //*metodo para crear un lote a un producto
     on<CreateLoteProduct>(_onCreateLoteProduct);
-    on<SearchLotevent>(_onSearchLoteEvent);
+    on<SearchLotevent>(_onSearchLoteEvent, transformer: droppable());
 
     //metodo para enviar un producto contado al wms
     on<SendProductConteoEvent>(_onSendProductConteoEvent);
@@ -158,10 +160,13 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     on<DeleteProductConteoEvent>(_onDeleteProductConteoEvent);
 
     //*metodo para cargar las ubicaciones
-    on<GetLocationsConteoEvent>(_onLoadLocations);
+    on<GetLocationsConteoEvent>(_onLoadLocations, transformer: restartable());
 
     //metodo para obtener los productos de la bd
-    on<GetProductsFromDBEvent>(_onGetProductsFromDBEvent);
+    on<GetProductsFromDBEvent>(
+      _onGetProductsFromDBEvent,
+      transformer: droppable(),
+    );
 
     //metodo para actualizar informacion de un producto enviado
     on<UpdateProductConteoEvent>(_onUpdateProductConteoEvent);
@@ -171,22 +176,26 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
 
     //todo estados para un new product
     //Metodo para cargar informacion pa crear un nuevo producto
-    on<LoadNewProductEvent>(_onLoadNewProductEvent);
+    on<LoadNewProductEvent>(_onLoadNewProductEvent, transformer: restartable());
     //metodo para buscar una ubicacion
-    on<SearchLocationEvent>(_onSearchLocationEvent);
+    on<SearchLocationEvent>(_onSearchLocationEvent, transformer: droppable());
     //*metodo para bucar un producto
-    on<SearchProductEvent>(_onSearchProductEvent);
+    on<SearchProductEvent>(_onSearchProductEvent, transformer: droppable());
     on<ViewProductImageEvent>(_onViewProductImageEvent);
   }
 
   void _onViewProductImageEvent(
-      ViewProductImageEvent event, Emitter<ConteoState> emit) async {
+    ViewProductImageEvent event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
       final response = await _inventarioRepository.viewUrlImageProduct(
-          event.idProduct, true);
+        event.idProduct,
+        true,
+      );
 
       if (response.result?.code == 200) {
         if (response.result?.result == null ||
@@ -206,7 +215,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   }
 
   void _onOrderConteosByStateEvent(
-      OrderConteosByStateEvent event, Emitter<ConteoState> emit) {
+    OrderConteosByStateEvent event,
+    Emitter<ConteoState> emit,
+  ) {
     try {
       //segun el estado que llegue en el evento ordenamos la lista
       ordenesDeConteo = ordenesDeConteoOriginals;
@@ -223,9 +234,11 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         //en progreso
 
         ordenesDeConteo = ordenesDeConteo
-            .where((orden) =>
-                orden.numeroItemsContados != 0 &&
-                orden.numeroItemsContados! < orden.numeroLineas!)
+            .where(
+              (orden) =>
+                  orden.numeroItemsContados != 0 &&
+                  orden.numeroItemsContados! < orden.numeroLineas!,
+            )
             .toList();
       } else if (event.stateOrder == 'pending') {
         //pendientes
@@ -239,9 +252,11 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     }
   }
 
-//metodo para actualizar un producto enviado
+  //metodo para actualizar un producto enviado
   void _onUpdateProductConteoEvent(
-      UpdateProductConteoEvent event, Emitter<ConteoState> emit) async {
+    UpdateProductConteoEvent event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       emit(UpdateProductLoadingEvent());
       int userId = await PrefUtils.getUserId();
@@ -265,8 +280,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
           quantityCounted: event.quantity,
           observation: 'Sin novedad',
           timeLine: double.parse(event.productExist.time.toString()).toInt(),
-          fechaTransaccion:
-              DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+          fechaTransaccion: DateFormat(
+            'yyyy-MM-dd HH:mm:ss',
+          ).format(DateTime.now()),
           idOperario: userId,
           locationId: event.productExist.locationId,
           loteId: event.productExist.lotId,
@@ -278,8 +294,11 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
 
         //validamos la respuesta
         if (response.result?.code != 200) {
-          emit(SendProductConteoFailure(
-              response.result?.msg ?? 'Error al enviar el producto'));
+          emit(
+            SendProductConteoFailure(
+              response.result?.msg ?? 'Error al enviar el producto',
+            ),
+          );
           return;
         }
 
@@ -319,8 +338,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
           quantityCounted: newQuantity,
           observation: 'Sin novedad',
           timeLine: double.parse(event.productExist.time.toString()).toInt(),
-          fechaTransaccion:
-              DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+          fechaTransaccion: DateFormat(
+            'yyyy-MM-dd HH:mm:ss',
+          ).format(DateTime.now()),
           idOperario: userId,
           locationId: event.productExist.locationId,
           loteId: event.productExist.lotId,
@@ -329,8 +349,11 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         final response = await _repository.sendProductConteo(true, productSend);
         //validamos la respuesta
         if (response.result?.code != 200) {
-          emit(SendProductConteoFailure(
-              response.result?.msg ?? 'Error al enviar el producto'));
+          emit(
+            SendProductConteoFailure(
+              response.result?.msg ?? 'Error al enviar el producto',
+            ),
+          );
           return;
         }
         // actualizamos el estado del producto en la bd
@@ -353,10 +376,12 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   Future<CountedLine?> validateProductSentEvent(ConteoItem product) async {
     try {
       debugPrint(
-          "locationID: ${product.locationId} productID: ${product.productId} loteID: ${product.loteId}");
+        "locationID: ${product.locationId} productID: ${product.productId} loteID: ${product.loteId}",
+      );
 
-      final productosEnvidos =
-          lineasContadas.where((p) => p.isDoneItem == 1).toList();
+      final productosEnvidos = lineasContadas
+          .where((p) => p.isDoneItem == 1)
+          .toList();
 
       // Buscar directamente en las líneas contadas
       final existingProduct = productosEnvidos.firstWhereOrNull(
@@ -383,10 +408,12 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   Future<CountedLine?> validateProductPorHacerEvent(ConteoItem product) async {
     try {
       debugPrint(
-          "locationID: ${product.locationId} productID: ${product.productId} loteID: ${product.loteId}");
+        "locationID: ${product.locationId} productID: ${product.productId} loteID: ${product.loteId}",
+      );
 
-      final productosPorHacer =
-          lineasContadas.where((p) => p.isDoneItem != 1).toList();
+      final productosPorHacer = lineasContadas
+          .where((p) => p.isDoneItem != 1)
+          .toList();
 
       // Buscar directamente en las líneas contadas
       final existingProduct = productosPorHacer.firstWhereOrNull(
@@ -410,13 +437,21 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   }
 
   void _onGetProductsFromDBEvent(
-      GetProductsFromDBEvent event, Emitter<ConteoState> emit) async {
+    GetProductsFromDBEvent event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       emit(GetProductsLoadingBD());
       final response = await db.productoInventarioRepository.getAllProducts();
       productos.clear();
       if (response.isNotEmpty) {
         productos.addAll(response);
+        // Para filterType "location" los filtros se asignan aquí, después de
+        // que la maestra está lista, no antes (evita asignar lista vacía).
+        if (ordenConteo.filterType == 'location') {
+          productosFilters = List.of(productos);
+          productosFiltersSearch = List.of(productos);
+        }
         debugPrint('productos de la bd::::: ${productos.length}');
         emit(GetProductsSuccessBD(response));
       } else {
@@ -436,23 +471,26 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       debugPrint('🔍 Buscando productos con query: "${event.query}"');
       emit(SearchLoading());
 
-      productosFiltersSearch = [];
-      productosFiltersSearch = productos;
+      // Para filterType "location" se busca en la maestra completa;
+      // para "category" / "product" solo en los productos de la orden.
+      final List<Product> listaFuente = ordenConteo.filterType == "location"
+          ? productos
+          : productosFilters;
+
       final query = event.query.toLowerCase();
       if (query.isEmpty) {
-        productosFiltersSearch = productos;
+        productosFiltersSearch = listaFuente;
       } else {
-        final List<Product> filtrados = productos.where((product) {
+        productosFiltersSearch = listaFuente.where((product) {
           final name = (product.name ?? '').toLowerCase();
           final code = (product.code ?? '').toString().trim();
           final barcode = (product.barcode ?? '').toString().trim();
-
-          return name.contains(query.toLowerCase()) ||
+          return name.contains(query) ||
               code.contains(query) ||
               barcode.contains(query);
         }).toList();
-        productosFiltersSearch = filtrados;
       }
+
       emit(SearchProductSuccess(productosFiltersSearch));
     } catch (e, s) {
       debugPrint('❌ Error en SearchProductEvent: $e\n$s');
@@ -461,16 +499,25 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   }
 
   void _onSearchLocationEvent(
-      SearchLocationEvent event, Emitter<ConteoState> emit) async {
+    SearchLocationEvent event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       emit(SearchLoading());
-      ubicacionesFiltersSearch = [];
-      ubicacionesFiltersSearch = ubicaciones;
+
+      // Para filterType "category"/"product" se busca en la maestra completa;
+      // para "location" / "combined" solo en las ubicaciones de la orden.
+      final listaFuente =
+          (ordenConteo.filterType == "category" ||
+              ordenConteo.filterType == "product")
+          ? ubicaciones
+          : ubicacionesFilters;
+
       final query = event.query.toLowerCase();
       if (query.isEmpty) {
-        ubicacionesFiltersSearch = ubicacionesFilters;
+        ubicacionesFiltersSearch = listaFuente;
       } else {
-        ubicacionesFiltersSearch = ubicacionesFilters.where((location) {
+        ubicacionesFiltersSearch = listaFuente.where((location) {
           final name = (location.name ?? '').toLowerCase();
           final barcode = (location.barcode ?? '').toLowerCase();
           return name.contains(query) || barcode.contains(query);
@@ -484,67 +531,156 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   }
 
   void _onLoadNewProductEvent(
-      LoadNewProductEvent event, Emitter<ConteoState> emit) async {
+    LoadNewProductEvent event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       emit(LoadNewProductLoading());
-      ubicacionesFilters.clear();
-      ubicacionesFiltersSearch.clear();
-      productosFilters.clear();
-      productosFiltersSearch.clear();
-
+      print('entro al bloc');
+      //vamos a cargar la informacion pa crear un nuevo producto
+      //todo: para este filtro solo podemos crear un producto con las ubicaciones de la orden de conteo y los productos de la orden
       if (ordenConteo.filterType == 'combined') {
+        //llenamos el listado de ubicacioones
+        ubicacionesFilters.clear();
+        ubicacionesFiltersSearch.clear();
+        ubicacionesFilters = ubicacionesConteo.map((allowed) {
+          return ResultUbicaciones(
+            id: allowed.id ?? 0,
+            name: allowed.name ?? '',
+            barcode: allowed.barcode ?? '',
+            locationId: allowed.id ?? 0,
+            locationName: allowed.name ?? '',
+            idWarehouse: 0,
+            warehouseName: '',
+          );
+        }).toList();
+        ubicacionesFiltersSearch = ubicacionesFilters;
+        //llenamos la lista de productos
+        productosFilters.clear();
+        productosFiltersSearch.clear();
+
         final productsOrder = await db.productoOrdenConteoRepository
             .getProductosByOrderId(ordenConteo.id ?? 0);
 
-        ubicacionesFilters = _mapAllowedToResultUbicaciones(ubicacionesConteo);
-        productosFilters = _mapOrderProductsToProduct(productsOrder);
+        productosFilters = productsOrder.map((product) {
+          return Product(
+            productId: product.productId,
+            name: product.productName,
+            code: product.productCode,
+            category: product.categoryName,
+            lotId: product.lotId,
+            lotName: product.lotName,
+            barcode: product.productBarcode,
+            otherBarcodes: [],
+            productPacking: [],
+            tracking: product.productTracking,
+            useExpirationDate: product.fechaVencimiento?.isNotEmpty ?? true
+                ? true
+                : false,
+            expirationTime: "",
+            weight: product.weight,
+            weightUomName: "",
+            volume: 0,
+            volumeUomName: '',
+            expirationDate: product.fechaVencimiento,
+            uom: product.uom,
+            locationId: product.locationId ?? 0,
+            locationName: product.locationName ?? '',
+            quantity: 0, // Inicializamos la cantidad en 0
+          );
+        }).toList();
+        productosFiltersSearch = productosFilters;
+        emit(LoadNewProductSuccess());
+        return;
+      } else if (ordenConteo.filterType == "location") {
+        add(GetProductsFromDBEvent());
+        //las ubicaciones que llegan en la orden
+        ubicacionesFilters.clear();
+        ubicacionesFiltersSearch.clear();
+        ubicacionesFilters = ubicacionesConteo.map((allowed) {
+          return ResultUbicaciones(
+            id: allowed.id ?? 0,
+            name: allowed.name ?? '',
+            barcode: allowed.barcode ?? '',
+            locationId: allowed.id ?? 0,
+            locationName: allowed.name ?? '',
+            idWarehouse: 0,
+            warehouseName: '',
+          );
+        }).toList();
+        ubicacionesFiltersSearch = ubicacionesFilters;
 
-      } else if (ordenConteo.filterType == 'location') {
-        // Iniciamos ambas queries en paralelo antes de awaitar cualquiera
-        final locationsFuture = Future.value(
-            _mapAllowedToResultUbicaciones(ubicacionesConteo));
-        final productsFuture =
-            db.productoInventarioRepository.getAllProducts();
+       
+        emit(LoadNewProductSuccess());
+        return;
 
-        ubicacionesFilters = await locationsFuture;
-        final allProducts = await productsFuture;
-        productos
-          ..clear()
-          ..addAll(allProducts);
-        productosFilters = List.of(productos);
+        //filtro por ubicacion
+      } else if (ordenConteo.filterType == "category" ||
+          ordenConteo.filterType == "product") {
+        add(GetLocationsConteoEvent());
+        //cargammos la lista de productos de la orden
+        productosFilters.clear();
+        productosFiltersSearch.clear();
 
-      } else if (ordenConteo.filterType == 'category' ||
-          ordenConteo.filterType == 'product') {
-        // Ambas queries en paralelo — evita la race condition del add() anterior
-        final locationsFuture = db.ubicacionesRepository.getAllUbicaciones();
-        final productsFuture = db.productoOrdenConteoRepository
+        final productsOrder = await db.productoOrdenConteoRepository
             .getProductosByOrderId(ordenConteo.id ?? 0);
 
-        final allLocations = await locationsFuture;
-        final productsOrder = await productsFuture;
+        productosFilters = productsOrder.map((product) {
+          return Product(
+            productId: product.productId,
+            name: product.productName,
+            code: product.productCode,
+            category: product.categoryName,
+            lotId: product.lotId,
+            lotName: product.lotName,
+            barcode: product.productBarcode,
+            otherBarcodes: [],
+            productPacking: [],
+            tracking: product.productTracking,
+            useExpirationDate: product.fechaVencimiento?.isNotEmpty ?? true
+                ? true
+                : false,
+            expirationTime: "",
+            weight: product.weight,
+            weightUomName: "",
+            volume: 0,
+            volumeUomName: '',
+            expirationDate: product.fechaVencimiento,
+            uom: product.uom,
+            locationId: product.locationId ?? 0,
+            locationName: product.locationName ?? '',
+            quantity: 0, // Inicializamos la cantidad en 0
+          );
+        }).toList();
+        productosFiltersSearch = productosFilters;
 
-        ubicaciones
-          ..clear()
-          ..addAll(allLocations);
+        //llenamos el listado de ubicacioones de la maestra
+        ubicacionesFilters.clear();
+        ubicacionesFiltersSearch.clear();
 
-        ubicacionesFilters = List.of(ubicaciones);
-        productosFilters = _mapOrderProductsToProduct(productsOrder);
+        ubicacionesFiltersSearch = ubicaciones;
+        ubicacionesFilters = ubicaciones;
       }
-
-      ubicacionesFiltersSearch = List.of(ubicacionesFilters);
-      productosFiltersSearch = List.of(productosFilters);
 
       debugPrint("ubicacionesFilters: ${ubicacionesFilters.length}");
       debugPrint("productosFilters: ${productosFilters.length}");
 
+      //cargamos las ubicaciones de la maestra
+
       emit(LoadNewProductSuccess());
     } catch (e) {
-      emit(LoadNewProductFailure(
-          'Error al cargar los datos para el nuevo producto'));
+      emit(
+        LoadNewProductFailure(
+          'Error al cargar los datos para el nuevo producto',
+        ),
+      );
     }
   }
+
   void _onLoadLocations(
-      GetLocationsConteoEvent event, Emitter<ConteoState> emit) async {
+    GetLocationsConteoEvent event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       emit(LoadLocationsLoading());
       final response = await db.ubicacionesRepository.getAllUbicaciones();
@@ -563,7 +699,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   }
 
   void _onDeleteProductConteoEvent(
-      DeleteProductConteoEvent event, Emitter<ConteoState> emit) async {
+    DeleteProductConteoEvent event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       emit(DeleteProductConteoLoading());
 
@@ -571,38 +709,56 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
 
       if (event.currentProduct.isOriginal == 1) {
         final response = await _repository.deleteInfoProductConteo(
-            false, event.currentProduct.idMove ?? 0);
+          false,
+          event.currentProduct.idMove ?? 0,
+        );
 
         if (response.result?.code == 200) {
-          await db.productoOrdenConteoRepository
-              .deleteInfoProductConteo(event.currentProduct);
+          await db.productoOrdenConteoRepository.deleteInfoProductConteo(
+            event.currentProduct,
+          );
           //actualizamos la lista de productos contados
-          add(LoadConteoAndProductsEvent(
-              ordenConteoId: event.currentProduct.orderId ?? 0));
+          add(
+            LoadConteoAndProductsEvent(
+              ordenConteoId: event.currentProduct.orderId ?? 0,
+            ),
+          );
 
           emit(DeleteProductConteoSuccess());
           //borramos el producto de la base de datos
         } else {
-          emit(DeleteProductConteoFailure(
-              response.result?.msg ?? 'Error al eliminar el producto'));
+          emit(
+            DeleteProductConteoFailure(
+              response.result?.msg ?? 'Error al eliminar el producto',
+            ),
+          );
         }
       } else {
         //el producto es nuevo solo lo borramos de la bd
         final response = await _repository.deleteProductConteo(
-            false, event.currentProduct.idMove ?? 0);
+          false,
+          event.currentProduct.idMove ?? 0,
+        );
 
         if (response.result?.code == 200) {
-          await db.productoOrdenConteoRepository
-              .deleteProductConteo(event.currentProduct);
+          await db.productoOrdenConteoRepository.deleteProductConteo(
+            event.currentProduct,
+          );
           //actualizamos la lista de productos contados
-          add(LoadConteoAndProductsEvent(
-              ordenConteoId: event.currentProduct.orderId ?? 0));
+          add(
+            LoadConteoAndProductsEvent(
+              ordenConteoId: event.currentProduct.orderId ?? 0,
+            ),
+          );
 
           emit(DeleteProductConteoSuccess());
           //borramos el producto de la base de datos
         } else {
-          emit(DeleteProductConteoFailure(
-              response.result?.msg ?? 'Error al eliminar el producto'));
+          emit(
+            DeleteProductConteoFailure(
+              response.result?.msg ?? 'Error al eliminar el producto',
+            ),
+          );
         }
       }
     } catch (e, s) {
@@ -612,7 +768,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   }
 
   void _onSendProductConteoEvent(
-      SendProductConteoEvent event, Emitter<ConteoState> emit) async {
+    SendProductConteoEvent event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       emit(SendProductConteoLoading());
 
@@ -642,7 +800,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       var difference = dateEnd.difference(dateStart);
       int time = difference.inSeconds;
 
-//construimos el producto a enviar
+      //construimos el producto a enviar
       final productSend = ConteoItem(
         lineId: event.currentProduct.idMove.toString(),
         orderId: ordenConteo.id ?? 0,
@@ -685,54 +843,56 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
           productSendPorHacer.locationId.toString(),
         );
 
-        final response =
-            await _repository.sendProductConteo(true, productSendPorHacer);
+        final response = await _repository.sendProductConteo(
+          true,
+          productSendPorHacer,
+        );
 
         if (response.result?.code == 200) {
-//validamso si el producto tiene lote para guardarlo con el lote que seleccionamos
+          //validamso si el producto tiene lote para guardarlo con el lote que seleccionamos
           if (event.currentProduct.productTracking == "lot") {
             //actualizamos el lote del producto en la bd
             await db.productoOrdenConteoRepository
                 .setFieldTableProductOrdenConteo(
-              ordenConteo.id ?? 0,
-              productSendPorHacer.productId,
-              'lot_id',
-              currentProductLote?.id ?? 0,
-              productSendPorHacer.lineId.toString(),
-              productSendPorHacer.locationId.toString(),
-            );
+                  ordenConteo.id ?? 0,
+                  productSendPorHacer.productId,
+                  'lot_id',
+                  currentProductLote?.id ?? 0,
+                  productSendPorHacer.lineId.toString(),
+                  productSendPorHacer.locationId.toString(),
+                );
 
             await db.productoOrdenConteoRepository
                 .setFieldTableProductOrdenConteo(
-              ordenConteo.id ?? 0,
-              productSendPorHacer.productId,
-              'lot_name',
-              currentProductLote?.name ?? '',
-              productSendPorHacer.lineId.toString(),
-              productSendPorHacer.locationId.toString(),
-            );
+                  ordenConteo.id ?? 0,
+                  productSendPorHacer.productId,
+                  'lot_name',
+                  currentProductLote?.name ?? '',
+                  productSendPorHacer.lineId.toString(),
+                  productSendPorHacer.locationId.toString(),
+                );
           }
           //actualzamos la cantidad del producto en la bd
           await db.productoOrdenConteoRepository
               .setFieldTableProductOrdenConteo(
-            ordenConteo.id ?? 0,
-            productSendPorHacer.productId,
-            "quantity_counted",
-            productSendPorHacer.quantityCounted ?? 0,
-            productSendPorHacer.lineId.toString(),
-            productSendPorHacer.locationId.toString(),
-          );
+                ordenConteo.id ?? 0,
+                productSendPorHacer.productId,
+                "quantity_counted",
+                productSendPorHacer.quantityCounted ?? 0,
+                productSendPorHacer.lineId.toString(),
+                productSendPorHacer.locationId.toString(),
+              );
 
           // actualizamos el estado del producto en la bd
           await db.productoOrdenConteoRepository
               .setFieldTableProductOrdenConteo(
-            ordenConteo.id ?? 0,
-            productSendPorHacer.productId,
-            'is_done_item',
-            1,
-            productSendPorHacer.lineId.toString(),
-            productSendPorHacer.locationId.toString(),
-          );
+                ordenConteo.id ?? 0,
+                productSendPorHacer.productId,
+                'is_done_item',
+                1,
+                productSendPorHacer.lineId.toString(),
+                productSendPorHacer.locationId.toString(),
+              );
 
           await db.ordenRepository.incrementNumeroItemsContados(
             ordenConteo.id ?? 0,
@@ -767,31 +927,31 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       final response = await _repository.sendProductConteo(true, productSend);
 
       if (response.result?.code == 200) {
-//validamso si el producto tiene lote para guardarlo con el lote que seleccionamos
+        //validamso si el producto tiene lote para guardarlo con el lote que seleccionamos
         if (event.currentProduct.productTracking == "lot") {
           //actualizamos el lote del producto en la bd
           await db.productoOrdenConteoRepository
               .setFieldTableProductOrdenConteo(
-            productSend.orderId,
-            productSend.productId,
-            'lot_id',
-            currentProductLote?.id ?? 0,
-            productSend.lineId.toString(),
-            productSend.locationId.toString(),
-          );
+                productSend.orderId,
+                productSend.productId,
+                'lot_id',
+                currentProductLote?.id ?? 0,
+                productSend.lineId.toString(),
+                productSend.locationId.toString(),
+              );
 
           await db.productoOrdenConteoRepository
               .setFieldTableProductOrdenConteo(
-            productSend.orderId,
-            productSend.productId,
-            'lot_name',
-            currentProductLote?.name ?? '',
-            productSend.lineId.toString(),
-            productSend.locationId.toString(),
-          );
+                productSend.orderId,
+                productSend.productId,
+                'lot_name',
+                currentProductLote?.name ?? '',
+                productSend.lineId.toString(),
+                productSend.locationId.toString(),
+              );
         }
 
-//si el producto es nuevo
+        //si el producto es nuevo
         if (event.isNewProduct) {
           //creamos y guardamos el producto en la base de datos
 
@@ -823,38 +983,37 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
             uom: event.currentProduct.uom ?? '',
           );
 
-          await db.productoOrdenConteoRepository
-              .addNewProductConteo(newPorductBD);
+          await db.productoOrdenConteoRepository.addNewProductConteo(
+            newPorductBD,
+          );
 
           //como es un producto nuevo tenemos que aumentar +1 la cantidad de  numero_items_contados y numero_lineas
           await db.ordenRepository.incrementNumeroItemsContados(
             ordenConteo.id ?? 0,
           );
-          await db.ordenRepository.incrementNumeroLineas(
-            ordenConteo.id ?? 0,
-          );
+          await db.ordenRepository.incrementNumeroLineas(ordenConteo.id ?? 0);
         } else {
           //actualzamos la cantidad del producto en la bd
           await db.productoOrdenConteoRepository
               .setFieldTableProductOrdenConteo(
-            productSend.orderId,
-            productSend.productId,
-            "quantity_counted",
-            productSend.quantityCounted ?? 0,
-            productSend.lineId.toString(),
-            currentProduct.locationId.toString(),
-          );
+                productSend.orderId,
+                productSend.productId,
+                "quantity_counted",
+                productSend.quantityCounted ?? 0,
+                productSend.lineId.toString(),
+                currentProduct.locationId.toString(),
+              );
 
           // actualizamos el estado del producto en la bd
           await db.productoOrdenConteoRepository
               .setFieldTableProductOrdenConteo(
-            productSend.orderId,
-            productSend.productId,
-            'is_done_item',
-            1,
-            productSend.lineId.toString(),
-            productSend.locationId.toString(),
-          );
+                productSend.orderId,
+                productSend.productId,
+                'is_done_item',
+                1,
+                productSend.lineId.toString(),
+                productSend.locationId.toString(),
+              );
 
           await db.ordenRepository.incrementNumeroItemsContados(
             ordenConteo.id ?? 0,
@@ -863,8 +1022,11 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
 
         emit(SendProductConteoSuccess(response));
       } else {
-        emit(SendProductConteoFailure(
-            response.result?.msg ?? 'Error al enviar el producto'));
+        emit(
+          SendProductConteoFailure(
+            response.result?.msg ?? 'Error al enviar el producto',
+          ),
+        );
       }
     } catch (e, s) {
       debugPrint('Error al enviar el producto: $e, $s');
@@ -873,7 +1035,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   }
 
   void _onCreateLoteProduct(
-      CreateLoteProduct event, Emitter<ConteoState> emit) async {
+    CreateLoteProduct event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       emit(CreateLoteProductLoading());
       final response = await _inventarioRepository.createLote(
@@ -911,10 +1075,13 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         add(SelectecLoteEvent(currentProductLote!));
         emit(CreateLoteProductSuccess());
       } else {
-        emit(CreateLoteProductFailure(
+        emit(
+          CreateLoteProductFailure(
             response.result?.msg ??
                 'Error al crear el lote contactarse con el administrador',
-            response.result?.code ?? 0));
+            response.result?.code ?? 0,
+          ),
+        );
       }
     } catch (e, s) {
       emit(CreateLoteProductFailure('Error al crear el lote', 400));
@@ -923,7 +1090,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   }
 
   void _onSearchLoteEvent(
-      SearchLotevent event, Emitter<ConteoState> emit) async {
+    SearchLotevent event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       listLotesProductFilters = listLotesProduct;
       final query = event.query.toLowerCase();
@@ -942,18 +1111,24 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   }
 
   void _onChangeLoteIsOkEvent(
-      SelectecLoteEvent event, Emitter<ConteoState> emit) async {
+    SelectecLoteEvent event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       currentProductLote = event.lote;
       loteIsOk = true;
       isLoteOk = true;
-      add(ChangeIsOkQuantity(currentProduct.orderId ?? 0, true,
-          currentProduct.productId ?? 0, currentProduct.idMove ?? 0));
+      add(
+        ChangeIsOkQuantity(
+          currentProduct.orderId ?? 0,
+          true,
+          currentProduct.productId ?? 0,
+          currentProduct.idMove ?? 0,
+        ),
+      );
       quantityIsOk = true;
 
-      emit(ChangeLoteIsOkState(
-        loteIsOk,
-      ));
+      emit(ChangeLoteIsOkState(loteIsOk));
     } catch (e, s) {
       debugPrint('Error en el SelectecLoteEvent de inventario $s ->$e');
     }
@@ -961,13 +1136,17 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
 
   //*metodo para obtener todos los lotes de un producto
   void _onGetLotesProduct(
-      GetLotesProduct event, Emitter<ConteoState> emit) async {
+    GetLotesProduct event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       emit(GetLotesProductLoading());
 
       // Siempre obtener los lotes frescos del servidor
       final response = await _inventarioRepository.fetchAllLotesProduct(
-          false, currentProduct?.productId ?? 0);
+        false,
+        currentProduct?.productId ?? 0,
+      );
 
       listLotesProduct = response;
       listLotesProductFilters = response;
@@ -980,20 +1159,26 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
 
   //*evento para obtener los barcodes de un producto por paquete
   void _onFetchBarcodesProductEvent(
-      FetchBarcodesProductEvent event, Emitter<ConteoState> emit) async {
+    FetchBarcodesProductEvent event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       listOfBarcodes.clear();
 
       if (event.isNewProduct) {
         listOfBarcodes = await db.barcodesPackagesRepository
-            .getBarcodesProductNotMove(currentProduct.orderId ?? 0,
-                currentProduct.productId ?? 0, 'orden');
+            .getBarcodesProductNotMove(
+              currentProduct.orderId ?? 0,
+              currentProduct.productId ?? 0,
+              'orden',
+            );
       } else {
         listOfBarcodes = await db.barcodesPackagesRepository.getBarcodesProduct(
-            currentProduct.orderId ?? 0,
-            currentProduct.productId ?? 0,
-            currentProduct.idMove ?? 0,
-            'orden');
+          currentProduct.orderId ?? 0,
+          currentProduct.productId ?? 0,
+          currentProduct.idMove ?? 0,
+          'orden',
+        );
       }
       debugPrint("listOfBarcodes: ${listOfBarcodes.length}");
       //imprimir todos los barcodes
@@ -1005,14 +1190,17 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
 
   //*evento para aumentar la cantidad
   void _onAddQuantitySeparateEvent(
-      AddQuantitySeparate event, Emitter<ConteoState> emit) async {
+    AddQuantitySeparate event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       quantitySelected = quantitySelected + event.quantity;
       await db.productoOrdenConteoRepository.updateCantidadContada(
-          productId: event.productId,
-          orderId: event.idOrder,
-          cantidad: quantitySelected,
-          idMove: currentProduct.idMove.toString());
+        productId: event.productId,
+        orderId: event.idOrder,
+        cantidad: quantitySelected,
+        idMove: currentProduct.idMove.toString(),
+      );
       emit(ChangeQuantitySeparateStateSuccess(quantitySelected));
     } catch (e, s) {
       emit(ChangeQuantitySeparateStateError('Error al aumentar cantidad'));
@@ -1022,7 +1210,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
 
   //*evento para ver la cantidad
   void _onShowQuantityEvent(
-      ShowQuantityEvent event, Emitter<ConteoState> emit) {
+    ShowQuantityEvent event,
+    Emitter<ConteoState> emit,
+  ) {
     try {
       viewQuantity = !viewQuantity;
       emit(ShowQuantityState(viewQuantity));
@@ -1100,23 +1290,23 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   }
 
   void _onExpandLocationEvent(
-      ExpandLocationEvent event, Emitter<ConteoState> emit) {
+    ExpandLocationEvent event,
+    Emitter<ConteoState> emit,
+  ) {
     ubicacionExpanded = event.ubicacion;
     debugPrint('Ubicacion expandida: $ubicacionExpanded');
     emit(ExpandLocationState(ubicacionExpanded));
   }
 
   void _onChangeProductIsOkEvent(
-      ChangeProductIsOkEvent event, Emitter<ConteoState> emit) async {
+    ChangeProductIsOkEvent event,
+    Emitter<ConteoState> emit,
+  ) async {
     if (event.productIsOk) {
       //si el producto es nuevo entonces no guardamos registros
       if (event.isNewProduct == false) {
         //todo actualizamos la entrada a true
-        await db.ordenRepository.updateField(
-          event.idOrder,
-          "is_selected",
-          1,
-        );
+        await db.ordenRepository.updateField(event.idOrder, "is_selected", 1);
 
         await db.productoOrdenConteoRepository.setFieldTableProductOrdenConteo(
           event.idOrder,
@@ -1167,43 +1357,39 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
 
         //valdiamos si tiene lote para traerlos
         if (currentProduct.productTracking == "lot") {
-          add(GetLotesProduct(
-            isManual: true,
-            idLote: currentProduct?.lotId ?? 0,
-          ));
+          add(
+            GetLotesProduct(isManual: true, idLote: currentProduct?.lotId ?? 0),
+          );
         }
         add(FetchBarcodesProductEvent(true));
       }
     }
     productIsOk = event.productIsOk;
     if (currentProduct.productTracking != "lot") {
-      add(ChangeIsOkQuantity(
-        event.idOrder,
-        true,
-        event.productId,
-        event.idMove,
-      ));
+      add(
+        ChangeIsOkQuantity(event.idOrder, true, event.productId, event.idMove),
+      );
     }
-    emit(ChangeProductOrderIsOkState(
-      productIsOk,
-    ));
+    emit(ChangeProductOrderIsOkState(productIsOk));
   }
 
   void _onChangeQuantitySelectedEvent(
-      ChangeQuantitySeparate event, Emitter<ConteoState> emit) async {
+    ChangeQuantitySeparate event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       if (event.quantity > 0.0) {
         quantitySelected = event.quantity;
         if (event.isNewProduct == false) {
           await db.productoOrdenConteoRepository
               .setFieldTableProductOrdenConteo(
-            event.idOrder,
-            event.productId,
-            "quantity_counted",
-            event.quantity,
-            event.idMove.toString(),
-            currentProduct.locationId.toString(),
-          );
+                event.idOrder,
+                event.productId,
+                "quantity_counted",
+                event.quantity,
+                event.idMove.toString(),
+                currentProduct.locationId.toString(),
+              );
         }
       }
       emit(ChangeQuantitySeparateState(quantitySelected));
@@ -1213,7 +1399,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   }
 
   void _onChangeLocationIsOkEvent(
-      ChangeLocationIsOkEvent event, Emitter<ConteoState> emit) async {
+    ChangeLocationIsOkEvent event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       if (isLocationOk) {
         //si el producto es nuevo entonces no guardamos registros
@@ -1222,23 +1410,23 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
           //actualizmso valor de fecha inicio
           await db.productoOrdenConteoRepository
               .setFieldTableProductOrdenConteo(
-            event.orden,
-            event.productId,
-            'date_start',
-            dateInicio,
-            event.idMove.toString(),
-            currentProduct.locationId.toString(),
-          );
+                event.orden,
+                event.productId,
+                'date_start',
+                dateInicio,
+                event.idMove.toString(),
+                currentProduct.locationId.toString(),
+              );
 
           await db.productoOrdenConteoRepository
               .setFieldTableProductOrdenConteo(
-            event.orden,
-            event.productId,
-            'is_location_is_ok',
-            1,
-            event.idMove.toString(),
-            currentProduct.locationId.toString(),
-          );
+                event.orden,
+                event.productId,
+                'is_location_is_ok',
+                1,
+                event.idMove.toString(),
+                currentProduct.locationId.toString(),
+              );
         } else {
           //asignamos el valor de la ubicacion actual cuando el producto es nuevo
           currentUbication = ResultUbicaciones();
@@ -1246,9 +1434,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         }
 
         locationIsOk = true;
-        emit(ChangeLocationIsOkState(
-          locationIsOk,
-        ));
+        emit(ChangeLocationIsOkState(locationIsOk));
       }
     } catch (e, s) {
       debugPrint("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
@@ -1256,7 +1442,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   }
 
   void _onChangeQuantityIsOkEvent(
-      ChangeIsOkQuantity event, Emitter<ConteoState> emit) async {
+    ChangeIsOkQuantity event,
+    Emitter<ConteoState> emit,
+  ) async {
     if (event.isOk) {
       await db.productoOrdenConteoRepository.setFieldTableProductOrdenConteo(
         event.idOrder,
@@ -1268,18 +1456,19 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       );
     }
     quantityIsOk = event.isOk;
-    emit(ChangeIsOkState(
-      event.isOk,
-    ));
+    emit(ChangeIsOkState(event.isOk));
   }
 
   //* evento para cargar la configuracion del usuario
   void _onLoadConfigurationsUserEvent(
-      LoadConfigurationsUserConteo event, Emitter<ConteoState> emit) async {
+    LoadConfigurationsUserConteo event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       int userId = await PrefUtils.getUserId();
-      final response =
-          await db.configurationsRepository.getConfiguration(userId);
+      final response = await db.configurationsRepository.getConfiguration(
+        userId,
+      );
 
       if (response != null) {
         emit(ConfigurationPickingLoaded(response));
@@ -1314,7 +1503,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
 
   //metodo para cargar el producto actual
   void _onLoadCurrentProductEvent(
-      LoadCurrentProductEvent event, Emitter<ConteoState> emit) async {
+    LoadCurrentProductEvent event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       currentProduct = CountedLine();
 
@@ -1343,10 +1534,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       add(FetchBarcodesProductEvent(false));
       //validamos si el producto tiene lote
       if (currentProduct.productTracking == "lot") {
-        add(GetLotesProduct(
-          isManual: true,
-          idLote: currentProduct?.lotId ?? 0,
-        ));
+        add(
+          GetLotesProduct(isManual: true, idLote: currentProduct?.lotId ?? 0),
+        );
       } else {
         if (productIsOk && locationIsOk && loteIsOk) {
           quantityIsOk = true;
@@ -1390,7 +1580,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   }
 
   void _onGetConteosFromDBEvent(
-      GetConteosFromDBEvent event, Emitter<ConteoState> emit) async {
+    GetConteosFromDBEvent event,
+    Emitter<ConteoState> emit,
+  ) async {
     emit(ConteoFromDBLoading());
     try {
       ordenesDeConteo.clear();
@@ -1404,7 +1596,8 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         emit(ConteoFromDBLoaded(ordenesDeConteo));
       } else {
         emit(
-            ConteoFromDBError("No se encontraron conteos en la base de datos"));
+          ConteoFromDBError("No se encontraron conteos en la base de datos"),
+        );
       }
     } catch (e, s) {
       debugPrint("Error al obtener los conteos desde la BD: $e, $s");
@@ -1413,12 +1606,14 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   }
 
   void _onLoadConteoEvent(
-      LoadConteoAndProductsEvent event, Emitter<ConteoState> emit) async {
+    LoadConteoAndProductsEvent event,
+    Emitter<ConteoState> emit,
+  ) async {
     try {
       //obtenemos la orden de conteo desde la bd
       ordenConteo =
           await db.ordenRepository.getOrdenById(event.ordenConteoId ?? 0) ??
-              DatumConteo();
+          DatumConteo();
 
       //obtenemos las lineas contadas de esa orden de conteo
       lineasContadas = await db.productoOrdenConteoRepository
@@ -1446,6 +1641,10 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       categoriasConteo = await db.categoriasConteoRepository
           .getCategoriasByOrdenId(event.ordenConteoId ?? 0);
 
+      //obtenemos los productos de la orden de conteo
+      productosOrdenConteo = await db.productosConteoRepository
+          .getProductosByOrdenId(event.ordenConteoId ?? 0);
+
       getPosicions();
 
       emit(LoadConteoSuccess(ordenConteo));
@@ -1456,7 +1655,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   }
 
   void _onGetConteosEvent(
-      GetConteosEvent event, Emitter<ConteoState> emit) async {
+    GetConteosEvent event,
+    Emitter<ConteoState> emit,
+  ) async {
     emit(ConteoLoading());
     try {
       //borramos todos los registros de losc conteos
@@ -1470,55 +1671,66 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
 
       if (response.data?.isNotEmpty ?? false) {
         //agregamos esas ordenes a la bd
-        await db.ordenRepository
-            .insertOrUpdateOrdenes(response.data as List<DatumConteo>);
+        await db.ordenRepository.insertOrUpdateOrdenes(
+          response.data as List<DatumConteo>,
+        );
 
         //obtenemos los productos de todas las ordenes de conteo
-        final productsToInsert =
-            _getAllProducts(response.data as List<DatumConteo>)
-                .toList(growable: false);
+        final productsToInsert = _getAllProducts(
+          response.data as List<DatumConteo>,
+        ).toList(growable: false);
 
-        await db.productoOrdenConteoRepository
-            .upsertProductosOrdenConteo(productsToInsert);
+        await db.productoOrdenConteoRepository.upsertProductosOrdenConteo(
+          productsToInsert,
+        );
 
         //obtenemos los ptoducto de ordenes de conteos que ya fueron contados
-        final productsToInsertDone =
-            _getAllProductsDone(response.data as List<DatumConteo>)
-                .toList(growable: false);
+        final productsToInsertDone = _getAllProductsDone(
+          response.data as List<DatumConteo>,
+        ).toList(growable: false);
 
-        await db.productoOrdenConteoRepository
-            .upsertProductosOrdenConteo(productsToInsertDone);
+        await db.productoOrdenConteoRepository.upsertProductosOrdenConteo(
+          productsToInsertDone,
+        );
         //obtenemos las ubicaciones de todas las ordenes de conteo
-        final ubicacionesToInsert =
-            _getAllUbicaciones(response.data as List<DatumConteo>)
-                .toList(growable: false);
+        final ubicacionesToInsert = _getAllUbicaciones(
+          response.data as List<DatumConteo>,
+        ).toList(growable: false);
 
-        await db.ubicacionesConteoRepository
-            .upsertUbicacionesConteo(ubicacionesToInsert);
+        await db.ubicacionesConteoRepository.upsertUbicacionesConteo(
+          ubicacionesToInsert,
+        );
 
         //obtenemos las categorias de todas las ordenes de conteo
-        final categoriasToInsert =
-            _getAllCategories(response.data as List<DatumConteo>)
-                .toList(growable: false);
+        final categoriasToInsert = _getAllCategories(
+          response.data as List<DatumConteo>,
+        ).toList(growable: false);
 
-        await db.categoriasConteoRepository
-            .upsertCategoriasConteo(categoriasToInsert);
+        await db.categoriasConteoRepository.upsertCategoriasConteo(
+          categoriasToInsert,
+        );
+
+        final productosAllowedToInsert = _getAllAllowedProducts(
+          response.data as List<DatumConteo>,
+        ).toList(growable: false);
+
+        await db.productosConteoRepository.upsertProductosConteo(
+          productosAllowedToInsert,
+        );
 
         //obtenemos los barcodes de todas las ordenes de conteo
-        final allBarcodes =
-            _extractAllBarcodes(response.data as List<DatumConteo>)
-                .toList(growable: false);
-        final allBarcodesDone =
-            _extractAllBarcodesDone(response.data as List<DatumConteo>)
-                .toList(growable: false);
+        final allBarcodes = _extractAllBarcodes(
+          response.data as List<DatumConteo>,
+        ).toList(growable: false);
+        final allBarcodesDone = _extractAllBarcodesDone(
+          response.data as List<DatumConteo>,
+        ).toList(growable: false);
 
         if (allBarcodes.isNotEmpty) {
           // Enviar la lista agrupada a insertBarcodesPackageProduct
-          await DataBaseSqlite()
-              .barcodesPackagesRepository
+          await DataBaseSqlite().barcodesPackagesRepository
               .insertOrUpdateBarcodes(allBarcodes, 'orden');
-          await DataBaseSqlite()
-              .barcodesPackagesRepository
+          await DataBaseSqlite().barcodesPackagesRepository
               .insertOrUpdateBarcodes(allBarcodesDone, 'orden');
         }
 
@@ -1587,46 +1799,67 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     }
   }
 
-  List<ResultUbicaciones> _mapAllowedToResultUbicaciones(List<Allowed> allowed) {
+  Iterable<Allowed> _getAllAllowedProducts(List<DatumConteo> ordenes) sync* {
+    for (final orden in ordenes) {
+      if (orden.allowedProducts == null) continue;
+      for (final producto in orden.allowedProducts!) {
+        yield Allowed(
+          id: producto.id,
+          name: producto.name,
+          barcode: producto.barcode,
+          ordenConteoId: producto.ordenConteoId ?? orden.id,
+        );
+      }
+    }
+  }
+
+  List<ResultUbicaciones> _mapAllowedToResultUbicaciones(
+    List<Allowed> allowed,
+  ) {
     return allowed
-        .map((a) => ResultUbicaciones(
-              id: a.id ?? 0,
-              name: a.name ?? '',
-              barcode: a.barcode ?? '',
-              locationId: a.id ?? 0,
-              locationName: a.name ?? '',
-              idWarehouse: 0,
-              warehouseName: '',
-            ))
+        .map(
+          (a) => ResultUbicaciones(
+            id: a.id ?? 0,
+            name: a.name ?? '',
+            barcode: a.barcode ?? '',
+            locationId: a.id ?? 0,
+            locationName: a.name ?? '',
+            idWarehouse: 0,
+            warehouseName: '',
+          ),
+        )
         .toList();
   }
 
   List<Product> _mapOrderProductsToProduct(List<dynamic> productsOrder) {
     return productsOrder
-        .map((product) => Product(
-              productId: product.productId,
-              name: product.productName,
-              code: product.productCode,
-              category: product.categoryName,
-              lotId: product.lotId,
-              lotName: product.lotName,
-              barcode: product.productBarcode,
-              otherBarcodes: [],
-              productPacking: [],
-              tracking: product.productTracking,
-              useExpirationDate:
-                  product.fechaVencimiento?.isNotEmpty ?? true ? true : false,
-              expirationTime: '',
-              weight: product.weight,
-              weightUomName: '',
-              volume: 0,
-              volumeUomName: '',
-              expirationDate: product.fechaVencimiento,
-              uom: product.uom,
-              locationId: product.locationId ?? 0,
-              locationName: product.locationName ?? '',
-              quantity: 0,
-            ))
+        .map(
+          (product) => Product(
+            productId: product.productId,
+            name: product.productName,
+            code: product.productCode,
+            category: product.categoryName,
+            lotId: product.lotId,
+            lotName: product.lotName,
+            barcode: product.productBarcode,
+            otherBarcodes: [],
+            productPacking: [],
+            tracking: product.productTracking,
+            useExpirationDate: product.fechaVencimiento?.isNotEmpty ?? true
+                ? true
+                : false,
+            expirationTime: '',
+            weight: product.weight,
+            weightUomName: '',
+            volume: 0,
+            volumeUomName: '',
+            expirationDate: product.fechaVencimiento,
+            uom: product.uom,
+            locationId: product.locationId ?? 0,
+            locationName: product.locationName ?? '',
+            quantity: 0,
+          ),
+        )
         .toList();
   }
 
@@ -1639,5 +1872,15 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     );
 
     debugPrint('productBD: ${productBD?.toMap()}');
+  }
+
+  @override
+  Future<void> close() {
+    newLoteController.dispose();
+    searchControllerLote.dispose();
+    dateLoteController.dispose();
+    searchControllerLocation.dispose();
+    searchControllerProducts.dispose();
+    return super.close();
   }
 }

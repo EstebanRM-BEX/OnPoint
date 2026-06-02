@@ -7,6 +7,8 @@ import 'package:wms_app/src/presentation/providers/db/conteo/tbl_ordenes/orden_r
 import 'package:wms_app/src/presentation/providers/db/conteo/tbl_ordenes/orden_table.dart';
 import 'package:wms_app/src/presentation/providers/db/conteo/tbl_products_ordenes_conteo/product_orden_conteo_repository.dart';
 import 'package:wms_app/src/presentation/providers/db/conteo/tbl_products_ordenes_conteo/product_orden_conteo_table.dart';
+import 'package:wms_app/src/presentation/providers/db/conteo/tbl_productos_conteo/productos_conteo_repository.dart';
+import 'package:wms_app/src/presentation/providers/db/conteo/tbl_productos_conteo/productos_conteo_table.dart';
 import 'package:wms_app/src/presentation/providers/db/conteo/tbl_ubicaciones_orden_conteo/ubicaciones_conteo_repository.dart';
 import 'package:wms_app/src/presentation/providers/db/conteo/tbl_ubicaciones_orden_conteo/ubicaciones_conteo_table.dart';
 import 'package:wms_app/src/presentation/providers/db/devoluciones/tbl_product/product_devolucion_repository.dart';
@@ -92,7 +94,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 33,
+      version: 34,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -175,6 +177,9 @@ class DataBaseSqlite {
 
     //* tabla de ubicaciones de un conteo
     await db.execute(UbicacionesConteoTable.createTable());
+
+    //* tabla de productos permitidos de un conteo (allowed_products)
+    await db.execute(ProductosConteoTable.createTable());
 
     //*tabla de los productos para crear una transferencia
     await db.execute(ProductCreateTransferTable.createTable());
@@ -692,6 +697,14 @@ class DataBaseSqlite {
         debugPrint("Error actualizando a v33 (tbl_pick_products): $e");
       }
     }
+
+    if (oldVersion < 34) {
+      try {
+        await db.execute(ProductosConteoTable.createTable());
+      } catch (e) {
+        debugPrint("Error actualizando a v34 (tbl_productos_conteo): $e");
+      }
+    }
   }
 
   //todo repositorios de las tablas
@@ -774,6 +787,9 @@ class DataBaseSqlite {
 
   CategoriasConteoRepository get categoriasConteoRepository =>
       CategoriasConteoRepository();
+
+  ProductosConteoRepository get productosConteoRepository =>
+      ProductosConteoRepository();
 
   //repositorio de productos para crear transferencia
   ProductCreateTransferRepository get productCreateTransferRepository =>
@@ -1074,6 +1090,7 @@ class DataBaseSqlite {
     await db.delete(ProductosOrdenConteoTable.tableName);
     await db.delete(CategoriasConteoTable.tableName);
     await db.delete(UbicacionesConteoTable.tableName);
+    await db.delete(ProductosConteoTable.tableName);
     await deleBarcodes("orden");
   }
 

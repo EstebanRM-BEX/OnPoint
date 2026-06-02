@@ -1,5 +1,7 @@
 // ignore_for_file: unrelated_type_equality_checks
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -7,6 +9,8 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
+import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:get/get.dart';
 
 class SearchLocationConteoScreen extends StatefulWidget {
   const SearchLocationConteoScreen({super.key});
@@ -18,288 +22,312 @@ class SearchLocationConteoScreen extends StatefulWidget {
 
 class _SearchLocationScreenState extends State<SearchLocationConteoScreen> {
   int? selectedIndex;
+  final FocusNode _searchFocusNode = FocusNode();
+  final ScrollController _locationListScrollController = ScrollController();
+  Timer? _debounce;
+  bool _isLoadingDialogShowing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final bloc = context.read<ConteoBloc>();
+      // LoadLocationsLoading puede haber sido emitido antes de montar esta
+      // pantalla; verificamos la condición real en lugar del estado.
+      final needsLoad = (bloc.ordenConteo.filterType == 'category' ||
+              bloc.ordenConteo.filterType == 'product') &&
+          bloc.ubicaciones.isEmpty;
+      if (needsLoad) {
+        _showLoadingDialog();
+      } else {
+        _searchFocusNode.requestFocus();
+      }
+    });
+  }
+
+  void _showLoadingDialog() {
+    if (_isLoadingDialogShowing || !mounted) return;
+    _isLoadingDialogShowing = true;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: DialogLoading(message: "Cargando ubicaciones..."),
+      ),
+    ).then((_) => _isLoadingDialogShowing = false);
+  }
+
+  void _closeLoadingDialog() {
+    if (!_isLoadingDialogShowing || !mounted) return;
+    _isLoadingDialogShowing = false;
+    Navigator.of(context, rootNavigator: true).pop();
+  }
+
+  @override
+  void dispose() {
+    _searchFocusNode.dispose();
+    _locationListScrollController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
+    final bloc = context.read<ConteoBloc>();
 
-    return BlocBuilder<ConteoBloc, ConteoState>(
-      builder: (context, state) {
-        final bloc = context.read<ConteoBloc>();
-        return WillPopScope(
-          onWillPop: () async {
-            return false;
-          },
-          child: Scaffold(
-            backgroundColor: primaryColorApp,
-            body: SafeArea(
-              child: Container(
-                  color: Colors.white,
-                  width: size.width * 1,
-                  height: size.height * 1,
-                  child: Column(
-                    children: [
-                      _AppBarInfo(size: size),
-                      SizedBox(
-                          height: 55,
-                          width: size.width * 1,
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                              left: 10,
-                              right: 10,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: size.width * 0.9,
-                                  child: Card(
-                                    color: Colors.white,
-                                    elevation: 3,
-                                    child: TextFormField(
-                                      showCursor: true,
-                                      textAlignVertical:
-                                          TextAlignVertical.center,
-                                      controller: bloc.searchControllerLocation,
-                                      decoration: InputDecoration(
-                                        prefixIcon: const Icon(
-                                          Icons.search,
-                                          color: grey,
-                                          size: 20,
-                                        ),
-                                        suffixIcon: IconButton(
-                                            onPressed: () {
-                                              bloc.searchControllerLocation
-                                                  .clear();
-                                              bloc.add(SearchLocationEvent(
-                                                '',
-                                              ));
-                                              FocusScope.of(context).unfocus();
-                                            },
-                                            icon: const Icon(
-                                              Icons.close,
-                                              color: grey,
-                                              size: 20,
-                                            )),
-                                        disabledBorder:
-                                            const OutlineInputBorder(),
-                                        hintText: "Buscar ubicación",
-                                        hintStyle: const TextStyle(
-                                            color: Colors.grey, fontSize: 14),
-                                        border: InputBorder.none,
-                                      ),
-                                      onChanged: (value) {
-                                        bloc.add(SearchLocationEvent(
-                                          value,
-                                        ));
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )),
-                      Expanded(
-                          child: ListView.builder(
-                              itemCount: bloc.ubicacionesFiltersSearch.length,
-                              itemBuilder: (context, index) {
-                                bool isSelected = selectedIndex == index;
+    return BlocListener<ConteoBloc, ConteoState>(
+      listenWhen: (prev, curr) =>
+          curr is LoadLocationsLoading ||
+          curr is LoadLocationsSuccess ||
+          curr is LoadLocationsFailure,
+      listener: (context, state) {
+        if (state is LoadLocationsLoading) {
+          _showLoadingDialog();
+        } else if (state is LoadLocationsSuccess) {
+          _closeLoadingDialog();
+          bloc.add(SearchLocationEvent(''));
+          _searchFocusNode.requestFocus();
+        } else if (state is LoadLocationsFailure) {
+          _closeLoadingDialog();
+          Get.snackbar(
+            '360 Software Informa',
+            state.error,
+            backgroundColor: Colors.white,
+            colorText: Colors.red[800],
+            icon: const Icon(Icons.error_outline, color: Colors.red),
+            duration: const Duration(seconds: 3),
+          );
+        }
+      },
+      child: WillPopScope(
+        onWillPop: () async => false,
+        child: Scaffold(
+        backgroundColor: primaryColorApp,
+        body: SafeArea(
+          child: Container(
+            color: Colors.white,
+            width: size.width,
+            height: size.height,
+            child: Column(
+              children: [
+                _AppBarInfo(size: size),
+                _buildSearchBar(context, bloc, size),
+                Expanded(
+                  child: BlocBuilder<ConteoBloc, ConteoState>(
+                    buildWhen: (prev, curr) =>
+                        curr is SearchLocationSuccess ||
+                        curr is SearchLoading ||
+                        curr is SearchFailure ||
+                        curr is LoadNewProductSuccess ||
+                        curr is LoadLocationsSuccess,
+                    builder: (context, state) {
+                      return _buildLocationList(context, bloc, size);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
+                if (selectedIndex != null) _buildSelectButton(bloc, size),
+                const SizedBox(height: 10),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  }
 
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 0),
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedIndex =
-                                            isSelected ? null : index;
-                                      });
-                                    },
-                                    child: Card(
-                                      elevation: 3,
-                                      color: isSelected
-                                          ? Colors.green[100]
-                                          : white,
-                                      child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 10, vertical: 5),
-                                          child: SizedBox(
-                                            // height: 30,
-                                            child: Column(
-                                              children: [
-                                                Row(
-                                                  children: [
-                                                    Text(
-                                                      'Nombre: ',
-                                                      style: TextStyle(
-                                                        color: black,
-                                                        fontSize: 12,
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      bloc
-                                                              .ubicacionesFiltersSearch[
-                                                                  index]
-                                                              .name ??
-                                                          '',
-                                                      style: TextStyle(
-                                                        color: primaryColorApp,
-                                                        fontSize: 12,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                Row(
-                                                  children: [
-                                                    Text(
-                                                      'Barcode: ',
-                                                      style: TextStyle(
-                                                        color: black,
-                                                        fontSize: 12,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 5),
-                                                    Text(
-                                                      bloc
-                                                                  .ubicacionesFiltersSearch[
-                                                                      index]
-                                                                  .barcode ==
-                                                              false
-                                                          ? 'Sin barcode'
-                                                          : bloc
-                                                                  .ubicacionesFiltersSearch[
-                                                                      index]
-                                                                  .barcode ??
-                                                              '',
-                                                      style: TextStyle(
-                                                        color: bloc
-                                                                    .ubicacionesFiltersSearch[
-                                                                        index]
-                                                                    .barcode ==
-                                                                false
-                                                            ? red
-                                                            : primaryColorApp,
-                                                        fontSize: 12,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                )
-                                              ],
-                                            ),
-                                          )),
-                                    ),
-                                  ),
-                                );
-                              })),
-                      const SizedBox(
-                        height: 20,
-                      ),
-                      Visibility(
-                        visible: selectedIndex != null,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            if (selectedIndex != null) {
-                              // seleccionamos la ubicacion
-                              final selectedLocation =
-                                  bloc.ubicacionesFiltersSearch[selectedIndex!];
+  Widget _buildSearchBar(BuildContext context, ConteoBloc bloc, Size size) {
+    return SizedBox(
+      height: 55,
+      width: size.width,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Card(
+          color: Colors.white,
+          elevation: 3,
+          child: TextFormField(
+            focusNode: _searchFocusNode,
+            showCursor: true,
+            textAlignVertical: TextAlignVertical.center,
+            controller: bloc.searchControllerLocation,
+            decoration: InputDecoration(
+              prefixIcon:
+                  const Icon(Icons.search, color: grey, size: 20),
+              suffixIcon: IconButton(
+                onPressed: () {
+                  bloc.searchControllerLocation.clear();
+                  bloc.add(SearchLocationEvent(''));
+                  _searchFocusNode.requestFocus();
+                },
+                icon: const Icon(Icons.close, color: grey, size: 20),
+              ),
+              disabledBorder: const OutlineInputBorder(),
+              hintText: "Buscar ubicación",
+              hintStyle:
+                  const TextStyle(color: Colors.grey, fontSize: 14),
+              border: InputBorder.none,
+            ),
+            onChanged: (value) {
+              if (_debounce?.isActive ?? false) _debounce!.cancel();
+              _debounce = Timer(const Duration(milliseconds: 300), () {
+                bloc.add(SearchLocationEvent(value));
+              });
+            },
+          ),
+        ),
+      ),
+    );
+  }
 
-                              //seleccionamos la ubicacion
-                              bloc.add(ValidateFieldsEvent(
-                                  field: "location", isOk: true));
-                              bloc.add(ChangeLocationIsOkEvent(
-                                  true, selectedLocation, 0, 0, 0));
+  Widget _buildLocationList(
+      BuildContext context, ConteoBloc bloc, Size size) {
+    final ubicaciones = bloc.ubicacionesFiltersSearch;
 
-                              FocusScope.of(context).unfocus();
+    if (ubicaciones.isEmpty) {
+      return const Center(
+        child: Text('No se encontraron ubicaciones',
+            style: TextStyle(fontSize: 14, color: grey)),
+      );
+    }
 
-                              setState(() {
-                                selectedIndex == null;
-                              });
+    return Scrollbar(
+      controller: _locationListScrollController,
+      thumbVisibility: true,
+      child: ListView.builder(
+        controller: _locationListScrollController,
+        itemCount: ubicaciones.length,
+        itemBuilder: (context, index) {
+        final ubicacion = ubicaciones[index];
+        final isSelected = selectedIndex == index;
+        final barcode = ubicacion.barcode;
+        final barcodeEmpty = barcode == false ||
+            barcode == null ||
+            barcode.toString().isEmpty;
 
-                              Navigator.pushReplacementNamed(
-                                context,
-                                'new-product-conteo',
-                              );
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColorApp,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            minimumSize: Size(size.width * 0.9, 40),
-                          ),
-                          child: Text("Seleccionar",
-                              style: TextStyle(
-                                color: white,
-                              )),
+        return Padding(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+          child: GestureDetector(
+            onTap: () => setState(
+                () => selectedIndex = isSelected ? null : index),
+            child: Card(
+              elevation: 1,
+              color: isSelected ? Colors.green[100] : white,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 5),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        const Text('Nombre: ',
+                            style:
+                                TextStyle(color: black, fontSize: 12)),
+                        Text(
+                          ubicacion.name ?? '',
+                          style: const TextStyle(
+                              color: primaryColorApp, fontSize: 12),
                         ),
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                    ],
-                  )),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        const Text('Barcode: ',
+                            style:
+                                TextStyle(color: black, fontSize: 12)),
+                        const SizedBox(width: 5),
+                        Text(
+                          barcodeEmpty
+                              ? 'Sin barcode'
+                              : barcode.toString(),
+                          style: TextStyle(
+                            color:
+                                barcodeEmpty ? red : primaryColorApp,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         );
       },
+      ),
+    );
+  }
+
+  Widget _buildSelectButton(ConteoBloc bloc, Size size) {
+    return ElevatedButton(
+      onPressed: () {
+        if (selectedIndex == null) return;
+        final selectedLocation =
+            bloc.ubicacionesFiltersSearch[selectedIndex!];
+
+        bloc.add(ValidateFieldsEvent(field: "location", isOk: true));
+        bloc.add(ChangeLocationIsOkEvent(true, selectedLocation, 0, 0, 0));
+
+        FocusScope.of(context).unfocus();
+        setState(() => selectedIndex = null);
+
+        Navigator.pushReplacementNamed(context, 'new-product-conteo');
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: primaryColorApp,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        minimumSize: Size(size.width * 0.9, 40),
+      ),
+      child: const Text("Seleccionar", style: TextStyle(color: white)),
     );
   }
 }
 
 class _AppBarInfo extends StatelessWidget {
-  const _AppBarInfo({
-    super.key,
-    required this.size,
-  });
-
+  const _AppBarInfo({required this.size});
   final Size size;
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
       builder: (context, connectionStatus) {
-        return BlocBuilder<ConteoBloc, ConteoState>(
-          builder: (context, state) {
-            return Container(
-              // padding: const EdgeInsets.only(top: 20),
-              decoration: BoxDecoration(
-                color: primaryColorApp,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
-                ),
-              ),
-              width: double.infinity,
-              child: Column(
+        return Container(
+          decoration: const BoxDecoration(
+            color: primaryColorApp,
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(20),
+            ),
+          ),
+          width: double.infinity,
+          child: Column(
+            children: [
+              const WarningWidgetCubit(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const WarningWidgetCubit(), // Usa cubit global
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: white),
-                        onPressed: () {
-                          Navigator.pushReplacementNamed(
-                            context,
-                            'new-product-conteo',
-                          );
-                        },
-                      ),
-                      Padding(
-                        padding: EdgeInsets.only(left: size.width * 0.2),
-                        child: const Text(
-                          'UBICACIONES',
-                          style: TextStyle(color: white, fontSize: 18),
-                        ),
-                      ),
-                      const Spacer()
-                    ],
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: white),
+                    onPressed: () => Navigator.pushReplacementNamed(
+                        context, 'new-product-conteo'),
                   ),
+                  Padding(
+                    padding: EdgeInsets.only(left: size.width * 0.2),
+                    child: const Text('UBICACIONES',
+                        style: TextStyle(color: white, fontSize: 18)),
+                  ),
+                  const Spacer(),
                 ],
               ),
-            );
-          },
+            ],
+          ),
         );
       },
     );

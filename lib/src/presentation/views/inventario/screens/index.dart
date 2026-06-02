@@ -67,9 +67,8 @@ class _InventarioScreenState extends State<InventarioScreen>
     showDialog(
       context: context,
       barrierDismissible: false, // Evitar que se cierre tocando fuera
-      builder: (context) => const DialogLoading(
-        message: "Espere un momento...",
-      ),
+      builder: (context) =>
+          const DialogLoading(message: "Espere un momento..."),
     ).then((_) {
       // Este callback se ejecuta cuando el diálogo se cierra
       debugPrint('Diálogo cerrado');
@@ -115,7 +114,7 @@ class _InventarioScreenState extends State<InventarioScreen>
       focusNode2,
       focusNode3,
       focusNode4,
-      focusNode5
+      focusNode5,
     ]) {
       if (node != except) node.unfocus();
     }
@@ -170,10 +169,10 @@ class _InventarioScreenState extends State<InventarioScreen>
     bloc.controllerLocation.clear();
 
     ResultUbicaciones? matchedUbicacion = bloc.ubicaciones.firstWhere(
-        (ubicacion) => ubicacion.barcode?.toLowerCase() == scan.trim(),
-        orElse: () =>
-            ResultUbicaciones() // Si no se encuentra ningún match, devuelve null
-        );
+      (ubicacion) => ubicacion.barcode?.toLowerCase() == scan.trim(),
+      orElse: () =>
+          ResultUbicaciones(), // Si no se encuentra ningún match, devuelve null
+    );
 
     if (matchedUbicacion.barcode != null) {
       debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
@@ -197,10 +196,10 @@ class _InventarioScreenState extends State<InventarioScreen>
     bloc.controllerLote.clear();
     //tengo una lista de lotes el cual quiero validar si el scan es igual a alguno de los lotes
     LotesProduct? matchedLote = bloc.listLotesProduct.firstWhere(
-        (lotes) => lotes.name?.toLowerCase() == scan.trim(),
-        orElse: () =>
-            LotesProduct() // Si no se encuentra ningún match, devuelve null
-        );
+      (lotes) => lotes.name?.toLowerCase() == scan.trim(),
+      orElse: () =>
+          LotesProduct(), // Si no se encuentra ningún match, devuelve null
+    );
 
     if (matchedLote.name != null) {
       debugPrint('lote encontrado: ${matchedLote.name}');
@@ -290,15 +289,19 @@ class _InventarioScreenState extends State<InventarioScreen>
     }
   }
 
-  bool validateScannedBarcode(String scannedBarcode, Product currentProduct,
-      InventarioBloc bloc, bool isProduct) {
+  bool validateScannedBarcode(
+    String scannedBarcode,
+    Product currentProduct,
+    InventarioBloc bloc,
+    bool isProduct,
+  ) {
     debugPrint('entrando a validar barcode');
     // Buscar el barcode que coincida con el valor escaneado
     BarcodeInventario? matchedBarcode = bloc.barcodeInventario.firstWhere(
-        (barcode) => barcode.barcode?.toLowerCase() == scannedBarcode.trim(),
-        orElse: () =>
-            BarcodeInventario() // Si no se encuentra ningún match, devuelve null
-        );
+      (barcode) => barcode.barcode?.toLowerCase() == scannedBarcode.trim(),
+      orElse: () =>
+          BarcodeInventario(), // Si no se encuentra ningún match, devuelve null
+    );
     if (matchedBarcode.barcode != null) {
       bloc.add(AddQuantitySeparate(matchedBarcode.cantidad, false));
       return false;
@@ -375,22 +378,26 @@ class _InventarioScreenState extends State<InventarioScreen>
         );
         return;
       } else {
-        double cantidad = double.parse(bloc.cantidadController.text.isEmpty
-            ? bloc.quantitySelected.toString()
-            : bloc.cantidadController.text);
+        double cantidad = double.parse(
+          bloc.cantidadController.text.isEmpty
+              ? bloc.quantitySelected.toString()
+              : bloc.cantidadController.text,
+        );
         bloc.add(SendProductInventarioEnvet(cantidad));
       }
     } else {
-      double cantidad = double.parse(bloc.cantidadController.text.isEmpty
-          ? bloc.quantitySelected.toString()
-          : bloc.cantidadController.text);
+      double cantidad = double.parse(
+        bloc.cantidadController.text.isEmpty
+            ? bloc.quantitySelected.toString()
+            : bloc.cantidadController.text,
+      );
       bloc.add(SendProductInventarioEnvet(cantidad));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-// Mostrar el diálogo solo una vez cuando la vista se crea
+    // Mostrar el diálogo solo una vez cuando la vista se crea
 
     final size = MediaQuery.sizeOf(context);
     return BlocConsumer<InventarioBloc, InventarioState>(
@@ -406,24 +413,28 @@ class _InventarioScreenState extends State<InventarioScreen>
               return WillPopScope(
                 onWillPop: () async =>
                     false, // Deshabilitar el botón de retroceso
-                child: const DialogLoading(
-                  message: "Cargando productos...",
-                ),
+                child: const DialogLoading(message: "Cargando productos..."),
               );
             },
           );
         }
 
+        if (state is GetProductsLoadingBD) {
+           showDialog(
+            context: context,
+            builder: (context) {
+              return const DialogLoading(message: "Cargando informacion...");
+            },
+          );
+        }
+
+
+
         if (state is GetProductsSuccessBD) {
           //cerramos solo si hay un dialogo abierto
-          // Navigator.pop(context);
-          Get.snackbar(
-            '360 Software Informa',
-            "Se han cargado los productos ${state.products.length} correctamente",
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            icon: Icon(Icons.error, color: Colors.green),
-          );
+           if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          }
         }
 
         if (state is GetProductsFailureInventory) {
@@ -447,9 +458,7 @@ class _InventarioScreenState extends State<InventarioScreen>
           showDialog(
             context: context,
             builder: (context) {
-              return const DialogLoading(
-                message: "Validando informacion...",
-              );
+              return const DialogLoading(message: "Validando informacion...");
             },
           );
           _handleDependencies();
@@ -486,9 +495,7 @@ class _InventarioScreenState extends State<InventarioScreen>
           showDialog(
             context: context,
             builder: (context) {
-              return const DialogLoading(
-                message: "Validando informacion...",
-              );
+              return const DialogLoading(message: "Validando informacion...");
             },
           );
         }
@@ -534,85 +541,101 @@ class _InventarioScreenState extends State<InventarioScreen>
                       width: double.infinity,
                       child:
                           BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
-                              builder: (context, status) {
-                        return Column(
-                          children: [
-                            const WarningWidgetCubit(),
-                            Padding(
-                              padding: EdgeInsets.only(
-                                bottom: 5,
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                            builder: (context, status) {
+                              return Column(
                                 children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.arrow_back,
-                                        size: 20, color: white),
-                                    onPressed: () {
-                                      Navigator.pushReplacementNamed(
-                                        context,
-                                        '/home',
-                                      );
-                                    },
-                                  ),
+                                  const WarningWidgetCubit(),
                                   Padding(
-                                    padding: EdgeInsets.only(
-                                        left: size.width * 0.15),
-                                    child: const Text("INVENTARIO RÁPIDO",
-                                        style: TextStyle(
-                                            color: white, fontSize: 14)),
+                                    padding: EdgeInsets.only(bottom: 5),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.arrow_back,
+                                            size: 20,
+                                            color: white,
+                                          ),
+                                          onPressed: () {
+                                            Navigator.pushReplacementNamed(
+                                              context,
+                                              '/home',
+                                            );
+                                          },
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                            left: size.width * 0.15,
+                                          ),
+                                          child: const Text(
+                                            "INVENTARIO RÁPIDO",
+                                            style: TextStyle(
+                                              color: white,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        IconButton(
+                                          onPressed: () {
+                                            bloc.add(CleanFieldsEent());
+                                          },
+                                          icon: const Icon(
+                                            Icons.delete,
+                                            size: 20,
+                                            color: white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  const Spacer(),
-                                  IconButton(
-                                      onPressed: () {
-                                        bloc.add(CleanFieldsEent());
-                                      },
-                                      icon: const Icon(Icons.delete,
-                                          size: 20, color: white)),
                                 ],
-                              ),
-                            ),
-                          ],
-                        );
-                      }),
+                              );
+                            },
+                          ),
                     ),
 
                     Expanded(
                       child: SizedBox(
-                          child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            //todo : ubicacion de origen
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10),
-                                  child: Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: BoxDecoration(
-                                      color: bloc.locationIsOk ? green : yellow,
-                                      shape: BoxShape.circle,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              //todo : ubicacion de origen
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                    ),
+                                    child: Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: BoxDecoration(
+                                        color: bloc.locationIsOk
+                                            ? green
+                                            : yellow,
+                                        shape: BoxShape.circle,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                Card(
-                                  color: bloc.isLocationOk
-                                      ? bloc.locationIsOk
-                                          ? Colors.green[100]
-                                          : Colors.grey[300]
-                                      : Colors.red[200],
-                                  elevation: 5,
-                                  child: Row(
-                                    children: [
-                                      Container(
+                                  Card(
+                                    color: bloc.isLocationOk
+                                        ? bloc.locationIsOk
+                                              ? Colors.green[100]
+                                              : Colors.grey[300]
+                                        : Colors.red[200],
+                                    elevation: 5,
+                                    child: Row(
+                                      children: [
+                                        Container(
                                           // color: Colors.amber,
                                           width: size.width * 0.85,
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 0, vertical: 2),
+                                            horizontal: 0,
+                                            vertical: 2,
+                                          ),
                                           child: Padding(
                                             padding: const EdgeInsets.all(8.0),
                                             child: Column(
@@ -641,94 +664,107 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                   focusNode: focusNode1,
                                                   onBarcodeScanned:
                                                       (value, context) {
-                                                    return validateLocation(
-                                                      value,
-                                                    );
-                                                  },
+                                                        return validateLocation(
+                                                          value,
+                                                        );
+                                                      },
                                                 ),
                                                 Align(
                                                   alignment:
                                                       Alignment.centerLeft,
                                                   child: Text(
-                                                      bloc.currentUbication
-                                                                      ?.name ==
-                                                                  "" ||
-                                                              bloc.currentUbication
-                                                                      ?.name ==
-                                                                  null
-                                                          ? 'Esperando escaneo'
-                                                          : bloc.currentUbication
+                                                    bloc.currentUbication?.name ==
+                                                                "" ||
+                                                            bloc
+                                                                    .currentUbication
+                                                                    ?.name ==
+                                                                null
+                                                        ? 'Esperando escaneo'
+                                                        : bloc
+                                                                  .currentUbication
                                                                   ?.name ??
                                                               "",
-                                                      style: TextStyle(
-                                                          fontSize: 14,
-                                                          color: black)),
-                                                )
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      color: black,
+                                                    ),
+                                                  ),
+                                                ),
                                               ],
                                             ),
-                                          )),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            //todo : producto
-                            const SizedBox(height: 5),
-                            Row(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10),
-                                  child: Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: BoxDecoration(
-                                      color: bloc.productIsOk ? green : yellow,
-                                      shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ),
-                                Card(
-                                  color: bloc.isProductOk
-                                      ? bloc.productIsOk
-                                          ? Colors.green[100]
-                                          : Colors.grey[300]
-                                      : Colors.red[200],
-                                  elevation: 5,
-                                  child: Container(
+                                ],
+                              ),
+
+                              //todo : producto
+                              const SizedBox(height: 5),
+                              Row(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                    ),
+                                    child: Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: BoxDecoration(
+                                        color: bloc.productIsOk
+                                            ? green
+                                            : yellow,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                                  Card(
+                                    color: bloc.isProductOk
+                                        ? bloc.productIsOk
+                                              ? Colors.green[100]
+                                              : Colors.grey[300]
+                                        : Colors.red[200],
+                                    elevation: 5,
+                                    child: Container(
                                       // color: Colors.amber,
                                       width: size.width * 0.85,
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 0),
+                                        horizontal: 10,
+                                        vertical: 0,
+                                      ),
                                       child: Padding(
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 0, vertical: 5),
+                                          horizontal: 0,
+                                          vertical: 5,
+                                        ),
                                         child: Column(
                                           children: [
                                             GestureDetector(
-                                              onTap: (bloc
-                                                          .locationIsOk && //true
+                                              onTap:
+                                                  (bloc.locationIsOk && //true
                                                       !bloc
                                                           .productIsOk && //false
                                                       !bloc
                                                           .quantityIsOk) //false
-
                                                   ? () {
                                                       if (bloc
-                                                          .productos.isEmpty) {
+                                                          .productos
+                                                          .isEmpty) {
                                                         Get.defaultDialog(
                                                           title:
                                                               '360 Software Informa',
                                                           titleStyle: TextStyle(
-                                                              color: Colors.red,
-                                                              fontSize: 18),
+                                                            color: Colors.red,
+                                                            fontSize: 18,
+                                                          ),
                                                           middleText:
                                                               "No hay productos cargadoss, por favor cargues las productos",
                                                           middleTextStyle:
                                                               TextStyle(
-                                                                  color: black,
-                                                                  fontSize: 14),
+                                                                color: black,
+                                                                fontSize: 14,
+                                                              ),
                                                           backgroundColor:
                                                               Colors.white,
                                                           radius: 10,
@@ -737,36 +773,37 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                               onPressed: () {
                                                                 context
                                                                     .read<
-                                                                        InventarioBloc>()
+                                                                      InventarioBloc
+                                                                    >()
                                                                     .add(
-                                                                        GetProductsEvent());
+                                                                      GetProductsEvent(),
+                                                                    );
                                                                 //esperamos 1 segundo para que se vea el dialogo
                                                                 Get.back();
                                                               },
-                                                              style:
-                                                                  ElevatedButton
-                                                                      .styleFrom(
+                                                              style: ElevatedButton.styleFrom(
                                                                 backgroundColor:
                                                                     primaryColorApp,
-                                                                shape:
-                                                                    RoundedRectangleBorder(
+                                                                shape: RoundedRectangleBorder(
                                                                   borderRadius:
-                                                                      BorderRadius
-                                                                          .circular(
-                                                                              10),
+                                                                      BorderRadius.circular(
+                                                                        10,
+                                                                      ),
                                                                 ),
                                                               ),
                                                               child: Text(
-                                                                  'Cargar productos',
-                                                                  style: TextStyle(
+                                                                'Cargar productos',
+                                                                style:
+                                                                    TextStyle(
                                                                       color:
-                                                                          white)),
+                                                                          white,
+                                                                    ),
+                                                              ),
                                                             ),
                                                           ],
                                                         );
                                                       } else {
-                                                        Navigator
-                                                            .pushReplacementNamed(
+                                                        Navigator.pushReplacementNamed(
                                                           context,
                                                           'search-product',
                                                         );
@@ -776,8 +813,9 @@ class _InventarioScreenState extends State<InventarioScreen>
                                               child: Card(
                                                 color: white,
                                                 child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(6.0),
+                                                  padding: const EdgeInsets.all(
+                                                    6.0,
+                                                  ),
                                                   child: Row(
                                                     children: [
                                                       Align(
@@ -786,9 +824,10 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                         child: Text(
                                                           'Producto',
                                                           style: TextStyle(
-                                                              fontSize: 14,
-                                                              color:
-                                                                  primaryColorApp),
+                                                            fontSize: 14,
+                                                            color:
+                                                                primaryColorApp,
+                                                          ),
                                                         ),
                                                       ),
                                                       const Spacer(),
@@ -808,26 +847,30 @@ class _InventarioScreenState extends State<InventarioScreen>
                                               focusNode: focusNode2,
                                               onBarcodeScanned:
                                                   (value, context) {
-                                                return validateProduct(
-                                                  value,
-                                                );
-                                              },
+                                                    return validateProduct(
+                                                      value,
+                                                    );
+                                                  },
                                             ),
                                             Align(
                                               alignment: Alignment.centerLeft,
                                               child: Text(
-                                                  bloc.currentProduct?.name ==
-                                                              "" ||
-                                                          bloc.currentProduct
-                                                                  ?.name ==
-                                                              null
-                                                      ? 'Esperando escaneo'
-                                                      : bloc.currentProduct
+                                                bloc.currentProduct?.name ==
+                                                            "" ||
+                                                        bloc
+                                                                .currentProduct
+                                                                ?.name ==
+                                                            null
+                                                    ? 'Esperando escaneo'
+                                                    : bloc
+                                                              .currentProduct
                                                               ?.name ??
                                                           "",
-                                                  style: TextStyle(
-                                                      fontSize: 14,
-                                                      color: black)),
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: black,
+                                                ),
+                                              ),
                                             ),
                                             Align(
                                               alignment: Alignment.centerLeft,
@@ -846,43 +889,53 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    bloc.currentProduct
-                                                                    ?.barcode ==
+                                                    bloc.currentProduct?.barcode ==
                                                                 false ||
-                                                            bloc.currentProduct
+                                                            bloc
+                                                                    .currentProduct
                                                                     ?.barcode ==
                                                                 null ||
-                                                            bloc.currentProduct
+                                                            bloc
+                                                                    .currentProduct
                                                                     ?.barcode ==
                                                                 ""
                                                         ? "Sin codigo de barras"
-                                                        : bloc.currentProduct
-                                                                ?.barcode ??
-                                                            "",
+                                                        : bloc
+                                                                  .currentProduct
+                                                                  ?.barcode ??
+                                                              "",
                                                     textAlign: TextAlign.start,
                                                     style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: bloc.currentProduct?.barcode ==
-                                                                    false ||
-                                                                bloc.currentProduct
-                                                                        ?.barcode ==
-                                                                    null ||
-                                                                bloc.currentProduct
-                                                                        ?.barcode ==
-                                                                    ""
-                                                            ? red
-                                                            : black),
+                                                      fontSize: 12,
+                                                      color:
+                                                          bloc
+                                                                      .currentProduct
+                                                                      ?.barcode ==
+                                                                  false ||
+                                                              bloc
+                                                                      .currentProduct
+                                                                      ?.barcode ==
+                                                                  null ||
+                                                              bloc
+                                                                      .currentProduct
+                                                                      ?.barcode ==
+                                                                  ""
+                                                          ? red
+                                                          : black,
+                                                    ),
                                                   ),
                                                   const Spacer(),
                                                   GestureDetector(
                                                     onTap: () {
                                                       showDialog(
-                                                          context: context,
-                                                          builder: (context) {
-                                                            return DialogBarcodesInventario(
-                                                                listOfBarcodes:
-                                                                    bloc.barcodeInventario);
-                                                          });
+                                                        context: context,
+                                                        builder: (context) {
+                                                          return DialogBarcodesInventario(
+                                                            listOfBarcodes: bloc
+                                                                .barcodeInventario,
+                                                          );
+                                                        },
+                                                      );
                                                     },
                                                     child: Visibility(
                                                       visible: bloc
@@ -909,77 +962,93 @@ class _InventarioScreenState extends State<InventarioScreen>
                                               alignment: Alignment.centerLeft,
                                               child: Row(
                                                 children: [
-                                                  Text('codigo: ',
-                                                      style: TextStyle(
-                                                          fontSize: 14,
-                                                          color: black)),
+                                                  Text(
+                                                    'codigo: ',
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      color: black,
+                                                    ),
+                                                  ),
                                                   Text(
                                                     bloc.currentProduct?.code ==
                                                                 false ||
-                                                            bloc.currentProduct
+                                                            bloc
+                                                                    .currentProduct
                                                                     ?.code ==
                                                                 null ||
-                                                            bloc.currentProduct
+                                                            bloc
+                                                                    .currentProduct
                                                                     ?.code ==
                                                                 ""
                                                         ? "Sin codigo "
-                                                        : bloc.currentProduct
-                                                                ?.code ??
-                                                            "",
+                                                        : bloc
+                                                                  .currentProduct
+                                                                  ?.code ??
+                                                              "",
                                                     textAlign: TextAlign.start,
                                                     style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: bloc.currentProduct?.code ==
-                                                                    false ||
-                                                                bloc.currentProduct
-                                                                        ?.code ==
-                                                                    null ||
-                                                                bloc.currentProduct
-                                                                        ?.code ==
-                                                                    ""
-                                                            ? red
-                                                            : primaryColorApp),
+                                                      fontSize: 12,
+                                                      color:
+                                                          bloc
+                                                                      .currentProduct
+                                                                      ?.code ==
+                                                                  false ||
+                                                              bloc
+                                                                      .currentProduct
+                                                                      ?.code ==
+                                                                  null ||
+                                                              bloc
+                                                                      .currentProduct
+                                                                      ?.code ==
+                                                                  ""
+                                                          ? red
+                                                          : primaryColorApp,
+                                                    ),
                                                   ),
                                                 ],
                                               ),
                                             ),
                                           ],
                                         ),
-                                      )),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 5),
-
-                            //todo: lotes
-
-                            Visibility(
-                              visible: bloc.currentProduct?.tracking == "lot",
-                              child: Row(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10),
-                                    child: Container(
-                                      width: 10,
-                                      height: 10,
-                                      decoration: BoxDecoration(
-                                        color: bloc.loteIsOk ? green : yellow,
-                                        shape: BoxShape.circle,
                                       ),
                                     ),
                                   ),
-                                  Card(
-                                    color: bloc.isLoteOk
-                                        ? bloc.loteIsOk
-                                            ? Colors.green[100]
-                                            : Colors.grey[300]
-                                        : Colors.red[200],
-                                    elevation: 5,
-                                    child: Container(
+                                ],
+                              ),
+                              const SizedBox(height: 5),
+
+                              //todo: lotes
+                              Visibility(
+                                visible: bloc.currentProduct?.tracking == "lot",
+                                child: Row(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                      ),
+                                      child: Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: BoxDecoration(
+                                          color: bloc.loteIsOk ? green : yellow,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    ),
+                                    Card(
+                                      color: bloc.isLoteOk
+                                          ? bloc.loteIsOk
+                                                ? Colors.green[100]
+                                                : Colors.grey[300]
+                                          : Colors.red[200],
+                                      elevation: 5,
+                                      child: Container(
                                         width: size.width * 0.85,
                                         padding: const EdgeInsets.only(
-                                            left: 10, right: 10, bottom: 10),
+                                          left: 10,
+                                          right: 10,
+                                          bottom: 10,
+                                        ),
                                         child: Column(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
@@ -988,8 +1057,9 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                 Text(
                                                   'Lote del producto',
                                                   style: TextStyle(
-                                                      fontSize: 14,
-                                                      color: primaryColorApp),
+                                                    fontSize: 14,
+                                                    color: primaryColorApp,
+                                                  ),
                                                 ),
                                                 const Spacer(),
                                                 SizedBox(
@@ -1004,21 +1074,21 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                   ),
                                                 ),
                                                 IconButton(
-                                                    onPressed: () {
-                                                      Navigator
-                                                          .pushReplacementNamed(
-                                                        context,
-                                                        'new-lote-inventario',
-                                                        arguments: [
-                                                          bloc.currentProduct
-                                                        ],
-                                                      );
-                                                    },
-                                                    icon: Icon(
-                                                      Icons.arrow_forward_ios,
-                                                      color: primaryColorApp,
-                                                      size: 20,
-                                                    ))
+                                                  onPressed: () {
+                                                    Navigator.pushReplacementNamed(
+                                                      context,
+                                                      'new-lote-inventario',
+                                                      arguments: [
+                                                        bloc.currentProduct,
+                                                      ],
+                                                    );
+                                                  },
+                                                  icon: Icon(
+                                                    Icons.arrow_forward_ios,
+                                                    color: primaryColorApp,
+                                                    size: 20,
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                             Column(
@@ -1036,29 +1106,32 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                       focusNode: focusNode5,
                                                       onBarcodeScanned:
                                                           (value, context) {
-                                                        return validateLote(
-                                                          value,
-                                                        );
-                                                      },
+                                                            return validateLote(
+                                                              value,
+                                                            );
+                                                          },
                                                     ),
                                                     Align(
                                                       alignment:
                                                           Alignment.centerLeft,
                                                       child: Text(
-                                                          bloc.currentProductLote
-                                                                          ?.name ==
-                                                                      "" ||
-                                                                  bloc.currentProductLote
-                                                                          ?.name ==
-                                                                      null
-                                                              ? 'Esperando escaneo'
-                                                              : bloc.currentProductLote
+                                                        bloc.currentProductLote?.name ==
+                                                                    "" ||
+                                                                bloc
+                                                                        .currentProductLote
+                                                                        ?.name ==
+                                                                    null
+                                                            ? 'Esperando escaneo'
+                                                            : bloc
+                                                                      .currentProductLote
                                                                       ?.name ??
                                                                   "",
-                                                          style: TextStyle(
-                                                              fontSize: 14,
-                                                              color: black)),
-                                                    )
+                                                        style: TextStyle(
+                                                          fontSize: 14,
+                                                          color: black,
+                                                        ),
+                                                      ),
+                                                    ),
                                                   ],
                                                 ),
                                                 ExpirationBadgeWidget(
@@ -1067,41 +1140,41 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                       ?.expirationDate,
                                                 ),
                                               ],
-                                            )
+                                            ),
                                           ],
-                                        )),
-                                  ),
-                                ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      )),
+                      ),
                     ),
 
                     //todo: cantidad
                     SizedBox(
                       width: size.width,
-                      height: bloc.viewQuantity == true &&
-                              context
-                                  .read<UserBloc>()
-                                  .fabricante
-                                  .contains("Zebra")
+                      height:
+                          bloc.viewQuantity == true &&
+                              context.read<UserBloc>().fabricante.contains(
+                                "Zebra",
+                              )
                           ? 300
                           : !bloc.viewQuantity
-                              ? 110
-                              : 150,
+                          ? 110
+                          : 150,
                       child: Column(
                         children: [
                           Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
                             child: Card(
                               color: bloc.isQuantityOk
                                   ? bloc.quantityIsOk
-                                      ? white
-                                      : Colors.grey[300]
+                                        ? white
+                                        : Colors.grey[300]
                                   : Colors.red[200],
                               elevation: 5,
                               child: Padding(
@@ -1112,46 +1185,61 @@ class _InventarioScreenState extends State<InventarioScreen>
                                   child: Row(
                                     children: [
                                       Visibility(
-                                        visible: bloc
-                                                .configurations
-                                                .result
-                                                ?.result
-                                                ?.countQuantityInventory ==
-                                            true,
-                                        child: Text('CANT: ',
-                                            style: TextStyle(
-                                                fontSize: 12, color: black)),
-                                      ),
-                                      Visibility(
-                                        visible: bloc
+                                        visible:
+                                            bloc
                                                 .configurations
                                                 .result
                                                 ?.result
                                                 ?.countQuantityInventory ==
                                             true,
                                         child: Text(
-                                            '${bloc.currentProduct?.quantity ?? 0.0}',
-                                            style: TextStyle(
-                                                fontSize: 12, color: black)),
+                                          'CANT: ',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: black,
+                                          ),
+                                        ),
+                                      ),
+                                      Visibility(
+                                        visible:
+                                            bloc
+                                                .configurations
+                                                .result
+                                                ?.result
+                                                ?.countQuantityInventory ==
+                                            true,
+                                        child: Text(
+                                          '${bloc.currentProduct?.quantity ?? 0.0}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: black,
+                                          ),
+                                        ),
                                       ),
                                       const SizedBox(width: 10),
-                                      Text('UND: ',
-                                          style: TextStyle(
-                                              fontSize: 12, color: black)),
                                       Text(
-                                          bloc.currentProduct?.uom == "" ||
-                                                  bloc.currentProduct?.uom ==
-                                                      null
-                                              ? "Sin unidad"
-                                              : bloc.currentProduct?.uom ?? "",
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: primaryColorApp)),
+                                        'UND: ',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: black,
+                                        ),
+                                      ),
+                                      Text(
+                                        bloc.currentProduct?.uom == "" ||
+                                                bloc.currentProduct?.uom == null
+                                            ? "Sin unidad"
+                                            : bloc.currentProduct?.uom ?? "",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: primaryColorApp,
+                                        ),
+                                      ),
                                       const Spacer(),
                                       Expanded(
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 10),
+                                            horizontal: 10,
+                                          ),
                                           alignment: Alignment.center,
                                           child: Stack(
                                             alignment: Alignment.center,
@@ -1164,39 +1252,50 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                   focusNode: focusNode3,
                                                   onBarcodeScanned:
                                                       (value, context) {
-                                                    validateQuantity(value);
-                                                  },
+                                                        validateQuantity(value);
+                                                      },
                                                 ),
                                               ),
                                               Text(
-                                                  bloc.quantitySelected
-                                                      .toString(),
-                                                  style: const TextStyle(
-                                                      color: black,
-                                                      fontSize: 14)),
+                                                bloc.quantitySelected
+                                                    .toString(),
+                                                style: const TextStyle(
+                                                  color: black,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
                                             ],
                                           ),
                                         ),
                                       ),
                                       IconButton(
-                                          onPressed: bloc.quantityIsOk &&
-                                                  bloc.quantitySelected >= 0
-                                              ? () {
-                                                  bloc.add(ShowQuantityEvent(
-                                                      !bloc.viewQuantity));
-                                                  Future.delayed(
-                                                      const Duration(
-                                                          milliseconds: 100),
-                                                      () {
-                                                    FocusScope.of(context)
-                                                        .requestFocus(
-                                                            focusNode4);
-                                                  });
-                                                }
-                                              : null,
-                                          icon: Icon(Icons.edit_note_rounded,
-                                              color: primaryColorApp,
-                                              size: 30)),
+                                        onPressed:
+                                            bloc.quantityIsOk &&
+                                                bloc.quantitySelected >= 0
+                                            ? () {
+                                                bloc.add(
+                                                  ShowQuantityEvent(
+                                                    !bloc.viewQuantity,
+                                                  ),
+                                                );
+                                                Future.delayed(
+                                                  const Duration(
+                                                    milliseconds: 100,
+                                                  ),
+                                                  () {
+                                                    FocusScope.of(
+                                                      context,
+                                                    ).requestFocus(focusNode4);
+                                                  },
+                                                );
+                                              }
+                                            : null,
+                                        icon: Icon(
+                                          Icons.edit_note_rounded,
+                                          color: primaryColorApp,
+                                          size: 30,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -1207,28 +1306,32 @@ class _InventarioScreenState extends State<InventarioScreen>
                             visible: bloc.viewQuantity,
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 2),
+                                horizontal: 10,
+                                vertical: 2,
+                              ),
                               child: SizedBox(
                                 height: 40,
                                 child: TextFormField(
                                   //tmano del campo
-
                                   focusNode: focusNode4,
                                   inputFormatters: [
                                     FilteringTextInputFormatter.allow(
-                                        RegExp(r'[0-9.]')),
+                                      RegExp(r'[0-9.]'),
+                                    ),
                                   ],
                                   showCursor: true,
                                   onChanged: (value) {
                                     // Verifica si el valor no está vacío y si es un número válido
                                     if (value.isNotEmpty) {
                                       try {
-                                        bloc.quantitySelected =
-                                            int.parse(value);
+                                        bloc.quantitySelected = int.parse(
+                                          value,
+                                        );
                                       } catch (e) {
                                         // Manejo de errores si la conversión falla
                                         debugPrint(
-                                            'Error al convertir a entero: $e');
+                                          'Error al convertir a entero: $e',
+                                        );
                                         // Aquí puedes mostrar un mensaje al usuario o manejar el error de otra forma
                                       }
                                     } else {
@@ -1239,22 +1342,24 @@ class _InventarioScreenState extends State<InventarioScreen>
                                   },
                                   controller: bloc.cantidadController,
                                   keyboardType: TextInputType.number,
-                                  decoration:
-                                      InputDecorations.authInputDecoration(
+                                  decoration: InputDecorations.authInputDecoration(
                                     hintText: 'Cantidad',
                                     labelText: 'Cantidad',
                                     suffixIconButton: IconButton(
                                       onPressed: () {
-                                        bloc.add(ShowQuantityEvent(
-                                            !bloc.viewQuantity));
+                                        bloc.add(
+                                          ShowQuantityEvent(!bloc.viewQuantity),
+                                        );
                                         bloc.cantidadController.clear();
                                         //cambiamos el foco pa leer por pda la cantidad
                                         Future.delayed(
-                                            const Duration(milliseconds: 100),
-                                            () {
-                                          FocusScope.of(context)
-                                              .requestFocus(focusNode3);
-                                        });
+                                          const Duration(milliseconds: 100),
+                                          () {
+                                            FocusScope.of(
+                                              context,
+                                            ).requestFocus(focusNode3);
+                                          },
+                                        );
                                       },
                                       icon: const Icon(Icons.clear),
                                     ),
@@ -1264,31 +1369,33 @@ class _InventarioScreenState extends State<InventarioScreen>
                             ),
                           ),
                           Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: ElevatedButton(
+                              onPressed:
+                                  bloc.quantityIsOk &&
+                                      bloc.quantitySelected >= 0
+                                  ? () {
+                                      //cerramos el teclado
+                                      FocusScope.of(context).unfocus();
+                                      _validatebuttonquantity();
+                                    }
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColorApp,
+                                minimumSize: Size(size.width * 0.93, 35),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
                               ),
-                              child: ElevatedButton(
-                                onPressed: bloc.quantityIsOk &&
-                                        bloc.quantitySelected >= 0
-                                    ? () {
-                                        //cerramos el teclado
-                                        FocusScope.of(context).unfocus();
-                                        _validatebuttonquantity();
-                                      }
-                                    : null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColorApp,
-                                  minimumSize: Size(size.width * 0.93, 35),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
+                              child: const Text(
+                                'APLICAR CANTIDAD',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
                                 ),
-                                child: const Text(
-                                  'APLICAR CANTIDAD',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 14),
-                                ),
-                              )),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),

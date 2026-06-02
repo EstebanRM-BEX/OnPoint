@@ -18,7 +18,6 @@ class ProductDropdowmnWidget extends StatelessWidget {
                   !context.read<ConteoBloc>().productIsOk &&
                   !context.read<ConteoBloc>().quantityIsOk)
               ? () {
-                  context.read<ConteoBloc>().add(LoadNewProductEvent());
                   Navigator.pushReplacementNamed(
                     context,
                     'search-product-conteo',

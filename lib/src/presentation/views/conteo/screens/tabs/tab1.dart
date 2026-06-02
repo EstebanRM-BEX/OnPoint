@@ -341,6 +341,41 @@ class Tab1ScreenConteo extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                 ],
+                const SizedBox(height: 5),
+                if (context.read<ConteoBloc>().productosOrdenConteo.isNotEmpty ==
+                    true) ...[
+                  Text(
+                    'Productos de conteo',
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: primaryColorApp,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 5),
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      itemCount:
+                          context.read<ConteoBloc>().productosOrdenConteo.length,
+                      itemBuilder: (context, index) {
+                        return Card(
+                            elevation: 4,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                  context
+                                          .read<ConteoBloc>()
+                                          .productosOrdenConteo[index]
+                                          .name ??
+                                      '',
+                                  style: const TextStyle(
+                                      fontSize: 12, color: black)),
+                            ));
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
 
                 if (context.read<ConteoBloc>().categoriasConteo.isNotEmpty ==
                     true) ...[
