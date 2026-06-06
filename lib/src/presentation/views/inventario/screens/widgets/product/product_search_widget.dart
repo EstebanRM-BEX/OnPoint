@@ -218,10 +218,6 @@ class _SearchProductScreenState extends State<SearchProductScreen> {
           bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
           bloc.add(ChangeProductIsOkEvent(selectedProduct, isManual: true));
 
-          if (selectedProduct.tracking == "none") {
-            bloc.add(ChangeIsOkQuantity(true));
-          }
-
           setState(() => selectedProductKey = null);
 
           Navigator.pushReplacementNamed(context, 'inventario');
@@ -240,7 +236,7 @@ class _SearchProductScreenState extends State<SearchProductScreen> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           minimumSize: Size(size.width * 0.9, 40),
         ),
-        child: const Text("Seleccionarr", style: TextStyle(color: white)),
+        child: const Text("Seleccionar", style: TextStyle(color: white)),
       ),
     );
   }

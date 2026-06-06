@@ -84,9 +84,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
         showDialog(
           context: context,
           builder: (context) {
-            return const DialogLoading(
-              message: "Espere un momento...",
-            );
+            return const DialogLoading(message: "Espere un momento...");
           },
         );
         Future.delayed(const Duration(seconds: 1), () {
@@ -187,10 +185,13 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
     final currentProduct = batchBloc.currentProduct;
     if (scan == currentProduct.barcodeLocation.toString().toLowerCase()) {
       batchBloc.add(ValidateFieldsEvent(field: "location", isOk: true));
-      batchBloc.add(ChangeLocationIsOkEvent(
+      batchBloc.add(
+        ChangeLocationIsOkEvent(
           currentProduct.idProduct ?? 0,
           batchBloc.pickWithProducts.pick?.id ?? 0,
-          currentProduct.idMove ?? 0));
+          currentProduct.idMove ?? 0,
+        ),
+      );
       batchBloc.oldLocation = currentProduct.locationId.toString();
       Future.microtask(() => focusNode1.requestFocus());
     } else {
@@ -211,17 +212,24 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
     final currentProduct = batchBloc.currentProduct;
     if (scan == currentProduct.barcode?.toLowerCase()) {
       batchBloc.add(ValidateFieldsEvent(field: "product", isOk: true));
-      batchBloc.add(ChangeProductIsOkEvent(
+      batchBloc.add(
+        ChangeProductIsOkEvent(
           true,
           currentProduct.idProduct ?? 0,
           batchBloc.pickWithProducts.pick?.id ?? 0,
           0,
-          currentProduct.idMove ?? 0));
+          currentProduct.idMove ?? 0,
+        ),
+      );
       Future.microtask(() => focusNode2.requestFocus());
     } else {
       debugPrint("Validando codigo de barras alternativo...");
       final isok = validateScannedBarcode(
-          scan, batchBloc.currentProduct, batchBloc, true);
+        scan,
+        batchBloc.currentProduct,
+        batchBloc,
+        true,
+      );
 
       if (!isok) {
         debugPrint("Codigo de barras no valido. $isok");
@@ -233,37 +241,52 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
     }
   }
 
-  bool validateScannedBarcode(String scannedBarcode,
-      ProductsBatch currentProduct, PickingPickBloc batchBloc, bool isProduct) {
+  bool validateScannedBarcode(
+    String scannedBarcode,
+    ProductsBatch currentProduct,
+    PickingPickBloc batchBloc,
+    bool isProduct,
+  ) {
     // Buscar el barcode que coincida con el valor escaneado
     debugPrint("scannedBarcode: $scannedBarcode");
 
     debugPrint("listOfBarcodes: ${batchBloc.listOfBarcodes}");
 
     Barcodes? matchedBarcode = batchBloc.listOfBarcodes.firstWhere(
-        (barcode) => barcode.barcode?.toLowerCase() == scannedBarcode,
-        orElse: () =>
-            Barcodes() // Si no se encuentra ningún match, devuelve null
-        );
+      (barcode) => barcode.barcode?.toLowerCase() == scannedBarcode,
+      orElse: () =>
+          Barcodes(), // Si no se encuentra ningún match, devuelve null
+    );
     if (matchedBarcode.barcode != null) {
       if (isProduct) {
         batchBloc.add(ValidateFieldsEvent(field: "product", isOk: true));
 
-        batchBloc.add(ChangeQuantitySeparate(
-            0, currentProduct.idProduct ?? 0, currentProduct.idMove ?? 0));
+        batchBloc.add(
+          ChangeQuantitySeparate(
+            0,
+            currentProduct.idProduct ?? 0,
+            currentProduct.idMove ?? 0,
+          ),
+        );
 
-        batchBloc.add(ChangeProductIsOkEvent(
+        batchBloc.add(
+          ChangeProductIsOkEvent(
             true,
             currentProduct.idProduct ?? 0,
             batchBloc.pickWithProducts.pick?.id ?? 0,
             0,
-            currentProduct.idMove ?? 0));
+            currentProduct.idMove ?? 0,
+          ),
+        );
 
-        batchBloc.add(ChangeIsOkQuantity(
+        batchBloc.add(
+          ChangeIsOkQuantity(
             true,
             currentProduct.idProduct ?? 0,
             batchBloc.pickWithProducts.pick?.id ?? 0,
-            currentProduct.idMove ?? 0));
+            currentProduct.idMove ?? 0,
+          ),
+        );
 
         return true;
       } else {
@@ -275,8 +298,14 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
           return false;
         }
 
-        batchBloc.add(AddQuantitySeparate(currentProduct.idProduct ?? 0,
-            currentProduct.idMove ?? 0, matchedBarcode.cantidad, false));
+        batchBloc.add(
+          AddQuantitySeparate(
+            currentProduct.idProduct ?? 0,
+            currentProduct.idMove ?? 0,
+            matchedBarcode.cantidad,
+            false,
+          ),
+        );
       }
       _vibrationService.vibrate();
       _audioService.playErrorSound();
@@ -299,8 +328,14 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
       return;
     }
     if (scan == currentProduct.barcode?.toLowerCase()) {
-      batchBloc.add(AddQuantitySeparate(
-          currentProduct.idProduct ?? 0, currentProduct.idMove ?? 0, 1, false));
+      batchBloc.add(
+        AddQuantitySeparate(
+          currentProduct.idProduct ?? 0,
+          currentProduct.idMove ?? 0,
+          1,
+          false,
+        ),
+      );
       Future.microtask(() => focusNode3.requestFocus());
     } else {
       validateScannedBarcode(scan, batchBloc.currentProduct, batchBloc, false);
@@ -313,50 +348,66 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
     final batchBloc = context.read<PickingPickBloc>();
     final currentProduct = batchBloc.currentProduct;
 
-    double cantidad = double.parse(cantidadController.text.isEmpty
-        ? batchBloc.quantitySelected.toString()
-        : cantidadController.text);
+    double cantidad = double.parse(
+      cantidadController.text.isEmpty
+          ? batchBloc.quantitySelected.toString()
+          : cantidadController.text,
+    );
 
     if (cantidad == currentProduct.quantity) {
-      batchBloc.add(ChangeQuantitySeparate(
-        cantidad,
-        currentProduct.idProduct ?? 0,
-        currentProduct.idMove ?? 0,
-      ));
+      batchBloc.add(
+        ChangeQuantitySeparate(
+          cantidad,
+          currentProduct.idProduct ?? 0,
+          currentProduct.idMove ?? 0,
+        ),
+      );
     } else {
       FocusScope.of(context).unfocus();
       if (cantidad < (currentProduct.quantity ?? 0)) {
         showDialog(
-            context: context,
-            builder: (context) {
-              return DialogAdvetenciaCantidadPick(
-                  currentProduct: currentProduct,
-                  cantidad: cantidad,
-                  batchId: batchBloc.pickWithProducts.pick?.id ?? 0,
-                  onAccepted: () async {
-                    batchBloc.add(ChangeQuantitySeparate(
-                        cantidad,
-                        currentProduct.idProduct ?? 0,
-                        currentProduct.idMove ?? 0));
-                    _nextProduct(currentProduct, batchBloc);
-                    cantidadController.clear();
-                  });
-            });
+          context: context,
+          builder: (context) {
+            return DialogAdvetenciaCantidadPick(
+              currentProduct: currentProduct,
+              cantidad: cantidad,
+              batchId: batchBloc.pickWithProducts.pick?.id ?? 0,
+              onAccepted: () async {
+                batchBloc.add(
+                  ChangeQuantitySeparate(
+                    cantidad,
+                    currentProduct.idProduct ?? 0,
+                    currentProduct.idMove ?? 0,
+                  ),
+                );
+                _nextProduct(currentProduct, batchBloc);
+                cantidadController.clear();
+              },
+            );
+          },
+        );
       } else {
-        batchBloc.add(ChangeQuantitySeparate(
-          cantidad,
-          currentProduct.idProduct ?? 0,
-          currentProduct.idMove ?? 0,
-        ));
-
-        _nextProduct(currentProduct, batchBloc);
-        // _vibrationService.vibrate();
-        // _audioService.playErrorSound();
-        // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        //   duration: const Duration(milliseconds: 1000),
-        //   content: const Text('Cantidad erronea'),
-        //   backgroundColor: Colors.red[200],
-        // ));
+        //validamos si el usuario tiene el permiso
+        if (batchBloc.configurations.result?.result?.allowMoveExcessProduction == true) {
+          batchBloc.add(
+            ChangeQuantitySeparate(
+              cantidad,
+              currentProduct.idProduct ?? 0,
+              currentProduct.idMove ?? 0,
+            ),
+          );
+          _nextProduct(currentProduct, batchBloc);
+          return;
+        }
+        _vibrationService.vibrate();
+        _audioService.playErrorSound();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            duration: const Duration(milliseconds: 1000),
+            content: const Text('Cantidad erronea'),
+            backgroundColor: Colors.red[200],
+          ),
+        );
       }
     }
   }
@@ -392,14 +443,16 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
         builder: (context, state) {
           final batchBloc = context.read<PickingPickBloc>();
 
-          int totalTasks =
-              context.read<PickingPickBloc>().filteredProducts.length;
+          int totalTasks = context
+              .read<PickingPickBloc>()
+              .filteredProducts
+              .length;
 
           double progress = totalTasks > 0
               ? context.read<PickingPickBloc>().filteredProducts.where((e) {
-                    return e.isSeparate == 1;
-                  }).length /
-                  totalTasks
+                      return e.isSeparate == 1;
+                    }).length /
+                    totalTasks
               : 0.0;
 
           final currentProduct = batchBloc.currentProduct;
@@ -416,410 +469,510 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                         return Container(
                           width: size.width,
                           color: primaryColorApp,
-                          child:
-                              BlocConsumer<PickingPickBloc, PickingPickState>(
-                                  listenWhen: (previous, current) {
-                            return true;
-                          }, listener: (context, state) {
-                            debugPrint("❤️‍🔥 state ::: $state");
+                          child: BlocConsumer<PickingPickBloc, PickingPickState>(
+                            listenWhen: (previous, current) {
+                              return true;
+                            },
+                            listener: (context, state) {
+                              debugPrint("❤️‍🔥 state ::: $state");
 
-                            if (state is ViewProductImageSuccess) {
-                              showImageDialog(context, state.imageUrl);
-                            } else if (state is ViewProductImageFailure) {
-                              showScrollableErrorDialog(state.error);
-                            }
-
-                            if (state is CreateBackOrderOrNotLoading) {
-                              showDialog(
-                                context: context,
-                                builder: (context) {
-                                  return const DialogLoading(
-                                    message: "Validando informacion...",
-                                  );
-                                },
-                              );
-                            }
-                            if (state is ValidateConfirmLoading) {
-                              showDialog(
-                                context: context,
-                                builder: (context) {
-                                  return const DialogLoading(
-                                    message: "Validando informacion...",
-                                  );
-                                },
-                              );
-                            }
-
-                            if (state is ValidateConfirmSuccess) {
-                              //volvemos a llamar las entradas que tenemos guardadas en la bd
-                              if (state.isBackorder) {
-                                Get.snackbar("360 Software Informa", state.msg,
-                                    backgroundColor: white,
-                                    colorText: primaryColorApp,
-                                    icon:
-                                        Icon(Icons.error, color: Colors.green));
-                              } else {
-                                Get.snackbar("360 Software Informa", state.msg,
-                                    backgroundColor: white,
-                                    colorText: primaryColorApp,
-                                    icon:
-                                        Icon(Icons.error, color: Colors.green));
-                              }
-
-                              Navigator.pop(context);
-                              if (batchBloc.pickWithProducts.pick?.typePick ==
-                                  'pick') {
-                                Navigator.pushReplacementNamed(
-                                  context,
-                                  'pick',
-                                );
-                              } else {
-                                Navigator.pushReplacementNamed(
-                                  context,
-                                  'picking-componentes',
-                                );
-                              }
-                            }
-
-                            if (state is SendProductPickOdooError) {
-                              Navigator.pop(context);
-                              showScrollableErrorDialog(state.error);
-                            }
-
-                            if (state is MuellesLoadingState) {
-                              showDialog(
-                                context: context,
-                                barrierDismissible:
-                                    false, // No permitir que el usuario cierre el diálogo manualmente
-                                builder: (context) => const DialogLoading(
-                                  message: 'Cargando muelles...',
-                                ),
-                              );
-                            }
-
-                            if (state is MuellesErrorState) {
-                              Navigator.pop(context);
-
-                              showScrollableErrorDialog(state.error);
-                            }
-
-                            if (state is MuellesLoadedState) {
-                              Navigator.pop(context);
-                              showModalBottomSheet(
-                                backgroundColor: white,
-                                context: context,
-                                isDismissible: false,
-                                enableDrag: false,
-                                builder: (context) {
-                                  return SelectSubMuelleBottomSheetPick(
-                                    controller: _controllerSubMuelle,
-                                    focusNode: focusNode6,
-                                  );
-                                },
-                              );
-                            }
-
-                            if (state is ValidateConfirmFailure) {
-                              Navigator.pop(context);
-
-                              showScrollableErrorDialog(state.error);
-                            }
-
-                            if (state is CreateBackOrderOrNotFailure) {
-                              Navigator.pop(context);
-
-                              if (state.error
-                                  .contains('expiry.picking.confirmation')) {
-                                Get.defaultDialog(
-                                  title: '360 Software Informa',
-                                  titleStyle: TextStyle(
-                                      color: Colors.red, fontSize: 18),
-                                  middleText:
-                                      'Algunos productos tienen fecha de caducidad alcanzada.\n¿Desea continuar con la confirmacion aceptando los productos vencidos?',
-                                  middleTextStyle:
-                                      TextStyle(color: black, fontSize: 14),
-                                  backgroundColor: Colors.white,
-                                  radius: 10,
-                                  actions: [
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        batchBloc.add(ValidateConfirmEvent(
-                                            batchBloc.pickWithProducts.pick
-                                                    ?.id ??
-                                                0,
-                                            state.isBackorder,
-                                            false));
-
-                                        Get.back();
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: primaryColorApp,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                      child: Text('Continuar',
-                                          style: TextStyle(color: white)),
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        Get.back();
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: grey,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                      child: Text('Descartar',
-                                          style: TextStyle(color: white)),
-                                    ),
-                                  ],
-                                );
-                              } else {
+                              if (state is ViewProductImageSuccess) {
+                                showImageDialog(context, state.imageUrl);
+                              } else if (state is ViewProductImageFailure) {
                                 showScrollableErrorDialog(state.error);
                               }
-                            }
 
-                            if (state is CreateBackOrderOrNotSuccess) {
-                              //volvemos a llamar las entradas que tenemos guardadas en la bd
-                              if (state.isBackorder) {
-                                Get.snackbar("360 Software Informa", state.msg,
+                              if (state is CreateBackOrderOrNotLoading) {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return const DialogLoading(
+                                      message: "Validando informacion...",
+                                    );
+                                  },
+                                );
+                              }
+                              if (state is ValidateConfirmLoading) {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return const DialogLoading(
+                                      message: "Validando informacion...",
+                                    );
+                                  },
+                                );
+                              }
+
+                              if (state is ValidateConfirmSuccess) {
+                                //volvemos a llamar las entradas que tenemos guardadas en la bd
+                                if (state.isBackorder) {
+                                  Get.snackbar(
+                                    "360 Software Informa",
+                                    state.msg,
                                     backgroundColor: white,
                                     colorText: primaryColorApp,
-                                    icon:
-                                        Icon(Icons.error, color: Colors.green));
-                              } else {
-                                Get.snackbar("360 Software Informa", state.msg,
+                                    icon: Icon(
+                                      Icons.error,
+                                      color: Colors.green,
+                                    ),
+                                  );
+                                } else {
+                                  Get.snackbar(
+                                    "360 Software Informa",
+                                    state.msg,
                                     backgroundColor: white,
                                     colorText: primaryColorApp,
-                                    icon:
-                                        Icon(Icons.error, color: Colors.green));
+                                    icon: Icon(
+                                      Icons.error,
+                                      color: Colors.green,
+                                    ),
+                                  );
+                                }
+
+                                Navigator.pop(context);
+                                if (batchBloc.pickWithProducts.pick?.typePick ==
+                                    'pick') {
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    'pick',
+                                  );
+                                } else {
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    'picking-componentes',
+                                  );
+                                }
                               }
 
-                              Navigator.pop(context);
-                              if (batchBloc.pickWithProducts.pick?.typePick ==
-                                  'pick') {
-                                Navigator.pushReplacementNamed(
-                                  context,
-                                  'pick',
-                                );
-                              } else {
-                                Navigator.pushReplacementNamed(
-                                  context,
-                                  'picking-componentes',
+                              if (state is SendProductPickOdooError) {
+                                Navigator.pop(context);
+                                showScrollableErrorDialog(state.error);
+                              }
+
+                              if (state is MuellesLoadingState) {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible:
+                                      false, // No permitir que el usuario cierre el diálogo manualmente
+                                  builder: (context) => const DialogLoading(
+                                    message: 'Cargando muelles...',
+                                  ),
                                 );
                               }
-                            }
 
-                            if (state is PickOkEventSuccess) {
-                              Navigator.pop(context);
-                              if (batchBloc.pickWithProducts.pick?.typePick ==
-                                  'pick') {
-                                Navigator.pushReplacementNamed(
-                                  context,
-                                  'pick',
-                                );
-                              } else {
-                                Navigator.pushReplacementNamed(
-                                  context,
-                                  'picking-componentes',
+                              if (state is MuellesErrorState) {
+                                Navigator.pop(context);
+
+                                showScrollableErrorDialog(state.error);
+                              }
+
+                              if (state is MuellesLoadedState) {
+                                Navigator.pop(context);
+                                showModalBottomSheet(
+                                  backgroundColor: white,
+                                  context: context,
+                                  isDismissible: false,
+                                  enableDrag: false,
+                                  builder: (context) {
+                                    return SelectSubMuelleBottomSheetPick(
+                                      controller: _controllerSubMuelle,
+                                      focusNode: focusNode6,
+                                    );
+                                  },
                                 );
                               }
-                            }
 
-                            // * validamos en todo cambio de estado de cantidad separada
-                            if (state is ChangeQuantitySeparateStateSuccess) {
-                              if (state.quantity == currentProduct.quantity) {
-                                _nextProduct(currentProduct, batchBloc);
+                              if (state is ValidateConfirmFailure) {
+                                Navigator.pop(context);
+
+                                showScrollableErrorDialog(state.error);
                               }
-                            }
 
-                            if (state is CurrentProductChangedStateLoading) {
-                              showDialog(
-                                context: context,
-                                barrierDismissible:
-                                    false, // No permitir que el usuario cierre el diálogo manualmente
-                                builder: (context) => const DialogLoading(
-                                  message: 'Cargando producto...',
-                                ),
-                              );
-                            }
+                              if (state is CreateBackOrderOrNotFailure) {
+                                Navigator.pop(context);
 
-                            if (state is CurrentProductChangedState) {
-                              Future.delayed(const Duration(seconds: 1), () {
-                                if (mounted) Navigator.of(context, rootNavigator: true).pop();
-                              });
-                            }
+                                if (state.error.contains(
+                                  'expiry.picking.confirmation',
+                                )) {
+                                  Get.defaultDialog(
+                                    title: '360 Software Informa',
+                                    titleStyle: TextStyle(
+                                      color: Colors.red,
+                                      fontSize: 18,
+                                    ),
+                                    middleText:
+                                        'Algunos productos tienen fecha de caducidad alcanzada.\n¿Desea continuar con la confirmacion aceptando los productos vencidos?',
+                                    middleTextStyle: TextStyle(
+                                      color: black,
+                                      fontSize: 14,
+                                    ),
+                                    backgroundColor: Colors.white,
+                                    radius: 10,
+                                    actions: [
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          batchBloc.add(
+                                            ValidateConfirmEvent(
+                                              batchBloc
+                                                      .pickWithProducts
+                                                      .pick
+                                                      ?.id ??
+                                                  0,
+                                              state.isBackorder,
+                                              false,
+                                            ),
+                                          );
 
-                            if (state is ChangeQuantitySeparateStateError) {
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                duration: const Duration(milliseconds: 1000),
-                                content: Text(state.msg),
-                                backgroundColor: Colors.red[200],
-                              ));
-                            }
+                                          Get.back();
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: primaryColorApp,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'Continuar',
+                                          style: TextStyle(color: white),
+                                        ),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          Get.back();
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: grey,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'Descartar',
+                                          style: TextStyle(color: white),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                } else {
+                                  showScrollableErrorDialog(state.error);
+                                }
+                              }
 
-                            if (state is CurrentProductChangedStateError) {
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                duration: const Duration(milliseconds: 1000),
-                                content: Text(state.msg),
-                                backgroundColor: Colors.red[200],
-                              ));
-                            }
+                              if (state is CreateBackOrderOrNotSuccess) {
+                                //volvemos a llamar las entradas que tenemos guardadas en la bd
+                                if (state.isBackorder) {
+                                  Get.snackbar(
+                                    "360 Software Informa",
+                                    state.msg,
+                                    backgroundColor: white,
+                                    colorText: primaryColorApp,
+                                    icon: Icon(
+                                      Icons.error,
+                                      color: Colors.green,
+                                    ),
+                                  );
+                                } else {
+                                  Get.snackbar(
+                                    "360 Software Informa",
+                                    state.msg,
+                                    backgroundColor: white,
+                                    colorText: primaryColorApp,
+                                    icon: Icon(
+                                      Icons.error,
+                                      color: Colors.green,
+                                    ),
+                                  );
+                                }
 
-                            if (state is ValidateFieldsStateError) {
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                duration: const Duration(milliseconds: 1000),
-                                content: Text(state.msg),
-                                backgroundColor: Colors.red[200],
-                              ));
-                            }
+                                Navigator.pop(context);
+                                if (batchBloc.pickWithProducts.pick?.typePick ==
+                                    'pick') {
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    'pick',
+                                  );
+                                } else {
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    'picking-componentes',
+                                  );
+                                }
+                              }
 
-                            if (state is SelectNovedadStateError) {
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                duration: const Duration(milliseconds: 1000),
-                                content: Text(state.msg),
-                                backgroundColor: Colors.red[200],
-                              ));
-                            }
+                              if (state is PickOkEventSuccess) {
+                                Navigator.pop(context);
+                                if (batchBloc.pickWithProducts.pick?.typePick ==
+                                    'pick') {
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    'pick',
+                                  );
+                                } else {
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    'picking-componentes',
+                                  );
+                                }
+                              }
 
-                            if (state is LoadDataInfoError) {
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                duration: const Duration(milliseconds: 1000),
-                                content: Text(state.msg),
-                                backgroundColor: Colors.red[200],
-                              ));
-                            }
+                              // * validamos en todo cambio de estado de cantidad separada
+                              if (state is ChangeQuantitySeparateStateSuccess) {
+                                if (state.quantity == currentProduct.quantity) {
+                                  _nextProduct(currentProduct, batchBloc);
+                                }
+                              }
 
-                            //*estado cando la ubicacion de origen es cambiada
-                            if (state is ChangeLocationIsOkState) {
-                              //cambiamos el foco
-                              Future.delayed(const Duration(seconds: 1), () {
-                                if (mounted) FocusScope.of(context).requestFocus(focusNode2);
-                              });
-                              _handleDependencies();
-                            }
+                              if (state is CurrentProductChangedStateLoading) {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible:
+                                      false, // No permitir que el usuario cierre el diálogo manualmente
+                                  builder: (context) => const DialogLoading(
+                                    message: 'Cargando producto...',
+                                  ),
+                                );
+                              }
 
-                            //*estado cuando el producto es leido ok
-                            if (state is ChangeProductIsOkState) {
-                              //cambiamos el foco a cantidad
-                              Future.delayed(const Duration(seconds: 1), () {
-                                if (mounted) FocusScope.of(context).requestFocus(focusNode3);
-                              });
-                              _handleDependencies();
-                            }
-                            //*estado cuando el muelle fue editado
-                            if (state is SubMuelleEditSusses) {
-                              Get.snackbar(
-                                  "360 Software Informa", state.message,
+                              if (state is CurrentProductChangedState) {
+                                Future.delayed(const Duration(seconds: 1), () {
+                                  if (mounted)
+                                    Navigator.of(
+                                      context,
+                                      rootNavigator: true,
+                                    ).pop();
+                                });
+                              }
+
+                              if (state is ChangeQuantitySeparateStateError) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    duration: const Duration(
+                                      milliseconds: 1000,
+                                    ),
+                                    content: Text(state.msg),
+                                    backgroundColor: Colors.red[200],
+                                  ),
+                                );
+                              }
+
+                              if (state is CurrentProductChangedStateError) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    duration: const Duration(
+                                      milliseconds: 1000,
+                                    ),
+                                    content: Text(state.msg),
+                                    backgroundColor: Colors.red[200],
+                                  ),
+                                );
+                              }
+
+                              if (state is ValidateFieldsStateError) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    duration: const Duration(
+                                      milliseconds: 1000,
+                                    ),
+                                    content: Text(state.msg),
+                                    backgroundColor: Colors.red[200],
+                                  ),
+                                );
+                              }
+
+                              if (state is SelectNovedadStateError) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    duration: const Duration(
+                                      milliseconds: 1000,
+                                    ),
+                                    content: Text(state.msg),
+                                    backgroundColor: Colors.red[200],
+                                  ),
+                                );
+                              }
+
+                              if (state is LoadDataInfoError) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    duration: const Duration(
+                                      milliseconds: 1000,
+                                    ),
+                                    content: Text(state.msg),
+                                    backgroundColor: Colors.red[200],
+                                  ),
+                                );
+                              }
+
+                              //*estado cando la ubicacion de origen es cambiada
+                              if (state is ChangeLocationIsOkState) {
+                                //cambiamos el foco
+                                Future.delayed(const Duration(seconds: 1), () {
+                                  if (mounted)
+                                    FocusScope.of(
+                                      context,
+                                    ).requestFocus(focusNode2);
+                                });
+                                _handleDependencies();
+                              }
+
+                              //*estado cuando el producto es leido ok
+                              if (state is ChangeProductIsOkState) {
+                                //cambiamos el foco a cantidad
+                                Future.delayed(const Duration(seconds: 1), () {
+                                  if (mounted)
+                                    FocusScope.of(
+                                      context,
+                                    ).requestFocus(focusNode3);
+                                });
+                                _handleDependencies();
+                              }
+                              //*estado cuando el muelle fue editado
+                              if (state is SubMuelleEditSusses) {
+                                Get.snackbar(
+                                  "360 Software Informa",
+                                  state.message,
                                   backgroundColor: white,
                                   colorText: primaryColorApp,
                                   duration: const Duration(seconds: 3),
-                                  icon: Icon(Icons.check_circle,
-                                      color: Colors.green));
-                            }
-
-                            if (state is SubMuelleEditFail) {
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                duration: const Duration(milliseconds: 1000),
-                                content: Text(state.message),
-                                backgroundColor: Colors.red[200],
-                              ));
-                            }
-
-                            //*estado cuando los barcodes del producto son cargados
-                            if (state is BarcodesProductLoadedState) {
-                              debugPrint(
-                                  "✅ Barcodes cargados: ${state.listOfBarcodes.length}");
-                              // El estado se emite para forzar el rebuild del UI
-                            }
-
-                            //*estado cuando un producto es seleccionado
-                            if (state is LoadSelectedProductState) {
-                              debugPrint(
-                                  "✅ Producto seleccionado cargado: ${state.selectedProduct.productId}");
-                              debugPrint(
-                                  "✅ Barcodes disponibles en el bloc: ${batchBloc.listOfBarcodes.length}");
-                              // El estado se emite para forzar el rebuild del UI
-                            }
-                          }, builder: (context, status) {
-                            return Column(
-                              children: [
-                                const WarningWidgetCubit(),
-                                Row(
-                                  children: [
-                                    IconButton(
-                                      onPressed: () {
-                                        cantidadController.clear();
-                                        batchBloc.searchPickController.clear();
-                                        batchBloc.add(SearchPickEvent(
-                                          '',
-                                          batchBloc.pickWithProducts.pick
-                                                      ?.typePick ==
-                                                  'pick'
-                                              ? false
-                                              : true,
-                                        ));
-
-                                        if (batchBloc.pickWithProducts.pick
-                                                ?.typePick ==
-                                            'pick') {
-                                          batchBloc.add(
-                                              FetchPickingPickFromDBEvent(
-                                                  false));
-                                          Navigator.pushReplacementNamed(
-                                              context, 'pick');
-                                        } else {
-                                          batchBloc.add(
-                                              FetchPickingComponentesFromDBEvent(
-                                                  false));
-                                          Navigator.pushReplacementNamed(
-                                              context, 'picking-componentes');
-                                        }
-                                      },
-                                      icon: const Icon(Icons.arrow_back,
-                                          color: Colors.white, size: 20),
-                                    ),
-                                    const Spacer(),
-                                    Align(
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        batchBloc.pickWithProducts.pick?.name ??
-                                            '',
-                                        style: const TextStyle(
-                                            color: Colors.white, fontSize: 14),
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    PopupMenuButtonPickWidget(
-                                        currentProduct: currentProduct),
-                                  ],
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 0),
-                                  child: ProgressIndicatorWidget(
-                                    progress: progress,
-                                    completed:
-                                        batchBloc.filteredProducts.where((e) {
-                                      return e.isSeparate == 1;
-                                    }).length,
-                                    total: totalTasks,
+                                  icon: Icon(
+                                    Icons.check_circle,
+                                    color: Colors.green,
                                   ),
-                                ),
-                                const SizedBox(height: 10),
-                              ],
-                            );
-                          }),
+                                );
+                              }
+
+                              if (state is SubMuelleEditFail) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    duration: const Duration(
+                                      milliseconds: 1000,
+                                    ),
+                                    content: Text(state.message),
+                                    backgroundColor: Colors.red[200],
+                                  ),
+                                );
+                              }
+
+                              //*estado cuando los barcodes del producto son cargados
+                              if (state is BarcodesProductLoadedState) {
+                                debugPrint(
+                                  "✅ Barcodes cargados: ${state.listOfBarcodes.length}",
+                                );
+                                // El estado se emite para forzar el rebuild del UI
+                              }
+
+                              //*estado cuando un producto es seleccionado
+                              if (state is LoadSelectedProductState) {
+                                debugPrint(
+                                  "✅ Producto seleccionado cargado: ${state.selectedProduct.productId}",
+                                );
+                                debugPrint(
+                                  "✅ Barcodes disponibles en el bloc: ${batchBloc.listOfBarcodes.length}",
+                                );
+                                // El estado se emite para forzar el rebuild del UI
+                              }
+                            },
+                            builder: (context, status) {
+                              return Column(
+                                children: [
+                                  const WarningWidgetCubit(),
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        onPressed: () {
+                                          cantidadController.clear();
+                                          batchBloc.searchPickController
+                                              .clear();
+                                          batchBloc.add(
+                                            SearchPickEvent(
+                                              '',
+                                              batchBloc
+                                                          .pickWithProducts
+                                                          .pick
+                                                          ?.typePick ==
+                                                      'pick'
+                                                  ? false
+                                                  : true,
+                                            ),
+                                          );
+
+                                          if (batchBloc
+                                                  .pickWithProducts
+                                                  .pick
+                                                  ?.typePick ==
+                                              'pick') {
+                                            batchBloc.add(
+                                              FetchPickingPickFromDBEvent(
+                                                false,
+                                              ),
+                                            );
+                                            Navigator.pushReplacementNamed(
+                                              context,
+                                              'pick',
+                                            );
+                                          } else {
+                                            batchBloc.add(
+                                              FetchPickingComponentesFromDBEvent(
+                                                false,
+                                              ),
+                                            );
+                                            Navigator.pushReplacementNamed(
+                                              context,
+                                              'picking-componentes',
+                                            );
+                                          }
+                                        },
+                                        icon: const Icon(
+                                          Icons.arrow_back,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      Align(
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          batchBloc
+                                                  .pickWithProducts
+                                                  .pick
+                                                  ?.name ??
+                                              '',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      PopupMenuButtonPickWidget(
+                                        currentProduct: currentProduct,
+                                      ),
+                                    ],
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 0,
+                                    ),
+                                    child: ProgressIndicatorWidget(
+                                      progress: progress,
+                                      completed: batchBloc.filteredProducts
+                                          .where((e) {
+                                            return e.isSeparate == 1;
+                                          })
+                                          .length,
+                                      total: totalTasks,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                ],
+                              );
+                            },
+                          ),
                         );
                       },
                     ),
@@ -827,112 +980,124 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                       child: Container(
                         padding: const EdgeInsets.only(top: 2),
                         child: SingleChildScrollView(
-                            child: Column(
-                          children: [
-                            //todo ubicacion de origen
-                            LocationScannerWidget(
-                              isLocationOk: batchBloc.isLocationOk,
-                              locationIsOk: batchBloc.locationIsOk,
-                              productIsOk: batchBloc.productIsOk,
-                              quantityIsOk: batchBloc.quantityIsOk,
-                              locationDestIsOk: batchBloc.locationDestIsOk,
-                              currentLocationId: batchBloc
-                                  .currentProduct.locationId
-                                  .toString(),
-                              onValidateLocation: (value) {
-                                validateLocation(value);
-                              },
-                              onKeyScanned: (keyLabel) {},
-                              focusNode: focusNode1,
-                              controller: _controllerLocation,
-                              locationDropdown: LocationDropdownWidget(
-                                isPDA: false,
-                                selectedLocation: selectedLocation,
-                                positionsOrigen: batchBloc.positionsOrigen,
+                          child: Column(
+                            children: [
+                              //todo ubicacion de origen
+                              LocationScannerWidget(
+                                isLocationOk: batchBloc.isLocationOk,
+                                locationIsOk: batchBloc.locationIsOk,
+                                productIsOk: batchBloc.productIsOk,
+                                quantityIsOk: batchBloc.quantityIsOk,
+                                locationDestIsOk: batchBloc.locationDestIsOk,
                                 currentLocationId: batchBloc
-                                    .currentProduct.locationId
+                                    .currentProduct
+                                    .locationId
                                     .toString(),
-                                currentProduct: currentProduct,
+                                onValidateLocation: (value) {
+                                  validateLocation(value);
+                                },
+                                onKeyScanned: (keyLabel) {},
+                                focusNode: focusNode1,
+                                controller: _controllerLocation,
+                                locationDropdown: LocationDropdownWidget(
+                                  isPDA: false,
+                                  selectedLocation: selectedLocation,
+                                  positionsOrigen: batchBloc.positionsOrigen,
+                                  currentLocationId: batchBloc
+                                      .currentProduct
+                                      .locationId
+                                      .toString(),
+                                  currentProduct: currentProduct,
+                                ),
                               ),
-                            ),
 
-                            // todo: Producto
-
-                            ProductScannerWidget(
-                              isProductOk: batchBloc.isProductOk,
-                              productIsOk: batchBloc.productIsOk,
-                              locationIsOk: batchBloc.locationIsOk,
-                              quantityIsOk: batchBloc.quantityIsOk,
-                              locationDestIsOk: batchBloc.locationDestIsOk,
-                              currentProductId:
-                                  batchBloc.currentProduct.productId.toString(),
-                              barcode: currentProduct.barcode,
-                              lotId: currentProduct.lote,
-                              origin: currentProduct.origin,
-                              expireDate: currentProduct.expireDate,
-                              size: size,
-                              onValidateProduct: (value) {
-                                validateProduct(value); // tu función actual
-                              },
-                              onKeyScanned: (keyLabel) {},
-                              focusNode: focusNode2,
-                              controller: _controllerProduct,
-                              productDropdown: ProductPickDropdownWidget(
-                                selectedProduct: selectedLocation,
-                                listOfProductsName:
-                                    batchBloc.listOfProductsName,
+                              // todo: Producto
+                              ProductScannerWidget(
+                                isProductOk: batchBloc.isProductOk,
+                                productIsOk: batchBloc.productIsOk,
+                                locationIsOk: batchBloc.locationIsOk,
+                                quantityIsOk: batchBloc.quantityIsOk,
+                                locationDestIsOk: batchBloc.locationDestIsOk,
                                 currentProductId: batchBloc
-                                    .currentProduct.productId
+                                    .currentProduct
+                                    .productId
                                     .toString(),
-                                currentProduct: currentProduct,
-                                isPDA: false,
-                              ),
-                              expiryWidget: ExpirationBadgeWidget(
-                                expirationDate:
-                                    batchBloc.currentProduct?.expireDate,
-                              ),
-                              listOfBarcodes: batchBloc.listOfBarcodes,
-                              onBarcodesDialogTap: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return DialogBarcodes(
+                                barcode: currentProduct.barcode,
+                                lotId: currentProduct.lote,
+                                origin: currentProduct.origin,
+                                expireDate: currentProduct.expireDate,
+                                size: size,
+                                onValidateProduct: (value) {
+                                  validateProduct(value); // tu función actual
+                                },
+                                onKeyScanned: (keyLabel) {},
+                                focusNode: focusNode2,
+                                controller: _controllerProduct,
+                                productDropdown: ProductPickDropdownWidget(
+                                  selectedProduct: selectedLocation,
+                                  listOfProductsName:
+                                      batchBloc.listOfProductsName,
+                                  currentProductId: batchBloc
+                                      .currentProduct
+                                      .productId
+                                      .toString(),
+                                  currentProduct: currentProduct,
+                                  isPDA: false,
+                                ),
+                                expiryWidget: ExpirationBadgeWidget(
+                                  expirationDate:
+                                      batchBloc.currentProduct?.expireDate,
+                                ),
+                                listOfBarcodes: batchBloc.listOfBarcodes,
+                                onBarcodesDialogTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return DialogBarcodes(
                                         listOfBarcodes:
-                                            batchBloc.listOfBarcodes);
-                                  },
-                                );
-                              },
-                              onViewImgProduct: () {
-                                batchBloc.add(ViewProductImageEvent(
-                                    currentProduct.idProduct ?? 0));
-                              },
-                            ),
+                                            batchBloc.listOfBarcodes,
+                                      );
+                                    },
+                                  );
+                                },
+                                onViewImgProduct: () {
+                                  batchBloc.add(
+                                    ViewProductImageEvent(
+                                      currentProduct.idProduct ?? 0,
+                                    ),
+                                  );
+                                },
+                              ),
 
-                            //Todo: MUELLE
-
-                            if (batchBloc.filteredProducts
-                                        .where((e) => e.isSeparate == 0)
-                                        .length ==
-                                    1 ||
-                                batchBloc.filteredProducts
-                                    .where((e) => e.isSeparate == 0)
-                                    .isEmpty)
-                              LocationDestScannerWidget(
+                              //Todo: MUELLE
+                              if (batchBloc.filteredProducts
+                                          .where((e) => e.isSeparate == 0)
+                                          .length ==
+                                      1 ||
+                                  batchBloc.filteredProducts
+                                      .where((e) => e.isSeparate == 0)
+                                      .isEmpty)
+                                LocationDestScannerWidget(
                                   isLocationDestOk: batchBloc.isLocationDestOk,
                                   locationDestIsOk: batchBloc.locationDestIsOk,
                                   locationIsOk: batchBloc.locationIsOk,
                                   productIsOk: batchBloc.productIsOk,
                                   quantityIsOk: batchBloc.quantityIsOk,
                                   size: size,
-                                  muelleHint: batchBloc.configurations.result
-                                              ?.result?.muelleOption ==
+                                  muelleHint:
+                                      batchBloc
+                                              .configurations
+                                              .result
+                                              ?.result
+                                              ?.muelleOption ==
                                           "multiple"
                                       ? batchBloc.currentProduct.locationDestId
-                                          .toString()
+                                            .toString()
                                       : batchBloc.pickWithProducts.pick?.muelle,
                                   onValidateMuelle: (value) {
                                     validateMuelle(
-                                        value); // tu función actual de validación
+                                      value,
+                                    ); // tu función actual de validación
                                   },
                                   onKeyScanned: (keyLabel) {},
                                   focusNode: focusNode5,
@@ -940,99 +1105,103 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                   dropdownWidget: MuellePickDropdownWidget(
                                     selectedMuelle: selectedMuelle,
                                     currentProduct: currentProduct,
-                                  )),
-                          ],
-                        )),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                    //todo muelle multiple
 
+                    //todo muelle multiple
                     Visibility(
-                      visible: batchBloc
-                              .configurations.result?.result?.muelleOption ==
+                      visible:
+                          batchBloc
+                              .configurations
+                              .result
+                              ?.result
+                              ?.muelleOption ==
                           "multiple",
                       child: Container(
-                          width: size.width,
-                          height: 55,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                          ),
-                          child: Card(
-                              color: Colors.grey[300],
-                              elevation: 5,
-                              child: Padding(
+                        width: size.width,
+                        height: 55,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Card(
+                          color: Colors.grey[300],
+                          elevation: 5,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            child: Row(
+                              children: [
+                                CantLineasMuelle(
+                                  productsOk: batchBloc.filteredProducts.where((
+                                    e,
+                                  ) {
+                                    return (e.isSeparate == 1) &&
+                                        (e.locationDestId ==
+                                            batchBloc
+                                                .pickWithProducts
+                                                .pick
+                                                ?.muelle);
+                                  }).toList(),
+                                ),
+                                const Spacer(),
+                                Padding(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 5,
+                                    vertical: 8,
                                   ),
-                                  child: Row(children: [
-                                    CantLineasMuelle(
-                                        productsOk: batchBloc.filteredProducts
+                                  child: ElevatedButton(
+                                    onPressed:
+                                        batchBloc.filteredProducts
                                             .where((e) {
-                                      return (e.isSeparate == 1) &&
-                                          (e.locationDestId ==
-                                              batchBloc.pickWithProducts.pick
-                                                  ?.muelle);
-                                    }).toList()),
-                                    const Spacer(),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 8),
-                                      child: ElevatedButton(
-                                          onPressed: batchBloc.filteredProducts
-                                                  .where((e) {
-                                                    return (e.isSeparate ==
-                                                            1) &&
-                                                        (e.locationDestId ==
-                                                            batchBloc
-                                                                .pickWithProducts
-                                                                .pick
-                                                                ?.muelle);
-                                                  })
-                                                  .toList()
-                                                  .isEmpty
-                                              ? null
-                                              : () {
-                                                  batchBloc
-                                                      .add(FetchMuellesEvent());
-                                                },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                primaryColorAppLigth,
-                                            minimumSize: const Size(100, 40),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                          ),
-                                          child: Text(
-                                            batchBloc.pickWithProducts.pick
-                                                    ?.muelle
-                                                    .toString() ??
-                                                '',
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                            ),
-                                          )),
+                                              return (e.isSeparate == 1) &&
+                                                  (e.locationDestId ==
+                                                      batchBloc
+                                                          .pickWithProducts
+                                                          .pick
+                                                          ?.muelle);
+                                            })
+                                            .toList()
+                                            .isEmpty
+                                        ? null
+                                        : () {
+                                            batchBloc.add(FetchMuellesEvent());
+                                          },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: primaryColorAppLigth,
+                                      minimumSize: const Size(100, 40),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
                                     ),
-                                  ])))),
+                                    child: Text(
+                                      batchBloc.pickWithProducts.pick?.muelle
+                                              .toString() ??
+                                          '',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
 
                     //todo: cantidad
-
                     SizedBox(
                       width: size.width,
                       height: !batchBloc.viewQuantity ? 110 : 150,
                       child: Column(
                         children: [
                           Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
                             child: Card(
                               color: batchBloc.isQuantityOk
                                   ? batchBloc.quantityIsOk
-                                      ? white
-                                      : Colors.grey[300]
+                                        ? white
+                                        : Colors.grey[300]
                                   : Colors.red[200],
                               elevation: 1,
                               child: Padding(
@@ -1042,48 +1211,57 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                 child: Center(
                                   child: Row(
                                     children: [
-                                      const Text('Cant:',
-                                          style: TextStyle(
-                                              color: Colors.black,
-                                              fontSize: 13)),
+                                      const Text(
+                                        'Cant:',
+                                        style: TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 11,
+                                        ),
+                                      ),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 5),
+                                          horizontal: 5,
+                                        ),
                                         child: Text(
                                           (currentProduct.quantity ?? 0.0)
                                               .toString(),
                                           style: TextStyle(
-                                              color: primaryColorApp,
-                                              fontSize: 13),
+                                            color: primaryColorApp,
+                                            fontSize: 11,
+                                          ),
                                         ),
                                       ),
                                       Visibility(
-                                        visible: (currentProduct.quantity ??
-                                                    0) -
+                                        visible:
+                                            (currentProduct.quantity ?? 0) -
                                                 batchBloc.quantitySelected !=
                                             0,
-                                        child: const Text('Pdte:',
-                                            style: TextStyle(
-                                                color: Colors.black,
-                                                fontSize: 13)),
+                                        child: const Text(
+                                          'Pdte:',
+                                          style: TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 11,
+                                          ),
+                                        ),
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 5),
-                                        child: (currentProduct.quantity ?? 0) -
+                                          horizontal: 5,
+                                        ),
+                                        child:
+                                            (currentProduct.quantity ?? 0) -
                                                     batchBloc
                                                         .quantitySelected ==
                                                 0
                                             ? Container() // Ocultamos el widget si la diferencia es 0
-
                                             : Text(
                                                 (batchBloc.quantitySelected <=
                                                         currentProduct.quantity
                                                     ? (currentProduct.quantity -
-                                                                batchBloc
-                                                                    .quantitySelected ??
-                                                            0.0)
-                                                        .toStringAsFixed(2)
+                                                                  batchBloc
+                                                                      .quantitySelected ??
+                                                              0.0)
+                                                          .toStringAsFixed(2)
                                                     : '0.0'),
                                                 style: TextStyle(
                                                   color: _getColorForDifference(
@@ -1091,23 +1269,27 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                                             currentProduct
                                                                 .quantity
                                                         ? (currentProduct
-                                                                .quantity -
-                                                            batchBloc
-                                                                .quantitySelected)
+                                                                  .quantity -
+                                                              batchBloc
+                                                                  .quantitySelected)
                                                         : 0,
                                                   ),
-                                                  fontSize: 13,
+                                                  fontSize: 11,
                                                 ),
                                               ),
                                       ),
-                                      Text(currentProduct.unidades ?? "",
-                                          style: const TextStyle(
-                                              color: Colors.black,
-                                              fontSize: 13)),
+                                      Text(
+                                        currentProduct.unidades ?? "",
+                                        style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 11,
+                                        ),
+                                      ),
                                       Expanded(
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 10),
+                                            horizontal: 10,
+                                          ),
                                           alignment: Alignment.center,
                                           child: Stack(
                                             alignment: Alignment.center,
@@ -1120,48 +1302,61 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                                   focusNode: focusNode3,
                                                   onBarcodeScanned:
                                                       (value, context) {
-                                                    validateQuantity(value);
-                                                  },
+                                                        validateQuantity(value);
+                                                      },
                                                 ),
                                               ),
                                               Text(
-                                                  batchBloc.quantitySelected
-                                                      .toString(),
-                                                  style: const TextStyle(
-                                                      color: black,
-                                                      fontSize: 14)),
+                                                batchBloc.quantitySelected
+                                                    .toString(),
+                                                style: const TextStyle(
+                                                  color: black,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
                                             ],
                                           ),
                                         ),
                                       ),
                                       IconButton(
-                                          onPressed: batchBloc
-                                                      .configurations
-                                                      .result
-                                                      ?.result
-                                                      ?.manualQuantity ==
-                                                  false
-                                              ? null
-                                              : batchBloc.quantityIsOk &&
-                                                      batchBloc
-                                                              .quantitySelected >=
-                                                          0
-                                                  ? () {
-                                                      batchBloc.add(
-                                                          ShowQuantityEvent(
-                                                              !batchBloc
-                                                                  .viewQuantity));
-                                                      Future.delayed(
-                                                          const Duration(
-                                                              milliseconds:
-                                                                  100), () {
-                                                        if (mounted) FocusScope.of(context).requestFocus(focusNode4);
-                                                      });
-                                                    }
-                                                  : null,
-                                          icon: Icon(Icons.edit_note_rounded,
-                                              color: primaryColorApp,
-                                              size: 25)),
+                                        onPressed:
+                                            batchBloc
+                                                    .configurations
+                                                    .result
+                                                    ?.result
+                                                    ?.manualQuantity ==
+                                                false
+                                            ? null
+                                            : batchBloc.quantityIsOk &&
+                                                  batchBloc.quantitySelected >=
+                                                      0
+                                            ? () {
+                                                batchBloc.add(
+                                                  ShowQuantityEvent(
+                                                    !batchBloc.viewQuantity,
+                                                  ),
+                                                );
+                                                Future.delayed(
+                                                  const Duration(
+                                                    milliseconds: 100,
+                                                  ),
+                                                  () {
+                                                    if (mounted)
+                                                      FocusScope.of(
+                                                        context,
+                                                      ).requestFocus(
+                                                        focusNode4,
+                                                      );
+                                                  },
+                                                );
+                                              }
+                                            : null,
+                                        icon: Icon(
+                                          Icons.edit_note_rounded,
+                                          color: primaryColorApp,
+                                          size: 25,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -1172,16 +1367,18 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                             visible: batchBloc.viewQuantity,
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 3),
+                                horizontal: 10,
+                                vertical: 3,
+                              ),
                               child: SizedBox(
                                 height: 35,
                                 child: TextFormField(
                                   //tmano del campo
-
                                   focusNode: focusNode4,
                                   inputFormatters: [
                                     FilteringTextInputFormatter.allow(
-                                        RegExp(r'[0-9.]')),
+                                      RegExp(r'[0-9.]'),
+                                    ),
                                   ],
                                   onChanged: (value) {
                                     // Verifica si el valor no está vacío y si es un número válido
@@ -1192,7 +1389,8 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                       } catch (e) {
                                         // Manejo de errores si la conversión falla
                                         debugPrint(
-                                            'Error al convertir a entero: $e');
+                                          'Error al convertir a entero: $e',
+                                        );
                                         // Aquí puedes mostrar un mensaje al usuario o manejar el error de otra forma
                                       }
                                     } else {
@@ -1204,22 +1402,28 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                   controller: cantidadController,
                                   keyboardType: TextInputType.number,
                                   maxLines: 1,
-                                  decoration:
-                                      InputDecorations.authInputDecoration(
+                                  decoration: InputDecorations.authInputDecoration(
                                     hintText: 'Cantidad',
                                     labelText: 'Cantidad',
                                     suffixIconButton: IconButton(
                                       onPressed: () {
-                                        batchBloc.add(ShowQuantityEvent(
-                                            !batchBloc.viewQuantity));
+                                        batchBloc.add(
+                                          ShowQuantityEvent(
+                                            !batchBloc.viewQuantity,
+                                          ),
+                                        );
                                         cantidadController.clear();
 
                                         //cambiamos el foco pa leer por pda la cantidad
                                         Future.delayed(
-                                            const Duration(milliseconds: 100),
-                                            () {
-                                          if (mounted) FocusScope.of(context).requestFocus(focusNode3);
-                                        });
+                                          const Duration(milliseconds: 100),
+                                          () {
+                                            if (mounted)
+                                              FocusScope.of(
+                                                context,
+                                              ).requestFocus(focusNode3);
+                                          },
+                                        );
                                       },
                                       icon: const Icon(Icons.clear),
                                     ),
@@ -1234,8 +1438,8 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                       // Aseguramos que la cantidad del producto también sea double para la comparación
                                       final double maxQuantity =
                                           (currentProduct.quantity as num?)
-                                                  ?.toDouble() ??
-                                              0.0;
+                                              ?.toDouble() ??
+                                          0.0;
 
                                       // ✅ 2. CORRECCIÓN CLAVE: Comparar como doubles
                                       if (enteredQuantity > maxQuantity) {
@@ -1243,56 +1447,73 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                         _vibrationService.vibrate();
 
                                         // ... (Tu lógica de error de rango)
-                                        batchBloc.add(ValidateFieldsEvent(
-                                            field: "quantity", isOk: false));
+                                        batchBloc.add(
+                                          ValidateFieldsEvent(
+                                            field: "quantity",
+                                            isOk: false,
+                                          ),
+                                        );
                                         cantidadController.clear();
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                          duration: const Duration(seconds: 1),
-                                          content:
-                                              const Text('Cantidad incorrecta'),
-                                          backgroundColor: Colors.red[200],
-                                        ));
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            duration: const Duration(
+                                              seconds: 1,
+                                            ),
+                                            content: const Text(
+                                              'Cantidad incorrecta',
+                                            ),
+                                            backgroundColor: Colors.red[200],
+                                          ),
+                                        );
                                       } else {
                                         // --- Lógica cuando la cantidad está dentro del rango ---
                                         // (Aseguramos que el valor que se pasa a los BLoCs sea el double parseado)
 
                                         if (enteredQuantity == maxQuantity) {
                                           //*cantidad correcta
-                                          batchBloc.add(ChangeQuantitySeparate(
+                                          batchBloc.add(
+                                            ChangeQuantitySeparate(
                                               enteredQuantity, // Usamos el double ya parseado
                                               currentProduct.idProduct ?? 0,
-                                              currentProduct.idMove ?? 0));
+                                              currentProduct.idMove ?? 0,
+                                            ),
+                                          );
                                         } else {
                                           //todo cantidad menor a la cantidad pedida
                                           showDialog(
-                                              context: context,
-                                              builder: (context) {
-                                                return DialogAdvetenciaCantidadPick(
-                                                    currentProduct:
-                                                        currentProduct,
-                                                    cantidad: batchBloc
-                                                        .quantitySelected,
-                                                    batchId: batchBloc
-                                                            .pickWithProducts
-                                                            .pick
-                                                            ?.id ??
-                                                        0,
-                                                    onAccepted: () {
-                                                      batchBloc.add(
-                                                          ChangeQuantitySeparate(
-                                                              enteredQuantity, // Usamos el double ya parseado
-                                                              currentProduct
-                                                                      .idProduct ??
-                                                                  0,
-                                                              currentProduct
-                                                                      .idMove ??
-                                                                  0));
-                                                      _nextProduct(
-                                                          currentProduct,
-                                                          batchBloc);
-                                                    });
-                                              });
+                                            context: context,
+                                            builder: (context) {
+                                              return DialogAdvetenciaCantidadPick(
+                                                currentProduct: currentProduct,
+                                                cantidad:
+                                                    batchBloc.quantitySelected,
+                                                batchId:
+                                                    batchBloc
+                                                        .pickWithProducts
+                                                        .pick
+                                                        ?.id ??
+                                                    0,
+                                                onAccepted: () {
+                                                  batchBloc.add(
+                                                    ChangeQuantitySeparate(
+                                                      enteredQuantity, // Usamos el double ya parseado
+                                                      currentProduct
+                                                              .idProduct ??
+                                                          0,
+                                                      currentProduct.idMove ??
+                                                          0,
+                                                    ),
+                                                  );
+                                                  _nextProduct(
+                                                    currentProduct,
+                                                    batchBloc,
+                                                  );
+                                                },
+                                              );
+                                            },
+                                          );
                                         }
                                       }
                                     }
@@ -1303,30 +1524,36 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                             ),
                           ),
                           Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 0),
-                              child: ElevatedButton(
-                                onPressed: batchBloc.quantityIsOk &&
-                                        batchBloc.quantitySelected >= 0
-                                    ? () {
-                                        //cerramos el teclado
-                                        FocusScope.of(context).unfocus();
-                                        _validatebuttonquantity();
-                                      }
-                                    : null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColorApp,
-                                  minimumSize: Size(size.width * 0.93, 30),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 0,
+                            ),
+                            child: ElevatedButton(
+                              onPressed:
+                                  batchBloc.quantityIsOk &&
+                                      batchBloc.quantitySelected >= 0
+                                  ? () {
+                                      //cerramos el teclado
+                                      FocusScope.of(context).unfocus();
+                                      _validatebuttonquantity();
+                                    }
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColorApp,
+                                minimumSize: Size(size.width * 0.93, 30),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: const Text(
-                                  'APLICAR CANTIDAD',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 14),
+                              ),
+                              child: const Text(
+                                'APLICAR CANTIDAD',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
                                 ),
-                              )),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1357,7 +1584,9 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
   }
 
   void _nextProduct(
-      ProductsBatch currentProduct, PickingPickBloc batchBloc) async {
+    ProductsBatch currentProduct,
+    PickingPickBloc batchBloc,
+  ) async {
     // Si el proceso ya está en ejecución, no hacemos nada
     if (batchBloc.isProcessing) return;
 
@@ -1386,23 +1615,24 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
 
       // Función para gestionar la transición al siguiente producto
       Future<void> _moveToNextProduct() async {
-        final separated =
-            batchBloc.filteredProducts.where((e) => e.isSeparate == 0).toList();
+        final separated = batchBloc.filteredProducts
+            .where((e) => e.isSeparate == 0)
+            .toList();
 
         // Si estamos en la última posición
         if (batchBloc.index + 1 == separated.length) {
           // Cambiar el producto actual
-          batchBloc.add(ChangeCurrentProduct(
-            currentProduct: currentProduct,
-          ));
+          batchBloc.add(ChangeCurrentProduct(currentProduct: currentProduct));
 
           // Cambiar el estado de cantidad
-          batchBloc.add(ChangeIsOkQuantity(
-            false,
-            currentProduct.idProduct ?? 0,
-            batch.id ?? 0,
-            currentProduct.idMove ?? 0,
-          ));
+          batchBloc.add(
+            ChangeIsOkQuantity(
+              false,
+              currentProduct.idProduct ?? 0,
+              batch.id ?? 0,
+              currentProduct.idMove ?? 0,
+            ),
+          );
 
           // Marcar como "no correcto" la cantidad
           await db.pickProductsRepository.setFieldTablePickProducts(
@@ -1421,9 +1651,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
           if (mounted) FocusScope.of(context).requestFocus(focusNode5);
         } else {
           // Si no estamos en la última posición, cambiamos el producto actual
-          batchBloc.add(ChangeCurrentProduct(
-            currentProduct: currentProduct,
-          ));
+          batchBloc.add(ChangeCurrentProduct(currentProduct: currentProduct));
 
           // Validamos el campo "quantity"
           batchBloc.add(ValidateFieldsEvent(field: "quantity", isOk: true));
@@ -1451,16 +1679,21 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
     }
   }
 
-  void validatePicking(PickingPickBloc batchBloc, BuildContext context,
-      ProductsBatch currentProduct) {
+  void validatePicking(
+    PickingPickBloc batchBloc,
+    BuildContext context,
+    ProductsBatch currentProduct,
+  ) {
     batchBloc.add(
-        FetchPickWithProductsEvent(batchBloc.pickWithProducts.pick?.id ?? 0));
+      FetchPickWithProductsEvent(batchBloc.pickWithProducts.pick?.id ?? 0),
+    );
 
     //validamos que la cantidad de productos separados sea igual a la cantidad de productos pedidos
-//validamos el 100 de las unidades separadas
-    final double unidadesSeparadas =
-        double.parse(batchBloc.calcularUnidadesSeparadas());
-//*validamos is tenemos productos que no se han enviado
+    //validamos el 100 de las unidades separadas
+    final double unidadesSeparadas = double.parse(
+      batchBloc.calcularUnidadesSeparadas(),
+    );
+    //*validamos is tenemos productos que no se han enviado
     if (unidadesSeparadas == "100.0" || unidadesSeparadas >= 100.0) {
       var productsToSend = batchBloc.filteredProducts
           .where((element) => element.isSendOdoo == 0)
@@ -1475,49 +1708,54 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
           builder: (context) => AlertDialog(
             backgroundColor: Colors.white,
             title: const Center(
-              child: Text("360 Software Informa",
-                  style: TextStyle(color: yellow, fontSize: 16)),
+              child: Text(
+                "360 Software Informa",
+                style: TextStyle(color: yellow, fontSize: 16),
+              ),
             ),
             content: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                    "Tienes productos que no han sido enviados al WMS. revisa la lista de productos y envíalos antes de continuar.",
-                    style: TextStyle(color: black, fontSize: 14)),
+                  "Tienes productos que no han sido enviados al WMS. revisa la lista de productos y envíalos antes de continuar.",
+                  style: TextStyle(color: black, fontSize: 14),
+                ),
                 const SizedBox(height: 15),
                 ElevatedButton(
-                    onPressed: () {
-                      // Navigator.pop(context);
-                      if (batchBloc.configurations.result?.result
-                              ?.showDetallesPicking ==
-                          true) {
-                        //cerramos el focus
-                        batchBloc.isSearch = false;
-                        batchBloc.add(LoadProductEditEvent());
-                        Navigator.pushReplacementNamed(
-                          context,
-                          'pick-detail',
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            duration: Duration(milliseconds: 1000),
-                            content:
-                                Text('No tienes permisos para ver detalles'),
-                          ),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 3,
+                  onPressed: () {
+                    // Navigator.pop(context);
+                    if (batchBloc
+                            .configurations
+                            .result
+                            ?.result
+                            ?.showDetallesPicking ==
+                        true) {
+                      //cerramos el focus
+                      batchBloc.isSearch = false;
+                      batchBloc.add(LoadProductEditEvent());
+                      Navigator.pushReplacementNamed(context, 'pick-detail');
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          duration: Duration(milliseconds: 1000),
+                          content: Text('No tienes permisos para ver detalles'),
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Text('Ver productos',
-                        style: TextStyle(color: primaryColorApp, fontSize: 12)))
+                    elevation: 3,
+                  ),
+                  child: Text(
+                    'Ver productos',
+                    style: TextStyle(color: primaryColorApp, fontSize: 12),
+                  ),
+                ),
               ],
             ),
           ),
@@ -1529,17 +1767,18 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
         if (batchBloc.configurations.result?.result?.hideValidatePicking ==
             false) {
           showDialog(
-              context: Navigator.of(context, rootNavigator: true).context,
-              builder: (context) {
-                return DialogBackorderPick(
-                  isHistory: false,
-                  idPick: batchBloc.pickWithProducts.pick?.id ?? 0,
-                  unidadesSeparadas: unidadesSeparadas,
-                  createBackorder:
-                      batchBloc.pickWithProducts.pick?.createBackorder ?? "ask",
-                  isExternalProduct: false, // Pasamos false por defecto
-                );
-              });
+            context: Navigator.of(context, rootNavigator: true).context,
+            builder: (context) {
+              return DialogBackorderPick(
+                isHistory: false,
+                idPick: batchBloc.pickWithProducts.pick?.id ?? 0,
+                unidadesSeparadas: unidadesSeparadas,
+                createBackorder:
+                    batchBloc.pickWithProducts.pick?.createBackorder ?? "ask",
+                isExternalProduct: false, // Pasamos false por defecto
+              );
+            },
+          );
         } else {
           batchBloc.add(PickOkEvent(batchBloc.pickWithProducts.pick?.id ?? 0));
         }
@@ -1558,10 +1797,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                 true) {
               batchBloc.isSearch = false;
               batchBloc.add(LoadProductEditEvent());
-              Navigator.pushReplacementNamed(
-                context,
-                'pick-detail',
-              );
+              Navigator.pushReplacementNamed(context, 'pick-detail');
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -1586,15 +1822,16 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                       unidadesSeparadas: unidadesSeparadas,
                       createBackorder:
                           batchBloc.pickWithProducts.pick?.createBackorder ??
-                              "ask",
+                          "ask",
                       isExternalProduct: false,
                     );
                   },
                 );
               });
             } else {
-              batchBloc
-                  .add(PickOkEvent(batchBloc.pickWithProducts.pick?.id ?? 0));
+              batchBloc.add(
+                PickOkEvent(batchBloc.pickWithProducts.pick?.id ?? 0),
+              );
             }
           },
         ),

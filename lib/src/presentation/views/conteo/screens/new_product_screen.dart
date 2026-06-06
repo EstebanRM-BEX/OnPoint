@@ -55,16 +55,13 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Verificamos al montar la screen si los productos ya están cargados.
-    // El evento GetProductsFromDBEvent pudo haberse emitido antes de que esta
-    // screen existiera (disparado desde tab2), por lo que el listener nunca lo captó.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final bloc = context.read<ConteoBloc>();
-      // Solo para filtros que usan la maestra de productos
       if (bloc.ordenConteo.filterType == 'location' && bloc.productos.isEmpty) {
         bloc.add(GetProductsFromDBEvent());
       }
+      _handleDependencies();
     });
   }
 
@@ -88,13 +85,15 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _handleDependencies();
   }
 
   void _focus(FocusNode node, String label) {
     debugPrint("🚼 $label");
-    FocusScope.of(context).requestFocus(node);
-    _unfocusOthers(except: node);
+    Future.microtask(() {
+      if (!mounted) return;
+      FocusScope.of(context).requestFocus(node);
+      _unfocusOthers(except: node);
+    });
   }
 
   void _unfocusOthers({required FocusNode except}) {
@@ -115,15 +114,14 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
 
     final focusMap = {
       "location": () =>
-          !bloc.locationIsOk && !bloc.productIsOk && !bloc.quantityIsOk,
+          !bloc.locationIsOk && !bloc.productIsOk,
       "product": () =>
-          bloc.locationIsOk && !bloc.productIsOk && !bloc.quantityIsOk,
+          bloc.locationIsOk && !bloc.productIsOk,
       "lote": () =>
           hasLote &&
           bloc.locationIsOk &&
           bloc.productIsOk &&
           !bloc.loteIsOk &&
-          !bloc.quantityIsOk &&
           !bloc.viewQuantity,
       "quantity": () =>
           bloc.locationIsOk &&

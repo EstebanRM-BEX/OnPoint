@@ -10,6 +10,7 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 import 'package:get/get.dart';
 
 class SearchLocationConteoScreen extends StatefulWidget {
@@ -32,18 +33,35 @@ class _SearchLocationScreenState extends State<SearchLocationConteoScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final bloc = context.read<ConteoBloc>();
-      // LoadLocationsLoading puede haber sido emitido antes de montar esta
-      // pantalla; verificamos la condición real en lugar del estado.
-      final needsLoad = (bloc.ordenConteo.filterType == 'category' ||
-              bloc.ordenConteo.filterType == 'product') &&
-          bloc.ubicaciones.isEmpty;
-      if (needsLoad) {
-        _showLoadingDialog();
+      final route = ModalRoute.of(context);
+      if (route?.animation?.isCompleted ?? true) {
+        _onRouteReady();
       } else {
-        _searchFocusNode.requestFocus();
+        route!.animation!.addStatusListener(_onRouteAnimationStatus);
       }
     });
+  }
+
+  void _onRouteAnimationStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed) {
+      ModalRoute.of(context)
+          ?.animation
+          ?.removeStatusListener(_onRouteAnimationStatus);
+      _onRouteReady();
+    }
+  }
+
+  void _onRouteReady() {
+    if (!mounted) return;
+    final bloc = context.read<ConteoBloc>();
+    final needsLoad = (bloc.ordenConteo.filterType == 'category' ||
+            bloc.ordenConteo.filterType == 'product') &&
+        bloc.ubicaciones.isEmpty;
+    if (needsLoad) {
+      _showLoadingDialog();
+    } else {
+      _searchFocusNode.requestFocus();
+    }
   }
 
   void _showLoadingDialog() {
@@ -142,45 +160,22 @@ class _SearchLocationScreenState extends State<SearchLocationConteoScreen> {
   }
 
   Widget _buildSearchBar(BuildContext context, ConteoBloc bloc, Size size) {
-    return SizedBox(
-      height: 55,
-      width: size.width,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: Card(
-          color: Colors.white,
-          elevation: 3,
-          child: TextFormField(
-            focusNode: _searchFocusNode,
-            showCursor: true,
-            textAlignVertical: TextAlignVertical.center,
-            controller: bloc.searchControllerLocation,
-            decoration: InputDecoration(
-              prefixIcon:
-                  const Icon(Icons.search, color: grey, size: 20),
-              suffixIcon: IconButton(
-                onPressed: () {
-                  bloc.searchControllerLocation.clear();
-                  bloc.add(SearchLocationEvent(''));
-                  _searchFocusNode.requestFocus();
-                },
-                icon: const Icon(Icons.close, color: grey, size: 20),
-              ),
-              disabledBorder: const OutlineInputBorder(),
-              hintText: "Buscar ubicación",
-              hintStyle:
-                  const TextStyle(color: Colors.grey, fontSize: 14),
-              border: InputBorder.none,
-            ),
-            onChanged: (value) {
-              if (_debounce?.isActive ?? false) _debounce!.cancel();
-              _debounce = Timer(const Duration(milliseconds: 300), () {
-                bloc.add(SearchLocationEvent(value));
-              });
-            },
-          ),
-        ),
-      ),
+    return DynamicSearchBar(
+      controller: bloc.searchControllerLocation,
+      focusNode: _searchFocusNode,
+      hintText: "Buscar ubicación",
+      onSearchChanged: (value) {
+        if (_debounce?.isActive ?? false) _debounce!.cancel();
+        _debounce = Timer(const Duration(milliseconds: 300), () {
+          bloc.add(SearchLocationEvent(value));
+        });
+      },
+      onSearchCleared: () {
+        // DynamicSearchBar ya llama controller.clear() antes de este callback
+        bloc.add(SearchLocationEvent(''));
+        _searchFocusNode.requestFocus();
+      },
+      onTap: () {},
     );
   }
 

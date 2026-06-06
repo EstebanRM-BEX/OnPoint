@@ -82,7 +82,7 @@ class ExpiryDateWidget extends StatelessWidget {
             child: SizedBox(
               width: size.width * 0.4,
               child: Text(
-                'Sin fecha de expiración',
+                'Sin expiración',
                 style: TextStyle(
                   fontSize: isDetaild ? 12 : 13,
                   color: red,

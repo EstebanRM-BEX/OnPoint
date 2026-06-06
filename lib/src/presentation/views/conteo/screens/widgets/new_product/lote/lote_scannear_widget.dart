@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
 
@@ -46,11 +47,24 @@ class _LoteScannerWidgetState extends State<LoteScannerWidget> {
   @override
   void initState() {
     super.initState();
-    // Cachear el ID del producto para evitar parpadeo durante el escaneo
+    widget.focusNode.addListener(_onFocusChange);
+  }
+
+  // keyboardType: TextInputType.none no siempre previene el teclado en PDAs
+  // Chainway/Zebra. Al ganar foco ocultamos el teclado suave pero mantenemos
+  // la conexión IME para que el scanner de hardware siga funcionando.
+  void _onFocusChange() {
+    if (!widget.focusNode.hasFocus) return;
+    Future.microtask(() {
+      if (mounted && widget.focusNode.hasFocus) {
+        SystemChannels.textInput.invokeMethod('TextInput.hide');
+      }
+    });
   }
 
   @override
   void dispose() {
+    widget.focusNode.removeListener(_onFocusChange);
     _debounce?.cancel();
     super.dispose();
   }
@@ -107,7 +121,7 @@ class _LoteScannerWidgetState extends State<LoteScannerWidget> {
                   children: [
                     _buildZebraInput(),
                      if (widget.lotId != "") ...[
-                        Text('Lote/serie:',
+                        Text('Sugerido:',
                             style: TextStyle(
                                 fontSize: 13, color: primaryColorApp)),
                         const SizedBox(width: 5),
@@ -155,6 +169,7 @@ class _LoteScannerWidgetState extends State<LoteScannerWidget> {
         ),
         IconButton(
           onPressed: () {
+            FocusScope.of(context).unfocus();
             Navigator.pushReplacementNamed(
               context,
               widget.routeName,

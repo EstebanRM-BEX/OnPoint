@@ -6,6 +6,7 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
+import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
 class SearchProductConteoScreen extends StatefulWidget {
   const SearchProductConteoScreen({super.key});
@@ -17,6 +18,37 @@ class SearchProductConteoScreen extends StatefulWidget {
 class _SearchProductScreenState extends State<SearchProductConteoScreen> {
   String? selectedProductKey;
   final ScrollController _productListScrollController = ScrollController();
+  final FocusNode _searchFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final route = ModalRoute.of(context);
+      if (route?.animation?.isCompleted ?? true) {
+        _searchFocusNode.requestFocus();
+      } else {
+        route!.animation!.addStatusListener(_onRouteAnimationStatus);
+      }
+    });
+  }
+
+  void _onRouteAnimationStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed) {
+      ModalRoute.of(context)
+          ?.animation
+          ?.removeStatusListener(_onRouteAnimationStatus);
+      if (mounted) _searchFocusNode.requestFocus();
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchFocusNode.dispose();
+    _productListScrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,38 +88,18 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
   }
 
   Widget _buildSearchBar(BuildContext context, ConteoBloc bloc, Size size) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: SizedBox(
-        height: 55,
-        width: size.width,
-        child: Card(
-          color: Colors.white,
-          elevation: 3,
-          child: TextFormField(
-            showCursor: true,
-            textAlignVertical: TextAlignVertical.center,
-            controller: bloc.searchControllerProducts,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search, color: grey, size: 20),
-              suffixIcon: IconButton(
-                onPressed: () {
-                  bloc.searchControllerProducts.clear();
-                  bloc.add(SearchProductEvent(''));
-                  FocusScope.of(context).unfocus();
-                },
-                icon: const Icon(Icons.close, color: grey, size: 20),
-              ),
-              hintText: "Buscar producto",
-              hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-              border: InputBorder.none,
-            ),
-            onChanged: (value) {
-              bloc.add(SearchProductEvent(value));
-            },
-          ),
-        ),
-      ),
+    return DynamicSearchBar(
+      controller: bloc.searchControllerProducts,
+      focusNode: _searchFocusNode,
+      hintText: "Buscar producto",
+      onSearchChanged: (value) {
+        bloc.add(SearchProductEvent(value));
+      },
+      onSearchCleared: () {
+        bloc.add(SearchProductEvent(''));
+        _searchFocusNode.requestFocus();
+      },
+      onTap: () {},
     );
   }
 

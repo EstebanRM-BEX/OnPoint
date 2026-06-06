@@ -15,10 +15,13 @@ import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.d
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart';
 
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_advertencia_lote_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 
-import 'package:intl/intl.dart'; // Importamos el paquete intl
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:intl/intl.dart';
 
 class SearchLoteConteoScreen extends StatefulWidget {
   const SearchLoteConteoScreen({super.key, this.currentProduct});
@@ -31,13 +34,92 @@ class SearchLoteConteoScreen extends StatefulWidget {
 
 class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
   bool viewList = true;
-  DateTime? selectedDate; // Para almacenar la fecha seleccionada
-  int? selectedIndex; // Para almacenar el índice del lote seleccionado
+  DateTime? selectedDate;
+  int? selectedIndex;
+  final FocusNode _searchFocusNode = FocusNode();
+
+  // true cuando el código llama unfocus() intencionalmente (botón X).
+  // Permite distinguir en Crashlytics si el foco se perdió por código o por el sistema.
+  bool _intentionalUnfocus = false;
+
+  // ── Analytics + Crashlytics helpers ─────────────────────────────────────
+
+  void _log(String event) {
+    FirebaseCrashlytics.instance.log(
+      '[SearchLote] $event | viewList:$viewList | hasFocus:${_searchFocusNode.hasFocus}',
+    );
+  }
+
+  void _logAnalytics(String eventName, {Map<String, Object>? parameters}) {
+    FirebaseAnalytics.instance.logEvent(
+      name: eventName,
+      parameters: {
+        'view_list': viewList ? '1' : '0',
+        'has_focus': _searchFocusNode.hasFocus ? '1' : '0',
+        ...?parameters,
+      },
+    );
+  }
+
+  void _onSearchFocusChanged() {
+    if (_searchFocusNode.hasFocus) {
+      _intentionalUnfocus = false;
+      FirebaseCrashlytics.instance.setCustomKey('lote_has_focus', true);
+      _log('focus_gained');
+      _logAnalytics('lote_focus_gained');
+    } else {
+      // "unexpected" = el sistema/Android cerró el teclado sin que el código lo pidiera
+      final cause = _intentionalUnfocus ? 'intentional' : 'unexpected';
+      _intentionalUnfocus = false;
+      FirebaseCrashlytics.instance.setCustomKey('lote_has_focus', false);
+      _log('focus_lost:$cause');
+      _logAnalytics('lote_focus_lost', parameters: {'cause': cause});
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────────────
 
   @override
   void initState() {
     super.initState();
+    _searchFocusNode.addListener(_onSearchFocusChanged);
+    FirebaseCrashlytics.instance.setCustomKey('lote_screen_active', true);
+    FirebaseCrashlytics.instance.setCustomKey('lote_view_mode', 'list');
+    FirebaseCrashlytics.instance.setCustomKey('lote_has_focus', false);
+    _log('screen_init');
+    _logAnalytics('lote_screen_open');
     viewList = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _log('focus_requested:route_start');
+      final route = ModalRoute.of(context);
+      if (route?.animation?.isCompleted ?? true) {
+        if (viewList) _searchFocusNode.requestFocus();
+      } else {
+        route!.animation!.addStatusListener(_onRouteAnimationStatus);
+      }
+    });
+  }
+
+  void _onRouteAnimationStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed) {
+      ModalRoute.of(context)
+          ?.animation
+          ?.removeStatusListener(_onRouteAnimationStatus);
+      if (mounted && viewList) {
+        _log('focus_requested:route_complete');
+        _searchFocusNode.requestFocus();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchFocusNode.removeListener(_onSearchFocusChanged);
+    FirebaseCrashlytics.instance.setCustomKey('lote_screen_active', false);
+    _log('screen_dispose');
+    _searchFocusNode.dispose();
+    super.dispose();
   }
 
   // Función para mostrar el selector de fecha y hora
@@ -45,127 +127,101 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
+    final bloc = context.read<ConteoBloc>();
 
     return WillPopScope(
       onWillPop: () async {
         return false;
       },
-      child: Scaffold(
-        backgroundColor: primaryColorApp,
-        body: BlocBuilder<ConteoBloc, ConteoState>(
-          builder: (context, state) {
-            final bloc = context.read<ConteoBloc>();
-            return SafeArea(
-              child: Container(
-                color: white,
-                width: size.width * 1,
-                height: size.height * 1,
-                child: Column(
-                  children: [
-                    BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
-                      builder: (context, connectionStatus) {
-                        return BlocConsumer<ConteoBloc, ConteoState>(
-                          listener: (context, state) {
-                            debugPrint('STATE ❤️‍🔥 $state');
+      child: BlocListener<ConteoBloc, ConteoState>(
+        listenWhen: (_, curr) =>
+            curr is CreateLoteProductSuccess ||
+            curr is CreateLoteProductLoading ||
+            curr is CreateLoteProductFailure,
+        listener: (context, state) {
+          final bloc = context.read<ConteoBloc>();
+          debugPrint('STATE ❤️‍🔥 $state');
 
-                            if (state is CreateLoteProductSuccess) {
-                              Navigator.pop(context);
-                              Navigator.pushReplacementNamed(
-                                context,
-                                'new-product-conteo',
-                              );
-                            }
+          if (state is CreateLoteProductSuccess) {
+            Navigator.pop(context);
+            Navigator.pushReplacementNamed(context, 'new-product-conteo');
+          }
 
-                            if (state is CreateLoteProductLoading) {
-                              showDialog(
-                                context: context,
-                                builder: (context) {
-                                  return const DialogLoading(
-                                    message:
-                                        "Creando lote espere un momento...",
-                                  );
-                                },
-                              );
-                            }
+          if (state is CreateLoteProductLoading) {
+            showDialog(
+              context: context,
+              builder: (_) =>
+                  const DialogLoading(message: "Creando lote espere un momento..."),
+            );
+          }
 
-                            if (state is CreateLoteProductFailure) {
-                              Navigator.pop(context);
-                              if (state.code == 400) {
-                                showScrollableErrorDialog(state.error);
-                              } else if (state.code == 202 &&
-                                  (context
-                                              .read<ConteoBloc>()
-                                              .configurations
-                                              .result
-                                              ?.result
-                                              ?.allowPriorExpirationDate ==
-                                          true ||
-                                      context
-                                              .read<ConteoBloc>()
-                                              .configurations
-                                              .result
-                                              ?.result
-                                              ?.allowPriorExpirationDate ==
-                                          1)) {
-                                showScrollableWarningLoteDialog(state.error,
-                                    onContinue: () {
-                                  //creamos el lote sin prioridad de caducidadz
-                                  bloc.add(CreateLoteProduct(
-                                      bloc.newLoteController.text,
-                                      bloc.dateLoteController.text,
-                                      true));
-                                });
-                              } else {
-                                showScrollableErrorDialog(state.error);
-                              }
-                            }
-                          },
-                          builder: (context, state) {
-                            return Container(
-                              decoration: BoxDecoration(
-                                color: primaryColorApp,
-                                borderRadius: const BorderRadius.only(
-                                  bottomLeft: Radius.circular(20),
-                                  bottomRight: Radius.circular(20),
+          if (state is CreateLoteProductFailure) {
+            Navigator.pop(context);
+            if (state.code == 400) {
+              showScrollableErrorDialog(state.error);
+            } else if (state.code == 202 &&
+                (bloc.configurations.result?.result?.allowPriorExpirationDate ==
+                        true ||
+                    bloc.configurations.result?.result
+                            ?.allowPriorExpirationDate ==
+                        1)) {
+              showScrollableWarningLoteDialog(state.error, onContinue: () {
+                bloc.add(CreateLoteProduct(
+                    bloc.newLoteController.text,
+                    bloc.dateLoteController.text,
+                    true));
+              });
+            } else {
+              showScrollableErrorDialog(state.error);
+            }
+          }
+        },
+        child: Scaffold(
+          backgroundColor: primaryColorApp,
+          body: SafeArea(
+            child: Container(
+              color: white,
+              width: size.width,
+              height: size.height,
+              child: Column(
+                children: [
+                  BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
+                    builder: (context, connectionStatus) {
+                      return Container(
+                        decoration: const BoxDecoration(
+                          color: primaryColorApp,
+                          borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(20),
+                            bottomRight: Radius.circular(20),
+                          ),
+                        ),
+                        width: double.infinity,
+                        child: Column(
+                          children: [
+                            const WarningWidgetCubit(),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_back, color: white),
+                                  onPressed: () => Navigator.pushReplacementNamed(
+                                      context, 'new-product-conteo'),
                                 ),
-                              ),
-                              width: double.infinity,
-                              child: Column(
-                                children: [
-                                  const WarningWidgetCubit(),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.arrow_back,
-                                            color: white),
-                                        onPressed: () {
-                                          Navigator.pushReplacementNamed(
-                                            context,
-                                            'new-product-conteo',
-                                          );
-                                        },
-                                      ),
-                                      Padding(
-                                        padding: EdgeInsets.only(
-                                            left: size.width * 0.2),
-                                        child: const Text(
-                                          'CREAR LOTE',
-                                          style: TextStyle(
-                                              color: white, fontSize: 18),
-                                        ),
-                                      ),
-                                      const Spacer(),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
+                                Padding(
+                                  padding:
+                                      EdgeInsets.only(left: size.width * 0.2),
+                                  child: const Text('CREAR LOTE',
+                                      style:
+                                          TextStyle(color: white, fontSize: 18)),
+                                ),
+                                const Spacer(),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
 
                     const SizedBox(height: 10),
                     Text(widget.currentProduct?.productName ?? '',
@@ -176,83 +232,34 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
                     //todo barra buscar
                     Visibility(
                       visible: viewList,
-                      child: SizedBox(
-                          height: 55,
-                          width: size.width * 1,
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                              left: 10,
-                              right: 10,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: size.width * 0.9,
-                                  child: Card(
-                                    color: Colors.white,
-                                    elevation: 3,
-                                    child: TextFormField(
-                                      style:
-                                          TextStyle(color: black, fontSize: 14),
-                                      textAlignVertical:
-                                          TextAlignVertical.center,
-                                      controller: context
-                                          .read<ConteoBloc>()
-                                          .searchControllerLote,
-                                      showCursor: true,
-                                      decoration: InputDecoration(
-                                        prefixIcon: const Icon(
-                                          Icons.search,
-                                          color: grey,
-                                          size: 20,
-                                        ),
-                                        suffixIcon: IconButton(
-                                            onPressed: () {
-                                              context
-                                                  .read<ConteoBloc>()
-                                                  .searchControllerLote
-                                                  .clear();
-                                              context
-                                                  .read<ConteoBloc>()
-                                                  .add(SearchLotevent(
-                                                    '',
-                                                  ));
-
-                                              FocusScope.of(context).unfocus();
-                                            },
-                                            icon: const Icon(
-                                              Icons.close,
-                                              color: grey,
-                                              size: 20,
-                                            )),
-                                        disabledBorder:
-                                            const OutlineInputBorder(),
-                                        hintText: "Buscar lote",
-                                        hintStyle: const TextStyle(
-                                            color: Colors.grey, fontSize: 14),
-                                        border: InputBorder.none,
-                                      ),
-                                      onChanged: (value) {
-                                        context
-                                            .read<ConteoBloc>()
-                                            .add(SearchLotevent(
-                                              value,
-                                            ));
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )),
+                      child: DynamicSearchBar(
+                        controller: context.read<ConteoBloc>().searchControllerLote,
+                        focusNode: _searchFocusNode,
+                        hintText: "Buscar lote",
+                        onSearchChanged: (value) {
+                          context.read<ConteoBloc>().add(SearchLotevent(value));
+                        },
+                        onSearchCleared: () {
+                          // Marcar antes de que DynamicSearchBar llame unfocus()
+                          _intentionalUnfocus = true;
+                          _log('clear_button_pressed');
+                          _logAnalytics('lote_clear_pressed');
+                          context.read<ConteoBloc>().add(SearchLotevent(''));
+                        },
+                        onTap: () {},
+                      ),
                     ),
                     const SizedBox(height: 10),
                     if(viewList)
                     Expanded(
-                      child: Visibility(
-                                            visible: viewList,
-                                            child: ListView.builder(
+                      child: BlocBuilder<ConteoBloc, ConteoState>(
+                        buildWhen: (_, curr) =>
+                            curr is SearchLoteSuccess ||
+                            curr is SearchFailure ||
+                            curr is GetLotesProductSuccess ||
+                            curr is GetLotesProductFailure,
+                        builder: (context, state) {
+                          return ListView.builder(
                         itemCount: context
                             .read<ConteoBloc>()
                             .listLotesProductFilters
@@ -301,11 +308,15 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
                                 horizontal: 10, vertical: 0),
                             child: GestureDetector(
                               onTap: () {
+                                _log('card_tapped:index=$index');
+                                _logAnalytics('lote_card_tapped', parameters: {'index': index.toString()});
                                 setState(() {
                                   selectedIndex = isSelected ? null : index;
                                 });
-                                debugPrint(
-                                    'Lote seleccionado: ${context.read<ConteoBloc>().listLotesProductFilters[index].toMap()}');
+                                // Re-solicitar foco: tocar un card cierra el
+                                // teclado en Android; esto lo mantiene abierto
+                                // para que el scanner siga enviando input.
+                                _searchFocusNode.requestFocus();
                               },
                               child: Card(
                                 elevation: 3,
@@ -437,8 +448,9 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
                               ),
                             ),
                           );
-                        }),
-                                          ),
+                        });
+                        },
+                      ),
                     ),
                     //todo crear lote
                     Visibility(
@@ -715,6 +727,10 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
                         children: [
                           ElevatedButton(
                               onPressed: () {
+                                _log('cancelar_pressed');
+                                _logAnalytics('lote_cancelar');
+                                FirebaseCrashlytics.instance
+                                    .setCustomKey('lote_view_mode', 'list');
                                 context
                                     .read<ConteoBloc>()
                                     .newLoteController
@@ -726,6 +742,7 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
                                 setState(() {
                                   viewList = true;
                                 });
+                                _searchFocusNode.requestFocus();
                               },
                               style: ElevatedButton.styleFrom(
                                   backgroundColor: grey,
@@ -769,6 +786,10 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
                                     ));
                                   }
 
+                                  _log('crear_lote_pressed');
+                                  _logAnalytics('lote_crear_lote');
+                                  FirebaseCrashlytics.instance
+                                      .setCustomKey('lote_view_mode', 'create');
                                   //ocultamos la lista de lotes
                                   setState(() {
                                     viewList = false;
@@ -941,10 +962,9 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
                   ],
                 ),
               ),
-            );
-          },
+            ),
+          ),
         ),
-      ),
     );
   }
 }

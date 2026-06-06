@@ -454,20 +454,20 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       listLotesProduct = response;
       listLotesProductFilters = response;
 
-      if (event.isManual) {
-        // Búsqueda optimizada sin caché - versión eficiente
-        LotesProduct? foundLote;
-        for (final lote in response) {
-          if (lote.id == event.idLote) {
-            foundLote = lote;
-            break; // Rompe el ciclo al encontrar el lote
-          }
-        }
+      // if (event.isManual) {
+      //   // Búsqueda optimizada sin caché - versión eficiente
+      //   LotesProduct? foundLote;
+      //   for (final lote in response) {
+      //     if (lote.id == event.idLote) {
+      //       foundLote = lote;
+      //       break; // Rompe el ciclo al encontrar el lote
+      //     }
+      //   }
 
-        currentProductLote = foundLote ?? LotesProduct();
-        loteIsOk = true;
-        add(ChangeIsOkQuantity(true));
-      }
+      //   currentProductLote = foundLote ?? LotesProduct();
+      //   loteIsOk = true;
+      //   add(ChangeIsOkQuantity(true));
+      // }
 
       emit(GetLotesProductSuccess(response));
     } catch (e, s) {
@@ -497,6 +497,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
         add(FetchBarcodesProductEvent());
 
         if (currentProduct?.tracking == 'lot') {
+          print("✅✅✅✅ entramos1");
           add(GetLotesProduct(
             isManual: event.isManual,
             idLote: currentProduct?.lotId ?? 0,
@@ -508,6 +509,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
 
         if (currentProduct?.tracking == "none" ||
             currentProduct?.tracking == null) {
+              print("✅✅✅✅ entramos");
           add(ChangeIsOkQuantity(true));
         }
 

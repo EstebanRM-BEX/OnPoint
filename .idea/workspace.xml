@@ -5,19 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7da9283c-b484-441f-9ccb-ba01066cf8f8" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/routes/app_router.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/routes/app_router.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/features/home/presentation/index.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/home/presentation/index.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/features/print_labels/presentation/screens/list_products_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/print_labels/presentation/screens/list_products_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/presentation/providers/db/database.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/providers/db/database.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/info rapida/modules/quick info/bloc/info_rapida_bloc.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/info rapida/modules/quick info/bloc/info_rapida_bloc.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/info rapida/modules/quick info/screens/locations_info_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/info rapida/modules/quick info/screens/locations_info_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/info rapida/modules/quick info/screens/product_info_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/info rapida/modules/quick info/screens/product_info_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/wms_packing/presentation/packing/screens/tabs/tab1.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/wms_packing/presentation/packing/screens/tabs/tab1.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/wms_picking/modules/Pick/screens/history_pick/index_list_pick__done_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/wms_picking/modules/Pick/screens/history_pick/index_list_pick__done_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/presentation/views/wms_picking/modules/history/screens/list_batchs_history_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/presentation/views/wms_picking/modules/history/screens/list_batchs_history_screen.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

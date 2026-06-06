@@ -22,6 +22,7 @@ class DialogAsignUserWidget extends StatelessWidget {
         sigmaY: 5,
       ),
       child: AlertDialog(
+        actionsPadding:  const EdgeInsets.symmetric(horizontal: 2.0, vertical:8 ),
         actionsAlignment: MainAxisAlignment.center,
         title: Center(
           child: Text(

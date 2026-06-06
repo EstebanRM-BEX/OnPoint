@@ -640,13 +640,29 @@ class ApiRequestService {
 
       final request = http.Request('GET', Uri.parse(fullImageUrl));
       request.headers['Cookie'] = sessionId;
+      // Forzar PNG/JPEG para garantizar compatibilidad con Android ImageDecoder
+      request.headers['Accept'] = 'image/png, image/jpeg, image/*;q=0.8';
 
       final streamed = await request.send();
 
       if (isLoadinDialog) Get.back();
 
+      final contentType = streamed.headers['content-type'] ?? '';
+
       if (streamed.statusCode == 200) {
-        return await streamed.stream.toBytes();
+        // Si el servidor devuelve HTML (ej. página de login) en lugar de imagen, descartar
+        if (contentType.contains('text/html')) {
+          Get.snackbar(
+            'Error',
+            'No se pudo autenticar para cargar la imagen',
+            backgroundColor: white,
+            colorText: primaryColorApp,
+            icon: const Icon(Icons.lock_outline, color: Colors.red),
+          );
+          return null;
+        }
+        final bytes = await streamed.stream.toBytes();
+        return bytes;
       } else {
         debugPrint('🔴 [fetchImage] Status: ${streamed.statusCode}');
         Get.snackbar(

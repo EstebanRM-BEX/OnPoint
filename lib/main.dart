@@ -149,8 +149,8 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => getIt<ClusterPickingBloc>()),
         BlocProvider(create: (_) => getIt<LoteProductoBloc>()),
         BlocProvider(create: (_) => getIt<PackagingTypeBloc>()),
-        // BlocProvider(create: (_) => getIt<PrintingBloc>()),
-        // BlocProvider(create: (_) => PrintLabelsBloc()),
+        BlocProvider(create: (_) => getIt<PrintingBloc>()),
+        BlocProvider(create: (_) => PrintLabelsBloc()),
       ],
       child: GetMaterialApp(
         navigatorKey: navigatorKey,
