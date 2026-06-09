@@ -173,6 +173,18 @@ class PrefUtils {
     await preferences.remove(PrefKeys.email);
     await preferences.remove(PrefKeys.pass);
     await preferences.remove(PrefKeys.rol);
+    // Resetear overlay a visible por defecto al cerrar sesión
+    await preferences.remove(PrefKeys.networkOverlayVisible);
+  }
+
+  static Future<void> setNetworkOverlayVisible(bool visible) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(PrefKeys.networkOverlayVisible, visible);
+  }
+
+  static Future<bool> getNetworkOverlayVisible() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(PrefKeys.networkOverlayVisible) ?? true;
   }
 
   static Future<void> clearSession() async {

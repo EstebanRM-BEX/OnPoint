@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
+import 'package:wms_app/src/presentation/providers/network_overlay/network_overlay_cubit.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_bloc.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_event.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_state.dart';
@@ -205,6 +206,8 @@ class _UserPageState extends State<UserPage> {
                                       bloc.userConfiguration?.result?.result ??
                                           const UserProfile()),
                               const SizedBox(height: 20),
+                              _buildNetworkOverlayToggle(context),
+                              const SizedBox(height: 20),
                               _buildDeleteDatabaseButton(context),
                               const SizedBox(height: 20),
                             ],
@@ -354,6 +357,32 @@ class _UserPageState extends State<UserPage> {
   /// - Extrae la lógica del UI a métodos separados
   /// - Maneja el contexto correctamente en operaciones asíncronas
   /// - Proporciona feedback visual al usuario
+  Widget _buildNetworkOverlayToggle(BuildContext context) {
+    return BlocBuilder<NetworkOverlayCubit, bool>(
+      builder: (context, visible) => Card(
+        color: white,
+        elevation: 2,
+        child: SwitchListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          secondary: Icon(Icons.network_check, color: primaryColorApp),
+          title: Text(
+            'Indicador de red',
+            style: TextStyle(fontSize: 13, color: primaryColorApp),
+          ),
+          subtitle: Text(
+            visible ? 'Visible en todas las pantallas' : 'Oculto',
+            style: const TextStyle(fontSize: 11, color: Colors.grey),
+          ),
+          value: visible,
+          activeColor: primaryColorApp,
+          onChanged: (value) =>
+              context.read<NetworkOverlayCubit>().setVisible(value),
+        ),
+      ),
+    );
+  }
+
   Widget _buildDeleteDatabaseButton(BuildContext context) {
     return ElevatedButton(
       onPressed: () => _showDeleteDatabaseConfirmation(context),

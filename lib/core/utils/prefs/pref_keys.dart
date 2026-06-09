@@ -14,4 +14,5 @@ class PrefKeys {
   static const String modeloPDA = "modeloPDA";
   static const String fabricantePDA = "fabricantePDA";
   static const String cookie = "cookie";
+  static const String networkOverlayVisible = "networkOverlayVisible";
 }

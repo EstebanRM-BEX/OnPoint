@@ -37,6 +37,8 @@ import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
 import 'package:wms_app/src/presentation/widgets/session_timeout_manager_widget.dart';
+import 'package:wms_app/src/presentation/widgets/network_quality_overlay.dart';
+import 'package:wms_app/src/presentation/providers/network_overlay/network_overlay_cubit.dart';
 import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
 import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
 import 'package:flutter/material.dart';
@@ -116,6 +118,8 @@ class MyApp extends StatelessWidget {
         await DataBaseSqlite().deleteBDCloseSession();
         await Future.delayed(const Duration(seconds: 1));
         PrefUtils.setIsLoggedIn(false);
+        // Restablecer overlay a visible por defecto
+        contextWithProviders.read<NetworkOverlayCubit>().reset();
       }
 
       navigatorKey.currentState
@@ -124,6 +128,7 @@ class MyApp extends StatelessWidget {
 
     return MultiBlocProvider(
       providers: [
+        BlocProvider(create: (_) => NetworkOverlayCubit()),
         BlocProvider(create: (_) => getIt<ConnectionStatusCubit>()),
         BlocProvider(create: (_) => getIt<UserBloc>()),
         BlocProvider(create: (_) => RecepcionBloc()),
@@ -175,7 +180,9 @@ class MyApp extends StatelessWidget {
           return SessionTimeoutManager(
             duration: const Duration(minutes: 240),
             onSessionExpired: logOut,
-            child: navigator ?? const SizedBox.shrink(),
+            child: NetworkQualityOverlay(
+              child: navigator ?? const SizedBox.shrink(),
+            ),
           );
         },
       ),
