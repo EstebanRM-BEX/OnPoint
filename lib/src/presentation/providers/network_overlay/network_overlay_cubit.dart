@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 
 class NetworkOverlayCubit extends Cubit<bool> {
-  NetworkOverlayCubit() : super(true) {
+  NetworkOverlayCubit() : super(false) {
     _loadFromPrefs();
   }
 
@@ -23,5 +23,5 @@ class NetworkOverlayCubit extends Cubit<bool> {
 
   // Llamado en logout — restablece a true sin guardar en prefs
   // (clearPrefs ya removió la key, al next init leerá el default true)
-  void reset() => emit(true);
+  void reset() => emit(false);
 }

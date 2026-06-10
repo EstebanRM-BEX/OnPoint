@@ -409,13 +409,13 @@ void main() {
 
   // ── Grupo 6: NetworkOverlayCubit – lógica de prefs ───────────────────────
   group('NetworkOverlayCubit – persistencia en SharedPreferences', () {
-    test('estado por defecto es true cuando la key no existe en prefs',
+    test('estado por defecto es false cuando la key no existe en prefs',
         () async {
       SharedPreferences.setMockInitialValues({});
       final cubit = NetworkOverlayCubit();
       await Future.delayed(Duration.zero);
 
-      expect(cubit.state, isTrue);
+      expect(cubit.state, isFalse);
       cubit.close();
     });
 
@@ -428,18 +428,18 @@ void main() {
       cubit.close();
     });
 
-    test('reset() vuelve el estado a true sin tocar prefs', () async {
-      SharedPreferences.setMockInitialValues({'networkOverlayVisible': false});
+    test('reset() vuelve el estado a false sin tocar prefs', () async {
+      SharedPreferences.setMockInitialValues({'networkOverlayVisible': true});
       final cubit = NetworkOverlayCubit();
       await Future.delayed(Duration.zero);
-      expect(cubit.state, isFalse);
+      expect(cubit.state, isTrue);
 
       cubit.reset();
-      expect(cubit.state, isTrue);
+      expect(cubit.state, isFalse);
 
       // La key en prefs no debe haber cambiado
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getBool('networkOverlayVisible'), isFalse,
+      expect(prefs.getBool('networkOverlayVisible'), isTrue,
           reason: 'reset() no escribe en prefs, solo resetea el estado en memoria');
 
       cubit.close();

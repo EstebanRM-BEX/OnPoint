@@ -184,7 +184,7 @@ class PrefUtils {
 
   static Future<bool> getNetworkOverlayVisible() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(PrefKeys.networkOverlayVisible) ?? true;
+    return prefs.getBool(PrefKeys.networkOverlayVisible) ?? false;
   }
 
   static Future<void> clearSession() async {
