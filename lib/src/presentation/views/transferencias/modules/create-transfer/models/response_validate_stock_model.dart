@@ -77,7 +77,7 @@ class Consulta {
     final String? ubicacionBarcode;
     final int? loteId;
     final String? loteNombre;
-    final dynamic? cantidadConsultada;
+    final dynamic cantidadConsultada;
 
     Consulta({
         this.productoId,
@@ -124,9 +124,9 @@ class DetalleQuantsEncontrado {
     final int? quantId;
     final int? lotId;
     final String? lotName;
-    final dynamic? cantidadAMano;
-    final dynamic? cantidadReservada;
-    final dynamic? disponibleEnEsteQuant;
+    final dynamic cantidadAMano;
+    final dynamic cantidadReservada;
+    final dynamic disponibleEnEsteQuant;
     final int? packageId;
     final String? packageName;
 
@@ -169,9 +169,9 @@ class DetalleQuantsEncontrado {
 }
 
 class ResumenStock {
-    final dynamic? stockTotalALaMano;
-    final dynamic? stockReservadoTotal;
-    final dynamic? stockDisponibleCalculado;
+    final dynamic stockTotalALaMano;
+    final dynamic stockReservadoTotal;
+    final dynamic stockDisponibleCalculado;
     final bool? esSuficiente;
 
     ResumenStock({

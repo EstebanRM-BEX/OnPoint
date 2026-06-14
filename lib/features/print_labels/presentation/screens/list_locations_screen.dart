@@ -248,7 +248,7 @@ class _PrintLabelsLocationsScreenState
 }
 
 class _AppBarInfo extends StatelessWidget {
-  const _AppBarInfo({super.key, required this.size, this.isSearching = false});
+  const _AppBarInfo({required this.size, this.isSearching = false});
 
   final Size size;
   final bool isSearching;

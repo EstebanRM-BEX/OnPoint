@@ -811,7 +811,6 @@ class ProductosPedidosRepository {
     } catch (e, s) {
       debugPrint("Error al eliminar productos del tipo $type: $e ==> $s");
       return 0;
-      ;
     }
   }
 

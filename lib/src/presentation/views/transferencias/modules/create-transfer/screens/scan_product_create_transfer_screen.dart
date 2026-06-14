@@ -14,7 +14,7 @@ import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/new_product/location/LocationScanner_widget.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/new_product/lote/lote_scannear_widget.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/new_product/product/ProductScanner_widget.dart';
-import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/location/LocationCardButton_widget%20copy.dart';

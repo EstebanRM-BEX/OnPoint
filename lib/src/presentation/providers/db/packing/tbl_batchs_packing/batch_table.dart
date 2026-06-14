@@ -27,6 +27,10 @@ class BatchPackingTable {
   static const String columnManejaTemperatura = 'maneja_temperatura';
   //temperatura
   static const String columnTemperatura = 'temperatura';
+    //propietario
+  static const String columnPropietario = 'propietario';
+    static const String columnManejoPropietario = 'manejo_propietario';
+  
 
   // Método para crear la tabla
   static String createTable() {
@@ -52,6 +56,8 @@ class BatchPackingTable {
         $columnEndTimePack VARCHAR(255),
         $columnManejaTemperatura INTEGER,
         $columnTemperatura REAL,
+        $columnPropietario TEXT,
+        $columnManejoPropietario INTEGER DEFAULT 0,
         $columnTimeSeparateEnd VARCHAR(255)
       )
     ''';

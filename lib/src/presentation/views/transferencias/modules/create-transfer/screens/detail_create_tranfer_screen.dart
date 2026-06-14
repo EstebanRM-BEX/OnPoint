@@ -528,6 +528,39 @@ class DetailCreateTransferScreen extends StatelessWidget {
                                                 ),
                                               ],
                                             ),
+                                            Visibility(
+                                              visible: product.manejoPropietario == 1,
+                                              child: Row(
+                                                children: [
+                                                  Text(
+                                                    "Propietario: ",
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: primaryColorApp,
+                                                    ),
+                                                  ),
+                                                  Align(
+                                                    alignment:
+                                                        Alignment.centerLeft,
+                                                    child: Text(
+                                                      product.propietario == null ||
+                                                              product.propietario ==
+                                                                  ""
+                                                          ? "Sin propietario"
+                                                          : "${product.propietario}",
+                                                      style: TextStyle(
+                                                          fontSize: 12,
+                                                          color: product.propietario ==
+                                                                      null ||
+                                                                  product.propietario ==
+                                                                      ""
+                                                              ? red
+                                                              : black),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
                                             Row(
                                               children: [
                                                 Text(

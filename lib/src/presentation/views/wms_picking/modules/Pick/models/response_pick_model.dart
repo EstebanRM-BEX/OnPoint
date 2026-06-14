@@ -124,12 +124,17 @@ class ResultPick {
   String? productoFinalNombre;
   String? productoFinalReferencia;
 
+
+
   List<ProductsBatch>? lineasTransferencia;
 
   List<ProductsBatch>? lineasTransferenciaEnviadas;
 
   final dynamic quantityDone;
   final dynamic quantityOrdered;
+
+    String? propietario;
+  dynamic? manejoPropietario;
 
   ResultPick(
       {this.id,
@@ -179,6 +184,8 @@ class ResultPick {
       this.productoFinalNombre,
       this.productoFinalReferencia,
       this.createBackorder,
+          this.propietario,
+    this.manejoPropietario,
       this.quantityDone,
       this.referencia, //dato solo para pick done
       this.quantityOrdered});
@@ -241,6 +248,8 @@ class ResultPick {
         createBackorder: json["create_backorder"],
         quantityDone: json["quantity_done"],
         quantityOrdered: json["quantity_ordered"],
+          propietario: json["propietario"],
+        manejoPropietario: json["manejo_propietario"],
       );
 
   Map<String, dynamic> toMap() => {
@@ -299,5 +308,7 @@ class ResultPick {
         "create_backorder": createBackorder,
         "quantity_done": quantityDone,
         "quantity_ordered": quantityOrdered,
+         "propietario": propietario,
+        "manejo_propietario": manejoPropietario
       };
 }

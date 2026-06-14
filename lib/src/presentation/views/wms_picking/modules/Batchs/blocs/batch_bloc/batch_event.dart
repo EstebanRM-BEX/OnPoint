@@ -164,6 +164,12 @@ class ProductPendingEvent extends BatchEvent {
   ProductPendingEvent(this.batchId, this.product, this.type);
 }
 
+//*evento para reenviar los productos guardados sin conexion (is_send_odoo = 0)
+class SyncPendingProductsEvent extends BatchEvent {
+  final String type;
+  SyncPendingProductsEvent(this.type);
+}
+
 class LoadConfigurationsUser extends BatchEvent {
   LoadConfigurationsUser();
 }

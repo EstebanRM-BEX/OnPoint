@@ -7,11 +7,7 @@ class BatchModelResponse {
   final dynamic id;
   final DataBatch? result;
 
-  BatchModelResponse({
-    this.jsonrpc,
-    this.id,
-    this.result,
-  });
+  BatchModelResponse({this.jsonrpc, this.id, this.result});
 
   factory BatchModelResponse.fromJson(String str) =>
       BatchModelResponse.fromMap(json.decode(str));
@@ -22,15 +18,16 @@ class BatchModelResponse {
       BatchModelResponse(
         jsonrpc: json["jsonrpc"],
         id: json["id"],
-        result:
-            json["result"] == null ? null : DataBatch.fromMap(json["result"]),
+        result: json["result"] == null
+            ? null
+            : DataBatch.fromMap(json["result"]),
       );
 
   Map<String, dynamic> toMap() => {
-        "jsonrpc": jsonrpc,
-        "id": id,
-        "result": result?.toMap(),
-      };
+    "jsonrpc": jsonrpc,
+    "id": id,
+    "result": result?.toMap(),
+  };
 }
 
 class DataBatch {
@@ -39,35 +36,31 @@ class DataBatch {
   final bool? updateVersion;
   final List<BatchsModel>? result;
 
-  DataBatch({
-    this.code,
-    this.msg,
-    this.updateVersion,
-    this.result,
-  });
+  DataBatch({this.code, this.msg, this.updateVersion, this.result});
 
   factory DataBatch.fromJson(String str) => DataBatch.fromMap(json.decode(str));
 
   String toJson() => json.encode(toMap());
 
   factory DataBatch.fromMap(Map<String, dynamic> json) => DataBatch(
-        code: json["code"],
-        msg: json["msg"],
-        updateVersion: json["update_version"],
-        result: json["result"] == null
-            ? []
-            : List<BatchsModel>.from(
-                json["result"]!.map((x) => BatchsModel.fromMap(x))),
-      );
+    code: json["code"],
+    msg: json["msg"],
+    updateVersion: json["update_version"],
+    result: json["result"] == null
+        ? []
+        : List<BatchsModel>.from(
+            json["result"]!.map((x) => BatchsModel.fromMap(x)),
+          ),
+  );
 
   Map<String, dynamic> toMap() => {
-        "code": code,
-        "msg": msg,
-        "update_version": updateVersion,
-        "result": result == null
-            ? []
-            : List<dynamic>.from(result!.map((x) => x.toMap())),
-      };
+    "code": code,
+    "msg": msg,
+    "update_version": updateVersion,
+    "result": result == null
+        ? []
+        : List<dynamic>.from(result!.map((x) => x.toMap())),
+  };
 }
 
 class BatchsModel {
@@ -106,6 +99,9 @@ class BatchsModel {
   final String? zonaEntrega;
   final List<Origin>? origin;
 
+  final String? propietario;
+  final dynamic? manejoPropietario;
+
   List<ProductsBatch>? listItems;
 
   BatchsModel({
@@ -139,6 +135,8 @@ class BatchsModel {
     this.endTimePick,
     this.zonaEntrega,
     this.origin,
+    this.propietario,
+    this.manejoPropietario,
   });
 
   factory BatchsModel.fromJson(String str) =>
@@ -147,79 +145,84 @@ class BatchsModel {
   String toJson() => json.encode(toMap());
 
   factory BatchsModel.fromMap(Map<String, dynamic> json) => BatchsModel(
-        id: json['id'],
-        name: json['name'].toString(),
-        type: json['type'],
-        scheduleddate: json["scheduleddate"],
-        pickingTypeId: json['picking_type_id'],
-        muelle: json['muelle'],
-        barcodeMuelle: json['barcode_muelle'],
-        idMuelle: json['id_muelle'],
-        idMuellePadre: json['id_muelle_padre'], // Nuevo campo
-        state: json['state'],
-        userId: json['user_id'],
-        userName: json['user_name'],
-        countItems: json['count_items'],
-        totalQuantityItems: json['total_quantity_items'],
-        indexList: json['index_list'],
-        isWave: json['is_wave'],
-        isSeparate: json['is_separate'],
-        isSelected: json['is_selected'],
-        productSeparateQty: json['product_separate_qty'],
-        timeSeparateTotal: json['time_separate_total'],
-        isSendOdoo: json['is_send_oddo'],
-        isSendOdooDate: json['is_send_oddo_date'],
-        observation: json['observation'],
-        listItems: json["list_items"] == null
-            ? []
-            : List<ProductsBatch>.from(
-                json["list_items"]!.map((x) => ProductsBatch.fromMap(x))),
-        orderBy: json["order_by"],
-        orderPicking: json["order_picking"],
-        startTimePick: json["start_time_pick"],
-        endTimePick: json["end_time_pick"],
-        zonaEntrega: json["zona_entrega"],
-        origin: json["origin"] == null
-            ? []
-            : List<Origin>.from(json["origin"]!.map((x) => Origin.fromMap(x))),
-      );
+    id: json['id'],
+    name: json['name'].toString(),
+    type: json['type'],
+    scheduleddate: json["scheduleddate"],
+    pickingTypeId: json['picking_type_id'],
+    muelle: json['muelle'],
+    barcodeMuelle: json['barcode_muelle'],
+    idMuelle: json['id_muelle'],
+    idMuellePadre: json['id_muelle_padre'], // Nuevo campo
+    state: json['state'],
+    userId: json['user_id'],
+    userName: json['user_name'],
+    countItems: json['count_items'],
+    totalQuantityItems: json['total_quantity_items'],
+    indexList: json['index_list'],
+    isWave: json['is_wave'],
+    isSeparate: json['is_separate'],
+    isSelected: json['is_selected'],
+    productSeparateQty: json['product_separate_qty'],
+    timeSeparateTotal: json['time_separate_total'],
+    isSendOdoo: json['is_send_oddo'],
+    isSendOdooDate: json['is_send_oddo_date'],
+    observation: json['observation'],
+    listItems: json["list_items"] == null
+        ? []
+        : List<ProductsBatch>.from(
+            json["list_items"]!.map((x) => ProductsBatch.fromMap(x)),
+          ),
+    orderBy: json["order_by"],
+    orderPicking: json["order_picking"],
+    startTimePick: json["start_time_pick"],
+    endTimePick: json["end_time_pick"],
+    zonaEntrega: json["zona_entrega"],
+    origin: json["origin"] == null
+        ? []
+        : List<Origin>.from(json["origin"]!.map((x) => Origin.fromMap(x))),
+    propietario: json["propietario"],
+    manejoPropietario: json["manejo_propietario"]
+  );
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name,
-        'type': type,
-        'scheduleddate': scheduleddate,
-        'picking_type_id': pickingTypeId,
-        'muelle': muelle,
-        'barcode_muelle': barcodeMuelle,
-        'id_muelle': idMuelle,
-        'id_muelle_padre': idMuellePadre, // Nuevo campo
-        'state': state,
-        'user_id': userId,
-        'user_name': userName,
-        'count_items': countItems,
-        'total_quantity_items': totalQuantityItems,
-        'index_list': indexList,
-        'is_wave': isWave,
-        'is_separate': isSeparate,
-        'is_selected': isSelected,
-        'product_separate_qty': productSeparateQty,
-        'time_separate_total': timeSeparateTotal,
-        'is_send_oddo': isSendOdoo,
-        'is_send_oddo_date': isSendOdooDate,
-        'observation': observation,
-        'list_items': listItems == null
-            ? []
-            : List<dynamic>.from(listItems!.map((x) => x.toMap())),
-        'order_by': orderBy,
-        'order_picking': orderPicking,
-        'start_time_pick': startTimePick,
-        'end_time_pick': endTimePick,
-        'zona_entrega': zonaEntrega,
-        'origin': origin == null
-            ? []
-            : List<dynamic>.from(origin!.map((x) => x.toMap())),
-      };
+    'id': id,
+    'name': name,
+    'type': type,
+    'scheduleddate': scheduleddate,
+    'picking_type_id': pickingTypeId,
+    'muelle': muelle,
+    'barcode_muelle': barcodeMuelle,
+    'id_muelle': idMuelle,
+    'id_muelle_padre': idMuellePadre, // Nuevo campo
+    'state': state,
+    'user_id': userId,
+    'user_name': userName,
+    'count_items': countItems,
+    'total_quantity_items': totalQuantityItems,
+    'index_list': indexList,
+    'is_wave': isWave,
+    'is_separate': isSeparate,
+    'is_selected': isSelected,
+    'product_separate_qty': productSeparateQty,
+    'time_separate_total': timeSeparateTotal,
+    'is_send_oddo': isSendOdoo,
+    'is_send_oddo_date': isSendOdooDate,
+    'observation': observation,
+    'list_items': listItems == null
+        ? []
+        : List<dynamic>.from(listItems!.map((x) => x.toMap())),
+    'order_by': orderBy,
+    'order_picking': orderPicking,
+    'start_time_pick': startTimePick,
+    'end_time_pick': endTimePick,
+    'zona_entrega': zonaEntrega,
+    'origin': origin == null
+        ? []
+        : List<dynamic>.from(origin!.map((x) => x.toMap())),
+    "propietario" : propietario,
+    "manejo_propietario" : manejoPropietario,
+  };
 }
 
 class Origin {
@@ -227,25 +230,14 @@ class Origin {
   final String? name;
   final int? idBatch;
 
-  Origin({
-    this.id,
-    this.name,
-    this.idBatch,
-  });
+  Origin({this.id, this.name, this.idBatch});
 
   factory Origin.fromJson(String str) => Origin.fromMap(json.decode(str));
   String toJson() => json.encode(toMap());
-  factory Origin.fromMap(Map<String, dynamic> json) => Origin(
-        id: json['id'],
-        name: json['name'],
-        idBatch: json['id_batch'],
-      );
+  factory Origin.fromMap(Map<String, dynamic> json) =>
+      Origin(id: json['id'], name: json['name'], idBatch: json['id_batch']);
 
-  Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name,
-        'id_batch': idBatch,
-      };
+  Map<String, dynamic> toMap() => {'id': id, 'name': name, 'id_batch': idBatch};
 }
 
 class ProductsBatch {
@@ -273,7 +265,7 @@ class ProductsBatch {
   final int? muelleId;
   final dynamic locationDestId;
   final dynamic idLocationDest;
-  final dynamic quantity; 
+  final dynamic quantity;
   final List<Barcodes>? productPacking;
   final List<Barcodes>? otherBarcode;
   final String? productTracking;
@@ -300,13 +292,13 @@ class ProductsBatch {
 
   // Variables para el picking
   late dynamic
-      isLocationIsOk; // Variable para si la ubicación es leída correctamente
+  isLocationIsOk; // Variable para si la ubicación es leída correctamente
   late dynamic
-      productIsOk; // Variable para si el producto es leído correctamente
+  productIsOk; // Variable para si el producto es leído correctamente
   late dynamic
-      locationDestIsOk; // Variable para si la ubicación destino está leída
+  locationDestIsOk; // Variable para si la ubicación destino está leída
   late dynamic
-      isQuantityIsOk; // Variable para si la cantidad es leída correctamente
+  isQuantityIsOk; // Variable para si la cantidad es leída correctamente
   final String? fechaTransaccion;
 
   final dynamic productCode;
@@ -387,11 +379,13 @@ class ProductsBatch {
       productPacking: map['product_packing'] == null
           ? []
           : List<Barcodes>.from(
-              map['product_packing'].map((x) => Barcodes.fromMap(x))),
+              map['product_packing'].map((x) => Barcodes.fromMap(x)),
+            ),
       otherBarcode: map['other_barcode'] == null
           ? []
           : List<Barcodes>.from(
-              map['other_barcode'].map((x) => Barcodes.fromMap(x))),
+              map['other_barcode'].map((x) => Barcodes.fromMap(x)),
+            ),
       locationId: map['location_id'],
       locationDestId: map['location_dest_id'],
       idLocationDest: map['id_location_dest'],
@@ -505,20 +499,20 @@ class Barcodes {
   String toJson() => json.encode(toMap());
 
   factory Barcodes.fromMap(Map<String, dynamic> json) => Barcodes(
-        batchId: json["batch_id"],
-        idMove: json["id_move"],
-        idProduct: json["id_product"],
-        barcode: json["barcode"],
-        cantidad: json["cantidad"],
-        barcodeType: json["barcode_type"],
-      );
+    batchId: json["batch_id"],
+    idMove: json["id_move"],
+    idProduct: json["id_product"],
+    barcode: json["barcode"],
+    cantidad: json["cantidad"],
+    barcodeType: json["barcode_type"],
+  );
 
   Map<String, dynamic> toMap() => {
-        "batch_id": batchId,
-        "id_move": idMove,
-        "id_product": idProduct,
-        "barcode": barcode,
-        "cantidad": cantidad,
-        "barcode_type": barcodeType,
-      };
+    "batch_id": batchId,
+    "id_move": idMove,
+    "id_product": idProduct,
+    "barcode": barcode,
+    "cantidad": cantidad,
+    "barcode_type": barcodeType,
+  };
 }

@@ -29,6 +29,8 @@ class PickingBatch extends Equatable {
   final String? zonaEntrega;
   final List<PedidoValidate> pedidosValidate;
   final List<PickingBatchItem> listItems;
+  final String? propietario;
+  final dynamic? manejoPropietario;
 
   const PickingBatch({
     this.id,
@@ -57,6 +59,8 @@ class PickingBatch extends Equatable {
     this.zonaEntrega,
     this.pedidosValidate = const [],
     required this.listItems,
+    this.manejoPropietario,
+    this.propietario
   });
 
   PickingBatch copyWith({
@@ -77,15 +81,17 @@ class PickingBatch extends Equatable {
     dynamic idMuellePadre,
     String? barcodeMuelle,
     int? countItems,
-    dynamic? totalQuantityItems,
+    dynamic totalQuantityItems,
     int? completedItems,
-    dynamic? progressPercentage,
+    dynamic progressPercentage,
     dynamic startTimePick,
     dynamic endTimePick,
     int? productSeparateQty,
     String? zonaEntrega,
     List<PedidoValidate>? pedidosValidate,
     List<PickingBatchItem>? listItems,
+       String? propietario,
+   dynamic? manejoPropietario,
   }) {
     return PickingBatch(
       id: id ?? this.id,
@@ -114,6 +120,8 @@ class PickingBatch extends Equatable {
       zonaEntrega: zonaEntrega ?? this.zonaEntrega,
       pedidosValidate: pedidosValidate ?? this.pedidosValidate,
       listItems: listItems ?? this.listItems,
+      propietario: propietario ?? this.propietario,
+      manejoPropietario: manejoPropietario ?? this.manejoPropietario,
     );
   }
 
@@ -145,6 +153,8 @@ class PickingBatch extends Equatable {
         zonaEntrega,
         pedidosValidate,
         listItems,
+        propietario,
+        manejoPropietario,
       ];
 }
 
@@ -167,21 +177,21 @@ class PickingBatchItem extends Equatable {
   final String? location;
   final List<dynamic>? locationDestId;
   final String? locationDest;
-  final dynamic? quantity;
+  final dynamic quantity;
   final String? barcode;
   final List<PickingOtherBarcode>? otherBarcodes;
   final List<PickingOtherBarcode>? productPacking;
-  final dynamic? weight;
+  final dynamic weight;
   final String? unidades;
   final String? zonaEntrega;
   final int? idZonaEntrega;
-  final dynamic? quantitySeparate;
+  final dynamic quantitySeparate;
   final String? observation;
   final String? timeSeparate;
   final String? fechaTransaccion;
   final int? isSeparate;
   final bool? manejaTemperatura;
-  final dynamic? temperatura;
+  final dynamic temperatura;
   final String? image;
   final String? imageNovedad;
   final String? packageConsecutivo;
@@ -272,7 +282,7 @@ class PickingBatchItem extends Equatable {
 
 class PickingOtherBarcode extends Equatable {
   final String? barcode;
-  final dynamic? cantidad;
+  final dynamic cantidad;
   final int? idProduct;
   final int? idMove;
   final int? batchId;

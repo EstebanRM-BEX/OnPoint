@@ -80,6 +80,8 @@ class EntradasRepository {
             EntradasRepeccionTable.columnTemperatura: entrada.temperatura ?? 0,
             //propietario
             EntradasRepeccionTable.columnPropietario: entrada.propietario ?? "",
+            EntradasRepeccionTable.columnManejoPropietario: entrada.manejoPropietario ?? 0,
+
             //create_backorder
             EntradasRepeccionTable.columnCreateBackorder:
                 entrada.createBackorder ?? "",

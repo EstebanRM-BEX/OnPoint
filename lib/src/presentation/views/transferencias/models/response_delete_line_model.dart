@@ -63,7 +63,7 @@ class ResultResult {
     final int? productId;
     final String? productName;
     final String? productCode;
-    final dynamic? productBarcode;
+    final dynamic productBarcode;
     final String? ordenName;
     final int? locationDestId;
     final String? locationDestName;
@@ -71,10 +71,10 @@ class ResultResult {
     final int? locationId;
     final String? locationName;
     final String? locationBarcode;
-    final dynamic? quantityOrdered;
-    final dynamic? quantityToTransfer;
-    final dynamic? cantidadFaltante;
-    final dynamic? cantidadDemandada;
+    final dynamic quantityOrdered;
+    final dynamic quantityToTransfer;
+    final dynamic cantidadFaltante;
+    final dynamic cantidadDemandada;
 
     ResultResult({
         this.id,

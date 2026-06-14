@@ -50,6 +50,21 @@ class DetailClusterScreen extends StatelessWidget {
           );
         }
 
+        if (state is SyncPendingClusterSuccess) {
+          Get.snackbar(
+            '360 Software Informa',
+            'Se enviaron ${state.enviados} de ${state.total} producto(s) pendiente(s)',
+            backgroundColor: white,
+            colorText: primaryColorApp,
+            icon: Icon(
+              state.enviados == state.total ? Icons.check_circle : Icons.error,
+              color:
+                  state.enviados == state.total ? Colors.green : Colors.amber,
+            ),
+            duration: const Duration(seconds: 4),
+          );
+        }
+
         if (state is ViewProductImageSuccess) {
           showImageDialog(context, state.imageUrl);
         } else if (state is ViewProductImageFailure) {
@@ -646,21 +661,21 @@ class DetailClusterScreen extends StatelessWidget {
                                             ),
                                           ),
                                           ExpiryDateWidget(
-                                              expireDate: productsBatch
-                                                              .expireDate ==
-                                                          "" ||
-                                                      productsBatch
-                                                              .expireDate ==
-                                                          null
-                                                  ? DateTime.now()
-                                                  : DateTime.parse(
-                                                      productsBatch.expireDate),
+                                              // tryParse: en BD puede haber
+                                              // "null"/"false" (lotes sin
+                                              // fecha); parse crashea la vista
+                                              expireDate: DateTime.tryParse(
+                                                      productsBatch.expireDate
+                                                              ?.toString() ??
+                                                          '') ??
+                                                  DateTime.now(),
                                               size: size,
                                               isDetaild: true,
-                                              isNoExpireDate:
-                                                  productsBatch.expireDate == ""
-                                                      ? true
-                                                      : false),
+                                              isNoExpireDate: DateTime.tryParse(
+                                                      productsBatch.expireDate
+                                                              ?.toString() ??
+                                                          '') ==
+                                                  null),
                                           if (productsBatch.lotId != null &&
                                               productsBatch.lotId != "")
                                             Padding(
@@ -714,45 +729,76 @@ class DetailClusterScreen extends StatelessWidget {
                                                           fontSize: 12,
                                                           color: black)),
                                                   const SizedBox(width: 5),
-                                                  SizedBox(
-                                                    width: size.width * 0.25,
-                                                    child: Text(
-                                                        productsBatch
-                                                                    .isSendOdoo ==
-                                                                null
-                                                            ? 'Sin enviar'
-                                                            : productsBatch
-                                                                        .isSendOdoo ==
-                                                                    1
-                                                                ? 'Enviado'
-                                                                : 'No enviado',
-                                                        style: TextStyle(
-                                                            fontSize: 12,
-                                                            color: productsBatch
-                                                                        .isSendOdoo ==
-                                                                    null
-                                                                ? primaryColorApp
-                                                                : productsBatch
-                                                                            .isSendOdoo ==
-                                                                        1
-                                                                    ? green
-                                                                    : red)),
-                                                  ),
                                                   if (productsBatch
                                                           .isSendOdoo ==
                                                       0)
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 6,
+                                                          vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            Colors.orange[50],
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(4),
+                                                        border: Border.all(
+                                                            color: Colors
+                                                                .orange
+                                                                .shade300),
+                                                      ),
+                                                      child: Row(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          Icon(Icons.wifi_off,
+                                                              color: Colors
+                                                                  .orange[800],
+                                                              size: 12),
+                                                          const SizedBox(
+                                                              width: 4),
+                                                          Text(
+                                                              'Pendiente de envío',
+                                                              style: TextStyle(
+                                                                  fontSize: 10,
+                                                                  color: Colors
+                                                                          .orange[
+                                                                      900],
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600)),
+                                                        ],
+                                                      ),
+                                                    )
+                                                  else
+                                                    SizedBox(
+                                                      width: size.width * 0.25,
+                                                      child: Text(
+                                                          productsBatch
+                                                                      .isSendOdoo ==
+                                                                  null
+                                                              ? 'Sin enviar'
+                                                              : 'Enviado',
+                                                          style: TextStyle(
+                                                              fontSize: 12,
+                                                              color: productsBatch
+                                                                          .isSendOdoo ==
+                                                                      null
+                                                                  ? primaryColorApp
+                                                                  : green)),
+                                                    ),
+                                                  if (productsBatch
+                                                          .isSendOdoo ==
+                                                      0) ...[
+                                                    const Spacer(),
                                                     ElevatedButton(
                                                         onPressed: () async {
-                                                          // context
-                                                          //     .read<BatchBloc>()
-                                                          //     .add(
-                                                          //         SendProductOdooEvent(
-                                                          //       productsBatch,
-                                                          //       context
-                                                          //           .read<
-                                                          //               BatchBloc>()
-                                                          //           .typePicking,
-                                                          //     ));
+                                                          context
+                                                              .read<
+                                                                  ClusterPickingBloc>()
+                                                              .add(
+                                                                  const SyncPendingClusterProductsEvent());
                                                         },
                                                         style: ElevatedButton
                                                             .styleFrom(
@@ -779,6 +825,7 @@ class DetailClusterScreen extends StatelessWidget {
                                                               color: white,
                                                               fontSize: 10),
                                                         )),
+                                                  ],
                                                 ],
                                               ),
                                             ),

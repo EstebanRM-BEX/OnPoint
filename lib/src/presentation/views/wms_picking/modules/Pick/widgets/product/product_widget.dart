@@ -26,8 +26,8 @@ class ProductPickDropdownWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final IAudioService _audioService = getIt<IAudioService>();
-    final IVibrationService _vibrationService = getIt<IVibrationService>();
+    final IAudioService audioService = getIt<IAudioService>();
+    final IVibrationService vibrationService = getIt<IVibrationService>();
 
     return SizedBox(
       height: 48,
@@ -91,8 +91,8 @@ class ProductPickDropdownWidget extends StatelessWidget {
                                 0,
                                 currentProduct.idMove ?? 0));
                           } else {
-                            _vibrationService.vibrate();
-                            _audioService.playErrorSound();
+                            vibrationService.vibrate();
+                            audioService.playErrorSound();
                             context.read<PickingPickBloc>().add(ValidateFieldsEvent(
                                 field: "product", isOk: false));
                           }

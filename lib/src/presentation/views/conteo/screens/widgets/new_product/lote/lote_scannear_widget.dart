@@ -21,7 +21,7 @@ class LoteScannerWidget extends StatefulWidget {
   final String lotId;
 
   const LoteScannerWidget({
-    Key? key,
+    super.key,
     required this.isLoteOk,
     required this.loteIsOk,
     required this.locationIsOk,
@@ -35,7 +35,7 @@ class LoteScannerWidget extends StatefulWidget {
     required this.controller,
     required this.routeName,
     required this.lotId,
-  }) : super(key: key);
+  });
 
   @override
   State<LoteScannerWidget> createState() => _LoteScannerWidgetState();

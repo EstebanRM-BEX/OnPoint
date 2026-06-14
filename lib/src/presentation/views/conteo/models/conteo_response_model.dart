@@ -305,7 +305,7 @@ class CountedLine {
 
   final dynamic isSelected;
   final dynamic isSeparate;
-  final dynamic? idMove;
+  final dynamic idMove;
   final dynamic isOriginal;
 
   final dynamic productIsOk;

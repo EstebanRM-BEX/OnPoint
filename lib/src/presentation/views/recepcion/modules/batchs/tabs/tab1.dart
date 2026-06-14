@@ -64,10 +64,13 @@ class Tab1ScreenRecepBatch extends StatelessWidget {
                                 Text('Tipo de entrada: ',
                                     style: TextStyle(
                                         fontSize: 14, color: primaryColorApp)),
-                                Text(
-                                  ordeCompraBd.pickingType ?? "",
-                                  style: const TextStyle(
-                                      fontSize: 14, color: black),
+                                Expanded(
+                                  child: Text(
+                                    ordeCompraBd.pickingType ?? "",
+                                    style: const TextStyle(
+                                        fontSize: 14, color: black),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ],
                             ),
@@ -76,19 +79,17 @@ class Tab1ScreenRecepBatch extends StatelessWidget {
                             alignment: Alignment.centerLeft,
                             child: Row(
                               children: [
-                                Text('Prioridad: ',
+                                Text('Propietario: ',
                                     style: TextStyle(
                                         fontSize: 14, color: primaryColorApp)),
-                                Text(
-                                  ordeCompraBd.priority == '0'
-                                      ? 'Normal'
-                                      : 'Alta'
-                                          "",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: ordeCompraBd.priority == '0'
-                                        ? black
-                                        : red,
+                                Expanded(
+                                  child: Text(
+                                    ordeCompraBd.propietario ?? "Sin propietario",
+                                  maxLines: 2,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: red,
+                                    ),
                                   ),
                                 ),
                               ],

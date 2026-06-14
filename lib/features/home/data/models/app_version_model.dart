@@ -5,16 +5,11 @@ import 'package:wms_app/features/home/domain/entities/app_version.dart';
 /// Includes JSON serialization/deserialization logic.
 class AppVersionModel extends AppVersion {
   const AppVersionModel({
-    String? jsonrpc,
-    dynamic id,
-    String message = '',
-    AppVersionResultModel? result,
-  }) : super(
-          jsonrpc: jsonrpc,
-          id: id,
-          message: message,
-          result: result,
-        );
+    super.jsonrpc,
+    super.id,
+    super.message,
+    AppVersionResultModel? super.result,
+  });
 
   factory AppVersionModel.fromJson(String str) =>
       AppVersionModel.fromMap(json.decode(str));
@@ -40,9 +35,9 @@ class AppVersionModel extends AppVersion {
 
 class AppVersionResultModel extends AppVersionResult {
   const AppVersionResultModel({
-    int? code,
-    VersionResultModel? result,
-  }) : super(code: code, result: result);
+    super.code,
+    VersionResultModel? super.result,
+  });
 
   factory AppVersionResultModel.fromJson(String str) =>
       AppVersionResultModel.fromMap(json.decode(str));
@@ -65,18 +60,12 @@ class AppVersionResultModel extends AppVersionResult {
 
 class VersionResultModel extends VersionResult {
   const VersionResultModel({
-    int? id,
-    String? version,
-    DateTime? releaseDate,
-    List<String>? notes,
-    String? urlDownload,
-  }) : super(
-          id: id,
-          version: version,
-          releaseDate: releaseDate,
-          notes: notes,
-          urlDownload: urlDownload,
-        );
+    super.id,
+    super.version,
+    super.releaseDate,
+    super.notes,
+    super.urlDownload,
+  });
 
   factory VersionResultModel.fromJson(String str) =>
       VersionResultModel.fromMap(json.decode(str));

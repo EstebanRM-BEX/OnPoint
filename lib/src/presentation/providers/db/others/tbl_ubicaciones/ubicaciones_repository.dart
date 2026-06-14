@@ -107,7 +107,7 @@ class UbicacionesRepository {
   Future<void> insertOrUpdateSingle(ResultUbicaciones item) async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
-      await db!.insert(
+      await db.insert(
         UbicacionesTable.tableName,
         {
           UbicacionesTable.columnId: item.id,
@@ -136,7 +136,7 @@ class UbicacionesRepository {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
 
-      final List<Map<String, dynamic>> res = await db!.query(
+      final List<Map<String, dynamic>> res = await db.query(
           UbicacionesTable.tableName,
           where: '${UbicacionesTable.columnBarcode} = ?',
           whereArgs: [barcode],
@@ -157,7 +157,7 @@ class UbicacionesRepository {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
       final List<Map<String, dynamic>> maps =
-          await db!.query(UbicacionesTable.tableName);
+          await db.query(UbicacionesTable.tableName);
       if (maps.isEmpty) return [];
       return await compute(_parseUbicacionesMap, maps);
     } catch (e) {
@@ -170,7 +170,7 @@ class UbicacionesRepository {
       String params) async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
-      final List<Map<String, dynamic>> maps = await db!.query(
+      final List<Map<String, dynamic>> maps = await db.query(
         UbicacionesTable.tableName,
         where: '${UbicacionesTable.columnIsADock} = ?',
         whereArgs: [1], // 1 representa 'true' en SQLite
@@ -200,6 +200,6 @@ class UbicacionesRepository {
   /// Borrar todo (Reset manual)
   Future<void> deleteAll() async {
     final db = await DataBaseSqlite().getDatabaseInstance();
-    await db!.delete(UbicacionesTable.tableName);
+    await db.delete(UbicacionesTable.tableName);
   }
 }

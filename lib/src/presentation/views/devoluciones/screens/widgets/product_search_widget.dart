@@ -10,7 +10,7 @@ import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluc
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 
 class SearchProductDevScreen extends StatefulWidget {
-  const SearchProductDevScreen({Key? key}) : super(key: key);
+  const SearchProductDevScreen({super.key});
 
   @override
   State<SearchProductDevScreen> createState() => _SearchProductDevScreenState();
@@ -192,7 +192,7 @@ class ProductListTile extends StatelessWidget {
 }
 
 class _AppBarInfo extends StatelessWidget {
-  const _AppBarInfo({super.key, required this.size});
+  const _AppBarInfo({required this.size});
 
   final Size size;
 
@@ -241,7 +241,7 @@ class _AppBarInfo extends StatelessWidget {
 }
 
 class _SearchBar extends StatelessWidget {
-  const _SearchBar({super.key, required this.size});
+  const _SearchBar({required this.size});
 
   final Size size;
 
@@ -282,7 +282,7 @@ class _SearchBar extends StatelessWidget {
 }
 
 class _NoProductsMessage extends StatelessWidget {
-  const _NoProductsMessage({super.key});
+  const _NoProductsMessage();
 
   @override
   Widget build(BuildContext context) {

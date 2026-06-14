@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
@@ -32,6 +34,8 @@ import '../../../domain/usecases/set_cluster_batch_pedido_field_use_case.dart';
 import '../../../domain/usecases/end_time_pick_use_case.dart';
 import '../../../domain/usecases/start_time_pick_use_case.dart';
 import '../../../domain/usecases/validate_pedido_usecase.dart';
+import '../../../domain/usecases/get_pending_send_products_use_case.dart';
+import 'package:wms_app/core/network/network_info.dart';
 
 part 'cluster_picking_event.dart';
 part 'cluster_picking_state.dart';
@@ -56,6 +60,12 @@ class ClusterPickingBloc
   final EndTimePickUseCase endTimePickUseCase;
   final StartTimePickUseCase startTimePickUseCase;
   final ValidatePedidoUseCase validatePedidoUseCase;
+  final GetPendingSendProductsUseCase getPendingSendProductsUseCase;
+  final NetworkInfo networkInfo;
+
+  //*conectividad: reenvío automático de pendientes al recuperar conexión
+  StreamSubscription<ConnectionStatus>? _networkSubscription;
+  bool _isSyncingPending = false;
 
   //uses cases de bloc user
   final GetUserConfiguration getUserConfiguration;
@@ -129,6 +139,13 @@ class ClusterPickingBloc
 
     if (currentProduct == null || currentProduct?.productTracking != "lot") return;
 
+    // Sin conexión la API de lotes solo dispararía el snackbar de error de
+    // red; la lista queda vacía igual que cuando la llamada falla.
+    if (!await networkInfo.isConnected) {
+      debugPrint("📡 Sin conexión: lotes no disponibles para el producto");
+      return;
+    }
+
     final result = await getLotesProductoUseCase(
       GetLotesProductoParams(productId: currentProduct?.idProduct ?? 0),
     );
@@ -171,6 +188,8 @@ class ClusterPickingBloc
     required this.endTimePickUseCase,
     required this.startTimePickUseCase,
     required this.validatePedidoUseCase,
+    required this.getPendingSendProductsUseCase,
+    required this.networkInfo,
   }) : super(ClusterPickingInitial()) {
     on<FetchPickingClustersEvent>(_onFetchPickingClusters);
     on<LoadLocalPickingClustersEvent>(_onLoadLocalPickingClusters);
@@ -198,6 +217,15 @@ class ClusterPickingBloc
     on<LoadSelectedProductEvent>(_onLoadSelectedProductEvent);
     on<ValidatePedidoEvent>(_onValidatePedidoEvent);
     on<MarkPedidoAsValidatedEvent>(_onMarkPedidoAsValidated);
+    //evento para reenviar productos guardados sin conexion
+    on<SyncPendingClusterProductsEvent>(_onSyncPendingClusterProducts);
+
+    //al recuperar conexion, reenviamos automaticamente los pendientes
+    _networkSubscription = networkInfo.onStatusChanged.listen((status) {
+      if (status == ConnectionStatus.online) {
+        add(const SyncPendingClusterProductsEvent());
+      }
+    });
     on<EndTimePick>(_onEndTimePickEvent);
     on<StartTimePick>(_onStartTimePickEvent);
     on<SendProductEditOdooEvent>(_onSendProductEditOdooEvent);
@@ -438,14 +466,14 @@ class ClusterPickingBloc
 
   String calcularProgresoReal() {
     try {
-      if (filteredProducts == null || filteredProducts!.isEmpty) {
+      if (filteredProducts == null || filteredProducts.isEmpty) {
         return "0.00";
       }
 
       double sumaRequeridaTotal = 0;
       double sumaAvanzadaReal = 0; // Esta suma tiene "tope" por producto
 
-      for (var product in filteredProducts!) {
+      for (var product in filteredProducts) {
         double solicitado = (product.quantity ?? 0).toDouble();
         double separado = (product.quantitySeparate ?? 0).toDouble();
 
@@ -721,6 +749,72 @@ class ClusterPickingBloc
         return (false, 'No se pudo obtener el producto localmente');
       }
 
+      // --- VALIDACIÓN DE CONEXIÓN (modo offline) ---
+      // Sin conexión: el proceso local queda completo y el producto pendiente
+      // con is_send_odoo = 0; se reenviará al recuperar la conexión.
+      if (!await networkInfo.isConnected) {
+        await setClusterBatchProductFieldUseCase.call(
+          SetClusterBatchProductFieldParams(
+            batchId: productBD.batchId ?? 0,
+            productId: productBD.idProduct ?? 0,
+            field: 'is_send_odoo',
+            value: 0,
+            idMove: productBD.idMove ?? 0,
+            type: 'cluster',
+          ),
+        );
+
+        // Persistimos el lote para que el reenvío pueda reconstruir el payload:
+        // lot_id = nombre (lo que muestra la UI), lote_id = id (para el envío).
+        if (productBD.productTracking == "lot") {
+          await setClusterBatchProductFieldUseCase.call(
+            SetClusterBatchProductFieldParams(
+              batchId: productBD.batchId ?? 0,
+              productId: productBD.idProduct ?? 0,
+              field: 'lot_id',
+              value: lotesProductCurrent.name ?? '',
+              idMove: productBD.idMove ?? 0,
+              type: 'cluster',
+            ),
+          );
+          await setClusterBatchProductFieldUseCase.call(
+            SetClusterBatchProductFieldParams(
+              batchId: productBD.batchId ?? 0,
+              productId: productBD.idProduct ?? 0,
+              field: 'lote_id',
+              value: lotesProductCurrent.id ?? 0,
+              idMove: productBD.idMove ?? 0,
+              type: 'cluster',
+            ),
+          );
+          // Solo persistimos fechas válidas: expirationDate puede venir como
+          // false (Odoo) o null, y .toString() produciría "false"/"null",
+          // que rompe el DateTime.parse de la UI.
+          final expireDateStr =
+              lotesProductCurrent.expirationDate?.toString() ?? '';
+          await setClusterBatchProductFieldUseCase.call(
+            SetClusterBatchProductFieldParams(
+              batchId: productBD.batchId ?? 0,
+              productId: productBD.idProduct ?? 0,
+              field: 'expire_date',
+              value:
+                  DateTime.tryParse(expireDateStr) != null ? expireDateStr : '',
+              idMove: productBD.idMove ?? 0,
+              type: 'cluster',
+            ),
+          );
+        }
+
+        // Doble emit: SendToOdooStateSuccess cierra el loader y continúa el
+        // flujo igual que un envío online; ProductSavedOfflineState muestra
+        // el aviso de guardado sin conexión.
+        // ignore: invalid_use_of_visible_for_testing_member
+        emit(const SendToOdooStateSuccess(true));
+        // ignore: invalid_use_of_visible_for_testing_member
+        emit(const ProductSavedOfflineState());
+        return (true, '');
+      }
+
       // 1. Delegamos lógica de negocio, cálculos de tiempo, y variables al UseCase
       final response = await sendProductOdooUseCase.call(
         SendProductOdooParams(
@@ -810,7 +904,7 @@ class ClusterPickingBloc
                 batchId: productBD.batchId ?? 0,
                 productId: productBD.idProduct ?? 0,
                 field: 'lot_id',
-                value: lotesProductCurrent?.name ?? 0,
+                value: lotesProductCurrent.name ?? 0,
                 idMove: productBD.idMove ?? 0,
                 type: 'cluster',
               ),
@@ -820,7 +914,7 @@ class ClusterPickingBloc
                 batchId: productBD.batchId ?? 0,
                 productId: productBD.idProduct ?? 0,
                 field: 'lote_id',
-                value: lotesProductCurrent?.name ?? 0,
+                value: lotesProductCurrent.name ?? 0,
                 idMove: productBD.idMove ?? 0,
                 type: 'cluster',
               ),
@@ -830,7 +924,7 @@ class ClusterPickingBloc
                 batchId: productBD.batchId ?? 0,
                 productId: productBD.idProduct ?? 0,
                 field: 'expire_date',
-                value: lotesProductCurrent?.expirationDate.toString() ?? '',
+                value: lotesProductCurrent.expirationDate.toString() ?? '',
                 idMove: productBD.idMove ?? 0,
                 type: 'cluster',
               ),
@@ -1036,6 +1130,41 @@ class ClusterPickingBloc
       print("  - namePedido: ${event.namePedido}");
       print("  - isValidated: ${event.isValidated}");
       print("  - listIdMove: ${event.listIdMove.length}");
+
+      // 0. Si el pedido tiene productos guardados sin conexión, intentamos
+      // sincronizarlos primero; si quedan pendientes bloqueamos la validación
+      // (el backend aún no conoce esas líneas). Los productos se relacionan
+      // con el pedido por pedidoId (igual que en validate_screen).
+      final idPedidoValidar = pedidosValidate
+          .firstWhere(
+            (p) => p.namePedido == event.namePedido,
+            orElse: () => const PedidoValidate(),
+          )
+          .idPedido;
+
+      final pendingResult = await getPendingSendProductsUseCase(NoParams());
+      final pendientesPedido = pendingResult.fold(
+        (failure) => <BatchProduct>[],
+        (pendientes) => pendientes
+            .where((p) =>
+                p.batchId == event.batchId && p.pedidoId == idPedidoValidar)
+            .toList(),
+      );
+
+      if (pendientesPedido.isNotEmpty) {
+        int enviados = 0;
+        if (await networkInfo.isConnected) {
+          for (final pendiente in pendientesPedido) {
+            if (await _resendPendingProduct(pendiente)) enviados++;
+          }
+        }
+        final restantes = pendientesPedido.length - enviados;
+        if (restantes > 0) {
+          emit(ValidatePedidoStateError(
+              'No se puede validar: $restantes producto(s) pendiente(s) de envío. Conéctate a internet para sincronizar'));
+          return;
+        }
+      }
 
       // // 1. Obtener los ids del pedido y la ubicación para validar con el backend
       final pedidoToValidate = pedidosValidate.firstWhere(
@@ -1677,4 +1806,112 @@ class ClusterPickingBloc
     isLoteOk = true;
     emit(ValidateFieldsStateSuccess(true));
   }
+  //*evento para reenviar los productos guardados sin conexion (is_send_odoo = 0)
+  void _onSyncPendingClusterProducts(SyncPendingClusterProductsEvent event,
+      Emitter<ClusterPickingState> emit) async {
+    if (_isSyncingPending) return;
+    _isSyncingPending = true;
+    try {
+      if (!await networkInfo.isConnected) return;
+
+      final result = await getPendingSendProductsUseCase(NoParams());
+      final pendientes = result.fold(
+        (failure) => <BatchProduct>[],
+        (value) => value,
+      );
+      if (pendientes.isEmpty) return;
+
+      debugPrint(
+          "📡 [cluster] Sincronizando ${pendientes.length} producto(s) pendiente(s)");
+      emit(SyncPendingClusterLoading());
+
+      //enviamos uno por uno
+      int enviados = 0;
+      for (final pendiente in pendientes) {
+        final ok = await _resendPendingProduct(pendiente);
+        if (ok) enviados++;
+        debugPrint(
+            "📡 [cluster] Pendiente ${pendiente.idProduct} (batch ${pendiente.batchId}): ${ok ? 'enviado ✅' : 'falló ❌'}");
+      }
+
+      //refrescamos la lista en memoria si seguimos en un batch
+      if (currentBatch != null) {
+        final resultProducts = await getLocalBatchProductsData(
+            GetBatchProductsParams(batchId: currentBatch?.id ?? 0));
+        resultProducts.fold(
+          (failure) => null,
+          (productsResult) {
+            final sortedProducts = _sortProducts(currentBatch!, productsResult);
+            products = sortedProducts;
+            filteredProducts = List.from(sortedProducts);
+          },
+        );
+      }
+
+      emit(SyncPendingClusterSuccess(enviados, pendientes.length));
+    } catch (e, s) {
+      debugPrint("❌ Error en SyncPendingClusterProducts $e -> $s");
+    } finally {
+      _isSyncingPending = false;
+    }
+  }
+
+  //* reenvía un producto pendiente: el lote sale de la fila persistida
+  //* (lote_id = id numérico guardado al momento del envío offline)
+  Future<bool> _resendPendingProduct(BatchProduct pendiente) async {
+    try {
+      final loteId = pendiente.productTracking == 'lot'
+          ? int.tryParse(pendiente.loteId.toString()) ?? 0
+          : 0;
+
+      final response = await sendProductOdooUseCase.call(
+        SendProductOdooParams(
+          product: pendiente,
+          loteId: loteId,
+          type: 'cluster',
+          configurations: configurations,
+        ),
+      );
+
+      return await response.fold(
+        (failure) async => false,
+        (success) async {
+          await setClusterBatchProductFieldUseCase.call(
+            SetClusterBatchProductFieldParams(
+              batchId: pendiente.batchId ?? 0,
+              productId: pendiente.idProduct ?? 0,
+              field: 'is_send_odoo',
+              value: 1,
+              idMove: pendiente.idMove ?? 0,
+              type: 'cluster',
+            ),
+          );
+          //restauramos lote_id al nombre, igual que el flujo online exitoso
+          if (pendiente.productTracking == 'lot') {
+            await setClusterBatchProductFieldUseCase.call(
+              SetClusterBatchProductFieldParams(
+                batchId: pendiente.batchId ?? 0,
+                productId: pendiente.idProduct ?? 0,
+                field: 'lote_id',
+                value: pendiente.lotId ?? '',
+                idMove: pendiente.idMove ?? 0,
+                type: 'cluster',
+              ),
+            );
+          }
+          return true;
+        },
+      );
+    } catch (e, s) {
+      debugPrint("❌ Error en _resendPendingProduct $e -> $s");
+      return false;
+    }
+  }
+
+  @override
+  Future<void> close() {
+    _networkSubscription?.cancel();
+    return super.close();
+  }
+
 }

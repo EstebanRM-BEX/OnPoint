@@ -27,8 +27,8 @@ class ProductDropdownTransferWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final IAudioService _audioService = getIt<IAudioService>();
-    final IVibrationService _vibrationService = getIt<IVibrationService>();
+    final IAudioService audioService = getIt<IAudioService>();
+    final IVibrationService vibrationService = getIt<IVibrationService>();
     return SizedBox(
       height: 48,
       child: Center(
@@ -92,8 +92,8 @@ class ProductDropdownTransferWidget extends StatelessWidget {
                                 0,
                                 currentProduct.idMove ?? 0));
                           } else {
-                            _audioService.playErrorSound();
-                            _vibrationService.vibrate();
+                            audioService.playErrorSound();
+                            vibrationService.vibrate();
                             batchBloc.add(ValidateFieldsEvent(
                                 field: "product", isOk: false));
                           }

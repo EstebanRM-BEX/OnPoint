@@ -67,7 +67,7 @@ class Terceros {
   final int? id;
   final String? document;
   final String? sucursal;
-  final dynamic? name;
+  final dynamic name;
   final String? almacen;
 
   Terceros({

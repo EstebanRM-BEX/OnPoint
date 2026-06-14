@@ -94,7 +94,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 34,
+      version: 43,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -705,6 +705,132 @@ class DataBaseSqlite {
         debugPrint("Error actualizando a v34 (tbl_productos_conteo): $e");
       }
     }
+
+
+     if (oldVersion < 35) {
+      try {
+        await db.execute('''
+        ALTER TABLE tbl_entradas_recepcion_batch
+        ADD COLUMN manejo_propietario INTEGER
+      ''');
+        await db.execute('''
+        ALTER TABLE tbl_entradas_recepcion
+        ADD COLUMN manejo_propietario INTEGER
+      ''');
+      } catch (e) {
+        debugPrint("Error actualizando a v35 (tbl_entradas_recepcion_batch): $e");
+      }
+    }
+     if (oldVersion < 36) {
+      try {
+        await db.execute('''
+        ALTER TABLE tbl_transferencias
+        ADD COLUMN manejo_propietario INTEGER
+      ''');
+        await db.execute('''
+        ALTER TABLE tbl_transferencias
+        ADD COLUMN propietario TEXT
+      ''');
+      } catch (e) {
+        debugPrint("Error actualizando a v36 (tbl_transferencias): $e");
+      }
+    }
+
+
+     if (oldVersion < 37) {
+      try {
+      
+        await db.execute('''
+        ALTER TABLE tbl_entradas_recepcion
+        ADD COLUMN manejo_propietario INTEGER
+      ''');
+      } catch (e) {
+        debugPrint("Error actualizando a v37 (tbl_entradas_recepcion): $e");
+      }
+    }
+    if (oldVersion < 38) {
+      // Columnas de propietario en tblproductos_inventario — execute separados
+      // porque SQLite no soporta múltiples ALTER TABLE en un solo execute().
+      for (final col in [
+        '${ProductInventarioTable.columnPropietario} VARCHAR(255)',
+        '${ProductInventarioTable.columnIdPropietario} INTEGER',
+        '${ProductInventarioTable.columnManejoPropietario} INTEGER DEFAULT 0',
+      ]) {
+        try {
+          await db.execute(
+              'ALTER TABLE ${ProductInventarioTable.tableName} ADD COLUMN $col');
+        } catch (_) {}
+      }
+    }
+
+    if (oldVersion < 39) {
+      // Columnas de propietario en tblproductos_create_transfer
+      for (final col in [
+        '${ProductCreateTransferTable.columnPropietario} TEXT',
+        '${ProductCreateTransferTable.columnIdPropietario} INTEGER',
+        '${ProductCreateTransferTable.columnManejoPropietario} INTEGER DEFAULT 0',
+      ]) {
+        try {
+          await db.execute(
+              'ALTER TABLE ${ProductCreateTransferTable.tableName} ADD COLUMN $col');
+        } catch (_) {}
+      }
+    }
+
+    if (oldVersion < 40) {
+      // Columnas de propietario en tbl_picking_pick
+      for (final col in [
+        '${PickingPickTable.columnPropietario} TEXT',
+        '${PickingPickTable.columnManejoPropietario} INTEGER DEFAULT 0',
+      ]) {
+        try {
+          await db.execute(
+              'ALTER TABLE ${PickingPickTable.tableName} ADD COLUMN $col');
+        } catch (_) {}
+      }
+    }
+
+    if (oldVersion < 41) {
+      // Columnas de propietario en tblbatchs
+      for (final col in [
+        '${BatchPickingTable.columnPropietario} TEXT',
+        '${BatchPickingTable.columnManejoPropietario} INTEGER DEFAULT 0',
+      ]) {
+        try {
+          await db.execute(
+              'ALTER TABLE ${BatchPickingTable.tableName} ADD COLUMN $col');
+        } catch (_) {}
+      }
+    }
+
+    if (oldVersion < 42) {
+      // Columnas de propietario en tablas de packing
+      for (final entry in [
+        (BatchPackingTable.tableName, BatchPackingTable.columnPropietario, BatchPackingTable.columnManejoPropietario),
+        (PedidoPackTable.tableName, PedidoPackTable.columnPropietario, PedidoPackTable.columnManejoPropietario),
+        (PedidosPackingConsolidateTable.tableName, PedidosPackingConsolidateTable.columnPropietario, PedidosPackingConsolidateTable.columnManejoPropietario),
+      ]) {
+        for (final col in [
+          '${entry.$2} TEXT',
+          '${entry.$3} INTEGER DEFAULT 0',
+        ]) {
+          try {
+            await db.execute('ALTER TABLE ${entry.$1} ADD COLUMN $col');
+          } catch (_) {}
+        }
+      }
+    }
+
+    if (oldVersion < 43) {
+      for (final col in [
+        '${BatchPackingConsolidateTable.columnPropietario} TEXT',
+        '${BatchPackingConsolidateTable.columnManejoPropietario} INTEGER DEFAULT 0',
+      ]) {
+        try {
+          await db.execute('ALTER TABLE ${BatchPackingConsolidateTable.tableName} ADD COLUMN $col');
+        } catch (_) {}
+      }
+    }
   }
 
   //todo repositorios de las tablas
@@ -970,11 +1096,23 @@ class DataBaseSqlite {
     }
   }
 
+  Future<int> getWarehousesCount() async {
+    try {
+      Database db = await DataBaseSqlite().getDatabaseInstance();
+      final List<Map<String, dynamic>> result =
+          await db.rawQuery('SELECT COUNT(*) as count FROM tbl_warehouses');
+      return result.isNotEmpty ? (result.first['count'] as int? ?? 0) : 0;
+    } catch (e) {
+      debugPrint("Error al contar almacenes de SQLite: $e");
+      return 0;
+    }
+  }
+
   Future<int?> setFieldTableBatchPedidoValidate(
       int batchId, String namePedido, String field, dynamic setValue) async {
     final db = await getDatabaseInstance();
 
-    final resUpdate = await db!.update(
+    final resUpdate = await db.update(
       'tblbatch_pedidos_validate',
       {field: setValue},
       where: 'batch_id = ? AND name_pedido = ?',
@@ -1009,7 +1147,7 @@ class DataBaseSqlite {
   Future<ProductsBatch?> getProductBatch(
       int batchId, int productId, int idMove, String type) async {
     final db = await getDatabaseInstance();
-    final List<Map<String, dynamic>> maps = await db!.query(
+    final List<Map<String, dynamic>> maps = await db.query(
       'tblbatch_products',
       where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
       whereArgs: [batchId, productId, idMove, type],
@@ -1024,7 +1162,7 @@ class DataBaseSqlite {
   //* Obtener todos los productos de tblbatch_products
   Future<List<ProductsBatch>> getProducts(String type) async {
     final db = await getDatabaseInstance();
-    final List<Map<String, dynamic>> maps = await db!
+    final List<Map<String, dynamic>> maps = await db
         .query('tblbatch_products', where: 'type = ?', whereArgs: [type]);
     return maps.map((map) => ProductsBatch.fromMap(map)).toList();
   }
@@ -1034,7 +1172,7 @@ class DataBaseSqlite {
       int batchId, String type) async {
     try {
       final db = await getDatabaseInstance();
-      final List<Map<String, dynamic>> batchMaps = await db!.query(
+      final List<Map<String, dynamic>> batchMaps = await db.query(
         'tblbatchs',
         where: 'id = ?',
         whereArgs: [batchId],
@@ -1126,13 +1264,13 @@ class DataBaseSqlite {
 
   Future<void> deleteAll() async {
     final db = await DataBaseSqlite().getDatabaseInstance();
-    await db!.delete(UbicacionesTable.tableName);
+    await db.delete(UbicacionesTable.tableName);
   }
 
   Future<int> getUbicacionesCount() async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
-      final List<Map<String, dynamic>> result = await db!.rawQuery(
+      final List<Map<String, dynamic>> result = await db.rawQuery(
           'SELECT COUNT(*) as count FROM ${UbicacionesTable.tableName}');
       return result.isNotEmpty ? (result.first['count'] as int? ?? 0) : 0;
     } catch (e) {
@@ -1305,7 +1443,7 @@ class DataBaseSqlite {
 
     // ✅ SOLUCIÓN: Usamos '?' para los valores y pasamos una lista de argumentos.
     // Nota: $field se deja igual porque es el nombre de la columna, no un valor.
-    final resUpdate = await db!.rawUpdate(
+    final resUpdate = await db.rawUpdate(
         'UPDATE tblbatch_products SET $field = ? WHERE batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
         [
           setValue,
@@ -1327,7 +1465,7 @@ class DataBaseSqlite {
     final db = await getDatabaseInstance();
 
     // db.update es mejor que rawUpdate porque maneja las comillas automáticamente
-    return await db!.update(
+    return await db.update(
       'tblbatch_products',
       {field: setValue}, // Mapa: columna -> valor
       where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
@@ -1341,7 +1479,7 @@ class DataBaseSqlite {
     try {
       final db = await getDatabaseInstance();
 
-      final res = await db!.query(
+      final res = await db.query(
         'tblbatch_products',
         columns: [field],
         where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
@@ -1366,7 +1504,7 @@ class DataBaseSqlite {
       int batchId, int productId, int moveId, String date, String type) async {
     final db = await getDatabaseInstance();
 
-    return await db!.update(
+    return await db.update(
       'tblbatch_products',
       {'time_separate_start': date},
       where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
@@ -1379,7 +1517,7 @@ class DataBaseSqlite {
       int batchId, int productId, int moveId, double time, String type) async {
     final db = await getDatabaseInstance();
 
-    return await db!.update(
+    return await db.update(
       'tblbatch_products',
       {'time_separate': time},
       where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
@@ -1392,7 +1530,7 @@ class DataBaseSqlite {
       int batchId, String date, int productId, int moveId, String type) async {
     final db = await getDatabaseInstance();
 
-    return await db!.update(
+    return await db.update(
       'tblbatch_products',
       {'time_separate_end': date},
       where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
@@ -1405,7 +1543,7 @@ class DataBaseSqlite {
       int batchId, String date, int productId, int moveId, String type) async {
     final db = await getDatabaseInstance();
 
-    return await db!.update(
+    return await db.update(
       'tblbatch_products',
       {'fecha_transaccion': date},
       where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
@@ -1423,7 +1561,7 @@ class DataBaseSqlite {
   ) async {
     final db = await getDatabaseInstance();
 
-    return await db!.update(
+    return await db.update(
       'tblbatch_products',
       {'observation': novedad},
       where: 'batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
@@ -1437,7 +1575,7 @@ class DataBaseSqlite {
   Future<int?> incrementProductSeparateQty(int batchId, String type) async {
     final db = await getDatabaseInstance();
 
-    return await db!.transaction((txn) async {
+    return await db.transaction((txn) async {
       final result = await txn.query(
         'tblbatchs',
         columns: ['product_separate_qty'],
@@ -1467,7 +1605,7 @@ class DataBaseSqlite {
       int idMove, dynamic quantity, String type) async {
     final db = await getDatabaseInstance();
 
-    return await db!.transaction((txn) async {
+    return await db.transaction((txn) async {
       final result = await txn.query(
         'tblbatch_products',
         columns: ['quantity_separate', 'quantity'],
@@ -1509,7 +1647,7 @@ class DataBaseSqlite {
   ) async {
     final db = await getDatabaseInstance();
 
-    return await db!.query(
+    return await db.query(
       'tblbatch_products',
       where: 'batch_id = ? AND id_product = ? AND type = ?',
       whereArgs: [batchId, productId, type],
@@ -1524,7 +1662,7 @@ class DataBaseSqlite {
   ) async {
     final db = await getDatabaseInstance();
 
-    return await db!.query(
+    return await db.query(
       'tblbatchs',
       where: 'id = ? AND type = ?',
       whereArgs: [batchId, type],

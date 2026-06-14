@@ -5,11 +5,12 @@ class TransferInfoRequest {
   final int idLote;
   final int idUbicacionOrigen;
   final int? idUbicacionDestino;
-  final dynamic? cantidadEnviada;
+  final dynamic cantidadEnviada;
   final int? idOperario;
   final int? timeLine;
   final String? fechaTransaccion;
   final String observacion;
+  final int? idPropietario;
 
   //tiempo de incio de la transferencia
   final String? dateStart;
@@ -29,6 +30,7 @@ class TransferInfoRequest {
     required this.observacion,
     this.dateStart,
     this.dateEnd,
+    this.idPropietario,
   });
 
   Map<String, dynamic> toMap() {
@@ -46,6 +48,7 @@ class TransferInfoRequest {
       "observacion": observacion,
       "date_start": dateStart,
       "date_end": dateEnd,
+      "id_propietario" : idPropietario,
     };
   }
 }

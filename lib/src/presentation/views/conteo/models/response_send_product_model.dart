@@ -87,7 +87,7 @@ class Data {
 class ResultElement {
     final int? lineId;
     final int? productId;
-    final dynamic? quantityCounted;
+    final dynamic quantityCounted;
     final String? observation;
     final int? userOperatorId;
     final DateTime? dateTransaction;

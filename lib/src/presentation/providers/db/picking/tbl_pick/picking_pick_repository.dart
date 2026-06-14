@@ -81,6 +81,8 @@ class PickingPickRepository {
                 pickItem.productoFinalReferencia ?? '',
             // create_backorder
             PickingPickTable.createBackorder: pickItem.createBackorder ?? '',
+            PickingPickTable.columnManejoPropietario: pickItem.manejoPropietario ?? 0,
+            PickingPickTable.columnPropietario: pickItem.propietario ?? '',
           };
 
           // Elimina si existe (por ID), y luego inserta
@@ -159,6 +161,9 @@ class PickingPickRepository {
           PickingPickTable.columnTypePick,
           // create_backorder
           PickingPickTable.createBackorder,
+          PickingPickTable.columnManejoPropietario,
+          PickingPickTable.columnPropietario,
+
         ],
         where: '${PickingPickTable.columnTypePick} = ?',
         whereArgs: [typePick],

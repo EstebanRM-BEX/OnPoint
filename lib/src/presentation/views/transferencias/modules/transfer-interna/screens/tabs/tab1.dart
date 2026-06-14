@@ -14,10 +14,7 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 
 class Tab1ScreenTrans extends StatelessWidget {
-  const Tab1ScreenTrans({
-    super.key,
-    required this.transFerencia,
-  });
+  const Tab1ScreenTrans({super.key, required this.transFerencia});
 
   final ResultTransFerencias? transFerencia;
 
@@ -55,9 +52,7 @@ class Tab1ScreenTrans extends StatelessWidget {
             showDialog(
               context: context,
               builder: (context) {
-                return const DialogLoading(
-                  message: "Validando informacion...",
-                );
+                return const DialogLoading(message: "Validando informacion...");
               },
             );
           }
@@ -90,12 +85,12 @@ class Tab1ScreenTrans extends StatelessWidget {
                 actions: [
                   ElevatedButton(
                     onPressed: () {
-                      context
-                          .read<TransferenciaBloc>()
-                          .add(ValidateConfirmEvent(
-                            transFerencia?.id ?? 0,
-                            state.isBackorder,
-                          ));
+                      context.read<TransferenciaBloc>().add(
+                        ValidateConfirmEvent(
+                          transFerencia?.id ?? 0,
+                          state.isBackorder,
+                        ),
+                      );
                       Get.back();
                     },
                     style: ElevatedButton.styleFrom(
@@ -129,47 +124,45 @@ class Tab1ScreenTrans extends StatelessWidget {
             showDialog(
               context: context,
               builder: (context) {
-                return const DialogLoading(
-                  message: "Validando informacion...",
-                );
+                return const DialogLoading(message: "Validando informacion...");
               },
             );
           }
 
           if (state is ValidateConfirmSuccess) {
             if (transFerencia?.type == "transfer") {
-              context
-                  .read<TransferenciaBloc>()
-                  .add(FetchAllTransferencias(true));
+              context.read<TransferenciaBloc>().add(
+                FetchAllTransferencias(true),
+              );
             } else if (transFerencia?.type == "entrega") {
               context.read<TransferenciaBloc>().add(FetchAllEntrega(true));
             }
 
             //volvemos a llamar las entradas que tenemos guardadas en la bd
             if (state.isBackorder) {
-              Get.snackbar("360 Software Informa", state.msg,
-                  backgroundColor: white,
-                  colorText: primaryColorApp,
-                  icon: Icon(Icons.error, color: Colors.green));
+              Get.snackbar(
+                "360 Software Informa",
+                state.msg,
+                backgroundColor: white,
+                colorText: primaryColorApp,
+                icon: Icon(Icons.error, color: Colors.green),
+              );
             } else {
-              Get.snackbar("360 Software Informa", state.msg,
-                  backgroundColor: white,
-                  colorText: primaryColorApp,
-                  icon: Icon(Icons.error, color: Colors.green));
+              Get.snackbar(
+                "360 Software Informa",
+                state.msg,
+                backgroundColor: white,
+                colorText: primaryColorApp,
+                icon: Icon(Icons.error, color: Colors.green),
+              );
             }
 
             Navigator.pop(context);
 
             if (transFerencia?.type == "transfer") {
-              Navigator.pushReplacementNamed(
-                context,
-                'transferencias',
-              );
+              Navigator.pushReplacementNamed(context, 'transferencias');
             } else if (transFerencia?.type == "entrega") {
-              Navigator.pushReplacementNamed(
-                context,
-                'list-entrada-productos',
-              );
+              Navigator.pushReplacementNamed(context, 'list-entrada-productos');
             }
           }
 
@@ -181,38 +174,38 @@ class Tab1ScreenTrans extends StatelessWidget {
 
           if (state is CreateBackOrderOrNotSuccess) {
             if (transFerencia?.type == "transfer") {
-              context
-                  .read<TransferenciaBloc>()
-                  .add(FetchAllTransferencias(true));
+              context.read<TransferenciaBloc>().add(
+                FetchAllTransferencias(true),
+              );
             } else if (transFerencia?.type == "entrega") {
               context.read<TransferenciaBloc>().add(FetchAllEntrega(true));
             }
 
             //volvemos a llamar las entradas que tenemos guardadas en la bd
             if (state.isBackorder) {
-              Get.snackbar("360 Software Informa", state.msg,
-                  backgroundColor: white,
-                  colorText: primaryColorApp,
-                  icon: Icon(Icons.error, color: Colors.green));
+              Get.snackbar(
+                "360 Software Informa",
+                state.msg,
+                backgroundColor: white,
+                colorText: primaryColorApp,
+                icon: Icon(Icons.error, color: Colors.green),
+              );
             } else {
-              Get.snackbar("360 Software Informa", state.msg,
-                  backgroundColor: white,
-                  colorText: primaryColorApp,
-                  icon: Icon(Icons.error, color: Colors.green));
+              Get.snackbar(
+                "360 Software Informa",
+                state.msg,
+                backgroundColor: white,
+                colorText: primaryColorApp,
+                icon: Icon(Icons.error, color: Colors.green),
+              );
             }
 
             Navigator.pop(context);
 
             if (transFerencia?.type == "transfer") {
-              Navigator.pushReplacementNamed(
-                context,
-                'transferencias',
-              );
+              Navigator.pushReplacementNamed(context, 'transferencias');
             } else if (transFerencia?.type == "entrega") {
-              Navigator.pushReplacementNamed(
-                context,
-                'list-entrada-productos',
-              );
+              Navigator.pushReplacementNamed(context, 'list-entrada-productos');
             }
           }
         },
@@ -220,10 +213,13 @@ class Tab1ScreenTrans extends StatelessWidget {
           final bloc = context.read<TransferenciaBloc>();
           final transferenciaDetail = bloc.currentTransferencia;
 
-          final totalEnviadas =
-              context.read<TransferenciaBloc>().listProductsTransfer.map((e) {
-            return e.quantityDone ?? 0;
-          }).fold<double>(0, (a, b) => a + b);
+          final totalEnviadas = context
+              .read<TransferenciaBloc>()
+              .listProductsTransfer
+              .map((e) {
+                return e.quantityDone ?? 0;
+              })
+              .fold<double>(0, (a, b) => a + b);
 
           return Scaffold(
             backgroundColor: white,
@@ -237,11 +233,14 @@ class Tab1ScreenTrans extends StatelessWidget {
                     GestureDetector(
                       onTap: () {
                         debugPrint(
-                            'Detalle de la transferencia: ${transferenciaDetail.toMap()} ');
+                          'Detalle de la transferencia: ${transferenciaDetail.toMap()} ',
+                        );
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 2),
+                          horizontal: 10,
+                          vertical: 2,
+                        ),
                         width: double.infinity,
                         child: Card(
                           color: Colors.white,
@@ -254,19 +253,25 @@ class Tab1ScreenTrans extends StatelessWidget {
                                   children: [
                                     Align(
                                       alignment: Alignment.centerLeft,
-                                      child: Text("${transferenciaDetail.name}",
-                                          style: TextStyle(
-                                              color: primaryColorApp,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold)),
+                                      child: Text(
+                                        "${transferenciaDetail.name}",
+                                        style: TextStyle(
+                                          color: primaryColorApp,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
                                     const Spacer(),
                                     IconButton(
                                       onPressed: () {
                                         context.read<TransferenciaBloc>().add(
-                                            ToggleProductExpansionEvent(!context
+                                          ToggleProductExpansionEvent(
+                                            !context
                                                 .read<TransferenciaBloc>()
-                                                .isExpanded));
+                                                .isExpanded,
+                                          ),
+                                        );
                                       },
                                       icon: Icon(
                                         !context
@@ -283,14 +288,19 @@ class Tab1ScreenTrans extends StatelessWidget {
                                   alignment: Alignment.centerLeft,
                                   child: Row(
                                     children: [
-                                      Text('Tipo de transferencia: ',
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: primaryColorApp)),
+                                      Text(
+                                        'Tipo de transferencia: ',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: primaryColorApp,
+                                        ),
+                                      ),
                                       Text(
                                         "${transferenciaDetail.pickingType}",
                                         style: const TextStyle(
-                                            fontSize: 12, color: black),
+                                          fontSize: 12,
+                                          color: black,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -299,18 +309,22 @@ class Tab1ScreenTrans extends StatelessWidget {
                                   alignment: Alignment.centerLeft,
                                   child: Row(
                                     children: [
-                                      Text('Prioridad: ',
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: primaryColorApp)),
+                                      Text(
+                                        'Prioridad: ',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: primaryColorApp,
+                                        ),
+                                      ),
                                       Text(
                                         transferenciaDetail.priority == '0'
                                             ? 'Normal'
                                             : 'Alta'
-                                                "",
+                                                  "",
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: transferenciaDetail.priority ==
+                                          color:
+                                              transferenciaDetail.priority ==
                                                   '0'
                                               ? black
                                               : red,
@@ -319,11 +333,34 @@ class Tab1ScreenTrans extends StatelessWidget {
                                     ],
                                   ),
                                 ),
-                                Divider(
-                                  color: black,
-                                  thickness: 1,
-                                  height: 5,
+                                Visibility(
+                                  visible:
+                                      transferenciaDetail.manejoPropietario ==
+                                      1,
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          'Propietario: ',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: primaryColorApp,
+                                          ),
+                                        ),
+                                        Text(
+                                          transferenciaDetail.propietario ??
+                                              "Sin propietario",
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: red,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
+                                Divider(color: black, thickness: 1, height: 5),
                                 if (!context
                                     .read<TransferenciaBloc>()
                                     .isExpanded) ...[
@@ -340,14 +377,20 @@ class Tab1ScreenTrans extends StatelessWidget {
                                         Text(
                                           transferenciaDetail.fechaCreacion !=
                                                   null
-                                              ? DateFormat('dd/MM/yyyy hh:mm ')
-                                                  .format(DateTime.parse(
-                                                      transferenciaDetail
-                                                              .fechaCreacion ??
-                                                          ''))
+                                              ? DateFormat(
+                                                  'dd/MM/yyyy hh:mm ',
+                                                ).format(
+                                                  DateTime.parse(
+                                                    transferenciaDetail
+                                                            .fechaCreacion ??
+                                                        '',
+                                                  ),
+                                                )
                                               : "Sin fecha",
                                           style: const TextStyle(
-                                              fontSize: 12, color: black),
+                                            fontSize: 12,
+                                            color: black,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -355,18 +398,17 @@ class Tab1ScreenTrans extends StatelessWidget {
                                   Align(
                                     alignment: Alignment.centerLeft,
                                     child: Text(
-                                        transferenciaDetail.proveedor == ""
-                                            ? 'Sin provedor'
-                                            : transferenciaDetail.proveedor ??
-                                                '',
-                                        style: TextStyle(
-                                          color:
-                                              transferenciaDetail.proveedor ==
-                                                      ""
-                                                  ? red
-                                                  : black,
-                                          fontSize: 12,
-                                        )),
+                                      transferenciaDetail.proveedor == ""
+                                          ? 'Sin provedor'
+                                          : transferenciaDetail.proveedor ?? '',
+                                      style: TextStyle(
+                                        color:
+                                            transferenciaDetail.proveedor == ""
+                                            ? red
+                                            : black,
+                                        fontSize: 12,
+                                      ),
+                                    ),
                                   ),
                                   Align(
                                     alignment: Alignment.centerLeft,
@@ -382,9 +424,11 @@ class Tab1ScreenTrans extends StatelessWidget {
                                           transferenciaDetail.origin == ""
                                               ? 'Sin orden de compra'
                                               : transferenciaDetail.origin ??
-                                                  '',
+                                                    '',
                                           style: const TextStyle(
-                                              fontSize: 12, color: black),
+                                            fontSize: 12,
+                                            color: black,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -399,19 +443,18 @@ class Tab1ScreenTrans extends StatelessWidget {
                                           color: primaryColorApp,
                                           size: 15,
                                         ),
-                                        const SizedBox(
-                                          width: 5,
-                                        ),
+                                        const SizedBox(width: 5),
                                         Align(
                                           alignment: Alignment.centerLeft,
                                           child: Text(
-                                              transferenciaDetail
-                                                      .backorderName ??
-                                                  '',
-                                              style: TextStyle(
-                                                  color: black,
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.bold)),
+                                            transferenciaDetail.backorderName ??
+                                                '',
+                                            style: TextStyle(
+                                              color: black,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -419,85 +462,102 @@ class Tab1ScreenTrans extends StatelessWidget {
                                   Row(
                                     children: [
                                       Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            'Peso: ',
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: primaryColorApp),
-                                          )),
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Peso: ',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: primaryColorApp,
+                                          ),
+                                        ),
+                                      ),
                                       Align(
                                         alignment: Alignment.centerLeft,
                                         child: Text(
                                           // Formateamos el número a 2 decimales
                                           NumberFormat('0.00').format(
-                                              transferenciaDetail.pesoTotal ??
-                                                  0),
+                                            transferenciaDetail.pesoTotal ?? 0,
+                                          ),
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: black,
                                           ),
                                         ),
-                                      )
+                                      ),
                                     ],
                                   ),
                                   Row(
                                     children: [
                                       Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            'Total productos : ',
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: primaryColorApp),
-                                          )),
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Total productos : ',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: primaryColorApp,
+                                          ),
+                                        ),
+                                      ),
                                       Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            transferenciaDetail.numeroLineas
-                                                .toString(),
-                                            style: TextStyle(
-                                                fontSize: 12, color: black),
-                                          )),
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          transferenciaDetail.numeroLineas
+                                              .toString(),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: black,
+                                          ),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                   Row(
                                     children: [
                                       Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            'Total de unidades: ',
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: primaryColorApp),
-                                          )),
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Total de unidades: ',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: primaryColorApp,
+                                          ),
+                                        ),
+                                      ),
                                       Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            transferenciaDetail.numeroItems
-                                                .toString(),
-                                            style: TextStyle(
-                                                fontSize: 12, color: black),
-                                          )),
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          transferenciaDetail.numeroItems
+                                              .toString(),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: black,
+                                          ),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                   Row(
                                     children: [
                                       Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            'Unidades recibidas: ',
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: primaryColorApp),
-                                          )),
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Unidades recibidas: ',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: primaryColorApp,
+                                          ),
+                                        ),
+                                      ),
                                       Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            totalEnviadas.toString(),
-                                            style: TextStyle(
-                                                fontSize: 12, color: black),
-                                          )),
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          totalEnviadas.toString(),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: black,
+                                          ),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                   Align(
@@ -505,7 +565,9 @@ class Tab1ScreenTrans extends StatelessWidget {
                                     child: Text(
                                       'Ubicacion destino: ',
                                       style: TextStyle(
-                                          fontSize: 12, color: primaryColorApp),
+                                        fontSize: 12,
+                                        color: primaryColorApp,
+                                      ),
                                     ),
                                   ),
                                   Align(
@@ -514,7 +576,9 @@ class Tab1ScreenTrans extends StatelessWidget {
                                       transferenciaDetail.locationDestName ??
                                           'Sin ubicacion',
                                       style: const TextStyle(
-                                          fontSize: 12, color: black),
+                                        fontSize: 12,
+                                        color: black,
+                                      ),
                                     ),
                                   ),
                                   Align(
@@ -532,10 +596,12 @@ class Tab1ScreenTrans extends StatelessWidget {
                                                   false
                                               ? 'Sin responsable'
                                               : transferenciaDetail
-                                                      .responsable ??
-                                                  '',
+                                                        .responsable ??
+                                                    '',
                                           style: const TextStyle(
-                                              fontSize: 12, color: black),
+                                            fontSize: 12,
+                                            color: black,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -553,8 +619,9 @@ class Tab1ScreenTrans extends StatelessWidget {
                                         Text(
                                           'Tiempo de inicio : ',
                                           style: TextStyle(
-                                              fontSize: 12,
-                                              color: primaryColorApp),
+                                            fontSize: 12,
+                                            color: primaryColorApp,
+                                          ),
                                         ),
                                         const SizedBox(width: 5),
                                         Text(
@@ -562,7 +629,9 @@ class Tab1ScreenTrans extends StatelessWidget {
                                                   .startTimeTransfer ??
                                               "Sin tiempo",
                                           style: const TextStyle(
-                                              fontSize: 12, color: black),
+                                            fontSize: 12,
+                                            color: black,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -574,15 +643,14 @@ class Tab1ScreenTrans extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(
-                      height: 10,
-                    ),
+                    const SizedBox(height: 10),
 
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Visibility(
-                          visible: context
+                          visible:
+                              context
                                   .read<TransferenciaBloc>()
                                   .configurations
                                   .result
@@ -590,211 +658,231 @@ class Tab1ScreenTrans extends StatelessWidget {
                                   ?.hideValidateTransfer ==
                               false,
                           child: ElevatedButton(
-                              onPressed: () {
-                                showDialog(
-                                    context: context,
-                                    builder: (context) {
-                                      return BackdropFilter(
-                                        filter: ImageFilter.blur(
-                                            sigmaX: 5, sigmaY: 5),
-                                        child: AlertDialog(
-                                          backgroundColor: Colors.white,
-                                          actionsAlignment:
-                                              MainAxisAlignment.center,
-                                          title: Text(
-                                            'Confirmar Transferencia',
-                                            style: TextStyle(
-                                                color: primaryColorApp,
-                                                fontSize: 16),
-                                            textAlign: TextAlign.center,
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return BackdropFilter(
+                                    filter: ImageFilter.blur(
+                                      sigmaX: 5,
+                                      sigmaY: 5,
+                                    ),
+                                    child: AlertDialog(
+                                      backgroundColor: Colors.white,
+                                      actionsAlignment:
+                                          MainAxisAlignment.center,
+                                      title: Text(
+                                        'Confirmar Transferencia',
+                                        style: TextStyle(
+                                          color: primaryColorApp,
+                                          fontSize: 16,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          SizedBox(
+                                            height: 100,
+                                            width: 200,
+                                            child: SvgPicture.asset(
+                                              "assets/images/icono.svg",
+                                              height: 150,
+                                              width: 50,
+                                              fit: BoxFit.cover,
+                                            ),
                                           ),
-                                          content: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              SizedBox(
-                                                height: 100,
-                                                width: 200,
-                                                child: SvgPicture.asset(
-                                                  "assets/images/icono.svg",
-                                                  height: 150,
-                                                  width: 50,
-                                                  fit: BoxFit.cover,
-                                                ),
-                                              ),
-                                              Align(
-                                                alignment: Alignment.center,
-                                                child: Text(
-                                                  (totalEnviadas ==
-                                                          transferenciaDetail
-                                                              .numeroItems)
-                                                      ? '¿Estás seguro de confirmar la transferencia y dejarla lista para ser enviada?'
-                                                      : transferenciaDetail
-                                                                  .createBackorder ==
-                                                              "never"
-                                                          ? '¿Estás seguro de confirmar la transferencia y dejarla lista para ser enviada?'
-                                                          : "Usted ha procesado cantidades de productos menores que los requeridos en el movimiento original.",
-                                                  style: TextStyle(
-                                                      color: black,
-                                                      fontSize: 14),
-                                                  textAlign: TextAlign.center,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          actions: [
-                                            Visibility(
-                                              visible: (totalEnviadas !=
+                                          Align(
+                                            alignment: Alignment.center,
+                                            child: Text(
+                                              (totalEnviadas ==
                                                       transferenciaDetail
                                                           .numeroItems)
-                                                  ? transferenciaDetail
-                                                                  .createBackorder ==
-                                                              "never" ||
-                                                          transferenciaDetail
-                                                                  .createBackorder ==
-                                                              "always"
-                                                      ? false
-                                                      : true
-                                                  : false,
-                                              child: ElevatedButton(
-                                                onPressed: () {
-                                                  context
-                                                      .read<TransferenciaBloc>()
-                                                      .add(CreateBackOrderOrNot(
-                                                          transFerencia?.id ??
-                                                              0,
-                                                          true));
-                                                  Navigator.pop(context);
-                                                },
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor:
-                                                      primaryColorApp,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            10),
-                                                  ),
-                                                  minimumSize: Size(
-                                                      size.width * 0.9, 40),
-                                                ),
-                                                child: const Text(
-                                                  'Confirmar y Crear un Backorder',
-                                                  style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 12),
-                                                ),
+                                                  ? '¿Estás seguro de confirmar la transferencia y dejarla lista para ser enviada?'
+                                                  : transferenciaDetail
+                                                            .createBackorder ==
+                                                        "never"
+                                                  ? '¿Estás seguro de confirmar la transferencia y dejarla lista para ser enviada?'
+                                                  : "Usted ha procesado cantidades de productos menores que los requeridos en el movimiento original.",
+                                              style: TextStyle(
+                                                color: black,
+                                                fontSize: 14,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      actions: [
+                                        Visibility(
+                                          visible:
+                                              (totalEnviadas !=
+                                                  transferenciaDetail
+                                                      .numeroItems)
+                                              ? transferenciaDetail
+                                                                .createBackorder ==
+                                                            "never" ||
+                                                        transferenciaDetail
+                                                                .createBackorder ==
+                                                            "always"
+                                                    ? false
+                                                    : true
+                                              : false,
+                                          child: ElevatedButton(
+                                            onPressed: () {
+                                              context
+                                                  .read<TransferenciaBloc>()
+                                                  .add(
+                                                    CreateBackOrderOrNot(
+                                                      transFerencia?.id ?? 0,
+                                                      true,
+                                                    ),
+                                                  );
+                                              Navigator.pop(context);
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: primaryColorApp,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              minimumSize: Size(
+                                                size.width * 0.9,
+                                                40,
                                               ),
                                             ),
-                                            ElevatedButton(
-                                              onPressed: () async {
-                                                context
-                                                    .read<TransferenciaBloc>()
-                                                    .add(CreateBackOrderOrNot(
-                                                        transFerencia?.id ?? 0,
-                                                        transFerencia
-                                                                    ?.createBackorder ==
-                                                                "never"
-                                                            ? false
-                                                            : transFerencia
-                                                                        ?.createBackorder ==
-                                                                    "always"
-                                                                ? true
-                                                                : false));
-                                                Navigator.pop(context);
-                                              },
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor:
-                                                    primaryColorApp,
-                                                minimumSize:
-                                                    Size(size.width * 0.9, 40),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                ),
-                                              ),
-                                              child: const Text(
-                                                'Confirmar Transferencia',
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 12),
+                                            child: const Text(
+                                              'Confirmar y Crear un Backorder',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
                                               ),
                                             ),
-                                            ElevatedButton(
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                              },
-                                              style: ElevatedButton.styleFrom(
-                                                minimumSize:
-                                                    Size(size.width * 0.9, 40),
-                                                backgroundColor: grey,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                ),
-                                              ),
-                                              child: const Text(
-                                                'Cancelar',
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 12),
-                                              ),
-                                            ),
-                                          ],
+                                          ),
                                         ),
-                                      );
-                                    });
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryColorApp,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                elevation: 3,
+                                        ElevatedButton(
+                                          onPressed: () async {
+                                            context.read<TransferenciaBloc>().add(
+                                              CreateBackOrderOrNot(
+                                                transFerencia?.id ?? 0,
+                                                transFerencia
+                                                            ?.createBackorder ==
+                                                        "never"
+                                                    ? false
+                                                    : transFerencia
+                                                              ?.createBackorder ==
+                                                          "always"
+                                                    ? true
+                                                    : false,
+                                              ),
+                                            );
+                                            Navigator.pop(context);
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: primaryColorApp,
+                                            minimumSize: Size(
+                                              size.width * 0.9,
+                                              40,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            'Confirmar Transferencia',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            minimumSize: Size(
+                                              size.width * 0.9,
+                                              40,
+                                            ),
+                                            backgroundColor: grey,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            'Cancelar',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColorApp,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 2, vertical: 3),
-                                child: Text('Terminar\nTransferencia',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(color: white)),
-                              )),
+                              elevation: 3,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 2,
+                                vertical: 3,
+                              ),
+                              child: Text(
+                                'Terminar\nTransferencia',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: white),
+                              ),
+                            ),
+                          ),
                         ),
-                        const SizedBox(
-                          width: 10,
-                        ),
+                        const SizedBox(width: 10),
                         Visibility(
-                          visible: transferenciaDetail.showCheckAvailability ==
-                                  1 ||
+                          visible:
+                              transferenciaDetail.showCheckAvailability == 1 ||
                               transferenciaDetail.showCheckAvailability == true,
                           child: ElevatedButton(
-                              onPressed: () {
-                                context.read<TransferenciaBloc>().add(
-                                    CheckAvailabilityEvent(
-                                        transferenciaDetail.id ?? 0,
-                                        transferenciaDetail.type ??
-                                            "transfer"));
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryColorAppLigth,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                            onPressed: () {
+                              context.read<TransferenciaBloc>().add(
+                                CheckAvailabilityEvent(
+                                  transferenciaDetail.id ?? 0,
+                                  transferenciaDetail.type ?? "transfer",
                                 ),
-                                elevation: 3,
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColorAppLigth,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 2, vertical: 3),
-                                child: Text('Comprobar\nDisponibilidad',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: white,
-                                    )),
-                              )),
+                              elevation: 3,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 2,
+                                vertical: 3,
+                              ),
+                              child: Text(
+                                'Comprobar\nDisponibilidad',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: white),
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(
-                      height: 10,
-                    ),
+                    const SizedBox(height: 10),
                   ],
                 ),
               ),

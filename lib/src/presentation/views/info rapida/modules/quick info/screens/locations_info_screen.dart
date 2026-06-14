@@ -13,17 +13,129 @@ import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20inf
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
-class LocationInfoScreen extends StatelessWidget {
+class LocationInfoScreen extends StatefulWidget {
   final InfoRapidaResult? infoRapidaResult;
 
-  const LocationInfoScreen({Key? key, this.infoRapidaResult}) : super(key: key);
+  const LocationInfoScreen({super.key, this.infoRapidaResult});
+
+  @override
+  State<LocationInfoScreen> createState() => _LocationInfoScreenState();
+}
+
+class _LocationInfoScreenState extends State<LocationInfoScreen> {
+  String? _selectedPropietario;
+
+  List<String> _getPropietarios(InfoRapidaBloc bloc) {
+    return (bloc.productosUbicacion ?? [])
+        .where((p) =>
+            (p.manejoPropietario == true || p.manejoPropietario == 1) &&
+            p.propietario != null &&
+            p.propietario!.isNotEmpty)
+        .map((p) => p.propietario!)
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
+  void _showPropietarioFilter(BuildContext context, InfoRapidaBloc bloc) {
+    final propietarios = _getPropietarios(bloc);
+
+    if (propietarios.isEmpty) {
+      Get.snackbar(
+        'Sin propietarios',
+        'No hay productos con propietario para filtrar',
+        backgroundColor: white,
+        colorText: primaryColorApp,
+        icon: const Icon(Icons.info_outline, color: primaryColorApp),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Icon(Icons.person_outline, color: primaryColorApp),
+                  SizedBox(width: 8),
+                  Text(
+                    'Filtrar por propietario',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: primaryColorApp,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            ListTile(
+              leading: Icon(
+                _selectedPropietario == null
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+                color: primaryColorApp,
+              ),
+              title: const Text('Todos los propietarios'),
+              onTap: () {
+                setState(() => _selectedPropietario = null);
+                Navigator.pop(context);
+              },
+            ),
+            ...propietarios.map((p) => ListTile(
+                  leading: Icon(
+                    _selectedPropietario == p
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_unchecked,
+                    color: primaryColorApp,
+                  ),
+                  title: Text(p),
+                  onTap: () {
+                    setState(() => _selectedPropietario = p);
+                    Navigator.pop(context);
+                  },
+                )),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     return BlocConsumer<InfoRapidaBloc, InfoRapidaState>(
       listener: (context, state) {
-        if (state is InfoRapidaLoading) {
+        if (state is MassTransferPropietarioMismatchState) {
+          Get.snackbar(
+            '360 Software Informa',
+            state.message,
+            backgroundColor: white,
+            colorText: primaryColorApp,
+            icon: const Icon(Icons.block, color: Colors.red),
+            duration: const Duration(seconds: 4),
+          );
+        } else if (state is InfoRapidaLoading) {
           showDialog(
             context: context,
             builder: (context) {
@@ -73,7 +185,7 @@ class LocationInfoScreen extends StatelessWidget {
                 height: size.height * 1,
                 child: Column(
                   children: [
-                    AppBar(size: size, infoRapidaResult: infoRapidaResult),
+                    AppBar(size: size, infoRapidaResult: widget.infoRapidaResult),
                     Padding(
                       padding: const EdgeInsets.only(top: 5, left: 20),
                       child: Align(
@@ -279,6 +391,22 @@ class LocationInfoScreen extends StatelessWidget {
                               ],
                             ),
                           ),
+                          const SizedBox(width: 8),
+                          Stack(
+                            children: [
+                              GestureDetector(
+                                onTap: () => _showPropietarioFilter(
+                                    context, bloc),
+                                child: Icon(
+                                  Icons.person_search_outlined,
+                                  color: _selectedPropietario != null
+                                      ? Colors.amber
+                                      : primaryColorApp,
+                                  size: 22,
+                                ),
+                              ),
+                            ],
+                          ),
                           const SizedBox(width: 10)
                         ],
                       ),
@@ -288,12 +416,18 @@ class LocationInfoScreen extends StatelessWidget {
                     Expanded(
                       child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: ListView.builder(
+                          child: Builder(builder: (context) {
+                            final lista = _selectedPropietario == null
+                                ? (bloc.productosUbicacion ?? [])
+                                : (bloc.productosUbicacion ?? [])
+                                    .where((p) =>
+                                        p.propietario == _selectedPropietario)
+                                    .toList();
+                            return ListView.builder(
                               padding: const EdgeInsets.all(0),
-                              itemCount: bloc.productosUbicacion?.length ?? 0,
+                              itemCount: lista.length,
                               itemBuilder: (context, index) {
-                                final producto =
-                                    bloc.productosUbicacion?[index];
+                                final producto = lista[index];
                                 return Card(
                                     color: white,
                                     elevation: 3,
@@ -364,6 +498,14 @@ class LocationInfoScreen extends StatelessWidget {
                                             value:
                                                 '${producto?.cantidad} ${producto?.unidadMedida}',
                                           ),
+                                          Visibility(
+                                            visible: producto?.manejoPropietario == true ||producto?.manejoPropietario == 1 ,
+                                            child: ProductInfoRow(
+                                              title: 'Propietario: ',
+                                              value:
+                                                  '${producto?.propietario}',
+                                            ),
+                                          ),
                                           ProductInfoRow(
                                             title: 'Cantidad reservada: ',
                                             value:
@@ -417,7 +559,8 @@ class LocationInfoScreen extends StatelessWidget {
                                         ],
                                       ),
                                     ));
-                              })),
+                              });
+                          })),
                     ),
 
                     //btn de crear trasnferencia masiva

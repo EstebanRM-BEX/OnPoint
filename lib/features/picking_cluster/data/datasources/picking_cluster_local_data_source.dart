@@ -12,6 +12,10 @@ abstract class PickingClusterLocalDataSource {
   Future<void> cachePickingBatches(List<PickingBatch> batches);
   Future<List<PickingBatch>> getCachedPickingBatches();
   Future<List<BatchProduct>> getBatchProducts(int batchId);
+
+  /// Productos type='cluster' guardados sin conexión (is_send_odoo = 0),
+  /// de todos los batches — para el reenvío automático.
+  Future<List<BatchProduct>> getPendingSendProducts();
   Future<void> setFieldTableBatchProducts(int batchId, int productId,
       String field, dynamic value, int idMove, String type);
   Future<void> setFieldTableBatch(
@@ -110,6 +114,21 @@ class PickingClusterLocalDataSourceImpl
       return rawProducts.map((p) => p.toEntity()).toList();
     } catch (e) {
       log('Error reading batch products from sqlite: $e',
+          name: 'PickingClusterLocalDS');
+      return [];
+    }
+  }
+
+  @override
+  Future<List<BatchProduct>> getPendingSendProducts() async {
+    try {
+      final rawProducts = await DataBaseSqlite().getProducts('cluster');
+      return rawProducts
+          .where((p) => p.isSendOdoo == 0)
+          .map((p) => p.toEntity())
+          .toList();
+    } catch (e) {
+      log('Error reading pending products from sqlite: $e',
           name: 'PickingClusterLocalDS');
       return [];
     }
@@ -294,6 +313,8 @@ extension BatchMapping on PickingBatch {
       startTimePick: startTimePick?.toString(),
       endTimePick: endTimePick?.toString(),
       zonaEntrega: zonaEntrega,
+      propietario: propietario,
+      manejoPropietario: manejoPropietario,
       listItems: listItems.map((item) => item.toProductsBatch()).toList(),
     );
   }
@@ -333,6 +354,8 @@ extension BatchModelToEntityMapping on BatchsModel {
       startTimePick: startTimePick?.toString(),
       endTimePick: endTimePick?.toString(),
       zonaEntrega: zonaEntrega,
+      propietario: propietario,
+      manejoPropietario: manejoPropietario,
       listItems: [],
     );
   }

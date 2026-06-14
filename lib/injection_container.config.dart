@@ -27,7 +27,6 @@ import 'core/services/notification_service.dart' as _i1011;
 import 'core/services/storage_service.dart' as _i243;
 import 'core/services/vibration_service_impl.dart' as _i869;
 import 'core/services/websocket_service.dart' as _i1020;
-
 import 'features/auth/data/datasources/auth_local_data_source.dart' as _i791;
 import 'features/auth/data/repositories/auth_repository_impl.dart' as _i111;
 import 'features/auth/domain/repositories/auth_repository.dart' as _i1015;
@@ -54,6 +53,34 @@ import 'features/home/domain/usecases/get_app_version.dart' as _i312;
 import 'features/home/domain/usecases/get_user_configurations.dart' as _i698;
 import 'features/home/domain/usecases/get_user_data.dart' as _i485;
 import 'features/home/presentation/bloc/home_bloc.dart' as _i123;
+import 'features/inventario/data/datasources/inventario_local_data_source.dart'
+    as _i812;
+import 'features/inventario/data/datasources/inventario_remote_data_source.dart'
+    as _i592;
+import 'features/inventario/data/repositories/inventario_repository_impl.dart'
+    as _i426;
+import 'features/inventario/domain/repositories/inventario_repository.dart'
+    as _i925;
+import 'features/inventario/domain/usecases/crear_lote_inventario.dart'
+    as _i589;
+import 'features/inventario/domain/usecases/enviar_producto_inventario.dart'
+    as _i46;
+import 'features/inventario/domain/usecases/get_all_barcodes_inventario.dart'
+    as _i377;
+import 'features/inventario/domain/usecases/get_barcodes_producto.dart'
+    as _i125;
+import 'features/inventario/domain/usecases/get_configuracion_usuario_inventario.dart'
+    as _i476;
+import 'features/inventario/domain/usecases/get_lotes_producto.dart' as _i704;
+import 'features/inventario/domain/usecases/get_productos_count.dart' as _i892;
+import 'features/inventario/domain/usecases/get_productos_local.dart' as _i627;
+import 'features/inventario/domain/usecases/get_ubicaciones_local.dart'
+    as _i970;
+import 'features/inventario/domain/usecases/get_url_imagen_producto.dart'
+    as _i616;
+import 'features/inventario/domain/usecases/sync_productos_inventario.dart'
+    as _i19;
+import 'features/inventario/presentation/bloc/inventario_bloc.dart' as _i731;
 import 'features/login/data/datasources/login_local_data_source.dart' as _i544;
 import 'features/login/data/datasources/login_remote_data_source.dart' as _i18;
 import 'features/login/data/repositories/login_repository_impl.dart' as _i1059;
@@ -75,6 +102,76 @@ import 'features/packaging_types/domain/usecases/get_packaging_types_usecase.dar
     as _i658;
 import 'features/packaging_types/presentation/bloc/packaging_type_bloc.dart'
     as _i475;
+import 'features/picking/data/datasources/pick_scan_local_data_source.dart'
+    as _i380;
+import 'features/picking/data/datasources/pick_scan_remote_data_source.dart'
+    as _i335;
+import 'features/picking/data/datasources/picking_components_local_data_source.dart'
+    as _i161;
+import 'features/picking/data/datasources/picking_components_remote_data_source.dart'
+    as _i682;
+import 'features/picking/data/datasources/picking_local_data_source.dart'
+    as _i860;
+import 'features/picking/data/datasources/picking_remote_data_source.dart'
+    as _i94;
+import 'features/picking/data/repositories/pick_scan_repository_impl.dart'
+    as _i334;
+import 'features/picking/data/repositories/picking_components_repository_impl.dart'
+    as _i355;
+import 'features/picking/data/repositories/picking_repository_impl.dart' as _i8;
+import 'features/picking/domain/repositories/pick_scan_repository.dart'
+    as _i1048;
+import 'features/picking/domain/repositories/picking_components_repository.dart'
+    as _i268;
+import 'features/picking/domain/repositories/picking_repository.dart' as _i661;
+import 'features/picking/domain/usecases/assign_muelle_usecase.dart' as _i360;
+import 'features/picking/domain/usecases/assign_user_to_pick_usecase.dart'
+    as _i958;
+import 'features/picking/domain/usecases/fetch_components_from_db_usecase.dart'
+    as _i601;
+import 'features/picking/domain/usecases/fetch_components_history_usecase.dart'
+    as _i887;
+import 'features/picking/domain/usecases/fetch_components_usecase.dart'
+    as _i192;
+import 'features/picking/domain/usecases/fetch_picks_history_usecase.dart'
+    as _i924;
+import 'features/picking/domain/usecases/fetch_picks_usecase.dart' as _i240;
+import 'features/picking/domain/usecases/get_barcodes_product_usecase.dart'
+    as _i696;
+import 'features/picking/domain/usecases/get_muelles_usecase.dart' as _i351;
+import 'features/picking/domain/usecases/get_pick_configurations_usecase.dart'
+    as _i232;
+import 'features/picking/domain/usecases/get_pick_with_products_usecase.dart'
+    as _i266;
+import 'features/picking/domain/usecases/get_product_image_usecase.dart'
+    as _i592;
+import 'features/picking/domain/usecases/get_products_for_edit_usecase.dart'
+    as _i1058;
+import 'features/picking/domain/usecases/get_scan_pick_with_products_usecase.dart'
+    as _i141;
+import 'features/picking/domain/usecases/increment_quantity_separate_usecase.dart'
+    as _i936;
+import 'features/picking/domain/usecases/mark_location_dest_ok_usecase.dart'
+    as _i776;
+import 'features/picking/domain/usecases/mark_location_ok_usecase.dart'
+    as _i422;
+import 'features/picking/domain/usecases/mark_pick_as_done_usecase.dart'
+    as _i300;
+import 'features/picking/domain/usecases/mark_product_ok_usecase.dart' as _i77;
+import 'features/picking/domain/usecases/mark_quantity_ok_usecase.dart'
+    as _i882;
+import 'features/picking/domain/usecases/record_pick_time_usecase.dart' as _i23;
+import 'features/picking/domain/usecases/send_product_to_odoo_usecase.dart'
+    as _i617;
+import 'features/picking/domain/usecases/start_stop_time_pick_usecase.dart'
+    as _i95;
+import 'features/picking/domain/usecases/update_quantity_separate_usecase.dart'
+    as _i215;
+import 'features/picking/domain/usecases/validate_confirm_pick_usecase.dart'
+    as _i993;
+import 'features/picking/domain/usecases/validate_transfer_usecase.dart'
+    as _i820;
+import 'features/picking/presentation/bloc/scan/pick_scan_bloc.dart' as _i989;
 import 'features/picking_cluster/data/datasources/picking_cluster_local_data_source.dart'
     as _i130;
 import 'features/picking_cluster/data/datasources/picking_remote_data_source.dart'
@@ -97,6 +194,8 @@ import 'features/picking_cluster/domain/usecases/get_local_picking_cluster_data.
     as _i295;
 import 'features/picking_cluster/domain/usecases/get_lotes_producto_use_case.dart'
     as _i799;
+import 'features/picking_cluster/domain/usecases/get_pending_send_products_use_case.dart'
+    as _i542;
 import 'features/picking_cluster/domain/usecases/get_picking_cluster_data.dart'
     as _i524;
 import 'features/picking_cluster/domain/usecases/get_product_batch_use_case.dart'
@@ -146,6 +245,8 @@ import 'presentation/global/blocs/network/connection_status_cubit.dart'
     as _i146;
 import 'src/api/api_request_service.dart' as _i319;
 import 'src/presentation/providers/db/database.dart' as _i552;
+import 'src/presentation/views/transferencias/data/transferencias_repository.dart'
+    as _i895;
 
 extension GetItInjectableX on _i174.GetIt {
   // initializes the registration of main-scope dependencies inside of GetIt
@@ -155,12 +256,14 @@ extension GetItInjectableX on _i174.GetIt {
   }) async {
     final gh = _i526.GetItHelper(this, environment, environmentFilter);
     final registerModule = _$RegisterModule();
-   
     gh.lazySingleton<_i519.Client>(() => registerModule.httpClient);
     gh.lazySingleton<_i895.Connectivity>(() => registerModule.connectivity);
     gh.lazySingleton<_i552.DataBaseSqlite>(() => registerModule.database);
     gh.lazySingleton<_i319.ApiRequestService>(
       () => registerModule.apiRequestService,
+    );
+    gh.lazySingleton<_i380.PickScanLocalDataSource>(
+      () => _i380.PickScanLocalDataSourceImpl(),
     );
     gh.lazySingleton<_i232.UserLocalDataSource>(
       () => _i232.UserLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()),
@@ -191,8 +294,14 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i146.ConnectionStatusCubit>(
       () => _i146.ConnectionStatusCubit(networkInfo: gh<_i75.NetworkInfo>()),
     );
+    gh.lazySingleton<_i94.PickingRemoteDataSource>(
+      () => _i94.PickingRemoteDataSourceImpl(),
+    );
     gh.lazySingleton<_i1071.UserRemoteDataSource>(
       () => _i1071.UserRemoteDataSourceImpl(gh<_i319.ApiRequestService>()),
+    );
+    gh.lazySingleton<_i161.PickingComponentsLocalDataSource>(
+      () => _i161.PickingComponentsLocalDataSourceImpl(),
     );
     gh.lazySingleton<_i615.INotificationService>(
       () => _i1011.NotificationService(),
@@ -208,11 +317,20 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i18.LoginRemoteDataSource>(
       () => _i18.LoginRemoteDataSourceImpl(gh<_i319.ApiRequestService>()),
     );
+    gh.lazySingleton<_i860.PickingLocalDataSource>(
+      () => _i860.PickingLocalDataSourceImpl(),
+    );
+    gh.lazySingleton<_i682.PickingComponentsRemoteDataSource>(
+      () => _i682.PickingComponentsRemoteDataSourceImpl(),
+    );
     gh.lazySingleton<_i180.UserRepository>(
       () => _i39.UserRepositoryImpl(
         remoteDataSource: gh<_i1071.UserRemoteDataSource>(),
         localDataSource: gh<_i232.UserLocalDataSource>(),
       ),
+    );
+    gh.lazySingleton<_i592.InventarioRemoteDataSource>(
+      () => _i592.InventarioRemoteDataSourceImpl(gh<_i319.ApiRequestService>()),
     );
     await gh.lazySingletonAsync<_i206.IStorageService>(() {
       final i = _i243.StorageService();
@@ -223,7 +341,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i319.ApiRequestService>(),
       ),
     );
-   
     gh.lazySingleton<_i1062.IWebSocketService>(() => _i1020.WebSocketService());
     gh.lazySingleton<_i854.EnterpriseLocalDataSource>(
       () => _i854.EnterpriseLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()),
@@ -256,6 +373,32 @@ extension GetItInjectableX on _i174.GetIt {
         networkInfo: gh<_i75.NetworkInfo>(),
       ),
     );
+    gh.lazySingleton<_i661.PickingRepository>(
+      () => _i8.PickingRepositoryImpl(
+        remoteDataSource: gh<_i94.PickingRemoteDataSource>(),
+        localDataSource: gh<_i860.PickingLocalDataSource>(),
+        networkInfo: gh<_i75.NetworkInfo>(),
+        transferRepository: gh<_i895.TransferenciasRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i958.AssignUserToPickUseCase>(
+      () => _i958.AssignUserToPickUseCase(gh<_i661.PickingRepository>()),
+    );
+    gh.lazySingleton<_i924.FetchPicksHistoryUseCase>(
+      () => _i924.FetchPicksHistoryUseCase(gh<_i661.PickingRepository>()),
+    );
+    gh.lazySingleton<_i240.FetchPicksUseCase>(
+      () => _i240.FetchPicksUseCase(gh<_i661.PickingRepository>()),
+    );
+    gh.lazySingleton<_i232.GetPickConfigurationsUseCase>(
+      () => _i232.GetPickConfigurationsUseCase(gh<_i661.PickingRepository>()),
+    );
+    gh.lazySingleton<_i266.GetPickWithProductsUseCase>(
+      () => _i266.GetPickWithProductsUseCase(gh<_i661.PickingRepository>()),
+    );
+    gh.lazySingleton<_i95.StartStopTimePickUseCase>(
+      () => _i95.StartStopTimePickUseCase(gh<_i661.PickingRepository>()),
+    );
     gh.lazySingleton<_i932.IPickingClusterRepository>(
       () => _i110.PickingClusterRepositoryImpl(
         gh<_i681.PickingClusterRemoteDataSource>(),
@@ -285,6 +428,9 @@ extension GetItInjectableX on _i174.GetIt {
         apiService: gh<_i319.ApiRequestService>(),
       ),
     );
+    gh.lazySingleton<_i812.InventarioLocalDataSource>(
+      () => _i812.InventarioLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()),
+    );
     gh.factory<_i676.WebSocketBloc>(
       () =>
           _i676.WebSocketBloc(webSocketService: gh<_i1062.IWebSocketService>()),
@@ -294,7 +440,6 @@ extension GetItInjectableX on _i174.GetIt {
         localDataSource: gh<_i791.AuthLocalDataSource>(),
       ),
     );
-    
     gh.lazySingleton<_i792.AuthenticateUser>(
       () => _i792.AuthenticateUser(gh<_i889.LoginRepository>()),
     );
@@ -330,6 +475,11 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i799.GetLotesProductoUseCase>(
       () =>
           _i799.GetLotesProductoUseCase(gh<_i932.IPickingClusterRepository>()),
+    );
+    gh.lazySingleton<_i542.GetPendingSendProductsUseCase>(
+      () => _i542.GetPendingSendProductsUseCase(
+        gh<_i932.IPickingClusterRepository>(),
+      ),
     );
     gh.lazySingleton<_i524.GetPickingClusterData>(
       () => _i524.GetPickingClusterData(gh<_i932.IPickingClusterRepository>()),
@@ -375,17 +525,24 @@ extension GetItInjectableX on _i174.GetIt {
       () =>
           _i149.ViewProductImageUseCase(gh<_i932.IPickingClusterRepository>()),
     );
+    gh.lazySingleton<_i268.PickingComponentsRepository>(
+      () => _i355.PickingComponentsRepositoryImpl(
+        remoteDataSource: gh<_i682.PickingComponentsRemoteDataSource>(),
+        localDataSource: gh<_i161.PickingComponentsLocalDataSource>(),
+        networkInfo: gh<_i75.NetworkInfo>(),
+      ),
+    );
+    gh.lazySingleton<_i925.InventarioRepository>(
+      () => _i426.InventarioRepositoryImpl(
+        remoteDataSource: gh<_i592.InventarioRemoteDataSource>(),
+        localDataSource: gh<_i812.InventarioLocalDataSource>(),
+        networkInfo: gh<_i75.NetworkInfo>(),
+      ),
+    );
     gh.factory<_i1070.LoginBloc>(
       () => _i1070.LoginBloc(
         authenticateUser: gh<_i792.AuthenticateUser>(),
         saveUserSession: gh<_i311.SaveUserSession>(),
-      ),
-    );
-    gh.lazySingleton<_i649.HomeRepository>(
-      () => _i689.HomeRepositoryImpl(
-        remoteDataSource: gh<_i359.HomeRemoteDataSource>(),
-        localDataSource: gh<_i205.HomeLocalDataSource>(),
-        networkInfo: gh<_i75.NetworkInfo>(),
       ),
     );
     gh.factory<_i545.ClusterPickingBloc>(
@@ -413,6 +570,16 @@ extension GetItInjectableX on _i174.GetIt {
         endTimePickUseCase: gh<_i782.EndTimePickUseCase>(),
         startTimePickUseCase: gh<_i612.StartTimePickUseCase>(),
         validatePedidoUseCase: gh<_i1044.ValidatePedidoUseCase>(),
+        getPendingSendProductsUseCase:
+            gh<_i542.GetPendingSendProductsUseCase>(),
+        networkInfo: gh<_i75.NetworkInfo>(),
+      ),
+    );
+    gh.lazySingleton<_i649.HomeRepository>(
+      () => _i689.HomeRepositoryImpl(
+        remoteDataSource: gh<_i359.HomeRemoteDataSource>(),
+        localDataSource: gh<_i205.HomeLocalDataSource>(),
+        networkInfo: gh<_i75.NetworkInfo>(),
       ),
     );
     gh.factory<_i573.LoteProductoBloc>(
@@ -439,7 +606,20 @@ extension GetItInjectableX on _i174.GetIt {
         registerDevice: gh<_i902.RegisterDevice>(),
       ),
     );
-    
+    gh.lazySingleton<_i601.FetchComponentsFromDbUseCase>(
+      () => _i601.FetchComponentsFromDbUseCase(
+        gh<_i268.PickingComponentsRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i887.FetchComponentsHistoryUseCase>(
+      () => _i887.FetchComponentsHistoryUseCase(
+        gh<_i268.PickingComponentsRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i192.FetchComponentsUseCase>(
+      () =>
+          _i192.FetchComponentsUseCase(gh<_i268.PickingComponentsRepository>()),
+    );
     gh.lazySingleton<_i72.PackagingTypeRepository>(
       () => _i690.PackagingTypeRepositoryImpl(
         remoteDataSource: gh<_i846.PackagingTypeRemoteDataSource>(),
@@ -462,6 +642,41 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i52.ValidateSession>(
       () => _i52.ValidateSession(gh<_i1015.AuthRepository>()),
+    );
+    gh.lazySingleton<_i589.CrearLoteInventario>(
+      () => _i589.CrearLoteInventario(gh<_i925.InventarioRepository>()),
+    );
+    gh.lazySingleton<_i46.EnviarProductoInventario>(
+      () => _i46.EnviarProductoInventario(gh<_i925.InventarioRepository>()),
+    );
+    gh.lazySingleton<_i377.GetAllBarcodesInventario>(
+      () => _i377.GetAllBarcodesInventario(gh<_i925.InventarioRepository>()),
+    );
+    gh.lazySingleton<_i125.GetBarcodesProducto>(
+      () => _i125.GetBarcodesProducto(gh<_i925.InventarioRepository>()),
+    );
+    gh.lazySingleton<_i476.GetConfiguracionUsuarioInventario>(
+      () => _i476.GetConfiguracionUsuarioInventario(
+        gh<_i925.InventarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i704.GetLotesProducto>(
+      () => _i704.GetLotesProducto(gh<_i925.InventarioRepository>()),
+    );
+    gh.lazySingleton<_i892.GetProductosCount>(
+      () => _i892.GetProductosCount(gh<_i925.InventarioRepository>()),
+    );
+    gh.lazySingleton<_i627.GetProductosLocal>(
+      () => _i627.GetProductosLocal(gh<_i925.InventarioRepository>()),
+    );
+    gh.lazySingleton<_i970.GetUbicacionesLocal>(
+      () => _i970.GetUbicacionesLocal(gh<_i925.InventarioRepository>()),
+    );
+    gh.lazySingleton<_i616.GetUrlImagenProducto>(
+      () => _i616.GetUrlImagenProducto(gh<_i925.InventarioRepository>()),
+    );
+    gh.lazySingleton<_i19.SyncProductosInventario>(
+      () => _i19.SyncProductosInventario(gh<_i925.InventarioRepository>()),
     );
     gh.factory<_i123.HomeBloc>(
       () => _i123.HomeBloc(
@@ -492,6 +707,111 @@ extension GetItInjectableX on _i174.GetIt {
         getPackagingTypesUseCase: gh<_i658.GetPackagingTypesUseCase>(),
         getLocalPackagingTypesUseCase:
             gh<_i762.GetLocalPackagingTypesUseCase>(),
+      ),
+    );
+    gh.factory<_i731.InventarioBloc>(
+      () => _i731.InventarioBloc(
+        syncProductosInventario: gh<_i19.SyncProductosInventario>(),
+        getProductosLocal: gh<_i627.GetProductosLocal>(),
+        getProductosCount: gh<_i892.GetProductosCount>(),
+        getUbicacionesLocal: gh<_i970.GetUbicacionesLocal>(),
+        getLotesProducto: gh<_i704.GetLotesProducto>(),
+        enviarProductoInventario: gh<_i46.EnviarProductoInventario>(),
+        crearLoteInventario: gh<_i589.CrearLoteInventario>(),
+        getBarcodesProducto: gh<_i125.GetBarcodesProducto>(),
+        getAllBarcodesInventario: gh<_i377.GetAllBarcodesInventario>(),
+        getConfiguracionUsuarioInventario:
+            gh<_i476.GetConfiguracionUsuarioInventario>(),
+      ),
+    );
+    gh.lazySingleton<_i335.PickScanRemoteDataSource>(
+      () =>
+          _i335.PickScanRemoteDataSourceImpl(gh<_i616.GetUrlImagenProducto>()),
+    );
+    gh.lazySingleton<_i1048.PickScanRepository>(
+      () => _i334.PickScanRepositoryImpl(
+        remoteDataSource: gh<_i335.PickScanRemoteDataSource>(),
+        localDataSource: gh<_i380.PickScanLocalDataSource>(),
+        networkInfo: gh<_i75.NetworkInfo>(),
+      ),
+    );
+    gh.lazySingleton<_i360.AssignMuelleUseCase>(
+      () => _i360.AssignMuelleUseCase(gh<_i1048.PickScanRepository>()),
+    );
+    gh.lazySingleton<_i696.GetBarcodesProductUseCase>(
+      () => _i696.GetBarcodesProductUseCase(gh<_i1048.PickScanRepository>()),
+    );
+    gh.lazySingleton<_i351.GetMuellesUseCase>(
+      () => _i351.GetMuellesUseCase(gh<_i1048.PickScanRepository>()),
+    );
+    gh.lazySingleton<_i592.GetProductImageUseCase>(
+      () => _i592.GetProductImageUseCase(gh<_i1048.PickScanRepository>()),
+    );
+    gh.lazySingleton<_i1058.GetProductsForEditUseCase>(
+      () => _i1058.GetProductsForEditUseCase(gh<_i1048.PickScanRepository>()),
+    );
+    gh.lazySingleton<_i141.GetScanPickWithProductsUseCase>(
+      () =>
+          _i141.GetScanPickWithProductsUseCase(gh<_i1048.PickScanRepository>()),
+    );
+    gh.lazySingleton<_i936.IncrementQuantitySeparateUseCase>(
+      () => _i936.IncrementQuantitySeparateUseCase(
+        gh<_i1048.PickScanRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i776.MarkLocationDestOkUseCase>(
+      () => _i776.MarkLocationDestOkUseCase(gh<_i1048.PickScanRepository>()),
+    );
+    gh.lazySingleton<_i422.MarkLocationOkUseCase>(
+      () => _i422.MarkLocationOkUseCase(gh<_i1048.PickScanRepository>()),
+    );
+    gh.lazySingleton<_i300.MarkPickAsDoneUseCase>(
+      () => _i300.MarkPickAsDoneUseCase(gh<_i1048.PickScanRepository>()),
+    );
+    gh.lazySingleton<_i77.MarkProductOkUseCase>(
+      () => _i77.MarkProductOkUseCase(gh<_i1048.PickScanRepository>()),
+    );
+    gh.lazySingleton<_i882.MarkQuantityOkUseCase>(
+      () => _i882.MarkQuantityOkUseCase(gh<_i1048.PickScanRepository>()),
+    );
+    gh.lazySingleton<_i23.RecordPickTimeUseCase>(
+      () => _i23.RecordPickTimeUseCase(gh<_i1048.PickScanRepository>()),
+    );
+    gh.lazySingleton<_i617.SendProductToOdooUseCase>(
+      () => _i617.SendProductToOdooUseCase(gh<_i1048.PickScanRepository>()),
+    );
+    gh.lazySingleton<_i215.UpdateQuantitySeparateUseCase>(
+      () =>
+          _i215.UpdateQuantitySeparateUseCase(gh<_i1048.PickScanRepository>()),
+    );
+    gh.lazySingleton<_i993.ValidateConfirmPickUseCase>(
+      () => _i993.ValidateConfirmPickUseCase(gh<_i1048.PickScanRepository>()),
+    );
+    gh.lazySingleton<_i820.ValidateTransferUseCase>(
+      () => _i820.ValidateTransferUseCase(gh<_i1048.PickScanRepository>()),
+    );
+    gh.factory<_i989.PickScanBloc>(
+      () => _i989.PickScanBloc(
+        markLocationOkUseCase: gh<_i422.MarkLocationOkUseCase>(),
+        markLocationDestOkUseCase: gh<_i776.MarkLocationDestOkUseCase>(),
+        markProductOkUseCase: gh<_i77.MarkProductOkUseCase>(),
+        markQuantityOkUseCase: gh<_i882.MarkQuantityOkUseCase>(),
+        updateQuantitySeparateUseCase:
+            gh<_i215.UpdateQuantitySeparateUseCase>(),
+        incrementQuantitySeparateUseCase:
+            gh<_i936.IncrementQuantitySeparateUseCase>(),
+        getScanPickWithProductsUseCase:
+            gh<_i141.GetScanPickWithProductsUseCase>(),
+        getBarcodesProductUseCase: gh<_i696.GetBarcodesProductUseCase>(),
+        getProductsForEditUseCase: gh<_i1058.GetProductsForEditUseCase>(),
+        getMuellesUseCase: gh<_i351.GetMuellesUseCase>(),
+        getProductImageUseCase: gh<_i592.GetProductImageUseCase>(),
+        validateConfirmPickUseCase: gh<_i993.ValidateConfirmPickUseCase>(),
+        validateTransferUseCase: gh<_i820.ValidateTransferUseCase>(),
+        markPickAsDoneUseCase: gh<_i300.MarkPickAsDoneUseCase>(),
+        recordPickTimeUseCase: gh<_i23.RecordPickTimeUseCase>(),
+        sendProductToOdooUseCase: gh<_i617.SendProductToOdooUseCase>(),
+        assignMuelleUseCase: gh<_i360.AssignMuelleUseCase>(),
       ),
     );
     return this;

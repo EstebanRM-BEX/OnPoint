@@ -36,6 +36,65 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
   final FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
   bool _isProcessing = false;
+  String? _selectedPropietario;
+
+  List<String> _getPropietarios(List<ResultPick> picks) {
+    final set = <String>{};
+    for (final p in picks) {
+      final prop = p.propietario;
+      if (prop != null && prop.isNotEmpty) set.add(prop);
+    }
+    return set.toList()..sort();
+  }
+
+  void _showPropietarioFilter(List<ResultPick> picks) {
+    final propietarios = _getPropietarios(picks);
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Filtrar por propietario',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const Divider(),
+                  RadioListTile<String?>(
+                    title: const Text('Todos'),
+                    value: null,
+                    groupValue: _selectedPropietario,
+                    onChanged: (v) {
+                      setModalState(() {});
+                      setState(() => _selectedPropietario = v);
+                      Navigator.pop(ctx);
+                    },
+                  ),
+                  ...propietarios.map(
+                    (prop) => RadioListTile<String?>(
+                      title: Text(prop),
+                      value: prop,
+                      groupValue: _selectedPropietario,
+                      onChanged: (v) {
+                        setModalState(() {});
+                        setState(() => _selectedPropietario = v);
+                        Navigator.pop(ctx);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   void initState() {
@@ -249,6 +308,10 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
 
           List<ResultPick> listToShow = bloc.listOfPickFiltered
               .where((batch) => batch.isSeparate == 0)
+              .where((batch) {
+                if (_selectedPropietario == null) return true;
+                return batch.propietario == _selectedPropietario;
+              })
               .toList();
 
           return Scaffold(
@@ -415,6 +478,13 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                                     'backorder',
                                                     true,
                                                   ),
+                                                );
+                                                break;
+                                              case 'filter_propietario':
+                                                _showPropietarioFilter(
+                                                  bloc.listOfPickFiltered
+                                                      .where((b) => b.isSeparate == 0)
+                                                      .toList(),
                                                 );
                                                 break;
                                             }
@@ -750,6 +820,55 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                                   ],
                                                 ),
                                               ),
+                                              const PopupMenuDivider(),
+                                              const PopupMenuItem<String>(
+                                                enabled: false,
+                                                height: 30,
+                                                child: Text(
+                                                  'PROPIETARIO',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                              ),
+                                              PopupMenuItem<String>(
+                                                value: 'filter_propietario',
+                                                height: 40,
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.person_search_outlined,
+                                                      size: 16,
+                                                      color: _selectedPropietario != null
+                                                          ? Colors.amber
+                                                          : Colors.grey,
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      _selectedPropietario ?? 'Todos',
+                                                      style: TextStyle(
+                                                        fontSize: 13,
+                                                        fontWeight: _selectedPropietario != null
+                                                            ? FontWeight.bold
+                                                            : FontWeight.normal,
+                                                        color: _selectedPropietario != null
+                                                            ? Colors.amber[800]
+                                                            : inactiveColor,
+                                                      ),
+                                                    ),
+                                                    if (_selectedPropietario != null) ...[
+                                                      const Spacer(),
+                                                      const Icon(
+                                                        Icons.check,
+                                                        size: 15,
+                                                        color: Colors.amber,
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                              ),
                                             ];
                                           },
                                         ),
@@ -789,8 +908,9 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                           onTap: () async {
                             if (_isProcessing ||
                                 context.read<PickingPickBloc>().state
-                                    is PickingLoadingState)
+                                    is PickingLoadingState) {
                               return;
+                            }
 
                             setState(() => _isProcessing = true);
 
@@ -855,9 +975,7 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                     ),
                     Expanded(
                       child:
-                          bloc.listOfPickFiltered
-                              .where((batch) => batch.isSeparate == 0)
-                              .isNotEmpty
+                          listToShow.isNotEmpty
                           ? ListView.builder(
                               padding: EdgeInsets.only(
                                 top: 10,
@@ -976,6 +1094,30 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                                                 ),
                                               ),
                                             ],
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Row(
+                                                children: [
+                                                  Text(
+                                                    'Propietario: ',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: primaryColorApp,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    batch.propietario ?? "Sin propietario",
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color:
+                                                          batch.priority == '0'
+                                                          ? black
+                                                          : red,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
                                             Align(
                                               alignment: Alignment.centerLeft,
                                               child: Row(

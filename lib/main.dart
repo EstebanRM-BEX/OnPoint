@@ -23,7 +23,7 @@ import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
 import 'package:wms_app/features/login/presentation/bloc/login_bloc.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/transfer/bloc/transfer_info_bloc.dart';
-import 'package:wms_app/src/presentation/views/inventario/screens/bloc/inventario_bloc.dart';
+import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/batchs/bloc/recepcion_batch_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
@@ -142,7 +142,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(
             create: (context) =>
                 InfoRapidaBloc(userBloc: context.read<UserBloc>())),
-        BlocProvider(create: (_) => InventarioBloc()),
+        BlocProvider(create: (_) => getIt<InventarioBloc>()),
         BlocProvider(create: (_) => PickingPickBloc()),
         BlocProvider(create: (_) => RecepcionBatchBloc()),
         BlocProvider(create: (_) => PackingPedidoBloc()),

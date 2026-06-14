@@ -155,6 +155,16 @@ class PickingClusterRepositoryImpl implements IPickingClusterRepository {
   }
 
   @override
+  Future<Either<Failure, List<BatchProduct>>> getPendingSendProducts() async {
+    try {
+      final products = await localDataSource.getPendingSendProducts();
+      return Right(products);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> setFieldTableBatchProducts(
       int batchId,
       int productId,

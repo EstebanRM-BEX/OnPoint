@@ -45,6 +45,11 @@ class BatchPackingConsolidateRepository {
             BatchPackingConsolidateTable.columnTemperatura:
                 batchItem.temperatura,
             BatchPackingConsolidateTable.columnOrigins: batchItem.origins,
+            BatchPackingConsolidateTable.columnPropietario: batchItem.propietario,
+            BatchPackingConsolidateTable.columnManejoPropietario:
+                batchItem.manejoPropietario is bool
+                    ? (batchItem.manejoPropietario == true ? 1 : 0)
+                    : batchItem.manejoPropietario,
             BatchPackingConsolidateTable.columnCantidadTotalPedidos:
                 batchItem.cantidadTotalPedidos,
             BatchPackingConsolidateTable.columnCantidadTotalProductos:

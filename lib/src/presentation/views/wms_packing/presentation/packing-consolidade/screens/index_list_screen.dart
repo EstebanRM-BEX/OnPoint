@@ -40,6 +40,83 @@ class _ListPackingConsolidadeScreenState
   final FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
   bool _isProcessing = false;
+  String? _selectedPropietario;
+  String _currentSortKey = '';
+
+  List<BatchPackingModel> _sortList(List<BatchPackingModel> list) {
+    final sorted = List<BatchPackingModel>.from(list);
+    switch (_currentSortKey) {
+      case 'date_asc':
+        sorted.sort((a, b) =>
+            (a.scheduleddate?.toString() ?? '').compareTo(b.scheduleddate?.toString() ?? ''));
+        break;
+      case 'date_desc':
+        sorted.sort((a, b) =>
+            (b.scheduleddate?.toString() ?? '').compareTo(a.scheduleddate?.toString() ?? ''));
+        break;
+      case 'name_asc':
+        sorted.sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
+        break;
+      case 'name_desc':
+        sorted.sort((a, b) => (b.name ?? '').compareTo(a.name ?? ''));
+        break;
+    }
+    return sorted;
+  }
+
+  List<String> _getPropietarios(List<BatchPackingModel> batchs) {
+    final set = <String>{};
+    for (final b in batchs) {
+      final prop = b.propietario;
+      if (prop != null && prop.isNotEmpty) set.add(prop);
+    }
+    return set.toList()..sort();
+  }
+
+  void _showPropietarioFilter(List<BatchPackingModel> batchs) {
+    final propietarios = _getPropietarios(batchs);
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Filtrar por propietario',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const Divider(),
+              RadioListTile<String?>(
+                title: const Text('Todos'),
+                value: null,
+                groupValue: _selectedPropietario,
+                onChanged: (v) {
+                  setModalState(() {});
+                  setState(() => _selectedPropietario = v);
+                  Navigator.pop(ctx);
+                },
+              ),
+              ...propietarios.map(
+                (prop) => RadioListTile<String?>(
+                  title: Text(prop),
+                  value: prop,
+                  groupValue: _selectedPropietario,
+                  onChanged: (v) {
+                    setModalState(() {});
+                    setState(() => _selectedPropietario = v);
+                    Navigator.pop(ctx);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   void validateBarcode(String value, BuildContext context) {
     final bloc = context.read<PackingConsolidateBloc>();
@@ -343,7 +420,7 @@ class _ListPackingConsolidadeScreenState
                                           child: Row(
                                             children: [
                                               const Text(
-                                                'PACKING CONSOLIDADO',
+                                                'PACK CONSOLIDADO',
                                                 style: TextStyle(
                                                     color: white,
                                                     fontSize: 18,
@@ -361,6 +438,131 @@ class _ListPackingConsolidadeScreenState
                                         ),
                                       ),
                                       const Spacer(),
+                                      PopupMenuButton<String>(
+                                        icon: const Icon(Icons.more_vert, color: white, size: 24),
+                                        onSelected: (value) {
+                                          if (value == 'filter_propietario') {
+                                            final all = context
+                                                .read<PackingConsolidateBloc>()
+                                                .listOfBatchsDB
+                                                .where((b) => b.isSeparate == 0 || b.isSeparate == null)
+                                                .toList();
+                                            _showPropietarioFilter(all);
+                                          } else {
+                                            setState(() => _currentSortKey = value);
+                                          }
+                                        },
+                                        itemBuilder: (BuildContext ctx) {
+                                          const Color activeColor = primaryColorApp;
+                                          const Color inactiveColor = Colors.black;
+
+                                          TextStyle getStyle(String key) {
+                                            final isSelected = _currentSortKey == key;
+                                            return TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                              color: isSelected ? activeColor : inactiveColor,
+                                            );
+                                          }
+
+                                          Color getIconColor(String key) =>
+                                              _currentSortKey == key ? activeColor : Colors.grey;
+
+                                          Widget checkIfActive(String key) => _currentSortKey == key
+                                              ? const Icon(Icons.check, size: 15, color: activeColor)
+                                              : const SizedBox.shrink();
+
+                                          return <PopupMenuEntry<String>>[
+                                            const PopupMenuItem<String>(
+                                              enabled: false,
+                                              height: 30,
+                                              child: Text('FECHA',
+                                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+                                            ),
+                                            PopupMenuItem<String>(
+                                              value: 'date_asc',
+                                              height: 40,
+                                              child: Row(children: [
+                                                Icon(Icons.calendar_month_outlined, size: 16, color: getIconColor('date_asc')),
+                                                const SizedBox(width: 8),
+                                                Text('Más Antiguas', style: getStyle('date_asc')),
+                                                const Spacer(),
+                                                checkIfActive('date_asc'),
+                                              ]),
+                                            ),
+                                            PopupMenuItem<String>(
+                                              value: 'date_desc',
+                                              height: 40,
+                                              child: Row(children: [
+                                                Icon(Icons.calendar_month_outlined, size: 16, color: getIconColor('date_desc')),
+                                                const SizedBox(width: 8),
+                                                Text('Más Recientes', style: getStyle('date_desc')),
+                                                const Spacer(),
+                                                checkIfActive('date_desc'),
+                                              ]),
+                                            ),
+                                            const PopupMenuDivider(),
+                                            const PopupMenuItem<String>(
+                                              enabled: false,
+                                              height: 30,
+                                              child: Text('CONSECUTIVO',
+                                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+                                            ),
+                                            PopupMenuItem<String>(
+                                              value: 'name_asc',
+                                              height: 40,
+                                              child: Row(children: [
+                                                Icon(Icons.arrow_upward, size: 16, color: getIconColor('name_asc')),
+                                                const SizedBox(width: 8),
+                                                Text('Consecutivo (A-Z)', style: getStyle('name_asc')),
+                                                const Spacer(),
+                                                checkIfActive('name_asc'),
+                                              ]),
+                                            ),
+                                            PopupMenuItem<String>(
+                                              value: 'name_desc',
+                                              height: 40,
+                                              child: Row(children: [
+                                                Icon(Icons.arrow_downward, size: 16, color: getIconColor('name_desc')),
+                                                const SizedBox(width: 8),
+                                                Text('Consecutivo (Z-A)', style: getStyle('name_desc')),
+                                                const Spacer(),
+                                                checkIfActive('name_desc'),
+                                              ]),
+                                            ),
+                                            const PopupMenuDivider(),
+                                            const PopupMenuItem<String>(
+                                              enabled: false,
+                                              height: 30,
+                                              child: Text('PROPIETARIO',
+                                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+                                            ),
+                                            PopupMenuItem<String>(
+                                              value: 'filter_propietario',
+                                              height: 40,
+                                              child: Row(children: [
+                                                Icon(
+                                                  Icons.person_search_outlined,
+                                                  size: 16,
+                                                  color: _selectedPropietario != null ? Colors.amber : Colors.grey,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  _selectedPropietario ?? 'Todos',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    fontWeight: _selectedPropietario != null ? FontWeight.bold : FontWeight.normal,
+                                                    color: _selectedPropietario != null ? Colors.amber[800] : inactiveColor,
+                                                  ),
+                                                ),
+                                                const Spacer(),
+                                                if (_selectedPropietario != null)
+                                                  const Icon(Icons.check, size: 15, color: Colors.amber),
+                                              ]),
+                                            ),
+                                          ];
+                                        },
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -419,48 +621,28 @@ class _ListPackingConsolidadeScreenState
 
                     //*listado de batchs
                     Expanded(
-                      child: context
-                              .read<PackingConsolidateBloc>()
-                              .listOfBatchsDB
-                              .where((batch) =>
-                                  batch.isSeparate == 0 ||
-                                  batch.isSeparate == null)
-                              .isNotEmpty
+                      child: Builder(
+                        builder: (context) {
+                          final listToShow = _sortList(
+                            context
+                                .read<PackingConsolidateBloc>()
+                                .listOfBatchsDB
+                                .where((b) => b.isSeparate == 0 || b.isSeparate == null)
+                                .where((b) {
+                                  if (_selectedPropietario == null) return true;
+                                  return b.propietario == _selectedPropietario;
+                                })
+                                .toList(),
+                          );
+
+                          return listToShow.isNotEmpty
                           ? ListView.builder(
                               padding:
                                   const EdgeInsets.only(top: 20, bottom: 20),
                               physics: const AlwaysScrollableScrollPhysics(),
-                              itemCount: context
-                                  .read<PackingConsolidateBloc>()
-                                  .listOfBatchsDB
-                                  .where((batch) =>
-                                      batch.isSeparate == 0 ||
-                                      batch.isSeparate == null)
-                                  .length,
+                              itemCount: listToShow.length,
                               itemBuilder: (contextBuilder, index) {
-                                final List<BatchPackingModel>
-                                    inProgressBatches = context
-                                        .read<PackingConsolidateBloc>()
-                                        .listOfBatchsDB
-                                        .where((batch) =>
-                                            batch.isSeparate == 0 ||
-                                            batch.isSeparate == null)
-                                        .toList(); // Convertir a lista
-
-                                // Asegurarse de que hay batches en progreso
-                                if (inProgressBatches.isEmpty) {
-                                  return const Center(
-                                      child:
-                                          Text('No hay batches en progreso.'));
-                                }
-
-                                // Comprobar que el índice no está fuera de rango
-                                if (index >= inProgressBatches.length) {
-                                  return const SizedBox(); // O manejar de otra forma
-                                }
-
-                                final batch = inProgressBatches[
-                                    index]; // Acceder al batch filtrado
+                                final batch = listToShow[index];
 
                                 return Padding(
                                   padding: const EdgeInsets.symmetric(
@@ -614,6 +796,28 @@ class _ListPackingConsolidadeScreenState
                                                       fontSize: 12,
                                                       color: black)),
                                             ),
+                                              Visibility(
+                                                    visible: batch.manejoPropietario == 1 ||  batch.manejoPropietario == true,
+                                                    child: Row(
+                                                      children: [
+                                                        const Align(
+                                                          alignment: Alignment
+                                                              .centerLeft,
+                                                          child: Text(
+                                                              "Propietario:",
+                                                              style: TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: primaryColorApp)),
+                                                        ),
+                                                        Text(
+                                                            batch.propietario ?? "Sin propietario",
+                                                            style: TextStyle(
+                                                                fontSize: 12,
+                                                                color: black)),
+                                                       
+                                                      ],
+                                                    ),
+                                                  ),
                                             Row(
                                               children: [
                                                 const Align(
@@ -838,7 +1042,9 @@ class _ListPackingConsolidadeScreenState
                                           TextStyle(fontSize: 12, color: grey)),
                                 ],
                               ),
-                            ),
+                            );
+                        },
+                      ),
                     ),
                   ],
                 ),

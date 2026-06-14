@@ -14,7 +14,7 @@ import 'package:wms_app/core/utils/widgets/dialog_loading_widget.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/login/presentation/bloc/login_bloc.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
-import 'package:wms_app/src/presentation/views/inventario/screens/bloc/inventario_bloc.dart';
+import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
@@ -214,7 +214,7 @@ class LoginPage extends StatelessWidget {
 }
 
 class _LoginForm extends StatefulWidget {
-  const _LoginForm({super.key});
+  const _LoginForm();
 
   @override
   State<_LoginForm> createState() => _LoginFormState();

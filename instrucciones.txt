@@ -1,0 +1,249 @@
+Guía de migración a Clean Architecture — WMS App
+
+  Estructura de carpetas a crear
+
+  lib/features/<modulo>/
+  ├── domain/
+  │   ├── entities/          # Clases puras, sin fromMap ni dependencias
+  │   ├── repositories/      # Abstract class con Either<Failure, T>
+  │   └── usecases/          # Un archivo por usecase
+  ├── data/
+  │   ├── models/            # XModel extends Entity + fromMap + fromLegacy/toLegacy
+  │   ├── datasources/       # remote e local (interfaces + impls)
+  │   └── repositories/      # XRepositoryImpl @LazySingleton
+  └── presentation/
+      ├── bloc/              # _event, _state, _bloc
+      ├── pages/             # Pantallas
+      └── widgets/           # Widgets propios del módulo
+
+  ---
+  Fase 1 — Domain
+
+  Entities
+
+  // Sin anotaciones, sin fromMap, campos nullable con const constructor
+  class ProductoInventario extends Equatable {
+    final dynamic productId;
+    final String? name;
+    const ProductoInventario({this.productId, this.name});
+    @override
+    List<Object?> get props => [productId, name];
+  }
+
+  Repositorio abstracto
+
+  abstract class InventarioRepository {
+    Future<Either<Failure, List<ProductoInventario>>> getProductosLocal();
+    Future<Either<Failure, void>> syncProductos(bool isLoading);
+    // ...
+  }
+
+  Usecases
+
+  @lazySingleton
+  class GetProductosLocal implements UseCase<List<ProductoInventario>, NoParams> {
+    final InventarioRepository repository;
+    GetProductosLocal(this.repository);
+
+    @override
+    Future<Either<Failure, List<ProductoInventario>>> call(NoParams params) =>
+        repository.getProductosLocal();
+  }
+
+  Verificar: flutter analyze lib/features/<modulo>/domain → 0 errores
+
+  ---
+  Fase 2 — Data
+
+  Models
+
+  class ProductoInventarioModel extends ProductoInventario {
+    const ProductoInventarioModel({super.productId, super.name});
+
+    factory ProductoInventarioModel.fromMap(Map<String, dynamic> json) =>
+        ProductoInventarioModel(
+          productId: json['product_id'],
+          name: json['name'],
+        );
+
+    // Puente con tipos legacy (solo dentro de data/)
+    factory ProductoInventarioModel.fromLegacy(Product legacy) =>
+        ProductoInventarioModel(productId: legacy.productId, name: legacy.name);
+
+    Product toLegacy() => Product(productId: productId, name: name);
+  }
+
+  Remote datasource
+
+  @LazySingleton(as: IRemoteDataSource)
+  class RemoteDataSourceImpl implements IRemoteDataSource {
+    final ApiRequestService apiService;
+    RemoteDataSourceImpl(this.apiService);
+
+    // Sesión expirada: code == 100 → throw SessionExpiredException
+    // compute() para parseos grandes (>10k objetos)
+    // debugPrint del request y response para debug
+  }
+
+  Local datasource
+
+  - Inyecta DataBaseSqlite (ya registrado en injection_container.dart)
+  - Usa .fromLegacy() al leer de DB y .toLegacy() al escribir
+  - Future.wait([...]) para inserts paralelos
+
+  Repository impl
+
+  @LazySingleton(as: InventarioRepository)
+  class InventarioRepositoryImpl implements InventarioRepository {
+    @override
+    Future<Either<Failure, List<ProductoInventario>>> getProductosLocal() async {
+      try {
+        final result = await localDataSource.getProductos();
+        return Right(result.cast<ProductoInventario>());  // ← IMPORTANTE el .cast()
+      } on CacheException catch (e) {
+        return Left(CacheFailure(e.message));
+      }
+    }
+  }
+
+  ▎ Regla crítica: Siempre .cast<Entidad>() al retornar listas de modelos. Sin esto, Dart conserva el tipo concreto en runtime y firstWhere falla con _TypeError.
+
+  Verificar: dart run build_runner build → registrado en injection_container.config.dart
+
+  ---
+  Fase 3 — Bloc
+
+  Convenciones
+
+  @injectable  // Bloc usa @injectable, no @lazySingleton
+  class MiBloc extends Bloc<MiEvent, MiState> {
+    // Inyectar todos los usecases en constructor
+    // TextEditingControllers AQUÍ si múltiples rutas comparten el bloc
+    // FocusNodes en el State de la página
+  }
+
+  Flags de color de campos (patrón doble-condición)
+
+  // En el bloc, dos booleans por campo:
+  bool locationIsOk = false;   // verde/amarillo cuando true
+  bool isLocationOk = true;    // false → rojo; true → gris/verde
+
+  // En clenanFields():
+  locationIsOk = false;
+  isLocationOk = true;   // ← siempre true al limpiar, NUNCA false
+
+  Patrón sesión expirada
+
+  result.fold(
+    (failure) {
+      if (failure is SessionExpiredFailure) emit(SessionExpiredState());
+      emit(FailureState(failure.message));
+    },
+    (data) => emit(SuccessState(data)),
+  );
+
+  Transformers (bloc_concurrency)
+
+  on<BusquedaEvent>(_handler, transformer: droppable());
+  on<GetListadoEvent>(_handler, transformer: restartable());
+
+  clenanFields() — checklist completo
+
+  void clenanFields() {
+    // 1. Flags visuales → false
+    xIsOk = false;
+    // 2. Flags de validación → true (para color gris, no rojo)
+    isXOk = true;
+    // 3. Objetos seleccionados → null
+    currentItem = null;
+    // 4. Contadores → 0
+    quantitySelected = 0;
+    // 5. Controllers → clear (TODOS, incluyendo cantidadController)
+    controller.clear();
+    cantidadController.clear();
+    // 6. Listas → clear
+    lista.clear();
+    // 7. Flags boolean → reset
+    viewQuantity = false;
+  }
+
+  Verificar: flutter analyze lib/features/<modulo>/presentation/bloc → 0 errores
+
+  ---
+  Fase 4 — UI
+
+  Ajustes al copiar la pantalla legacy
+
+  1. Cambiar imports del bloc legacy → features bloc
+  2. Reemplazar tipos: LegacyModel → Entity
+  3. Cambiar orElse: () => LegacyModel() → orElse: () => const Entity()
+  4. Verificar campos de estado: state.message vs state.error (mirar la definición del state)
+  5. Agregar listener SessionExpiredState → SessionExpiredHelper.showDialog()
+
+  SessionExpiredHelper (copiar este patrón)
+
+  class SessionExpiredHelper {
+    static void showDialog() {
+      Get.defaultDialog(
+        title: 'Alerta',
+        titleStyle: const TextStyle(color: Colors.red, fontSize: 18),
+        middleText: 'Sesion expirada, por favor inicie sesión nuevamente',
+        // ...
+      );
+    }
+  }
+
+  Foco entre campos (patrón Zebra/scanner)
+
+  // En listener del BlocConsumer:
+  if (state is CampoAValidadoState) {
+    Future.delayed(const Duration(seconds: 1), () {
+      FocusScope.of(context).requestFocus(focusNodeSiguiente);
+    });
+    _handleDependencies();
+  }
+
+  // Al seleccionar item (lote, producto, etc.):
+  // El handler en el bloc DEBE despachar ChangeIsOkQuantity(true) o similar
+  // para activar el siguiente campo
+
+  ---
+  Fase 5 — Integración
+
+  Archivos a tocar (quirúrgico, una línea cada uno):
+
+  ┌──────────────────────────────────────────────┬───────────────────────────────────────────────────────┐
+  │                   Archivo                    │                        Cambio                         │
+  ├──────────────────────────────────────────────┼───────────────────────────────────────────────────────┤
+  │ lib/main.dart                                │ Import + BlocProvider(create: (_) => getIt<MiBloc>()) │
+  ├──────────────────────────────────────────────┼───────────────────────────────────────────────────────┤
+  │ lib/src/presentation/views/pages.dart        │ Export → features/<modulo>/presentation/pages/        │
+  ├──────────────────────────────────────────────┼───────────────────────────────────────────────────────┤
+  │ lib/core/routes/app_router.dart              │ Imports + cast de args si aplica                      │
+  ├──────────────────────────────────────────────┼───────────────────────────────────────────────────────┤
+  │ Cualquier archivo que importe el bloc legacy │ Swap de import solamente                              │
+  └──────────────────────────────────────────────┴───────────────────────────────────────────────────────┘
+
+  ---
+  Verificación final
+
+  dart run build_runner build
+  flutter analyze                    # 0 errores nuevos
+  flutter build apk --debug          # compila sin errores
+
+  ---
+  Errores comunes a vigilar
+
+  ┌───────────────────────────┬────────────────────────────────────────────────┬─────────────────────────────────────────────────┐
+  │           Error           │                     Causa                      │                       Fix                       │
+  ├───────────────────────────┼────────────────────────────────────────────────┼─────────────────────────────────────────────────┤
+  │ _TypeError: orElse        │ Lista retorna List<Model> en runtime           │ .cast<Entity>() en repo impl                    │
+  ├───────────────────────────┼────────────────────────────────────────────────┼─────────────────────────────────────────────────┤
+  │ Campos siempre rojos      │ isXxxOk inicializado en false                  │ Inicializar en true                             │
+  ├───────────────────────────┼────────────────────────────────────────────────┼─────────────────────────────────────────────────┤
+  │ Campos rojos tras limpiar │ clenanFields() resetea a false                 │ Resetear a true                                 │
+  ├───────────────────────────┼────────────────────────────────────────────────┼─────────────────────────────────────────────────┤
+  │ Foco no avanza            │ Falta add(ChangeIsOkQuantity(true)) al validar │ Agregarlo en el handler del evento de selección │
+  ├───────────────────────────┼────────────────────────────────────────────────┼─────────────────────────────────────────────────┤
+  │ Estado siempre error      │ Handler usa parámetro sin revisar legacy       │ Comparar lógica 1:1 con el bloc legacy          │
+  └───────────────────────────┴────────────────────────────────────────────────┴─────────────────────────────────────────────────┘

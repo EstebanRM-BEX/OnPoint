@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
-import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 
 class ProductDropdownConteoWidget extends StatelessWidget {
   final String? selectedProduct;
@@ -25,8 +25,8 @@ class ProductDropdownConteoWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final IAudioService _audioService = getIt<IAudioService>();
-    final IVibrationService _vibrationService = getIt<IVibrationService>();
+    final IAudioService audioService = getIt<IAudioService>();
+    final IVibrationService vibrationService = getIt<IVibrationService>();
     final screenWidth = MediaQuery.of(context).size.width;
 
     return SizedBox(
@@ -107,8 +107,8 @@ class ProductDropdownConteoWidget extends StatelessWidget {
                           currentProduct.idMove ?? 0,
                         ));
                       } else {
-                        _vibrationService.vibrate();
-                        _audioService.playErrorSound();
+                        vibrationService.vibrate();
+                        audioService.playErrorSound();
                         conteoBloc.add(
                             ValidateFieldsEvent(field: "product", isOk: false));
                       }

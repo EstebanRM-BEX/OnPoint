@@ -109,6 +109,8 @@ class BatchPackingModel {
 
   dynamic manejaTemperatura;
   dynamic temperatura;
+  String? propietario;
+  dynamic manejoPropietario;
 
   BatchPackingModel({
     this.id,
@@ -138,6 +140,8 @@ class BatchPackingModel {
     this.cantidadTotalPedidos,
     this.cantidadTotalProductos,
     this.unidadesProductos,
+    this.propietario,
+    this.manejoPropietario,
   });
 
   factory BatchPackingModel.fromJson(String str) =>
@@ -178,6 +182,8 @@ class BatchPackingModel {
         origin: json["origin"] == null
             ? []
             : List<Origin>.from(json["origin"]!.map((x) => Origin.fromMap(x))),
+        propietario: json['propietario'] is bool ? null : json['propietario'] as String?,
+        manejoPropietario: json["manejo_propietario"]
       );
 
   Map<String, dynamic> toMap() => {
@@ -210,6 +216,8 @@ class BatchPackingModel {
         "origin": origin == null
             ? []
             : List<dynamic>.from(origin!.map((x) => x.toMap())),
+        "propietario": propietario,
+        "manejo_propietario" : manejoPropietario,
       };
 }
 
@@ -225,7 +233,7 @@ class PedidoPacking {
   final String? tipoOperacion;
   final String? contactoName;
   final dynamic isTerminate;
-  final dynamic? cantidadProductos;
+  final dynamic cantidadProductos;
   final int? numeroPaquetes;
   final List<ProductoPedido>? listaProductos;
   final List<Paquete>? listaPaquetes;
@@ -234,6 +242,8 @@ class PedidoPacking {
   final String? orderTms;
   final String? type;
   final String? pedidos;
+    String? propietario;
+  dynamic manejoPropietario;
 
   PedidoPacking({
     this.id,
@@ -256,6 +266,8 @@ class PedidoPacking {
     this.orderTms,
     this.type,
     this.pedidos,
+        this.propietario,
+    this.manejoPropietario,
   });
 
   factory PedidoPacking.fromJson(String str) =>
@@ -291,6 +303,8 @@ class PedidoPacking {
         orderTms: json["order_tms"],
         type: json["type"],
         pedidos: json["pedidos"],
+        propietario: json['propietario'] is bool ? null : json['propietario'] as String?,
+        manejoPropietario: json["manejo_propietario"]
       );
 
   Map<String, dynamic> toMap() => {
@@ -317,6 +331,8 @@ class PedidoPacking {
         "order_tms": orderTms,
         "type": type,
         "pedidos": pedidos,
+                "propietario": propietario,
+        "manejo_propietario" : manejoPropietario,
       };
 }
 
@@ -411,7 +427,7 @@ class Paquete {
     String? name,
     int? batchId,
     int? pedidoId,
-    dynamic? cantidadProductos,
+    dynamic cantidadProductos,
     String? packingBarcode,
     int? locationDestId,
     String? locationDestName,
@@ -420,9 +436,9 @@ class Paquete {
     bool? isSticker,
     bool? isCertificate,
     String? type,
-    dynamic? consecutivo,
+    dynamic consecutivo,
     String? typePaquete,
-    dynamic? peso,
+    dynamic peso,
   }) {
     return Paquete(
       id: id ?? this.id,

@@ -663,7 +663,9 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
                           onTap: () async {
                             if (_isProcessing ||
                                 context.read<PickingListBloc>().state
-                                    is PickingListLoading) return;
+                                    is PickingListLoading) {
+                              return;
+                            }
 
                             setState(() => _isProcessing = true);
 

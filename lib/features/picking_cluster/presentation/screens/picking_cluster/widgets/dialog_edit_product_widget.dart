@@ -10,7 +10,6 @@ import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/batch_product.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/cluster_picking/cluster_picking_bloc.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
-import 'package:wms_app/src/presentation/providers/db/database.dart';
 
 class DialogEditProductWidget extends StatefulWidget {
   final BatchProduct productsBatch;

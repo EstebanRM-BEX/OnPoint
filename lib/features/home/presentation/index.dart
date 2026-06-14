@@ -16,7 +16,7 @@ import 'package:wms_app/features/home/presentation/widgets/dialog_inventario_wid
 import 'package:wms_app/features/home/presentation/widgets/dialog_picking_componentes_widget.dart';
 import 'package:wms_app/features/home/presentation/widgets/dialog_picking_widget.dart';
 import 'package:wms_app/features/home/presentation/widgets/widget.dart';
-import 'package:wms_app/src/presentation/views/inventario/screens/bloc/inventario_bloc.dart';
+import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
@@ -55,6 +55,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       context.read<InventarioBloc>().add(LoadProductosCountEvent());
       context.read<UserBloc>().add(LoadUserLocationsCountEvent());
       context.read<UserBloc>().add(LoadUserNoveltiesCountEvent());
+      context.read<UserBloc>().add(LoadWarehousesCountEvent());
     });
   }
 
@@ -486,7 +487,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                   count: bloc.noveltiesCount,
                                                   isLoading: state
                                                       is UserNoveltiesLoading,
-                                                )
+                                                ),
+                                                _buildInfoItem(
+                                                  icon: Icons.warehouse,
+                                                  label: 'Almacenes',
+                                                  count: bloc.warehousesCount,
+                                                  isLoading: false,
+                                                ),
                                               ],
                                             );
                                           },

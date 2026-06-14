@@ -2,18 +2,12 @@ import '../../domain/entities/printer_report.dart';
 
 class PrinterReportModel extends PrinterReport {
   const PrinterReportModel({
-    required int id,
-    required String name,
-    required String reportName,
-    required String reportType,
-    required String model,
-  }) : super(
-          id: id,
-          name: name,
-          reportName: reportName,
-          reportType: reportType,
-          model: model,
-        );
+    required super.id,
+    required super.name,
+    required super.reportName,
+    required super.reportType,
+    required super.model,
+  });
 
   factory PrinterReportModel.fromJson(Map<String, dynamic> json) {
     return PrinterReportModel(

@@ -268,3 +268,27 @@ class LoadTercerosFromDBFailure extends DevolucionesState {
   final String error;
   LoadTercerosFromDBFailure(this.error);
 }
+
+class SelectPropietarioState extends DevolucionesState {
+  final Terceros propietario;
+  SelectPropietarioState(this.propietario);
+}
+
+class ResetPropietarioState extends DevolucionesState {}
+
+class LoadAllowedWarehousesLoading extends DevolucionesState {}
+
+class LoadAllowedWarehousesSuccess extends DevolucionesState {
+  final List<AllowedWarehouse> warehouses;
+  LoadAllowedWarehousesSuccess(this.warehouses);
+}
+
+class LoadAllowedWarehousesFailure extends DevolucionesState {
+  final String error;
+  LoadAllowedWarehousesFailure(this.error);
+}
+
+class SelectWarehouseState extends DevolucionesState {
+  final AllowedWarehouse warehouse;
+  SelectWarehouseState(this.warehouse);
+}

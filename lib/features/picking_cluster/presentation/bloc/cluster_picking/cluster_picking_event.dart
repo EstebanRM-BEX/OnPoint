@@ -211,3 +211,8 @@ class ProductPendingEvent extends ClusterPickingEvent {
   final String type;
   const ProductPendingEvent(this.batchId, this.product, this.type);
 }
+
+//evento para reenviar los productos guardados sin conexion (is_send_odoo = 0)
+class SyncPendingClusterProductsEvent extends ClusterPickingEvent {
+  const SyncPendingClusterProductsEvent();
+}

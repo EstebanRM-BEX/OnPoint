@@ -5,8 +5,11 @@ import 'package:wms_app/features/user/data/models/user_configuration_model.dart'
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
-import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
-import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
+import 'package:wms_app/features/inventario/domain/entities/lote_producto_inventario.dart';
+import 'package:wms_app/features/inventario/domain/usecases/crear_lote_inventario.dart';
+import 'package:wms_app/features/inventario/domain/usecases/get_lotes_producto.dart';
+import 'package:wms_app/injection_container.dart';
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
 import 'package:wms_app/src/presentation/views/transferencias/data/transferencias_repository.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/request_create_trasnfer_model.dart';
@@ -89,7 +92,6 @@ class CreateTransferBloc
   DataBaseSqlite db = DataBaseSqlite();
 
   //repositorios
-  final InventarioRepository _inventarioRepository = InventarioRepository();
 
   //*repositorio
   final TransferenciasRepository _transferenciasRepository =
@@ -208,6 +210,8 @@ class CreateTransferBloc
                   cantidadEnviada: product.quantityDone ?? 0,
                   idLote: product.tracking == "lot" ? product.lotId ?? 0 : 0,
                   timeLine: product.time ?? 0,
+                  idPropietario: 
+                  product.idPropietario ?? 0,
                 ))
             .toList(),
       );
@@ -331,6 +335,9 @@ class CreateTransferBloc
         expirationDateLote: event.product.tracking == "lot"
             ? currentProductLote?.expirationDate
             : null,
+        manejoPropietario: event.product.manejoPropietario ??0,
+        propietario:event.product.propietario ??"",
+        idPropietario: event.product.idPropietario??0
       );
 
       await db.productCreateTransferRepository.insertSingleProduct(productAdd);
@@ -541,8 +548,13 @@ class CreateTransferBloc
       emit(GetLotesProductLoading());
 
       // Siempre obtener los lotes frescos del servidor
-      final response = await _inventarioRepository.fetchAllLotesProduct(
-          false, currentProduct?.productId ?? 0);
+      final result = await getIt<GetLotesProducto>()(
+          GetLotesProductoParams(productId: currentProduct?.productId ?? 0));
+
+      final response = result.fold(
+        (failure) => throw Exception(failure.message),
+        (lotes) => lotes.map(_loteToLegacy).toList(),
+      );
 
       listLotesProduct = response;
       listLotesProductFilters = response;
@@ -557,16 +569,24 @@ class CreateTransferBloc
       CreateLoteProduct event, Emitter<CreateTransferState> emit) async {
     try {
       emit(CreateLoteProductLoading());
-      final response = await _inventarioRepository.createLote(
-          false,
-          currentProduct?.productId ?? 0,
-          event.nameLote,
-          event.fechaCaducidad,
-          event.priorityExpiration);
+      final result = await getIt<CrearLoteInventario>()(
+        CrearLoteInventarioParams(
+          productId: currentProduct?.productId ?? 0,
+          nameLote: event.nameLote,
+          fechaCaducidad: event.fechaCaducidad,
+          priorityExpiration: event.priorityExpiration,
+        ),
+      );
 
-      if (response.result?.code == 200) {
+      final response = result.fold(
+        (failure) => throw Exception(failure.message),
+        (resultado) => resultado,
+      );
+
+      if (response.code == 200) {
         // 1. Capturamos el objeto del nuevo lote
-        final newLote = response.result?.result ?? LotesProduct();
+        final newLote =
+            _loteToLegacy(response.lote ?? const LoteProductoInventario());
 
         // 2. Agregamos el nuevo lote a la lista PRINCIPAL
         listLotesProduct.add(newLote);
@@ -585,7 +605,7 @@ class CreateTransferBloc
         add(SelectecLoteEvent(currentProductLote!));
         emit(CreateLoteProductSuccess());
       } else {
-        emit(CreateLoteProductFailure(response.result?.msg ??
+        emit(CreateLoteProductFailure(response.msg ??
             'Error al crear el lote contactarse con el administrador'));
       }
     } catch (e, s) {
@@ -818,4 +838,14 @@ class CreateTransferBloc
       debugPrint('❌ Error en LoadConfigurationsUser $e =>$s');
     }
   }
+  //puente entity → modelo legacy mientras este bloc migra a clean architecture
+  LotesProduct _loteToLegacy(LoteProductoInventario lote) => LotesProduct(
+        id: lote.id,
+        name: lote.name,
+        quantity: lote.quantity,
+        expirationDate: lote.expirationDate ?? "",
+        productId: lote.productId,
+        productName: lote.productName,
+      );
+
 }

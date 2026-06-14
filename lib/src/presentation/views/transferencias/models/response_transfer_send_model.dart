@@ -61,11 +61,11 @@ class ResultElement {
     int? idMove;
     int? idTransferencia;
     int? idProduct;
-    dynamic? qtyDone;
+    dynamic qtyDone;
     bool? isDoneItem;
-    dynamic? dateTransaction;
+    dynamic dateTransaction;
     String? newObservation;
-    dynamic? timeLine;
+    dynamic timeLine;
     int? userOperatorId;
 
     ResultElement({

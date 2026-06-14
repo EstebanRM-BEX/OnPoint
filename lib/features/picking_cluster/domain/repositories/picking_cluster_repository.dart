@@ -33,6 +33,9 @@ abstract class IPickingClusterRepository {
   // ─── Local ───────────────────────────────────────────────────────────────
   Future<Either<Failure, List<PickingBatch>>> getCachedPickingBatches();
   Future<Either<Failure, List<BatchProduct>>> getBatchProducts(int batchId);
+
+  /// Productos guardados sin conexión (is_send_odoo = 0), de todos los batches.
+  Future<Either<Failure, List<BatchProduct>>> getPendingSendProducts();
   Future<Either<Failure, void>> setFieldTableBatchProducts(int batchId,
       int productId, String field, dynamic value, int idMove, String type);
   Future<Either<Failure, void>> setFieldTableBatch(

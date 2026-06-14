@@ -39,10 +39,10 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
   Widget build(BuildContext context) {
     final Size size = MediaQuery.sizeOf(context);
 
-    final IAudioService _audioService = getIt<IAudioService>();
-    final IVibrationService _vibrationService = getIt<IVibrationService>();
+    final IAudioService audioService = getIt<IAudioService>();
+    final IVibrationService vibrationService = getIt<IVibrationService>();
     FocusNode focusNodeBuscar = FocusNode();
-    final TextEditingController _controllerToDo = TextEditingController();
+    final TextEditingController controllerToDo = TextEditingController();
 
     void validateBarcode(String value, BuildContext context) {
       final bloc = context.read<TransferenciaBloc>();
@@ -60,7 +60,7 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
 
       final scan = value.trim().toLowerCase();
 
-      _controllerToDo.clear();
+      controllerToDo.clear();
       debugPrint('🔎 Scan barcode (batch picking): $scan');
 
       final listOfBatchs = bloc.entregaProductosDB;
@@ -97,8 +97,8 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
         processBatch(batchs);
         return;
       } else {
-        _audioService.playErrorSound();
-        _vibrationService.vibrate();
+        audioService.playErrorSound();
+        vibrationService.vibrate();
         Future.microtask(() => focusNodeBuscar.requestFocus());
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Entrega de productos no encontrada')),
@@ -347,7 +347,7 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
 
                     //*buscar por scan
                     BarcodeScannerField(
-                      controller: _controllerToDo,
+                      controller: controllerToDo,
                       focusNode: focusNodeBuscar,
                       onBarcodeScanned: (value, context) {
                         return validateBarcode(value, context);

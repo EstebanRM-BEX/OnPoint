@@ -1,5 +1,5 @@
 import 'package:injectable/injectable.dart';
-import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
+import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
 import 'package:wms_app/src/presentation/views/transferencias/data/transferencias_repository.dart';
 import 'package:wms_app/src/presentation/views/transferencias/models/requets_transfer_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/data/wms_picking_repository.dart';
@@ -17,6 +17,10 @@ abstract class PickScanRemoteDataSource {
 
 @LazySingleton(as: PickScanRemoteDataSource)
 class PickScanRemoteDataSourceImpl implements PickScanRemoteDataSource {
+  final GetUrlImagenProducto getUrlImagenProducto;
+
+  PickScanRemoteDataSourceImpl(this.getUrlImagenProducto);
+
   @override
   Future<List<Muelles>> getMuelles() async {
     final response = await WmsPickingRepository().getmuelles(false);
@@ -26,14 +30,12 @@ class PickScanRemoteDataSourceImpl implements PickScanRemoteDataSource {
 
   @override
   Future<String> getProductImageUrl(int productId) async {
-    final response =
-        await InventarioRepository().viewUrlImageProduct(productId, true);
-    if (response.result?.code == 200 &&
-        response.result?.result?.url != null &&
-        response.result!.result!.url!.isNotEmpty) {
-      return response.result!.result!.url!;
-    }
-    throw Exception('Imagen no disponible');
+    final result = await getUrlImagenProducto(
+        GetUrlImagenProductoParams(productId: productId));
+    return result.fold(
+      (failure) => throw Exception('Imagen no disponible'),
+      (url) => url,
+    );
   }
 
   @override

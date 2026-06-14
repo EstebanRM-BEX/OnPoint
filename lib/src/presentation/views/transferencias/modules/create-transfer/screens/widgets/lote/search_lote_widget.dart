@@ -10,7 +10,7 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
-import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
 
@@ -361,13 +361,13 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                                                         vertical: 2),
                                                 decoration: BoxDecoration(
                                                   // Si faltan menos de 15 días: Fondo Naranja suave, sino Azul suave
-                                                  color: daysLeft! < 15
+                                                  color: daysLeft < 15
                                                       ? Colors.orange[50]
                                                       : Colors.blue[50],
                                                   borderRadius:
                                                       BorderRadius.circular(4),
                                                   border: Border.all(
-                                                      color: daysLeft! < 15
+                                                      color: daysLeft < 15
                                                           ? Colors
                                                               .orange.shade300
                                                           : Colors
@@ -381,7 +381,7 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                                                         Icons
                                                             .av_timer, // Icono de cronómetro
                                                         // Si faltan menos de 15 días: Naranja, sino Azul
-                                                        color: daysLeft! < 15
+                                                        color: daysLeft < 15
                                                             ? Colors.orange[800]
                                                             : Colors.blue[700],
                                                         size: 16),
@@ -391,7 +391,7 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                                                           ? "Vence hoy"
                                                           : "Vence en $daysLeft días",
                                                       style: TextStyle(
-                                                        color: daysLeft! < 15
+                                                        color: daysLeft < 15
                                                             ? Colors.orange[900]
                                                             : Colors.blue[900],
                                                         fontSize: 12,

@@ -37,6 +37,11 @@ class BatchPackingRepository {
                 batchItem.manejaTemperatura,
             //temperatura
             BatchPackingTable.columnTemperatura: batchItem.temperatura,
+            BatchPackingTable.columnPropietario: batchItem.propietario,
+            BatchPackingTable.columnManejoPropietario:
+                batchItem.manejoPropietario is bool
+                    ? (batchItem.manejoPropietario == true ? 1 : 0)
+                    : batchItem.manejoPropietario,
           };
 
           // Elimina si ya existe el registro con ese ID

@@ -35,20 +35,20 @@ class SendTransferResponse {
 class Result {
     int? code;
     String? msg;
-    dynamic? transferenciaId;
+    dynamic transferenciaId;
     String? nombreTransferencia;
-    dynamic? lineaId;
-    dynamic? cantidadEnviada;
-    dynamic? idProducto;
+    dynamic lineaId;
+    dynamic cantidadEnviada;
+    dynamic idProducto;
     String? nombreProducto;
     String? ubicacionOrigen;
     String? ubicacionDestino;
     String? fechaTransaccion;
     String? observacion;
-    dynamic? timeLine;
-    dynamic? userOperatorId;
+    dynamic timeLine;
+    dynamic userOperatorId;
     String? userOperatorName;
-    dynamic? idLote;
+    dynamic idLote;
 
     Result({
         this.code,

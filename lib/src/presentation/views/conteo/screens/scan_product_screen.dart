@@ -4,7 +4,6 @@ import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
@@ -19,7 +18,7 @@ import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.d
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/location/location_dropdown_widget.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/others/dialog_validate_product_send_widget.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/product/product_dropdown_widget.dart';
-import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
@@ -65,6 +64,13 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Foco inicial una sola vez. Antes esto vivía en didChangeDependencies,
+    // que se dispara con cada cambio de MediaQuery (incluida la apertura y
+    // cierre del teclado) y robaba el foco a campos TextInputType.none,
+    // cerrando el teclado en bucle.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _handleFocusAccordingToState();
+    });
   }
 
   @override
@@ -84,11 +90,6 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
     }
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _handleFocusAccordingToState();
-  }
 
   void _setOnlyFocus(FocusNode nodeToFocus) {
     for (final node in [
@@ -370,11 +371,11 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                           // * validamos en todo cambio de estado de cantidad separada
 
                           if (state is SendProductConteoSuccess) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              duration: const Duration(milliseconds: 1000),
-                              content: Text(state.response.result?.msg ?? ""),
-                              backgroundColor: Colors.green[200],
-                            ));
+                            // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            //   duration: const Duration(milliseconds: 1000),
+                            //   content: Text(state.response.result?.msg ?? ""),
+                            //   backgroundColor: Colors.green[200],
+                            // ));
                             //limpiamos los valores pa volver a iniciar con otro producto
                             cantidadController.clear();
                             context.read<ConteoBloc>().add(ResetValuesEvent(

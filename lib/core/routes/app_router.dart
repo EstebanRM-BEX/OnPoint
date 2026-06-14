@@ -22,6 +22,8 @@ import 'package:wms_app/src/presentation/views/conteo/screens/widgets/new_produc
 import 'package:wms_app/src/presentation/views/devoluciones/screens/index.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/locations_dest_screen.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/terceros_screen.dart';
+import 'package:wms_app/src/presentation/views/devoluciones/screens/propietario_screen.dart';
+import 'package:wms_app/src/presentation/views/devoluciones/screens/almacenes_screen.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/models/info_rapida_model.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/screens/create-transfer/create_mass_trasnfer_screen.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/screens/create-transfer/widgets/locationDest/location_search_widget.dart';
@@ -32,10 +34,11 @@ import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20inf
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/screens/product_info_screen.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/transfer/screens/transfer_info_screen.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/transfer/widget/locations_dest_widget.dart';
-import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
-import 'package:wms_app/src/presentation/views/inventario/screens/widgets/location/location_search_widget.dart';
-import 'package:wms_app/src/presentation/views/inventario/screens/widgets/new_lote_widget.dart';
-import 'package:wms_app/src/presentation/views/inventario/screens/widgets/product/product_search_widget.dart';
+import 'package:wms_app/features/inventario/domain/entities/producto_inventario.dart';
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart' show Product;
+import 'package:wms_app/features/inventario/presentation/widgets/location_search_widget.dart';
+import 'package:wms_app/features/inventario/presentation/widgets/new_lote_widget.dart';
+import 'package:wms_app/features/inventario/presentation/widgets/product_search_widget.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_batch_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/batchs/index_list.dart';
@@ -192,6 +195,8 @@ class AppRoutes {
   //todo devoluciones
   static const String devolucionesCreate = 'devoluciones-create';
   static const String terceros = 'terceros';
+  static const String propietarioDevoluciones = 'propietario-devoluciones';
+  static const String almacenesDevoluciones = 'almacenes-devoluciones';
   static const String ubicacionesDevoluciones = 'ubicaciones-devoluciones';
 
   //todo info rapida
@@ -438,7 +443,7 @@ class AppRoutes {
 
       newLoteInventario: (context) {
         final args = _args(context);
-        final currentProduct = _arg<Product>(args, 0);
+        final currentProduct = _arg<ProductoInventario>(args, 0);
         return NewLoteInventarioScreen(currentProduct: currentProduct);
       },
 
@@ -625,6 +630,8 @@ class AppRoutes {
       //todo devoluciones
       devolucionesCreate: (_) => DevolucionesScreen(),
       terceros: (_) => const Terceroscreen(),
+      propietarioDevoluciones: (_) => const PropietarioScreen(),
+      almacenesDevoluciones: (_) => const AlmacenesDevolucionesScreen(),
       ubicacionesDevoluciones: (_) => LocationDestDevolucionesScreen(),
     };
   }

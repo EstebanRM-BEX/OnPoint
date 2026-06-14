@@ -35,13 +35,13 @@ class ResultUpdateProduct {
     final int? productId;
     final String? nombre;
     final String? referencia;
-    final dynamic? precio;
-    final dynamic? peso;
-    final dynamic? volumen;
+    final dynamic precio;
+    final dynamic peso;
+    final dynamic volumen;
     final String? codigoBarras;
-    final dynamic? standardPrice;
-    final dynamic? cantidadDisponible;
-    final dynamic? previsto;
+    final dynamic standardPrice;
+    final dynamic cantidadDisponible;
+    final dynamic previsto;
     final String? categoria;
     final List<String>? updatedFields;
 

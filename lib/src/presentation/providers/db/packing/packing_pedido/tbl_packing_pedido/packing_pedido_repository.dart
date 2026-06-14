@@ -164,6 +164,10 @@ class PedidoPackRepository {
         PedidoPackTable.columnIsSelected: pedido.isSelected == true ? 1 : 0,
         PedidoPackTable.columnIsStarted: pedido.isStarted == true ? 1 : 0,
         PedidoPackTable.columnCreateBackorder: pedido.createBackorder ?? '',
+        PedidoPackTable.columnPropietario: pedido.propietario,
+        PedidoPackTable.columnManejoPropietario: pedido.manejoPropietario is bool
+            ? (pedido.manejoPropietario == true ? 1 : 0)
+            : pedido.manejoPropietario,
       };
 
       // Eliminar cualquier entrada donde el valor sea null, si la columna no acepta nulls.

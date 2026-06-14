@@ -26,9 +26,11 @@ class BatchPackingConsolidateTable {
   //maneja_temperatura
   static const String columnManejaTemperatura = 'maneja_temperatura';
   //temperatura
-  
   static const String columnTemperatura = 'temperatura';
   static const String columnOrigins = 'origins';
+  //propietario
+  static const String columnPropietario = 'propietario';
+  static const String columnManejoPropietario = 'manejo_propietario';
 
   // cantidad_total_pedidos
   // cantidad_total_productos
@@ -64,7 +66,9 @@ class BatchPackingConsolidateTable {
         $columnCantidadTotalPedidos INTEGER,
         $columnCantidadTotalProductos REAL,
         $columnUnidadesProductos REAL,
-        $columnTimeSeparateEnd VARCHAR(255)
+        $columnTimeSeparateEnd VARCHAR(255),
+        $columnPropietario TEXT,
+        $columnManejoPropietario INTEGER DEFAULT 0
       )
     ''';
   }

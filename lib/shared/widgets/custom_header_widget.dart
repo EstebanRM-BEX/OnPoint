@@ -11,6 +11,9 @@ class CustomHeaderWidget extends StatelessWidget {
   final VoidCallback onRefresh;
   final VoidCallback? onCalendar;
   final bool showCalendar;
+  final VoidCallback? onFilterPropietario;
+  final bool hasActivePropietarioFilter;
+  final Widget? popupMenu;
 
   const CustomHeaderWidget({
     super.key,
@@ -19,6 +22,9 @@ class CustomHeaderWidget extends StatelessWidget {
     required this.onRefresh,
     this.onCalendar,
     this.showCalendar = true,
+    this.onFilterPropietario,
+    this.hasActivePropietarioFilter = false,
+    this.popupMenu,
   });
 
   @override
@@ -78,6 +84,17 @@ class CustomHeaderWidget extends StatelessWidget {
                           ),
                         ),
                         const Spacer(),
+                        if (popupMenu != null) popupMenu!,
+                        if (onFilterPropietario != null)
+                          IconButton(
+                            icon: Icon(
+                              Icons.person_search_outlined,
+                              color: hasActivePropietarioFilter
+                                  ? Colors.amber
+                                  : white,
+                            ),
+                            onPressed: onFilterPropietario,
+                          ),
                         if (showCalendar)
                           IconButton(
                             icon:

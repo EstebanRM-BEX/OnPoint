@@ -255,3 +255,8 @@ class WsProductSyncedState extends InfoRapidaState {
   final int productId;
   WsProductSyncedState(this.productId);
 }
+
+class MassTransferPropietarioMismatchState extends InfoRapidaState {
+  final String message;
+  MassTransferPropietarioMismatchState(this.message);
+}

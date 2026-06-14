@@ -4,7 +4,6 @@ import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -131,7 +130,7 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
         );
 
     //validamos que la ubicacion de destino no sea la misma que la de origen
-    if (matchedUbicacion.id == bloc.infoRapidaResult?.result?.id) {
+    if (matchedUbicacion.id == bloc.infoRapidaResult.result?.id) {
       _vibrationService.vibrate();
       _audioService.playErrorSound();
       debugPrint(
@@ -653,6 +652,30 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
                                                     color: product.lote ==
                                                                 null ||
                                                             product.lote == ""
+                                                        ? red
+                                                        : black),
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                "Propietario: ",
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: primaryColorApp,
+                                                ),
+                                              ),
+                                              Text(
+                                                product.propietario == null ||
+                                                        product.propietario == ""
+                                                    ? "Sin propietario"
+                                                    : "${product.propietario}",
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: product.propietario ==
+                                                                null ||
+                                                            product.propietario == ""
                                                         ? red
                                                         : black),
                                               ),

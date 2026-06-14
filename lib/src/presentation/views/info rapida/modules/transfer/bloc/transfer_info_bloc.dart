@@ -153,6 +153,7 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
             fechaTransaccion: fechaFormateada,
             observacion: event.request.observacion,
             dateStart: dateStart,
+            idPropietario: event.request.idPropietario ?? 0,
             dateEnd:
                 //'yyyy-MM-dd HH:mm:ss'
                 formatoFecha(DateTime.now()),

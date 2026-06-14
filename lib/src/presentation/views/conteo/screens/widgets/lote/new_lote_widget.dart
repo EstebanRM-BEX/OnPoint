@@ -18,6 +18,8 @@ import 'package:wms_app/src/presentation/views/recepcion/modules/individual/scre
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_advertencia_lote_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
+import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import 'package:intl/intl.dart'; // Importamos el paquete intl
 
@@ -242,67 +244,21 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                     //todo barra buscar
                     Visibility(
                       visible: viewList,
-                      child: SizedBox(
-                        height: 55,
-                        width: size.width * 1,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 10, right: 10),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: size.width * 0.9,
-                                child: Card(
-                                  color: Colors.white,
-                                  elevation: 3,
-                                  child: TextFormField(
-                                    focusNode: _searchFocusNode,
-                                    style: TextStyle(
-                                      color: black,
-                                      fontSize: 14,
-                                    ),
-                                    textAlignVertical: TextAlignVertical.center,
-                                    controller: context
-                                        .read<ConteoBloc>()
-                                        .searchControllerLote,
-                                    showCursor: true,
-                                    decoration: InputDecoration(
-                                      prefixIcon: const Icon(
-                                        Icons.search,
-                                        color: grey,
-                                        size: 20,
-                                      ),
-                                      suffixIcon: IconButton(
-                                        onPressed: () {
-                                          context
-                                              .read<ConteoBloc>()
-                                              .searchControllerLote
-                                              .clear();
-                                          _filterLotes('');
-                                          FocusScope.of(context).unfocus();
-                                        },
-                                        icon: const Icon(
-                                          Icons.close,
-                                          color: grey,
-                                          size: 20,
-                                        ),
-                                      ),
-                                      disabledBorder:
-                                          const OutlineInputBorder(),
-                                      hintText: "Buscar lote",
-                                      hintStyle: const TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 14,
-                                      ),
-                                      border: InputBorder.none,
-                                    ),
-                                    onChanged: _filterLotes,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      child: DynamicSearchBar(
+                        controller: context
+                            .read<ConteoBloc>()
+                            .searchControllerLote,
+                        focusNode: _searchFocusNode,
+                        hintText: "Buscar lote",
+                        persistentKeyboard: true,
+                        onKeyboardEvent: (event) {
+                          FirebaseCrashlytics.instance
+                              .log('[NewLoteOrden] $event');
+                        },
+                        onSearchChanged: _filterLotes,
+                        onSearchCleared: () {
+                          _filterLotes('');
+                        },
                       ),
                     ),
 
@@ -885,7 +841,7 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                       ),
                     ),
                     Visibility(
-                      visible: !context.read<ConteoBloc>().isKeyboardVisible,
+                      visible: MediaQuery.viewInsetsOf(context).bottom == 0,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [

@@ -275,7 +275,6 @@ class _LocationDestScreenState extends State<LocationDestRecepScreen> {
 
 class _AppBarInfo extends StatelessWidget {
   const _AppBarInfo({
-    super.key,
     required this.size,
     required this.ordenCompra,
     required this.currentProduct,

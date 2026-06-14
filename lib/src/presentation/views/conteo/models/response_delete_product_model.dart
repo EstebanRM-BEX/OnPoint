@@ -59,9 +59,9 @@ class ResponseDeleteProductResult {
 class ResultElement {
     final int? lineId;
     final int? productId;
-    final dynamic? quantityCounted;
+    final dynamic quantityCounted;
     final String? newObservation;
-    final dynamic? userOperatorId;
+    final dynamic userOperatorId;
     final String? dateTransaction;
 
     ResultElement({

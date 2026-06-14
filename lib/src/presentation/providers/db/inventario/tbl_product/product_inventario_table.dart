@@ -21,7 +21,10 @@ class ProductInventarioTable {
   static const String columnQuantity = 'quantity';
   static const String columnUseExpirationDate = 'use_expiration_date';
   static const String columnCategory = 'category';
-  
+  static const String columnManejoPropietario = 'manejo_propietario';
+  static const String columnPropietario = 'propietario';
+  static const String columnIdPropietario = 'id_propietario';
+
   // ✅ NUEVO: Columna para estrategia de sincronización
   static const String columnIsSynced = 'is_synced';
 
@@ -47,6 +50,9 @@ class ProductInventarioTable {
         $columnUseExpirationDate INTEGER,
         $columnCategory TEXT,
         $columnVolumeUomName TEXT,
+        $columnPropietario TEXT,
+        $columnIdPropietario INTEGER,
+        $columnManejoPropietario INTEGER DEFAULT 0,
         $columnIsSynced INTEGER DEFAULT 0
       );
 

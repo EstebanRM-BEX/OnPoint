@@ -314,7 +314,6 @@ class _ListLocationsScreenState extends State<ListLocationsScreen> {
 
 class _AppBarInfo extends StatelessWidget {
   const _AppBarInfo({
-    super.key,
     required this.size,
   });
 

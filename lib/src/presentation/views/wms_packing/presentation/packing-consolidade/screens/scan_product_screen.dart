@@ -643,7 +643,7 @@ class _ScanProductPackingConsolidateScreenState
                                   ),
                                   expiryWidget: ExpirationBadgeWidget(
                                     expirationDate:
-                                        packingBloc.currentProduct?.expireDate,
+                                        packingBloc.currentProduct.expireDate,
                                   ),
                                   listOfBarcodes: packingBloc.listOfBarcodes,
                                   onBarcodesDialogTap: () {

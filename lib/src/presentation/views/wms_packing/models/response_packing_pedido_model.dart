@@ -78,8 +78,8 @@ class PedidoPackingResult {
   final int? id;
   final String? name;
   final String? observacion;
-  final dynamic? fechaCreacion;
-  final dynamic? configPacking;
+  final dynamic fechaCreacion;
+  final dynamic configPacking;
   final int? locationId;
   final String? locationName;
   final String? locationNameCluster;
@@ -117,8 +117,10 @@ class PedidoPackingResult {
   final int? numeroPaquetes;
   final dynamic isTerminate;
   final dynamic isSelected;
-  final dynamic? isStarted;
+  final dynamic isStarted;
   final String? createBackorder;
+    String? propietario;
+  dynamic manejoPropietario;
 
   final List<ProductoPedido>? listaProductos;
   final List<Paquete>? listaPaquetes;
@@ -171,6 +173,8 @@ class PedidoPackingResult {
     this.isSelected,
     this.isStarted,
     this.createBackorder,
+        this.propietario,
+    this.manejoPropietario,
   });
 
   factory PedidoPackingResult.fromJson(String str) =>
@@ -235,6 +239,8 @@ class PedidoPackingResult {
             : List<Paquete>.from(
                 json["lista_paquetes"]!.map((x) => Paquete.fromMap(x))),
         createBackorder: json["create_backorder"],
+        propietario: json['propietario'] is bool ? null : json['propietario'] as String?,
+        manejoPropietario: json["manejo_propietario"]
       );
 
   Map<String, dynamic> toMap() => {
@@ -289,5 +295,7 @@ class PedidoPackingResult {
             ? []
             : List<dynamic>.from(listaPaquetes!.map((x) => x.toMap())),
         "create_backorder": createBackorder,
+                "propietario": propietario,
+        "manejo_propietario" : manejoPropietario,
       };
 }

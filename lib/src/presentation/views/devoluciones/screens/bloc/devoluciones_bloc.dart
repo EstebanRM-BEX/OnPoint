@@ -3,6 +3,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
+import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/interable_extension_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
@@ -13,7 +14,7 @@ import 'package:wms_app/src/presentation/views/devoluciones/models/product_devol
 import 'package:wms_app/src/presentation/views/devoluciones/models/request_send_devolucion_model.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/models/response_devolucion_model.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/models/response_terceros_model.dart';
-import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
 
 part 'devoluciones_event.dart';
@@ -36,7 +37,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   String selectedAlmacen = '';
 
   bool locationIsOk = false;
+  bool almacenIsOk = false;
   bool contactoIsOk = false;
+  bool propietarioIsOk = false;
   bool productIsOk = false;
 
   //configuracion del usuario //permisos
@@ -50,7 +53,13 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
   Product currentProduct = Product();
   Terceros currentTercero = Terceros();
+  Terceros currentPropietario = Terceros();
+  AllowedWarehouse currentWarehouse = const AllowedWarehouse();
   ResultUbicaciones currentLocation = ResultUbicaciones();
+
+  List<AllowedWarehouse> allowedWarehouses = [];
+  List<AllowedWarehouse> allowedWarehousesFilters = [];
+  TextEditingController searchControllerAlmacen = TextEditingController();
 
   LotesProduct lotesProductCurrent = LotesProduct();
 
@@ -155,6 +164,10 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     on<LoadTercerosCountEvent>(_onLoadTercerosCountEvent);
     //metodo para cargar los terceros desde la bd
     on<LoadTercerosFromDBEvent>(_onLoadTercerosFromDBEvent);
+    on<SelectPropietarioEvent>(_onSelectPropietarioEvent);
+    on<ResetPropietarioEvent>(_onResetPropietarioEvent);
+    on<LoadAllowedWarehousesEvent>(_onLoadAllowedWarehousesEvent);
+    on<SelectWarehouseEvent>(_onSelectWarehouseEvent);
   }
 
   void _onLoadTercerosFromDBEvent(
@@ -258,8 +271,8 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       // 4. Cargamos Productos desde BD
       add(GetProductsList());
 
-      //madnamos a llamar todos los terceros que estan guardados en la bd
       add(LoadTercerosFromDBEvent());
+      add(LoadAllowedWarehousesEvent());
 
       // 5. LÓGICA SMART PARA TERCEROS:
       // Intentamos cargar de BD primero. Solo si está vacío, vamos a la nube.
@@ -323,12 +336,13 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       String fechaFormateada = formatoFecha(fechaTransaccion);
 
       final RequestSendDevolucionModel request = RequestSendDevolucionModel(
-        idAlmacen: currentLocation.idWarehouse ?? 0,
+        idAlmacen: currentWarehouse.id ?? 0,
         idProveedor: currentTercero.id ?? 0,
         idUbicacionDestino: currentLocation.id ?? 0,
         idResponsable: userid,
         fechaInicio: fechaFormateada,
         fechaFin: fechaFormateada,
+        idPropietario: currentPropietario.id ??0,
         listItems: productosDevolucion.map((product) {
           return ProductRequest(
             idProducto: product.productId ?? 0,
@@ -345,6 +359,8 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
           );
         }).toList(),
       );
+
+      print("request: ${request.toJson()}");
 
       //enviamos la devolucion
       final response = await devolucionesRepository.sendDevolucion(
@@ -411,9 +427,13 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       isKeyboardVisible = false;
       productIsOk = false;
       locationIsOk = false;
+      almacenIsOk = false;
       contactoIsOk = false;
+      propietarioIsOk = false;
       currentProduct = Product();
       currentTercero = Terceros();
+      currentPropietario = Terceros();
+      currentWarehouse = const AllowedWarehouse();
       currentLocation = ResultUbicaciones();
       lotesProductCurrent = LotesProduct();
       quantitySelected = 0;
@@ -649,12 +669,69 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     try {
       currentTercero = event.tercero;
       contactoIsOk = true;
-      productIsOk = true;
       scannedValue4 = '';
       debugPrint('Tercero seleccionado: ${currentTercero.toMap()}');
       emit(SelectTerceroState(currentTercero));
     } catch (e, s) {
       debugPrint("❌ Error en _onSelectTerceroEvent: $e, $s");
+    }
+  }
+
+  void _onSelectPropietarioEvent(
+      SelectPropietarioEvent event, Emitter<DevolucionesState> emit) {
+    try {
+      currentPropietario = event.propietario;
+      propietarioIsOk = true;
+      productIsOk = true;
+      debugPrint('Propietario seleccionado: ${currentPropietario.toMap()}');
+      emit(SelectPropietarioState(currentPropietario));
+    } catch (e, s) {
+      debugPrint("❌ Error en _onSelectPropietarioEvent: $e, $s");
+    }
+  }
+
+  void _onLoadAllowedWarehousesEvent(
+      LoadAllowedWarehousesEvent event, Emitter<DevolucionesState> emit) async {
+    try {
+      emit(LoadAllowedWarehousesLoading());
+      final response = await db.warehouseRepository.getAllowedWarehouse();
+      allowedWarehouses = response;
+      allowedWarehousesFilters = List.from(response);
+      if (response.isNotEmpty) {
+        emit(LoadAllowedWarehousesSuccess(response));
+      } else {
+        emit(LoadAllowedWarehousesFailure('No se encontraron almacenes'));
+      }
+    } catch (e, s) {
+      debugPrint("❌ Error en _onLoadAllowedWarehousesEvent: $e, $s");
+      emit(LoadAllowedWarehousesFailure('Error al cargar los almacenes'));
+    }
+  }
+
+  void _onSelectWarehouseEvent(
+      SelectWarehouseEvent event, Emitter<DevolucionesState> emit) {
+    try {
+      currentWarehouse = event.warehouse;
+      almacenIsOk = true;
+      searchControllerAlmacen.clear();
+      allowedWarehousesFilters = List.from(allowedWarehouses);
+      debugPrint('Almacén seleccionado: ${currentWarehouse.id} - ${currentWarehouse.name}');
+      emit(SelectWarehouseState(currentWarehouse));
+    } catch (e, s) {
+      debugPrint("❌ Error en _onSelectWarehouseEvent: $e, $s");
+    }
+  }
+
+  void _onResetPropietarioEvent(
+      ResetPropietarioEvent event, Emitter<DevolucionesState> emit) {
+    try {
+      currentPropietario = Terceros();
+      propietarioIsOk = false;
+      productIsOk = false;
+      isDialogVisible = false;
+      emit(ResetPropietarioState());
+    } catch (e, s) {
+      debugPrint("❌ Error en _onResetPropietarioEvent: $e, $s");
     }
   }
 

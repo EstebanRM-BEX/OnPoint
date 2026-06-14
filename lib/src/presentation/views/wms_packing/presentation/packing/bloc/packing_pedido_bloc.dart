@@ -12,7 +12,8 @@ import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
-import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
+import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_image_send_novedad_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_temp_ia_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/data/wms_packing_repository.dart';
@@ -116,7 +117,6 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   //*repositorio
   WmsPackingRepository wmsPackingRepository = WmsPackingRepository();
   //repositorio de inventario
-  InventarioRepository inventarioRepository = InventarioRepository();
   PackingPedidoBloc() : super(PackingPedidoInitial()) {
     on<PackingPedidoEvent>((event, emit) {});
     //evento para mostrar el teclado
@@ -220,7 +220,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
     on<SortPackingListEvent>((event, emit) {
       List<PedidoPackingResult> sortedList =
-          List.from(this.listOfPedidosFilters);
+          List.from(listOfPedidosFilters);
       sortedList.sort((a, b) {
         switch (event.field) {
           case 'priority':
@@ -277,7 +277,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         }
       });
 
-      this.listOfPedidosFilters = sortedList;
+      listOfPedidosFilters = sortedList;
       emit(PackingPackSuccess(sortedList));
     });
 
@@ -458,20 +458,13 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
-      final response =
-          await inventarioRepository.viewUrlImageProduct(event.idProduct, true);
+      final result = await getIt<GetUrlImagenProducto>()(
+          GetUrlImagenProductoParams(productId: event.idProduct));
 
-      if (response.result?.code == 200) {
-        if (response.result?.result == null ||
-            response.result?.result?.url == null ||
-            response.result?.result?.url == '') {
-          emit(ViewProductImageFailure('Imagen no disponible'));
-          return;
-        }
-        emit(ViewProductImageSuccess(response.result?.result?.url ?? ''));
-      } else {
-        emit(ViewProductImageFailure('Imagen no disponible'));
-      }
+      result.fold(
+        (failure) => emit(ViewProductImageFailure('Imagen no disponible')),
+        (url) => emit(ViewProductImageSuccess(url)),
+      );
     } catch (e, s) {
       debugPrint('Error en el ViewProductImageEvent: $e, $s');
       emit(ViewProductImageFailure(e.toString()));
@@ -1638,7 +1631,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       if (response != null) {
         currentPedidoPack = response;
 
-        if (responseProducts != null && responseProducts is List) {
+        if (responseProducts != null) {
           debugPrint(
               'responseProducts lista de productos: ${responseProducts.length}');
           listOfProductos.clear();
@@ -1676,7 +1669,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           final responseBarcodes = await db.barcodesPackagesRepository
               .getBarcodesByBatchIdAndType(event.idPedido, 'packing-pack');
 
-          if (responseBarcodes != null && responseBarcodes is List) {
+          if (responseBarcodes != null) {
             listAllOfBarcodes = responseBarcodes;
           }
 
@@ -2035,8 +2028,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         if (apiPedido.id == null || apiPedido.listaProductos == null) continue;
 
         for (final apiProduct in apiPedido.listaProductos!) {
-          if (apiProduct.idMove == null || apiProduct.quantity == null)
+          if (apiProduct.idMove == null || apiProduct.quantity == null) {
             continue;
+          }
 
           final totalSeparated = await db.productosPedidosRepository
               .getTotalSeparatedQtyByMove(

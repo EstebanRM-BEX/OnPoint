@@ -31,6 +31,7 @@ class EntradaBatchTable {
   static const String columnDateFinish = 'end_time_reception';
   static const String columnDateStart = 'start_time_reception';
   //propietario
+  static const String columnManejoPropietario = 'manejo_propietario';
   static const String columnPropietario = 'propietario';
 
   static String createTable() {
@@ -62,9 +63,10 @@ class EntradaBatchTable {
     $columnWarehouseName TEXT DEFAULT '',
     $columnIsSelected INTEGER DEFAULT 0,
     $columnIsStarted INTEGER DEFAULT 0,
-    $columnIsfinis INTEGER DEFAULT 0,
     $columnDateFinish TEXT,
+    $columnIsfinis INTEGER DEFAULT 0,
     $columnPropietario TEXT,
+    $columnManejoPropietario INTEGER DEFAULT 0,
     $columnDateStart TEXT
     )
     ''';

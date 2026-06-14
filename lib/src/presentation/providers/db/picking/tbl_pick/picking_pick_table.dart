@@ -55,7 +55,9 @@ class PickingPickTable {
 
   //create_backorder
   static const String createBackorder = 'create_backorder';
-
+  //propietario
+  static const String columnPropietario = 'propietario';
+    static const String columnManejoPropietario = 'manejo_propietario';
 
   // Método para crear la tabla
   static String createTable() {
@@ -104,6 +106,8 @@ class PickingPickTable {
         $productoFinalNombre TEXT,
         $productoFinalReferencia TEXT,
         $createBackorder TEXT,
+        $columnPropietario TEXT,
+        $columnManejoPropietario INTEGER DEFAULT 0,
         $columnOrderPicking TEXT
 
       )

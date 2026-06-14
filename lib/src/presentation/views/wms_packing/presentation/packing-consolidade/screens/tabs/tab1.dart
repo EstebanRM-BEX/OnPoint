@@ -182,7 +182,7 @@ class Tab1Screen extends StatelessWidget {
                                               context
                                                       .read<
                                                           PackingConsolidateBloc>()
-                                                      ?.listOfProductosProgress
+                                                      .listOfProductosProgress
                                                       .length
                                                       .toString() ??
                                                   "",

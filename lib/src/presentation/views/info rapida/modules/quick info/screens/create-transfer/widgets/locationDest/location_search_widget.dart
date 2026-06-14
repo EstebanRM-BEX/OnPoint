@@ -210,7 +210,7 @@ class _SearchLocationScreenState
 
                               //validamos que la ubicacion destino no sea la misma que la ubicacion de origen
                               if (selectedLocation.id ==
-                                  bloc.infoRapidaResult?.result?.id) {
+                                  bloc.infoRapidaResult.result?.id) {
                                 Get.snackbar(
                                   'Error',
                                   'La ubicacion de destino no puede ser la misma que la de origen',

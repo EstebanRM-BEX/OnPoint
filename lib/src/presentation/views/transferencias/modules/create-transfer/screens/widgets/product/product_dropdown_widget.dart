@@ -166,6 +166,39 @@ class ProductDropdownCreateTransferWidget extends StatelessWidget {
             ],
           ),
         ),
+        Visibility(
+          visible: context.read<CreateTransferBloc>().currentProduct?.manejoPropietario == 1,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Row(
+              children: [
+                Text('Propietario: ', style: TextStyle(fontSize: 14, color: black)),
+                Text(
+                  context
+                              .read<CreateTransferBloc>()
+                              .currentProduct
+                              ?.propietario
+                              ?.isNotEmpty ??
+                          true
+                      ? context.read<CreateTransferBloc>().currentProduct?.propietario ??
+                          "Sin propietario"
+                      : "Sin propietario",
+                  textAlign: TextAlign.start,
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: context
+                                  .read<CreateTransferBloc>()
+                                  .currentProduct
+                                  ?.propietario
+                                  ?.isNotEmpty ??
+                              false
+                          ? primaryColorApp
+                          : red),
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }

@@ -7,8 +7,6 @@ import 'package:wms_app/injection_container.dart';
 
 import 'package:flutter/material.dart';
 
-import 'dart:convert';
-import 'dart:developer' as developer;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';

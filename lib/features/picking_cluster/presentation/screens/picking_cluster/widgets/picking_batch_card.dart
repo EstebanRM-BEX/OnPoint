@@ -8,40 +8,33 @@ class PickingBatchCard extends StatelessWidget {
   final PickingBatch batch;
   final VoidCallback onTap;
 
-  const PickingBatchCard({
-    super.key,
-    required this.batch,
-    required this.onTap,
-  });
+  const PickingBatchCard({super.key, required this.batch, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 10,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Card(
           elevation: 3,
           child: ListTile(
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              color: primaryColorApp,
-            ),
+            trailing: Icon(Icons.arrow_forward_ios, color: primaryColorApp),
             leading: Container(
               padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
 
-                  //sombras
-                  boxShadow: const [
-                    BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 5,
-                        offset: Offset(0, 2))
-                  ]),
+                //sombras
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 5,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
               child: Image.asset(
                 "assets/icons/producto.png",
                 color: primaryColorApp,
@@ -54,27 +47,55 @@ class PickingBatchCard extends StatelessWidget {
               children: [
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(batch.zonaEntrega ?? '',
-                      style: const TextStyle(fontSize: 12, color: black)),
+                  child: Text(
+                    batch.zonaEntrega ?? '',
+                    style: const TextStyle(fontSize: 12, color: black),
+                  ),
+                ),
+                Visibility(
+                  visible:
+                      batch.manejoPropietario == 1 ||
+                      batch.manejoPropietario == true,
+                  child: Row(
+                    children: [
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "Propietario:",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: primaryColorApp,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        batch.propietario ?? "Sin propietario",
+                        style: TextStyle(fontSize: 12, color: black),
+                      ),
+                    ],
+                  ),
                 ),
                 Row(
                   children: [
                     const Align(
                       alignment: Alignment.centerLeft,
-                      child: Text("Tipo de operación:",
-                          style: TextStyle(fontSize: 12, color: grey)),
+                      child: Text(
+                        "Tipo de operación:",
+                        style: TextStyle(fontSize: 12, color: grey),
+                      ),
                     ),
                     const Spacer(),
                     batch.startTimePick != ""
                         ? GestureDetector(
                             onTap: () {
                               showDialog(
-                                  context: context,
-                                  builder: (context) => DialogInfo(
-                                        title: 'Tiempo de inicio',
-                                        body:
-                                            'Este batch fue iniciado a las ${batch.startTimePick}',
-                                      ));
+                                context: context,
+                                builder: (context) => DialogInfo(
+                                  title: 'Tiempo de inicio',
+                                  body:
+                                      'Este batch fue iniciado a las ${batch.startTimePick}',
+                                ),
+                              );
                             },
                             child: Icon(
                               Icons.timer_sharp,
@@ -106,8 +127,9 @@ class PickingBatchCard extends StatelessWidget {
                       const SizedBox(width: 5),
                       Text(
                         batch.scheduledDate != null
-                            ? DateFormat('dd/MM/yyyy')
-                                .format(DateTime.parse(batch.scheduledDate!))
+                            ? DateFormat(
+                                'dd/MM/yyyy',
+                              ).format(DateTime.parse(batch.scheduledDate!))
                             : "Sin fecha",
                         style: const TextStyle(fontSize: 12),
                       ),
@@ -118,11 +140,7 @@ class PickingBatchCard extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.add,
-                        color: primaryColorApp,
-                        size: 15,
-                      ),
+                      Icon(Icons.add, color: primaryColorApp, size: 15),
                       const SizedBox(width: 5),
                       const Text(
                         "Cantidad de lineas: ",
@@ -133,8 +151,10 @@ class PickingBatchCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           batch.countItems.toString(),
-                          style:
-                              TextStyle(fontSize: 12, color: primaryColorApp),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: primaryColorApp,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -146,11 +166,7 @@ class PickingBatchCard extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.add,
-                        color: primaryColorApp,
-                        size: 15,
-                      ),
+                      Icon(Icons.add, color: primaryColorApp, size: 15),
                       const SizedBox(width: 5),
                       const Text(
                         "Cantidad unidades: ",
@@ -161,8 +177,10 @@ class PickingBatchCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           batch.totalQuantityItems.toString(),
-                          style:
-                              TextStyle(fontSize: 12, color: primaryColorApp),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: primaryColorApp,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -174,11 +192,7 @@ class PickingBatchCard extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.person,
-                        color: primaryColorApp,
-                        size: 15,
-                      ),
+                      Icon(Icons.person, color: primaryColorApp, size: 15),
                       const SizedBox(width: 5),
                       Expanded(
                         child: Text(

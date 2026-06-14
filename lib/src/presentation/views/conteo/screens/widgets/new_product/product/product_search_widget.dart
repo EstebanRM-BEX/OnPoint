@@ -228,7 +228,7 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
         const SizedBox(width: 5),
         Expanded(
           child: Text(
-            isEmpty ? emptyText : value!,
+            isEmpty ? emptyText : value,
             style: TextStyle(
               fontSize: 12,
               color: isEmpty ? red : (highlight ? primaryColorApp : black),
@@ -288,7 +288,7 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
 }
 
 class _AppBarInfo extends StatelessWidget {
-  const _AppBarInfo({super.key, required this.size});
+  const _AppBarInfo({required this.size});
   final Size size;
 
   @override

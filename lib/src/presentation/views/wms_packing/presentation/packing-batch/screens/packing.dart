@@ -551,7 +551,7 @@ class _PackingScreenState extends State<PackingScreen> {
                                     ),
                                     expiryWidget: ExpirationBadgeWidget(
                                       expirationDate: packingBloc
-                                          .currentProduct?.expireDate,
+                                          .currentProduct.expireDate,
                                     ),
                                     listOfBarcodes: packingBloc.listOfBarcodes,
                                     onBarcodesDialogTap: () {

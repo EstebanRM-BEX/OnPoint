@@ -3,14 +3,10 @@ import 'package:wms_app/features/auth/domain/entities/session.dart';
 /// Modelo de datos que extiende la entidad Session
 class SessionModel extends Session {
   const SessionModel({
-    required bool isLoggedIn,
-    DateTime? lastActiveTime,
-    int? userId,
-  }) : super(
-          isLoggedIn: isLoggedIn,
-          lastActiveTime: lastActiveTime,
-          userId: userId,
-        );
+    required super.isLoggedIn,
+    super.lastActiveTime,
+    super.userId,
+  });
 
   /// Crea un SessionModel desde datos de preferencias
   factory SessionModel.fromPrefs({

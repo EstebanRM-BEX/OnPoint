@@ -662,7 +662,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                               ),
                               expiryWidget: ExpirationBadgeWidget(
                                 expirationDate:
-                                    bloc.currentProduct?.fechaVencimiento,
+                                    bloc.currentProduct.fechaVencimiento,
                               ),
                               listOfBarcodes: bloc.listOfBarcodes,
                               onBarcodesDialogTap: () {

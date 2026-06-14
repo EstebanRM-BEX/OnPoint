@@ -1,12 +1,11 @@
 // ignore_for_file: unrelated_type_equality_checks
 
 import 'package:flutter/foundation.dart'; // Import para compute
-import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/product_inventario_table.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/models/update_product_request.dart';
-import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 import 'dart:core';
 
 // Funciones Top-Level
@@ -14,9 +13,9 @@ List<Map<String, dynamic>> _processProductsRawArgs(
     List<Product> productosList) {
   final List<Map<String, dynamic>> queries = [];
   // LÍMITE ABSOLUTO DE VARIABLES SQLITE: 999.
-  // Tenemos 19 columnas, entonces 999 / 19 = 52.5.
-  // Usaremos 52 como el tamaño óptimo de iteración masiva de caché.
-  const int itemsPerQuery = 52;
+  // Tenemos 22 columnas, entonces 999 / 22 = 45.4.
+  // Usaremos 45 como el tamaño óptimo de iteración masiva de caché.
+  const int itemsPerQuery = 45;
 
   for (var i = 0; i < productosList.length; i += itemsPerQuery) {
     final end = (i + itemsPerQuery < productosList.length)
@@ -37,12 +36,16 @@ List<Map<String, dynamic>> _processProductsRawArgs(
     queryBuffer.write(
         '${ProductInventarioTable.columnUom}, ${ProductInventarioTable.columnLocationId}, ${ProductInventarioTable.columnLocationName}, ');
     queryBuffer.write(
-        '${ProductInventarioTable.columnQuantity}, ${ProductInventarioTable.columnUseExpirationDate}, ${ProductInventarioTable.columnCategory}, ${ProductInventarioTable.columnIsSynced}) VALUES ');
+        '${ProductInventarioTable.columnQuantity}, ${ProductInventarioTable.columnUseExpirationDate}, ${ProductInventarioTable.columnCategory}, ');
+    queryBuffer.write(
+        '${ProductInventarioTable.columnPropietario}, ${ProductInventarioTable.columnIdPropietario}, ${ProductInventarioTable.columnManejoPropietario}, ');
+    queryBuffer.write(
+        '${ProductInventarioTable.columnIsSynced}) VALUES ');
 
     final List<dynamic> args = [];
     for (var j = 0; j < chunk.length; j++) {
       if (j > 0) queryBuffer.write(',');
-      queryBuffer.write('(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'); // 19 params
+      queryBuffer.write('(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'); // 22 params
 
       final producto = chunk[j];
       args.addAll([
@@ -64,6 +67,9 @@ List<Map<String, dynamic>> _processProductsRawArgs(
         producto.quantity == false ? 0.0 : producto.quantity ?? 0.0,
         producto.useExpirationDate == true ? 1 : 0,
         producto.category == false ? "" : producto.category ?? '',
+        producto.propietario ?? '',
+        producto.idPropietario ?? 0,
+        producto.manejoPropietario == true ? 1 : 0,
         1
       ]);
     }

@@ -150,14 +150,14 @@ class PickProductsRepository {
   //* Obtener todos los productos de la tabla
   Future<List<ProductsBatch>> getProducts() async {
     final db = await DataBaseSqlite().getDatabaseInstance();
-    final List<Map<String, dynamic>> maps = await db!.query(_table);
+    final List<Map<String, dynamic>> maps = await db.query(_table);
     return maps.map((map) => ProductsBatch.fromMap(map)).toList();
   }
 
   //* Obtener productos filtrados por id de batch
   Future<List<ProductsBatch>> getBatchProducts(int batchId) async {
     final db = await DataBaseSqlite().getDatabaseInstance();
-    final List<Map<String, dynamic>> maps = await db!.query(
+    final List<Map<String, dynamic>> maps = await db.query(
       _table,
       where: 'batch_id = ?',
       whereArgs: [batchId],
@@ -305,7 +305,7 @@ class PickProductsRepository {
   Future<int?> startStopwatch(
       int batchId, int productId, int moveId, String date) async {
     final db = await DataBaseSqlite().getDatabaseInstance();
-    final resUpdate = await db!.rawUpdate(
+    final resUpdate = await db.rawUpdate(
         "UPDATE $_table SET time_separate_start = '$date' WHERE batch_id = $batchId AND id_product = $productId AND id_move = $moveId");
     debugPrint("tiemppo de inicio :$date  --> $resUpdate");
     return resUpdate;
@@ -314,7 +314,7 @@ class PickProductsRepository {
   Future<int?> totalStopwatchProduct(
       int batchId, int productId, int moveId, double time) async {
     final db = await DataBaseSqlite().getDatabaseInstance();
-    final resUpdate = await db!.rawUpdate(
+    final resUpdate = await db.rawUpdate(
         "UPDATE $_table SET time_separate = $time WHERE batch_id = $batchId AND id_product = $productId AND id_move = $moveId");
     debugPrint("totalStopwatchProduct: $resUpdate");
     return resUpdate;
@@ -323,7 +323,7 @@ class PickProductsRepository {
   Future<int?> endStopwatchProduct(
       int batchId, String date, int productId, int moveId) async {
     final db = await DataBaseSqlite().getDatabaseInstance();
-    final resUpdate = await db!.rawUpdate(
+    final resUpdate = await db.rawUpdate(
         "UPDATE $_table SET time_separate_end = '$date' WHERE batch_id = $batchId AND id_product = $productId AND id_move = $moveId");
     debugPrint("endStopwatchProduct: $resUpdate");
     return resUpdate;
@@ -333,11 +333,11 @@ class PickProductsRepository {
       int batchId, int productId, int moveId, String field) async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
-      final res = await db!.rawQuery('''
+      final res = await db.rawQuery('''
       SELECT $field FROM  $_table  WHERE batch_id = $batchId AND  id_product = $productId AND id_move = $moveId LIMIT 1
     ''');
       if (res.isNotEmpty) {
-        String responsefield = res[0]['${field}'].toString();
+        String responsefield = res[0][field].toString();
         return responsefield;
       }
       return "";

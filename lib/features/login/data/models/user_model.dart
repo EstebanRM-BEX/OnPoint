@@ -9,17 +9,13 @@ class UserModel extends User {
   final String? webBaseUrl;
 
   const UserModel({
-    required int uid,
-    required String name,
-    required String username,
+    required super.uid,
+    required super.name,
+    required super.username,
     this.db,
     this.serverVersion,
     this.webBaseUrl,
-  }) : super(
-          uid: uid,
-          name: name,
-          username: username,
-        );
+  });
 
   /// Create UserModel from JSON response
   factory UserModel.fromJson(Map<String, dynamic> json) {

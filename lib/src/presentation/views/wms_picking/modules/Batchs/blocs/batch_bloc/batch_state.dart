@@ -129,6 +129,21 @@ class PickingOkError extends BatchState {}
 
 class PickingOkLoading extends BatchState {}
 
+//*estado cuando se bloquea el cierre del batch por productos pendientes de envio
+class PickingOkBlockedPendingSend extends BatchState {
+  final int pendientes;
+  PickingOkBlockedPendingSend(this.pendientes);
+}
+
+//*estados de la sincronizacion de productos guardados sin conexion
+class SyncPendingProductsLoading extends BatchState {}
+
+class SyncPendingProductsSuccess extends BatchState {
+  final int enviados;
+  final int total;
+  SyncPendingProductsSuccess(this.enviados, this.total);
+}
+
 class ConfigurationLoading extends BatchState {}
 
 class ConfigurationPickingLoaded extends BatchState {

@@ -66,13 +66,15 @@ class ResultElementModel {
   final dynamic idMuellePadre;
   final String? barcodeMuelle;
   final int? countItems;
-  final dynamic? totalQuantityItems;
+  final dynamic totalQuantityItems;
   final int? completedItems;
-  final dynamic? progressPercentage;
+  final dynamic progressPercentage;
   final dynamic startTimePick;
   final dynamic endTimePick;
   final int? productSeparateQty;
   final String? zonaEntrega;
+  final String? propietario;
+  final dynamic manejoPropietario;
   // final List<OriginElement>? origin;
   final List<PedidoValidateModel>? pedidosValidate;
   final List<ListItem>? listItems;
@@ -102,6 +104,8 @@ class ResultElementModel {
     this.endTimePick,
     this.productSeparateQty,
     this.zonaEntrega,
+    this.propietario,
+    this.manejoPropietario,
     // this.origin,
     this.pedidosValidate,
     this.listItems,
@@ -135,6 +139,8 @@ class ResultElementModel {
             : DateTime.parse(json["end_time_pick"]),
         productSeparateQty: json["product_separate_qty"],
         zonaEntrega: json["zona_entrega"],
+        propietario: json["propietario"] is bool ? null : json["propietario"] as String?,
+        manejoPropietario: json["manejo_propietario"],
         //         json["origin"]!.map((x) => OriginElement.fromJson(x))),
         pedidosValidate: json["pedidos_validate"] == null
             ? []
@@ -172,6 +178,8 @@ class ResultElementModel {
       endTimePick: endTimePick,
       productSeparateQty: productSeparateQty,
       zonaEntrega: zonaEntrega,
+      propietario: propietario,
+      manejoPropietario: manejoPropietario,
       pedidosValidate: pedidosValidate?.map((i) => i.toEntity()).toList() ?? [],
       listItems: listItems?.map((i) => i.toEntity()).toList() ?? [],
     );
@@ -202,6 +210,8 @@ class ResultElementModel {
         "end_time_pick": endTimePick,
         "product_separate_qty": productSeparateQty,
         "zona_entrega": zonaEntrega,
+        "propietario": propietario,
+        "manejo_propietario": manejoPropietario,
         //     : List<dynamic>.from(origin!.map((x) => x.toJson())),
         "pedidos_validate": pedidosValidate == null
             ? []
@@ -230,21 +240,21 @@ class ListItem {
   final String? barcodeLocation;
   final List<dynamic>? locationDestId;
   final String? barcodeLocationDest;
-  final dynamic? quantity;
+  final dynamic quantity;
   final String? barcode;
   final List<OtherBarcode>? otherBarcodes;
   final List<OtherBarcode>? productPacking;
-  final dynamic? weight;
+  final dynamic weight;
   final String? unidades;
   final String? zonaEntrega;
   final int? idZonaEntrega;
-  final dynamic? quantitySeparate;
+  final dynamic quantitySeparate;
   final String? observation;
   final String? timeSeparate;
   final String? fechaTransaccion;
   final int? isSeparate;
   final bool? manejaTemperatura;
-  final dynamic? temperatura;
+  final dynamic temperatura;
   final String? image;
   final String? imageNovedad;
   final String? packageConsecutivo;
@@ -439,7 +449,7 @@ class ListItem {
 
 class OtherBarcode {
   final String? barcode;
-  final dynamic? cantidad;
+  final dynamic cantidad;
   final int? idProduct;
   final int? idMove;
   final int? batchId;

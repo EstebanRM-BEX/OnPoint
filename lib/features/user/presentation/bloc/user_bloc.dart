@@ -37,6 +37,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
   int locationsCount = 0;
   int noveltiesCount = 0;
+  int warehousesCount = 0;
 
   UserConfiguration? userConfiguration;
   DeviceInfo? deviceInfo;
@@ -55,6 +56,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     on<LoadInfoDeviceEventUser>(_onLoadInfoDeviceUser);
     on<LoadUserLocationsCountEvent>(_onLoadUserLocationsCount);
     on<LoadUserNoveltiesCountEvent>(_onLoadUserNoveltiesCount);
+    on<LoadWarehousesCountEvent>(_onLoadWarehousesCount);
   }
 
   Future<void> _onLoadInfoDeviceUser(
@@ -301,6 +303,16 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       emit(LoadNoveltiesCountSuccess(noveltiesCount));
     } catch (e) {
       debugPrint("❌ Error en _onLoadUserNoveltiesCount: $e");
+    }
+  }
+
+  Future<void> _onLoadWarehousesCount(
+      LoadWarehousesCountEvent event, Emitter<UserState> emit) async {
+    try {
+      warehousesCount = await DataBaseSqlite().getWarehousesCount();
+      emit(LoadWarehousesCountSuccess(warehousesCount));
+    } catch (e) {
+      debugPrint("❌ Error en _onLoadWarehousesCount: $e");
     }
   }
 }

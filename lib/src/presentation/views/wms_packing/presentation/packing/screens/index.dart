@@ -11,7 +11,6 @@ import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
-import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
@@ -37,6 +36,60 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
   final FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
   bool _isProcessing = false;
+  String? _selectedPropietario;
+
+  List<String> _getPropietarios(List<PedidoPackingResult> list) {
+    return list
+        .where((b) => b.propietario != null && b.propietario!.isNotEmpty)
+        .map((b) => b.propietario!)
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
+  void _showPropietarioFilter(
+      BuildContext context, List<PedidoPackingResult> list) {
+    final propietarios = _getPropietarios(list);
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Filtrar por propietario',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const Divider(),
+              RadioListTile<String?>(
+                title: const Text('Todos'),
+                value: null,
+                groupValue: _selectedPropietario,
+                onChanged: (v) {
+                  setModalState(() {});
+                  setState(() => _selectedPropietario = v);
+                  Navigator.pop(ctx);
+                },
+              ),
+              ...propietarios.map((p) => RadioListTile<String?>(
+                    title: Text(p),
+                    value: p,
+                    groupValue: _selectedPropietario,
+                    onChanged: (v) {
+                      setModalState(() {});
+                      setState(() => _selectedPropietario = v);
+                      Navigator.pop(ctx);
+                    },
+                  )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   void validateBarcode(String value, BuildContext context) {
     final bloc = context.read<PackingPedidoBloc>();
@@ -185,6 +238,9 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
 
       List<PedidoPackingResult> listToShow = bloc.listOfPedidosFilters
           .where((batch) => batch.isTerminate == 0)
+          .where((b) =>
+              _selectedPropietario == null ||
+              b.propietario == _selectedPropietario)
           .toList();
 
       return Scaffold(
@@ -279,7 +335,22 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                                       ),
                                     ),
                                     const Spacer(),
-                                    // ✅ MENU DE FILTROS (Reemplaza al Spacer)
+                                    if (_selectedPropietario != null)
+                                      IconButton(
+                                        icon: const Icon(
+                                            Icons.person_search_outlined,
+                                            color: Colors.amber),
+                                        onPressed: () => _showPropietarioFilter(
+                                          context,
+                                          context
+                                              .read<PackingPedidoBloc>()
+                                              .listOfPedidosFilters
+                                              .where((b) =>
+                                                  b.isTerminate == 0)
+                                              .toList(),
+                                        ),
+                                      ),
+                                    // ✅ MENU DE FILTROS
                                     PopupMenuButton<String>(
                                       icon: Icon(
                                         Icons.more_vert,
@@ -318,6 +389,15 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                                           case 'backorder_asc':
                                             bloc.add(SortPackingListEvent(
                                                 'backorder', true));
+                                            break;
+                                          case 'filter_propietario':
+                                            _showPropietarioFilter(
+                                              context,
+                                              bloc.listOfPedidosFilters
+                                                  .where((b) =>
+                                                      b.isTerminate == 0)
+                                                  .toList(),
+                                            );
                                             break;
                                         }
                                       },
@@ -564,6 +644,59 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                                               ]
                                             ]),
                                           ),
+                                          const PopupMenuDivider(),
+
+                                          // --- SECCIÓN PROPIETARIO ---
+                                          const PopupMenuItem<String>(
+                                            enabled: false,
+                                            height: 30,
+                                            child: Text('PROPIETARIO',
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                    color: Colors.grey)),
+                                          ),
+                                          PopupMenuItem<String>(
+                                            value: 'filter_propietario',
+                                            height: 40,
+                                            child: Row(children: [
+                                              Icon(
+                                                  Icons.person_search_outlined,
+                                                  size: 16,
+                                                  color: _selectedPropietario !=
+                                                          null
+                                                      ? Colors.amber
+                                                      : Colors.grey),
+                                              SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  _selectedPropietario != null
+                                                      ? _selectedPropietario!
+                                                      : 'Filtrar propietario',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: _selectedPropietario !=
+                                                            null
+                                                        ? Colors.amber
+                                                        : Colors.black,
+                                                    fontWeight:
+                                                        _selectedPropietario !=
+                                                                null
+                                                            ? FontWeight.bold
+                                                            : FontWeight.normal,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              if (_selectedPropietario !=
+                                                  null) ...[
+                                                Icon(Icons.check,
+                                                    size: 15,
+                                                    color: Colors.amber),
+                                              ],
+                                            ]),
+                                          ),
                                         ];
                                       },
                                     ),
@@ -611,11 +744,7 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
 
                   //*listado de batchs
                   Expanded(
-                    child: context
-                            .read<PackingPedidoBloc>()
-                            .listOfPedidosFilters
-                            .where((batch) => batch.isTerminate == 0)
-                            .isNotEmpty
+                    child: listToShow.isNotEmpty
                         ? ListView.builder(
                             padding: const EdgeInsets.only(top: 20, bottom: 20),
                             physics: const AlwaysScrollableScrollPhysics(),
@@ -677,6 +806,28 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                                                     fontSize: 12,
                                                     color: black)),
                                           ),
+                                            Visibility(
+                                                    visible: batch.manejoPropietario == 1 ||  batch.manejoPropietario == true,
+                                                    child: Row(
+                                                      children: [
+                                                        const Align(
+                                                          alignment: Alignment
+                                                              .centerLeft,
+                                                          child: Text(
+                                                              "Propietario:",
+                                                              style: TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: primaryColorApp)),
+                                                        ),
+                                                        Text(
+                                                            batch.propietario ?? "Sin propietario",
+                                                            style: TextStyle(
+                                                                fontSize: 12,
+                                                                color: black)),
+                                                       
+                                                      ],
+                                                    ),
+                                                  ),
                                           Row(
                                             children: [
                                               Align(

@@ -220,15 +220,7 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
                                   const Text('Intente buscar otra recepcion',
                                       style:
                                           TextStyle(fontSize: 12, color: grey)),
-                                  Visibility(
-                                    visible: context
-                                        .read<UserBloc>()
-                                        .fabricante
-                                        .contains("Zebra"),
-                                    child: Container(
-                                      height: 60,
-                                    ),
-                                  ),
+                                 
                                 ],
                               ),
                             )
@@ -317,6 +309,9 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
                                                 ),
                                               ),
                                               Visibility(
+                                                visible: ordenCompra[index]
+                                                                    .manejoPropietario ==
+                                                                1,
                                                 child: Align(
                                                   alignment:
                                                       Alignment.centerLeft,

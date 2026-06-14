@@ -6,7 +6,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/response_ocupar_muelle_model.dart';

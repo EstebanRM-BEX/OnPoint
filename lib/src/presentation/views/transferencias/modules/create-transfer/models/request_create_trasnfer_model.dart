@@ -44,12 +44,14 @@ class ListItem {
   final double cantidadEnviada;
   final int idLote;
   final int timeLine;
+  final int idPropietario;
 
   ListItem({
     required this.idProducto,
     required this.cantidadEnviada,
     required this.idLote,
     required this.timeLine,
+    required this.idPropietario,
   });
 
   // Método para convertir el objeto a un Map (estructura JSON)
@@ -58,5 +60,6 @@ class ListItem {
         "cantidad_enviada": cantidadEnviada,
         "id_lote": idLote,
         "time_line": timeLine,
+        "id_propietario" : idPropietario,
       };
 }

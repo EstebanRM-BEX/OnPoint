@@ -217,7 +217,7 @@ class ProductListTile extends StatelessWidget {
 }
 
 class _AppBarInfo extends StatelessWidget {
-  const _AppBarInfo({super.key, required this.size});
+  const _AppBarInfo({required this.size});
 
   final Size size;
 
@@ -267,7 +267,7 @@ class _AppBarInfo extends StatelessWidget {
 }
 
 class _NoProductsMessage extends StatelessWidget {
-  const _NoProductsMessage({super.key});
+  const _NoProductsMessage();
 
   @override
   Widget build(BuildContext context) {

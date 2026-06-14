@@ -73,7 +73,7 @@ class DetailPickDoneScreen extends StatelessWidget {
                                 context
                                         .read<PickingPickBloc>()
                                         .historyPickId
-                                        ?.result
+                                        .result
                                         ?.result
                                         ?.id ??
                                     0,

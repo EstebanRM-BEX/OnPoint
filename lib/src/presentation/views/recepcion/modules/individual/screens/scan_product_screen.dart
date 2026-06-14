@@ -788,7 +788,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
                                               ExpirationBadgeWidget(
                                                 expirationDate: recepcionBloc
                                                     .lotesProductCurrent
-                                                    ?.expirationDate,
+                                                    .expirationDate,
                                               ),
                                             ],
                                           )

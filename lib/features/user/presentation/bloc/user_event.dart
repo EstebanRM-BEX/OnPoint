@@ -29,3 +29,5 @@ class LoadUserNoveltiesEvent extends UserEvent {}
 class LoadUserLocationsCountEvent extends UserEvent {}
 
 class LoadUserNoveltiesCountEvent extends UserEvent {}
+
+class LoadWarehousesCountEvent extends UserEvent {}

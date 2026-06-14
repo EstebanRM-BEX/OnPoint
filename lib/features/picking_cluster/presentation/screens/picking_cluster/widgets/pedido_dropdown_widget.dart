@@ -31,8 +31,8 @@ class PedidoDropdownWidget extends StatefulWidget {
 class _PedidoDropdownWidgetState extends State<PedidoDropdownWidget> {
   @override
   Widget build(BuildContext context) {
-    final IAudioService _audioService = getIt<IAudioService>();
-    final IVibrationService _vibrationService = getIt<IVibrationService>();
+    final IAudioService audioService = getIt<IAudioService>();
+    final IVibrationService vibrationService = getIt<IVibrationService>();
     final ClusterPickingBloc bloc = context.read<ClusterPickingBloc>();
 
     final screenWidth = MediaQuery.of(context).size.width;
@@ -124,8 +124,8 @@ class _PedidoDropdownWidgetState extends State<PedidoDropdownWidget> {
                           'cluster'));
                       bloc.oldPedido = expected;
                     } else {
-                      _vibrationService.vibrate();
-                      _audioService.playErrorSound();
+                      vibrationService.vibrate();
+                      audioService.playErrorSound();
                       bloc.add(
                           ValidateFieldsEvent(field: "pedido", isOk: false));
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(

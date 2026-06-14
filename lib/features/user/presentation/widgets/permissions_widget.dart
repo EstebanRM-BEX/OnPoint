@@ -28,7 +28,7 @@ class PermissionsWidget extends StatelessWidget {
                     style: TextStyle(fontSize: 14, color: black)),
                 const Spacer(),
                 Checkbox(
-                    value: profile?.accessProductionModule ?? false,
+                    value: profile.accessProductionModule ?? false,
                     onChanged: null),
                 IconButton(
                     onPressed: () {
@@ -51,7 +51,7 @@ class PermissionsWidget extends StatelessWidget {
                     style: TextStyle(fontSize: 14, color: black)),
                 const Spacer(),
                 Checkbox(
-                    value: profile?.allowPriorExpirationDate ?? false,
+                    value: profile.allowPriorExpirationDate ?? false,
                     onChanged: null),
                 IconButton(
                     onPressed: () {
@@ -75,7 +75,7 @@ class PermissionsWidget extends StatelessWidget {
                     style: TextStyle(fontSize: 14, color: black)),
                 const Spacer(),
                 Checkbox(
-                    value: profile?.manageExpirationDateWithoutLot ?? false,
+                    value: profile.manageExpirationDateWithoutLot ?? false,
                     onChanged: null),
                 IconButton(
                     onPressed: () {
@@ -99,7 +99,7 @@ class PermissionsWidget extends StatelessWidget {
                     style: TextStyle(fontSize: 14, color: black)),
                 const Spacer(),
                 Checkbox(
-                    value: profile?.allowMoveExcessProduction ?? false,
+                    value: profile.allowMoveExcessProduction ?? false,
                     onChanged: null),
                 IconButton(
                     onPressed: () {
@@ -119,7 +119,7 @@ class PermissionsWidget extends StatelessWidget {
 
             //todo: permisos de picking
             Visibility(
-              visible: profile?.rol == 'picking' || profile?.rol == 'admin',
+              visible: profile.rol == 'picking' || profile.rol == 'admin',
               child: Card(
                 elevation: 3,
                 color: white,
@@ -139,7 +139,7 @@ class PermissionsWidget extends StatelessWidget {
                           const Spacer(),
                           Checkbox(
                               value:
-                                  profile?.showButtonValidateClusterPicking ??
+                                  profile.showButtonValidateClusterPicking ??
                                       false,
                               onChanged: null),
                           IconButton(
@@ -164,7 +164,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.hideValidatePicking ?? false,
+                              value: profile.hideValidatePicking ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -188,7 +188,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.locationPickingManual ?? false,
+                              value: profile.locationPickingManual ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -211,7 +211,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.manualProductSelection ?? false,
+                              value: profile.manualProductSelection ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -234,7 +234,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.manualQuantity ?? false,
+                              value: profile.manualQuantity ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -257,7 +257,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.manualSpringSelection ?? false,
+                              value: profile.manualSpringSelection ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -280,7 +280,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.showDetallesPicking ?? false,
+                              value: profile.showDetallesPicking ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -304,7 +304,7 @@ class PermissionsWidget extends StatelessWidget {
                           const Spacer(),
                           Checkbox(
                               value:
-                                  profile?.showNextLocationsInDetails ?? false,
+                                  profile.showNextLocationsInDetails ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -330,7 +330,7 @@ class PermissionsWidget extends StatelessWidget {
 
             //todo permisos de packing
             Visibility(
-              visible: profile?.rol == 'packing' || profile?.rol == 'admin',
+              visible: profile.rol == 'packing' || profile.rol == 'admin',
               child: Card(
                 color: white,
                 elevation: 3,
@@ -351,7 +351,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.hideValidatePacking ?? false,
+                              value: profile.hideValidatePacking ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -375,7 +375,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.locationPackManual ?? false,
+                              value: profile.locationPackManual ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -399,7 +399,7 @@ class PermissionsWidget extends StatelessWidget {
                           const Spacer(),
                           Checkbox(
                               value:
-                                  profile?.manualProductSelectionPack ?? false,
+                                  profile.manualProductSelectionPack ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -422,7 +422,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.manualQuantityPack ?? false,
+                              value: profile.manualQuantityPack ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -446,7 +446,7 @@ class PermissionsWidget extends StatelessWidget {
                           const Spacer(),
                           Checkbox(
                               value:
-                                  profile?.manualSpringSelectionPack ?? false,
+                                  profile.manualSpringSelectionPack ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -469,7 +469,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.scanProduct ?? false,
+                              value: profile.scanProduct ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -495,7 +495,7 @@ class PermissionsWidget extends StatelessWidget {
 
             //todo permisos de recepcion
             Visibility(
-              visible: profile?.rol == 'reception' || profile?.rol == 'admin',
+              visible: profile.rol == 'reception' || profile.rol == 'admin',
               child: Card(
                 elevation: 3,
                 color: white,
@@ -515,7 +515,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.allowMoveExcess ?? false,
+                              value: profile.allowMoveExcess ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -538,7 +538,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.showOwnerField ?? false,
+                              value: profile.showOwnerField ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -561,7 +561,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.hideExpectedQty ?? false,
+                              value: profile.hideExpectedQty ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -584,7 +584,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.manualProductReading ?? false,
+                              value: profile.manualProductReading ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -608,7 +608,7 @@ class PermissionsWidget extends StatelessWidget {
                           const Spacer(),
                           Checkbox(
                               value:
-                                  profile?.scanDestinationLocationReception ??
+                                  profile.scanDestinationLocationReception ??
                                       false,
                               onChanged: null),
                           IconButton(
@@ -632,7 +632,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.hideValidateReception ?? false,
+                              value: profile.hideValidateReception ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -657,7 +657,7 @@ class PermissionsWidget extends StatelessWidget {
             ),
             //todo permisos para transferencias
             Visibility(
-              visible: profile?.rol == 'transfer' || profile?.rol == 'admin',
+              visible: profile.rol == 'transfer' || profile.rol == 'admin',
               child: Card(
                 elevation: 3,
                 color: white,
@@ -677,7 +677,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.manualSourceLocationTransfer ??
+                              value: profile.manualSourceLocationTransfer ??
                                   false,
                               onChanged: null),
                           IconButton(
@@ -701,7 +701,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.manualProductSelectionTransfer ??
+                              value: profile.manualProductSelectionTransfer ??
                                   false,
                               onChanged: null),
                           IconButton(
@@ -726,7 +726,7 @@ class PermissionsWidget extends StatelessWidget {
                           const Spacer(),
                           Checkbox(
                               value:
-                                  profile?.manualDestLocationTransfer ?? false,
+                                  profile.manualDestLocationTransfer ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -749,7 +749,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.manualQuantityTransfer ?? false,
+                              value: profile.manualQuantityTransfer ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -773,7 +773,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.hideValidateTransfer ?? false,
+                              value: profile.hideValidateTransfer ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -798,7 +798,7 @@ class PermissionsWidget extends StatelessWidget {
             ),
             //todo permisos de inventario
             Visibility(
-              visible: profile?.rol == 'inventory' || profile?.rol == 'admin',
+              visible: profile.rol == 'inventory' || profile.rol == 'admin',
               child: Card(
                 elevation: 3,
                 color: white,
@@ -818,7 +818,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.countQuantityInventory ?? false,
+                              value: profile.countQuantityInventory ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -841,7 +841,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.manualProductSelectionInventory ??
+                              value: profile.manualProductSelectionInventory ??
                                   false,
                               onChanged: null),
                           IconButton(
@@ -865,7 +865,7 @@ class PermissionsWidget extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: black)),
                           const Spacer(),
                           Checkbox(
-                              value: profile?.locationManualInventory ?? false,
+                              value: profile.locationManualInventory ?? false,
                               onChanged: null),
                           IconButton(
                               onPressed: () {
@@ -908,7 +908,7 @@ class PermissionsWidget extends StatelessWidget {
                             style: TextStyle(fontSize: 14, color: black)),
                         const Spacer(),
                         Checkbox(
-                            value: profile?.updateItemInventory ?? false,
+                            value: profile.updateItemInventory ?? false,
                             onChanged: null),
                         IconButton(
                             onPressed: () {
@@ -931,7 +931,7 @@ class PermissionsWidget extends StatelessWidget {
                             style: TextStyle(fontSize: 14, color: black)),
                         const Spacer(),
                         Checkbox(
-                            value: profile?.updateItemInventory ?? false,
+                            value: profile.updateItemInventory ?? false,
                             onChanged: null),
                         IconButton(
                             onPressed: () {
@@ -972,7 +972,7 @@ class PermissionsWidget extends StatelessWidget {
                             style: TextStyle(fontSize: 14, color: black)),
                         const SizedBox(width: 10),
                         Text(
-                          profile?.returnsLocationDestOption == "predefined"
+                          profile.returnsLocationDestOption == "predefined"
                               ? "Predefinida"
                               : "Dinamica",
                           style:
@@ -1000,7 +1000,7 @@ class PermissionsWidget extends StatelessWidget {
                             style: TextStyle(fontSize: 14, color: black)),
                         const Spacer(),
                         Checkbox(
-                            value: profile?.allowMoveExcessProduction ?? false,
+                            value: profile.allowMoveExcessProduction ?? false,
                             onChanged: null),
                         IconButton(
                             onPressed: () {

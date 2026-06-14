@@ -25,7 +25,7 @@ class ProductDropdownWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final IAudioService audioService = getIt<IAudioService>();
-    final IVibrationService _vibrationService = getIt<IVibrationService>();
+    final IVibrationService vibrationService = getIt<IVibrationService>();
 
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -112,7 +112,7 @@ class ProductDropdownWidget extends StatelessWidget {
                             "cluster",
                           ));
                         } else {
-                          _vibrationService.vibrate();
+                          vibrationService.vibrate();
                           audioService.playErrorSound();
                           bloc.add(ValidateFieldsEvent(
                               field: "product", isOk: false));

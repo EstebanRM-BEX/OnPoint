@@ -60,13 +60,13 @@ class ResultElement {
     int? id;
     String? producto;
     dynamic cantidad;
-    dynamic? lote;
+    dynamic lote;
     int? ubicacionDestino;
     String? fechaTransaccion;
     String? dateTransaction;
     String? newObservation;
-    dynamic? time;
-    dynamic? userOperatorId;
+    dynamic time;
+    dynamic userOperatorId;
     bool? isDoneItem;
 
     ResultElement({

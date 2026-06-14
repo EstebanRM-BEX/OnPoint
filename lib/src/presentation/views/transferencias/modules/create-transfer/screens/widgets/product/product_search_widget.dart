@@ -18,6 +18,106 @@ class SearchProductCreateTransferScreen extends StatefulWidget {
 class _SearchProductScreenState
     extends State<SearchProductCreateTransferScreen> {
   String? selectedProductKey;
+  String? _selectedPropietario;
+
+  List<String> _getPropietarios(CreateTransferBloc bloc) {
+    return bloc.productos
+        .where((p) =>
+            p.manejoPropietario == 1 &&
+            p.propietario != null &&
+            p.propietario != false &&
+            p.propietario.toString().isNotEmpty)
+        .map((p) => p.propietario.toString())
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
+  void _showPropietarioFilter(BuildContext context, CreateTransferBloc bloc) {
+    final propietarios = _getPropietarios(bloc);
+
+    if (propietarios.isEmpty) {
+      Get.snackbar(
+        'Sin propietarios',
+        'No hay productos con propietario para filtrar',
+        backgroundColor: white,
+        colorText: primaryColorApp,
+        icon: const Icon(Icons.info_outline, color: primaryColorApp),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Icon(Icons.person_outline, color: primaryColorApp),
+                    SizedBox(width: 8),
+                    Text(
+                      'Filtrar por propietario',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: primaryColorApp,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              ListTile(
+                leading: Icon(
+                  _selectedPropietario == null
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: primaryColorApp,
+                ),
+                title: const Text('Todos los propietarios'),
+                onTap: () {
+                  setState(() => _selectedPropietario = null);
+                  Navigator.pop(context);
+                },
+              ),
+              ...propietarios.map((p) => ListTile(
+                    leading: Icon(
+                      _selectedPropietario == p
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      color: primaryColorApp,
+                    ),
+                    title: Text(p),
+                    onTap: () {
+                      setState(() => _selectedPropietario = p);
+                      Navigator.pop(context);
+                    },
+                  )),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +136,12 @@ class _SearchProductScreenState
                 color: white,
                 child: Column(
                   children: [
-                    _AppBarInfo(size: size),
+                    _AppBarInfo(
+                      size: size,
+                      hasActiveFilter: _selectedPropietario != null,
+                      onFilterTap: () =>
+                          _showPropietarioFilter(context, bloc),
+                    ),
                     _buildSearchBar(context, bloc, size),
                     Expanded(child: _buildProductList(context, bloc)),
                     const SizedBox(height: 20),
@@ -90,7 +195,14 @@ class _SearchProductScreenState
   }
 
   Widget _buildProductList(BuildContext context, CreateTransferBloc bloc) {
-    final productos = bloc.productosFilters;
+    var productos = bloc.productosFilters;
+
+    if (_selectedPropietario != null) {
+      productos = productos
+          .where((p) => p.propietario == _selectedPropietario)
+          .toList();
+    }
+
     final ubicacionId = bloc.currentUbication?.id;
 
     final enUbicacionActual =
@@ -104,7 +216,6 @@ class _SearchProductScreenState
 
     final List<Widget> items = [];
 
-    // 🟢 Primero: productos en ubicación actual
     for (final product in enUbicacionActual) {
       items.add(_buildProductCard(
         context,
@@ -115,7 +226,6 @@ class _SearchProductScreenState
       ));
     }
 
-    // 🔵 Luego: productos en locationId == 0
     for (final product in enUbicacionCero) {
       items.add(_buildProductCard(
         context,
@@ -126,7 +236,6 @@ class _SearchProductScreenState
       ));
     }
 
-    // ⚪ Por último: productos restantes
     for (final product in restantes) {
       items.add(_buildProductCard(
         context,
@@ -186,9 +295,14 @@ class _SearchProductScreenState
                     emptyText: 'Sin barcode'),
                 _buildInfoRow("Code:", product.code,
                     emptyText: 'Sin código de producto'),
+                Visibility(
+                  visible: product.manejoPropietario == 1,
+                  child: _buildInfoRow("Propietario:", product.propietario,
+                      emptyText: 'Sin propietario'),
+                ),
                 _buildInfoRow("UND:", product.uom, emptyText: 'Sin unidad'),
-                // _buildInfoRow("Ubicación:", product.locationName,
-                //     emptyText: 'Sin ubicación'),
+                _buildInfoRow("Ubicación:", product.locationName,
+                    emptyText: 'Sin ubicación'),
                 _buildInfoRow("Lote:", product.lotName, emptyText: 'Sin lote'),
               ],
             ),
@@ -207,7 +321,7 @@ class _SearchProductScreenState
         const SizedBox(width: 5),
         Expanded(
           child: Text(
-            isEmpty ? emptyText : value!,
+            isEmpty ? emptyText : value,
             style: TextStyle(
               fontSize: 12,
               color: isEmpty ? red : (highlight ? primaryColorApp : black),
@@ -266,8 +380,15 @@ class _SearchProductScreenState
 }
 
 class _AppBarInfo extends StatelessWidget {
-  const _AppBarInfo({super.key, required this.size});
+  const _AppBarInfo({
+    required this.size,
+    required this.onFilterTap,
+    required this.hasActiveFilter,
+  });
+
   final Size size;
+  final VoidCallback onFilterTap;
+  final bool hasActiveFilter;
 
   @override
   Widget build(BuildContext context) {
@@ -307,6 +428,29 @@ class _AppBarInfo extends StatelessWidget {
                         ),
                       ),
                       const Spacer(),
+                      Stack(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.person_search_outlined,
+                                color: white),
+                            tooltip: 'Filtrar por propietario',
+                            onPressed: onFilterTap,
+                          ),
+                          if (hasActiveFilter)
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: Colors.amber,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
                 ],

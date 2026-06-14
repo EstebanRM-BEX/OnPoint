@@ -73,7 +73,7 @@ class ResultElementPack {
   final int? cantidadProductosEnElPaquete;
   final bool? isSticker;
   final bool? isCertificate;
-  final dynamic? peso;
+  final dynamic peso;
   final List<ListItem>? listItem;
   final dynamic consecutivo;
   final String? packingBarcode;
@@ -132,13 +132,13 @@ class ResultElementPack {
 class ListItem {
   final int? idMove;
   final int? idProducto;
-  final dynamic? cantidadEnviada;
+  final dynamic cantidadEnviada;
   final int? idUbicacionOrigen;
   final int? idUbicacionDestino;
   final int? idLote;
   final int? idOperario;
   final DateTime? fechaTransaccion;
-  final dynamic? timeLine;
+  final dynamic timeLine;
   final String? observacion;
 
   ListItem({

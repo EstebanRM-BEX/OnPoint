@@ -3,18 +3,12 @@ import 'printer_report_model.dart';
 
 class PrinterModel extends Printer {
   const PrinterModel({
-    required int printerId,
-    required String printerName,
-    required String printerType,
-    required String hostmachine,
-    required List<PrinterReportModel> availableReports,
-  }) : super(
-          printerId: printerId,
-          printerName: printerName,
-          printerType: printerType,
-          hostmachine: hostmachine,
-          availableReports: availableReports,
-        );
+    required super.printerId,
+    required super.printerName,
+    required super.printerType,
+    required super.hostmachine,
+    required List<PrinterReportModel> super.availableReports,
+  });
 
   factory PrinterModel.fromJson(Map<String, dynamic> json) {
     return PrinterModel(

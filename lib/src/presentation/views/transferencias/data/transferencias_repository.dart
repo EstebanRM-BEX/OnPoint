@@ -847,7 +847,7 @@ class TransferenciasRepository {
     try {
       var response = await ApiRequestService().postPacking(
         endpoint:
-            'transferencias/create_trasferencia', // Cambiado para que sea el endpoint correspondiente
+            'transferencias/create_trasferencia', 
         body: {
           "params": {
             "date_start": request.dateStart,

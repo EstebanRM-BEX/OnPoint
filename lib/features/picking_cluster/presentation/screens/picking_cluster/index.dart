@@ -3,6 +3,7 @@
 import 'package:get/get.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/features/picking_cluster/data/datasources/picking_cluster_local_data_source.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/picking_batch.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +29,81 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
   FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
   bool _isProcessing = false;
+  String? _selectedPropietario;
+  String _currentSortKey = '';
+
+  List<String> _getPropietarios(List<PickingBatch> list) {
+    return list
+        .where((b) => b.propietario != null && b.propietario!.isNotEmpty)
+        .map((b) => b.propietario!)
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
+  void _showPropietarioFilter(List<PickingBatch> list) {
+    final propietarios = _getPropietarios(list);
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Filtrar por propietario',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const Divider(),
+              RadioListTile<String?>(
+                title: const Text('Todos'),
+                value: null,
+                groupValue: _selectedPropietario,
+                onChanged: (v) {
+                  setModalState(() {});
+                  setState(() => _selectedPropietario = v);
+                  Navigator.pop(ctx);
+                },
+              ),
+              ...propietarios.map((p) => RadioListTile<String?>(
+                    title: Text(p),
+                    value: p,
+                    groupValue: _selectedPropietario,
+                    onChanged: (v) {
+                      setModalState(() {});
+                      setState(() => _selectedPropietario = v);
+                      Navigator.pop(ctx);
+                    },
+                  )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<PickingBatch> _sortList(List<PickingBatch> list) {
+    final sorted = List<PickingBatch>.from(list);
+    switch (_currentSortKey) {
+      case 'date_asc':
+        sorted.sort((a, b) =>
+            (a.scheduledDate ?? '').compareTo(b.scheduledDate ?? ''));
+        break;
+      case 'date_desc':
+        sorted.sort((a, b) =>
+            (b.scheduledDate ?? '').compareTo(a.scheduledDate ?? ''));
+        break;
+      case 'name_asc':
+        sorted.sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
+        break;
+      case 'name_desc':
+        sorted.sort((a, b) => (b.name ?? '').compareTo(a.name ?? ''));
+        break;
+    }
+    return sorted;
+  }
 
   void validateBarcode(String value, BuildContext context) {}
 
@@ -133,7 +209,9 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                         onRefresh: () async {
                           if (_isProcessing ||
                               context.read<ClusterPickingBloc>().state
-                                  is PickingClustersLoading) return;
+                                  is PickingClustersLoading) {
+                            return;
+                          }
 
                           if (mounted) setState(() => _isProcessing = true);
                           try {
@@ -149,6 +227,172 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                           }
                         },
                         showCalendar: false,
+                        popupMenu: PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert, color: Colors.white),
+                          onSelected: (value) {
+                            if (value == 'filter_propietario') {
+                              if (state is PickingClustersLoaded) {
+                                _showPropietarioFilter(state.batches);
+                              }
+                            } else {
+                              setState(() => _currentSortKey = value);
+                            }
+                          },
+                          itemBuilder: (ctx) {
+                            final activeColor = primaryColorApp;
+                            final inactiveColor = Colors.black;
+
+                            TextStyle getStyle(String key) => TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: _currentSortKey == key
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                  color: _currentSortKey == key
+                                      ? activeColor
+                                      : inactiveColor,
+                                );
+                            Color getIconColor(String key) =>
+                                _currentSortKey == key
+                                    ? activeColor
+                                    : Colors.grey;
+
+                            return <PopupMenuEntry<String>>[
+                              // --- FECHA ---
+                              const PopupMenuItem<String>(
+                                enabled: false,
+                                height: 30,
+                                child: Text('FECHA',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Colors.grey)),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'date_asc',
+                                height: 40,
+                                child: Row(children: [
+                                  Icon(Icons.calendar_month_outlined,
+                                      size: 16,
+                                      color: getIconColor('date_asc')),
+                                  const SizedBox(width: 8),
+                                  Text('Más Antiguas',
+                                      style: getStyle('date_asc')),
+                                  if (_currentSortKey == 'date_asc') ...[
+                                    const Spacer(),
+                                    Icon(Icons.check,
+                                        size: 15, color: activeColor),
+                                  ],
+                                ]),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'date_desc',
+                                height: 40,
+                                child: Row(children: [
+                                  Icon(Icons.calendar_month_outlined,
+                                      size: 16,
+                                      color: getIconColor('date_desc')),
+                                  const SizedBox(width: 8),
+                                  Text('Más Recientes',
+                                      style: getStyle('date_desc')),
+                                  if (_currentSortKey == 'date_desc') ...[
+                                    const Spacer(),
+                                    Icon(Icons.check,
+                                        size: 15, color: activeColor),
+                                  ],
+                                ]),
+                              ),
+                              const PopupMenuDivider(),
+
+                              // --- CONSECUTIVO ---
+                              const PopupMenuItem<String>(
+                                enabled: false,
+                                height: 30,
+                                child: Text('CONSECUTIVO',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Colors.grey)),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'name_asc',
+                                height: 40,
+                                child: Row(children: [
+                                  Icon(Icons.arrow_upward,
+                                      size: 16,
+                                      color: getIconColor('name_asc')),
+                                  const SizedBox(width: 8),
+                                  Text('Consecutivo (A-Z)',
+                                      style: getStyle('name_asc')),
+                                  if (_currentSortKey == 'name_asc') ...[
+                                    const Spacer(),
+                                    Icon(Icons.check,
+                                        size: 15, color: activeColor),
+                                  ],
+                                ]),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'name_desc',
+                                height: 40,
+                                child: Row(children: [
+                                  Icon(Icons.arrow_downward,
+                                      size: 16,
+                                      color: getIconColor('name_desc')),
+                                  const SizedBox(width: 8),
+                                  Text('Consecutivo (Z-A)',
+                                      style: getStyle('name_desc')),
+                                  if (_currentSortKey == 'name_desc') ...[
+                                    const Spacer(),
+                                    Icon(Icons.check,
+                                        size: 15, color: activeColor),
+                                  ],
+                                ]),
+                              ),
+                              const PopupMenuDivider(),
+
+                              // --- PROPIETARIO ---
+                              const PopupMenuItem<String>(
+                                enabled: false,
+                                height: 30,
+                                child: Text('PROPIETARIO',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Colors.grey)),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'filter_propietario',
+                                height: 40,
+                                child: Row(children: [
+                                  Icon(Icons.person_search_outlined,
+                                      size: 16,
+                                      color: _selectedPropietario != null
+                                          ? Colors.amber
+                                          : Colors.grey),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _selectedPropietario ??
+                                          'Filtrar propietario',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: _selectedPropietario != null
+                                            ? Colors.amber
+                                            : Colors.black,
+                                        fontWeight: _selectedPropietario != null
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (_selectedPropietario != null)
+                                    const Icon(Icons.check,
+                                        size: 15, color: Colors.amber),
+                                ]),
+                              ),
+                            ];
+                          },
+                        ),
                       ),
                       const SizedBox(height: 10),
                       BarcodeScannerField(
@@ -163,7 +407,14 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                         child: Builder(
                           builder: (context) {
                             if (state is PickingClustersLoaded) {
-                              if (state.batches.isEmpty) {
+                              final listToShow = _sortList(
+                                state.batches
+                                    .where((b) =>
+                                        _selectedPropietario == null ||
+                                        b.propietario == _selectedPropietario)
+                                    .toList(),
+                              );
+                              if (listToShow.isEmpty) {
                                 return const Center(
                                   child: Text(
                                     'No hay clusters disponibles',
@@ -173,12 +424,21 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                                 );
                               }
                               return ListView.builder(
-                                itemCount: state.batches.length,
+                                itemCount: listToShow.length,
                                 itemBuilder: (context, index) {
-                                  final batch = state.batches[index];
+                                  final batch = listToShow[index];
                                   return PickingBatchCard(
                                     batch: batch,
                                     onTap: () {
+                                      print('🔎 batch seleccionado:'
+                                          '\n  id: ${batch.id}'
+                                          '\n  name: ${batch.name}'
+                                          '\n  propietario: ${batch.propietario}'
+                                          '\n  manejoPropietario: ${batch.manejoPropietario}'
+                                          '\n  zonaEntrega: ${batch.zonaEntrega}'
+                                          '\n  userName: ${batch.userName}'
+                                          '\n  state: ${batch.state}'
+                                          '\n  startTimePick: ${batch.startTimePick}');
                                       _handleBatchSelection(
                                           context, context, batch);
                                     },

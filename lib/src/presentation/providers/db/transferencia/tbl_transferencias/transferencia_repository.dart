@@ -81,6 +81,8 @@ class TransferenciaRepository {
                 TransferenciaTable.columnType: type,
                 TransferenciaTable.columnCreateBackorder:
                     transfer.createBackorder ?? '',
+                TransferenciaTable.columnManejoPropietario: transfer.manejoPropietario ?? 0,
+                TransferenciaTable.columnPropietario: transfer.propietario ?? "",
               },
               where: '${TransferenciaTable.columnId} = ?',
               whereArgs: [transfer.id],
@@ -132,6 +134,8 @@ class TransferenciaRepository {
                 TransferenciaTable.columnType: type,
                 TransferenciaTable.columnCreateBackorder:
                     transfer.createBackorder ?? '',
+                     TransferenciaTable.columnManejoPropietario: transfer.manejoPropietario ?? 0,
+                TransferenciaTable.columnPropietario: transfer.propietario ?? "",  
               },
               conflictAlgorithm: ConflictAlgorithm.replace,
             );

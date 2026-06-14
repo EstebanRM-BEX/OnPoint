@@ -1,25 +1,25 @@
 import 'dart:convert';
 
-import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 
 class ProductDevolucion {
   int? productId;
   String? name;
-  dynamic? code;
-  dynamic? category;
-  dynamic? barcode;
+  dynamic code;
+  dynamic category;
+  dynamic barcode;
   List<BarcodeInventario>? otherBarcodes;
   List<BarcodeInventario>? productPacking;
 
   dynamic lotId;
-  dynamic? lotName;
+  dynamic lotName;
   String? tracking;
-  dynamic? useExpirationDate;
-  dynamic? expirationTime;
-  dynamic? weight;
-  dynamic? weightUomName;
-  dynamic? volume;
-  dynamic? volumeUomName;
+  dynamic useExpirationDate;
+  dynamic expirationTime;
+  dynamic weight;
+  dynamic weightUomName;
+  dynamic volume;
+  dynamic volumeUomName;
   dynamic expirationDate;
   dynamic uom;
 
@@ -49,6 +49,35 @@ class ProductDevolucion {
       this.locationId,
       this.locationName,
       this.quantity});
+
+  Product toProduct({
+    bool clearLotId = false,
+    bool clearLotName = false,
+    bool clearQuantity = false,
+  }) =>
+      Product(
+        productId: productId,
+        name: name,
+        code: code,
+        category: category,
+        barcode: barcode,
+        otherBarcodes: otherBarcodes,
+        productPacking: productPacking,
+        lotId: clearLotId ? null : lotId,
+        lotName: clearLotName ? null : lotName,
+        tracking: tracking,
+        useExpirationDate: useExpirationDate,
+        expirationTime: expirationTime,
+        weight: weight,
+        weightUomName: weightUomName,
+        volume: volume,
+        volumeUomName: volumeUomName,
+        expirationDate: expirationDate,
+        uom: uom,
+        locationId: locationId,
+        locationName: locationName,
+        quantity: clearQuantity ? null : quantity,
+      );
 
   factory ProductDevolucion.fromMap(Map<String, dynamic> json) =>
       ProductDevolucion(

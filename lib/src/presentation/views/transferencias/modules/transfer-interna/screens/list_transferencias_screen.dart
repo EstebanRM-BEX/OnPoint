@@ -486,6 +486,41 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
                                                 ],
                                               ),
                                             ),
+                                               Visibility(
+                                                visible: transferenciaDetail
+                                                                    .manejoPropietario ==
+                                                                1,
+                                                child: Align(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  child: Row(
+                                                    children: [
+                                                      Text('Propietario: ',
+                                                          style: TextStyle(
+                                                              fontSize: 12,
+                                                              color:
+                                                                  primaryColorApp)),
+                                                      Text(
+                                                     transferenciaDetail
+                                                                    .propietario ==
+                                                                ''
+                                                            ? 'Sin propietario'
+                                                            : transferenciaDetail
+                                                                    .propietario ??
+                                                                "",
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color:transferenciaDetail
+                                                                      .priority ==
+                                                                  ''
+                                                              ? black
+                                                              : red,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
                                             Divider(
                                               color: black,
                                               thickness: 1,

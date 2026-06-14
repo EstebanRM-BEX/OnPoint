@@ -36,7 +36,7 @@ class Result {
     final int? totalItems;
     final List<ItemsProcesado>? itemsProcesados;
     final List<dynamic>? correccionesRealizadas;
-    final dynamic? totalCorrecciones;
+    final dynamic totalCorrecciones;
     final int? ubicacionOrigenId;
     final int? ubicacionDestinoId;
 
@@ -88,7 +88,7 @@ class ItemsProcesado {
     final int? lineaId;
     final int? productoId;
     final String? productoNombre;
-    final dynamic? cantidad;
+    final dynamic cantidad;
     final int? loteId;
     final String? observacion;
 

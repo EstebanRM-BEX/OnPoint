@@ -282,6 +282,7 @@ class InfoRapidaRepository {
             "id_almacen": transferInfoRequest.idAlmacen,
             "id_move": transferInfoRequest.idMove,
             "id_producto": transferInfoRequest.idProducto,
+            "id_propietario" : transferInfoRequest.idPropietario,
             "id_lote": transferInfoRequest.idLote,
             "id_ubicacion_origen": transferInfoRequest.idUbicacionOrigen,
             "id_ubicacion_destino": transferInfoRequest.idUbicacionDestino,

@@ -111,6 +111,33 @@ class _PickingCompoBatchScreenState extends State<PickingCompoBatchScreen> {
                       'components',
                     ));
               }
+              if (state is PickingOkBlockedPendingSend) {
+                Get.snackbar(
+                  '360 Software Informa',
+                  'No se puede finalizar: ${state.pendientes} producto(s) pendiente(s) de envío. Conéctate a internet para sincronizar',
+                  backgroundColor: white,
+                  colorText: primaryColorApp,
+                  icon: Icon(Icons.wifi_off, color: Colors.amber),
+                  duration: const Duration(seconds: 4),
+                );
+              }
+              if (state is SyncPendingProductsSuccess) {
+                Get.snackbar(
+                  '360 Software Informa',
+                  'Se enviaron ${state.enviados} de ${state.total} producto(s) pendiente(s)',
+                  backgroundColor: white,
+                  colorText: primaryColorApp,
+                  icon: Icon(
+                    state.enviados == state.total
+                        ? Icons.check_circle
+                        : Icons.error,
+                    color: state.enviados == state.total
+                        ? Colors.green
+                        : Colors.amber,
+                  ),
+                  duration: const Duration(seconds: 4),
+                );
+              }
             },
             child: BlocBuilder<WMSPickingBloc, PickingState>(
               builder: (context, state) {

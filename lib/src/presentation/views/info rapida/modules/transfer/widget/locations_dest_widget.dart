@@ -63,88 +63,80 @@ class _LocationDestScreenState extends State<LocationDestTransfInfoScreen> {
                                 return Column(
                                   children: [
                                     const WarningWidgetCubit(),
-                                    Padding(
-                                      padding: EdgeInsets.only(
-                                        top: connectionStatus !=
-                                                ConnectionStatus.online
-                                            ? 0
-                                            : 25,
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          IconButton(
-                                            icon: const Icon(Icons.arrow_back,
-                                                color: white),
-                                            onPressed: () {
-                                              Navigator.pushReplacementNamed(
-                                                context,
-                                                'transfer-info',
-                                                arguments: [
-                                                  widget.infoRapidaResult,
-                                                  widget.ubicacion,
-                                                ],
-                                              );
-                                            },
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.arrow_back,
+                                              color: white),
+                                          onPressed: () {
+                                            Navigator.pushReplacementNamed(
+                                              context,
+                                              'transfer-info',
+                                              arguments: [
+                                                widget.infoRapidaResult,
+                                                widget.ubicacion,
+                                              ],
+                                            );
+                                          },
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                              left: size.width * 0.2),
+                                          child: const Text(
+                                            'UBICACIONES',
+                                            style: TextStyle(
+                                                color: white, fontSize: 18),
                                           ),
-                                          Padding(
-                                            padding: EdgeInsets.only(
-                                                left: size.width * 0.2),
-                                            child: const Text(
-                                              'UBICACIONES',
-                                              style: TextStyle(
-                                                  color: white, fontSize: 18),
-                                            ),
+                                        ),
+                                        const Spacer(),
+                                        PopupMenuButton<String>(
+                                          color: white,
+                                          icon: const Icon(
+                                            Icons.more_vert,
+                                            color: Colors.white,
+                                            size: 20,
                                           ),
-                                          const Spacer(),
-                                          PopupMenuButton<String>(
-                                            color: white,
-                                            icon: const Icon(
-                                              Icons.more_vert,
-                                              color: Colors.white,
-                                              size: 20,
-                                            ),
-                                            onSelected: (value) {
-                                              context
-                                                  .read<TransferInfoBloc>()
-                                                  .add(
-                                                    FilterUbicacionesEvent(
-                                                        value),
-                                                  );
-                                            },
-                                            itemBuilder:
-                                                (BuildContext context) {
-                                              final tipos = context
-                                                  .read<UserBloc>()
-                                                  .almacenes;
-                                              return tipos.map((tipo) {
-                                                return PopupMenuItem<String>(
-                                                  value: tipo.name,
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons
-                                                            .file_upload_outlined,
-                                                        color: primaryColorApp,
-                                                        size: 20,
-                                                      ),
-                                                      const SizedBox(width: 10),
-                                                      Text(
-                                                        tipo.name ?? "",
-                                                        style: const TextStyle(
-                                                          color: black,
-                                                          fontSize: 12,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
+                                          onSelected: (value) {
+                                            context
+                                                .read<TransferInfoBloc>()
+                                                .add(
+                                                  FilterUbicacionesEvent(
+                                                      value),
                                                 );
-                                              }).toList();
-                                            },
-                                          ),
-                                        ],
-                                      ),
+                                          },
+                                          itemBuilder:
+                                              (BuildContext context) {
+                                            final tipos = context
+                                                .read<UserBloc>()
+                                                .almacenes;
+                                            return tipos.map((tipo) {
+                                              return PopupMenuItem<String>(
+                                                value: tipo.name,
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons
+                                                          .file_upload_outlined,
+                                                      color: primaryColorApp,
+                                                      size: 20,
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Text(
+                                                      tipo.name ?? "",
+                                                      style: const TextStyle(
+                                                        color: black,
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            }).toList();
+                                          },
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 );

@@ -26,8 +26,8 @@ class LocationPackingDropdownWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final IAudioService _audioService = getIt<IAudioService>();
-    final IVibrationService _vibrationService = getIt<IVibrationService>();
+    final IAudioService audioService = getIt<IAudioService>();
+    final IVibrationService vibrationService = getIt<IVibrationService>();
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -100,8 +100,8 @@ class LocationPackingDropdownWidget extends StatelessWidget {
                               batchBloc.oldLocation =
                                   currentProduct.locationId.toString();
                             } else {
-                              _audioService.playErrorSound();
-                              _vibrationService.vibrate();
+                              audioService.playErrorSound();
+                              vibrationService.vibrate();
 
                               batchBloc.add(ValidateFieldsPackingEvent(
                                   field: "location", isOk: false));

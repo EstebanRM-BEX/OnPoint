@@ -8,6 +8,7 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/widgets/dialog_dispositivo_no_autorizado_widget.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
@@ -21,6 +22,112 @@ class ListProductsScreen extends StatefulWidget {
 
 class _ListProductsScreenState extends State<ListProductsScreen> {
   int? selectedIndex;
+  String? _selectedPropietario;
+
+  List<String> _getPropietarios(InfoRapidaBloc bloc) {
+    return bloc.productos
+        .where((p) =>
+            p.manejoPropietario == 1 &&
+            p.propietario != null &&
+            p.propietario != false &&
+            p.propietario.toString().isNotEmpty)
+        .map((p) => p.propietario.toString())
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
+  void _showPropietarioFilter(BuildContext context, InfoRapidaBloc bloc) {
+    final propietarios = _getPropietarios(bloc);
+
+    if (propietarios.isEmpty) {
+      Get.snackbar(
+        'Sin propietarios',
+        'No hay productos con propietario para filtrar',
+        backgroundColor: white,
+        colorText: primaryColorApp,
+        icon: const Icon(Icons.info_outline, color: primaryColorApp),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Icon(Icons.person_outline, color: primaryColorApp),
+                    SizedBox(width: 8),
+                    Text(
+                      'Filtrar por propietario',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: primaryColorApp,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              ListTile(
+                leading: Icon(
+                  _selectedPropietario == null
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: primaryColorApp,
+                ),
+                title: const Text('Todos los propietarios'),
+                onTap: () {
+                  setState(() {
+                    _selectedPropietario = null;
+                    selectedIndex = null;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              ...propietarios.map((p) => ListTile(
+                    leading: Icon(
+                      _selectedPropietario == p
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      color: primaryColorApp,
+                    ),
+                    title: Text(p),
+                    onTap: () {
+                      setState(() {
+                        _selectedPropietario = p;
+                        selectedIndex = null;
+                      });
+                      Navigator.pop(context);
+                    },
+                  )),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,15 +195,16 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
           // ✅ CORRECCIÓN 2: Bloque Try-Catch para "Bad state: No element"
           // Si infoRapidaResult intenta acceder a lista.first y está vacía, capturamos el error.
           try {
-            final route = state.infoRapidaResult!.type == 'product'
+            final route = state.infoRapidaResult.type == 'product'
                 ? 'product-info'
                 : 'location-info';
 
             Navigator.pushReplacementNamed(
               context,
               route,
-              arguments:
-                  route == 'location-info' ? [state.infoRapidaResult] : null,
+              arguments: route == 'location-info'
+                  ? [state.infoRapidaResult]
+                  : null,
             );
           } catch (e) {
             debugPrint("Error al procesar resultado: $e");
@@ -122,7 +230,12 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
                 color: white,
                 child: Column(
                   children: [
-                    _AppBarInfo(size: size),
+                    _AppBarInfo(
+                      size: size,
+                      hasActiveFilter: _selectedPropietario != null,
+                      onFilterTap: () =>
+                          _showPropietarioFilter(context, bloc),
+                    ),
                     //*barra de buscar
                     DynamicSearchBar(
                       controller: bloc.searchControllerProducts,
@@ -143,20 +256,28 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
                       onTap: () {},
                     ),
                     Expanded(
-                      child: bloc.productosFilters.isEmpty
-                          ? const _NoProductsMessage()
-                          : ListView.builder(
-                              itemCount: bloc.productosFilters.length,
-                              itemBuilder: (_, index) {
-                                return ProductListTile(
-                                  index: index,
-                                  isSelected: selectedIndex == index,
-                                  onSelect: () {
-                                    setState(() => selectedIndex = index);
-                                  },
-                                );
-                              },
-                            ),
+                      child: Builder(builder: (context) {
+                        final filtered = _selectedPropietario == null
+                            ? bloc.productosFilters
+                            : bloc.productosFilters
+                                .where((p) =>
+                                    p.propietario == _selectedPropietario)
+                                .toList();
+
+                        if (filtered.isEmpty) return const _NoProductsMessage();
+
+                        return ListView.builder(
+                          itemCount: filtered.length,
+                          itemBuilder: (_, index) {
+                            return ProductListTile(
+                              product: filtered[index],
+                              isSelected: selectedIndex == index,
+                              onSelect: () =>
+                                  setState(() => selectedIndex = index),
+                            );
+                          },
+                        );
+                      }),
                     ),
 
                     if (selectedIndex != null)
@@ -164,16 +285,27 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         child: ElevatedButton(
                           onPressed: () {
-                            final selectedProduct =
-                                bloc.productosFilters[selectedIndex!];
+                            final filtered = _selectedPropietario == null
+                                ? bloc.productosFilters
+                                : bloc.productosFilters
+                                    .where((p) =>
+                                        p.propietario == _selectedPropietario)
+                                    .toList();
+                            final selectedProduct = filtered[selectedIndex!];
+
+                            print(
+                              'product seleccionado: ${selectedProduct.toMap()}',
+                            );
 
                             FocusScope.of(context).unfocus();
-                            bloc.add(GetInfoRapida(
-                              selectedProduct.productId.toString(),
-                              true,
-                              true,
-                              false,
-                            ));
+                            bloc.add(
+                              GetInfoRapida(
+                                selectedProduct.productId.toString(),
+                                true,
+                                true,
+                                false,
+                              ),
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColorApp,
@@ -182,8 +314,10 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
                             ),
                             minimumSize: Size(size.width * 0.9, 40),
                           ),
-                          child: const Text("Seleccionar",
-                              style: TextStyle(color: white)),
+                          child: const Text(
+                            "Seleccionar",
+                            style: TextStyle(color: white),
+                          ),
                         ),
                       ),
                   ],
@@ -200,17 +334,20 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
 class ProductListTile extends StatelessWidget {
   const ProductListTile({
     super.key,
-    required this.index,
+    required this.product,
     required this.isSelected,
     required this.onSelect,
   });
 
-  final int index;
+  final Product product;
   final bool isSelected;
   final VoidCallback onSelect;
 
   @override
   Widget build(BuildContext context) {
+    final barcode = product.barcode?.toString() ?? '';
+    final code = product.code?.toString() ?? '';
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: GestureDetector(
@@ -223,37 +360,23 @@ class ProductListTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildProductRow('Nombre',
-                    context.read<InfoRapidaBloc>().productosFilters[index].name,
-                    isError: false),
+                _buildProductRow('Nombre', product.name, isError: false),
+                if (product.manejoPropietario == 1)
+                  _buildProductRow(
+                    'Propietario',
+                    product.propietario?.toString(),
+                    isError: false,
+                  ),
                 _buildProductRow(
-                    'Barcode',
-                    context
-                        .read<InfoRapidaBloc>()
-                        .productosFilters[index]
-                        .barcode,
-                    isError: context
-                                .read<InfoRapidaBloc>()
-                                .productosFilters[index]
-                                .barcode ==
-                            null ||
-                        context
-                            .read<InfoRapidaBloc>()
-                            .productosFilters[index]
-                            .barcode!
-                            .isEmpty),
-                _buildProductRow('Code',
-                    context.read<InfoRapidaBloc>().productosFilters[index].code,
-                    isError: context
-                                .read<InfoRapidaBloc>()
-                                .productosFilters[index]
-                                .code ==
-                            null ||
-                        context
-                            .read<InfoRapidaBloc>()
-                            .productosFilters[index]
-                            .code!
-                            .isEmpty),
+                  'Barcode',
+                  barcode,
+                  isError: barcode.isEmpty,
+                ),
+                _buildProductRow(
+                  'Code',
+                  code,
+                  isError: code.isEmpty,
+                ),
               ],
             ),
           ),
@@ -263,8 +386,9 @@ class ProductListTile extends StatelessWidget {
   }
 
   Widget _buildProductRow(String label, String? value, {bool isError = false}) {
-    final displayValue =
-        (value == null || value.isEmpty) ? 'Sin ${label.toLowerCase()}' : value;
+    final displayValue = (value == null || value.isEmpty)
+        ? 'Sin ${label.toLowerCase()}'
+        : value;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -287,9 +411,15 @@ class ProductListTile extends StatelessWidget {
 }
 
 class _AppBarInfo extends StatelessWidget {
-  const _AppBarInfo({super.key, required this.size});
+  const _AppBarInfo({
+    required this.size,
+    required this.onFilterTap,
+    required this.hasActiveFilter,
+  });
 
   final Size size;
+  final VoidCallback onFilterTap;
+  final bool hasActiveFilter;
 
   @override
   Widget build(BuildContext context) {
@@ -321,10 +451,35 @@ class _AppBarInfo extends StatelessWidget {
                 ),
                 Padding(
                   padding: EdgeInsets.only(left: size.width * 0.22),
-                  child: const Text('PRODUCTOS',
-                      style: TextStyle(color: white, fontSize: 18)),
+                  child: const Text(
+                    'PRODUCTOS',
+                    style: TextStyle(color: white, fontSize: 18),
+                  ),
                 ),
                 const Spacer(),
+                Stack(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.person_search_outlined,
+                          color: white),
+                      tooltip: 'Filtrar por propietario',
+                      onPressed: onFilterTap,
+                    ),
+                    if (hasActiveFilter)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: Colors.amber,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ],
             ),
           ],
@@ -335,7 +490,7 @@ class _AppBarInfo extends StatelessWidget {
 }
 
 class _NoProductsMessage extends StatelessWidget {
-  const _NoProductsMessage({super.key});
+  const _NoProductsMessage();
 
   @override
   Widget build(BuildContext context) {
@@ -343,8 +498,10 @@ class _NoProductsMessage extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: const [
         Text('No hay productos', style: TextStyle(fontSize: 14, color: grey)),
-        Text('No tiene productos en la base de datos',
-            style: TextStyle(fontSize: 12, color: grey)),
+        Text(
+          'No tiene productos en la base de datos',
+          style: TextStyle(fontSize: 12, color: grey),
+        ),
         SizedBox(height: 60),
       ],
     );

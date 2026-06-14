@@ -10,7 +10,8 @@ import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
-import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
+import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_image_send_novedad_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_temp_ia_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/data/wms_packing_repository.dart';
@@ -117,7 +118,6 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
   List<Novedad> novedades = [];
 
   //repositorio de inventario
-  InventarioRepository inventarioRepository = InventarioRepository();
   WmsPackingBloc() : super(WmsPackingInitial()) {
     //* empezar el tiempo de separacion
     on<StartTimePack>(_onStartTimePickEvent);
@@ -211,20 +211,13 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
-      final response =
-          await inventarioRepository.viewUrlImageProduct(event.idProduct, true);
+      final result = await getIt<GetUrlImagenProducto>()(
+          GetUrlImagenProductoParams(productId: event.idProduct));
 
-      if (response.result?.code == 200) {
-        if (response.result?.result == null ||
-            response.result?.result?.url == null ||
-            response.result?.result?.url == '') {
-          emit(ViewProductImageFailure('Imagen no disponible'));
-          return;
-        }
-        emit(ViewProductImageSuccess(response.result?.result?.url ?? ''));
-      } else {
-        emit(ViewProductImageFailure('Imagen no disponible'));
-      }
+      result.fold(
+        (failure) => emit(ViewProductImageFailure('Imagen no disponible')),
+        (url) => emit(ViewProductImageSuccess(url)),
+      );
     } catch (e, s) {
       debugPrint('Error en el ViewProductImageEvent: $e, $s');
       emit(ViewProductImageFailure(e.toString()));

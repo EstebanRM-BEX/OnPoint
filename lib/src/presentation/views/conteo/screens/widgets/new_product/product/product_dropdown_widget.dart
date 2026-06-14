@@ -7,7 +7,7 @@ import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
 
 class ProductDropdowmnWidget extends StatelessWidget {
-  const ProductDropdowmnWidget({Key? key}) : super(key: key);
+  const ProductDropdowmnWidget({super.key});
 
   @override
   Widget build(BuildContext context) {

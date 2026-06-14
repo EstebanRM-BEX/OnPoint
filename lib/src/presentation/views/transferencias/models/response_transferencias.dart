@@ -112,6 +112,9 @@ class ResultTransFerencias {
   final dynamic showCheckAvailability;
   final String? createBackorder;
 
+  String? propietario;
+  dynamic? manejoPropietario;
+
 
   ResultTransFerencias({
     this.id,
@@ -146,6 +149,8 @@ class ResultTransFerencias {
     this.proveedor,
     this.type,
     this.createBackorder,
+    this.propietario,
+    this.manejoPropietario,
   });
 
   factory ResultTransFerencias.fromMap(Map<String, dynamic> json) =>
@@ -190,6 +195,8 @@ class ResultTransFerencias {
         proveedor: json["proveedor"],
         type: json["type"],
         createBackorder: json["create_backorder"],
+        propietario: json["propietario"],
+        manejoPropietario: json["manejo_propietario"],
       );
 
   Map<String, dynamic> toMap() => {
@@ -229,6 +236,8 @@ class ResultTransFerencias {
         "proveedor": proveedor,
         "type": type,
         "create_backorder": createBackorder,
+         "propietario": propietario,
+        "manejo_propietario": manejoPropietario
       };
 }
 

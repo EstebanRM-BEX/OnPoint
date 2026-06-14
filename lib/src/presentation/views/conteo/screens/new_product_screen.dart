@@ -19,7 +19,7 @@ import 'package:wms_app/src/presentation/views/conteo/screens/widgets/new_produc
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/new_product/product/ProductScanner_widget.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/new_product/product/product_dropdown_widget.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/others/dialog_validate_product_send_widget.dart';
-import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
@@ -27,7 +27,7 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 
 class NewProductConteoScreen extends StatefulWidget {
-  const NewProductConteoScreen({Key? key}) : super(key: key);
+  const NewProductConteoScreen({super.key});
 
   @override
   State<NewProductConteoScreen> createState() => _NewProductConteoScreenState();
@@ -244,7 +244,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
     _controllerQuantity.clear();
     final currentProduct = bloc.currentProduct;
 
-    if (scan == currentProduct?.productBarcode?.toLowerCase()) {
+    if (scan == currentProduct.productBarcode?.toLowerCase()) {
       bloc.add(
         AddQuantitySeparate(
           currentProduct.productId ?? 0,
@@ -567,15 +567,15 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
                             }
                             // * validamos en todo cambio de estado de cantidad separada
                             else if (state is SendProductConteoSuccess) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  duration: const Duration(milliseconds: 1000),
-                                  content: Text(
-                                    state.response.result?.msg ?? "",
-                                  ),
-                                  backgroundColor: Colors.green[200],
-                                ),
-                              );
+                              // ScaffoldMessenger.of(context).showSnackBar(
+                              //   SnackBar(
+                              //     duration: const Duration(milliseconds: 1000),
+                              //     content: Text(
+                              //       state.response.result?.msg ?? "",
+                              //     ),
+                              //     backgroundColor: Colors.green[200],
+                              //   ),
+                              // );
                               //limpiamos los valores pa volver a iniciar con otro producto
                               cantidadController.clear();
                               context.read<ConteoBloc>().add(

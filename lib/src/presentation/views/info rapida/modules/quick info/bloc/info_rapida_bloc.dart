@@ -13,8 +13,8 @@ import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/data/info_rapida_repository.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/models/info_rapida_model.dart';
 import 'package:wms_app/src/presentation/views/info%20rapida/models/update_product_request.dart';
-import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
-import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
+import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 import 'package:wms_app/src/presentation/views/transferencias/data/transferencias_repository.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/request_create_trasnfer_model.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/response_create_transfer_mode.dart';
@@ -80,7 +80,6 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   UserConfigurationModel configurations = UserConfigurationModel();
 
   //repositorio de inventario
-  InventarioRepository inventarioRepository = InventarioRepository();
 
   StreamSubscription<dynamic>? _wsSubscription;
 
@@ -161,21 +160,43 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     _wsSubscription = getIt<IWebSocketService>().messages.listen(_onRawWsMessage);
   }
 
+  // Normaliza el propietario de un producto: null = sin propietario (grupo propio).
+  String? _propietarioKey(Producto p) {
+    final tieneManejo = p.manejoPropietario == true || p.manejoPropietario == 1;
+    if (!tieneManejo) return null;
+    final prop = p.propietario;
+    if (prop == null || prop.isEmpty) return null;
+    return prop;
+  }
+
   void _onSelectAllAvailableProductsEvent(
       SelectAllAvailableProductsEvent event, Emitter<InfoRapidaState> emit) {
     final disponibles = (productosUbicacion ?? [])
         .where((p) => p.packing != true && (p.cantidadMano ?? 0) > 0)
         .toList();
 
-    final todosSeleccionados = disponibles.isNotEmpty &&
-        disponibles.every(
+    // Opción A: determinar el grupo objetivo por propietario.
+    // Si ya hay seleccionados, usar su propietario; si no, usar el del primero disponible.
+    String? targetKey;
+    if (productosFiltersMassTransfer.isNotEmpty) {
+      targetKey = _propietarioKey(productosFiltersMassTransfer.first);
+    } else if (disponibles.isNotEmpty) {
+      targetKey = _propietarioKey(disponibles.first);
+    }
+
+    final compatibles = disponibles
+        .where((p) => _propietarioKey(p) == targetKey)
+        .toList();
+
+    final todosSeleccionados = compatibles.isNotEmpty &&
+        compatibles.every(
             (p) => productosFiltersMassTransfer.any((s) => s.id == p.id));
 
     if (todosSeleccionados) {
       productosFiltersMassTransfer
-          .removeWhere((s) => disponibles.any((p) => p.id == s.id));
+          .removeWhere((s) => compatibles.any((p) => p.id == s.id));
     } else {
-      for (final producto in disponibles) {
+      for (final producto in compatibles) {
         if (!productosFiltersMassTransfer.any((p) => p.id == producto.id)) {
           productosFiltersMassTransfer.add(producto);
         }
@@ -186,19 +207,34 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
 
   void _onToggleProductMassTransferEvent(
       ToggleProductMassTransferEvent event, Emitter<InfoRapidaState> emit) {
-    debugPrint('isSelectedMassTransfer: ${event.isSelected}');
-    debugPrint('product id: ${event.product.id}');
-
-    //agregamos esos productos a la lista de productos para transferencia masiva
     if (event.isSelected) {
-      //agregamos el producto a la lista
-      //validamos si el producto ya existe en la lista
       if (!productosFiltersMassTransfer
           .any((prod) => prod.id == event.product.id)) {
+        // Validar compatibilidad de propietario con los ya seleccionados.
+        if (productosFiltersMassTransfer.isNotEmpty) {
+          final keyExistente =
+              _propietarioKey(productosFiltersMassTransfer.first);
+          final keyNuevo = _propietarioKey(event.product);
+
+          if (keyExistente != keyNuevo) {
+            final String msg;
+            if (keyExistente == null) {
+              msg =
+                  'No puedes mezclar productos sin propietario con productos de "$keyNuevo"';
+            } else if (keyNuevo == null) {
+              msg =
+                  'No puedes mezclar productos de "$keyExistente" con productos sin propietario';
+            } else {
+              msg =
+                  'No puedes mezclar productos de "$keyExistente" con productos de "$keyNuevo"';
+            }
+            emit(MassTransferPropietarioMismatchState(msg));
+            return;
+          }
+        }
         productosFiltersMassTransfer.add(event.product);
       }
     } else {
-      //removemos el producto de la lista
       productosFiltersMassTransfer
           .removeWhere((prod) => prod.id == event.product.id);
     }
@@ -237,6 +273,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
                   cantidadEnviada: product.cantidadMano ?? 0,
                   idLote: product.loteId ?? 0,
                   timeLine: 2,
+                  idPropietario: product.idPropietario ??0
                 ))
             .toList(),
       );
@@ -385,20 +422,13 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
       debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
-      final response =
-          await inventarioRepository.viewUrlImageProduct(event.idProduct, true);
+      final result = await getIt<GetUrlImagenProducto>()(
+          GetUrlImagenProductoParams(productId: event.idProduct));
 
-      if (response.result?.code == 200) {
-        if (response.result?.result == null ||
-            response.result?.result?.url == null ||
-            response.result?.result?.url == '') {
-          emit(ViewProductImageFailure('Imagen no disponible'));
-          return;
-        }
-        emit(ViewProductImageSuccess(response.result?.result?.url ?? ''));
-      } else {
-        emit(ViewProductImageFailure('Imagen no disponible'));
-      }
+      result.fold(
+        (failure) => emit(ViewProductImageFailure('Imagen no disponible')),
+        (url) => emit(ViewProductImageSuccess(url)),
+      );
     } catch (e, s) {
       debugPrint('Error en el ViewProductImageEvent: $e, $s');
       emit(ViewProductImageFailure(e.toString()));

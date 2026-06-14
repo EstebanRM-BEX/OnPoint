@@ -63,7 +63,7 @@ class RespondePickDoneIdResult {
 class ResultResult {
   final int? id;
   final String? name;
-  final dynamic? fechaCreacion;
+  final dynamic fechaCreacion;
   final int? locationId;
   final String? locationName;
   final String? locationBarcode;
@@ -72,8 +72,8 @@ class ResultResult {
   final String? locationDestBarcode;
   final String? proveedor;
   final String? numeroTransferencia;
-  final dynamic? pesoTotal;
-  final dynamic? numeroItems;
+  final dynamic pesoTotal;
+  final dynamic numeroItems;
   final String? state;
   final String? createBackorder;
   final String? origin;
@@ -83,8 +83,8 @@ class ResultResult {
   final int? responsableId;
   final String? responsable;
   final String? pickingType;
-  final dynamic? startTimeTransfer;
-  final dynamic? endTimeTransfer;
+  final dynamic startTimeTransfer;
+  final dynamic endTimeTransfer;
   final int? backorderId;
   final String? backorderName;
   final bool? showCheckAvailability;
@@ -101,7 +101,7 @@ class ResultResult {
 
   final List<LineasTransferenciaEnviada>? lineasTransferencia;
   final List<LineasTransferenciaEnviada>? lineasTransferenciaEnviadas;
-  final dynamic? numeroLineas;
+  final dynamic numeroLineas;
 
   ResultResult({
     this.id,
@@ -271,10 +271,10 @@ class LineasTransferenciaEnviada {
   final String? diasVencimiento;
   final List<dynamic>? otherBarcodes;
   final List<ProductPacking>? productPacking;
-  final dynamic? quantity;
-  final dynamic? quantityToTransfer;
-  final dynamic? quantityDone;
-  final dynamic? cantidadFaltante;
+  final dynamic quantity;
+  final dynamic quantityToTransfer;
+  final dynamic quantityDone;
+  final dynamic cantidadFaltante;
   final String? unidades;
   final List<dynamic>? locationDestId;
   final String? locationDestName;
@@ -282,7 +282,7 @@ class LineasTransferenciaEnviada {
   final List<dynamic>? locationId;
   final String? locationName;
   final String? barcodeLocation;
-  final dynamic? weight;
+  final dynamic weight;
   final int? rimovalPriority;
   final String? zonaEntrega;
   final List<dynamic>? otherBarcode;
@@ -291,12 +291,12 @@ class LineasTransferenciaEnviada {
   final String? origin;
   final int? loteId;
   final String? lote;
-  final dynamic? quantitySeparate;
+  final dynamic quantitySeparate;
   final bool? isDoneItem;
-  final dynamic? dateTransaction;
+  final dynamic dateTransaction;
   final String? observation;
   final String? timeSeparate;
-  final dynamic? time;
+  final dynamic time;
   final int? userOperatorId;
   final String? expireDate;
   final int? isSeparate;
@@ -472,7 +472,7 @@ class LineasTransferenciaEnviada {
 
 class ProductPacking {
   final String? barcode;
-  final dynamic? cantidad;
+  final dynamic cantidad;
   final int? idProduct;
   final int? idMove;
   final int? batchId;

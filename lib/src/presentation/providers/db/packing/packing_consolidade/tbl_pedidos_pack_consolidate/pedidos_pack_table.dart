@@ -19,6 +19,9 @@ class PedidosPackingConsolidateTable {
   static const String columnIsZonaEntrega = 'zona_entrega';
   static const String columnIsZonaEntregaTms = 'zona_entrega_tms';
   static const String columnType = 'type'; // si es de type batch o pedido
+        //propietario
+  static const String columnPropietario = 'propietario';
+    static const String columnManejoPropietario = 'manejo_propietario';
 
   //pedidos
   static const String columnPedidos = 'pedidos';
@@ -47,6 +50,8 @@ class PedidosPackingConsolidateTable {
         $columnIsZonaEntregaTms TEXT,
         $columnType TEXT,
         $columnPedidos TEXT,
+                        $columnPropietario TEXT,
+        $columnManejoPropietario INTEGER DEFAULT 0,
         FOREIGN KEY ($columnBatchId) REFERENCES tblbatchs_packing (id)
       )
     ''';

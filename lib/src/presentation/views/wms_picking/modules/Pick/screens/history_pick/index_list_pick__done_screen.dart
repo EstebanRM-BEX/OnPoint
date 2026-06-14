@@ -357,36 +357,36 @@ class IndexListPickDoneScreen extends StatelessWidget {
                                                             color:
                                                                 primaryColorApp)),
                                                     Text(
-                                                      batch?.state == 'done'
+                                                      batch.state == 'done'
                                                           ? 'Completado'
-                                                          : batch?.state ==
+                                                          : batch.state ==
                                                                   'draft'
                                                               ? 'Borrador'
-                                                              : batch?.state ==
+                                                              : batch.state ==
                                                                       'waiting'
                                                                   ? 'Esperando'
-                                                                  : batch?.state ==
+                                                                  : batch.state ==
                                                                           'confirmed'
                                                                       ? 'Confirmado'
-                                                                      : batch?.state ==
+                                                                      : batch.state ==
                                                                               'assigned'
                                                                           ? 'Asignado'
                                                                           : "",
                                                       style: TextStyle(
                                                         fontSize: 12,
-                                                        color: batch?.state ==
+                                                        color: batch.state ==
                                                                 'done'
                                                             ? green
-                                                            : batch?.state ==
+                                                            : batch.state ==
                                                                     'draft'
                                                                 ? grey
-                                                                : batch?.state ==
+                                                                : batch.state ==
                                                                         'waiting'
                                                                     ? yellow
-                                                                    : batch?.state ==
+                                                                    : batch.state ==
                                                                             'confirmed'
                                                                         ? red
-                                                                        : batch?.state ==
+                                                                        : batch.state ==
                                                                                 'assigned'
                                                                             ? red
                                                                             : black,

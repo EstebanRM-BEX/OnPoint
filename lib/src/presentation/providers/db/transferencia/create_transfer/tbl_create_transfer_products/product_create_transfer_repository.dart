@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/transferencia/create_transfer/tbl_create_transfer_products/product_create_transfer_table.dart';
-import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 
 class ProductCreateTransferRepository {
   // Aquí irían los métodos para interactuar con la tabla tblproductos_create_transfer
@@ -164,6 +164,12 @@ class ProductCreateTransferRepository {
           dateEnd: maps[i][ProductCreateTransferTable.columnDateEnd],
           expirationDateLote: maps[i]
               [ProductCreateTransferTable.columnExpirationDateLote],
+          manejoPropietario:  maps[i]
+              [ProductCreateTransferTable.columnManejoPropietario],
+          propietario:  maps[i]
+              [ProductCreateTransferTable.columnPropietario],
+          idPropietario: maps[i]
+              [ProductCreateTransferTable.columnIdPropietario],
         );
       });
 

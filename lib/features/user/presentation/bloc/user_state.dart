@@ -67,7 +67,7 @@ class DeviceRegistrationLoading extends UserState {}
 class UserLocationsLoaded extends UserState {
   final List<UserLocation> locations;
 
-  UserLocationsLoaded({required this.locations});
+  const UserLocationsLoaded({required this.locations});
 
   @override
   List<Object?> get props => [locations];
@@ -122,7 +122,7 @@ class DeviceInfoError extends UserState {
 
 class LoadLocationsCountSuccess extends UserState {
   final int count;
-  LoadLocationsCountSuccess(this.count);
+  const LoadLocationsCountSuccess(this.count);
 
   @override
   List<Object?> get props => [count];
@@ -130,7 +130,15 @@ class LoadLocationsCountSuccess extends UserState {
 
 class LoadNoveltiesCountSuccess extends UserState {
   final int count;
-  LoadNoveltiesCountSuccess(this.count);
+  const LoadNoveltiesCountSuccess(this.count);
+
+  @override
+  List<Object?> get props => [count];
+}
+
+class LoadWarehousesCountSuccess extends UserState {
+  final int count;
+  const LoadWarehousesCountSuccess(this.count);
 
   @override
   List<Object?> get props => [count];

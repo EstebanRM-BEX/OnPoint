@@ -3,7 +3,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
-import 'package:meta/meta.dart';
 import 'package:wms_app/features/login/domain/entities/user.dart';
 import 'package:wms_app/features/login/domain/usecases/authenticate_user.dart';
 import 'package:wms_app/features/login/domain/usecases/save_user_session.dart';

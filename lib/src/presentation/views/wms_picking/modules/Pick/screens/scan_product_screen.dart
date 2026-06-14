@@ -739,11 +739,12 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
 
                               if (state is CurrentProductChangedState) {
                                 Future.delayed(const Duration(seconds: 1), () {
-                                  if (mounted)
+                                  if (mounted) {
                                     Navigator.of(
                                       context,
                                       rootNavigator: true,
                                     ).pop();
+                                  }
                                 });
                               }
 
@@ -811,10 +812,11 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                               if (state is ChangeLocationIsOkState) {
                                 //cambiamos el foco
                                 Future.delayed(const Duration(seconds: 1), () {
-                                  if (mounted)
+                                  if (mounted) {
                                     FocusScope.of(
                                       context,
                                     ).requestFocus(focusNode2);
+                                  }
                                 });
                                 _handleDependencies();
                               }
@@ -823,10 +825,11 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                               if (state is ChangeProductIsOkState) {
                                 //cambiamos el foco a cantidad
                                 Future.delayed(const Duration(seconds: 1), () {
-                                  if (mounted)
+                                  if (mounted) {
                                     FocusScope.of(
                                       context,
                                     ).requestFocus(focusNode3);
+                                  }
                                 });
                                 _handleDependencies();
                               }
@@ -1046,7 +1049,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                 ),
                                 expiryWidget: ExpirationBadgeWidget(
                                   expirationDate:
-                                      batchBloc.currentProduct?.expireDate,
+                                      batchBloc.currentProduct.expireDate,
                                 ),
                                 listOfBarcodes: batchBloc.listOfBarcodes,
                                 onBarcodesDialogTap: () {
@@ -1341,12 +1344,13 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                                     milliseconds: 100,
                                                   ),
                                                   () {
-                                                    if (mounted)
+                                                    if (mounted) {
                                                       FocusScope.of(
                                                         context,
                                                       ).requestFocus(
                                                         focusNode4,
                                                       );
+                                                    }
                                                   },
                                                 );
                                               }
@@ -1418,10 +1422,11 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                         Future.delayed(
                                           const Duration(milliseconds: 100),
                                           () {
-                                            if (mounted)
+                                            if (mounted) {
                                               FocusScope.of(
                                                 context,
                                               ).requestFocus(focusNode3);
+                                            }
                                           },
                                         );
                                       },
@@ -1603,7 +1608,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
       debugPrint("currentProduct ${currentProduct.productId}");
 
       // Función para actualizar la base de datos en varios campos a la vez
-      Future<void> _updateDatabaseFields() async {
+      Future<void> updateDatabaseFields() async {
         await db.pickProductsRepository.setFieldTablePickProducts(
           batch.id ?? 0,
           currentProduct.idProduct ?? 0,
@@ -1614,7 +1619,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
       }
 
       // Función para gestionar la transición al siguiente producto
-      Future<void> _moveToNextProduct() async {
+      Future<void> moveToNextProduct() async {
         final separated = batchBloc.filteredProducts
             .where((e) => e.isSeparate == 0)
             .toList();
@@ -1667,10 +1672,10 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
       }
 
       // Ejecutar las operaciones en bloque
-      await _updateDatabaseFields();
+      await updateDatabaseFields();
       batchBloc.add(ShowQuantityEvent(false));
       batchBloc.sortProductsByLocationId();
-      await _moveToNextProduct();
+      await moveToNextProduct();
     } catch (e, s) {
       debugPrint("❌ Error en _nextProduct: $e -> $s");
       // Manejo de errores

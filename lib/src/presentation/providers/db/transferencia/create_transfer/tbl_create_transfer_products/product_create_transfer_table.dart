@@ -44,6 +44,10 @@ class ProductCreateTransferTable {
   //columnExpirationDateLote
   static const String columnExpirationDateLote = 'expiration_date_lote';
 
+  static const String columnManejoPropietario = 'manejo_propietario';
+  static const String columnPropietario = 'propietario';
+  static const String columnIdPropietario = 'id_propietario';
+
   static String createTable() {
     return '''
       CREATE TABLE $tableName (
@@ -71,7 +75,10 @@ class ProductCreateTransferTable {
         $columnDateTransaction TEXT,
         $columnQuantityDone REAL,
         $columnExpirationDateLote TEXT,
-        $columnVolumeUomName TEXT
+        $columnVolumeUomName TEXT,
+        $columnPropietario TEXT,
+        $columnIdPropietario INTEGER,
+        $columnManejoPropietario INTEGER DEFAULT 0
         )
 
         ''';

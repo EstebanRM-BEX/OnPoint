@@ -31,8 +31,8 @@ class LocationDropdownWidget extends StatefulWidget {
 class _LocationDropdownWidgetState extends State<LocationDropdownWidget> {
   @override
   Widget build(BuildContext context) {
-    final IAudioService _audioService = getIt<IAudioService>();
-    final IVibrationService _vibrationService = getIt<IVibrationService>();
+    final IAudioService audioService = getIt<IAudioService>();
+    final IVibrationService vibrationService = getIt<IVibrationService>();
     final ClusterPickingBloc bloc = context.read<ClusterPickingBloc>();
 
     final screenWidth = MediaQuery.of(context).size.width;
@@ -124,8 +124,8 @@ class _LocationDropdownWidgetState extends State<LocationDropdownWidget> {
                           //     widget.batchBloc.typePicking));
                           bloc.oldLocation = expected;
                         } else {
-                          _vibrationService.vibrate();
-                          _audioService.playErrorSound();
+                          vibrationService.vibrate();
+                          audioService.playErrorSound();
                           bloc.add(ValidateFieldsEvent(
                               field: "location", isOk: false));
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(

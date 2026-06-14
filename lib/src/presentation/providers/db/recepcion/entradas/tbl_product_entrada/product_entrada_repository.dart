@@ -282,7 +282,9 @@ class ProductsEntradaRepository {
 
         if (idMoveDestino == null ||
             idMoveEliminar == null ||
-            idProducto == null) continue;
+            idProducto == null) {
+          continue;
+        }
 
         final double cantidadNueva =
             double.tryParse(product.cantidad.toString()) ?? 0;

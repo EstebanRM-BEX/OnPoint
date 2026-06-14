@@ -459,7 +459,7 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                               .configPacking ==
                                           'cluster')
                                         Text(
-                                          "Ubicación: ${package.locationDestName == null ? 'Sin asignar' : package.locationDestName}",
+                                          "Ubicación: ${package.locationDestName ?? 'Sin asignar'}",
                                           style: const TextStyle(
                                               fontSize: 12, color: black),
                                         ),
@@ -683,8 +683,9 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                                                         .getUserId();
 
                                                                 if (!context
-                                                                    .mounted)
+                                                                    .mounted) {
                                                                   return;
+                                                                }
                                                                 context
                                                                     .read<
                                                                         PackingPedidoBloc>()

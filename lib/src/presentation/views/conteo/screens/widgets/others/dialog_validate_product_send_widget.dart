@@ -94,7 +94,7 @@ class DialogValidateProductSendWidget extends StatelessWidget {
                         ),
                       ),
                       TextSpan(
-                        text: '${productExist.locationName ?? "N/A"}',
+                        text: productExist.locationName ?? "N/A",
                         style: TextStyle(
                           color: primaryColorApp,
                           fontSize: 14,

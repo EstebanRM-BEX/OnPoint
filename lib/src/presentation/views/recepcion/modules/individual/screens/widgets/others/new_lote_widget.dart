@@ -371,13 +371,13 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                                                       vertical: 2),
                                               decoration: BoxDecoration(
                                                 // Si faltan menos de 15 días: Fondo Naranja suave, sino Azul suave
-                                                color: daysLeft! < 15
+                                                color: daysLeft < 15
                                                     ? Colors.orange[50]
                                                     : Colors.blue[50],
                                                 borderRadius:
                                                     BorderRadius.circular(4),
                                                 border: Border.all(
-                                                    color: daysLeft! < 15
+                                                    color: daysLeft < 15
                                                         ? Colors.orange.shade300
                                                         : Colors.blue.shade200),
                                               ),
@@ -388,7 +388,7 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                                                       Icons
                                                           .av_timer, // Icono de cronómetro
                                                       // Si faltan menos de 15 días: Naranja, sino Azul
-                                                      color: daysLeft! < 15
+                                                      color: daysLeft < 15
                                                           ? Colors.orange[800]
                                                           : Colors.blue[700],
                                                       size: 16),
@@ -398,7 +398,7 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                                                         ? "Vence hoy"
                                                         : "Vence en $daysLeft días",
                                                     style: TextStyle(
-                                                      color: daysLeft! < 15
+                                                      color: daysLeft < 15
                                                           ? Colors.orange[900]
                                                           : Colors.blue[900],
                                                       fontSize: 12,

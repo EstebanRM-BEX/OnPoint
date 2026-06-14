@@ -172,7 +172,7 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
             final result = state.infoRapidaResult;
 
             // Navegación segura (asumiendo que result no es nulo gracias al chequeo anterior)
-            if (result!.type == 'product') {
+            if (result.type == 'product') {
               Navigator.pushReplacementNamed(context, 'product-info');
             } else if (result.type == 'ubicacion') {
               Navigator.pushReplacementNamed(

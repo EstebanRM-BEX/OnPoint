@@ -623,6 +623,35 @@ class _ScanProductClusterState extends State<ScanProductCluster>
               listener: (context, state) {
                 debugPrint("✅STATE: $state");
 
+                if (state is ProductSavedOfflineState) {
+                  Get.snackbar(
+                    '360 Software Informa',
+                    'Producto guardado sin conexión, se enviará al recuperar internet',
+                    backgroundColor: white,
+                    colorText: primaryColorApp,
+                    icon: Icon(Icons.wifi_off, color: Colors.orange[800]),
+                    duration: const Duration(seconds: 3),
+                  );
+                }
+
+                if (state is SyncPendingClusterSuccess) {
+                  Get.snackbar(
+                    '360 Software Informa',
+                    'Se enviaron ${state.enviados} de ${state.total} producto(s) pendiente(s)',
+                    backgroundColor: white,
+                    colorText: primaryColorApp,
+                    icon: Icon(
+                      state.enviados == state.total
+                          ? Icons.check_circle
+                          : Icons.error,
+                      color: state.enviados == state.total
+                          ? Colors.green
+                          : Colors.amber,
+                    ),
+                    duration: const Duration(seconds: 4),
+                  );
+                }
+
                 if (state is PickingClustersLoading) {
                   showDialog(
                     context: context,

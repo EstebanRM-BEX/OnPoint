@@ -17,11 +17,7 @@ class Recepcionresponse {
   dynamic id;
   RecepcionresponseResult? result;
 
-  Recepcionresponse({
-    this.jsonrpc,
-    this.id,
-    this.result,
-  });
+  Recepcionresponse({this.jsonrpc, this.id, this.result});
 
   factory Recepcionresponse.fromMap(Map<String, dynamic> json) =>
       Recepcionresponse(
@@ -33,10 +29,10 @@ class Recepcionresponse {
       );
 
   Map<String, dynamic> toMap() => {
-        "jsonrpc": jsonrpc,
-        "id": id,
-        "result": result?.toMap(),
-      };
+    "jsonrpc": jsonrpc,
+    "id": id,
+    "result": result?.toMap(),
+  };
 }
 
 class RecepcionresponseResult {
@@ -60,25 +56,26 @@ class RecepcionresponseResult {
         result: json["result"] == null
             ? []
             : List<ResultEntrada>.from(
-                json["result"]!.map((x) => ResultEntrada.fromMap(x))),
+                json["result"]!.map((x) => ResultEntrada.fromMap(x)),
+              ),
       );
 
   Map<String, dynamic> toMap() => {
-        "code": code,
-        "msg": msg,
-        "update_version": updateVersion,
-        "result": result == null
-            ? []
-            : List<dynamic>.from(result!.map((x) => x.toMap())),
-      };
+    "code": code,
+    "msg": msg,
+    "update_version": updateVersion,
+    "result": result == null
+        ? []
+        : List<dynamic>.from(result!.map((x) => x.toMap())),
+  };
 }
 
 class ResultEntrada {
   int? id;
   String? name;
   String? fechaCreacion;
-  dynamic? proveedorId;
-  dynamic? proveedor;
+  dynamic proveedorId;
+  dynamic proveedor;
   int? locationDestId;
   String? locationDestName;
   String? locationDestBarode;
@@ -86,8 +83,8 @@ class ResultEntrada {
   String? purchaseOrderName;
   String? numeroEntrada;
   double? pesoTotal;
-  dynamic? numeroLineas;
-  dynamic? numeroItems;
+  dynamic numeroLineas;
+  dynamic numeroItems;
   String? state;
   String? origin;
   String? priority;
@@ -99,7 +96,7 @@ class ResultEntrada {
   String? responsable;
   String? pickingType;
 
-  dynamic? manejaTemperatura;
+  dynamic manejaTemperatura;
   dynamic temperatura;
 
   dynamic startTimeReception;
@@ -108,9 +105,10 @@ class ResultEntrada {
   dynamic isStarted;
   dynamic isFinish;
   String? type;
-  String? propietario;
   String? createBackorder;
-  
+
+  String? propietario;
+  dynamic? manejoPropietario;
 
   List<LineasTransferencia>? lineasRecepcion;
   List<LineasTransferencia>? lineasRecepcionEnviadas;
@@ -156,120 +154,128 @@ class ResultEntrada {
     this.temperatura,
     this.type,
     this.propietario,
-    this.createBackorder ,
+    this.manejoPropietario,
+    this.createBackorder,
   });
 
   factory ResultEntrada.fromMap(Map<String, dynamic> json) => ResultEntrada(
-        id: json["id"],
-        name: json["name"],
-        fechaCreacion: json["fecha_creacion"],
-        proveedorId: json["proveedor_id"],
-        proveedor: json["proveedor"],
-        locationDestId: json["location_dest_id"],
-        locationDestName: json["location_dest_name"],
-        locationDestBarode: json["location_dest_barode"],
-        purchaseOrderId: json["purchase_order_id"],
-        purchaseOrderName: json["purchase_order_name"],
-        numeroEntrada: json["numero_entrada"],
-        pesoTotal: json["peso_total"]?.toDouble(),
-        numeroLineas: json["numero_lineas"],
-        numeroItems: json["numero_items"],
-        state: json["state"],
-        origin: json["origin"],
-        priority: json["priority"],
-        warehouseId: json["warehouse_id"],
-        warehouseName: json["warehouse_name"],
-        locationId: json["location_id"],
-        locationName: json["location_name"],
-        responsableId: json["responsable_id"],
-        responsable: json["responsable"],
-        pickingType: json["picking_type"],
-        startTimeReception: json["start_time_reception"],
-        endTimeReception: json["end_time_reception"],
-        isSelected: json["is_selected"],
-        isStarted: json["is_started"],
-        isFinish: json["is_finish"],
-        lineasRecepcion: json["lineas_recepcion"] == null
-            ? []
-            : List<LineasTransferencia>.from(json["lineas_recepcion"]!
-                .map((x) => LineasTransferencia.fromMap(x))),
-        lineasRecepcionEnviadas: json["lineas_recepcion_enviadas"] == null
-            ? []
-            : List<LineasTransferencia>.from(json["lineas_recepcion_enviadas"]!
-                .map((x) => LineasTransferencia.fromMap(x))),
-        backorderName: json["backorder_name"],
-        backorderId: json["backorder_id"],
-        manejaTemperatura: json["maneja_temperatura"],
-        temperatura: json["temperatura"],
-        type: json["type"],
-        propietario: json["propietario"],
-        createBackorder: json["create_backorder"],
-      );
+    id: json["id"],
+    name: json["name"],
+    fechaCreacion: json["fecha_creacion"],
+    proveedorId: json["proveedor_id"],
+    proveedor: json["proveedor"],
+    locationDestId: json["location_dest_id"],
+    locationDestName: json["location_dest_name"],
+    locationDestBarode: json["location_dest_barode"],
+    purchaseOrderId: json["purchase_order_id"],
+    purchaseOrderName: json["purchase_order_name"],
+    numeroEntrada: json["numero_entrada"],
+    pesoTotal: json["peso_total"]?.toDouble(),
+    numeroLineas: json["numero_lineas"],
+    numeroItems: json["numero_items"],
+    state: json["state"],
+    origin: json["origin"],
+    priority: json["priority"],
+    warehouseId: json["warehouse_id"],
+    warehouseName: json["warehouse_name"],
+    locationId: json["location_id"],
+    locationName: json["location_name"],
+    responsableId: json["responsable_id"],
+    responsable: json["responsable"],
+    pickingType: json["picking_type"],
+    startTimeReception: json["start_time_reception"],
+    endTimeReception: json["end_time_reception"],
+    isSelected: json["is_selected"],
+    isStarted: json["is_started"],
+    isFinish: json["is_finish"],
+    lineasRecepcion: json["lineas_recepcion"] == null
+        ? []
+        : List<LineasTransferencia>.from(
+            json["lineas_recepcion"]!.map(
+              (x) => LineasTransferencia.fromMap(x),
+            ),
+          ),
+    lineasRecepcionEnviadas: json["lineas_recepcion_enviadas"] == null
+        ? []
+        : List<LineasTransferencia>.from(
+            json["lineas_recepcion_enviadas"]!.map(
+              (x) => LineasTransferencia.fromMap(x),
+            ),
+          ),
+    backorderName: json["backorder_name"],
+    backorderId: json["backorder_id"],
+    manejaTemperatura: json["maneja_temperatura"],
+    temperatura: json["temperatura"],
+    type: json["type"],
+    propietario: json["propietario"],
+    manejoPropietario: json["manejo_propietario"],
+    createBackorder: json["create_backorder"],
+  );
 
   Map<String, dynamic> toMap() => {
-        "id": id,
-        "name": name,
-        "fecha_creacion": fechaCreacion,
-        "proveedor_id": proveedorId,
-        "proveedor": proveedor,
-        "location_dest_id": locationDestId,
-        "location_dest_name": locationDestName,
-        "location_dest_barode": locationDestBarode,
-        "purchase_order_id": purchaseOrderId,
-        "purchase_order_name": purchaseOrderName,
-        "numero_entrada": numeroEntrada,
-        "peso_total": pesoTotal,
-        "numero_lineas": numeroLineas,
-        "numero_items": numeroItems,
-        "state": state,
-        "origin": origin,
-        "priority": priority,
-        "warehouse_id": warehouseId,
-        "warehouse_name": warehouseName,
-        "location_id": locationId,
-        "location_name": locationName,
-        "responsable_id": responsableId,
-        "responsable": responsable,
-        "picking_type": pickingType,
-        "start_time_reception": startTimeReception,
-        "end_time_reception": endTimeReception,
-        "is_selected": isSelected,
-        "is_started": isStarted,
-        "is_finish": isFinish,
-        "lineas_recepcion": lineasRecepcion == null
-            ? []
-            : List<dynamic>.from(lineasRecepcion!.map((x) => x.toMap())),
-        "lineas_recepcion_enviadas": lineasRecepcionEnviadas == null
-            ? []
-            : List<dynamic>.from(
-                lineasRecepcionEnviadas!.map((x) => x.toMap())),
-        "backorder_name": backorderName,
-        "backorder_id": backorderId,
-        "maneja_temperatura": manejaTemperatura,
-        "temperatura": temperatura,
-        "type": type,
-        "propietario": propietario,
-        "create_backorder": createBackorder,
-        };
+    "id": id,
+    "name": name,
+    "fecha_creacion": fechaCreacion,
+    "proveedor_id": proveedorId,
+    "proveedor": proveedor,
+    "location_dest_id": locationDestId,
+    "location_dest_name": locationDestName,
+    "location_dest_barode": locationDestBarode,
+    "purchase_order_id": purchaseOrderId,
+    "purchase_order_name": purchaseOrderName,
+    "numero_entrada": numeroEntrada,
+    "peso_total": pesoTotal,
+    "numero_lineas": numeroLineas,
+    "numero_items": numeroItems,
+    "state": state,
+    "origin": origin,
+    "priority": priority,
+    "warehouse_id": warehouseId,
+    "warehouse_name": warehouseName,
+    "location_id": locationId,
+    "location_name": locationName,
+    "responsable_id": responsableId,
+    "responsable": responsable,
+    "picking_type": pickingType,
+    "start_time_reception": startTimeReception,
+    "end_time_reception": endTimeReception,
+    "is_selected": isSelected,
+    "is_started": isStarted,
+    "is_finish": isFinish,
+    "lineas_recepcion": lineasRecepcion == null
+        ? []
+        : List<dynamic>.from(lineasRecepcion!.map((x) => x.toMap())),
+    "lineas_recepcion_enviadas": lineasRecepcionEnviadas == null
+        ? []
+        : List<dynamic>.from(lineasRecepcionEnviadas!.map((x) => x.toMap())),
+    "backorder_name": backorderName,
+    "backorder_id": backorderId,
+    "maneja_temperatura": manejaTemperatura,
+    "temperatura": temperatura,
+    "type": type,
+    "propietario": propietario,
+    "manejo_propietario": manejoPropietario,
+    "create_backorder": createBackorder,
+  };
 }
 
 class LineasTransferencia {
   int? id;
-  dynamic? productId;
-  dynamic? idRecepcion;
-  dynamic? idMove;
+  dynamic productId;
+  dynamic idRecepcion;
+  dynamic idMove;
   String? productName;
   String? productCode;
   String? productBarcode;
   String? productTracking;
   String? fechaVencimiento;
 
-  dynamic? diasVencimiento;
+  dynamic diasVencimiento;
   List<Barcodes>? otherBarcodes;
   List<Barcodes>? productPacking;
-  dynamic? quantityOrdered;
-  dynamic? quantityToReceive;
-  dynamic? quantityDone;
+  dynamic quantityOrdered;
+  dynamic quantityToReceive;
+  dynamic quantityDone;
   String? uom;
 
   int? locationDestId;
@@ -304,10 +310,10 @@ class LineasTransferencia {
 
   final dynamic isPrincipalItem;
   final dynamic cantidadFaltante;
-  final dynamic? manejaTemperatura;
+  final dynamic manejaTemperatura;
   final dynamic temperatura;
-  final dynamic image;  
-  final dynamic imageNovedad;  
+  final dynamic image;
+  final dynamic imageNovedad;
   final dynamic useExpirationDate;
   // date_transaction
 
@@ -376,11 +382,13 @@ class LineasTransferencia {
         otherBarcodes: json["other_barcodes"] == null
             ? []
             : List<Barcodes>.from(
-                json["other_barcodes"]!.map((x) => Barcodes.fromMap(x))),
+                json["other_barcodes"]!.map((x) => Barcodes.fromMap(x)),
+              ),
         productPacking: json["product_packing"] == null
             ? []
             : List<Barcodes>.from(
-                json["product_packing"]!.map((x) => Barcodes.fromMap(x))),
+                json["product_packing"]!.map((x) => Barcodes.fromMap(x)),
+              ),
         quantityOrdered: json["quantity_ordered"],
         quantityToReceive: json["quantity_to_receive"],
         quantityDone: json["quantity_done"],
@@ -419,56 +427,56 @@ class LineasTransferencia {
       );
 
   Map<String, dynamic> toMap() => {
-        "id": id,
-        "product_id": productId,
-        "id_recepcion": idRecepcion,
-        "id_move": idMove,
-        "product_name": productName,
-        "product_code": productCode,
-        "product_barcode": productBarcode,
-        "product_tracking": productTracking,
-        "fecha_vencimiento": fechaVencimiento,
-        "dias_vencimiento": diasVencimiento,
-        "other_barcodes": otherBarcodes == null
-            ? []
-            : List<dynamic>.from(otherBarcodes!.map((x) => x.toMap())),
-        "product_packing": productPacking == null
-            ? []
-            : List<dynamic>.from(productPacking!.map((x) => x)),
-        "quantity_ordered": quantityOrdered,
-        "quantity_to_receive": quantityToReceive,
-        "quantity_done": quantityDone,
-        "uom": uom,
-        "location_dest_id": locationDestId,
-        "location_dest_name": locationDestName,
-        "location_dest_barcode": locationBarcode,
-        "location_id": locationId,
-        "location_name": locationName,
-        "location_barcode": locationBarcode,
-        "weight": weight,
-        "lote_id": loteId,
-        "lot_name": lotName,
-        "lote_date": loteDate,
-        "product_is_ok": productIsOk,
-        "is_quantity_is_ok": isQuantityIsOk,
-        "quantity_separate": quantitySeparate,
-        "is_selected": isSelected,
-        "is_separate": isSeparate,
-        "is_product_split": isProductSplit,
-        "observation": observation,
-        "date_separate": dateSeparate,
-        "date_start": dateStart,
-        "date_end": dateEnd,
-        "time": time,
-        "is_done_item": isDoneItem,
-        "date_transaction": dateTransaction,
-        "is_principal_item": isPrincipalItem,
-        "cantidad_faltante": cantidadFaltante,
-        "type": type,
-        "maneja_temperatura": manejaTemperatura,
-        "temperatura": temperatura,
-        "image": image,
-        "image_novedad": imageNovedad,
-        "use_expiration_date": useExpirationDate,
-      };
+    "id": id,
+    "product_id": productId,
+    "id_recepcion": idRecepcion,
+    "id_move": idMove,
+    "product_name": productName,
+    "product_code": productCode,
+    "product_barcode": productBarcode,
+    "product_tracking": productTracking,
+    "fecha_vencimiento": fechaVencimiento,
+    "dias_vencimiento": diasVencimiento,
+    "other_barcodes": otherBarcodes == null
+        ? []
+        : List<dynamic>.from(otherBarcodes!.map((x) => x.toMap())),
+    "product_packing": productPacking == null
+        ? []
+        : List<dynamic>.from(productPacking!.map((x) => x)),
+    "quantity_ordered": quantityOrdered,
+    "quantity_to_receive": quantityToReceive,
+    "quantity_done": quantityDone,
+    "uom": uom,
+    "location_dest_id": locationDestId,
+    "location_dest_name": locationDestName,
+    "location_dest_barcode": locationBarcode,
+    "location_id": locationId,
+    "location_name": locationName,
+    "location_barcode": locationBarcode,
+    "weight": weight,
+    "lote_id": loteId,
+    "lot_name": lotName,
+    "lote_date": loteDate,
+    "product_is_ok": productIsOk,
+    "is_quantity_is_ok": isQuantityIsOk,
+    "quantity_separate": quantitySeparate,
+    "is_selected": isSelected,
+    "is_separate": isSeparate,
+    "is_product_split": isProductSplit,
+    "observation": observation,
+    "date_separate": dateSeparate,
+    "date_start": dateStart,
+    "date_end": dateEnd,
+    "time": time,
+    "is_done_item": isDoneItem,
+    "date_transaction": dateTransaction,
+    "is_principal_item": isPrincipalItem,
+    "cantidad_faltante": cantidadFaltante,
+    "type": type,
+    "maneja_temperatura": manejaTemperatura,
+    "temperatura": temperatura,
+    "image": image,
+    "image_novedad": imageNovedad,
+    "use_expiration_date": useExpirationDate,
+  };
 }

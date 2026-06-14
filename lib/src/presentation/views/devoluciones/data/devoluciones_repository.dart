@@ -240,7 +240,7 @@ class DevolucionesRepository {
     try {
       var response = await ApiRequestService().postPacking(
         endpoint:
-            'crear_devs', // Cambiado para que sea el endpoint correspondiente
+            'crear_devs', 
         body: {
           "params": {
             "device_id": mac == "02:00:00:00:00:00" ? imei : mac,
@@ -250,6 +250,7 @@ class DevolucionesRepository {
             "id_responsable": request.idResponsable,
             "fecha_inicio": request.fechaInicio,
             "fecha_fin": request.fechaFin,
+            "id_propietario" : request.idPropietario,
             "list_items":
                 request.listItems.map((item) => item.toJson()).toList(),
           },

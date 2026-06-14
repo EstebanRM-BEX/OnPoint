@@ -257,6 +257,7 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
           idUbicacionOrigen: widget.ubicacion?.idUbicacion ?? 0,
           timeLine: differenceInSeconds,
           observacion: "Sin novedad",
+          idPropietario: widget.ubicacion?.idPropietario ?? 0,
         ),
         cantidad));
 
@@ -277,6 +278,7 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
     return BlocBuilder<TransferInfoBloc, TransferInfoState>(
       builder: (context, state) {
         final product = widget.infoRapidaResult;
+        
         final bloc = context.read<TransferInfoBloc>();
         return WillPopScope(
           onWillPop: () async {
@@ -542,6 +544,37 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                                                             product?.codigoBarras ==
                                                                 null ||
                                                             product?.codigoBarras ==
+                                                                ""
+                                                        ? red
+                                                        : black),
+                                              ),
+                                              const Spacer(),
+                                            ],
+                                          ),
+                                        ),
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Row(
+                                            children: [
+                                               Text(
+                                              'Propietario:',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: primaryColorApp,
+                                              ),
+                                            ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                widget.ubicacion?.propietario ?? "Sin propietario",
+                                                          
+                                                textAlign: TextAlign.start,
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    color:   widget.ubicacion?.propietario ==
+                                                                false ||
+                                                             widget.ubicacion?.propietario ==
+                                                                null ||
+                                                             widget.ubicacion?.propietario ==
                                                                 ""
                                                         ? red
                                                         : black),

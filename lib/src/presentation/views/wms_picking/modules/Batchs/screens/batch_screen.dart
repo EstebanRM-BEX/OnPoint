@@ -633,7 +633,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
                               ),
                               expiryWidget: ExpirationBadgeWidget(
                                 expirationDate:
-                                    batchBloc.currentProduct?.expireDate,
+                                    batchBloc.currentProduct.expireDate,
                               ),
                               listOfBarcodes: batchBloc.listOfBarcodes,
                               onBarcodesDialogTap: () {
@@ -912,7 +912,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
     // Función auxiliar para NO REPETIR el código de envío a la API
     void procesarTransaccion() {
       batchBloc.add(ChangeQuantitySeparate(
-          cantidad!, // Usamos ! porque ya validamos arriba
+          cantidad, // Usamos ! porque ya validamos arriba
           currentProduct.idProduct ?? 0,
           currentProduct.idMove ?? 0,
           batchBloc.typePicking));

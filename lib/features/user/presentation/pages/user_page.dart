@@ -12,13 +12,15 @@ import 'package:wms_app/features/home/presentation/widgets/update_app_dialog_wid
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
-import 'package:wms_app/src/presentation/views/inventario/screens/bloc/inventario_bloc.dart';
+import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import '../bloc/user_bloc.dart';
 import '../widgets/device_info_card.dart';
 import '../widgets/permissions_widget.dart';
 import '../widgets/user_info_card.dart';
+import '../widgets/warehouses_dialog.dart';
+import 'package:wms_app/src/presentation/providers/db/others/tbl_warehouses/warehouse_repository.dart';
 
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
@@ -72,10 +74,11 @@ class _UserPageState extends State<UserPage> {
                 );
               }
               if (state is GetProductsFailureInventory) {
+                print("error: ${state.message}");
                 if (Navigator.canPop(context)) Navigator.pop(context);
                 Get.snackbar(
                   '360 Software Informa',
-                  state.error,
+                  state.message,
                   backgroundColor: white,
                   colorText: primaryColorApp,
                   icon: const Icon(Icons.error, color: Colors.red),
@@ -287,6 +290,25 @@ class _UserPageState extends State<UserPage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
+            ElevatedButton.icon(
+              onPressed: () async {
+                final warehouses =
+                    await WarehouseRepository().getAllowedWarehouse();
+                if (!context.mounted) return;
+                showDialog(
+                  context: context,
+                  builder: (_) => WarehousesDialog(warehouses: warehouses),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 30),
+                  backgroundColor: primaryColorApp),
+              icon: const Icon(Icons.warehouse, color: white, size: 16),
+              label: const Text(
+                "Ver Almacenes",
+                style: TextStyle(color: white),
+              ),
+            ),
             ElevatedButton(
               onPressed: () {
                 context.read<InventarioBloc>().add(GetProductsEvent());
@@ -313,7 +335,6 @@ class _UserPageState extends State<UserPage> {
                 style: TextStyle(color: white),
               ),
             ),
-
             ElevatedButton(
               onPressed: () {
                 context
@@ -328,22 +349,6 @@ class _UserPageState extends State<UserPage> {
                 style: TextStyle(color: white),
               ),
             ),
-            // ElevatedButton(
-            //   onPressed: () {
-            //      final warehouses = state.configuration.result?.result?.allowedWarehouses ?? [];
-            //      showDialog(
-            //        context: context,
-            //        builder: (context) => WarehousesDialog(warehouses: warehouses),
-            //      );
-            //   },
-            //   style: ElevatedButton.styleFrom(
-            //       minimumSize: const Size(double.infinity, 30),
-            //       backgroundColor: grey),
-            //   child: const Text(
-            //     "Ver Almacenes",
-            //     style: TextStyle(color: white),
-            //   ),
-            // ),
           ],
         ),
       ),

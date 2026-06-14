@@ -1,6 +1,7 @@
 class RequestSendDevolucionModel {
   final int idAlmacen;
   final int idProveedor;
+  final int idPropietario;
   final int idUbicacionDestino;
   final int idResponsable;
   final String fechaInicio;
@@ -10,6 +11,7 @@ class RequestSendDevolucionModel {
   RequestSendDevolucionModel({
     required this.idAlmacen,
     required this.idProveedor,
+    required this.idPropietario,
     required this.idUbicacionDestino,
     required this.idResponsable,
     required this.fechaInicio,
@@ -20,6 +22,7 @@ class RequestSendDevolucionModel {
     return {
       'idAlmacen': idAlmacen,
       'idProveedor': idProveedor,
+      'id_propietario': idPropietario,
       'idUbicacionDestino': idUbicacionDestino,
       'idResponsable': idResponsable,
       'fechaInicio': fechaInicio,
@@ -32,6 +35,7 @@ class RequestSendDevolucionModel {
     return RequestSendDevolucionModel(
       idAlmacen: json['idAlmacen'],
       idProveedor: json['idProveedor'],
+      idPropietario: json['id_propietario'],
       idUbicacionDestino: json['idUbicacionDestino'],
       idResponsable: json['idResponsable'],
       fechaInicio: json['fechaInicio'],

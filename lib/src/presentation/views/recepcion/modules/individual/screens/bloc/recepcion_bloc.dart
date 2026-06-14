@@ -11,7 +11,8 @@ import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
-import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
+import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/views/recepcion/data/recepcion_repository.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/repcion_requets_model.dart';
@@ -120,7 +121,6 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   UserConfigurationModel configurations = UserConfigurationModel();
 
   //repositorio de inventario
-  InventarioRepository inventarioRepository = InventarioRepository();
 
   RecepcionBloc() : super(RecepcionInitial()) {
     on<RecepcionEvent>((event, emit) {});
@@ -231,20 +231,13 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
-      final response =
-          await inventarioRepository.viewUrlImageProduct(event.idProduct, true);
+      final result = await getIt<GetUrlImagenProducto>()(
+          GetUrlImagenProductoParams(productId: event.idProduct));
 
-      if (response.result?.code == 200) {
-        if (response.result?.result == null ||
-            response.result?.result?.url == null ||
-            response.result?.result?.url == '') {
-          emit(ViewProductImageFailure('Imagen no disponible'));
-          return;
-        }
-        emit(ViewProductImageSuccess(response.result?.result?.url ?? ''));
-      } else {
-        emit(ViewProductImageFailure('Imagen no disponible'));
-      }
+      result.fold(
+        (failure) => emit(ViewProductImageFailure('Imagen no disponible')),
+        (url) => emit(ViewProductImageSuccess(url)),
+      );
     } catch (e, s) {
       debugPrint('Error en el ViewProductImageEvent: $e, $s');
       emit(ViewProductImageFailure(e.toString()));

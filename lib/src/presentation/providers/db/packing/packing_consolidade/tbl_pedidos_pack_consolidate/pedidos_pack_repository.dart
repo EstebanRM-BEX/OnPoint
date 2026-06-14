@@ -53,6 +53,11 @@ class PedidosPackingConsolidateRepository {
                 PedidosPackingConsolidateTable.columnType: type,
                 //pedidos
                 PedidosPackingConsolidateTable.columnPedidos: pedido.pedidos,
+                PedidosPackingConsolidateTable.columnManejoPropietario: pedido.manejoPropietario is bool
+                    ? (pedido.manejoPropietario == true ? 1 : 0)
+                    : (pedido.manejoPropietario ?? 0),
+                PedidosPackingConsolidateTable.columnPropietario: pedido.propietario,
+
               },
               where: '${PedidosPackingConsolidateTable.columnId} = ?',
               whereArgs: [pedido.id],
@@ -86,6 +91,10 @@ class PedidosPackingConsolidateRepository {
                 PedidosPackingConsolidateTable.columnType: type,
                 //pedidos
                 PedidosPackingConsolidateTable.columnPedidos: pedido.pedidos,
+                 PedidosPackingConsolidateTable.columnManejoPropietario: pedido.manejoPropietario is bool
+                    ? (pedido.manejoPropietario == true ? 1 : 0)
+                    : (pedido.manejoPropietario ?? 0),
+                PedidosPackingConsolidateTable.columnPropietario: pedido.propietario,
               },
               conflictAlgorithm: ConflictAlgorithm.replace,
             );

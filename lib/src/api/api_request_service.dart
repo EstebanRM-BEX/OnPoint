@@ -60,6 +60,9 @@ class ApiRequestService {
   }
 
   void _showNetworkError() {
+    // Evita el spam: varias peticiones fallando en ráfaga sin conexión
+    // mostraban un snackbar de 5s por cada una.
+    if (Get.isSnackbarOpen) return;
     Get.snackbar(
       'Error de red',
       'No se pudo conectar al servidor',

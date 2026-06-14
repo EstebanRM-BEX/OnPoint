@@ -91,7 +91,7 @@ class ProductInfoScreen extends StatelessWidget {
         final nameController = TextEditingController(
           text: product.nombre ?? '',
         );
-
+       
         return WillPopScope(
           onWillPop: () async {
             return false;
@@ -162,6 +162,7 @@ class ProductInfoScreen extends StatelessWidget {
                                     isName: true,
                                     isExpanded: true,
                                   ),
+                                 
                                   EditableReferenceRow(
                                     title: 'Referencia: ',
                                     isEditMode: bloc.isEdit,
@@ -621,6 +622,14 @@ class ProductInfoScreen extends StatelessWidget {
                                         value:
                                             '${ubicacion?.reservado} ${ubicacion?.unidadMedida ?? 'UND'}',
                                         color: red,
+                                      ),
+                                      ProductInfoRow(
+                                        title:
+                                            'Propietario: ', // Este parece repetido, si es correcto, déjalo así
+                                        value: ubicacion?.propietario == null ||
+                                                ubicacion?.propietario == ''
+                                            ? 'Sin propietario'
+                                            : ubicacion?.propietario ?? 'Sin propietario',
                                       ),
                                       ProductInfoRow(
                                         title:

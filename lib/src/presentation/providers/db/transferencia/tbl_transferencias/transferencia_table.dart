@@ -37,7 +37,9 @@ class TransferenciaTable {
 
   static const String columnType = 'type';
 
-
+  //propietario
+  static const String columnManejoPropietario = 'manejo_propietario';
+  static const String columnPropietario = 'propietario';
 
   static String createTable() {
     return '''
@@ -71,6 +73,8 @@ class TransferenciaTable {
       $columnProveedor TEXT,
       $columnType TEXT,
       $columnCreateBackorder TEXT,
+      $columnPropietario TEXT,
+      $columnManejoPropietario INTEGER DEFAULT 0,
       $columnShowCheckAvailability INTEGER
     )
     ''';

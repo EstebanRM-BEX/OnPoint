@@ -1,13 +1,17 @@
 // ignore_for_file: unnecessary_null_comparison, unnecessary_type_check, avoid_print, prefer_is_empty, use_build_context_synchronously, prefer_if_null_operators
 
+import 'dart:async';
+
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:intl/intl.dart';
+import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
-import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
+import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/data/wms_picking_repository.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/BatchWithProducts_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/item_picking_request.dart';
@@ -72,6 +76,11 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
   DataBaseSqlite db = DataBaseSqlite();
   WmsPickingRepository repository = WmsPickingRepository();
 
+  //*conectividad: para el modo offline y el reenvío automático de pendientes
+  final NetworkInfo _networkInfo = getIt<NetworkInfo>();
+  StreamSubscription<ConnectionStatus>? _networkSubscription;
+  bool _isSyncingPending = false;
+
   //*lista de novedades de separacion
 
   String selectedNovedad = '';
@@ -103,7 +112,6 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
   int index = 0;
 
   //repositorio de inventario
-  InventarioRepository inventarioRepository = InventarioRepository();
 
   BatchBloc() : super(BatchInitial()) {
     on<LoadConfigurationsUser>(_onLoadConfigurationsUserEvent);
@@ -141,6 +149,15 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
     on<PickingOkEvent>(_onPickingOkEvent);
     //*evento para dejar pendiente la separacion
     on<ProductPendingEvent>(_onPickingPendingEvent);
+    //*evento para reenviar productos guardados sin conexion
+    on<SyncPendingProductsEvent>(_onSyncPendingProductsEvent);
+
+    //*al recuperar conexion, reenviamos automaticamente los pendientes
+    _networkSubscription = _networkInfo.onStatusChanged.listen((status) {
+      if (status == ConnectionStatus.online && typePicking.isNotEmpty) {
+        add(SyncPendingProductsEvent(typePicking));
+      }
+    });
 
     //*evento para editar un producto
     on<LoadProductEditEvent>(_onEditProductEvent);
@@ -183,20 +200,13 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
-      final response =
-          await inventarioRepository.viewUrlImageProduct(event.idProduct, true);
+      final result = await getIt<GetUrlImagenProducto>()(
+          GetUrlImagenProductoParams(productId: event.idProduct));
 
-      if (response.result?.code == 200) {
-        if (response.result?.result == null ||
-            response.result?.result?.url == null ||
-            response.result?.result?.url == '') {
-          emit(ViewProductImageFailure('Imagen no disponible'));
-          return;
-        }
-        emit(ViewProductImageSuccess(response.result?.result?.url ?? ''));
-      } else {
-        emit(ViewProductImageFailure('Imagen no disponible'));
-      }
+      result.fold(
+        (failure) => emit(ViewProductImageFailure('Imagen no disponible')),
+        (url) => emit(ViewProductImageSuccess(url)),
+      );
     } catch (e, s) {
       debugPrint('Error en el ViewProductImageEvent: $e, $s');
       emit(ViewProductImageFailure(e.toString()));
@@ -807,6 +817,20 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
   void _onPickingOkEvent(PickingOkEvent event, Emitter<BatchState> emit) async {
     try {
       emit(PickingOkLoading());
+
+      //bloqueamos el cierre del batch si hay productos pendientes de envio
+      //(guardados sin conexion con is_send_odoo = 0)
+      final batchDB =
+          await db.getBatchWithProducts(event.batchId, event.type);
+      final pendientes =
+          batchDB?.products?.where((p) => p.isSendOdoo == 0).length ?? 0;
+      if (pendientes > 0) {
+        emit(PickingOkBlockedPendingSend(pendientes));
+        //intentamos sincronizar de una vez por si ya hay conexion
+        add(SyncPendingProductsEvent(event.type));
+        return;
+      }
+
       await db.batchPickingRepository
           .setFieldTableBatch(event.batchId, 'is_separate', 1, event.type);
 
@@ -815,6 +839,114 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       emit(PickingOkError());
       debugPrint("❌ Error en PickingOkEvent $e -> $s");
     }
+  }
+
+  //*evento para reenviar los productos guardados sin conexion (is_send_odoo = 0)
+  void _onSyncPendingProductsEvent(
+      SyncPendingProductsEvent event, Emitter<BatchState> emit) async {
+    if (_isSyncingPending) return;
+    _isSyncingPending = true;
+    try {
+      if (!await _networkInfo.isConnected) return;
+
+      //todos los productos pendientes del tipo, sin importar el batch:
+      //cubre pendientes de varios batches acumulados sin conexion
+      final products = await db.getProducts(event.type);
+      final pendientes = products.where((p) => p.isSendOdoo == 0).toList();
+      if (pendientes.isEmpty) return;
+
+      debugPrint(
+          "📡 Sincronizando ${pendientes.length} producto(s) pendiente(s)");
+      emit(SyncPendingProductsLoading());
+
+      //enviamos uno por uno; cada Item lleva su propio batchId
+      int enviados = 0;
+      for (final product in pendientes) {
+        final ok = await _sendPendingProductToOdoo(product, event.type);
+        if (ok) enviados++;
+        debugPrint(
+            "📡 Pendiente ${product.idProduct} (batch ${product.batchId}): ${ok ? 'enviado ✅' : 'falló ❌'}");
+      }
+
+      emit(SyncPendingProductsSuccess(enviados, pendientes.length));
+    } catch (e, s) {
+      debugPrint("❌ Error en SyncPendingProductsEvent $e -> $s");
+    } finally {
+      _isSyncingPending = false;
+    }
+  }
+
+  //* reenvía un producto pendiente a odoo (mismo Item que sendProuctOdoo)
+  Future<bool> _sendPendingProductToOdoo(
+      ProductsBatch product, String type) async {
+    try {
+      final double cantidadSeparada =
+          (product.quantitySeparate ?? 0).toDouble();
+      final double cantidadSolicitada = (product.quantity ?? 0).toDouble();
+      final bool esExceso = cantidadSeparada > cantidadSolicitada;
+      final bool esComponentes = type == 'components';
+      final bool tienePermisoExceso =
+          configurations.result?.result?.allowMoveExcessProduction == 1 ||
+              configurations.result?.result?.allowMoveExcessProduction == true;
+
+      double cantidadFinal = cantidadSeparada;
+      if (esExceso && !(esComponentes && tienePermisoExceso)) {
+        cantidadFinal = cantidadSolicitada;
+      }
+
+      final userid = await PrefUtils.getUserId();
+
+      //batch propio del producto (puede ser distinto al batch en memoria)
+      final batchDB =
+          await db.getBatchWithProducts(product.batchId ?? 0, type);
+
+      final response = await repository.sendPicking(
+        tipoPicking: type,
+        idBatch: product.batchId ?? 0,
+        timeTotal: 0.0,
+        cantItemsSeparados: batchDB?.batch?.productSeparateQty ?? 0,
+        listItem: [
+          Item(
+            idMove: product.idMove ?? 0,
+            productId: product.idProduct ?? 0,
+            lote: product.lotId ?? '',
+            cantidad: cantidadFinal,
+            novedad: product.observation == ""
+                ? 'Sin novedad'
+                : product.observation ?? '',
+            timeLine: product.timeSeparate == null
+                ? 30.0
+                : product.timeSeparate.toDouble(),
+            muelle: product.muelleId ?? 0,
+            idOperario: userid,
+            fechaTransaccion:
+                product.fechaTransaccion ?? DateTime.now().toString(),
+          ),
+        ],
+      );
+
+      if (response.result?.code == 200) {
+        await db.setFieldTableBatchProducts(
+          product.batchId ?? 0,
+          product.idProduct ?? 0,
+          'is_send_odoo',
+          1,
+          product.idMove ?? 0,
+          type,
+        );
+        return true;
+      }
+      return false;
+    } catch (e, s) {
+      debugPrint("❌ Error en _sendPendingProductToOdoo $e -> $s");
+      return false;
+    }
+  }
+
+  @override
+  Future<void> close() {
+    _networkSubscription?.cancel();
+    return super.close();
   }
 
   //*metodo para cambiar la cantidad seleccionada
@@ -944,6 +1076,22 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         }
       }
       // Si no es exceso, 'cantidadFinal' ya es igual a 'cantidadSeparada'
+
+      // --- VALIDACIÓN DE CONEXIÓN (modo offline) ---
+      // Sin conexión: el proceso local ya quedó completo (is_separate = 1,
+      // quantity_separate intacta). Marcamos is_send_odoo = 0 para que el
+      // producto quede pendiente y se reenvíe al recuperar la conexión.
+      if (!await _networkInfo.isConnected) {
+        await db.setFieldTableBatchProducts(
+          product?.batchId ?? 0,
+          product?.idProduct ?? 0,
+          'is_send_odoo',
+          0,
+          product?.idMove ?? 0,
+          type,
+        );
+        return (true, '');
+      }
 
       final userid = await PrefUtils.getUserId();
 

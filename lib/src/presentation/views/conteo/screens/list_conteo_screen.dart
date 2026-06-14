@@ -10,7 +10,7 @@ import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.d
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 
 class ListConteoScreen extends StatelessWidget {
-  const ListConteoScreen({Key? key}) : super(key: key);
+  const ListConteoScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -155,7 +155,7 @@ class ListConteoScreen extends StatelessWidget {
                         }),
                       ),
 
-                      (context.read<ConteoBloc>().ordenesDeConteo?.isEmpty ??
+                      (context.read<ConteoBloc>().ordenesDeConteo.isEmpty ??
                               true)
                           ? Expanded(
                               child: Column(
@@ -186,12 +186,12 @@ class ListConteoScreen extends StatelessWidget {
                                   itemCount: context
                                       .read<ConteoBloc>()
                                       .ordenesDeConteo
-                                      ?.length,
+                                      .length,
                                   itemBuilder:
                                       (BuildContext contextList, int index) {
                                     final conteo = context
                                         .read<ConteoBloc>()
-                                        .ordenesDeConteo?[index];
+                                        .ordenesDeConteo[index];
                                     return Padding(
                                         padding: const EdgeInsets.only(
                                           left: 10,

@@ -178,19 +178,19 @@ class SendToOdooStateError extends ClusterPickingState {
 final class CurrentProductChangedState extends ClusterPickingState {
   final BatchProduct? currentProduct;
   final int index;
-  CurrentProductChangedState({this.currentProduct, required this.index});
+  const CurrentProductChangedState({this.currentProduct, required this.index});
 }
 
 class ViewProductImageLoading extends ClusterPickingState {}
 
 class ViewProductImageSuccess extends ClusterPickingState {
   final String imageUrl;
-  ViewProductImageSuccess(this.imageUrl);
+  const ViewProductImageSuccess(this.imageUrl);
 }
 
 class ViewProductImageFailure extends ClusterPickingState {
   final String error;
-  ViewProductImageFailure(this.error);
+  const ViewProductImageFailure(this.error);
 }
 
 class LoadSelectedProductState extends ClusterPickingState {
@@ -247,3 +247,20 @@ class ProductPendingError extends ClusterPickingState {
 }
 
 class ProductPendingSuccess extends ClusterPickingState {}
+
+//estado cuando el producto se guarda localmente sin conexion (pendiente de envio)
+class ProductSavedOfflineState extends ClusterPickingState {
+  const ProductSavedOfflineState();
+}
+
+//estados de la sincronizacion de productos pendientes de envio
+class SyncPendingClusterLoading extends ClusterPickingState {}
+
+class SyncPendingClusterSuccess extends ClusterPickingState {
+  final int enviados;
+  final int total;
+  const SyncPendingClusterSuccess(this.enviados, this.total);
+
+  @override
+  List<Object> get props => [enviados, total];
+}

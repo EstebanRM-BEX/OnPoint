@@ -45,6 +45,9 @@ class PedidoPackTable {
   static const String columnNumeroPaquetes = 'numero_paquetes';
   static const String columnIsSelected = 'is_selected';
   static const String columnIsTerminate = 'is_terminate';
+      //propietario
+  static const String columnPropietario = 'propietario';
+    static const String columnManejoPropietario = 'manejo_propietario';
 
   //is_started
   static const String columnIsStarted = 'is_started';
@@ -100,6 +103,8 @@ class PedidoPackTable {
         $columnIsTerminate INTEGER,
         $columnCreateBackorder TEXT,
         $columnIsStarted INTEGER,
+                $columnPropietario TEXT,
+        $columnManejoPropietario INTEGER DEFAULT 0,
         $columnNumeroPaquetes INTEGER
       )
     ''';

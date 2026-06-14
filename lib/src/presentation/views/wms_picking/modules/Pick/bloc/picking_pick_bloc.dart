@@ -8,7 +8,8 @@ import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
-import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
+import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/views/transferencias/data/transferencias_repository.dart';
 import 'package:wms_app/src/presentation/views/transferencias/models/requets_transfer_model.dart';
 
@@ -110,7 +111,6 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   String currentFilterKey = 'priority_high';
 
   //repositorio de inventario
-  InventarioRepository inventarioRepository = InventarioRepository();
 
   PickingPickBloc() : super(PickingPickInitial()) {
     on<PickingPickEvent>((event, emit) {});
@@ -210,7 +210,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     on<ViewProductImageEvent>(_onViewProductImageEvent);
 
     on<SortPickListEvent>((event, emit) {
-      List<ResultPick> sortedList = List.from(this.listOfPickFiltered);
+      List<ResultPick> sortedList = List.from(listOfPickFiltered);
       sortedList.sort((a, b) {
         switch (event.field) {
           case 'priority':
@@ -269,7 +269,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         }
       });
 
-      this.listOfPickFiltered = sortedList;
+      listOfPickFiltered = sortedList;
       emit(PickingPickSuccess(sortedList));
     });
   }
@@ -281,22 +281,13 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
-      final response = await inventarioRepository.viewUrlImageProduct(
-        event.idProduct,
-        true,
-      );
+      final result = await getIt<GetUrlImagenProducto>()(
+          GetUrlImagenProductoParams(productId: event.idProduct));
 
-      if (response.result?.code == 200) {
-        if (response.result?.result == null ||
-            response.result?.result?.url == null ||
-            response.result?.result?.url == '') {
-          emit(ViewProductImageFailure('Imagen no disponible'));
-          return;
-        }
-        emit(ViewProductImageSuccess(response.result?.result?.url ?? ''));
-      } else {
-        emit(ViewProductImageFailure('Imagen no disponible'));
-      }
+      result.fold(
+        (failure) => emit(ViewProductImageFailure('Imagen no disponible')),
+        (url) => emit(ViewProductImageSuccess(url)),
+      );
     } catch (e, s) {
       debugPrint('Error en el ViewProductImageEvent: $e, $s');
       emit(ViewProductImageFailure(e.toString()));
@@ -316,7 +307,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         event.date,
       );
 
-      if (response != null && response is List) {
+      if (response != null) {
         historyPicks = [];
         filtersHistoryPicks = [];
         historyPicks.addAll(response);
@@ -345,7 +336,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         event.date,
       );
 
-      if (response != null && response is List) {
+      if (response != null) {
         historyPicks = [];
         filtersHistoryPicks = [];
         historyPicks.addAll(response);
@@ -373,7 +364,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         event.idPicking,
       );
 
-      if (response != null && response is RespondePickDoneId) {
+      if (response != null) {
         historyPickId = RespondePickDoneId();
         historyPickId = response;
         emit(BatchHistoryLoadedState(historyPickId));
@@ -2264,7 +2255,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         listOfPick = result;
         listOfPickFiltered = result;
 
-        this.listOfPickFiltered.sort((a, b) {
+        listOfPickFiltered.sort((a, b) {
           final String pA = a.priority ?? '0';
           final String pB = b.priority ?? '0';
           return pB.compareTo(pA); // Descendente

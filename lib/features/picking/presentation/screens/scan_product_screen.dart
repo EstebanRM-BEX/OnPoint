@@ -892,7 +892,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                               ),
                               expiryWidget: ExpirationBadgeWidget(
                                 expirationDate:
-                                    batchBloc.currentProduct?.expireDate,
+                                    batchBloc.currentProduct.expireDate,
                               ),
                               listOfBarcodes: batchBloc.listOfBarcodes,
                               onBarcodesDialogTap: () {
@@ -1377,7 +1377,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
       debugPrint("currentProduct ${currentProduct.productId}");
 
       // Función para actualizar la base de datos en varios campos a la vez
-      Future<void> _updateDatabaseFields() async {
+      Future<void> updateDatabaseFields() async {
         await db.pickProductsRepository.setFieldTablePickProducts(
           batch.id ?? 0,
           currentProduct.idProduct ?? 0,
@@ -1388,7 +1388,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
       }
 
       // Función para gestionar la transición al siguiente producto
-      Future<void> _moveToNextProduct() async {
+      Future<void> moveToNextProduct() async {
         final separated =
             batchBloc.filteredProducts.where((e) => e.isSeparate == 0).toList();
 
@@ -1442,10 +1442,10 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
       }
 
       // Ejecutar las operaciones en bloque
-      await _updateDatabaseFields();
+      await updateDatabaseFields();
       batchBloc.add(ShowQuantityEvent(false));
       batchBloc.sortProductsByLocationId();
-      await _moveToNextProduct();
+      await moveToNextProduct();
     } catch (e, s) {
       debugPrint("❌ Error en _nextProduct: $e -> $s");
       // Manejo de errores

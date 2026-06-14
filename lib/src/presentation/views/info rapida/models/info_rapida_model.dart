@@ -84,20 +84,24 @@ class InfoResult {
   List<Ubicacion>? ubicaciones;
   String? unidadMedida;
 
-  dynamic? isSticker;
-  dynamic? isCertificate;
+  dynamic isSticker;
+  dynamic isCertificate;
   String? fechaEmpaquetado;
 
   //parametros de ubicacion
   String? ubicacionPadre;
   String? tipoUbicacion;
   List<Producto>? productos;
-  dynamic? numeroPedidos;
-  dynamic? totalProductos;
-  dynamic? numeroProductos;
+  dynamic numeroPedidos;
+  dynamic totalProductos;
+  dynamic numeroProductos;
 
   String? nombreAlmacen;
   String? nombreCompleto;
+  dynamic? manejoPropietario;
+  String? propietario;
+  int? idPropietario;
+
 
   InfoResult({
     this.id,
@@ -124,6 +128,9 @@ class InfoResult {
     this.numeroProductos,
     this.nombreAlmacen,
     this.nombreCompleto,
+    this.idPropietario,
+    this.manejoPropietario,
+    this.propietario,
   });
 
   factory InfoResult.fromMap(Map<String, dynamic> json) => InfoResult(
@@ -159,6 +166,9 @@ class InfoResult {
         numeroProductos: json["numero_productos"],
         nombreAlmacen: json["nombre_almacen"],
         nombreCompleto: json["nombre_completo"],
+        propietario: json["propietario"],
+        idPropietario: json["id_propietario"],
+        manejoPropietario: json["manejo_propietario"]
       );
 
   Map<String, dynamic> toMap() => {
@@ -189,6 +199,10 @@ class InfoResult {
         "numero_productos": numeroProductos,
         "nombre_almacen": nombreAlmacen,
         "nombre_completo": nombreCompleto,
+        "propietario" : propietario,
+        "id_propietario" : idPropietario,
+        "manejo_propietario" : manejoPropietario,
+
       };
 }
 
@@ -209,6 +223,10 @@ class Ubicacion {
   String? unidadMedida;
   bool? packing;
   String? nombrePaquete;
+  String? propietario;
+  int? idPropietario;
+  dynamic manejoPropietario;
+
 
   Ubicacion({
     this.idMove,
@@ -227,6 +245,9 @@ class Ubicacion {
     this.unidadMedida,
     this.packing,
     this.nombrePaquete,
+    this.idPropietario,
+    this.propietario,
+    this.manejoPropietario,
   });
 
   factory Ubicacion.fromMap(Map<String, dynamic> json) => Ubicacion(
@@ -246,8 +267,12 @@ class Ubicacion {
         unidadMedida: json["unidad_medida"],
         packing: json["packing"],
         nombrePaquete: json["nombre_paquete"],
+        propietario: json['propietario'],
+        manejoPropietario: json["manejo_propietario"],
+        idPropietario: json["id_propietario"]
       );
 
+      
   Map<String, dynamic> toMap() => {
         "id_move": idMove,
         "id_almacen": idAlmacen,
@@ -265,6 +290,9 @@ class Ubicacion {
         "unidad_medida": unidadMedida,
         "packing": packing,
         "nombre_paquete": nombrePaquete,
+        "id_propietario" : idPropietario,
+        "propietario" : propietario,
+        "manejo_propietario" : manejoPropietario,
       };
 }
 
@@ -283,10 +311,13 @@ class Producto {
   String? tercero;
   String? numeroCaja;
   String? nombreAlmacen;
-  dynamic? operador;
+  dynamic operador;
   String? fechaVencimiento;
   bool? packing;
   String? nombrePaquete;
+    String? propietario;
+  int? idPropietario;
+  dynamic manejoPropietario;
 
   Producto({
     this.id,
@@ -307,6 +338,11 @@ class Producto {
     this.fechaVencimiento,
     this.packing,
     this.nombrePaquete,
+        this.idPropietario,
+    this.propietario,
+    this.manejoPropietario,
+    
+
   });
 
   factory Producto.fromMap(Map<String, dynamic> json) => Producto(
@@ -328,6 +364,9 @@ class Producto {
         fechaVencimiento: json["fecha_vencimiento"],
         packing: json["packing"],
         nombrePaquete: json["nombre_paquete"],
+                propietario: json['propietario'],
+        manejoPropietario: json["manejo_propietario"],
+        idPropietario: json["id_propietario"]
       );
 
   Map<String, dynamic> toMap() => {
@@ -349,5 +388,8 @@ class Producto {
         "fecha_vencimiento": fechaVencimiento,
         "packing": packing,
         "nombre_paquete": nombrePaquete,
+                "id_propietario" : idPropietario,
+        "propietario" : propietario,
+        "manejo_propietario" : manejoPropietario,
       };
 }

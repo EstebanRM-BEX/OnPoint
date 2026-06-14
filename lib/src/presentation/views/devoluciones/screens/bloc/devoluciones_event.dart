@@ -150,3 +150,17 @@ class DownloadAllTercerosEvent extends DevolucionesEvent {}
 class LoadTercerosCountEvent extends DevolucionesEvent {}
 
 class LoadTercerosFromDBEvent extends DevolucionesEvent {}
+
+class SelectPropietarioEvent extends DevolucionesEvent {
+  final Terceros propietario;
+  SelectPropietarioEvent(this.propietario);
+}
+
+class ResetPropietarioEvent extends DevolucionesEvent {}
+
+class LoadAllowedWarehousesEvent extends DevolucionesEvent {}
+
+class SelectWarehouseEvent extends DevolucionesEvent {
+  final AllowedWarehouse warehouse;
+  SelectWarehouseEvent(this.warehouse);
+}

@@ -9,7 +9,7 @@ class NetworkOverlayCubit extends Cubit<bool> {
 
   /// Constructor solo para tests: establece el estado inicial sin leer prefs.
   @visibleForTesting
-  NetworkOverlayCubit.withState(bool initial) : super(initial);
+  NetworkOverlayCubit.withState(super.initial);
 
   Future<void> _loadFromPrefs() async {
     final visible = await PrefUtils.getNetworkOverlayVisible();

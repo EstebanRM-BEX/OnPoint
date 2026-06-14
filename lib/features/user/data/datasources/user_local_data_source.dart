@@ -96,7 +96,7 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
     if (legacyNovelties.isNotEmpty) {
       return legacyNovelties.map((e) {
         return UserNoveltyModel(
-          id: e.id!,
+          id: e.id,
           name: e.name ?? '',
           code: e.code ?? '',
         );

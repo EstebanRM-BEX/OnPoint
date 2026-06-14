@@ -12,8 +12,12 @@ import 'package:wms_app/src/presentation/views/conteo/data/conteo_repository.dar
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/request_send_product_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/response_send_product_model.dart';
-import 'package:wms_app/src/presentation/views/inventario/data/inventario_repository.dart';
-import 'package:wms_app/src/presentation/views/inventario/models/response_products_model.dart';
+import 'package:wms_app/features/inventario/domain/entities/lote_producto_inventario.dart';
+import 'package:wms_app/features/inventario/domain/usecases/crear_lote_inventario.dart';
+import 'package:wms_app/features/inventario/domain/usecases/get_lotes_producto.dart';
+import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
+import 'package:wms_app/injection_container.dart';
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:collection/collection.dart'; // Importa esta librería
@@ -69,7 +73,6 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   bool isProductOk = true;
   bool isLocationDestOk = true;
   bool isQuantityOk = true;
-  bool isKeyboardVisible = false;
   bool isLoteOk = true;
 
   bool viewQuantity = false;
@@ -101,7 +104,6 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   Product? currentNewProduct;
   ResultUbicaciones? currentUbication;
 
-  final InventarioRepository _inventarioRepository = InventarioRepository();
 
   //*producto en posicion actual
   CountedLine currentProduct = CountedLine();
@@ -192,22 +194,13 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
-      final response = await _inventarioRepository.viewUrlImageProduct(
-        event.idProduct,
-        true,
-      );
+      final result = await getIt<GetUrlImagenProducto>()(
+          GetUrlImagenProductoParams(productId: event.idProduct));
 
-      if (response.result?.code == 200) {
-        if (response.result?.result == null ||
-            response.result?.result?.url == null ||
-            response.result?.result?.url == '') {
-          emit(ViewProductImageFailure('Imagen no disponible'));
-          return;
-        }
-        emit(ViewProductImageSuccess(response.result?.result?.url ?? ''));
-      } else {
-        emit(ViewProductImageFailure('Imagen no disponible'));
-      }
+      result.fold(
+        (failure) => emit(ViewProductImageFailure('Imagen no disponible')),
+        (url) => emit(ViewProductImageSuccess(url)),
+      );
     } catch (e, s) {
       debugPrint('Error en el ViewProductImageEvent: $e, $s');
       emit(ViewProductImageFailure(e.toString()));
@@ -1040,31 +1033,31 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   ) async {
     try {
       emit(CreateLoteProductLoading());
-      final response = await _inventarioRepository.createLote(
-        false,
-        currentProduct?.productId ?? 0,
-        event.nameLote,
-        event.fechaCaducidad,
-        event.priorityExpiration,
+      final result = await getIt<CrearLoteInventario>()(
+        CrearLoteInventarioParams(
+          productId: currentProduct.productId ?? 0,
+          nameLote: event.nameLote,
+          fechaCaducidad: event.fechaCaducidad,
+          priorityExpiration: event.priorityExpiration,
+        ),
       );
 
-      if (response.result?.code == 200) {
+      final response = result.fold(
+        (failure) => throw Exception(failure.message),
+        (resultado) => resultado,
+      );
+
+      if (response.code == 200) {
         // Creamos el objeto del nuevo lote
-        final newLote = LotesProduct(
-          id: response.result?.result?.id,
-          name: response.result?.result?.name,
-          expirationDate: response.result?.result?.expirationDate ?? "",
-          quantity: response.result?.result?.quantity,
-          productId: response.result?.result?.productId,
-          productName: response.result?.result?.productName,
-        );
+        final newLote =
+            _loteToLegacy(response.lote ?? const LoteProductoInventario());
 
         // 1. Agregamos el nuevo lote SOLO a la lista principal
         listLotesProduct.add(newLote);
 
         listLotesProductFilters = List.from(listLotesProduct);
 
-        currentProductLote = response.result?.result;
+        currentProductLote = newLote;
         loteIsOk = true;
         dateLoteController.clear();
         newLoteController.clear();
@@ -1077,9 +1070,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       } else {
         emit(
           CreateLoteProductFailure(
-            response.result?.msg ??
+            response.msg ??
                 'Error al crear el lote contactarse con el administrador',
-            response.result?.code ?? 0,
+            response.code ?? 0,
           ),
         );
       }
@@ -1143,9 +1136,12 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       emit(GetLotesProductLoading());
 
       // Siempre obtener los lotes frescos del servidor
-      final response = await _inventarioRepository.fetchAllLotesProduct(
-        false,
-        currentProduct?.productId ?? 0,
+      final result = await getIt<GetLotesProducto>()(
+          GetLotesProductoParams(productId: currentProduct.productId ?? 0));
+
+      final response = result.fold(
+        (failure) => throw Exception(failure.message),
+        (lotes) => lotes.map(_loteToLegacy).toList(),
       );
 
       listLotesProduct = response;
@@ -1358,7 +1354,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         //valdiamos si tiene lote para traerlos
         if (currentProduct.productTracking == "lot") {
           add(
-            GetLotesProduct(isManual: true, idLote: currentProduct?.lotId ?? 0),
+            GetLotesProduct(isManual: true, idLote: currentProduct.lotId ?? 0),
           );
         }
         add(FetchBarcodesProductEvent(true));
@@ -1535,7 +1531,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       //validamos si el producto tiene lote
       if (currentProduct.productTracking == "lot") {
         add(
-          GetLotesProduct(isManual: true, idLote: currentProduct?.lotId ?? 0),
+          GetLotesProduct(isManual: true, idLote: currentProduct.lotId ?? 0),
         );
       } else {
         if (productIsOk && locationIsOk && loteIsOk) {
@@ -1623,7 +1619,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       final responseBarcodes = await db.barcodesPackagesRepository
           .getBarcodesByBatchIdAndType(event.ordenConteoId, 'orden');
 
-      if (responseBarcodes != null && responseBarcodes is List) {
+      if (responseBarcodes != null) {
         listAllOfBarcodes = responseBarcodes;
       }
 
@@ -1883,4 +1879,14 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     searchControllerProducts.dispose();
     return super.close();
   }
+  //puente entity → modelo legacy mientras este bloc migra a clean architecture
+  LotesProduct _loteToLegacy(LoteProductoInventario lote) => LotesProduct(
+        id: lote.id,
+        name: lote.name,
+        quantity: lote.quantity,
+        expirationDate: lote.expirationDate ?? "",
+        productId: lote.productId,
+        productName: lote.productName,
+      );
+
 }

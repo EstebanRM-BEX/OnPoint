@@ -61,7 +61,7 @@ class ProductDeleted {
     final bool? error;
     final String? mensaje;
     final String? producto;
-    final dynamic? cantidad;
+    final dynamic cantidad;
     final int? idMove;
     final int? idProducto;
     final int? idMoveDeleted;

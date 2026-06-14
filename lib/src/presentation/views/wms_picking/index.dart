@@ -37,6 +37,93 @@ class _PickingPageState extends State<WMSPickingPage> {
   FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
   bool _isProcessing = false;
+  String? _selectedPropietario;
+  String _currentSortKey = '';
+
+  List<BatchsModel> _sortList(List<BatchsModel> list) {
+    final sorted = List<BatchsModel>.from(list);
+    switch (_currentSortKey) {
+      case 'date_asc':
+        sorted.sort((a, b) {
+          final da = a.scheduleddate?.toString() ?? '';
+          final db = b.scheduleddate?.toString() ?? '';
+          return da.compareTo(db);
+        });
+        break;
+      case 'date_desc':
+        sorted.sort((a, b) {
+          final da = a.scheduleddate?.toString() ?? '';
+          final db = b.scheduleddate?.toString() ?? '';
+          return db.compareTo(da);
+        });
+        break;
+      case 'name_asc':
+        sorted.sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
+        break;
+      case 'name_desc':
+        sorted.sort((a, b) => (b.name ?? '').compareTo(a.name ?? ''));
+        break;
+    }
+    return sorted;
+  }
+
+  List<String> _getPropietarios(List<BatchsModel> batchs) {
+    final set = <String>{};
+    for (final b in batchs) {
+      final prop = b.propietario;
+      if (prop != null && prop.isNotEmpty) set.add(prop);
+    }
+    return set.toList()..sort();
+  }
+
+  void _showPropietarioFilter(List<BatchsModel> batchs) {
+    final propietarios = _getPropietarios(batchs);
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Filtrar por propietario',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const Divider(),
+                  RadioListTile<String?>(
+                    title: const Text('Todos'),
+                    value: null,
+                    groupValue: _selectedPropietario,
+                    onChanged: (v) {
+                      setModalState(() {});
+                      setState(() => _selectedPropietario = v);
+                      Navigator.pop(ctx);
+                    },
+                  ),
+                  ...propietarios.map(
+                    (prop) => RadioListTile<String?>(
+                      title: Text(prop),
+                      value: prop,
+                      groupValue: _selectedPropietario,
+                      onChanged: (v) {
+                        setModalState(() {});
+                        setState(() => _selectedPropietario = v);
+                        Navigator.pop(ctx);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   void validateBarcode(String value, BuildContext context) {
     final bloc = context.read<WMSPickingBloc>();
@@ -115,6 +202,33 @@ class _PickingPageState extends State<WMSPickingPage> {
                   .read<WMSPickingBloc>()
                   .add(FilterBatchesBStatusEvent('', 'batch'));
             }
+            if (state is PickingOkBlockedPendingSend) {
+              Get.snackbar(
+                '360 Software Informa',
+                'No se puede finalizar: ${state.pendientes} producto(s) pendiente(s) de envío. Conéctate a internet para sincronizar',
+                backgroundColor: white,
+                colorText: primaryColorApp,
+                icon: Icon(Icons.wifi_off, color: Colors.amber),
+                duration: const Duration(seconds: 4),
+              );
+            }
+            if (state is SyncPendingProductsSuccess) {
+              Get.snackbar(
+                '360 Software Informa',
+                'Se enviaron ${state.enviados} de ${state.total} producto(s) pendiente(s)',
+                backgroundColor: white,
+                colorText: primaryColorApp,
+                icon: Icon(
+                  state.enviados == state.total
+                      ? Icons.check_circle
+                      : Icons.error,
+                  color: state.enviados == state.total
+                      ? Colors.green
+                      : Colors.amber,
+                ),
+                duration: const Duration(seconds: 4),
+              );
+            }
           },
           // 3. Child Visual (Hijo final): UI
           child: BlocBuilder<WMSPickingBloc, PickingState>(
@@ -136,10 +250,178 @@ class _PickingPageState extends State<WMSPickingPage> {
                                   .clear();
                               Navigator.pushReplacementNamed(context, '/home');
                             },
+                            popupMenu: PopupMenuButton<String>(
+                              icon: const Icon(
+                                Icons.more_vert,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                              onSelected: (value) {
+                                if (value == 'filter_propietario') {
+                                  final allBatchs = context
+                                      .read<WMSPickingBloc>()
+                                      .filteredBatchs
+                                      .where((b) => b.isSeparate == null)
+                                      .toList();
+                                  _showPropietarioFilter(allBatchs);
+                                } else {
+                                  setState(() => _currentSortKey = value);
+                                }
+                              },
+                              itemBuilder: (BuildContext ctx) {
+                                const Color activeColor = primaryColorApp;
+                                const Color inactiveColor = Colors.black;
+
+                                TextStyle getStyle(String key) {
+                                  final isSelected = _currentSortKey == key;
+                                  return TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: isSelected ? activeColor : inactiveColor,
+                                  );
+                                }
+
+                                Color getIconColor(String key) =>
+                                    _currentSortKey == key ? activeColor : Colors.grey;
+
+                                Widget checkIfActive(String key) =>
+                                    _currentSortKey == key
+                                        ? const Icon(Icons.check, size: 15, color: activeColor)
+                                        : const SizedBox.shrink();
+
+                                return <PopupMenuEntry<String>>[
+                                  const PopupMenuItem<String>(
+                                    enabled: false,
+                                    height: 30,
+                                    child: Text(
+                                      'FECHA',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                  PopupMenuItem<String>(
+                                    value: 'date_asc',
+                                    height: 40,
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.calendar_month_outlined, size: 16, color: getIconColor('date_asc')),
+                                        const SizedBox(width: 8),
+                                        Text('Más Antiguas', style: getStyle('date_asc')),
+                                        const Spacer(),
+                                        checkIfActive('date_asc'),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuItem<String>(
+                                    value: 'date_desc',
+                                    height: 40,
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.calendar_month_outlined, size: 16, color: getIconColor('date_desc')),
+                                        const SizedBox(width: 8),
+                                        Text('Más Recientes', style: getStyle('date_desc')),
+                                        const Spacer(),
+                                        checkIfActive('date_desc'),
+                                      ],
+                                    ),
+                                  ),
+                                  const PopupMenuDivider(),
+                                  const PopupMenuItem<String>(
+                                    enabled: false,
+                                    height: 30,
+                                    child: Text(
+                                      'CONSECUTIVO',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                  PopupMenuItem<String>(
+                                    value: 'name_asc',
+                                    height: 40,
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.arrow_upward, size: 16, color: getIconColor('name_asc')),
+                                        const SizedBox(width: 8),
+                                        Text('Consecutivo (A-Z)', style: getStyle('name_asc')),
+                                        const Spacer(),
+                                        checkIfActive('name_asc'),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuItem<String>(
+                                    value: 'name_desc',
+                                    height: 40,
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.arrow_downward, size: 16, color: getIconColor('name_desc')),
+                                        const SizedBox(width: 8),
+                                        Text('Consecutivo (Z-A)', style: getStyle('name_desc')),
+                                        const Spacer(),
+                                        checkIfActive('name_desc'),
+                                      ],
+                                    ),
+                                  ),
+                                  const PopupMenuDivider(),
+                                  const PopupMenuItem<String>(
+                                    enabled: false,
+                                    height: 30,
+                                    child: Text(
+                                      'PROPIETARIO',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                  PopupMenuItem<String>(
+                                    value: 'filter_propietario',
+                                    height: 40,
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.person_search_outlined,
+                                          size: 16,
+                                          color: _selectedPropietario != null
+                                              ? Colors.amber
+                                              : Colors.grey,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          _selectedPropietario ?? 'Todos',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: _selectedPropietario != null
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                            color: _selectedPropietario != null
+                                                ? Colors.amber[800]
+                                                : inactiveColor,
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        if (_selectedPropietario != null)
+                                          const Icon(Icons.check, size: 15, color: Colors.amber),
+                                      ],
+                                    ),
+                                  ),
+                                ];
+                              },
+                            ),
                             onRefresh: () async {
                               if (_isProcessing ||
                                   context.read<WMSPickingBloc>().state
-                                      is BatchsPickingLoadingState) return;
+                                      is BatchsPickingLoadingState) {
+                                return;
+                              }
 
                               setState(() => _isProcessing = true);
 
@@ -170,7 +452,9 @@ class _PickingPageState extends State<WMSPickingPage> {
                             onCalendar: () async {
                               if (_isProcessing ||
                                   context.read<WMSPickingBloc>().state
-                                      is BatchsPickingLoadingState) return;
+                                      is BatchsPickingLoadingState) {
+                                return;
+                              }
 
                               setState(() => _isProcessing = true);
 
@@ -230,29 +514,29 @@ class _PickingPageState extends State<WMSPickingPage> {
 
                           //*listado de batchs
                           Expanded(
-                            child: context
-                                    .read<WMSPickingBloc>()
-                                    .filteredBatchs
-                                    .where((batch) => batch.isSeparate == null)
-                                    .isNotEmpty
+                            child: Builder(
+                              builder: (context) {
+                                final listToShow = _sortList(
+                                  context
+                                      .read<WMSPickingBloc>()
+                                      .filteredBatchs
+                                      .where((batch) => batch.isSeparate == null)
+                                      .where((batch) {
+                                        if (_selectedPropietario == null) return true;
+                                        return batch.propietario == _selectedPropietario;
+                                      })
+                                      .toList(),
+                                );
+
+                                return listToShow.isNotEmpty
                                 ? ListView.builder(
                                     padding: EdgeInsets.only(
                                         top: 10, bottom: size.height * 0.15),
                                     physics:
                                         const AlwaysScrollableScrollPhysics(),
-                                    itemCount: context
-                                        .read<WMSPickingBloc>()
-                                        .filteredBatchs
-                                        .where(
-                                            (batch) => batch.isSeparate == null)
-                                        .length,
+                                    itemCount: listToShow.length,
                                     itemBuilder: (contextBuilder, index) {
-                                      final batch = context
-                                          .read<WMSPickingBloc>()
-                                          .filteredBatchs
-                                          .where((batch) =>
-                                              batch.isSeparate == null)
-                                          .toList()[index];
+                                      final batch = listToShow[index];
                                       //convertimos la fecha
 
                                       return Padding(
@@ -417,6 +701,28 @@ class _PickingPageState extends State<WMSPickingPage> {
                                                         style: const TextStyle(
                                                             fontSize: 12,
                                                             color: black)),
+                                                  ),
+                                                  Visibility(
+                                                    visible: batch.manejoPropietario == 1 ||  batch.manejoPropietario == true,
+                                                    child: Row(
+                                                      children: [
+                                                        const Align(
+                                                          alignment: Alignment
+                                                              .centerLeft,
+                                                          child: Text(
+                                                              "Propietario:",
+                                                              style: TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: primaryColorApp)),
+                                                        ),
+                                                        Text(
+                                                            batch.propietario ?? "Sin propietario",
+                                                            style: TextStyle(
+                                                                fontSize: 12,
+                                                                color: black)),
+                                                       
+                                                      ],
+                                                    ),
                                                   ),
                                                   Row(
                                                     children: [
@@ -632,7 +938,9 @@ class _PickingPageState extends State<WMSPickingPage> {
                                                 fontSize: 14, color: grey)),
                                       ],
                                     ),
-                                  ),
+                                  );
+                              },
+                            ),
                           ),
                           const SizedBox(height: 10),
                         ],
