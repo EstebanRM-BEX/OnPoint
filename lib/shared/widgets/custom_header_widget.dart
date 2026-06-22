@@ -62,7 +62,7 @@ class CustomHeaderWidget extends StatelessWidget {
                         GestureDetector(
                           onTap: onRefresh,
                           child: Padding(
-                            padding: EdgeInsets.only(left: size.width * 0.2),
+                            padding: EdgeInsets.only(left: size.width * 0.1),
                             child: Row(
                               children: [
                                 Text(

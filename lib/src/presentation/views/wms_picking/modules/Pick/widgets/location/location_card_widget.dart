@@ -134,13 +134,9 @@ class LocationDropdownWidget extends StatelessWidget {
 
           Align(
             alignment: Alignment.centerLeft,
-            child: Row(
-              children: [
-                Text(
-                  currentLocationId,
-                  style: const TextStyle(fontSize: 14, color: black),
-                ),
-              ],
+            child: Text(
+              currentLocationId,
+              style: const TextStyle(fontSize: 14, color: black),
             ),
           ),
           const SizedBox(height: 5),
