@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_bloc.dart';
@@ -29,7 +30,7 @@ class LoginPage extends StatelessWidget {
     // LoginBloc is now provided in main.dart via getIt
     // 1. Primer Listener: LoginBloc
     return BlocListener<LoginBloc, LoginState>(
-      listener: (context, state) {
+      listener: (context, state) async {
         if (state is LoginLoading) {
           Get.dialog(
             DialogLoadingNetwork(
@@ -40,9 +41,12 @@ class LoginPage extends StatelessWidget {
           );
         }
         if (state is LoginSuccess) {
+          // El password fue guardado en PrefUtils por el BLoC antes del emit
+          final password = await PrefUtils.getUserPass();
+          if (!context.mounted) return;
           context.read<UserBloc>().add(RegisterDeviceEvent(
                 user: state.user,
-                password: state.password,
+                password: password,
               ));
           context.read<PackagingTypeBloc>().add(SyncPackagingTypesEvent());
         }

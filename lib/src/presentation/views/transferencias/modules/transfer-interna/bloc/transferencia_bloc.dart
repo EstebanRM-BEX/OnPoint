@@ -22,6 +22,7 @@ part 'transferencia_state.dart';
 class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
   //*controller de busqueda
   TextEditingController searchControllerTransfer = TextEditingController();
+  TextEditingController segundaUnidadController = TextEditingController();
   //*variables para validar
   bool isKeyboardVisible = false;
   bool isHome = true;
@@ -325,6 +326,14 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
           0,
           event.idMove,
         );
+        await db.productTransferenciaRepository
+            .setFieldTableProductTransferDone(
+          event.idTransfer,
+          event.idProduct,
+          'quantity_segunda_unidad',
+          0,
+          event.idMove,
+        );
         add(GetPorductsToTransfer(event.idTransfer));
         emit(DeleteLineTransferSuccess());
       } else {
@@ -544,6 +553,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
     selectedLocation = currentProduct.locationDestName ?? "";
     locationDestIsOk = false;
     isLocationDestOk = true;
+    segundaUnidadController.clear();
     emit((TransferenciaInitial()));
   }
 
@@ -714,8 +724,8 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       debugPrint("dateInicio: $dateInicio  dateFin: $dateFin");
 
       //calculamos la diferencia de tiempo
-      DateTime dateStart = DateTime.parse(dateInicio);
-      DateTime dateEnd = DateTime.parse(dateFin);
+      DateTime dateStart = DateTime.tryParse(dateInicio) ?? DateTime.now();
+      DateTime dateEnd = DateTime.tryParse(dateFin) ?? DateTime.now();
 
       var difference = dateEnd.difference(dateStart);
       int time = difference.inSeconds;
@@ -750,6 +760,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
                       ? "Sin novedad"
                       : productBD.observation,
               dividida: event.isDividio,
+              quantitySegundaUnidad: event.quantitySegundaUnidad,
             ),
           ],
         ),
@@ -781,6 +792,15 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
           currentLocationDest.barcode ?? "",
           currentProduct.idMove ?? 0,
         );
+        if (event.quantitySegundaUnidad > 0) {
+          await db.productTransferenciaRepository.setFieldTableProductTransfer(
+            currentProduct.idTransferencia ?? 0,
+            int.parse(currentProduct.productId),
+            'quantity_segunda_unidad',
+            event.quantitySegundaUnidad,
+            currentProduct.idMove ?? 0,
+          );
+        }
 
         // marcamos tiempo final de sepfaracion
         await db.productTransferenciaRepository.setFieldTableProductTransfer(

@@ -23,6 +23,10 @@ class MockWebSocketService implements IWebSocketService {
   Stream get messages => const Stream.empty();
 
   @override
+  Stream<WebSocketConnectionStatus> get connectionStatus =>
+      const Stream.empty();
+
+  @override
   void sendMessage(dynamic data) {}
 
   @override

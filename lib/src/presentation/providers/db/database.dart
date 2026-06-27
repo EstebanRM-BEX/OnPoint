@@ -94,7 +94,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 43,
+      version: 48,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -828,6 +828,57 @@ class DataBaseSqlite {
       ]) {
         try {
           await db.execute('ALTER TABLE ${BatchPackingConsolidateTable.tableName} ADD COLUMN $col');
+        } catch (_) {}
+      }
+    }
+
+    if (oldVersion < 44) {
+      for (final entry in [
+        (ProductRecepcionTable.tableName, ProductRecepcionTable.columnManejaSegundaUnidad, 'INTEGER DEFAULT 0'),
+        (ProductRecepcionTable.tableName, ProductRecepcionTable.columnUomSegundaUnidad, 'TEXT DEFAULT \'\''),
+        (ProductRecepcionTable.tableName, ProductRecepcionTable.columnQuantitySegundaUnidad, 'REAL DEFAULT 0.0'),
+        (ProductRecepcionBatchTable.tableName, ProductRecepcionBatchTable.columnManejaSegundaUnidad, 'INTEGER DEFAULT 0'),
+        (ProductRecepcionBatchTable.tableName, ProductRecepcionBatchTable.columnUomSegundaUnidad, 'TEXT DEFAULT \'\''),
+        (ProductRecepcionBatchTable.tableName, ProductRecepcionBatchTable.columnQuantitySegundaUnidad, 'REAL DEFAULT 0.0'),
+      ]) {
+        try {
+          await db.execute('ALTER TABLE ${entry.$1} ADD COLUMN ${entry.$2} ${entry.$3}');
+        } catch (_) {}
+      }
+    }
+    if (oldVersion < 45) {
+      for (final entry in [
+        (ProductTransferenciaTable.tableName, ProductTransferenciaTable.columnManejaSegundaUnidad, 'INTEGER DEFAULT 0'),
+        (ProductTransferenciaTable.tableName, ProductTransferenciaTable.columnUomSegundaUnidad, 'TEXT DEFAULT \'\''),
+        (ProductTransferenciaTable.tableName, ProductTransferenciaTable.columnQuantitySegundaUnidad, 'REAL DEFAULT 0.0'),
+      ]) {
+        try {
+          await db.execute('ALTER TABLE ${entry.$1} ADD COLUMN ${entry.$2} ${entry.$3}');
+        } catch (_) {}
+      }
+    }
+    if (oldVersion < 46) {
+      for (final entry in [
+        (ProductInventarioTable.tableName, ProductInventarioTable.columnManejaSegundaUnidad, 'INTEGER DEFAULT 0'),
+        (ProductInventarioTable.tableName, ProductInventarioTable.columnUomSegundaUnidad, 'TEXT DEFAULT \'\''),
+      ]) {
+        try {
+          await db.execute('ALTER TABLE ${entry.$1} ADD COLUMN ${entry.$2} ${entry.$3}');
+        } catch (_) {}
+      }
+    }
+    if (oldVersion < 47) {
+      try {
+        await db.execute('ALTER TABLE ${ProductCreateTransferTable.tableName} ADD COLUMN ${ProductCreateTransferTable.columnQuantitySegundaUnidad} REAL DEFAULT 0');
+      } catch (_) {}
+    }
+    if (oldVersion < 48) {
+      for (final entry in [
+        (ProductCreateTransferTable.tableName, ProductCreateTransferTable.columnManejaSegundaUnidad, 'INTEGER DEFAULT 0'),
+        (ProductCreateTransferTable.tableName, ProductCreateTransferTable.columnUomSegundaUnidad, 'TEXT DEFAULT \'\''),
+      ]) {
+        try {
+          await db.execute('ALTER TABLE ${entry.$1} ADD COLUMN ${entry.$2} ${entry.$3}');
         } catch (_) {}
       }
     }

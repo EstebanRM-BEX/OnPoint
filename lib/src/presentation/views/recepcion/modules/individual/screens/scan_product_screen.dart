@@ -26,11 +26,11 @@ import 'package:wms_app/src/presentation/views/recepcion/modules/individual/scre
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/shared/widgets/lote_scanner_widget.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/product/product_card_widget.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
+import 'package:wms_app/shared/widgets/segunda_unidad_input_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
 
@@ -55,8 +55,12 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
   @override
   void initState() {
     super.initState();
-    // Añadimos el observer para escuchar el ciclo de vida de la app.
     WidgetsBinding.instance.addObserver(this);
+    focusNodeSegundaUnidad.addListener(() {
+      if (!focusNodeSegundaUnidad.hasFocus && mounted) {
+        Future.microtask(() => _handleDependencies());
+      }
+    });
   }
 
   @override
@@ -86,9 +90,10 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
 
   FocusNode focusNode2 = FocusNode(); // producto
   FocusNode focusNode3 = FocusNode(); // cantidad por pda
-  FocusNode focusNode4 = FocusNode(); //cantidad textformfieldƒ
+  FocusNode focusNode4 = FocusNode(); //cantidad textformfield
   FocusNode focusNode5 = FocusNode(); //ubicacion destino
   FocusNode focusNode6 = FocusNode(); //lote
+  FocusNode focusNodeSegundaUnidad = FocusNode(); // segunda unidad
 
   String? selectedLocation;
   String? selectedMuelle;
@@ -110,7 +115,8 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
       focusNode3,
       focusNode4,
       focusNode5,
-      focusNode6
+      focusNode6,
+      focusNodeSegundaUnidad,
     ]) {
       if (node != except) node.unfocus();
     }
@@ -158,19 +164,16 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
       }
 
       if (configMuelle) {
-        if (bloc.productIsOk && !bloc.quantityIsOk && !bloc.locationsDestIsok) {
+        if (bloc.productIsOk && bloc.loteIsOk && !bloc.locationsDestIsok) {
           _requestOnly(focusNode5, 'muelle');
           return;
         }
-        if (bloc.productIsOk &&
-            bloc.quantityIsOk &&
-            bloc.locationsDestIsok &&
-            !bloc.viewQuantity) {
+        if (bloc.productIsOk && bloc.locationsDestIsok && !bloc.viewQuantity) {
           _requestOnly(focusNode3, 'quantity');
           return;
         }
       } else {
-        if (bloc.productIsOk && !bloc.quantityIsOk && !bloc.viewQuantity) {
+        if (bloc.productIsOk && bloc.loteIsOk && !bloc.viewQuantity) {
           _requestOnly(focusNode3, 'quantity');
           return;
         }
@@ -179,19 +182,16 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
       // SIN LOTE
       debugPrint('--- SIN LOTE ---');
       if (configMuelle) {
-        if (bloc.productIsOk && !bloc.quantityIsOk && !bloc.locationsDestIsok) {
+        if (bloc.productIsOk && !bloc.locationsDestIsok) {
           _requestOnly(focusNode5, 'muelle');
           return;
         }
-        if (bloc.productIsOk &&
-            bloc.quantityIsOk &&
-            bloc.locationsDestIsok &&
-            !bloc.viewQuantity) {
+        if (bloc.productIsOk && bloc.locationsDestIsok && !bloc.viewQuantity) {
           _requestOnly(focusNode3, 'quantity');
           return;
         }
       } else {
-        if (bloc.productIsOk && bloc.quantityIsOk && !bloc.viewQuantity) {
+        if (bloc.productIsOk && !bloc.viewQuantity) {
           _requestOnly(focusNode3, 'quantity');
           return;
         }
@@ -201,11 +201,12 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
 
   @override
   void dispose() {
-    focusNode2.dispose(); //product
-    focusNode3.dispose(); //quantity
-    focusNode4.dispose(); //quantity
-    focusNode5.dispose(); //quantity
-    focusNode6.dispose(); //quantity
+    focusNode2.dispose();
+    focusNode3.dispose();
+    focusNode4.dispose();
+    focusNode5.dispose();
+    focusNode6.dispose();
+    focusNodeSegundaUnidad.dispose();
     super.dispose();
   }
 
@@ -278,6 +279,24 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
     _controllerQuantity.text = "";
     final currentProduct = bloc.currentProduct;
 
+    if (currentProduct.manejaSegundaUnidad == true ||
+        currentProduct.manejaSegundaUnidad == 1) {
+      if (bloc.segundaUnidadController.text.trim().isEmpty) {
+        _audioService.playErrorSound();
+        _vibrationService.vibrate();
+        Get.snackbar(
+          'Segunda unidad requerida',
+          'Ingrese la cantidad de la segunda unidad (${currentProduct.uomSegundaUnidad ?? ''})',
+          backgroundColor: white,
+          colorText: primaryColorApp,
+          icon: const Icon(Icons.scale_outlined, color: Colors.orange),
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 2),
+        );
+        return;
+      }
+    }
+
     if (bloc.quantitySelected == currentProduct.cantidadFaltante) {
       return;
     }
@@ -315,13 +334,13 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
           int.parse(currentProduct.productId),
           currentProduct.idMove ?? 0,
           matchedUbicacion));
-      Future.microtask(() => focusNode4.requestFocus());
+      Future.microtask(() => focusNode3.requestFocus());
     } else {
       _audioService.playErrorSound();
       _vibrationService.vibrate();
       debugPrint('Ubicacion no encontrada');
       bloc.add(ValidateFieldsOrderEvent(field: "locationDest", isOk: false));
-      Future.microtask(() => focusNode4.requestFocus());
+      Future.microtask(() => focusNode5.requestFocus());
     }
   }
 
@@ -1007,6 +1026,16 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
                   ),
                 ),
 
+                //todo: segunda unidad de medida
+                if (recepcionBloc.currentProduct.manejaSegundaUnidad == true ||
+                    recepcionBloc.currentProduct.manejaSegundaUnidad == 1)
+                  SegundaUnidadInputWidget(
+                    controller: recepcionBloc.segundaUnidadController,
+                    uomLabel:
+                        recepcionBloc.currentProduct.uomSegundaUnidad ?? '',
+                    focusNode: focusNodeSegundaUnidad,
+                  ),
+
                 //todo: cantidad
                 SizedBox(
                   width: size.width,
@@ -1288,6 +1317,26 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
 
     //validamos que tengamos un lote seleccionado
 
+ if (currentProduct.manejaSegundaUnidad == true ||
+        currentProduct.manejaSegundaUnidad == 1) {
+      if (batchBloc.segundaUnidadController.text.trim().isEmpty) {
+        _audioService.playErrorSound();
+        _vibrationService.vibrate();
+        Get.snackbar(
+          'Segunda unidad requerida',
+          'Ingrese la cantidad de la segunda unidad (${currentProduct.uomSegundaUnidad ?? ''})',
+          backgroundColor: white,
+          colorText: primaryColorApp,
+          icon: const Icon(Icons.scale_outlined, color: Colors.orange),
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 2),
+        );
+        return;
+      }
+    }
+
+
+
     if (currentProduct.productTracking == 'lot') {
       if (context.read<RecepcionBloc>().lotesProductCurrent.id == null) {
         _audioService.playErrorSound();
@@ -1319,6 +1368,8 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
         return;
       }
     }
+
+   
 
     // double cantidad = double.parse(_cantidadController.text.isEmpty
     //     ? batchBloc.quantitySelected.toString()
@@ -1450,7 +1501,17 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
     }
 
     context.read<RecepcionBloc>().add(FinalizarRecepcionProducto());
-    context.read<RecepcionBloc>().add(SendProductToOrder(false, cantidad));
+    context.read<RecepcionBloc>().add(SendProductToOrder(
+          false,
+          cantidad,
+          quantitySegundaUnidad: double.tryParse(
+                  context
+                      .read<RecepcionBloc>()
+                      .segundaUnidadController
+                      .text
+                      .trim()) ??
+              0.0,
+        ));
     termiateProcess();
   }
 
@@ -1475,7 +1536,17 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
     context
         .read<RecepcionBloc>()
         .add(FinalizarRecepcionProductoSplit(cantidad));
-    context.read<RecepcionBloc>().add(SendProductToOrder(true, cantidad));
+    context.read<RecepcionBloc>().add(SendProductToOrder(
+          true,
+          cantidad,
+          quantitySegundaUnidad: double.tryParse(
+                  context
+                      .read<RecepcionBloc>()
+                      .segundaUnidadController
+                      .text
+                      .trim()) ??
+              0.0,
+        ));
     termiateProcess();
   }
 

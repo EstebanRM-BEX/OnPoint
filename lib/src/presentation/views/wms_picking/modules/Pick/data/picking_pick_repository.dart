@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:wms_app/core/network/connectivity_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
@@ -16,7 +17,7 @@ class PickingPickRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponsePickResult(
         code: 500,
@@ -143,7 +144,7 @@ class PickingPickRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return []; // Si no hay conexión, retornar una lista vacía
     }
@@ -251,7 +252,7 @@ class PickingPickRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return []; // Si no hay conexión, retornar una lista vacía
     }
@@ -358,7 +359,7 @@ class PickingPickRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponsePickResult(
         code: 500,
@@ -502,7 +503,7 @@ class PickingPickRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return RespondePickDoneId(); // Si no hay conexión, retornar una lista vacía
     }

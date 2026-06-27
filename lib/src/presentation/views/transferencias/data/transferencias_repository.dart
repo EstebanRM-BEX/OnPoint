@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:wms_app/core/network/connectivity_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
@@ -25,7 +26,7 @@ class TransferenciasRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseTransferenciasResult(); // Si no hay conexión, retornar una lista vacía
     }
@@ -130,7 +131,7 @@ class TransferenciasRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseTransferenciasResult(
         result: [],
@@ -245,7 +246,7 @@ class TransferenciasRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return true; // Si no hay conexión, terminamos la ejecución
     }
@@ -326,7 +327,7 @@ class TransferenciasRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return false; // Si no hay conexión, retornar una lista vacía
     }
@@ -402,7 +403,7 @@ class TransferenciasRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseSenTransfer(); // Si no hay conexión, terminamos la ejecución
     }
@@ -462,7 +463,7 @@ class TransferenciasRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseSenTransfer(); // Si no hay conexión, terminamos la ejecución
     }
@@ -521,7 +522,7 @@ class TransferenciasRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseValidate(); // Si no hay conexión, terminamos la ejecución
     }
@@ -598,7 +599,7 @@ class TransferenciasRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseValidate(); // Si no hay conexión, terminamos la ejecución
     }
@@ -674,7 +675,7 @@ class TransferenciasRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return CheckAvailabilityResponseResult(); // Si no hay conexión, terminamos la ejecución
     }
@@ -751,7 +752,7 @@ class TransferenciasRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseDeleteLine(); // Si no hay conexión, terminamos la ejecución
     }
@@ -839,7 +840,7 @@ class TransferenciasRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return RespondeCreateTransfer(); // Si no hay conexión, terminamos la ejecución
     }
@@ -927,7 +928,7 @@ class TransferenciasRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return RespondeValidateStock(); // Si no hay conexión, terminamos la ejecución
     }

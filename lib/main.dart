@@ -8,6 +8,20 @@ import 'package:flutter/services.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_bloc.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/cluster_picking/cluster_picking_bloc.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/lote_producto/lote_producto_bloc.dart';
+import 'package:wms_app/features/picking_cluster/presentation/bloc/picking_cluster_list/picking_cluster_list_bloc.dart';
+import 'package:wms_app/features/picking_cluster/presentation/bloc/detail_cluster/detail_cluster_bloc.dart';
+import 'package:wms_app/features/picking_cluster/presentation/bloc/validate_cluster/validate_cluster_bloc.dart';
+import 'package:wms_app/features/picking_cluster/domain/usecases/get_picking_cluster_data.dart';
+import 'package:wms_app/features/picking_cluster/domain/usecases/get_local_picking_cluster_data.dart';
+import 'package:wms_app/features/picking_cluster/domain/usecases/start_time_pick_use_case.dart';
+import 'package:wms_app/features/picking_cluster/domain/usecases/view_product_image_usecase.dart';
+import 'package:wms_app/features/picking_cluster/domain/usecases/validate_pedido_usecase.dart';
+import 'package:wms_app/features/picking_cluster/domain/usecases/set_cluster_batch_pedido_field_use_case.dart';
+import 'package:wms_app/features/picking_cluster/domain/usecases/get_pending_send_products_use_case.dart';
+import 'package:wms_app/features/picking_cluster/domain/usecases/send_product_odoo_use_case.dart';
+import 'package:wms_app/features/picking_cluster/domain/usecases/set_cluster_batch_product_field_use_case.dart';
+import 'package:wms_app/features/picking_cluster/domain/usecases/end_time_pick_use_case.dart';
+import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/features/printing/presentation/bloc/printing_bloc.dart';
 import 'package:wms_app/firebase_options.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -41,6 +55,7 @@ import 'package:wms_app/src/presentation/widgets/network_quality_overlay.dart';
 import 'package:wms_app/src/presentation/providers/network_overlay/network_overlay_cubit.dart';
 import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
 import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
+import 'package:wms_app/features/websocket/presentation/bloc/websocket_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -152,10 +167,30 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => PackingConsolidateBloc()),
         BlocProvider(create: (_) => getIt<EnterpriseBloc>()),
         BlocProvider(create: (_) => getIt<ClusterPickingBloc>()),
+        BlocProvider(create: (context) => PickingClusterListBloc(
+          clusterPickingBloc: context.read<ClusterPickingBloc>(),
+          getPickingClusterData: getIt<GetPickingClusterData>(),
+          getLocalPickingClusterData: getIt<GetLocalPickingClusterData>(),
+          startTimePickUseCase: getIt<StartTimePickUseCase>(),
+        )),
+        BlocProvider(create: (_) => DetailClusterBloc(
+          viewProductImageUseCase: getIt<ViewProductImageUseCase>(),
+        )),
+        BlocProvider(create: (context) => ValidateClusterBloc(
+          clusterPickingBloc: context.read<ClusterPickingBloc>(),
+          validatePedidoUseCase: getIt<ValidatePedidoUseCase>(),
+          setClusterBatchPedidoFieldUseCase: getIt<SetClusterBatchPedidoFieldUseCase>(),
+          getPendingSendProductsUseCase: getIt<GetPendingSendProductsUseCase>(),
+          sendProductOdooUseCase: getIt<SendProductOdooUseCase>(),
+          setClusterBatchProductFieldUseCase: getIt<SetClusterBatchProductFieldUseCase>(),
+          endTimePickUseCase: getIt<EndTimePickUseCase>(),
+          networkInfo: getIt<NetworkInfo>(),
+        )),
         BlocProvider(create: (_) => getIt<LoteProductoBloc>()),
         BlocProvider(create: (_) => getIt<PackagingTypeBloc>()),
         BlocProvider(create: (_) => getIt<PrintingBloc>()),
         BlocProvider(create: (_) => PrintLabelsBloc()),
+        BlocProvider(create: (_) => getIt<WebSocketBloc>()),
       ],
       child: GetMaterialApp(
         navigatorKey: navigatorKey,

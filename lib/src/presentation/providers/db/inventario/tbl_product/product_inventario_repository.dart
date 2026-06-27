@@ -13,9 +13,9 @@ List<Map<String, dynamic>> _processProductsRawArgs(
     List<Product> productosList) {
   final List<Map<String, dynamic>> queries = [];
   // LÍMITE ABSOLUTO DE VARIABLES SQLITE: 999.
-  // Tenemos 22 columnas, entonces 999 / 22 = 45.4.
-  // Usaremos 45 como el tamaño óptimo de iteración masiva de caché.
-  const int itemsPerQuery = 45;
+  // Tenemos 24 columnas, entonces 999 / 24 = 41.6.
+  // Usaremos 41 como el tamaño óptimo de iteración masiva de caché.
+  const int itemsPerQuery = 41;
 
   for (var i = 0; i < productosList.length; i += itemsPerQuery) {
     final end = (i + itemsPerQuery < productosList.length)
@@ -40,12 +40,12 @@ List<Map<String, dynamic>> _processProductsRawArgs(
     queryBuffer.write(
         '${ProductInventarioTable.columnPropietario}, ${ProductInventarioTable.columnIdPropietario}, ${ProductInventarioTable.columnManejoPropietario}, ');
     queryBuffer.write(
-        '${ProductInventarioTable.columnIsSynced}) VALUES ');
+        '${ProductInventarioTable.columnIsSynced}, ${ProductInventarioTable.columnManejaSegundaUnidad}, ${ProductInventarioTable.columnUomSegundaUnidad}) VALUES ');
 
     final List<dynamic> args = [];
     for (var j = 0; j < chunk.length; j++) {
       if (j > 0) queryBuffer.write(',');
-      queryBuffer.write('(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'); // 22 params
+      queryBuffer.write('(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'); // 24 params
 
       final producto = chunk[j];
       args.addAll([
@@ -70,7 +70,9 @@ List<Map<String, dynamic>> _processProductsRawArgs(
         producto.propietario ?? '',
         producto.idPropietario ?? 0,
         producto.manejoPropietario == true ? 1 : 0,
-        1
+        1,
+        producto.manejaSegundaUnidad == true ? 1 : 0,
+        producto.uomSegundaUnidad ?? '',
       ]);
     }
     queries.add({

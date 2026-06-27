@@ -468,6 +468,7 @@ class RecepcionBatchBloc
               idOperario: userid,
               timeLine: time,
               fechaTransaccion: fechaFormateada, // Formato de la fecha
+              quantitySegundaUnidad: 0.0
             )
           ],
         ),

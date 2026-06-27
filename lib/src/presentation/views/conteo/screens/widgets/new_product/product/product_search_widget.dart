@@ -315,6 +315,9 @@ class _AppBarInfo extends StatelessWidget {
                       IconButton(
                         icon: const Icon(Icons.arrow_back, color: white),
                         onPressed: () {
+                          final bloc = context.read<ConteoBloc>();
+                          bloc.searchControllerProducts.clear();
+                          bloc.add(SearchProductEvent(''));
                           Navigator.pushReplacementNamed(
                             context,
                             'new-product-conteo',

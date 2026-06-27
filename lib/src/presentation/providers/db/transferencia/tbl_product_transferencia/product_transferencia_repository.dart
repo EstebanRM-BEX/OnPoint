@@ -83,7 +83,13 @@ class ProductTransferenciaRepository {
                 producto.isDoneItem ?? 0,
             ProductTransferenciaTable.columnCantidadFaltante:
                 producto.cantidadFaltante ?? 0,
-            ProductTransferenciaTable.columnType: type
+            ProductTransferenciaTable.columnType: type,
+            ProductTransferenciaTable.columnManejaSegundaUnidad:
+                producto.manejaSegundaUnidad ?? 0,
+            ProductTransferenciaTable.columnUomSegundaUnidad:
+                producto.uomSegundaUnidad ?? '',
+            ProductTransferenciaTable.columnQuantitySegundaUnidad:
+                producto.quantitySegundaUnidad ?? 0.0,
           };
 
           if (existing.isNotEmpty) {
@@ -209,6 +215,12 @@ class ProductTransferenciaRepository {
         ProductTransferenciaTable.columnDateTransaction: "",
         ProductTransferenciaTable.columnCantidadFaltante: cantidad,
         ProductTransferenciaTable.columnType: type,
+        ProductTransferenciaTable.columnManejaSegundaUnidad:
+            producto.manejaSegundaUnidad ?? 0,
+        ProductTransferenciaTable.columnUomSegundaUnidad:
+            producto.uomSegundaUnidad ?? '',
+        ProductTransferenciaTable.columnQuantitySegundaUnidad:
+            producto.quantitySegundaUnidad ?? 0.0,
       };
 
       await db.insert(

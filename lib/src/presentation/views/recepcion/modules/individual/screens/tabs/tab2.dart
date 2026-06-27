@@ -16,10 +16,7 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 
 class Tab2ScreenRecep extends StatefulWidget {
-  const Tab2ScreenRecep({
-    super.key,
-    required this.ordenCompra,
-  });
+  const Tab2ScreenRecep({super.key, required this.ordenCompra});
 
   final ResultEntrada? ordenCompra;
 
@@ -73,19 +70,23 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
       // Disparar eventos del BLoC (sin cambios)
       bloc
         ..add(ValidateFieldsOrderEvent(field: "product", isOk: true))
-        ..add(ChangeQuantitySeparate(
-          0,
-          int.parse(product.productId),
-          product.idRecepcion ?? 0,
-          product.idMove ?? 0,
-        ))
-        ..add(ChangeProductIsOkEvent(
-          product.idRecepcion ?? 0,
-          true,
-          int.parse(product.productId),
-          0,
-          product.idMove ?? 0,
-        ))
+        ..add(
+          ChangeQuantitySeparate(
+            0,
+            int.parse(product.productId),
+            product.idRecepcion ?? 0,
+            product.idMove ?? 0,
+          ),
+        )
+        ..add(
+          ChangeProductIsOkEvent(
+            product.idRecepcion ?? 0,
+            true,
+            int.parse(product.productId),
+            0,
+            product.idMove ?? 0,
+          ),
+        )
         ..add(FetchPorductOrder(product));
 
       Future.microtask(() => focusNodeBuscar.requestFocus());
@@ -122,7 +123,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
       debugPrint('✅ Producto procesado: ${product.toMap()}');
     }
 
-// ... (El resto de tu función validateBarcode sin cambios)
+    // ... (El resto de tu función validateBarcode sin cambios)
 
     // 1️⃣ Buscar producto por código de barras principal
     final product = listOfProducts.firstWhere(
@@ -209,28 +210,31 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             mainAxisSize: MainAxisSize.max,
                             children: [
-                              const Text('No hay productos',
-                                  style: TextStyle(fontSize: 14, color: grey)),
-                              const Text('Intente buscar otro producto',
-                                  style: TextStyle(fontSize: 12, color: grey)),
+                              const Text(
+                                'No hay productos',
+                                style: TextStyle(fontSize: 14, color: grey),
+                              ),
+                              const Text(
+                                'Intente buscar otro producto',
+                                style: TextStyle(fontSize: 12, color: grey),
+                              ),
                               Visibility(
                                 visible: context
                                     .read<UserBloc>()
                                     .fabricante
                                     .contains("Zebra"),
-                                child: Container(
-                                  height: 60,
-                                ),
+                                child: Container(height: 60),
                               ),
                             ],
                           ),
                         )
                       :
-                      // :
-                      Expanded(
+                        // :
+                        Expanded(
                           child: ListView.builder(
-                            itemCount: recepcionBloc.listProductsEntrada
-                                .where((element) {
+                            itemCount: recepcionBloc.listProductsEntrada.where((
+                              element,
+                            ) {
                               return (element.isSeparate == 0 ||
                                       element.isSeparate == null) &&
                                   (element.isDoneItem == 0 ||
@@ -240,11 +244,12 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
                               final product = recepcionBloc
                                   .listProductsEntrada //recepcionBloc.listProductsEntrada
                                   .where((element) {
-                                return (element.isSeparate == 0 ||
-                                        element.isSeparate == null) &&
-                                    (element.isDoneItem == 0 ||
-                                        element.isDoneItem == null);
-                              }).elementAt(index);
+                                    return (element.isSeparate == 0 ||
+                                            element.isSeparate == null) &&
+                                        (element.isDoneItem == 0 ||
+                                            element.isDoneItem == null);
+                                  })
+                                  .elementAt(index);
 
                               return Padding(
                                 padding: const EdgeInsets.symmetric(
@@ -256,17 +261,15 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
                                   color: product.isSelected == 1
                                       ? primaryColorAppLigth // Color amarillo si está seleccionado
                                       : Colors
-                                          .white, // Color blanco si no está seleccionado
+                                            .white, // Color blanco si no está seleccionado
                                   elevation: 5,
                                   child: Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: GestureDetector(
                                       onTap: () async {
-                                        context
-                                            .read<RecepcionBloc>()
-                                            .add(FetchPorductOrder(
-                                              product,
-                                            ));
+                                        context.read<RecepcionBloc>().add(
+                                          FetchPorductOrder(product),
+                                        );
 
                                         Future.microtask(() {
                                           showDialog(
@@ -282,26 +285,28 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
                                         });
 
                                         Future.delayed(
-                                            const Duration(milliseconds: 1000),
-                                            () {
-                                          if (!mounted) return;
+                                          const Duration(milliseconds: 1000),
+                                          () {
+                                            if (!mounted) return;
 
-                                          // 4.1. Cerrar el diálogo de carga (usando el context del widget, ya que el diálogo fue abierto con él)
-                                          Navigator.of(context,
-                                                  rootNavigator: true)
-                                              .pop();
+                                            // 4.1. Cerrar el diálogo de carga (usando el context del widget, ya que el diálogo fue abierto con él)
+                                            Navigator.of(
+                                              context,
+                                              rootNavigator: true,
+                                            ).pop();
 
-                                          // 4.2. Navegar a la vista 'Packing' (Línea 450)
-                                          // Se asume que la vista 'Packing' ahora puede usar los datos que el BLoC ya cargó.
-                                          Navigator.pushReplacementNamed(
-                                            context,
-                                            'scan-product-order',
-                                            arguments: [
-                                              widget.ordenCompra,
-                                              product
-                                            ],
-                                          );
-                                        });
+                                            // 4.2. Navegar a la vista 'Packing' (Línea 450)
+                                            // Se asume que la vista 'Packing' ahora puede usar los datos que el BLoC ya cargó.
+                                            Navigator.pushReplacementNamed(
+                                              context,
+                                              'scan-product-order',
+                                              arguments: [
+                                                widget.ordenCompra,
+                                                product,
+                                              ],
+                                            );
+                                          },
+                                        );
                                       },
                                       child: Column(
                                         crossAxisAlignment:
@@ -335,7 +340,9 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
                                             child: Text(
                                               "${product.productName}",
                                               style: const TextStyle(
-                                                  fontSize: 12, color: black),
+                                                fontSize: 12,
+                                                color: black,
+                                              ),
                                             ),
                                           ),
                                           Row(
@@ -347,21 +354,26 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
                                                   color: primaryColorApp,
                                                 ),
                                               ),
-                                              Text("${product.productCode}",
-                                                  style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: black)),
+                                              Text(
+                                                "${product.productCode}",
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: black,
+                                                ),
+                                              ),
                                               const Spacer(),
-//ponemos icono de imprimir
+                                              //ponemos icono de imprimir
                                               GestureDetector(
                                                 onTap: () {
                                                   ModalPrintersList.show(
-                                                      context,
-                                                      resIds: [product.idMove],
-                                                      companyId: widget
-                                                              .ordenCompra
-                                                              ?.warehouseId ??
-                                                          1);
+                                                    context,
+                                                    resIds: [product.idMove],
+                                                    companyId:
+                                                        widget
+                                                            .ordenCompra
+                                                            ?.warehouseId ??
+                                                        1,
+                                                  );
                                                 },
                                                 child: Icon(
                                                   Icons.print,
@@ -378,11 +390,16 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
                                               color: primaryColorApp,
                                             ),
                                           ),
-                                          Text("${product.locationName}",
-                                              style: const TextStyle(
-                                                  fontSize: 12, color: black)),
+                                          Text(
+                                            "${product.locationName}",
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: black,
+                                            ),
+                                          ),
                                           Visibility(
-                                            visible: recepcionBloc
+                                            visible:
+                                                recepcionBloc
                                                     .configurations
                                                     .result
                                                     ?.result
@@ -398,10 +415,37 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
                                                   ),
                                                 ),
                                                 Text(
-                                                    "${product.cantidadFaltante}",
-                                                    style: const TextStyle(
-                                                        fontSize: 12,
-                                                        color: black)),
+                                                  "${product.cantidadFaltante}",
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: black,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Visibility(
+                                            visible:
+                                                product.manejaSegundaUnidad ==
+                                                    1 ||
+                                                product.manejaSegundaUnidad ==
+                                                    true,
+                                            child: Row(
+                                              children: [
+                                                Text(
+                                                  "2nd Unidad: ",
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: primaryColorApp,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  "${product.uomSegundaUnidad}",
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: black,
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                           ),

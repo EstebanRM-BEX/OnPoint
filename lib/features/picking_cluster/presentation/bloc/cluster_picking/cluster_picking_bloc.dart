@@ -4,12 +4,10 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
-import 'package:intl/intl.dart';
 import 'package:wms_app/core/usecases/usecase.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/error/failures.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/lote_producto.dart';
-import 'package:wms_app/features/picking_cluster/domain/usecases/view_product_image_usecase.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/features/user/domain/usecases/get_user_novelties.dart';
@@ -30,10 +28,6 @@ import '../../../domain/usecases/set_cluster_batch_field_use_case.dart';
 import '../../../domain/usecases/set_cluster_batch_product_field_use_case.dart';
 import '../../../domain/usecases/get_product_batch_use_case.dart';
 import '../../../domain/usecases/send_product_odoo_use_case.dart';
-import '../../../domain/usecases/set_cluster_batch_pedido_field_use_case.dart';
-import '../../../domain/usecases/end_time_pick_use_case.dart';
-import '../../../domain/usecases/start_time_pick_use_case.dart';
-import '../../../domain/usecases/validate_pedido_usecase.dart';
 import '../../../domain/usecases/get_pending_send_products_use_case.dart';
 import 'package:wms_app/core/network/network_info.dart';
 
@@ -55,11 +49,6 @@ class ClusterPickingBloc
   final GetFieldTableProductsUseCase getFieldTableProductsUseCase;
   final GetProductBatchUseCase getProductBatchUseCase;
   final SendProductOdooUseCase sendProductOdooUseCase;
-  final ViewProductImageUseCase viewProductImageUseCase;
-  final SetClusterBatchPedidoFieldUseCase setClusterBatchPedidoFieldUseCase;
-  final EndTimePickUseCase endTimePickUseCase;
-  final StartTimePickUseCase startTimePickUseCase;
-  final ValidatePedidoUseCase validatePedidoUseCase;
   final GetPendingSendProductsUseCase getPendingSendProductsUseCase;
   final NetworkInfo networkInfo;
 
@@ -128,8 +117,7 @@ class ClusterPickingBloc
 
   TextEditingController editProductController = TextEditingController();
 
-  bool _isProcessing = false; // Bandera para controlar el estado del proceso
-  bool isProcessing = false; // Bandera para controlar el estado del proceso
+  bool isProcessing = false;
 
   // Carga los lotes del producto actual si su tracking es "lot".
   // Centraliza la lógica que estaba duplicada 4 veces en distintos handlers.
@@ -182,12 +170,7 @@ class ClusterPickingBloc
     required this.getFieldTableProductsUseCase,
     required this.getProductBatchUseCase,
     required this.sendProductOdooUseCase,
-    required this.viewProductImageUseCase,
     required this.getUserNovelties,
-    required this.setClusterBatchPedidoFieldUseCase,
-    required this.endTimePickUseCase,
-    required this.startTimePickUseCase,
-    required this.validatePedidoUseCase,
     required this.getPendingSendProductsUseCase,
     required this.networkInfo,
   }) : super(ClusterPickingInitial()) {
@@ -212,11 +195,10 @@ class ClusterPickingBloc
     on<SeparateProductEvent>(_onSeparateProductEvent);
     //*cambiar el producto actual
     on<ChangeCurrentProduct>(_onChangeCurrentProduct);
-    on<ViewProductImageEvent>(_onViewProductImageEvent);
+    on<UpdatePedidosValidateEvent>(_onUpdatePedidosValidate);
     //*evento para cargar un producto seleccionado
     on<LoadSelectedProductEvent>(_onLoadSelectedProductEvent);
     on<ValidatePedidoEvent>(_onValidatePedidoEvent);
-    on<MarkPedidoAsValidatedEvent>(_onMarkPedidoAsValidated);
     //evento para reenviar productos guardados sin conexion
     on<SyncPendingClusterProductsEvent>(_onSyncPendingClusterProducts);
 
@@ -226,8 +208,6 @@ class ClusterPickingBloc
         add(const SyncPendingClusterProductsEvent());
       }
     });
-    on<EndTimePick>(_onEndTimePickEvent);
-    on<StartTimePick>(_onStartTimePickEvent);
     on<SendProductEditOdooEvent>(_onSendProductEditOdooEvent);
     on<SelectLoteEventCluster>(_onSelectLoteEventCluster);
     //*evento para dejar pendiente la separacion
@@ -379,7 +359,7 @@ class ClusterPickingBloc
     try {
       emit(LoadingSendProductEdit());
 
-      final (success, errorMessage) = await sendProuctOdoo(event.product);
+      final (success, errorMessage) = await sendProuctOdoo(event.product, emit);
 
       if (success) {
         //actualizamos la lista  de products para que la cantidad de ese producto este actualizada
@@ -406,61 +386,6 @@ class ClusterPickingBloc
       }
     } catch (e, s) {
       debugPrint("❌ Error en el SendProductEditOdooEvent :$e->$s");
-    }
-  }
-
-  void _onStartTimePickEvent(
-      StartTimePick event, Emitter<ClusterPickingState> emit) async {
-    try {
-      DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
-      String formattedDate = formatter.format(event.time);
-
-      final result = await startTimePickUseCase.call(
-        StartTimePickParams(
-          batchId: event.batchId,
-          formattedDate: formattedDate,
-          typePicking: event.type,
-        ),
-      );
-
-      await result.fold(
-        (failure) async => emit(TimeSeparateError(failure.message)),
-        (_) async {
-          //actualizamos el timepo del batch
-          await setClusterBatchFieldUseCase.call(SetClusterBatchFieldParams(
-              batchId: event.batchId,
-              field: 'start_time_pick',
-              value: formattedDate,
-              type: 'cluster'));
-
-          emit(TimeSeparateSuccess(formattedDate));
-        },
-      );
-    } catch (e, s) {
-      debugPrint("❌ Error en _onStartTimePickEvent: $e, $s");
-    }
-  }
-
-  void _onEndTimePickEvent(
-      EndTimePick event, Emitter<ClusterPickingState> emit) async {
-    try {
-      DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
-      String formattedDate = formatter.format(event.time);
-
-      final result = await endTimePickUseCase.call(
-        EndTimePickParams(
-          batchId: event.batchId,
-          formattedDate: formattedDate,
-          typePicking: 'cluster',
-        ),
-      );
-
-      await result.fold(
-        (failure) async => emit(TimeSeparateError(failure.message)),
-        (_) async => emit(TimeSeparateSuccess(formattedDate)),
-      );
-    } catch (e, s) {
-      debugPrint("❌ Error en _onEndTimePickEvent: $e, $s");
     }
   }
 
@@ -528,27 +453,6 @@ class ClusterPickingBloc
       emit(LoadSelectedProductState(currentProduct!));
     } catch (e, s) {
       debugPrint("❌ Error en _onLoadSelectedProductEvent: $e -> $s");
-    }
-  }
-
-  void _onViewProductImageEvent(
-      ViewProductImageEvent event, Emitter<ClusterPickingState> emit) async {
-    try {
-      debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
-      emit(ViewProductImageLoading());
-
-      final result = await viewProductImageUseCase.call(
-        ViewProductImageParams(
-            idProduct: event.idProduct, isLoadinDialog: true),
-      );
-
-      result.fold(
-        (failure) => emit(ViewProductImageFailure(failure.message)),
-        (url) => emit(ViewProductImageSuccess(url)),
-      );
-    } catch (e, s) {
-      debugPrint('Error en el ViewProductImageEvent: $e, $s');
-      emit(ViewProductImageFailure(e.toString()));
     }
   }
 
@@ -632,7 +536,7 @@ class ClusterPickingBloc
 
       // 2. Enviamos el producto a Odoo
       final (success, errorMessage) =
-          await sendProuctOdoo(event.currentProduct);
+          await sendProuctOdoo(event.currentProduct, emit);
 
       if (!success) {
         emit(CurrentProductChangedStateError(errorMessage));
@@ -723,7 +627,7 @@ class ClusterPickingBloc
   }
 
   //* Metodo para enviar al wms
-  Future<(bool, String)> sendProuctOdoo(BatchProduct producto) async {
+  Future<(bool, String)> sendProuctOdoo(BatchProduct producto, Emitter<ClusterPickingState> emit) async {
     try {
       debugPrint("sendProuctOdoo ------------");
 
@@ -808,9 +712,7 @@ class ClusterPickingBloc
         // Doble emit: SendToOdooStateSuccess cierra el loader y continúa el
         // flujo igual que un envío online; ProductSavedOfflineState muestra
         // el aviso de guardado sin conexión.
-        // ignore: invalid_use_of_visible_for_testing_member
         emit(const SendToOdooStateSuccess(true));
-        // ignore: invalid_use_of_visible_for_testing_member
         emit(const ProductSavedOfflineState());
         return (true, '');
       }
@@ -878,9 +780,8 @@ class ClusterPickingBloc
             ),
           );
 
-          // ignore: invalid_use_of_visible_for_testing_member
           emit(SendToOdooStateError(mensajeError));
-          print("❌ Error en sendProuctOdoo: $mensajeError");
+          debugPrint("❌ Error en sendProuctOdoo: $mensajeError");
           return (false, mensajeError);
         },
         (success) async {
@@ -931,7 +832,6 @@ class ClusterPickingBloc
             );
           }
 
-          // ignore: invalid_use_of_visible_for_testing_member
           emit(SendToOdooStateSuccess(true));
           return (true, '');
         },
@@ -1002,7 +902,7 @@ class ClusterPickingBloc
   void _onShowQuantityEvent(
       ShowQuantityEvent event, Emitter<ClusterPickingState> emit) {
     try {
-      viewQuantity = !viewQuantity;
+      viewQuantity = event.showQuantity;
       emit(ShowQuantityState(viewQuantity));
     } catch (e, s) {
       debugPrint("❌ Error en _onShowQuantityEvent: $e, $s");
@@ -1029,7 +929,7 @@ class ClusterPickingBloc
       emit(ChangeQuantitySeparateStateLoading());
 
       if (quantitySelected > (currentProduct?.quantity ?? 0)) {
-        print(
+        debugPrint(
             "Error: La cantidad seleccionada es mayor a la cantidad del producto");
         return;
       } else {
@@ -1122,115 +1022,11 @@ class ClusterPickingBloc
     }
   }
 
-  void _onMarkPedidoAsValidated(MarkPedidoAsValidatedEvent event,
-      Emitter<ClusterPickingState> emit) async {
-    try {
-      print("📦 EventoMarkPedidoAsValidated recibido:");
-      print("  - batchId: ${event.batchId}");
-      print("  - namePedido: ${event.namePedido}");
-      print("  - isValidated: ${event.isValidated}");
-      print("  - listIdMove: ${event.listIdMove.length}");
-
-      // 0. Si el pedido tiene productos guardados sin conexión, intentamos
-      // sincronizarlos primero; si quedan pendientes bloqueamos la validación
-      // (el backend aún no conoce esas líneas). Los productos se relacionan
-      // con el pedido por pedidoId (igual que en validate_screen).
-      final idPedidoValidar = pedidosValidate
-          .firstWhere(
-            (p) => p.namePedido == event.namePedido,
-            orElse: () => const PedidoValidate(),
-          )
-          .idPedido;
-
-      final pendingResult = await getPendingSendProductsUseCase(NoParams());
-      final pendientesPedido = pendingResult.fold(
-        (failure) => <BatchProduct>[],
-        (pendientes) => pendientes
-            .where((p) =>
-                p.batchId == event.batchId && p.pedidoId == idPedidoValidar)
-            .toList(),
-      );
-
-      if (pendientesPedido.isNotEmpty) {
-        int enviados = 0;
-        if (await networkInfo.isConnected) {
-          for (final pendiente in pendientesPedido) {
-            if (await _resendPendingProduct(pendiente)) enviados++;
-          }
-        }
-        final restantes = pendientesPedido.length - enviados;
-        if (restantes > 0) {
-          emit(ValidatePedidoStateError(
-              'No se puede validar: $restantes producto(s) pendiente(s) de envío. Conéctate a internet para sincronizar'));
-          return;
-        }
-      }
-
-      // // 1. Obtener los ids del pedido y la ubicación para validar con el backend
-      final pedidoToValidate = pedidosValidate.firstWhere(
-        (p) => p.namePedido == event.namePedido,
-        orElse: () => const PedidoValidate(),
-      );
-
-      final validateResult = await validatePedidoUseCase.call(
-        ValidatePedidoParams(
-          idPedido: pedidoToValidate.idPedido ?? 0,
-          idLocation: pedidoToValidate.idMuelle ??
-              0, // idMuelle es lo pedido como idLocation
-          listItems: event.listIdMove,
-        ),
-      );
-
-      bool validateSuccess = false;
-      String errorMessage = '';
-
-      validateResult.fold(
-        (failure) {
-          validateSuccess = false;
-          errorMessage = failure.message;
-        },
-        (success) {
-          validateSuccess = success;
-        },
-      );
-
-      if (!validateSuccess) {
-        debugPrint('❌ Error validando pedido en API: $errorMessage');
-        emit(ValidatePedidoStateError(errorMessage));
-        return; // Detenemos la ejecución si falla en backend
-      }
-
-      // 2. Si es correcto hacemos ya el siguiente proceso
-      await setClusterBatchPedidoFieldUseCase.call(
-        SetClusterBatchPedidoFieldParams(
-          batchId: event.batchId,
-          namePedido: event.namePedido,
-          field: 'is_validated',
-          value: event.isValidated ? 1 : 0,
-        ),
-      );
-
-      // Actualizar el estado local
-      pedidosValidate = pedidosValidate.map((p) {
-        if (p.namePedido == event.namePedido) {
-          return PedidoValidate(
-            batchId: p.batchId,
-            namePedido: p.namePedido,
-            idPicking: p.idPicking,
-            idPedido: p.idPedido,
-            muelle: p.muelle,
-            idMuelle: p.idMuelle,
-            barcodeMuelle: p.barcodeMuelle,
-            isValidated: event.isValidated,
-          );
-        }
-        return p;
-      }).toList();
-
-      emit(MarkPedidoAsValidatedStateSuccess(pedidosValidate));
-    } catch (e, s) {
-      debugPrint('❌ Error en MarkPedidoAsValidatedEvent: $e -> $s ');
-    }
+  // Bridge: ValidateClusterBloc actualiza la lista compartida de pedidos validados
+  void _onUpdatePedidosValidate(
+      UpdatePedidosValidateEvent event, Emitter<ClusterPickingState> emit) {
+    pedidosValidate = event.pedidosValidate;
+    emit(PedidosValidateUpdatedState(pedidosValidate));
   }
 
   void _onChangeProductIsOkEvent(
@@ -1342,7 +1138,6 @@ class ClusterPickingBloc
       isPedidoValidateOk = true;
 
       isProcessing = false;
-      _isProcessing = false;
       isSearch = true;
 
       quantitySelected = 0;
@@ -1471,12 +1266,18 @@ class ClusterPickingBloc
     emit(BatchProductsLoading());
 
     try {
-      // 1. Fetch products
-      final resultProducts = await getLocalBatchProductsData(
-          GetBatchProductsParams(batchId: event.batch.id!));
-
       currentBatch = event.batch;
       pedidosValidate = event.batch.pedidosValidate;
+
+      // Lanzar las 3 queries en paralelo (son independientes entre sí)
+      final futureProducts = getLocalBatchProductsData(
+          GetBatchProductsParams(batchId: event.batch.id!));
+      final futureConfig = getUserConfiguration(NoParams());
+      final futureNovelties = getUserNovelties(NoParams());
+
+      final resultProducts = await futureProducts;
+      final resultConfig = await futureConfig;
+      final resultNovelties = await futureNovelties;
 
       bool hasError = false;
       String errorMsg = '';
@@ -1498,8 +1299,6 @@ class ClusterPickingBloc
         return;
       }
 
-      // 2. Fetch configurations
-      final resultConfig = await getUserConfiguration(NoParams());
       resultConfig.fold(
         (failure) {
           debugPrint('Error al cargar config: ${failure.message}');
@@ -1509,8 +1308,6 @@ class ClusterPickingBloc
         },
       );
 
-      //3. Fetch novelties
-      final resultNovelties = await getUserNovelties(NoParams());
       resultNovelties.fold(
         (failure) {
           debugPrint('Error al cargar novedades: ${failure.message}');
@@ -1520,7 +1317,6 @@ class ClusterPickingBloc
         },
       );
 
-      // 5. Emit Loaded
       emit(BatchProductsLoaded(
         event.batch,
         products,
@@ -1602,7 +1398,6 @@ class ClusterPickingBloc
       productIsOk = currentProduct?.productIsOk == 1 ? true : false;
       quantityIsOk = currentProduct?.isQuantityIsOk == 1 ? true : false;
       quantitySelected = currentProduct?.quantitySeparate ?? 0;
-      _isProcessing = false;
 
       if (productIsOk == true) {
         locationIsOk = true;
@@ -1911,6 +1706,7 @@ class ClusterPickingBloc
   @override
   Future<void> close() {
     _networkSubscription?.cancel();
+    editProductController.dispose();
     return super.close();
   }
 

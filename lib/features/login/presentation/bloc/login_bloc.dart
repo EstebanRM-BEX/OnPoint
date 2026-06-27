@@ -3,6 +3,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/login/domain/entities/user.dart';
 import 'package:wms_app/features/login/domain/usecases/authenticate_user.dart';
 import 'package:wms_app/features/login/domain/usecases/save_user_session.dart';
@@ -55,8 +56,9 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       // Authentication successful
       (user) async {
         debugPrint('✅ Login successful: ${user.name}');
-        // Session is saved only after device authorization is confirmed
-        emit(LoginSuccess(user, event.password));
+        // Guardar el password antes del emit para no exponerlo en el estado
+        await PrefUtils.setUserPass(event.password);
+        emit(LoginSuccess(user));
       },
     );
   }

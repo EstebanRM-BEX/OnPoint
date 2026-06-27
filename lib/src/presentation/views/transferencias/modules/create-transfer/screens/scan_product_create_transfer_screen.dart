@@ -23,6 +23,7 @@ import 'package:wms_app/src/presentation/views/transferencias/modules/create-tra
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/quantity/scanner_quantity_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
+import 'package:wms_app/shared/widgets/segunda_unidad_input_widget.dart';
 
 class CreateTransferScreen extends StatefulWidget {
   const CreateTransferScreen({super.key});
@@ -43,6 +44,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
   FocusNode focusNode4 = FocusNode(); //cantidad textformfield
   FocusNode focusNode5 = FocusNode(); // lote
   FocusNode focusNode6 = FocusNode(); // ubicacion  de destino
+  FocusNode focusNodeSegundaUnidad = FocusNode(); // segunda unidad de medida
 
   //controller
   final TextEditingController _controllerLocation = TextEditingController();
@@ -59,6 +61,18 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    focusNodeSegundaUnidad.addListener(() {
+      if (!focusNodeSegundaUnidad.hasFocus) {
+        Future.microtask(() => _handleDependencies());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    focusNodeSegundaUnidad.dispose();
+    super.dispose();
   }
 
   @override
@@ -98,6 +112,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
       focusNode4,
       focusNode5,
       focusNode6,
+      focusNodeSegundaUnidad,
     ]) {
       if (node != except) node.unfocus();
     }
@@ -319,6 +334,25 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
 
   void validateQuantity(String value) {
     final bloc = context.read<CreateTransferBloc>();
+
+    final maneja = bloc.currentProduct?.manejaSegundaUnidad;
+    if (maneja == true || maneja == 1) {
+      if (bloc.segundaUnidadController.text.trim().isEmpty) {
+        _audioService.playErrorSound();
+        _vibrationService.vibrate();
+        Get.snackbar(
+          'Atención',
+          'Debe ingresar la cantidad de la segunda unidad de medida',
+          backgroundColor: white,
+          colorText: primaryColorApp,
+          duration: const Duration(milliseconds: 2000),
+          icon: const Icon(Icons.warning_amber, color: Colors.amber),
+          snackPosition: SnackPosition.TOP,
+        );
+        Future.microtask(() => focusNode3.requestFocus());
+        return;
+      }
+    }
 
     String scan = bloc.scannedValue3.trim().toLowerCase() == ""
         ? value.trim().toLowerCase()
@@ -697,6 +731,18 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                                   ProductDropdownCreateTransferWidget(),
                             ),
 
+                            //todo segunda unidad de medida
+                            Builder(builder: (context) {
+                              final bloc = context.read<CreateTransferBloc>();
+                              final maneja = bloc.currentProduct?.manejaSegundaUnidad;
+                              if (maneja != true && maneja != 1) return const SizedBox.shrink();
+                              return SegundaUnidadInputWidget(
+                                controller: bloc.segundaUnidadController,
+                                uomLabel: bloc.currentProduct?.uomSegundaUnidad ?? '',
+                                focusNode: focusNodeSegundaUnidad,
+                              );
+                            }),
+
                             //todo lote
                             Visibility(
                               // El padre controla la visibilidad
@@ -819,23 +865,36 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                       debugPrint('onManualQuantityChanged: $value');
                     },
                     onManualQuantitySubmitted: (value) {
+                      final bloc = context.read<CreateTransferBloc>();
+                      final maneja = bloc.currentProduct?.manejaSegundaUnidad;
+                      if (maneja == true || maneja == 1) {
+                        if (bloc.segundaUnidadController.text.trim().isEmpty) {
+                          _audioService.playErrorSound();
+                          _vibrationService.vibrate();
+                          Get.snackbar(
+                            'Atención',
+                            'Debe ingresar la cantidad de la segunda unidad de medida',
+                            backgroundColor: white,
+                            colorText: primaryColorApp,
+                            duration: const Duration(milliseconds: 2000),
+                            icon: const Icon(Icons.warning_amber, color: Colors.amber),
+                            snackPosition: SnackPosition.TOP,
+                          );
+                          return;
+                        }
+                      }
+
                       final intValue = double.parse(value);
 
-                      context.read<CreateTransferBloc>().add(
+                      bloc.add(
                         ChangeQuantitySeparate(
                           intValue,
-                          context
-                                  .read<CreateTransferBloc>()
-                                  .currentProduct
-                                  ?.productId ??
-                              0,
+                          bloc.currentProduct?.productId ?? 0,
                         ),
                       );
 
-                      context.read<CreateTransferBloc>().add(
-                        ShowQuantityEvent(
-                          !context.read<CreateTransferBloc>().viewQuantity,
-                        ),
+                      bloc.add(
+                        ShowQuantityEvent(!bloc.viewQuantity),
                       );
                     },
                     isViewCant: false,
@@ -851,6 +910,24 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
 
   void _validatebuttonquantity() {
     final bloc = context.read<CreateTransferBloc>();
+
+    final maneja = bloc.currentProduct?.manejaSegundaUnidad;
+    if (maneja == true || maneja == 1) {
+      if (bloc.segundaUnidadController.text.trim().isEmpty) {
+        _audioService.playErrorSound();
+        _vibrationService.vibrate();
+        Get.snackbar(
+          'Atención',
+          'Debe ingresar la cantidad de la segunda unidad de medida',
+          backgroundColor: white,
+          colorText: primaryColorApp,
+          duration: const Duration(milliseconds: 2000),
+          icon: const Icon(Icons.warning_amber, color: Colors.amber),
+          snackPosition: SnackPosition.TOP,
+        );
+        return;
+      }
+    }
 
     String input = cantidadController.text.trim();
     //validamos quantity

@@ -105,6 +105,12 @@ class ProductsEntradaRepository {
                 product.imageNovedad ?? '',
             ProductRecepcionTable.columnUseExpirationDate:
                 product.useExpirationDate ?? 0,
+            ProductRecepcionTable.columnManejaSegundaUnidad:
+                product.manejaSegundaUnidad ?? 0,
+            ProductRecepcionTable.columnUomSegundaUnidad:
+                product.uomSegundaUnidad ?? '',
+            ProductRecepcionTable.columnQuantitySegundaUnidad:
+                product.quantitySegundaUnidad ?? 0.0,
           };
 
           // Si la clave ya existe, se hace UPDATE; si no, se hace INSERT.
@@ -198,6 +204,12 @@ class ProductsEntradaRepository {
         ProductRecepcionTable.columnImageNovedad: '',
         ProductRecepcionTable.columnUseExpirationDate:
             producto.useExpirationDate ?? 0,
+        ProductRecepcionTable.columnManejaSegundaUnidad:
+            producto.manejaSegundaUnidad ?? 0,
+        ProductRecepcionTable.columnUomSegundaUnidad:
+            producto.uomSegundaUnidad ?? '',
+        ProductRecepcionTable.columnQuantitySegundaUnidad:
+            producto.quantitySegundaUnidad ?? 0.0,
       };
 
       await db.insert(
@@ -351,6 +363,7 @@ class ProductsEntradaRepository {
               ProductRecepcionTable.columnProductIsOk: null,
               ProductRecepcionTable.columnIsQuantityIsOk: null,
               ProductRecepcionTable.columnQuantitySeparate: null,
+              ProductRecepcionTable.columnQuantitySegundaUnidad: 0,
             },
             where: '${ProductRecepcionTable.columnIdRecepcion} = ? AND '
                 '${ProductRecepcionTable.columnProductId} = ? AND '

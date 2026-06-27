@@ -286,6 +286,9 @@ class LineasTransferenciaTrans {
   final dynamic dateEnd;
   final dynamic cantidadFaltante;
   final String? type;
+  final dynamic manejaSegundaUnidad;
+  final String? uomSegundaUnidad;
+  final double? quantitySegundaUnidad;
 
   LineasTransferenciaTrans({
     this.idMove,
@@ -327,6 +330,9 @@ class LineasTransferenciaTrans {
     this.dateEnd,
     this.cantidadFaltante,
     this.type,
+    this.manejaSegundaUnidad,
+    this.uomSegundaUnidad,
+    this.quantitySegundaUnidad,
   });
 
   factory LineasTransferenciaTrans.fromMap(Map<String, dynamic> json) =>
@@ -376,6 +382,9 @@ class LineasTransferenciaTrans {
         dateEnd: json["date_end"],
         cantidadFaltante: json["cantidad_faltante"],
         type: json["type"],
+        manejaSegundaUnidad: json["maneja_segunda_unidad"],
+        uomSegundaUnidad: json["uom_segunda_unidad"],
+        quantitySegundaUnidad: json["quantity_segunda_unidad"]?.toDouble(),
       );
 
   Map<String, dynamic> toMap() => {
@@ -422,5 +431,8 @@ class LineasTransferenciaTrans {
         "date_end": dateEnd,
         "cantidad_faltante": cantidadFaltante,
         "type": type,
+        "maneja_segunda_unidad": manejaSegundaUnidad,
+        "uom_segunda_unidad": uomSegundaUnidad,
+        "quantity_segunda_unidad": quantitySegundaUnidad,
       };
 }

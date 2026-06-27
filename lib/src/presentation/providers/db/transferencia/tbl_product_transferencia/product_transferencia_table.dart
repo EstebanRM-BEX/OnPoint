@@ -48,6 +48,9 @@ class ProductTransferenciaTable {
 
   static const String columnCantidadFaltante = 'cantidad_faltante';
   static const String columnType = 'type';
+  static const String columnManejaSegundaUnidad = 'maneja_segunda_unidad';
+  static const String columnUomSegundaUnidad = 'uom_segunda_unidad';
+  static const String columnQuantitySegundaUnidad = 'quantity_segunda_unidad';
 
 //Meotdo para crar la tabla
   static String createTable() {
@@ -91,6 +94,9 @@ class ProductTransferenciaTable {
       $columnDateTransaction TEXT,
       $columnCantidadFaltante REAL,
       $columnType TEXT,
+      $columnManejaSegundaUnidad INTEGER,
+      $columnUomSegundaUnidad TEXT,
+      $columnQuantitySegundaUnidad REAL,
       FOREIGN KEY ($columnIdTransferencia) REFERENCES tbl_entradas_recepcion ($columnIdMove)
 
     )

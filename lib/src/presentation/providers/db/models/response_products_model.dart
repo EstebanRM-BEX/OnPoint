@@ -91,8 +91,9 @@ class Product {
   int? idPropietario;
   String? propietario;
   dynamic? manejoPropietario;
-
-
+  dynamic manejaSegundaUnidad;
+  String? uomSegundaUnidad;
+  double? quantitySegundaUnidad;
 
   Product({
     this.productId,
@@ -125,6 +126,9 @@ class Product {
     this.idPropietario,
     this.propietario,
     this.manejoPropietario,
+    this.manejaSegundaUnidad,
+    this.uomSegundaUnidad,
+    this.quantitySegundaUnidad,
   });
 
   Product copyWith({
@@ -158,6 +162,7 @@ class Product {
     int? idPropietario,
     String? propietario,
     dynamic manejoPropietario,
+    double? quantitySegundaUnidad,
     // Sentinel para campos que se quieren pasar explícitamente a null
     bool clearLotId = false,
     bool clearLotName = false,
@@ -194,6 +199,9 @@ class Product {
         idPropietario: idPropietario ?? this.idPropietario,
         propietario: propietario ?? this.propietario,
         manejoPropietario: manejoPropietario ?? this.manejoPropietario,
+        manejaSegundaUnidad: manejaSegundaUnidad ?? this.manejaSegundaUnidad,
+        uomSegundaUnidad: uomSegundaUnidad ?? this.uomSegundaUnidad,
+        quantitySegundaUnidad: quantitySegundaUnidad ?? this.quantitySegundaUnidad,
       );
 
   factory Product.fromMap(Map<String, dynamic> json) => Product(
@@ -232,7 +240,10 @@ class Product {
         expirationDateLote: json['expiration_date'],
         idPropietario: json["id_propietario"],
         manejoPropietario: json["manejo_propietario"],
-        propietario: json["propietario"]
+        propietario: json["propietario"],
+        manejaSegundaUnidad: json["maneja_segunda_unidad"],
+        uomSegundaUnidad: json["uom_segunda_unidad"] is bool ? null : json["uom_segunda_unidad"],
+        quantitySegundaUnidad: (json["quantity_segunda_unidad"] as num?)?.toDouble(),
       );
 
   Map<String, dynamic> toMap() => {
@@ -270,6 +281,9 @@ class Product {
         "propietario" : propietario,
         "id_propietario" : idPropietario,
         "manejo_propietario" : manejoPropietario,
+        "maneja_segunda_unidad": manejaSegundaUnidad,
+        "uom_segunda_unidad": uomSegundaUnidad,
+        "quantity_segunda_unidad": quantitySegundaUnidad,
       };
 }
 

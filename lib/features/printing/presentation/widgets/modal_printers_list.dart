@@ -343,14 +343,14 @@ class _ReportTile extends StatelessWidget {
                             resIds: List<int>.from(resIds),
                             companyId: int.parse(companyId.toString()),
                             copies: copies));
-                        print(printer.hostmachine);
-                        print(printer.printerType);
-                        print(printer.hostmachine);
-                        print('reporte: ${report.name}');
-                        print('reporte: ${report.reportName}');
-                        print('reporte: ${report.id}');
-                        print('reporte: ${report.reportType}');
-                        print('reporte: ${report.model}');
+                        debugPrint(printer.hostmachine);
+                        debugPrint(printer.printerType);
+                        debugPrint(printer.hostmachine);
+                        debugPrint('reporte: ${report.name}');
+                        debugPrint('reporte: ${report.reportName}');
+                        debugPrint('reporte: ${report.id}');
+                        debugPrint('reporte: ${report.reportType}');
+                        debugPrint('reporte: ${report.model}');
                       },
                     );
                   }

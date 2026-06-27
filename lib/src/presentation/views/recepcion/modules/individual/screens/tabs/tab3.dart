@@ -541,6 +541,44 @@ class Tab3ScreenRecep extends StatelessWidget {
                                               ),
                                             ],
                                           ),
+                                          Visibility(
+                                            visible:
+                                                product.manejaSegundaUnidad ==
+                                                        true ||
+                                                    product.manejaSegundaUnidad ==
+                                                        1,
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.scale_outlined,
+                                                  color: primaryColorApp,
+                                                  size: 15,
+                                                ),
+                                                const SizedBox(width: 5),
+                                                Text(
+                                                  "2da unidad: ",
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: primaryColorApp,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  "${product.quantitySegundaUnidad ?? 0}",
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: black),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  product.uomSegundaUnidad ?? '',
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: primaryColorApp,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                           Row(
                                             children: [
                                               Icon(

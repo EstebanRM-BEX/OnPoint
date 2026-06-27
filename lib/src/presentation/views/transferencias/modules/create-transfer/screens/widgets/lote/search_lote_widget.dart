@@ -11,8 +11,10 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
+import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
+import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
@@ -30,13 +32,55 @@ class SearchLoteCreateTransferScreen extends StatefulWidget {
 
 class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
   bool viewList = true;
-  DateTime? selectedDate; // Para almacenar la fecha seleccionada
-  int? selectedIndex; // Para almacenar el índice del lote seleccionado
+  DateTime? selectedDate;
+  int? selectedIndex;
+  final FocusNode _searchFocusNode = FocusNode();
+
+  List<LotesProduct> _allLotes = [];
+  List<LotesProduct> _filteredLotes = [];
+  int? _suggestedLoteId;
 
   @override
   void initState() {
     super.initState();
     viewList = true;
+    _initLotes();
+  }
+
+  void _initLotes() {
+    final bloc = context.read<CreateTransferBloc>();
+    final lotId = bloc.currentProduct?.lotId;
+    _suggestedLoteId = (lotId is int) ? lotId : int.tryParse(lotId?.toString() ?? '');
+
+    var lotes = List<LotesProduct>.from(bloc.listLotesProduct);
+
+    if (_suggestedLoteId != null && _suggestedLoteId != 0) {
+      final idx = lotes.indexWhere((l) => l.id == _suggestedLoteId);
+      if (idx != -1) {
+        final suggested = lotes.removeAt(idx);
+        lotes.insert(0, suggested);
+      }
+    }
+
+    _allLotes = lotes;
+    _filteredLotes = List.from(_allLotes);
+  }
+
+  void _filterLotes(String query) {
+    final q = query.toLowerCase().trim();
+    setState(() {
+      _filteredLotes = q.isEmpty
+          ? List.from(_allLotes)
+          : _allLotes
+                .where((l) => (l.name ?? '').toLowerCase().contains(q))
+                .toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchFocusNode.dispose();
+    super.dispose();
   }
 
   // Función para mostrar el selector de fecha y hora
@@ -144,272 +188,222 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 12, color: black)),
 
-                    //todo barra buscar
                     Visibility(
                       visible: viewList,
-                      child: SizedBox(
-                          height: 55,
-                          width: size.width * 1,
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                              left: 10,
-                              right: 10,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: size.width * 0.9,
-                                  child: Card(
-                                    color: Colors.white,
-                                    elevation: 3,
-                                    child: TextFormField(
-                                      style:
-                                          TextStyle(color: black, fontSize: 14),
-                                      textAlignVertical:
-                                          TextAlignVertical.center,
-                                      controller: bloc.searchControllerLote,
-                                      showCursor: true,
-                                      decoration: InputDecoration(
-                                        prefixIcon: const Icon(
-                                          Icons.search,
-                                          color: grey,
-                                          size: 20,
-                                        ),
-                                        suffixIcon: IconButton(
-                                            onPressed: () {
-                                              bloc.searchControllerLote.clear();
-                                              bloc.add(SearchLotevent(
-                                                '',
-                                              ));
-
-                                              FocusScope.of(context).unfocus();
-                                            },
-                                            icon: const Icon(
-                                              Icons.close,
-                                              color: grey,
-                                              size: 20,
-                                            )),
-                                        disabledBorder:
-                                            const OutlineInputBorder(),
-                                        hintText: "Buscar lote",
-                                        hintStyle: const TextStyle(
-                                            color: Colors.grey, fontSize: 14),
-                                        border: InputBorder.none,
-                                      ),
-                                      onChanged: (value) {
-                                        bloc.add(SearchLotevent(
-                                          value,
-                                        ));
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )),
+                      child: DynamicSearchBar(
+                        controller: bloc.searchControllerLote,
+                        focusNode: _searchFocusNode,
+                        hintText: "Buscar lote",
+                        persistentKeyboard: true,
+                        onSearchChanged: _filterLotes,
+                        onSearchCleared: () {
+                          _filterLotes('');
+                        },
+                      ),
                     ),
 
                     const SizedBox(height: 10),
                     if (viewList)
                       Expanded(
-                          child: ListView.builder(
-                              itemCount: bloc.listLotesProductFilters.length,
-                              itemBuilder: (context, index) {
-                                bool isSelected = selectedIndex == index;
-                                // 1. Obtener el dato crudo
-                                final rawDate = bloc
-                                    .listLotesProductFilters[index]
-                                    .expirationDate;
-                                bool isExpired = false;
-                                int?
-                                    daysLeft; // Variable para guardar los días restantes
+                        child: ListView.builder(
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.manual,
+                          itemCount: _filteredLotes.length,
+                          itemBuilder: (context, index) {
+                            final loteData = _filteredLotes[index];
+                            final bool isSelected = selectedIndex == index;
+                            final bool isSuggested =
+                                _suggestedLoteId != null &&
+                                _suggestedLoteId != 0 &&
+                                loteData.id == _suggestedLoteId;
+                            final rawDate = loteData.expirationDate;
+                            bool isExpired = false;
+                            int? daysLeft;
 
-                                if (rawDate != null &&
-                                    rawDate != false &&
-                                    rawDate.toString().isNotEmpty) {
-                                  DateTime? expiration =
-                                      DateTime.tryParse(rawDate.toString());
-
-                                  if (expiration != null) {
-                                    final now = DateTime.now();
-
-                                    // Normalizamos las fechas (Solo Año, Mes, Día) para que la hora no afecte
-                                    final dateExpiration = DateTime(
-                                        expiration.year,
-                                        expiration.month,
-                                        expiration.day);
-                                    final dateNow =
-                                        DateTime(now.year, now.month, now.day);
-
-                                    // Calculamos la diferencia
-                                    final difference = dateExpiration
-                                        .difference(dateNow)
-                                        .inDays;
-
-                                    if (difference < 0) {
-                                      isExpired = true; // Ya pasó la fecha
-                                    } else {
-                                      daysLeft =
-                                          difference; // Guardamos cuántos días faltan
-                                    }
-                                  }
+                            if (rawDate != null &&
+                                rawDate != false &&
+                                rawDate.toString().isNotEmpty) {
+                              final expiration =
+                                  DateTime.tryParse(rawDate.toString());
+                              if (expiration != null) {
+                                final now = DateTime.now();
+                                final dateExpiration = DateTime(
+                                    expiration.year,
+                                    expiration.month,
+                                    expiration.day);
+                                final dateNow =
+                                    DateTime(now.year, now.month, now.day);
+                                final difference =
+                                    dateExpiration.difference(dateNow).inDays;
+                                if (difference < 0) {
+                                  isExpired = true;
+                                } else {
+                                  daysLeft = difference;
                                 }
+                              }
+                            }
 
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 0),
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedIndex =
-                                            isSelected ? null : index;
-                                      });
-                                    },
-                                    child: Card(
-                                      elevation: 3,
-                                      color: isSelected
-                                          ? Colors.green[100]
-                                          : Colors.white,
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 5),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 0),
+                              child: GestureDetector(
+                                onTap: () {
+                                  _searchFocusNode.unfocus();
+                                  setState(() {
+                                    selectedIndex = isSelected ? null : index;
+                                  });
+                                },
+                                child: Card(
+                                  elevation: 3,
+                                  color: isSelected
+                                      ? Colors.green[100]
+                                      : Colors.white,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 5),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
                                           children: [
                                             Text(
-                                              'Lote: ${bloc.listLotesProductFilters[index].name}',
+                                              'Lote: ${loteData.name}',
                                               style: TextStyle(
-                                                  color: primaryColorApp,
-                                                  fontSize: 12),
+                                                color: primaryColorApp,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
-                                            if (bloc
-                                                    .listLotesProductFilters[
-                                                        index]
-                                                    .expirationDate !=
-                                                "") ...[
-                                              Row(
-                                                children: [
-                                                  const Text(
-                                                      'Fecha de caducidad: ',
-                                                      style: TextStyle(
-                                                          color: Colors.black,
-                                                          fontSize: 12)),
-                                                  Text(
-                                                    '${rawDate == false ? 'Sin fecha' : rawDate}',
-                                                    style: TextStyle(
-                                                      color:
-                                                          (rawDate == false ||
-                                                                  isExpired)
-                                                              ? Colors.red
-                                                              : Colors.black,
-                                                      fontSize: 12,
-                                                      fontWeight: isExpired
-                                                          ? FontWeight.bold
-                                                          : FontWeight.normal,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-
-                                            // --- SECCIÓN DE ESTADO DEL LOTE ---
-
-                                            // CASO 1: LOTE VENCIDO
-                                            if (isExpired) ...[
-                                              const SizedBox(height: 5),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.all(4),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.red[50],
-                                                  borderRadius:
-                                                      BorderRadius.circular(4),
-                                                  border: Border.all(
-                                                      color:
-                                                          Colors.red.shade200),
-                                                ),
-                                                child: Row(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: const [
-                                                    Icon(
-                                                        Icons
-                                                            .warning_amber_rounded,
-                                                        color: Colors.red,
-                                                        size: 16),
-                                                    SizedBox(width: 5),
-                                                    Text("¡LOTE VENCIDO!",
-                                                        style: TextStyle(
-                                                            color: Colors.red,
-                                                            fontSize: 12,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold)),
-                                                  ],
-                                                ),
-                                              ),
-                                            ]
-                                            // CASO 2: POR VENCER (Mostrar días restantes)
-                                            else if (daysLeft != null) ...[
-                                              const SizedBox(height: 5),
+                                            if (isSuggested) ...[
+                                              const SizedBox(width: 8),
                                               Container(
                                                 padding:
                                                     const EdgeInsets.symmetric(
                                                         horizontal: 6,
                                                         vertical: 2),
                                                 decoration: BoxDecoration(
-                                                  // Si faltan menos de 15 días: Fondo Naranja suave, sino Azul suave
-                                                  color: daysLeft < 15
-                                                      ? Colors.orange[50]
-                                                      : Colors.blue[50],
+                                                  color: Colors.green[50],
                                                   borderRadius:
                                                       BorderRadius.circular(4),
                                                   border: Border.all(
-                                                      color: daysLeft < 15
-                                                          ? Colors
-                                                              .orange.shade300
-                                                          : Colors
-                                                              .blue.shade200),
+                                                      color: Colors
+                                                          .green.shade300),
                                                 ),
-                                                child: Row(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    Icon(
-                                                        Icons
-                                                            .av_timer, // Icono de cronómetro
-                                                        // Si faltan menos de 15 días: Naranja, sino Azul
-                                                        color: daysLeft < 15
-                                                            ? Colors.orange[800]
-                                                            : Colors.blue[700],
-                                                        size: 16),
-                                                    const SizedBox(width: 5),
-                                                    Text(
-                                                      daysLeft == 0
-                                                          ? "Vence hoy"
-                                                          : "Vence en $daysLeft días",
-                                                      style: TextStyle(
-                                                        color: daysLeft < 15
-                                                            ? Colors.orange[900]
-                                                            : Colors.blue[900],
-                                                        fontSize: 12,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                      ),
-                                                    ),
-                                                  ],
+                                                child: const Text(
+                                                  'Sugerido',
+                                                  style: TextStyle(
+                                                    color: Colors.green,
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
                                                 ),
                                               ),
                                             ],
                                           ],
                                         ),
-                                      ),
+                                        if (rawDate != null &&
+                                            rawDate != '') ...[
+                                          Row(
+                                            children: [
+                                              const Text('Fecha de caducidad: ',
+                                                  style: TextStyle(
+                                                      color: Colors.black,
+                                                      fontSize: 12)),
+                                              Text(
+                                                '${rawDate == false ? 'Sin fecha' : rawDate}',
+                                                style: TextStyle(
+                                                  color: (rawDate == false ||
+                                                          isExpired)
+                                                      ? Colors.red
+                                                      : Colors.black,
+                                                  fontSize: 12,
+                                                  fontWeight: isExpired
+                                                      ? FontWeight.bold
+                                                      : FontWeight.normal,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                        if (isExpired) ...[
+                                          const SizedBox(height: 5),
+                                          Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red[50],
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              border: Border.all(
+                                                  color: Colors.red.shade200),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: const [
+                                                Icon(
+                                                    Icons.warning_amber_rounded,
+                                                    color: Colors.red,
+                                                    size: 16),
+                                                SizedBox(width: 5),
+                                                Text('¡LOTE VENCIDO!',
+                                                    style: TextStyle(
+                                                        color: Colors.red,
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.bold)),
+                                              ],
+                                            ),
+                                          ),
+                                        ] else if (daysLeft != null) ...[
+                                          const SizedBox(height: 5),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: daysLeft < 15
+                                                  ? Colors.orange[50]
+                                                  : Colors.blue[50],
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              border: Border.all(
+                                                  color: daysLeft < 15
+                                                      ? Colors.orange.shade300
+                                                      : Colors.blue.shade200),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.av_timer,
+                                                    color: daysLeft < 15
+                                                        ? Colors.orange[800]
+                                                        : Colors.blue[700],
+                                                    size: 16),
+                                                const SizedBox(width: 5),
+                                                Text(
+                                                  daysLeft == 0
+                                                      ? 'Vence hoy'
+                                                      : 'Vence en $daysLeft días',
+                                                  style: TextStyle(
+                                                    color: daysLeft < 15
+                                                        ? Colors.orange[900]
+                                                        : Colors.blue[900],
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ],
                                     ),
                                   ),
-                                );
-                              })),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     //todo crear lote
                     if (!viewList)
                       Expanded(
@@ -631,23 +625,73 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         child: ElevatedButton(
                           onPressed: () {
-                            // Aquí puedes manejar la lógica de lo que suceda cuando se seleccione el lote
-                            var selectedLote =
-                                bloc.listLotesProductFilters[selectedIndex!];
+                            final selectedLote = _filteredLotes[selectedIndex!];
+                            final isSuggested =
+                                _suggestedLoteId != null &&
+                                _suggestedLoteId != 0 &&
+                                selectedLote.id == _suggestedLoteId;
 
-                            bloc.add(SelectecLoteEvent(selectedLote));
+                            void confirmSelection() {
+                              bloc.add(SelectecLoteEvent(selectedLote));
+                              Navigator.pushReplacementNamed(
+                                context,
+                                'create-transfer',
+                              );
+                              Get.snackbar(
+                                'Lote Seleccionado',
+                                'Has seleccionado el lote: ${selectedLote.name}',
+                                backgroundColor: white,
+                                colorText: primaryColorApp,
+                                icon: const Icon(
+                                  Icons.check,
+                                  color: Colors.green,
+                                ),
+                              );
+                            }
 
-                            Navigator.pushReplacementNamed(
-                              context,
-                              'create-transfer',
-                            );
-                            Get.snackbar(
-                              'Lote Seleccionado',
-                              'Has seleccionado el lote: ${selectedLote.name}',
-                              backgroundColor: white,
-                              colorText: primaryColorApp,
-                              icon: Icon(Icons.check, color: Colors.green),
-                            );
+                            if (isSuggested) {
+                              confirmSelection();
+                            } else {
+                              showDialog(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  backgroundColor: Colors.white,
+                                  title: const Text(
+                                    '360 Software Informa',
+                                    style: TextStyle(
+                                        color: Colors.orange, fontSize: 16),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  content: Text(
+                                    'El lote seleccionado (${selectedLote.name}) es diferente al lote sugerido.\n¿Desea continuar con este lote?',
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx),
+                                      child: const Text('Cancelar'),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(ctx);
+                                        confirmSelection();
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: primaryColorApp,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'Continuar',
+                                        style: TextStyle(color: white),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColorApp,

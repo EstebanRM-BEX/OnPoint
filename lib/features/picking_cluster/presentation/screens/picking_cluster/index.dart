@@ -1,11 +1,8 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:get/get.dart';
-import 'package:wms_app/core/interfaces/i_vibration_service.dart';
-import 'package:wms_app/core/interfaces/i_audio_service.dart';
-import 'package:wms_app/features/picking_cluster/data/datasources/picking_cluster_local_data_source.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/picking_batch.dart';
-import 'package:wms_app/injection_container.dart';
+import 'package:wms_app/features/picking_cluster/presentation/bloc/picking_cluster_list/picking_cluster_list_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -24,13 +21,32 @@ class PickingClusterScreen extends StatefulWidget {
 }
 
 class _PickingClusterScreenState extends State<PickingClusterScreen> {
-  final IAudioService _audioService = getIt<IAudioService>();
-  final IVibrationService _vibrationService = getIt<IVibrationService>();
   FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
-  bool _isProcessing = false;
   String? _selectedPropietario;
   String _currentSortKey = '';
+
+  @override
+  void initState() {
+    super.initState();
+    // Carga local inmediata al entrar a la pantalla.
+    // Si el usuario quiere datos frescos de red usa el botón de refresh.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context
+            .read<PickingClusterListBloc>()
+            .add(const LoadLocalClustersEvent());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    focusNodeBuscar.unfocus();
+    focusNodeBuscar.dispose();
+    _controllerToDo.dispose();
+    super.dispose();
+  }
 
   List<String> _getPropietarios(List<PickingBatch> list) {
     return list
@@ -105,96 +121,125 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
     return sorted;
   }
 
-  void validateBarcode(String value, BuildContext context) {}
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    focusNodeBuscar.unfocus();
-    focusNodeBuscar.dispose();
-    _controllerToDo.dispose();
-    super.dispose();
+  void _onBatchTapped(PickingBatch batch) {
+    final listBloc = context.read<PickingClusterListBloc>();
+    if (batch.startTimePick != "") {
+      listBloc.add(SelectBatchEvent(batch));
+    } else {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => DialogStartTimeWidget(
+          onAccepted: () async {
+            Navigator.pop(ctx);
+            listBloc.add(SelectBatchEvent(batch, startTime: DateTime.now()));
+          },
+          title: 'Iniciar Picking',
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async {
-        return false;
-      },
-      child: BlocListener<ClusterPickingBloc, ClusterPickingState>(
-        listener: (context, state) {
-          print('State: $state');
-          if (state is PickingClustersLoading) {
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (context) =>
-                  const DialogLoading(message: "Sincronizando Localmente..."),
-            );
-          }
+      onWillPop: () async => false,
+      child: MultiBlocListener(
+        listeners: [
+          // Listener del BLoC de lista: carga de clusters y errores
+          BlocListener<PickingClusterListBloc, PickingClusterListState>(
+            listener: (context, state) {
+              if (state is ClustersLoadingState) {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) =>
+                      const DialogLoading(message: "Sincronizando Localmente..."),
+                );
+              }
 
-          if (state is PickingClustersLoaded) {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context); // Cierra el loader
-            }
-          }
+              if (state is ClustersLoadedState) {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+              }
 
-          if (state is BatchProductsLoading) {
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (context) =>
-                  const DialogLoading(message: "Cargando productos..."),
-            );
-          }
+              if (state is ClustersErrorState) {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+                Get.snackbar(
+                  '360 Software Informa',
+                  state.message,
+                  backgroundColor: white,
+                  colorText: primaryColorApp,
+                  icon: const Icon(Icons.error, color: Colors.red),
+                  showProgressIndicator: true,
+                  duration: const Duration(seconds: 5),
+                );
+              }
 
-          if (state is BatchProductsLoaded) {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context); // Cierra loader
-            }
+              if (state is BatchStartTimeErrorState) {
+                Get.snackbar(
+                  '360 Software Informa',
+                  state.message,
+                  backgroundColor: white,
+                  colorText: primaryColorApp,
+                  icon: const Icon(Icons.error, color: Colors.red),
+                  duration: const Duration(seconds: 4),
+                );
+              }
+            },
+          ),
 
-            final pendingProducts =
-                state.products.where((p) => p.isSeparate == 0).toList();
+          // Listener del BLoC compartido: carga de productos y navegación
+          BlocListener<ClusterPickingBloc, ClusterPickingState>(
+            listener: (context, state) {
+              if (state is BatchProductsLoading) {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) =>
+                      const DialogLoading(message: "Cargando productos..."),
+                );
+              }
 
-            if (pendingProducts.isNotEmpty) {
-              context
-                  .read<ClusterPickingBloc>()
-                  .add(LoadCurrentProductEvent(pendingProducts.first));
-            } else if (state.products.isNotEmpty) {
-              context
-                  .read<ClusterPickingBloc>()
-                  .add(LoadCurrentProductEvent(state.products.last));
-            }
+              if (state is BatchProductsLoaded) {
+                if (Navigator.canPop(context)) Navigator.pop(context);
 
-            Navigator.pushReplacementNamed(context, 'scan-product-cluster',
-                arguments: state.batch);
-          }
+                final pendingProducts =
+                    state.products.where((p) => p.isSeparate == 0).toList();
+                if (pendingProducts.isNotEmpty) {
+                  context
+                      .read<ClusterPickingBloc>()
+                      .add(LoadCurrentProductEvent(pendingProducts.first));
+                } else if (state.products.isNotEmpty) {
+                  context
+                      .read<ClusterPickingBloc>()
+                      .add(LoadCurrentProductEvent(state.products.last));
+                }
 
-          if (state is PickingClustersError || state is BatchProductsError) {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context); // Cierra el loader
-            }
-            Get.snackbar(
-              '360 Software Informa',
-              state is PickingClustersError
-                  ? state.message
-                  : (state as BatchProductsError).message,
-              backgroundColor: white,
-              colorText: primaryColorApp,
-              icon: const Icon(Icons.error, color: Colors.red),
-              showProgressIndicator: true,
-              duration: Duration(seconds: 5),
-            );
-          }
-        },
+                Navigator.pushReplacementNamed(
+                  context,
+                  'scan-product-cluster',
+                  arguments: state.batch,
+                );
+              }
+
+              if (state is BatchProductsError) {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+                Get.snackbar(
+                  '360 Software Informa',
+                  state.message,
+                  backgroundColor: white,
+                  colorText: primaryColorApp,
+                  icon: const Icon(Icons.error, color: Colors.red),
+                  showProgressIndicator: true,
+                  duration: const Duration(seconds: 5),
+                );
+              }
+            },
+          ),
+        ],
         child: Scaffold(
           backgroundColor: primaryColorApp,
-          body: BlocBuilder<ClusterPickingBloc, ClusterPickingState>(
+          body: BlocBuilder<PickingClusterListBloc, PickingClusterListState>(
             builder: (context, state) {
               return SafeArea(
                 child: Container(
@@ -207,31 +252,17 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                           Navigator.pushReplacementNamed(context, '/home');
                         },
                         onRefresh: () async {
-                          if (_isProcessing ||
-                              context.read<ClusterPickingBloc>().state
-                                  is PickingClustersLoading) {
-                            return;
-                          }
-
-                          if (mounted) setState(() => _isProcessing = true);
-                          try {
-                            if (mounted) {
-                              context
-                                  .read<ClusterPickingBloc>()
-                                  .add(const FetchPickingClustersEvent());
-                            }
-                          } finally {
-                            if (mounted) {
-                              setState(() => _isProcessing = false);
-                            }
-                          }
+                          final listBloc =
+                              context.read<PickingClusterListBloc>();
+                          if (listBloc.state is ClustersLoadingState) return;
+                          listBloc.add(const FetchClustersEvent());
                         },
                         showCalendar: false,
                         popupMenu: PopupMenuButton<String>(
                           icon: const Icon(Icons.more_vert, color: Colors.white),
                           onSelected: (value) {
                             if (value == 'filter_propietario') {
-                              if (state is PickingClustersLoaded) {
+                              if (state is ClustersLoadedState) {
                                 _showPropietarioFilter(state.batches);
                               }
                             } else {
@@ -257,7 +288,6 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                                     : Colors.grey;
 
                             return <PopupMenuEntry<String>>[
-                              // --- FECHA ---
                               const PopupMenuItem<String>(
                                 enabled: false,
                                 height: 30,
@@ -302,8 +332,6 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                                 ]),
                               ),
                               const PopupMenuDivider(),
-
-                              // --- CONSECUTIVO ---
                               const PopupMenuItem<String>(
                                 enabled: false,
                                 height: 30,
@@ -348,8 +376,6 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                                 ]),
                               ),
                               const PopupMenuDivider(),
-
-                              // --- PROPIETARIO ---
                               const PopupMenuItem<String>(
                                 enabled: false,
                                 height: 30,
@@ -398,15 +424,13 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                       BarcodeScannerField(
                         controller: _controllerToDo,
                         focusNode: focusNodeBuscar,
-                        onBarcodeScanned: (value, context) {
-                          validateBarcode(value, context);
-                        },
+                        onBarcodeScanned: (value, context) {},
                       ),
                       const SizedBox(height: 10),
                       Expanded(
                         child: Builder(
                           builder: (context) {
-                            if (state is PickingClustersLoaded) {
+                            if (state is ClustersLoadedState) {
                               final listToShow = _sortList(
                                 state.batches
                                     .where((b) =>
@@ -429,31 +453,19 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                                   final batch = listToShow[index];
                                   return PickingBatchCard(
                                     batch: batch,
-                                    onTap: () {
-                                      print('🔎 batch seleccionado:'
-                                          '\n  id: ${batch.id}'
-                                          '\n  name: ${batch.name}'
-                                          '\n  propietario: ${batch.propietario}'
-                                          '\n  manejoPropietario: ${batch.manejoPropietario}'
-                                          '\n  zonaEntrega: ${batch.zonaEntrega}'
-                                          '\n  userName: ${batch.userName}'
-                                          '\n  state: ${batch.state}'
-                                          '\n  startTimePick: ${batch.startTimePick}');
-                                      _handleBatchSelection(
-                                          context, context, batch);
-                                    },
+                                    onTap: () => _onBatchTapped(batch),
                                   );
                                 },
                               );
-                            } else if (state is PickingClustersLoading) {
-                              return const SizedBox
-                                  .shrink(); // Loader handled by dialog
                             }
 
-                            // Initial state or error fallback
-                            return Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: const Center(
+                            if (state is ClustersLoadingState) {
+                              return const SizedBox.shrink();
+                            }
+
+                            return const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Center(
                                 child: Text(
                                   'No hay clusters disponibles, recargue la pantalla',
                                   textAlign: TextAlign.center,
@@ -474,84 +486,5 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
         ),
       ),
     );
-  }
-
-  void goBatchInfo(BuildContext context, PickingBatch batch) async {
-    // 1. Mostrar Diálogo (Capturamos el contexto del diálogo)
-    BuildContext? dialogContext;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        dialogContext = ctx; // ✅ Capturamos el contexto del diálogo
-        return const DialogLoading(
-          message: 'Cargando interfaz...',
-        );
-      },
-    );
-
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (dialogContext != null) {
-      Navigator.of(dialogContext!, rootNavigator: true).pop();
-    }
-
-    context.read<ClusterPickingBloc>().add(FetchBatchProductsEvent(batch));
-  }
-
-  Future<void> _handleBatchSelection(
-      BuildContext context, BuildContext contextBuilder, dynamic batch) async {
-    if (_isProcessing) return;
-
-    setState(() => _isProcessing = true);
-
-    try {
-      final batchBloc = context.read<ClusterPickingBloc>();
-
-      // 1. Mostrar diálogo de carga mientras se despachan los eventos al BLoC
-      BuildContext? loadingContext;
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) {
-          loadingContext = ctx;
-          return const DialogLoading(message: 'Cargando batch...');
-        },
-      );
-
-      await Future.delayed(const Duration(milliseconds: 400));
-
-      // 3. Cerrar diálogo de carga
-      if (loadingContext != null && Navigator.canPop(loadingContext!)) {
-        Navigator.of(loadingContext!, rootNavigator: true).pop();
-      }
-
-      // 4. Definir la función de navegación
-      void navigateToBatchInfo() {
-        goBatchInfo(contextBuilder, batch);
-      }
-
-      // 5. Lógica para decidir si mostrar el diálogo de inicio o navegar directamente
-      if (batch.startTimePick != "") {
-        navigateToBatchInfo();
-      } else {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => DialogStartTimeWidget(
-            onAccepted: () async {
-              batchBloc
-                  .add(StartTimePick(batch.id ?? 0, DateTime.now(), 'batch'));
-              Navigator.pop(context);
-              navigateToBatchInfo();
-            },
-            title: 'Iniciar Picking',
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isProcessing = false);
-      }
-    }
   }
 }

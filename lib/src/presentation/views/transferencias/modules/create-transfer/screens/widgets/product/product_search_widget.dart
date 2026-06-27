@@ -304,6 +304,9 @@ class _SearchProductScreenState
                 _buildInfoRow("Ubicación:", product.locationName,
                     emptyText: 'Sin ubicación'),
                 _buildInfoRow("Lote:", product.lotName, emptyText: 'Sin lote'),
+                Visibility(
+                  visible: product.manejaSegundaUnidad == 1,
+                  child: _buildInfoRow("2nd Unidad:", product.uomSegundaUnidad, emptyText: 'Sin undiad')),
               ],
             ),
           ),

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../src/api/api_request_service.dart';
 import '../models/picking_cluster_model.dart';
@@ -219,7 +220,7 @@ class PickingClusterRemoteDataSourceImpl
       "params": params,
     };
 
-    print('requestBody: $requestBody');
+    debugPrint('requestBody: $requestBody');
 
     final response = await apiRequestService.postPicking(
       endpoint: 'cluster/validate_pedido/id',

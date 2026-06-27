@@ -37,6 +37,9 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
   DateTime? selectedDate;
   int? selectedIndex;
   final FocusNode _searchFocusNode = FocusNode();
+  final FocusNode _loteFocusNode = FocusNode();
+  int? _suggestedLoteId;
+  List<dynamic> _sortedLotes = [];
 
   // true cuando el código llama unfocus() intencionalmente (botón X).
   // Permite distinguir en Crashlytics si el foco se perdió por código o por el sistema.
@@ -91,6 +94,7 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
     viewList = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      _suggestedLoteId = context.read<ConteoBloc>().currentProduct.lotId;
       _log('focus_requested:route_start');
       final route = ModalRoute.of(context);
       if (route?.animation?.isCompleted ?? true) {
@@ -119,6 +123,7 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
     FirebaseCrashlytics.instance.setCustomKey('lote_screen_active', false);
     _log('screen_dispose');
     _searchFocusNode.dispose();
+    _loteFocusNode.dispose();
     super.dispose();
   }
 
@@ -264,18 +269,34 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
                             curr is GetLotesProductSuccess ||
                             curr is GetLotesProductFailure,
                         builder: (context, state) {
+                          // Reordenar: sugerido siempre en índice 0
+                          final rawList = List.of(
+                              context.read<ConteoBloc>().listLotesProductFilters);
+                          if (_suggestedLoteId != null && _suggestedLoteId != 0) {
+                            final idx = rawList
+                                .indexWhere((l) => l.id == _suggestedLoteId);
+                            if (idx > 0) {
+                              rawList.insert(0, rawList.removeAt(idx));
+                            }
+                          }
+                          // Guardar en estado para que el botón "Seleccionar" use
+                          // el mismo orden sin acceder a listLotesProductFilters directamente.
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) setState(() => _sortedLotes = rawList);
+                          });
                           return ListView.builder(
-                        itemCount: context
-                            .read<ConteoBloc>()
-                            .listLotesProductFilters
-                            .length,
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.manual,
+                        itemCount: rawList.length,
                         itemBuilder: (context, index) {
                           bool isSelected = selectedIndex == index;
+                          final loteData = rawList[index];
+                          final bool isSuggested =
+                              _suggestedLoteId != null &&
+                              _suggestedLoteId != 0 &&
+                              loteData.id == _suggestedLoteId;
                           // 1. Obtener el dato crudo
-                          final rawDate = context
-                              .read<ConteoBloc>()
-                              .listLotesProductFilters[index]
-                              .expirationDate;
+                          final rawDate = loteData.expirationDate;
                           bool isExpired = false;
                           int?
                               daysLeft; // Variable para guardar los días restantes
@@ -335,17 +356,41 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        'Lote: ${context.read<ConteoBloc>().listLotesProductFilters[index].name}',
-                                        style: TextStyle(
-                                            color: primaryColorApp,
-                                            fontSize: 12),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'Lote: ${loteData.name}',
+                                            style: TextStyle(
+                                              color: primaryColorApp,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          if (isSuggested) ...[
+                                            const SizedBox(width: 8),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green[50],
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                                border: Border.all(
+                                                    color: Colors.green.shade300),
+                                              ),
+                                              child: const Text(
+                                                'Sugerido',
+                                                style: TextStyle(
+                                                  color: Colors.green,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
                                       ),
-                                      if (context
-                                              .read<ConteoBloc>()
-                                              .listLotesProductFilters[index]
-                                              .expirationDate !=
-                                          "") ...[
+                                      if (loteData.expirationDate != "") ...[
                                         Row(
                                           children: [
                                             const Text('Fecha de caducidad: ',
@@ -475,10 +520,12 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
                               SizedBox(
                                 height: 40,
                                 child: TextFormField(
+                                  focusNode: _loteFocusNode,
+                                  autofocus: true,
                                   controller: bloc.newLoteController,
                                   style:
                                       TextStyle(color: black, fontSize: 14),
-                    
+
                                   // UX: Abre el teclado en mayúsculas
                                   textCapitalization:
                                       TextCapitalization.characters,
@@ -691,26 +738,74 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         child: ElevatedButton(
                           onPressed: () {
-                            // Aquí puedes manejar la lógica de lo que suceda cuando se seleccione el lote
-                            var selectedLote = context
-                                .read<ConteoBloc>()
-                                .listLotesProductFilters[selectedIndex!];
+                            final selectedLote = _sortedLotes.isNotEmpty
+                                ? _sortedLotes[selectedIndex!]
+                                : context
+                                    .read<ConteoBloc>()
+                                    .listLotesProductFilters[selectedIndex!];
+                            final isSelectedSuggested =
+                                _suggestedLoteId != null &&
+                                _suggestedLoteId != 0 &&
+                                selectedLote.id == _suggestedLoteId;
 
-                            context
-                                .read<ConteoBloc>()
-                                .add(SelectecLoteEvent(selectedLote));
+                            void confirmSelection() {
+                              context
+                                  .read<ConteoBloc>()
+                                  .add(SelectecLoteEvent(selectedLote));
+                              Navigator.pushReplacementNamed(
+                                  context, 'new-product-conteo');
+                              Get.snackbar(
+                                'Lote Seleccionado',
+                                'Has seleccionado el lote: ${selectedLote.name}',
+                                backgroundColor: white,
+                                colorText: primaryColorApp,
+                                icon: Icon(Icons.check, color: Colors.green),
+                              );
+                            }
 
-                            Navigator.pushReplacementNamed(
-                              context,
-                              'new-product-conteo',
-                            );
-                            Get.snackbar(
-                              'Lote Seleccionado',
-                              'Has seleccionado el lote: ${selectedLote.name}',
-                              backgroundColor: white,
-                              colorText: primaryColorApp,
-                              icon: Icon(Icons.check, color: Colors.green),
-                            );
+                            if (isSelectedSuggested ||
+                                _suggestedLoteId == null ||
+                                _suggestedLoteId == 0) {
+                              confirmSelection();
+                            } else {
+                              showDialog(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  backgroundColor: Colors.white,
+                                  title: const Text(
+                                    '360 Software Informa',
+                                    style: TextStyle(
+                                        color: Colors.orange, fontSize: 16),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  content: Text(
+                                    'El lote seleccionado (${selectedLote.name}) es diferente al lote sugerido.\n¿Desea continuar con este lote?',
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx),
+                                      child: const Text('Cancelar'),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(ctx);
+                                        confirmSelection();
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: primaryColorApp,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      child: const Text('Continuar',
+                                          style: TextStyle(color: white)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColorApp,
@@ -795,10 +890,17 @@ class _NewLoteScreenState extends State<SearchLoteConteoScreen> {
                                   _logAnalytics('lote_crear_lote');
                                   FirebaseCrashlytics.instance
                                       .setCustomKey('lote_view_mode', 'create');
-                                  //ocultamos la lista de lotes
                                   setState(() {
                                     viewList = false;
                                   });
+                                  if (bloc.configurations.result?.result
+                                          ?.manageExpirationDateWithoutLot ==
+                                      false) {
+                                    Future.delayed(
+                                        const Duration(milliseconds: 100), () {
+                                      if (mounted) _loteFocusNode.requestFocus();
+                                    });
+                                  }
                                 },
                                 style: ElevatedButton.styleFrom(
                                     backgroundColor: primaryColorApp,

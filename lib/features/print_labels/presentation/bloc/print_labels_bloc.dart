@@ -39,6 +39,15 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
     on<RemoveSelectedProductEvent>(_onRemoveSelectedProductEvent);
   }
 
+  @override
+  Future<void> close() {
+    searchControllerLocation.dispose();
+    searchControllerProducts.dispose();
+    rangeStartController.dispose();
+    rangeEndController.dispose();
+    return super.close();
+  }
+
   void _onLoadLocations(
       GetListLocationsEvent event, Emitter<PrintLabelsState> emit) async {
     try {
@@ -47,9 +56,12 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
       ubicaciones.clear();
       ubicacionesFilters.clear();
       if (response.isNotEmpty) {
-        ubicaciones = response;
+        // Ordenar por nombre una sola vez aquí; el filtro de búsqueda preserva
+        // el orden, evitando re-ordenar en cada build de la pantalla (P-04).
+        ubicaciones = response
+          ..sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
         ubicacionesFilters = List.from(ubicaciones);
-        print('####################>>>>>ubicaciones ${ubicaciones.length}');
+        debugPrint('####################>>>>>ubicaciones ${ubicaciones.length}');
         emit(LoadLocationsSuccess(ubicaciones));
       } else {
         emit(LoadLocationsFailure('No se encontraron ubicaciones'));
@@ -71,7 +83,7 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
       if (response.isNotEmpty) {
         productos = response;
         productosFilters = List.from(productos);
-        print('####################>>>>>productos ${productos.length}');
+        debugPrint('####################>>>>>productos ${productos.length}');
         emit(GetProductsSuccess(response));
       } else {
         emit(GetProductsFailure('No se encontraron productos'));

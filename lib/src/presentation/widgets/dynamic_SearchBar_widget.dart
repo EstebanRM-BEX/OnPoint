@@ -59,8 +59,12 @@ class _DynamicSearchBarState extends State<DynamicSearchBar>
   double _lastBottomInset = 0;
   int _reopenAttempts = 0;
   DateTime? _attemptWindowStart;
+  DateTime? _keyboardOpenedAt;
   static const _maxReopenAttempts = 3;
   static const _attemptWindow = Duration(seconds: 5);
+  // Si el teclado estuvo abierto más de este umbral antes de cerrarse,
+  // asumimos que fue el usuario quien lo cerró (no el IME del PDA).
+  static const _userDismissThreshold = Duration(milliseconds: 600);
 
   FocusNode get _effectiveFocusNode =>
       widget.focusNode ?? _internalFocusNode!;
@@ -99,12 +103,28 @@ class _DynamicSearchBarState extends State<DynamicSearchBar>
     if (!mounted || !widget.persistentKeyboard) return;
     final bottomInset = _currentBottomInset();
     final wasOpen = _lastBottomInset > 0;
+
+    if (!wasOpen && bottomInset > 0) {
+      _keyboardOpenedAt = DateTime.now();
+    }
+
     _lastBottomInset = bottomInset;
 
     // El teclado se cerró pero el campo conserva el foco: el IME del PDA
     // (Urovo/Zebra/Chainway) lo ocultó sin pasar por Flutter. El listener de
     // foco es ciego a esto — único punto donde se puede detectar.
     if (wasOpen && bottomInset == 0 && _effectiveFocusNode.hasFocus) {
+      final elapsed = _keyboardOpenedAt != null
+          ? DateTime.now().difference(_keyboardOpenedAt!)
+          : Duration.zero;
+
+      // El usuario cerró intencionalmente el teclado (lo tenía abierto > 600ms).
+      // No luchar contra él: el PDA cierra el teclado involuntariamente en < 300ms.
+      if (elapsed > _userDismissThreshold) {
+        widget.onKeyboardEvent?.call('keyboard_dismissed_by_user');
+        return;
+      }
+
       widget.onKeyboardEvent?.call('keyboard_hidden_while_focused');
       _attemptReopen();
     }
@@ -137,7 +157,10 @@ class _DynamicSearchBarState extends State<DynamicSearchBar>
       widget.onKeyboardEvent?.call('keyboard_reopen_recycle');
       _effectiveFocusNode.unfocus();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _effectiveFocusNode.requestFocus();
+        if (mounted) {
+          _keyboardOpenedAt = DateTime.now();
+          _effectiveFocusNode.requestFocus();
+        }
       });
     });
   }

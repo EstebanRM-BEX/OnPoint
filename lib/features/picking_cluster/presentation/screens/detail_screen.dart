@@ -8,6 +8,7 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/get_colors_utils.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/cluster_picking/cluster_picking_bloc.dart';
+import 'package:wms_app/features/picking_cluster/presentation/bloc/detail_cluster/detail_cluster_bloc.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
@@ -26,59 +27,76 @@ class DetailClusterScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    return BlocConsumer<ClusterPickingBloc, ClusterPickingState>(
-      listener: (context, state) {
-        if (state is LoadingSendProductEdit) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) =>
-                const DialogLoading(message: "Enviando producto..."),
-          );
-        } else if (state is SendProductEditOdooStateSuccess) {
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context); // Cierra el loader
-          }
-          Get.snackbar(
-            '360 Software Informa',
-            'Cantidad de producto ajustada correctamente',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            icon: const Icon(Icons.check, color: Colors.green),
-            showProgressIndicator: true,
-            duration: const Duration(seconds: 2),
-          );
-        }
+    return MultiBlocListener(
+      listeners: [
+        // Listener propio de esta pantalla: imagen del producto
+        BlocListener<DetailClusterBloc, DetailClusterState>(
+          listener: (context, state) {
+            if (state is ImageDetailLoading) {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) =>
+                    const DialogLoading(message: "Cargando imagen..."),
+              );
+            } else if (state is ImageDetailSuccess) {
+              if (Navigator.canPop(context)) Navigator.pop(context);
+              showImageDialog(context, state.url);
+            } else if (state is ImageDetailFailure) {
+              if (Navigator.canPop(context)) Navigator.pop(context);
+              showScrollableErrorDialog(state.error);
+            }
+          },
+        ),
+        // Listener del BLoC compartido: edición de producto y sync offline
+        BlocListener<ClusterPickingBloc, ClusterPickingState>(
+          listener: (context, state) {
+            if (state is LoadingSendProductEdit) {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) =>
+                    const DialogLoading(message: "Enviando producto..."),
+              );
+            } else if (state is SendProductEditOdooStateSuccess) {
+              if (Navigator.canPop(context)) Navigator.pop(context);
+              Get.snackbar(
+                '360 Software Informa',
+                'Cantidad de producto ajustada correctamente',
+                backgroundColor: white,
+                colorText: primaryColorApp,
+                icon: const Icon(Icons.check, color: Colors.green),
+                showProgressIndicator: true,
+                duration: const Duration(seconds: 2),
+              );
+            } else if (state is SendProductEditOdooStateError) {
+              if (Navigator.canPop(context)) Navigator.pop(context);
+              showScrollableErrorDialog(state.msg);
+            }
 
-        if (state is SyncPendingClusterSuccess) {
-          Get.snackbar(
-            '360 Software Informa',
-            'Se enviaron ${state.enviados} de ${state.total} producto(s) pendiente(s)',
-            backgroundColor: white,
-            colorText: primaryColorApp,
-            icon: Icon(
-              state.enviados == state.total ? Icons.check_circle : Icons.error,
-              color:
-                  state.enviados == state.total ? Colors.green : Colors.amber,
-            ),
-            duration: const Duration(seconds: 4),
-          );
-        }
-
-        if (state is ViewProductImageSuccess) {
-          showImageDialog(context, state.imageUrl);
-        } else if (state is ViewProductImageFailure) {
-          showScrollableErrorDialog(state.error);
-        } else if (state is SendProductEditOdooStateError) {
-          //cerramos el dialogo si esta abierto
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context); // Cierra el loader
-          }
-          showScrollableErrorDialog(state.msg);
-        }
-      },
-      builder: (context, state) {
-        return WillPopScope(
+            if (state is SyncPendingClusterSuccess) {
+              Get.snackbar(
+                '360 Software Informa',
+                'Se enviaron ${state.enviados} de ${state.total} producto(s) pendiente(s)',
+                backgroundColor: white,
+                colorText: primaryColorApp,
+                icon: Icon(
+                  state.enviados == state.total
+                      ? Icons.check_circle
+                      : Icons.error,
+                  color: state.enviados == state.total
+                      ? Colors.green
+                      : Colors.amber,
+                ),
+                duration: const Duration(seconds: 4),
+              );
+            }
+          },
+        ),
+      ],
+      child: BlocBuilder<ClusterPickingBloc, ClusterPickingState>(
+        builder: (context, state) {
+          return WillPopScope(
           onWillPop: () async {
             return false;
           },
@@ -104,52 +122,45 @@ class DetailClusterScreen extends StatelessWidget {
                       return Column(
                         children: [
                           const WarningWidgetCubit(),
-                          Padding(
-                            padding: EdgeInsets.only(
-                                bottom: 5,
-                                top: status != ConnectionStatus.online
-                                    ? 20
-                                    : 30),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.arrow_back,
-                                      color: white),
-                                  onPressed: () {
-                                    Navigator.pushReplacementNamed(
-                                        context, 'scan-product-cluster');
-                                  },
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.arrow_back,
+                                    color: white),
+                                onPressed: () {
+                                  Navigator.pushReplacementNamed(
+                                      context, 'scan-product-cluster');
+                                },
+                              ),
+                              Padding(
+                                padding:
+                                    EdgeInsets.only(left: size.width * 0.25),
+                                child: Text(
+                                    "${context.read<ClusterPickingBloc>().currentBatch?.name}",
+                                    style: const TextStyle(
+                                        color: white, fontSize: 12)),
+                              ),
+                              const Spacer(),
+                              GestureDetector(
+                                onTap: () {
+                                  ModalPrintersList.show(context,
+                                      resIds: [
+                                        context
+                                            .read<ClusterPickingBloc>()
+                                            .currentBatch
+                                            ?.id
+                                      ],
+                                      companyId: 1);
+                                },
+                                child: Icon(
+                                  Icons.print,
+                                  color: white,
+                                  size: 25,
                                 ),
-                                Padding(
-                                  padding:
-                                      EdgeInsets.only(left: size.width * 0.25),
-                                  child: Text(
-                                      "${context.read<ClusterPickingBloc>().currentBatch?.name}",
-                                      style: const TextStyle(
-                                          color: white, fontSize: 12)),
-                                ),
-                                const Spacer(),
-                                GestureDetector(
-                                  onTap: () {
-                                    ModalPrintersList.show(context,
-                                        resIds: [
-                                          context
-                                              .read<ClusterPickingBloc>()
-                                              .currentBatch
-                                              ?.id
-                                        ],
-                                        companyId: 1);
-                                  },
-                                  child: Icon(
-                                    Icons.print,
-                                    color: white,
-                                    size: 25,
-                                  ),
-                                ),
-                                const SizedBox(width: 15),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(width: 15),
+                            ],
                           ),
                         ],
                       );
@@ -430,12 +441,9 @@ class DetailClusterScreen extends StatelessWidget {
                                                 GestureDetector(
                                                   onTap: () {
                                                     context
-                                                        .read<
-                                                            ClusterPickingBloc>()
-                                                        .add(ViewProductImageEvent(
-                                                            productsBatch
-                                                                    .idProduct ??
-                                                                0));
+                                                        .read<DetailClusterBloc>()
+                                                        .add(ViewProductImageDetailEvent(
+                                                            productsBatch.idProduct ?? 0));
                                                   },
                                                   child: Card(
                                                     //borde
@@ -562,7 +570,7 @@ class DetailClusterScreen extends StatelessWidget {
                                                         color: black)),
                                                 const SizedBox(width: 5),
                                                 SizedBox(
-                                                  width: size.width * 0.7,
+                                                  width: size.width * 0.6,
                                                   child: Text(
                                                       productsBatch
                                                           .locationDestId
@@ -1022,6 +1030,7 @@ class DetailClusterScreen extends StatelessWidget {
           ),
         );
       },
+      ),
     );
   }
 }

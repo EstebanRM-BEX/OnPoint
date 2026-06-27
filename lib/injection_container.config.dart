@@ -545,36 +545,6 @@ extension GetItInjectableX on _i174.GetIt {
         saveUserSession: gh<_i311.SaveUserSession>(),
       ),
     );
-    gh.factory<_i545.ClusterPickingBloc>(
-      () => _i545.ClusterPickingBloc(
-        getPickingClusterData: gh<_i524.GetPickingClusterData>(),
-        getLocalPickingClusterData: gh<_i295.GetLocalPickingClusterData>(),
-        getLocalBatchProductsData: gh<_i61.GetLocalBatchProductsData>(),
-        getLotesProductoUseCase: gh<_i799.GetLotesProductoUseCase>(),
-        getUserConfiguration: gh<_i280.GetUserConfiguration>(),
-        setClusterBatchFieldUseCase: gh<_i956.SetClusterBatchFieldUseCase>(),
-        setClusterBatchProductFieldUseCase:
-            gh<_i915.SetClusterBatchProductFieldUseCase>(),
-        getBarcodesProductUseCase: gh<_i309.GetBarcodesProductUseCase>(),
-        incrementQuantitySeparateUseCase:
-            gh<_i85.IncrementQuantitySeparateUseCase>(),
-        incrementProductSeparateQtyUseCase:
-            gh<_i360.IncrementProductSeparateQtyUseCase>(),
-        getFieldTableProductsUseCase: gh<_i235.GetFieldTableProductsUseCase>(),
-        getProductBatchUseCase: gh<_i410.GetProductBatchUseCase>(),
-        sendProductOdooUseCase: gh<_i984.SendProductOdooUseCase>(),
-        viewProductImageUseCase: gh<_i149.ViewProductImageUseCase>(),
-        getUserNovelties: gh<_i465.GetUserNovelties>(),
-        setClusterBatchPedidoFieldUseCase:
-            gh<_i274.SetClusterBatchPedidoFieldUseCase>(),
-        endTimePickUseCase: gh<_i782.EndTimePickUseCase>(),
-        startTimePickUseCase: gh<_i612.StartTimePickUseCase>(),
-        validatePedidoUseCase: gh<_i1044.ValidatePedidoUseCase>(),
-        getPendingSendProductsUseCase:
-            gh<_i542.GetPendingSendProductsUseCase>(),
-        networkInfo: gh<_i75.NetworkInfo>(),
-      ),
-    );
     gh.lazySingleton<_i649.HomeRepository>(
       () => _i689.HomeRepositoryImpl(
         remoteDataSource: gh<_i359.HomeRemoteDataSource>(),
@@ -642,6 +612,30 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i52.ValidateSession>(
       () => _i52.ValidateSession(gh<_i1015.AuthRepository>()),
+    );
+    gh.factory<_i545.ClusterPickingBloc>(
+      () => _i545.ClusterPickingBloc(
+        getPickingClusterData: gh<_i524.GetPickingClusterData>(),
+        getLocalPickingClusterData: gh<_i295.GetLocalPickingClusterData>(),
+        getLocalBatchProductsData: gh<_i61.GetLocalBatchProductsData>(),
+        getLotesProductoUseCase: gh<_i799.GetLotesProductoUseCase>(),
+        getUserConfiguration: gh<_i280.GetUserConfiguration>(),
+        setClusterBatchFieldUseCase: gh<_i956.SetClusterBatchFieldUseCase>(),
+        setClusterBatchProductFieldUseCase:
+            gh<_i915.SetClusterBatchProductFieldUseCase>(),
+        getBarcodesProductUseCase: gh<_i309.GetBarcodesProductUseCase>(),
+        incrementQuantitySeparateUseCase:
+            gh<_i85.IncrementQuantitySeparateUseCase>(),
+        incrementProductSeparateQtyUseCase:
+            gh<_i360.IncrementProductSeparateQtyUseCase>(),
+        getFieldTableProductsUseCase: gh<_i235.GetFieldTableProductsUseCase>(),
+        getProductBatchUseCase: gh<_i410.GetProductBatchUseCase>(),
+        sendProductOdooUseCase: gh<_i984.SendProductOdooUseCase>(),
+        getUserNovelties: gh<_i465.GetUserNovelties>(),
+        getPendingSendProductsUseCase:
+            gh<_i542.GetPendingSendProductsUseCase>(),
+        networkInfo: gh<_i75.NetworkInfo>(),
+      ),
     );
     gh.lazySingleton<_i589.CrearLoteInventario>(
       () => _i589.CrearLoteInventario(gh<_i925.InventarioRepository>()),

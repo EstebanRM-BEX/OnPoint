@@ -529,7 +529,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   ) async {
     try {
       emit(LoadNewProductLoading());
-      print('entro al bloc');
+      debugPrint('entro al bloc');
       //vamos a cargar la informacion pa crear un nuevo producto
       //todo: para este filtro solo podemos crear un producto con las ubicaciones de la orden de conteo y los productos de la orden
       if (ordenConteo.filterType == 'combined') {
@@ -552,40 +552,35 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         productosFilters.clear();
         productosFiltersSearch.clear();
 
-        final productsOrder = await db.productoOrdenConteoRepository
-            .getProductosByOrderId(ordenConteo.id ?? 0);
+        final productosMap = {for (final p in productos) p.productId: p};
 
-        productosFilters = productsOrder.map((product) {
-          return Product(
-            productId: product.productId,
-            name: product.productName,
-            code: product.productCode,
-            category: product.categoryName,
-            lotId: product.lotId,
-            lotName: product.lotName,
-            barcode: product.productBarcode,
-            otherBarcodes: [],
-            productPacking: [],
-            tracking: product.productTracking,
-            useExpirationDate: product.fechaVencimiento?.isNotEmpty ?? true
-                ? true
-                : false,
-            expirationTime: "",
-            weight: product.weight,
-            weightUomName: "",
-            volume: 0,
-            volumeUomName: '',
-            expirationDate: product.fechaVencimiento,
-            uom: product.uom,
-            locationId: product.locationId ?? 0,
-            locationName: product.locationName ?? '',
-            quantity: 0, // Inicializamos la cantidad en 0
-          );
-        }).toList();
+        // Productos por categoría (de categoriasConteo vs maestra)
+        final allowedCategories = categoriasConteo.map((c) => c.name).toSet();
+        final productosPorCategoria = categoriasConteo.isNotEmpty
+            ? productos
+                .where((p) => allowedCategories.contains(p.category))
+                .toList()
+            : <Product>[];
+
+        // Productos por productosOrdenConteo (si no hay categorías, se usan solos)
+        final productosPorOrden = productosOrdenConteo
+            .map((allowed) => productosMap[allowed.id])
+            .whereType<Product>()
+            .toList();
+
+        // Unión sin duplicados: categorías + productos de la orden
+        final seen = <int>{};
+        productosFilters = [
+          ...productosPorCategoria,
+          ...productosPorOrden,
+        ].where((p) => seen.add(p.productId ?? 0)).toList();
+
         productosFiltersSearch = productosFilters;
         emit(LoadNewProductSuccess());
         return;
       } else if (ordenConteo.filterType == "location") {
+
+        
         add(GetProductsFromDBEvent());
         //las ubicaciones que llegan en la orden
         ubicacionesFilters.clear();
@@ -611,40 +606,14 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       } else if (ordenConteo.filterType == "category" ||
           ordenConteo.filterType == "product") {
         add(GetLocationsConteoEvent());
-        //cargammos la lista de productos de la orden
         productosFilters.clear();
         productosFiltersSearch.clear();
 
-        final productsOrder = await db.productoOrdenConteoRepository
-            .getProductosByOrderId(ordenConteo.id ?? 0);
-
-        productosFilters = productsOrder.map((product) {
-          return Product(
-            productId: product.productId,
-            name: product.productName,
-            code: product.productCode,
-            category: product.categoryName,
-            lotId: product.lotId,
-            lotName: product.lotName,
-            barcode: product.productBarcode,
-            otherBarcodes: [],
-            productPacking: [],
-            tracking: product.productTracking,
-            useExpirationDate: product.fechaVencimiento?.isNotEmpty ?? true
-                ? true
-                : false,
-            expirationTime: "",
-            weight: product.weight,
-            weightUomName: "",
-            volume: 0,
-            volumeUomName: '',
-            expirationDate: product.fechaVencimiento,
-            uom: product.uom,
-            locationId: product.locationId ?? 0,
-            locationName: product.locationName ?? '',
-            quantity: 0, // Inicializamos la cantidad en 0
-          );
-        }).toList();
+        final productosMap = {for (final p in productos) p.productId: p};
+        productosFilters = productosOrdenConteo
+            .map((allowed) => productosMap[allowed.id])
+            .whereType<Product>()
+            .toList();
         productosFiltersSearch = productosFilters;
 
         //llenamos el listado de ubicacioones de la maestra

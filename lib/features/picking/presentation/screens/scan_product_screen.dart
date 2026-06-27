@@ -108,9 +108,9 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
     //mostremos que focus estan activos
 
     final batchBloc = context.read<PickScanBloc>();
-    print('batchBloc.locationIsOk ${batchBloc.locationIsOk}');
-    print('batchBloc.productIsOk ${batchBloc.productIsOk}');
-    print('batchBloc.quantityIsOk ${batchBloc.quantityIsOk}');
+    debugPrint('batchBloc.locationIsOk ${batchBloc.locationIsOk}');
+    debugPrint('batchBloc.productIsOk ${batchBloc.productIsOk}');
+    debugPrint('batchBloc.quantityIsOk ${batchBloc.quantityIsOk}');
 
     if (!batchBloc.locationIsOk && //false
         !batchBloc.productIsOk && //false

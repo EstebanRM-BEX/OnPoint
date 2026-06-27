@@ -348,14 +348,15 @@ class ViewProductImageFailure extends PickingPickState {
 }
 
 // Estado para indicar que la lista de picks se cargó o actualizó (filtro/orden)
-class PickingPickSuccess extends PickingPickState {
-  // Opcional: Puedes pasar la lista aquí para ser más puro en el patrón BLoC
+class PickingPickSuccess extends PickingPickState with EquatableMixin {
   final List<ResultPick> picks;
 
   PickingPickSuccess(this.picks);
 
+  // Equatable compara la lista por contenido: si cambia el orden o los elementos
+  // se emite un estado distinto y la UI redibuja; si la lista es idéntica, el
+  // BlocBuilder se salta el rebuild. (Antes se incluía DateTime.now() en props,
+  // lo que forzaba un rebuild en cada emit — anti-patrón de rendimiento.)
   @override
-  List<Object> get props => [picks, DateTime.now()];
-  // Tip: Agregar DateTime.now() o UniqueKey() en props asegura que
-  // Flutter redibuje aunque la lista sea "técnicamente" la misma pero en diferente orden.
+  List<Object> get props => [picks];
 }

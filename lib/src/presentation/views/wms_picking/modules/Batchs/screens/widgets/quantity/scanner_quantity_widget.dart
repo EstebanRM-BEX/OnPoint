@@ -203,7 +203,10 @@ class _QuantityScannerWidgetState extends State<QuantityScannerWidget> {
                     ),
                     IconButton(
                       onPressed:
-                          widget.quantityIsOk && widget.quantitySelected >= 0
+                          widget.locationIsOk &&
+                                  widget.productIsOk &&
+                                  widget.quantityIsOk &&
+                                  !widget.locationDestIsOk
                               ? widget.onToggleViewQuantity
                               : null,
                       icon: Icon(Icons.edit_note_rounded,

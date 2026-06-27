@@ -27,13 +27,13 @@ class ListItem {
   final String fechaTransaccion;
   final String observacion;
   final bool dividida;
-
+  final double quantitySegundaUnidad;
 
   ListItem({
     required this.idMove,
     required this.idProducto,
     required this.idLote,
-     this.idUbicacionOrigen,
+    this.idUbicacionOrigen,
     required this.idUbicacionDestino,
     required this.cantidadEnviada,
     required this.idOperario,
@@ -41,6 +41,7 @@ class ListItem {
     required this.fechaTransaccion,
     required this.observacion,
     required this.dividida,
+    this.quantitySegundaUnidad = 0.0,
   });
 
   Map<String, dynamic> toMap() {
@@ -56,6 +57,7 @@ class ListItem {
       "fecha_transaccion": fechaTransaccion,
       "observacion": observacion,
       "dividida": dividida,
+      "quantity_segunda_unidad": quantitySegundaUnidad,
     };
   }
 }

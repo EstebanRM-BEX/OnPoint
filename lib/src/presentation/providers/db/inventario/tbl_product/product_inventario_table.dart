@@ -27,6 +27,8 @@ class ProductInventarioTable {
 
   // ✅ NUEVO: Columna para estrategia de sincronización
   static const String columnIsSynced = 'is_synced';
+  static const String columnManejaSegundaUnidad = 'maneja_segunda_unidad';
+  static const String columnUomSegundaUnidad = 'uom_segunda_unidad';
 
   static String createTable() {
     return '''
@@ -53,7 +55,9 @@ class ProductInventarioTable {
         $columnPropietario TEXT,
         $columnIdPropietario INTEGER,
         $columnManejoPropietario INTEGER DEFAULT 0,
-        $columnIsSynced INTEGER DEFAULT 0
+        $columnIsSynced INTEGER DEFAULT 0,
+        $columnManejaSegundaUnidad INTEGER DEFAULT 0,
+        $columnUomSegundaUnidad TEXT DEFAULT ''
       );
 
       -- ✅ ÍNDICES DE RENDIMIENTO

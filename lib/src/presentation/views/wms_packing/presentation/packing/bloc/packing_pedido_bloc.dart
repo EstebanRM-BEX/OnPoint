@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
+import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/features/packaging_types/domain/entities/packaging_type.dart';
@@ -296,7 +297,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       // por lo que reemplazar garantiza que las deselecciones
       // individuales también se reflejen aquí.
       selectedPackageIds = Set<int>.from(event.packageIds);
-      print('--------------------------->>>>>>> ${selectedPackageIds.length}');
+      debugPrint('--------------------------->>>>>>> ${selectedPackageIds.length}');
       emit(SelectPackageSuccess(List<int>.from(selectedPackageIds)));
     } catch (e, s) {
       debugPrint('Error en _onSelectPackageEvent: $e, $s');
@@ -1620,13 +1621,21 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       Emitter<PackingPedidoState> emit) async {
     try {
       emit(LoadPedidoAndProductsLoading());
-      //cargamos el pedido actual
-      final response =
-          await db.pedidoPackRepository.getPedidoPackById(event.idPedido);
 
-      //obtenemos todos los productos de un pedido
-      final responseProducts = await db.productosPedidosRepository
+      // Lanzar las 4 queries en paralelo (todas usan event.idPedido, son independientes)
+      final futurePedido =
+          db.pedidoPackRepository.getPedidoPackById(event.idPedido);
+      final futureProducts = db.productosPedidosRepository
           .getProductosPedido(event.idPedido, 'packing-pack');
+      final futureBarcodes = db.barcodesPackagesRepository
+          .getBarcodesByBatchIdAndType(event.idPedido, 'packing-pack');
+      final futurePackages =
+          db.packagesRepository.getPackagesPedido(event.idPedido);
+
+      final response = await futurePedido;
+      final responseProducts = await futureProducts;
+      final responseBarcodes = await futureBarcodes;
+      final packagesDB = await futurePackages;
 
       if (response != null) {
         currentPedidoPack = response;
@@ -1664,18 +1673,11 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
           ordenarProducts();
 
-          //despues de obtener los productos vamos a obtener todos los codigos de barras de este pedido
           listAllOfBarcodes.clear();
-          final responseBarcodes = await db.barcodesPackagesRepository
-              .getBarcodesByBatchIdAndType(event.idPedido, 'packing-pack');
-
           if (responseBarcodes != null) {
             listAllOfBarcodes = responseBarcodes;
           }
 
-          //traemos todos los paquetes de la base de datos del pedido en cuesiton
-          final packagesDB =
-              await db.packagesRepository.getPackagesPedido(event.idPedido);
           packages.clear();
           packages.addAll(packagesDB);
           debugPrint('packagesDB: ${packagesDB.length}');

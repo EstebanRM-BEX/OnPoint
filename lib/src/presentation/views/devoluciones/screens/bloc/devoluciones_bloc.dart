@@ -360,7 +360,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
         }).toList(),
       );
 
-      print("request: ${request.toJson()}");
+      debugPrint("request: ${request.toJson()}");
 
       //enviamos la devolucion
       final response = await devolucionesRepository.sendDevolucion(

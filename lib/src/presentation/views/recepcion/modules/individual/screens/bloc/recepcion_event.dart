@@ -142,8 +142,10 @@ class GetLotesProduct extends RecepcionEvent {}
 class SendProductToOrder extends RecepcionEvent {
   final bool isSplit;
   final dynamic quantity;
+  final double quantitySegundaUnidad;
 
-  SendProductToOrder(this.isSplit, this.quantity);
+  SendProductToOrder(this.isSplit, this.quantity,
+      {this.quantitySegundaUnidad = 0.0});
 }
 
 class CreateLoteProduct extends RecepcionEvent {

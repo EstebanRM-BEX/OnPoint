@@ -784,12 +784,18 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
                                                               ?.name ??
                                                           "",
                                                 ),
+                                                 Text("Sugerido:", style: TextStyle(color: primaryColorApp),),
+                                                 Text( context
+                                                                  .read<
+                                                                      ConteoBloc>().currentProduct.lotName??"Sin nombre", style: TextStyle(color: black),),
+
                                                 ExpirationBadgeWidget(
                                                   expirationDate: context
                                                       .read<ConteoBloc>()
                                                       .currentProductLote
                                                       ?.expirationDate,
                                                 ),
+                                               
                                               ],
                                             )
                                           ],

@@ -131,10 +131,7 @@ class ChangeCurrentProduct extends ClusterPickingEvent {
   });
 }
 
-class ViewProductImageEvent extends ClusterPickingEvent {
-  final int idProduct;
-  const ViewProductImageEvent(this.idProduct);
-}
+// ViewProductImageEvent eliminado — manejo migrado a DetailClusterBloc
 
 class LoadSelectedProductEvent extends ClusterPickingEvent {
   final BatchProduct selectedProduct;
@@ -151,39 +148,18 @@ class ValidatePedidoEvent extends ClusterPickingEvent {
       this.productId, this.batchId, this.idMove, this.type);
 }
 
-class MarkPedidoAsValidatedEvent extends ClusterPickingEvent {
-  final int batchId;
-  final String namePedido;
-  final bool isValidated;
-  final List<int> listIdMove;
-
-  const MarkPedidoAsValidatedEvent({
-    required this.batchId,
-    required this.namePedido,
-    required this.isValidated,
-    required this.listIdMove,
-  });
+// Bridge: ValidateClusterBloc llama esto después de validar para mantener
+// el estado compartido pedidosValidate actualizado en la sesión.
+class UpdatePedidosValidateEvent extends ClusterPickingEvent {
+  final List<PedidoValidate> pedidosValidate;
+  const UpdatePedidosValidateEvent(this.pedidosValidate);
 
   @override
-  List<Object> get props => [batchId, namePedido, isValidated];
+  List<Object> get props => [pedidosValidate];
 }
 
-class EndTimePick extends ClusterPickingEvent {
-  final int batchId;
-  final DateTime time;
-  const EndTimePick(this.batchId, this.time);
-}
-
-class StartTimePick extends ClusterPickingEvent {
-  final int batchId;
-  final DateTime time;
-  final String type;
-
-  const StartTimePick(this.batchId, this.time, this.type);
-
-  @override
-  List<Object> get props => [batchId, time, type];
-}
+// EndTimePick eliminado — manejo migrado a ValidateClusterBloc
+// StartTimePick eliminado — PickingClusterListBloc llama el use case directo
 
 class SendProductEditOdooEvent extends ClusterPickingEvent {
   final BatchProduct product;

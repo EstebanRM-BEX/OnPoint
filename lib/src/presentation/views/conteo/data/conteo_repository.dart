@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:wms_app/core/network/connectivity_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
@@ -21,7 +22,7 @@ class ConteoRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResultConteo(
         code: 0,
@@ -101,7 +102,7 @@ class ConteoRepository {
       bool isLoadinDialog, ConteoItem product) async {
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseSendProductConteo(); // Si no hay conexión, retornar un ResultConteo vacío
     }
@@ -204,7 +205,7 @@ class ConteoRepository {
       bool isLoadinDialog, int idMove) async {
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseDeleteProduct(); // Si no hay conexión, retornar un ResultConteo vacío
     }
@@ -276,7 +277,7 @@ class ConteoRepository {
       bool isLoadinDialog, int idMove) async {
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseDeleteProduct(); // Si no hay conexión, retornar un ResultConteo vacío
     }

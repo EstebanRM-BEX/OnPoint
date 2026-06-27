@@ -181,17 +181,7 @@ final class CurrentProductChangedState extends ClusterPickingState {
   const CurrentProductChangedState({this.currentProduct, required this.index});
 }
 
-class ViewProductImageLoading extends ClusterPickingState {}
-
-class ViewProductImageSuccess extends ClusterPickingState {
-  final String imageUrl;
-  const ViewProductImageSuccess(this.imageUrl);
-}
-
-class ViewProductImageFailure extends ClusterPickingState {
-  final String error;
-  const ViewProductImageFailure(this.error);
-}
+// ViewProductImage* eliminados — migrados a DetailClusterBloc/DetailClusterState
 
 class LoadSelectedProductState extends ClusterPickingState {
   final BatchProduct selectedProduct;
@@ -203,22 +193,15 @@ class ValidatePedidoStateSuccess extends ClusterPickingState {
   const ValidatePedidoStateSuccess(this.quantity);
 }
 
-class MarkPedidoAsValidatedStateSuccess extends ClusterPickingState {
+// Bridge: emitido cuando ValidateClusterBloc actualiza pedidosValidate
+class PedidosValidateUpdatedState extends ClusterPickingState {
   final List<PedidoValidate> pedidosValidate;
-  const MarkPedidoAsValidatedStateSuccess(this.pedidosValidate);
+  const PedidosValidateUpdatedState(this.pedidosValidate);
 }
 
 class LoadValidatePedidoState extends ClusterPickingState {}
 
-class TimeSeparateSuccess extends ClusterPickingState {
-  final String date;
-  const TimeSeparateSuccess(this.date);
-}
-
-class TimeSeparateError extends ClusterPickingState {
-  final String message;
-  const TimeSeparateError(this.message);
-}
+// TimeSeparate* eliminados — EndTimePick/StartTimePick migrados a ValidateClusterBloc y PickingClusterListBloc
 
 class LoadingSendProductEdit extends ClusterPickingState {}
 
@@ -232,10 +215,7 @@ class SendProductEditOdooStateError extends ClusterPickingState {
   const SendProductEditOdooStateError(this.msg);
 }
 
-class ValidatePedidoStateError extends ClusterPickingState {
-  final String msg;
-  const ValidatePedidoStateError(this.msg);
-}
+// ValidatePedidoStateError eliminado — migrado a ValidateClusterState.ValidatePedidoErrorState
 
 class ChangeQuantitySeparateStateLoading extends ClusterPickingState {}
 

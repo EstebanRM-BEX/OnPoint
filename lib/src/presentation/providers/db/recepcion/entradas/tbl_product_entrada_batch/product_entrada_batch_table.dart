@@ -55,6 +55,11 @@ class ProductRecepcionBatchTable {
   //use_expiration_date
   static const String columnUseExpirationDate = 'use_expiration_date';
 
+  // segunda unidad
+  static const String columnManejaSegundaUnidad = 'maneja_segunda_unidad';
+  static const String columnUomSegundaUnidad = 'uom_segunda_unidad';
+  static const String columnQuantitySegundaUnidad = 'quantity_segunda_unidad';
+
 //Meotdo para crar la tabla
   static String createTable() {
     return '''
@@ -101,6 +106,9 @@ class ProductRecepcionBatchTable {
       $columnTemperature INTEGER,
       $columnUseExpirationDate INTEGER,
       $columnImage TEXT,
+      $columnManejaSegundaUnidad INTEGER,
+      $columnUomSegundaUnidad TEXT,
+      $columnQuantitySegundaUnidad REAL,
       FOREIGN KEY ($columnIdRecepcion) REFERENCES tbl_entradas_recepcion_batch ($columnId)
 
     )

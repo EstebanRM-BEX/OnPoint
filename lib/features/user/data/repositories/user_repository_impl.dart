@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:injectable/injectable.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:wms_app/core/network/connectivity_extensions.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/device_info.dart';
@@ -118,6 +119,6 @@ class UserRepositoryImpl implements UserRepository {
 
   Future<bool> _isConnected() async {
     final result = await Connectivity().checkConnectivity();
-    return result != ConnectivityResult.none;
+    return result.isOnline;
   }
 }

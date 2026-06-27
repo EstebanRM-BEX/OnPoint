@@ -95,8 +95,8 @@ class _PrintLabelsLocationsScreenState
                       ),
                       Expanded(
                         child: Builder(builder: (context) {
-                          final sorted = [...bloc.ubicacionesFilters]..sort(
-                              (a, b) => (a.name ?? '').compareTo(b.name ?? ''));
+                          // Ya viene ordenada desde el bloc (P-04): no re-ordenar en build.
+                          final sorted = bloc.ubicacionesFilters;
                           return ListView.builder(
                             itemCount: sorted.length,
                             itemBuilder: (context, index) {

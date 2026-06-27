@@ -237,10 +237,10 @@ class _LoteScannerWidgetState extends State<LoteScannerWidget> {
         children: [
           Text(
             'Caducidad: ',
-            style: TextStyle(fontSize: 14, color: black),
+            style: TextStyle(fontSize: 14, color: primaryColorApp),
           ),
           Text(
-            expirationDate.isEmpty ? "Sin fecha" : expirationDate,
+            expirationDate.isEmpty ? "No controla caducidad" : expirationDate,
             style: TextStyle(
               fontSize: 14,
               color: expirationDate.isEmpty ? red : black,

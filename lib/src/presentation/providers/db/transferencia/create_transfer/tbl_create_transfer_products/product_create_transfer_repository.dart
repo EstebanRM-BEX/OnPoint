@@ -63,6 +63,12 @@ class ProductCreateTransferRepository {
             producto.quantityDone ?? 0.0,
         ProductCreateTransferTable.columnExpirationDateLote:
             producto.expirationDateLote ?? '',
+        ProductCreateTransferTable.columnQuantitySegundaUnidad:
+            producto.quantitySegundaUnidad ?? 0.0,
+        ProductCreateTransferTable.columnManejaSegundaUnidad:
+            (producto.manejaSegundaUnidad == true || producto.manejaSegundaUnidad == 1) ? 1 : 0,
+        ProductCreateTransferTable.columnUomSegundaUnidad:
+            producto.uomSegundaUnidad ?? '',
       };
 
       // 3. Ejecutar la inserción directa
@@ -170,6 +176,9 @@ class ProductCreateTransferRepository {
               [ProductCreateTransferTable.columnPropietario],
           idPropietario: maps[i]
               [ProductCreateTransferTable.columnIdPropietario],
+          quantitySegundaUnidad: (maps[i][ProductCreateTransferTable.columnQuantitySegundaUnidad] as num?)?.toDouble(),
+          manejaSegundaUnidad: maps[i][ProductCreateTransferTable.columnManejaSegundaUnidad],
+          uomSegundaUnidad: maps[i][ProductCreateTransferTable.columnUomSegundaUnidad] as String?,
         );
       });
 

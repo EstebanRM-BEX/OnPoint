@@ -1332,9 +1332,16 @@ class PackingConsolidateBloc
 
       add(LoadConfigurationsUserPackConsolidate());
 
-      final response = await DataBaseSqlite()
+      // Lanzar productos y paquetes en paralelo (independientes entre sí)
+      // Barcodes NO puede paralelizarse: depende de listOfProductosProgress[0].batchId
+      final futureProducts = DataBaseSqlite()
           .productosPedidosRepository
           .getProductosPedido(event.pedidoId, 'packing-batch-consolidate');
+      final futurePackages =
+          db.packagesRepository.getPackagesPedido(event.pedidoId);
+
+      final response = await futureProducts;
+      final packagesDB = await futurePackages;
 
       if (response != null) {
         debugPrint('response lista de productos: ${response.length}');
@@ -1366,7 +1373,7 @@ class PackingConsolidateBloc
 
         ordenarProducts();
 
-        //despues de obtener los productos vamos a obtener todos los codigos de barras de este pedido
+        //barcodes dependen del batchId del primer producto pendiente
         listAllOfBarcodes.clear();
         if (listOfProductosProgress.isNotEmpty) {
           final responseBarcodes = await db.barcodesPackagesRepository
@@ -1381,9 +1388,6 @@ class PackingConsolidateBloc
 
         debugPrint('listAllOfBarcodes: ${listAllOfBarcodes.length}');
 
-        //traemos todos los paquetes de la base de datos del pedido en cuesiton
-        final packagesDB =
-            await db.packagesRepository.getPackagesPedido(event.pedidoId);
         packages.clear();
         packages.addAll(packagesDB);
         debugPrint('packagesDB: ${packagesDB.length}');

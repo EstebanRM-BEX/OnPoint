@@ -42,6 +42,8 @@ class ProductoInventarioModel extends ProductoInventario {
     super.propietario,
     super.idPropietario,
     super.manejoPropietario,
+    super.manejaSegundaUnidad,
+    super.uomSegundaUnidad,
   });
 
   // Copia literal de Product.fromMap, creando BarcodeProductoModel en listas anidadas.
@@ -87,6 +89,8 @@ class ProductoInventarioModel extends ProductoInventario {
         propietario: _s(json['propietario']),
         idPropietario: json['id_propietario'] is bool ? null : json['id_propietario'],
         manejoPropietario: json['manejo_propietario'],
+        manejaSegundaUnidad: json['maneja_segunda_unidad'],
+        uomSegundaUnidad: json['uom_segunda_unidad'] is bool ? null : json['uom_segunda_unidad'] as String?,
       );
 
   factory ProductoInventarioModel.fromLegacy(legacy.Product p) =>
@@ -127,6 +131,8 @@ class ProductoInventarioModel extends ProductoInventario {
         propietario: p.propietario,
         idPropietario: p.idPropietario,
         manejoPropietario: p.manejoPropietario,
+        manejaSegundaUnidad: p.manejaSegundaUnidad,
+        uomSegundaUnidad: p.uomSegundaUnidad,
       );
 
   legacy.Product toLegacy() => legacy.Product(
@@ -164,6 +170,8 @@ class ProductoInventarioModel extends ProductoInventario {
         propietario: propietario,
         idPropietario: idPropietario,
         manejoPropietario: manejoPropietario,
+        manejaSegundaUnidad: manejaSegundaUnidad,
+        uomSegundaUnidad: uomSegundaUnidad,
       );
 
   static legacy.BarcodeInventario _barcodeToLegacy(BarcodeProducto b) {

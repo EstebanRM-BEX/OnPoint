@@ -293,7 +293,7 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
                                     .toList();
                             final selectedProduct = filtered[selectedIndex!];
 
-                            print(
+                            debugPrint(
                               'product seleccionado: ${selectedProduct.toMap()}',
                             );
 

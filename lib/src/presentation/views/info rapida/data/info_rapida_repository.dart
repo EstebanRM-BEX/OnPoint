@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:wms_app/core/network/connectivity_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -18,7 +19,7 @@ class InfoRapidaRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return InfoRapida(); // Si no hay conexión, retornar una lista vacía
     }
@@ -151,7 +152,7 @@ class InfoRapidaRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return InfoRapida(); // Si no hay conexión, retornar una lista vacía
     }
@@ -266,7 +267,7 @@ class InfoRapidaRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return SendTransferResponse(); // Si no hay conexión, terminamos la ejecución
     }
@@ -333,7 +334,7 @@ class InfoRapidaRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return InfoRapida(); // Si no hay conexión, terminamos la ejecución
     }
@@ -413,7 +414,7 @@ class InfoRapidaRepository {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return InfoRapida(); // Si no hay conexión, terminamos la ejecución
     }

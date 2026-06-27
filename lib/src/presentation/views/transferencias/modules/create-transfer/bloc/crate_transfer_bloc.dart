@@ -75,6 +75,7 @@ class CreateTransferBloc
   TextEditingController dateLoteController = TextEditingController();
   TextEditingController searchControllerLocation = TextEditingController();
   TextEditingController searchControllerProducts = TextEditingController();
+  TextEditingController segundaUnidadController = TextEditingController();
 
   dynamic quantitySelected = 0;
 
@@ -209,9 +210,9 @@ class CreateTransferBloc
                   idProducto: product.productId ?? 0,
                   cantidadEnviada: product.quantityDone ?? 0,
                   idLote: product.tracking == "lot" ? product.lotId ?? 0 : 0,
-                  timeLine: product.time ?? 0,
-                  idPropietario: 
-                  product.idPropietario ?? 0,
+                  timeLine: int.tryParse(product.time?.toString() ?? '0') ?? 0,
+                  idPropietario: product.idPropietario ?? 0,
+                  quantitySegundaUnidad: product.quantitySegundaUnidad ?? 0.0,
                 ))
             .toList(),
       );
@@ -312,6 +313,8 @@ class CreateTransferBloc
 
       //todo agregamos el producto a la lista de transferencia en la bd local
 
+      final qSegunda = double.tryParse(segundaUnidadController.text.trim()) ?? 0.0;
+
       final productAdd = Product(
         productId: event.product.productId,
         name: event.product.name,
@@ -335,9 +338,12 @@ class CreateTransferBloc
         expirationDateLote: event.product.tracking == "lot"
             ? currentProductLote?.expirationDate
             : null,
-        manejoPropietario: event.product.manejoPropietario ??0,
-        propietario:event.product.propietario ??"",
-        idPropietario: event.product.idPropietario??0
+        manejoPropietario: event.product.manejoPropietario ?? 0,
+        propietario: event.product.propietario ?? "",
+        idPropietario: event.product.idPropietario ?? 0,
+        manejaSegundaUnidad: event.product.manejaSegundaUnidad,
+        uomSegundaUnidad: event.product.uomSegundaUnidad,
+        quantitySegundaUnidad: qSegunda,
       );
 
       await db.productCreateTransferRepository.insertSingleProduct(productAdd);
@@ -433,6 +439,7 @@ class CreateTransferBloc
 
         dateInicio = '';
         dateFin = '';
+        segundaUnidadController.clear();
       } else {
         //limpiamos todo, producto, ubicacion y cantidad
         currentUbication = null;
@@ -470,6 +477,7 @@ class CreateTransferBloc
 
         dateInicio = '';
         dateFin = '';
+        segundaUnidadController.clear();
       }
 
       emit(ClearDataCreateTransferState());

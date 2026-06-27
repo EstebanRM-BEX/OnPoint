@@ -445,10 +445,7 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
                                             : Colors.white,
                                     elevation: 5,
                                     child: ListTile(
-                                      trailing: Icon(
-                                        Icons.arrow_forward_ios,
-                                        color: primaryColorApp,
-                                      ),
+                                     
                                       leading: GestureDetector(
                                         onTap: () {
                                           context

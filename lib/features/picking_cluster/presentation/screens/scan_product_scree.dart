@@ -10,6 +10,7 @@ import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/lote_producto.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/cluster_picking/cluster_picking_bloc.dart';
+import 'package:wms_app/features/picking_cluster/presentation/bloc/detail_cluster/detail_cluster_bloc.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/pedido_dropdown_widget.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/popunButton_widget.dart';
 import 'package:wms_app/core/routes/app_router.dart';
@@ -736,12 +737,6 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                   _handleDependencies();
                 }
 
-                if (state is ViewProductImageSuccess) {
-                  showImageDialog(context, state.imageUrl);
-                } else if (state is ViewProductImageFailure) {
-                  showScrollableErrorDialog(state.error);
-                }
-
                 //*estado cuando el producto es leido ok
                 if (state is ChangeProductIsOkState) {
                   //pasamos al foco de lote
@@ -803,6 +798,15 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                 }
               },
             ),
+            BlocListener<DetailClusterBloc, DetailClusterState>(
+              listener: (context, state) {
+                if (state is ImageDetailSuccess) {
+                  showImageDialog(context, state.url);
+                } else if (state is ImageDetailFailure) {
+                  showScrollableErrorDialog(state.error);
+                }
+              },
+            ),
           ],
           child: BlocBuilder<ClusterPickingBloc, ClusterPickingState>(
             builder: (context, state) {
@@ -830,33 +834,30 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                         child: Column(
                           children: [
                             const WarningWidgetCubit(),
-                            Padding(
-                              padding: const EdgeInsets.only(top: 15),
-                              child: Row(
-                                children: [
-                                  IconButton(
-                                    onPressed: () {
-                                      _controllerQuantity.clear();
-                                      bloc.add(ClearFieldsEvent());
-                                      bloc.add(LoadLocalPickingClustersEvent());
-                                    },
-                                    icon: const Icon(Icons.arrow_back,
-                                        color: Colors.white, size: 20),
+                            Row(
+                              children: [
+                                IconButton(
+                                  onPressed: () {
+                                    _controllerQuantity.clear();
+                                    bloc.add(ClearFieldsEvent());
+                                    bloc.add(LoadLocalPickingClustersEvent());
+                                  },
+                                  icon: const Icon(Icons.arrow_back,
+                                      color: Colors.white, size: 20),
+                                ),
+                                const Spacer(),
+                                Align(
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    bloc.currentBatch?.name ?? '',
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 14),
                                   ),
-                                  const Spacer(),
-                                  Align(
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      bloc.currentBatch?.name ?? '',
-                                      style: const TextStyle(
-                                          color: Colors.white, fontSize: 14),
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  PopupMenuButtonWidget(
-                                      currentProduct: bloc.currentProduct!),
-                                ],
-                              ),
+                                ),
+                                const Spacer(),
+                                PopupMenuButtonWidget(
+                                    currentProduct: bloc.currentProduct!),
+                              ],
                             ),
                             Padding(
                               padding: const EdgeInsets.symmetric(
@@ -919,7 +920,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                               isProductOk: bloc.isProductOk,
                               productIsOk: bloc.productIsOk,
                               locationIsOk: bloc.locationIsOk,
-                              isViewLote: false,
+                              isViewLote: true,
                               quantityIsOk: bloc.quantityIsOk,
                               locationDestIsOk: bloc.locationDestIsOk,
                               currentProductId:
@@ -961,8 +962,9 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                                 );
                               },
                               onViewImgProduct: () {
-                                bloc.add(ViewProductImageEvent(
-                                    bloc.currentProduct?.idProduct ?? 0));
+                                context.read<DetailClusterBloc>().add(
+                                  ViewProductImageDetailEvent(
+                                      bloc.currentProduct?.idProduct ?? 0));
                               },
                             ),
 
@@ -1222,10 +1224,13 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                       });
                     },
                     onToggleViewQuantity: () {
-                      bloc.add(ShowQuantityEvent(!bloc.viewQuantity));
+                      final willShow = !bloc.viewQuantity;
+                      bloc.add(ShowQuantityEvent(willShow));
                       _controllerCantidad.clear();
                       Future.delayed(const Duration(milliseconds: 100), () {
-                        FocusScope.of(context).requestFocus(focusNode3);
+                        FocusScope.of(context).requestFocus(
+                          willShow ? focusNode4 : focusNode3,
+                        );
                       });
                     },
                     onValidateButton: () {

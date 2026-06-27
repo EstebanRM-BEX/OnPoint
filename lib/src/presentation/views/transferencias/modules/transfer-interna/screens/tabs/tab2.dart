@@ -433,6 +433,31 @@ class _Tab2ScreenTransState extends State<Tab2ScreenTrans> {
                                               ),
                                             ],
                                           ),
+                                              Visibility(
+                                            visible:
+                                                product.manejaSegundaUnidad ==
+                                                    1 ||
+                                                product.manejaSegundaUnidad ==
+                                                    true,
+                                            child: Row(
+                                              children: [
+                                                Text(
+                                                  "2nd Unidad: ",
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: primaryColorApp,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  "${product.uomSegundaUnidad}",
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: black,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ),

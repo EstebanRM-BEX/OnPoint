@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 import 'package:web_socket_channel/io.dart';
@@ -18,14 +19,27 @@ class WebSocketService implements IWebSocketService {
   // --- VARIABLES DE ESTADO ---
   WebSocketChannel? _channel;
   bool _isConnected = false;
-  bool _isSubscribed = false; // 🚩 Bandera para controlar la suscripción
+  bool _isSubscribed = false;
+  bool _manuallyDisconnected = false;
+
+  // --- VARIABLES DE RECONEXIÓN ---
+  int _reconnectAttempts = 0;
+  Timer? _reconnectTimer;
 
   // Stream para exponer los mensajes a la UI
   final StreamController<dynamic> _messageController =
       StreamController.broadcast();
 
+  // Stream para exponer el estado de conexión al BLoC
+  final StreamController<WebSocketConnectionStatus> _statusController =
+      StreamController.broadcast();
+
   @override
   Stream<dynamic> get messages => _messageController.stream;
+
+  @override
+  Stream<WebSocketConnectionStatus> get connectionStatus =>
+      _statusController.stream;
 
   /// Inicia la conexión al WebSocket
   @override
@@ -36,6 +50,8 @@ class WebSocketService implements IWebSocketService {
 
     // Si ya estamos conectados, no hacemos nada
     if (_isConnected) return;
+
+    _manuallyDisconnected = false;
 
     try {
       // 2. Obtener credenciales y URL base
@@ -74,10 +90,10 @@ class WebSocketService implements IWebSocketService {
       String socketUrl = cleanBaseUrl.replaceFirst('https://', 'wss://');
       socketUrl += '/websocket';
 
-      debugPrint("🔄 WebSocket: Intentando conectar a $socketUrl");
-      debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-      debugPrint("📋 HEADERS DE CONEXIÓN:");
-      debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      // debugPrint("🔄 WebSocket: Intentando conectar a $socketUrl");
+      // debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      // debugPrint("📋 HEADERS DE CONEXIÓN:");
+      // debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
       // 5. Preparar HEADERS (Crucial para que el servidor acepte la conexión)
       final Map<String, dynamic> headers = {
@@ -95,6 +111,9 @@ class WebSocketService implements IWebSocketService {
       );
 
       _isConnected = true;
+      // Conexión exitosa: resetear contador de reintentos
+      _reconnectAttempts = 0;
+      _reconnectTimer?.cancel();
 
       // 6. Escuchar eventos
       _channel!.stream.listen(
@@ -103,29 +122,33 @@ class WebSocketService implements IWebSocketService {
         },
         onDone: () {
           _resetConnectionState();
-          print('🔴 ══════════════ WEBSOCKET CERRADO ══════════════');
-          print('⚠️  El servidor cerró la conexión (onDone)');
-          print('═════════════════════════════════════════════════');
+          // debugPrint('🔴 ══════════════ WEBSOCKET CERRADO ══════════════');
+          // debugPrint('⚠️  El servidor cerró la conexión (onDone)');
+          // debugPrint('═════════════════════════════════════════════════');
+          _scheduleReconnect();
         },
         onError: (error) {
           _resetConnectionState();
-          print('🔴 ══════════════ WEBSOCKET ERROR ════════════════');
-          print('❌ Error: $error');
-          print('═════════════════════════════════════════════════');
+          // debugPrint('🔴 ══════════════ WEBSOCKET ERROR ════════════════');
+          // debugPrint('❌ Error: $error');
+          // debugPrint('═════════════════════════════════════════════════');
+          _scheduleReconnect();
         },
       );
 
-      print('🟢 ══════════════ WEBSOCKET CONECTADO ══════════════');
-      print('🔗 URL: $socketUrl');
-      print('🍪 Session: $sessionId');
-      print('════════════════════════════════════════════════════');
-      debugPrint("✅ WebSocket: Conexión física establecida.");
+      // debugPrint('🟢 ══════════════ WEBSOCKET CONECTADO ══════════════');
+      // debugPrint('🔗 URL: $socketUrl');
+      // debugPrint('🍪 Session: $sessionId');
+      // debugPrint('════════════════════════════════════════════════════');
+      // debugPrint("✅ WebSocket: Conexión física establecida.");
+      _statusController.add(WebSocketConnectionStatus.connected);
 
       // 7. Intentar suscripción automática
       _subscribeToChannel();
     } catch (e) {
       _resetConnectionState();
       debugPrint("❌ WebSocket Excepción Crítica: $e");
+      _scheduleReconnect();
     }
   }
 
@@ -145,21 +168,21 @@ class WebSocketService implements IWebSocketService {
       }
     };
 
-    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    debugPrint("📤 ENVIANDO SUSCRIPCIÓN AL SERVIDOR:");
-    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    debugPrint("📦 Payload: ${jsonEncode(subscriptionPayload)}");
-    debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    // debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    // debugPrint("📤 ENVIANDO SUSCRIPCIÓN AL SERVIDOR:");
+    // debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    // debugPrint("📦 Payload: ${jsonEncode(subscriptionPayload)}");
+    // debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     sendMessage(jsonEncode(subscriptionPayload));
   }
 
   /// Procesa cada mensaje que llega del servidor
   void _handleMessage(dynamic data) {
-    print('');
-    print('🟢 ══════════════ WEBSOCKET MESSAGE ══════════════');
-    print('📥 RAW: $data');
-    print('════════════════════════════════════════════════════');
-    print('');
+    debugPrint('');
+    debugPrint('🟢 ══════════════ WEBSOCKET MESSAGE ══════════════');
+    debugPrint('📥 RAW: $data');
+    debugPrint('════════════════════════════════════════════════════');
+    debugPrint('');
 
     try {
       final dynamic decoded = jsonDecode(data);
@@ -191,6 +214,7 @@ class WebSocketService implements IWebSocketService {
       }
     } catch (e) {
       debugPrint("📦 Contenido RAW (no es JSON válido): ${data.toString()}");
+      _statusController.add(WebSocketConnectionStatus.error);
     }
 
     if (!_messageController.isClosed) {
@@ -222,7 +246,7 @@ class WebSocketService implements IWebSocketService {
       final String incoming = wsVal?.toString() ?? '';
       if (stored != incoming) {
         updatedFields[column] = wsVal;
-        print('🔄 Producto $label — "$fieldName": "$stored" → "$incoming"');
+        debugPrint('🔄 Producto $label — "$fieldName": "$stored" → "$incoming"');
       }
     }
 
@@ -266,16 +290,16 @@ class WebSocketService implements IWebSocketService {
     final int wsUseExp = wsData['use_expiration_date'] == true ? 1 : 0;
     if (storedUseExp != wsUseExp) {
       updatedFields[ProductInventarioTable.columnUseExpirationDate] = wsUseExp;
-      print(
+      debugPrint(
           '🔄 Producto $label — "use_expiration_date": "$storedUseExp" → "$wsUseExp"');
     }
 
     if (updatedFields.isNotEmpty) {
       await productRepo.updateProductFields(productId, updatedFields);
-      print(
+      debugPrint(
           '✅ Producto $label — ${updatedFields.length} campo(s) actualizado(s) en BD.');
     } else {
-      print('✅ Producto $label — sin cambios de campos.');
+      debugPrint('✅ Producto $label — sin cambios de campos.');
     }
 
     // ── Barcodes ──────────────────────────────────────────────────────────────
@@ -301,11 +325,11 @@ class WebSocketService implements IWebSocketService {
       if (!storedMap.containsKey(wsBarcode)) {
         toInsert.add(BarcodeInventario(
             barcode: wsBarcode, idProduct: productId, cantidad: wsCantidad));
-        print(
+        debugPrint(
             '🔄 Producto $label — nuevo barcode: "$wsBarcode" (cantidad: $wsCantidad)');
       } else if (storedMap[wsBarcode].toString() != wsCantidad.toString()) {
         await barcodesRepo.updateBarcodeCantidad(productId, wsBarcode, wsCantidad);
-        print(
+        debugPrint(
             '🔄 Producto $label — barcode "$wsBarcode" cantidad: "${storedMap[wsBarcode]}" → "$wsCantidad"');
       }
     }
@@ -325,21 +349,37 @@ class WebSocketService implements IWebSocketService {
     }
   }
 
+  /// Programa una reconexión con backoff exponencial (1s, 2s, 4s … hasta 30s)
+  void _scheduleReconnect() {
+    if (_manuallyDisconnected) return;
+    _reconnectTimer?.cancel();
+    final delay = Duration(seconds: min(30, pow(2, _reconnectAttempts).toInt()));
+    _reconnectAttempts++;
+    // debugPrint(
+    //     '🔄 WebSocket: Reconectando en ${delay.inSeconds}s (intento $_reconnectAttempts)…');
+    _statusController.add(WebSocketConnectionStatus.reconnecting);
+    _reconnectTimer = Timer(delay, () async {
+      await connect();
+    });
+  }
+
   /// Resetea las banderas de estado (Útil para reconexiones)
   void _resetConnectionState() {
     _isConnected = false;
-    _isSubscribed =
-        false; // Importante: volver a false para permitir re-suscribirse luego
+    _isSubscribed = false;
   }
 
-  /// Cierra la conexión manualmente
+  /// Cierra la conexión manualmente (no programa reconexión)
   @override
   void disconnect() {
+    _manuallyDisconnected = true;
+    _reconnectTimer?.cancel();
     if (_channel != null) {
       _channel!.sink.close();
       _channel = null;
     }
     _resetConnectionState();
+    _statusController.add(WebSocketConnectionStatus.disconnected);
     debugPrint("🔌 WebSocket: Desconectado manualmente.");
   }
 
@@ -348,5 +388,6 @@ class WebSocketService implements IWebSocketService {
   void dispose() {
     disconnect();
     _messageController.close();
+    _statusController.close();
   }
 }

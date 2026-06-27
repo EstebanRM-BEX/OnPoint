@@ -7,24 +7,29 @@ import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
 part 'websocket_event.dart';
 part 'websocket_state.dart';
 
-/// WebSocket BLoC separated from HomeBloc for better separation of concerns.
-///
-/// Manages WebSocket connections and real-time message handling.
+/// Gestiona el estado de la conexión WebSocket y los mensajes en tiempo real.
 @injectable
 class WebSocketBloc extends Bloc<WebSocketEvent, WebSocketState> {
   final IWebSocketService webSocketService;
-  late StreamSubscription _webSocketSubscription;
+  late StreamSubscription _messageSubscription;
+  late StreamSubscription _statusSubscription;
 
   WebSocketBloc({required this.webSocketService}) : super(WebSocketInitial()) {
-    // Subscribe to WebSocket messages
-    _webSocketSubscription =
+    _messageSubscription =
         webSocketService.messages.listen(_onWebSocketMessage);
+    _statusSubscription =
+        webSocketService.connectionStatus.listen(_onStatusChanged);
 
     on<WebSocketMessageReceived>(_handleIncomingWebSocketData);
+    on<WebSocketStatusChanged>(_handleStatusChanged);
   }
 
   void _onWebSocketMessage(dynamic data) {
     add(WebSocketMessageReceived(data));
+  }
+
+  void _onStatusChanged(WebSocketConnectionStatus status) {
+    add(WebSocketStatusChanged(status));
   }
 
   void _handleIncomingWebSocketData(
@@ -33,21 +38,42 @@ class WebSocketBloc extends Bloc<WebSocketEvent, WebSocketState> {
   ) {
     debugPrint(
         'WebSocketBloc: Mensaje recibido en tiempo real: ${event.payload}');
-
-    // Emit state with received data
     emit(WebSocketDataReceived(event.payload));
 
     // TODO: Add specific logic based on message type
-    // Example:
     // if (event.payload is Map && event.payload['type'] == 'NEW_ORDER') {
     //   emit(NewOrderReceived(event.payload));
     // }
   }
 
+  void _handleStatusChanged(
+    WebSocketStatusChanged event,
+    Emitter<WebSocketState> emit,
+  ) {
+    switch (event.status) {
+      case WebSocketConnectionStatus.connected:
+        debugPrint('✅ WebSocketBloc: Conectado');
+        emit(WebSocketConnected());
+      case WebSocketConnectionStatus.reconnecting:
+        final attempt =
+            state is WebSocketReconnecting
+                ? (state as WebSocketReconnecting).attempt + 1
+                : 1;
+        debugPrint('🔄 WebSocketBloc: Reconectando (intento $attempt)');
+        emit(WebSocketReconnecting(attempt: attempt));
+      case WebSocketConnectionStatus.disconnected:
+        debugPrint('🔌 WebSocketBloc: Desconectado');
+        emit(WebSocketDisconnected());
+      case WebSocketConnectionStatus.error:
+        debugPrint('❌ WebSocketBloc: Error al procesar mensaje');
+        emit(WebSocketError('Error al procesar mensaje del servidor'));
+    }
+  }
+
   @override
   Future<void> close() {
-    // Cancel subscription to prevent memory leaks
-    _webSocketSubscription.cancel();
+    _messageSubscription.cancel();
+    _statusSubscription.cancel();
     return super.close();
   }
 }

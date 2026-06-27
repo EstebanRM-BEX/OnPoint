@@ -74,7 +74,7 @@ class _UserPageState extends State<UserPage> {
                 );
               }
               if (state is GetProductsFailureInventory) {
-                print("error: ${state.message}");
+                debugPrint("error: ${state.message}");
                 if (Navigator.canPop(context)) Navigator.pop(context);
                 Get.snackbar(
                   '360 Software Informa',

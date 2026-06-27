@@ -184,45 +184,36 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen> {
                               child: Column(
                                 children: [
                                   const WarningWidgetCubit(),
-                                  Padding(
-                                    padding: EdgeInsets.only(
-                                      top:
-                                          connectionStatus !=
-                                              ConnectionStatus.online
-                                          ? 0
-                                          : 35,
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.arrow_back,
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.arrow_back,
+                                          color: white,
+                                        ),
+                                        onPressed: () {
+                                          Navigator.pushReplacementNamed(
+                                            context,
+                                            'scan-product-conteo',
+                                          );
+                                        },
+                                      ),
+                                      Padding(
+                                        padding: EdgeInsets.only(
+                                          left: size.width * 0.2,
+                                        ),
+                                        child: const Text(
+                                          'CREAR LOTE',
+                                          style: TextStyle(
                                             color: white,
-                                          ),
-                                          onPressed: () {
-                                            Navigator.pushReplacementNamed(
-                                              context,
-                                              'scan-product-conteo',
-                                            );
-                                          },
-                                        ),
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                            left: size.width * 0.2,
-                                          ),
-                                          child: const Text(
-                                            'CREAR LOTE',
-                                            style: TextStyle(
-                                              color: white,
-                                              fontSize: 18,
-                                            ),
+                                            fontSize: 18,
                                           ),
                                         ),
-                                        const Spacer(),
-                                      ],
-                                    ),
+                                      ),
+                                      const Spacer(),
+                                    ],
                                   ),
                                 ],
                               ),

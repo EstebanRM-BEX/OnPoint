@@ -1,40 +1,31 @@
-# This file configures the analyzer, which statically analyzes Dart code to
-# check for errors, warnings, and lints.
+# Análisis estático — WMS App Flutter
+# Base: flutter_lints (nivel estándar Flutter)
+# Plan: migrar a very_good_analysis tras completar Phase 3 (refactorización God Objects)
 #
-# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
-# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
-# invoked from the command line by running `flutter analyze`.
+# Historial:
+#   2026-06-22 — Habilitadas reglas F4-2 del plan de mejoras; eliminada supresión avoid_print
 
-# The following line activates a set of recommended lints for Flutter apps,
-# packages, and plugins designed to encourage good coding practices.
+include: package:flutter_lints/flutter.yaml
+
 analyzer:
   exclude:
     - build/**
     - "**/*.g.dart"
     - "**/*.freezed.dart"
   errors:
-    avoid_print: ignore
+    # avoid_print: eliminado — todos los print() fueron migrados a debugPrint()
     depend_on_referenced_packages: ignore
     deprecated_member_use: ignore
     file_names: ignore
     library_private_types_in_public_api: ignore
     unnecessary_null_comparison: ignore
-include: package:flutter_lints/flutter.yaml
 
 linter:
-  # The lint rules applied to this project can be customized in the
-  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
-  # included above or to enable additional rules. A list of all available lints
-  # and their documentation is published at https://dart.dev/lints.
-  #
-  # Instead of disabling a lint rule for the entire project in the
-  # section below, it can also be suppressed for a single line of code
-  # or a specific dart file by using the `// ignore: name_of_lint` and
-  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
-  # producing the lint.
   rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    # ── Reglas habilitadas (F4-2 del plan de mejoras) ──────────────────────────
+    avoid_print: true          # print() ejecuta en release y puede exponer datos
+    close_sinks: true          # StreamController sin close() → memory leak
+    cancel_subscriptions: true # StreamSubscription sin cancel() → memory leak
 
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+    # ── Reglas desactivadas temporalmente (quitar cuando Phase 3 esté completa) ─
+    # use_build_context_synchronously: true  # 95 archivos aún tienen ignore_for_file

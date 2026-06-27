@@ -27,6 +27,7 @@ import 'package:wms_app/shared/widgets/scanner_location_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
+import 'package:wms_app/shared/widgets/segunda_unidad_input_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
 
@@ -47,8 +48,12 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
   @override
   void initState() {
     super.initState();
-    // Añadimos el observer para escuchar el ciclo de vida de la app.
     WidgetsBinding.instance.addObserver(this);
+    focusNodeSegundaUnidad.addListener(() {
+      if (!focusNodeSegundaUnidad.hasFocus && mounted) {
+        Future.microtask(() => _handleDependencies());
+      }
+    });
   }
 
   @override
@@ -80,6 +85,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
   FocusNode focusNode3 = FocusNode(); // cantidad por pda
   FocusNode focusNode4 = FocusNode(); //cantidad textformfieldƒ
   FocusNode focusNode5 = FocusNode(); //location dest
+  FocusNode focusNodeSegundaUnidad = FocusNode(); // segunda unidad
 
   String? selectedLocation;
   String? selectedMuelle;
@@ -98,6 +104,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
     focusNode3.dispose(); //cantidad por pda
     focusNode4.dispose(); //cantidad textformfieldƒ
     focusNode5.dispose(); //location dest
+    focusNodeSegundaUnidad.dispose();
     super.dispose();
   }
 
@@ -228,6 +235,26 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
 
     _controllerQuantity.text = "";
     final currentProduct = bloc.currentProduct;
+
+
+ if (currentProduct.manejaSegundaUnidad == true ||
+        currentProduct.manejaSegundaUnidad == 1) {
+      if (bloc.segundaUnidadController.text.trim().isEmpty) {
+        _audioService.playErrorSound();
+        _vibrationService.vibrate();
+        Get.snackbar(
+          'Segunda unidad requerida',
+          'Ingrese la cantidad de la segunda unidad (${currentProduct.uomSegundaUnidad ?? ''})',
+          backgroundColor: white,
+          colorText: primaryColorApp,
+          icon: const Icon(Icons.scale_outlined, color: Colors.orange),
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 2),
+        );
+        return;
+      }
+    }
+
     //validamos que no aumente en cantidad si llego al maximo
     if (bloc.quantitySelected == bloc.currentProduct.cantidadFaltante) {
       return;
@@ -250,7 +277,24 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
 
   void _validatebuttonquantity2() {
     final bloc = context.read<TransferenciaBloc>();
-    //desactivamos volver a ingresar la cantidad
+
+    if (bloc.currentProduct.manejaSegundaUnidad == true ||
+        bloc.currentProduct.manejaSegundaUnidad == 1) {
+      if (bloc.segundaUnidadController.text.trim().isEmpty) {
+        _audioService.playErrorSound();
+        _vibrationService.vibrate();
+        Get.snackbar(
+          'Atención',
+          'Debe ingresar la cantidad de la segunda unidad de medida',
+          backgroundColor: white,
+          colorText: primaryColorApp,
+          duration: const Duration(milliseconds: 2000),
+          icon: Icon(Icons.warning_amber_rounded, color: Colors.amber),
+          snackPosition: SnackPosition.TOP,
+        );
+        return;
+      }
+    }
 
     String input = _cantidadController.text.trim();
 
@@ -428,6 +472,24 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
     final batchBloc = context.read<TransferenciaBloc>();
     final currentProduct = batchBloc.currentProduct;
 
+    if (currentProduct.manejaSegundaUnidad == true ||
+        currentProduct.manejaSegundaUnidad == 1) {
+      if (batchBloc.segundaUnidadController.text.trim().isEmpty) {
+        _audioService.playErrorSound();
+        _vibrationService.vibrate();
+        Get.snackbar(
+          'Atención',
+          'Debe ingresar la cantidad de la segunda unidad de medida',
+          backgroundColor: white,
+          colorText: primaryColorApp,
+          duration: const Duration(milliseconds: 2000),
+          icon: Icon(Icons.warning_amber_rounded, color: Colors.amber),
+          snackPosition: SnackPosition.TOP,
+        );
+        return;
+      }
+    }
+
     double cantidad = double.parse(_cantidadController.text.isEmpty
         ? batchBloc.quantitySelected.toString()
         : _cantidadController.text);
@@ -473,7 +535,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
       },
       child: BlocConsumer<TransferenciaBloc, TransferenciaState>(
         listener: (context, state) {
-          print("STATE: $state");
+          debugPrint("STATE: $state");
           if (state is ViewProductImageSuccess) {
             showImageDialog(context, state.imageUrl);
           } else if (state is ViewProductImageFailure) {
@@ -768,6 +830,15 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                                 ),
                               ],
                             ),
+
+                            if (bloc.currentProduct.manejaSegundaUnidad == true ||
+                                bloc.currentProduct.manejaSegundaUnidad == 1)
+                              SegundaUnidadInputWidget(
+                                controller: bloc.segundaUnidadController,
+                                uomLabel:
+                                    bloc.currentProduct.uomSegundaUnidad ?? '',
+                                focusNode: focusNodeSegundaUnidad,
+                              ),
                           ]),
                         ),
                       ),
@@ -1028,10 +1099,10 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
   }
 
   void _finishSeprateProductOrder(BuildContext context, dynamic cantidad) {
-    context.read<TransferenciaBloc>().add(FinalizarTransferProducto());
-    context
-        .read<TransferenciaBloc>()
-        .add(SendProductToTransfer(false, cantidad));
+    final bloc = context.read<TransferenciaBloc>();
+    final qSegunda = double.tryParse(bloc.segundaUnidadController.text.trim()) ?? 0.0;
+    bloc.add(FinalizarTransferProducto());
+    bloc.add(SendProductToTransfer(false, cantidad, quantitySegundaUnidad: qSegunda));
     termiateProcess();
   }
 
@@ -1039,12 +1110,10 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
     BuildContext context,
     dynamic cantidad,
   ) {
-    context
-        .read<TransferenciaBloc>()
-        .add(FinalizarTransferProductoSplit(cantidad));
-    context
-        .read<TransferenciaBloc>()
-        .add(SendProductToTransfer(true, cantidad));
+    final bloc = context.read<TransferenciaBloc>();
+    final qSegunda = double.tryParse(bloc.segundaUnidadController.text.trim()) ?? 0.0;
+    bloc.add(FinalizarTransferProductoSplit(cantidad));
+    bloc.add(SendProductToTransfer(true, cantidad, quantitySegundaUnidad: qSegunda));
     termiateProcess();
   }
 

@@ -112,6 +112,12 @@ class ProductsEntradaBatchRepository {
             ProductRecepcionBatchTable.columnImage: product.image ?? '',
             ProductRecepcionBatchTable.columnUseExpirationDate:
                 product.useExpirationDate ?? 0,
+            ProductRecepcionBatchTable.columnManejaSegundaUnidad:
+                product.manejaSegundaUnidad ?? 0,
+            ProductRecepcionBatchTable.columnUomSegundaUnidad:
+                product.uomSegundaUnidad ?? '',
+            ProductRecepcionBatchTable.columnQuantitySegundaUnidad:
+                product.quantitySegundaUnidad ?? 0.0,
           };
 
           // Si la clave ya existe, se hace UPDATE; si no, se hace INSERT.
@@ -210,6 +216,12 @@ class ProductsEntradaBatchRepository {
         ProductRecepcionBatchTable.columnImage: producto.image ?? '',
         ProductRecepcionBatchTable.columnUseExpirationDate:
             producto.useExpirationDate ?? 0,
+        ProductRecepcionBatchTable.columnManejaSegundaUnidad:
+            producto.manejaSegundaUnidad ?? 0,
+        ProductRecepcionBatchTable.columnUomSegundaUnidad:
+            producto.uomSegundaUnidad ?? '',
+        ProductRecepcionBatchTable.columnQuantitySegundaUnidad:
+            producto.quantitySegundaUnidad ?? 0.0,
       };
 
       await db.insert(

@@ -315,6 +315,9 @@ class LineasTransferencia {
   final dynamic image;
   final dynamic imageNovedad;
   final dynamic useExpirationDate;
+  final dynamic manejaSegundaUnidad;
+  final String? uomSegundaUnidad;
+  final double? quantitySegundaUnidad;
   // date_transaction
 
   LineasTransferencia({
@@ -365,6 +368,9 @@ class LineasTransferencia {
     this.image,
     this.imageNovedad,
     this.useExpirationDate,
+    this.manejaSegundaUnidad,
+    this.uomSegundaUnidad,
+    this.quantitySegundaUnidad,
   });
 
   factory LineasTransferencia.fromMap(Map<String, dynamic> json) =>
@@ -424,6 +430,9 @@ class LineasTransferencia {
         image: json["image"],
         imageNovedad: json["image_novedad"],
         useExpirationDate: json["use_expiration_date"],
+        manejaSegundaUnidad: json["maneja_segunda_unidad"],
+        uomSegundaUnidad: json["uom_segunda_unidad"],
+        quantitySegundaUnidad: json["quantity_segunda_unidad"]?.toDouble(),
       );
 
   Map<String, dynamic> toMap() => {
@@ -478,5 +487,8 @@ class LineasTransferencia {
     "image": image,
     "image_novedad": imageNovedad,
     "use_expiration_date": useExpirationDate,
+    "maneja_segunda_unidad": manejaSegundaUnidad,
+    "uom_segunda_unidad": uomSegundaUnidad,
+    "quantity_segunda_unidad": quantitySegundaUnidad,
   };
 }

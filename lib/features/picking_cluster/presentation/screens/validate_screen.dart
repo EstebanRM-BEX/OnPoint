@@ -6,6 +6,8 @@ import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/utils/get_colors_utils.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/cluster_picking/cluster_picking_bloc.dart';
+import 'package:wms_app/features/picking_cluster/presentation/bloc/validate_cluster/validate_cluster_bloc.dart';
+import 'package:wms_app/features/picking_cluster/presentation/bloc/picking_cluster_list/picking_cluster_list_bloc.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/pedido_validate.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/batch_product.dart';
 import 'package:wms_app/injection_container.dart';
@@ -63,99 +65,108 @@ class _ValidateScreenState extends State<ValidateScreen> {
   }
 
   void validateBarcode(String value, BuildContext context) {
-    final bloc = context.read<ClusterPickingBloc>();
-    final scan = value.trim().toLowerCase();
     _controllerToDo.clear();
-    debugPrint('🔎 Scan barcode: $scan');
-
-    final pedido = bloc.pedidosValidate.firstWhere(
-      (p) => p.barcodeMuelle?.toLowerCase() == scan,
-      orElse: () => const PedidoValidate(),
-    );
-
-    // ✅ Pedido encontrado → despachar evento y salir
-    if (pedido.idPedido != null) {
-      final listIdMove = bloc.filteredProducts
-          .where((p) => p.pedidoId == pedido.idPedido)
-          .map((p) => p.idMove ?? 0)
-          .toList();
-
-      bloc.add(MarkPedidoAsValidatedEvent(
-        batchId: pedido.batchId ?? 0,
-        namePedido: pedido.namePedido ?? '',
-        isValidated: true,
-        listIdMove: listIdMove,
-      ));
-      Future.microtask(() { if (mounted) focusNodeBuscar.requestFocus(); });
-      return;
-    }
-
-    // ❌ No encontrado → feedback de error
-    _vibrationService.vibrate();
-    _audioService.playErrorSound();
-    Future.microtask(() { if (mounted) focusNodeBuscar.requestFocus(); });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Código no encontrado en la lista')),
-    );
+    debugPrint('🔎 Scan barcode: ${value.trim()}');
+    context
+        .read<ValidateClusterBloc>()
+        .add(ScanBarcodeValidateEvent(value));
+    Future.microtask(() {
+      if (mounted) focusNodeBuscar.requestFocus();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: white,
-      body: BlocConsumer<ClusterPickingBloc, ClusterPickingState>(
-        listener: (context, state) {
-          print('✅ state: $state');
-          if (state is ValidatePedidoStateError) {
-            Get.snackbar(
-              '360 Software Informa',
-              state.msg,
-              backgroundColor: white,
-              colorText: primaryColorApp,
-              icon: const Icon(Icons.error, color: Colors.red),
-              showProgressIndicator: true,
-              duration: const Duration(seconds: 5),
-            );
-            Future.microtask(() { if (mounted) focusNodeBuscar.requestFocus(); });
-          }
+      body: MultiBlocListener(
+        listeners: [
+          // Listener propio: todo el feedback de esta pantalla viene de ValidateClusterBloc
+          BlocListener<ValidateClusterBloc, ValidateClusterState>(
+            listener: (context, state) {
+              if (state is BarcodeValidateNotFoundState) {
+                _vibrationService.vibrate();
+                _audioService.playErrorSound();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Código no encontrado en la lista')),
+                );
+                Future.microtask(() {
+                  if (mounted) focusNodeBuscar.requestFocus();
+                });
+              }
 
-          if (state is PickingClustersLoading) {
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (context) =>
-                  const DialogLoading(message: "Sincronizando Localmente..."),
-            );
-          }
+              if (state is ValidatePedidoErrorState) {
+                Get.snackbar(
+                  '360 Software Informa',
+                  state.msg,
+                  backgroundColor: white,
+                  colorText: primaryColorApp,
+                  icon: const Icon(Icons.error, color: Colors.red),
+                  showProgressIndicator: true,
+                  duration: const Duration(seconds: 5),
+                );
+                Future.microtask(() {
+                  if (mounted) focusNodeBuscar.requestFocus();
+                });
+              }
 
-          if (state is PickingClustersLoaded) {
-            Navigator.of(context).popUntil((route) => route.isFirst);
-            Navigator.pushReplacementNamed(
-              context,
-              'picking-cluster',
-            );
-          }
+              if (state is BatchNotAllValidatedState) {
+                Get.snackbar(
+                  '360 Software Informa',
+                  state.message,
+                  backgroundColor: white,
+                  colorText: primaryColorApp,
+                  icon: const Icon(Icons.error, color: Colors.red),
+                );
+                Future.microtask(() {
+                  if (mounted) focusNodeBuscar.requestFocus();
+                });
+              }
 
-          if (state is PickingClustersError || state is BatchProductsError) {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context); // Cierra el loader
-            }
-            Get.snackbar(
-              '360 Software Informa',
-              state is PickingClustersError
-                  ? state.message
-                  : (state as BatchProductsError).message,
-              backgroundColor: white,
-              colorText: primaryColorApp,
-              icon: const Icon(Icons.error, color: Colors.red),
-              showProgressIndicator: true,
-              duration: Duration(seconds: 5),
-            );
-            Future.microtask(() { if (mounted) focusNodeBuscar.requestFocus(); });
-          }
-        },
-        builder: (context, state) {
+              if (state is BatchCloseLoadingState) {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) => const DialogLoading(
+                      message: "Cerrando Batch..."),
+                );
+              }
+
+              if (state is BatchClosedSuccessState) {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+                context
+                    .read<PickingClusterListBloc>()
+                    .add(const FetchClustersEvent());
+                Navigator.of(context).popUntil((route) => route.isFirst);
+                Navigator.pushReplacementNamed(context, 'picking-cluster');
+              }
+
+              if (state is BatchCloseErrorState) {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+                Get.snackbar(
+                  '360 Software Informa',
+                  state.message,
+                  backgroundColor: white,
+                  colorText: primaryColorApp,
+                  icon: const Icon(Icons.error, color: Colors.red),
+                  showProgressIndicator: true,
+                  duration: const Duration(seconds: 5),
+                );
+              }
+            },
+          ),
+          // Listener del BLoC compartido: solo sync offline
+          BlocListener<ClusterPickingBloc, ClusterPickingState>(
+            listener: (context, state) {
+              if (state is SyncPendingClusterLoading) {
+                // sync en background — sin dialog para no bloquear la pantalla
+              }
+            },
+          ),
+        ],
+        child: BlocBuilder<ClusterPickingBloc, ClusterPickingState>(
+          builder: (context, state) {
           final bloc = context.read<ClusterPickingBloc>();
           final pedidos = bloc.pedidosValidate;
           final products = bloc.filteredProducts;
@@ -323,21 +334,9 @@ class _ValidateScreenState extends State<ValidateScreen> {
                 padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton(
                     onPressed: () {
-                      //validamos que todos los pedidos esten validados
-                      if (bloc.pedidosValidate
-                          .every((pedido) => pedido.isValidated == true)) {
-                        bloc.add(ClearFieldsEvent());
-                        bloc.add(EndTimePick(
-                            bloc.currentBatch?.id ?? 0, DateTime.now()));
-                        bloc.add(const FetchPickingClustersEvent());
-                      } else {
-                        Get.snackbar("360 Software Informa",
-                            "No todos los pedidos estan validados",
-                            backgroundColor: white,
-                            colorText: primaryColorApp,
-                            icon: Icon(Icons.error, color: Colors.red));
-                        return;
-                      }
+                      context.read<ValidateClusterBloc>().add(
+                            CloseBatchEvent(bloc.currentBatch?.id ?? 0),
+                          );
                     },
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 40),
@@ -354,6 +353,7 @@ class _ValidateScreenState extends State<ValidateScreen> {
             ],
           );
         },
+        ),
       ),
     );
   }
@@ -494,10 +494,9 @@ class _ValidateScreenState extends State<ValidateScreen> {
               ),
               ElevatedButton(
                 onPressed: () {
-                  bloc.add(MarkPedidoAsValidatedEvent(
+                  context.read<ValidateClusterBloc>().add(TapMarkPedidoEvent(
                     batchId: pedido.batchId ?? 0,
                     namePedido: pedido.namePedido ?? '',
-                    isValidated: true,
                     listIdMove: products.map((p) => p.idMove ?? 0).toList(),
                   ));
                   Navigator.pop(context);

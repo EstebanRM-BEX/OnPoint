@@ -51,7 +51,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
   LineasTransferencia currentProduct = LineasTransferencia();
 
-//*orden actual
+  //*orden actual
   ResultEntrada resultEntrada = ResultEntrada();
 
   List<String> tiposRecepcion = [];
@@ -87,6 +87,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   TextEditingController controllerTemperature = TextEditingController();
   TextEditingController searchControllerLocationDest = TextEditingController();
   TextEditingController temperatureController = TextEditingController();
+  TextEditingController segundaUnidadController = TextEditingController();
 
   //*variables para validar
   bool productIsOk = false;
@@ -114,7 +115,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
   ResultUbicaciones? currentUbicationDest;
 
-//*base de datos
+  //*base de datos
   DataBaseSqlite db = DataBaseSqlite();
 
   //*configuracion del usuario //permisos
@@ -226,13 +227,16 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   }
 
   void _onViewProductImageEvent(
-      ViewProductImageEvent event, Emitter<RecepcionState> emit) async {
+    ViewProductImageEvent event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
       final result = await getIt<GetUrlImagenProducto>()(
-          GetUrlImagenProductoParams(productId: event.idProduct));
+        GetUrlImagenProductoParams(productId: event.idProduct),
+      );
 
       result.fold(
         (failure) => emit(ViewProductImageFailure('Imagen no disponible')),
@@ -245,15 +249,19 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   }
 
   void _onToggleProductExpansionEvent(
-      ToggleProductExpansionEvent event, Emitter<RecepcionState> emit) {
+    ToggleProductExpansionEvent event,
+    Emitter<RecepcionState> emit,
+  ) {
     debugPrint('isExpanded: $isExpanded');
     isExpanded = event.isExpanded;
     emit(ProductExpansionToggled(isExpanded));
   }
 
-//metodo para enviar una imagen de novedad
+  //metodo para enviar una imagen de novedad
   void _onSendImageNovedad(
-      SendImageNovedad event, Emitter<RecepcionState> emit) async {
+    SendImageNovedad event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(SendImageNovedadLoading());
 
@@ -273,11 +281,16 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
           response.stockMoveLineId ?? 0,
         );
         emit(SendImageNovedadSuccess(response));
-        add(GetPorductsToEntrada(event.idRecepcion,
-            resultEntrada.type == 'dev' ? 'dev' : 'reception'));
+        add(
+          GetPorductsToEntrada(
+            event.idRecepcion,
+            resultEntrada.type == 'dev' ? 'dev' : 'reception',
+          ),
+        );
       } else {
-        emit(SendImageNovedadFailure(
-            response.msg ?? 'Error al enviar la imagen'));
+        emit(
+          SendImageNovedadFailure(response.msg ?? 'Error al enviar la imagen'),
+        );
       }
     } catch (e, s) {
       debugPrint('Error en el _onSendImageNovedad: $e, $s');
@@ -287,24 +300,33 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
   //*metodo para eliminar un producto ya enviado
   void _onDelectedProductWmsEvent(
-      DelectedProductWmsEvent event, Emitter<RecepcionState> emit) async {
+    DelectedProductWmsEvent event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(DelectedProductWmsLoading());
 
       final response = await _recepcionRepository.deleteProductInWms(
-          event.idRecepcion, event.listIdMove, false);
+        event.idRecepcion,
+        event.listIdMove,
+        false,
+      );
 
       if (response.result?.code == 200) {
         // Antes de eliminar, actualizamos la cantidad faltante
         await db.productEntradaRepository
             .updateCantidadAndDeleteProductsEntrada(
-          idRecepcion: event.idRecepcion,
-          products: response.result?.result ?? [],
-        );
+              idRecepcion: event.idRecepcion,
+              products: response.result?.result ?? [],
+            );
 
         ///pedimos nuevamente los productos de la entrada
-        add(GetPorductsToEntrada(event.idRecepcion,
-            resultEntrada.type == 'dev' ? 'dev' : 'reception'));
+        add(
+          GetPorductsToEntrada(
+            event.idRecepcion,
+            resultEntrada.type == 'dev' ? 'dev' : 'reception',
+          ),
+        );
 
         emit(DelectedProductWmsSuccess('Línea eliminada correctamente'));
       } else {
@@ -319,7 +341,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   //*metodo para buscar una devolucion
 
   void _onSearchDevolucionEvent(
-      SearchDevolucionEvent event, Emitter<RecepcionState> emit) async {
+    SearchDevolucionEvent event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       listFiltersDevolutions = [];
       listFiltersDevolutions = listDevolutions;
@@ -348,7 +372,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
   //*metodo para obtener las entradas desde la bd
   void _onFetchDevolucionesOfDB(
-      FetchDevolucionesOfDB event, Emitter<RecepcionState> emit) async {
+    FetchDevolucionesOfDB event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(FetchDevolucionesLoadingDB());
       final listbd = await db.entradasRepository.getAllEntradas('dev');
@@ -358,19 +384,25 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         listDevolutions = listbd;
         listFiltersDevolutions = listbd;
       } else {
-        emit(FetchDevolucionesFailureDB(
-            'No hay ordenes de compra en la base de datos'));
+        emit(
+          FetchDevolucionesFailureDB(
+            'No hay ordenes de compra en la base de datos',
+          ),
+        );
       }
       emit(FetchDevolucionesSuccessDB(listFiltersDevolutions));
     } catch (e, s) {
       emit(
-          FetchDevolucionesFailureDB('Error al obtener las ordenes de compra'));
+        FetchDevolucionesFailureDB('Error al obtener las ordenes de compra'),
+      );
       debugPrint('Error en el _onFetchOrdenesCompraOfBd: $e, $s');
     }
   }
 
   void _onFetchDevoluciones(
-      FetchDevoluciones event, Emitter<RecepcionState> emit) async {
+    FetchDevoluciones event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(FetchDevolucionesLoading());
 
@@ -378,8 +410,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
       await db.deleRecepcion('dev');
 
-      final response =
-          await _recepcionRepository.fetchAllDevolutions(event.isLoadinDialog);
+      final response = await _recepcionRepository.fetchAllDevolutions(
+        event.isLoadinDialog,
+      );
 
       if ((response.result?.updateVersion ?? false) == true) {
         emit(NeedUpdateVersionState());
@@ -389,26 +422,37 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         if (response.result?.result?.isNotEmpty == true) {
           final listRecepcion = response.result?.result;
 
-          await db.entradasRepository
-              .insertEntrada(response.result?.result ?? [], 'dev');
+          await db.entradasRepository.insertEntrada(
+            response.result?.result ?? [],
+            'dev',
+          );
 
-          final productsToInsert =
-              _getAllProducts(listRecepcion!).toList(growable: false);
-          final productsSedToInsert =
-              _getAllSentProducts(listRecepcion).toList(growable: false);
-          final allBarcodes =
-              _getAllBarcodes(listRecepcion).toList(growable: false);
+          final productsToInsert = _getAllProducts(
+            listRecepcion!,
+          ).toList(growable: false);
+          final productsSedToInsert = _getAllSentProducts(
+            listRecepcion,
+          ).toList(growable: false);
+          final allBarcodes = _getAllBarcodes(
+            listRecepcion,
+          ).toList(growable: false);
 
           // Enviar la lista agrupada a insertBatchProducts
-          await db.productEntradaRepository
-              .insertarProductoEntrada(productsToInsert, 'dev');
+          await db.productEntradaRepository.insertarProductoEntrada(
+            productsToInsert,
+            'dev',
+          );
 
-          await db.productEntradaRepository
-              .insertarProductoEntrada(productsSedToInsert, 'dev');
+          await db.productEntradaRepository.insertarProductoEntrada(
+            productsSedToInsert,
+            'dev',
+          );
 
           // Enviar la lista agrupada de barcodes de un producto para packing
-          await db.barcodesPackagesRepository
-              .insertOrUpdateBarcodes(allBarcodes, 'dev');
+          await db.barcodesPackagesRepository.insertOrUpdateBarcodes(
+            allBarcodes,
+            'dev',
+          );
 
           debugPrint("listRecepcion: ${listRecepcion.length}");
           debugPrint("productsToInsert: ${productsToInsert.length}");
@@ -416,13 +460,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
           debugPrint("allBarcodes: ${allBarcodes.length}");
 
           add(FetchDevolucionesOfDB());
-          emit(FetchDevolucionesSuccess(
-            response.result?.result ?? [],
-          ));
+          emit(FetchDevolucionesSuccess(response.result?.result ?? []));
         } else {
-          emit(FetchDevolucionesSuccess(
-            response.result?.result ?? [],
-          ));
+          emit(FetchDevolucionesSuccess(response.result?.result ?? []));
         }
       } else {
         if (response.result?.code == 403) {
@@ -444,22 +484,29 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     try {
       emit(GetTemperatureLoading());
       // 1. Llamar al método que analiza la imagen y devuelve la temperatura
-      final result =
-          await _recepcionRepository.getTemperatureWithImage(event.file);
+      final result = await _recepcionRepository.getTemperatureWithImage(
+        event.file,
+      );
 
       resultTemperature = TemperatureIa();
       if (result.temperature != null) {
         resultTemperature = result;
         emit(GetTemperatureSuccess(resultTemperature));
       } else {
-        emit(GetTemperatureFailure(
-            result.detail ?? 'Error al obtener la temperatura'));
+        emit(
+          GetTemperatureFailure(
+            result.detail ?? 'Error al obtener la temperatura',
+          ),
+        );
         return;
       }
     } catch (e, s) {
       debugPrint('Error en el _onSendTemperatureEvent: $e, $s');
-      emit(GetTemperatureFailure(
-          'Ocurrió un error al procesar la imagen y obtener la temperatura'));
+      emit(
+        GetTemperatureFailure(
+          'Ocurrió un error al procesar la imagen y obtener la temperatura',
+        ),
+      );
     }
   }
 
@@ -509,19 +556,32 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         //limpiamos el dato de temperatura
         resultTemperature = TemperatureIa();
 
-        emit(SendTemperatureSuccess(
-            response.result ?? 'Temperatura enviada correctamente'));
-        add(GetPorductsToEntrada(currentProduct.idRecepcion ?? 0,
-            resultEntrada.type == 'dev' ? 'dev' : 'reception'));
+        emit(
+          SendTemperatureSuccess(
+            response.result ?? 'Temperatura enviada correctamente',
+          ),
+        );
+        add(
+          GetPorductsToEntrada(
+            currentProduct.idRecepcion ?? 0,
+            resultEntrada.type == 'dev' ? 'dev' : 'reception',
+          ),
+        );
       } else {
-        emit(SendTemperatureFailure(
-            response.msg ?? 'Error al enviar la temperatura'));
+        emit(
+          SendTemperatureFailure(
+            response.msg ?? 'Error al enviar la temperatura',
+          ),
+        );
         return;
       }
     } catch (e, s) {
       debugPrint('Error en el _onSendTemperatureEvent: $e, $s');
-      emit(SendTemperatureFailure(
-          'Ocurrió un error al procesar la imagen y obtener la temperatura'));
+      emit(
+        SendTemperatureFailure(
+          'Ocurrió un error al procesar la imagen y obtener la temperatura',
+        ),
+      );
     }
   }
 
@@ -555,24 +615,39 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         temperatureController.clear();
         resultTemperature = TemperatureIa();
 
-        emit(SendTemperatureSuccess(
-            response.result ?? 'Temperatura enviada correctamente'));
-        add(GetPorductsToEntrada(currentProduct.idRecepcion ?? 0,
-            resultEntrada.type == 'dev' ? 'dev' : 'reception'));
+        emit(
+          SendTemperatureSuccess(
+            response.result ?? 'Temperatura enviada correctamente',
+          ),
+        );
+        add(
+          GetPorductsToEntrada(
+            currentProduct.idRecepcion ?? 0,
+            resultEntrada.type == 'dev' ? 'dev' : 'reception',
+          ),
+        );
       } else {
-        emit(SendTemperatureFailure(
-            response.msg ?? 'Error al enviar la temperatura'));
+        emit(
+          SendTemperatureFailure(
+            response.msg ?? 'Error al enviar la temperatura',
+          ),
+        );
         return;
       }
     } catch (e, s) {
       debugPrint('Error en el _onSendTemperatureEvent: $e, $s');
-      emit(SendTemperatureFailure(
-          'Ocurrió un error al procesar la imagen y obtener la temperatura'));
+      emit(
+        SendTemperatureFailure(
+          'Ocurrió un error al procesar la imagen y obtener la temperatura',
+        ),
+      );
     }
   }
 
   void _onFilterUbicacionesEvent(
-      FilterUbicacionesAlmacenEvent event, Emitter<RecepcionState> emit) {
+    FilterUbicacionesAlmacenEvent event,
+    Emitter<RecepcionState> emit,
+  ) {
     try {
       emit(FilterUbicacionesLoading());
       selectedAlmacen = '';
@@ -595,7 +670,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   }
 
   void _onCleanFieldsEvent(
-      CleanFieldsEvent event, Emitter<RecepcionState> emit) {
+    CleanFieldsEvent event,
+    Emitter<RecepcionState> emit,
+  ) {
     scannedValue2 = '';
     scannedValue3 = '';
     scannedValue4 = '';
@@ -613,10 +690,13 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     isQuantityOk = true;
     isLoteOk = true;
     isLocationDestOk = true;
+    segundaUnidadController.clear();
   }
 
   void _onFilterTransferByTypeEvent(
-      FilterReceptionByTypeEvent event, Emitter<RecepcionState> emit) {
+    FilterReceptionByTypeEvent event,
+    Emitter<RecepcionState> emit,
+  ) {
     try {
       emit(FilterReceptionByTypeLoading());
 
@@ -642,25 +722,32 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
   //*metodo para validar la ubicacion
   void _onChangeLocationIsOkEvent(
-      ChangeLocationDestIsOkEvent event, Emitter<RecepcionState> emit) async {
+    ChangeLocationDestIsOkEvent event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       if (isLocationDestOk) {
         await db.productEntradaRepository.setFieldTableProductEntrada(
-            event.idEntrada,
-            event.productId,
-            "locationdest_is_ok",
-            1,
-            event.idMove);
+          event.idEntrada,
+          event.productId,
+          "locationdest_is_ok",
+          1,
+          event.idMove,
+        );
 
         currentUbicationDest = event.locationSelect;
         locationsDestIsok = true;
 
-        add(ChangeIsOkQuantity(currentProduct.idRecepcion ?? 0, true,
-            int.parse(currentProduct.productId), currentProduct.idMove ?? 0));
+        add(
+          ChangeIsOkQuantity(
+            currentProduct.idRecepcion ?? 0,
+            true,
+            int.parse(currentProduct.productId),
+            currentProduct.idMove ?? 0,
+          ),
+        );
 
-        emit(ChangeLocationDestIsOkState(
-          locationsDestIsok,
-        ));
+        emit(ChangeLocationDestIsOkState(locationsDestIsok));
       }
     } catch (e, s) {
       debugPrint("❌ Error en el ChangeLocationIsOkEvent $e ->$s");
@@ -668,7 +755,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   }
 
   void _onSearchLocationEvent(
-      SearchLocationEvent event, Emitter<RecepcionState> emit) async {
+    SearchLocationEvent event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(SearchLoading());
       ubicacionesFilters = [];
@@ -690,7 +779,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   }
 
   void _onLoadLocations(
-      GetLocationsDestEvent event, Emitter<RecepcionState> emit) async {
+    GetLocationsDestEvent event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(LoadLocationsLoading());
       final response = await db.ubicacionesRepository.getAllUbicaciones();
@@ -712,7 +803,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   }
 
   void _onSearchLoteEvent(
-      SearchLotevent event, Emitter<RecepcionState> emit) async {
+    SearchLotevent event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(SearchLoading());
       listLotesProductFilters = [];
@@ -733,26 +826,32 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   }
 
   void _onCreateBackOrder(
-      CreateBackOrderOrNot event, Emitter<RecepcionState> emit) async {
+    CreateBackOrderOrNot event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(CreateBackOrderOrNotLoading());
       final response = await _recepcionRepository.validateRecepcion(
-          event.idRecepcion, event.isBackOrder, false,
-          forzarLoteVencido: event.forzarLoteVencido);
+        event.idRecepcion,
+        event.isBackOrder,
+        false,
+        forzarLoteVencido: event.forzarLoteVencido,
+      );
 
       if (response.result?.code == 200) {
-        add(StartOrStopTimeOrder(
-          event.idRecepcion,
-          'end_time_reception',
-        ));
+        add(StartOrStopTimeOrder(event.idRecepcion, 'end_time_reception'));
 
         await db.entradasRepository.setFieldTableEntrada(
           event.idRecepcion,
           "is_finish",
           1,
         );
-        emit(CreateBackOrderOrNotSuccess(
-            event.isBackOrder, response.result?.msg ?? ""));
+        emit(
+          CreateBackOrderOrNotSuccess(
+            event.isBackOrder,
+            response.result?.msg ?? "",
+          ),
+        );
 
         if (event.type == 'dev') {
           add(FetchDevolucionesOfDB());
@@ -760,8 +859,12 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
           add(FetchOrdenesCompraOfBd());
         }
       } else {
-        emit(CreateBackOrderOrNotFailure(response.result?.msg ?? '',
-            result: response.result));
+        emit(
+          CreateBackOrderOrNotFailure(
+            response.result?.msg ?? '',
+            result: response.result,
+          ),
+        );
       }
     } catch (e, s) {
       emit(CreateBackOrderOrNotFailure('Error al crear la backorder'));
@@ -770,11 +873,15 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   }
 
   void _onConfirmarLoteVencido(
-      ConfirmarLoteVencidoEvent event, Emitter<RecepcionState> emit) async {
+    ConfirmarLoteVencidoEvent event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(ConfirmarLoteVencidoLoading());
       final response = await _recepcionRepository.confirmarLoteVencido(
-          event.idRecepcion, event.isBackOrder);
+        event.idRecepcion,
+        event.isBackOrder,
+      );
 
       if (response.result?.code == 200) {
         add(StartOrStopTimeOrder(event.idRecepcion, 'end_time_reception'));
@@ -800,7 +907,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   }
 
   void _onStartOrStopTimeOrder(
-      StartOrStopTimeOrder event, Emitter<RecepcionState> emit) async {
+    StartOrStopTimeOrder event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       final time = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
@@ -850,12 +959,15 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   }
 
   void _onCurrentOrdenesCompra(
-      CurrentOrdenesCompra event, Emitter<RecepcionState> emit) async {
+    CurrentOrdenesCompra event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       resultEntrada = ResultEntrada();
       //traemos la orden de compra de la bd
-      final respnonseEntradaDb = await db.entradasRepository
-          .getEntradaById(event.resultEntrada.id ?? 0);
+      final respnonseEntradaDb = await db.entradasRepository.getEntradaById(
+        event.resultEntrada.id ?? 0,
+      );
       resultEntrada = respnonseEntradaDb ?? ResultEntrada();
 
       emit(CurrentOrdenesCompraState(resultEntrada));
@@ -866,15 +978,18 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
   //metodo pea crar un lote a un producto
   void _onCreateLoteProduct(
-      CreateLoteProduct event, Emitter<RecepcionState> emit) async {
+    CreateLoteProduct event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(CreateLoteProductLoading());
       final response = await _recepcionRepository.createLote(
-          false,
-          int.parse(currentProduct.productId),
-          event.nameLote,
-          event.fechaCaducidad,
-          event.priorityExpiration);
+        false,
+        int.parse(currentProduct.productId),
+        event.nameLote,
+        event.fechaCaducidad,
+        event.priorityExpiration,
+      );
 
       if (response.result?.code == 200) {
         //agregamos el nuevo lote a la lista de lotes
@@ -912,10 +1027,13 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
         emit(CreateLoteProductSuccess());
       } else {
-        emit(CreateLoteProductFailure(
+        emit(
+          CreateLoteProductFailure(
             response.result?.msg ??
                 'Error al crear el lote concactarse con el administrador',
-            response.result?.code ?? 0));
+            response.result?.code ?? 0,
+          ),
+        );
       }
     } catch (e, s) {
       emit(CreateLoteProductFailure('Error al crear el lote', 400));
@@ -925,7 +1043,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
   //metodo para enviar el producto a wms
   void _onSendProductToOrder(
-      SendProductToOrder event, Emitter<RecepcionState> emit) async {
+    SendProductToOrder event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(SendProductToOrderLoading());
 
@@ -974,6 +1094,8 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         currentProduct.idMove ?? 0,
       );
 
+      print("2nd cantidad ${event.quantitySegundaUnidad}");
+
       final responseSend = await _recepcionRepository.sendProductRecepcion(
         RecepcionRequest(
           idRecepcion: productBD?.idRecepcion ?? 0,
@@ -983,8 +1105,11 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
               idMove: productBD?.idMove ?? 0,
               loteProducto: lotesProductCurrent.id ?? 0,
               //validamos permiso
-              ubicacionDestino: configurations
-                          .result?.result?.scanDestinationLocationReception ==
+              ubicacionDestino:
+                  configurations
+                          .result
+                          ?.result
+                          ?.scanDestinationLocationReception ==
                       true
                   ? currentUbicationDest?.id ?? 0
                   : productBD?.locationDestId ?? 0,
@@ -994,8 +1119,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
                   : productBD?.observation ?? "Sin novedad",
               idOperario: userid,
               timeLine: time,
-              fechaTransaccion: fechaFormateada, // Formato de la fecha
-            )
+              fechaTransaccion: fechaFormateada,
+              quantitySegundaUnidad: event.quantitySegundaUnidad,
+            ),
           ],
         ),
         false,
@@ -1004,21 +1130,33 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       if (responseSend.result?.code == 200) {
         //AISGAMOS EL NOMBRE DE LA UBICACION DESTINO
         await db.productEntradaRepository.setFieldTableProductEntrada(
+          currentProduct.idRecepcion ?? 0,
+          int.parse(currentProduct.productId),
+          "location_dest_name",
+          configurations.result?.result?.scanDestinationLocationReception ==
+                  true
+              ? currentUbicationDest?.name ?? ''
+              : productBD?.locationDestName ?? '',
+          currentProduct.idMove ?? 0,
+        );
+        // guardamos la cantidad de segunda unidad en la BD local
+        if (event.quantitySegundaUnidad > 0) {
+          await db.productEntradaRepository.setFieldTableProductEntrada(
             currentProduct.idRecepcion ?? 0,
             int.parse(currentProduct.productId),
-            "location_dest_name",
-            configurations.result?.result?.scanDestinationLocationReception ==
-                    true
-                ? currentUbicationDest?.name ?? ''
-                : productBD?.locationDestName ?? '',
-            currentProduct.idMove ?? 0);
+            'quantity_segunda_unidad',
+            event.quantitySegundaUnidad,
+            currentProduct.idMove ?? 0,
+          );
+        }
         // marcamos tiempo final de sepfaracion
         await db.productEntradaRepository.setFieldTableProductEntrada(
-            currentProduct.idRecepcion ?? 0,
-            int.parse(currentProduct.productId),
-            "is_done_item",
-            1,
-            currentProduct.idMove ?? 0);
+          currentProduct.idRecepcion ?? 0,
+          int.parse(currentProduct.productId),
+          "is_done_item",
+          1,
+          currentProduct.idMove ?? 0,
+        );
 
         if (event.isSplit) {
           debugPrint("Es un producto split");
@@ -1027,34 +1165,45 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
               (currentProduct.cantidadFaltante - event.quantity);
           //creamos un nuevo producto (duplicado) con la cantidad separada
           await db.productEntradaRepository.insertDuplicateProducto(
-              currentProduct, pendingQuantity, currentProduct.type ?? "");
+            currentProduct,
+            pendingQuantity,
+            currentProduct.type ?? "",
+          );
         }
 
         await db.productEntradaRepository.setFieldTableProductSendEntrada(
-            currentProduct.idRecepcion ?? 0,
-            int.parse(currentProduct.productId),
-            "quantity_done",
-            event.quantity ?? 0,
-            currentProduct.idMove);
+          currentProduct.idRecepcion ?? 0,
+          int.parse(currentProduct.productId),
+          "quantity_done",
+          event.quantity ?? 0,
+          currentProduct.idMove,
+        );
 
         //actualizamos el idMove del producto que ya fue enviado
         await db.productEntradaRepository.setFieldTableProductSendEntrada(
-            currentProduct.idRecepcion ?? 0,
-            int.parse(currentProduct.productId),
-            "id_move",
-            responseSend.result?.result?.first.id ?? 0,
-            currentProduct.idMove);
+          currentProduct.idRecepcion ?? 0,
+          int.parse(currentProduct.productId),
+          "id_move",
+          responseSend.result?.result?.first.id ?? 0,
+          currentProduct.idMove,
+        );
 
         //si el producto cuaenta con temperatura pedimos temperatura
         if (currentProduct.manejaTemperatura == 1 ||
             currentProduct.manejaTemperatura == true) {
-          emit(GetTemperatureProduct(
-            moveLineId: responseSend.result?.result?.first.id ?? 0,
-          ));
+          emit(
+            GetTemperatureProduct(
+              moveLineId: responseSend.result?.result?.first.id ?? 0,
+            ),
+          );
           return;
         } else {
-          add(GetPorductsToEntrada(currentProduct.idRecepcion ?? 0,
-              resultEntrada.type == 'dev' ? 'dev' : 'reception'));
+          add(
+            GetPorductsToEntrada(
+              currentProduct.idRecepcion ?? 0,
+              resultEntrada.type == 'dev' ? 'dev' : 'reception',
+            ),
+          );
           lotesProductCurrent = LotesProduct();
           dateInicio = '';
           dateFin = '';
@@ -1064,56 +1213,68 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         // actualizamos estos datos si el producto no fue enviado correctamente
 
         await db.productEntradaRepository.setFieldTableProductEntrada(
-            currentProduct.idRecepcion,
-            int.parse(currentProduct.productId),
-            "quantity_done",
-            0,
-            currentProduct.idMove);
+          currentProduct.idRecepcion,
+          int.parse(currentProduct.productId),
+          "quantity_done",
+          0,
+          currentProduct.idMove,
+        );
         await db.productEntradaRepository.setFieldTableProductEntrada(
-            currentProduct.idRecepcion,
-            int.parse(currentProduct.productId),
-            "is_selected",
-            0,
-            currentProduct.idMove);
+          currentProduct.idRecepcion,
+          int.parse(currentProduct.productId),
+          "is_selected",
+          0,
+          currentProduct.idMove,
+        );
         await db.productEntradaRepository.setFieldTableProductEntrada(
-            currentProduct.idRecepcion,
-            int.parse(currentProduct.productId),
-            "quantity_separate",
-            null,
-            currentProduct.idMove);
+          currentProduct.idRecepcion,
+          int.parse(currentProduct.productId),
+          "quantity_separate",
+          null,
+          currentProduct.idMove,
+        );
         await db.productEntradaRepository.setFieldTableProductEntrada(
-            currentProduct.idRecepcion,
-            int.parse(currentProduct.productId),
-            "date_end",
-            "",
-            currentProduct.idMove);
+          currentProduct.idRecepcion,
+          int.parse(currentProduct.productId),
+          "date_end",
+          "",
+          currentProduct.idMove,
+        );
         await db.productEntradaRepository.setFieldTableProductEntrada(
-            currentProduct.idRecepcion,
-            int.parse(currentProduct.productId),
-            "date_transaction",
-            "",
-            currentProduct.idMove);
+          currentProduct.idRecepcion,
+          int.parse(currentProduct.productId),
+          "date_transaction",
+          "",
+          currentProduct.idMove,
+        );
         await db.productEntradaRepository.setFieldTableProductEntrada(
-            currentProduct.idRecepcion,
-            int.parse(currentProduct.productId),
-            "is_separate",
-            0,
-            currentProduct.idMove);
+          currentProduct.idRecepcion,
+          int.parse(currentProduct.productId),
+          "is_separate",
+          0,
+          currentProduct.idMove,
+        );
         await db.productEntradaRepository.setFieldTableProductEntrada(
-            currentProduct.idRecepcion,
-            int.parse(currentProduct.productId),
-            "is_product_split",
-            0,
-            currentProduct.idMove);
+          currentProduct.idRecepcion,
+          int.parse(currentProduct.productId),
+          "is_product_split",
+          0,
+          currentProduct.idMove,
+        );
         await db.productEntradaRepository.setFieldTableProductEntrada(
-            currentProduct.idRecepcion,
-            int.parse(currentProduct.productId),
-            "time",
-            null,
-            currentProduct.idMove);
+          currentProduct.idRecepcion,
+          int.parse(currentProduct.productId),
+          "time",
+          null,
+          currentProduct.idMove,
+        );
 
-        add(GetPorductsToEntrada(currentProduct.idRecepcion ?? 0,
-            resultEntrada.type == 'dev' ? 'dev' : 'reception'));
+        add(
+          GetPorductsToEntrada(
+            currentProduct.idRecepcion ?? 0,
+            resultEntrada.type == 'dev' ? 'dev' : 'reception',
+          ),
+        );
         emit(SendProductToOrderFailure(responseSend.result?.msg ?? ""));
       }
     } catch (e, s) {
@@ -1133,11 +1294,15 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
   //*metodo para obtener todos los lotes de un producto
   void _onGetLotesProduct(
-      GetLotesProduct event, Emitter<RecepcionState> emit) async {
+    GetLotesProduct event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(GetLotesProductLoading());
       final response = await _recepcionRepository.fetchAllLotesProduct(
-          false, int.parse(currentProduct.productId));
+        false,
+        int.parse(currentProduct.productId),
+      );
 
       if (response != null && response is List) {
         listLotesProduct = response;
@@ -1153,8 +1318,10 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   }
 
   //*Metodo para finalizar un producto Split
-  void _onFinalizarRecepcionProductoSplit(FinalizarRecepcionProductoSplit event,
-      Emitter<RecepcionState> emit) async {
+  void _onFinalizarRecepcionProductoSplit(
+    FinalizarRecepcionProductoSplit event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(FinalizarRecepcionProductoSplitLoading());
 
@@ -1162,26 +1329,29 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
       //marcamos tiempo final de separacion
       await db.productEntradaRepository.setFieldTableProductEntrada(
-          currentProduct.idRecepcion,
-          int.parse(currentProduct.productId),
-          "date_end",
-          dateFin,
-          currentProduct.idMove);
+        currentProduct.idRecepcion,
+        int.parse(currentProduct.productId),
+        "date_end",
+        dateFin,
+        currentProduct.idMove,
+      );
       //actualizamso el estado del producto como separado
       await db.productEntradaRepository.setFieldTableProductEntrada(
-          currentProduct.idRecepcion,
-          int.parse(currentProduct.productId),
-          "is_separate",
-          1,
-          currentProduct.idMove);
+        currentProduct.idRecepcion,
+        int.parse(currentProduct.productId),
+        "is_separate",
+        1,
+        currentProduct.idMove,
+      );
 
       //marcamos el producto como split
       await db.productEntradaRepository.setFieldTableProductEntrada(
-          currentProduct.idRecepcion,
-          int.parse(currentProduct.productId),
-          "is_product_split",
-          1,
-          currentProduct.idMove);
+        currentProduct.idRecepcion,
+        int.parse(currentProduct.productId),
+        "is_product_split",
+        1,
+        currentProduct.idMove,
+      );
 
       emit(FinalizarRecepcionProductoSplitSuccess());
     } catch (e, s) {
@@ -1191,35 +1361,44 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
   //*Metodo pra finalizar un producto de se recepcion
   void _onFinalizarRecepcionProducto(
-      FinalizarRecepcionProducto event, Emitter<RecepcionState> emit) async {
+    FinalizarRecepcionProducto event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(FinalizarRecepcionProductoLoading());
       dateFin = DateTime.now().toString();
       //marcamos el producto como terminado
       await db.productEntradaRepository.setFieldTableProductEntrada(
-          currentProduct.idRecepcion,
-          int.parse(currentProduct.productId),
-          "is_separate",
-          1,
-          currentProduct.idMove);
+        currentProduct.idRecepcion,
+        int.parse(currentProduct.productId),
+        "is_separate",
+        1,
+        currentProduct.idMove,
+      );
 
       //marcamos tiempo final de separacion
       await db.productEntradaRepository.setFieldTableProductEntrada(
-          currentProduct.idRecepcion,
-          int.parse(currentProduct.productId),
-          "date_end",
-          dateFin,
-          currentProduct.idMove ?? 0);
+        currentProduct.idRecepcion,
+        int.parse(currentProduct.productId),
+        "date_end",
+        dateFin,
+        currentProduct.idMove ?? 0,
+      );
     } catch (e, s) {
-      emit(FinalizarRecepcionProductoFailure(
-          'Error al finalizar la recepcion del producto'));
+      emit(
+        FinalizarRecepcionProductoFailure(
+          'Error al finalizar la recepcion del producto',
+        ),
+      );
       debugPrint('Error en el _onFinalizarRecepcionProducto: $e, $s');
     }
   }
 
-//*meotod para cargar todas las novedades
+  //*meotod para cargar todas las novedades
   void _onLoadAllNovedadesEvent(
-      LoadAllNovedadesOrderEvent event, Emitter<RecepcionState> emit) async {
+    LoadAllNovedadesOrderEvent event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(NovedadesOrderLoadingState());
       final response = await db.novedadesRepository.getAllNovedades();
@@ -1237,14 +1416,20 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
   //*evento para aumentar la cantidad
   void _onAddQuantitySeparateEvent(
-      AddQuantitySeparate event, Emitter<RecepcionState> emit) async {
+    AddQuantitySeparate event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       if (quantitySelected > (currentProduct.cantidadFaltante ?? 0)) {
         return;
       } else {
         quantitySelected = quantitySelected + event.quantity;
         await db.productEntradaRepository.incremenQtytProductSeparatePacking(
-            event.idRecepcion, event.productId, event.idMove, event.quantity);
+          event.idRecepcion,
+          event.productId,
+          event.idMove,
+          event.quantity,
+        );
         emit(ChangeQuantitySeparateState(quantitySelected));
       }
     } catch (e, s) {
@@ -1255,7 +1440,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
   //*evento para ver la cantidad
   void _onShowQuantityEvent(
-      ShowQuantityOrderEvent event, Emitter<RecepcionState> emit) {
+    ShowQuantityOrderEvent event,
+    Emitter<RecepcionState> emit,
+  ) {
     try {
       viewQuantity = !viewQuantity;
       emit(ShowQuantityOrderState(viewQuantity));
@@ -1265,32 +1452,36 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   }
 
   void _onChangeQuantityIsOkEvent(
-      ChangeIsOkQuantity event, Emitter<RecepcionState> emit) async {
+    ChangeIsOkQuantity event,
+    Emitter<RecepcionState> emit,
+  ) async {
     if (event.isOk) {
       await db.productEntradaRepository.setFieldTableProductEntrada(
-          event.idEntrada,
-          event.productId,
-          "is_quantity_is_ok",
-          1,
-          event.idMove);
+        event.idEntrada,
+        event.productId,
+        "is_quantity_is_ok",
+        1,
+        event.idMove,
+      );
     }
     quantityIsOk = event.isOk;
-    emit(ChangeIsOkState(
-      event.isOk,
-    ));
+    emit(ChangeIsOkState(event.isOk));
   }
 
   void _onChangeQuantitySelectedEvent(
-      ChangeQuantitySeparate event, Emitter<RecepcionState> emit) async {
+    ChangeQuantitySeparate event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       if (event.quantity > 0.0) {
         quantitySelected = event.quantity;
         await db.productEntradaRepository.setFieldTableProductEntrada(
-            event.idRecepcion,
-            event.productId,
-            "quantity_done",
-            event.quantity,
-            event.idMove);
+          event.idRecepcion,
+          event.productId,
+          "quantity_done",
+          event.quantity,
+          event.idMove,
+        );
       }
       emit(ChangeQuantitySeparateState(quantitySelected));
     } catch (e, s) {
@@ -1299,7 +1490,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   }
 
   void _onChangeProductIsOkEvent(
-      ChangeProductIsOkEvent event, Emitter<RecepcionState> emit) async {
+    ChangeProductIsOkEvent event,
+    Emitter<RecepcionState> emit,
+  ) async {
     if (event.productIsOk) {
       dateInicio = DateTime.now().toString();
       //actualizmso valor de fecha inicio
@@ -1319,11 +1512,12 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       );
 
       await db.productEntradaRepository.setFieldTableProductEntrada(
-          event.idEntrada,
-          event.productId,
-          "is_selected",
-          1,
-          currentProduct.idMove ?? 0);
+        event.idEntrada,
+        event.productId,
+        "is_selected",
+        1,
+        currentProduct.idMove ?? 0,
+      );
 
       //actualizamos el producto a true
       await db.productEntradaRepository.setFieldTableProductEntrada(
@@ -1342,27 +1536,29 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         event.idMove,
       );
 
-//validamos si el producto tiene lote
+      //validamos si el producto tiene lote
       if (currentProduct.productTracking != "lot") {
         if (configurations.result?.result?.scanDestinationLocationReception ==
             false) {
-          add(ChangeIsOkQuantity(
-            currentProduct.idRecepcion ?? 0,
-            true,
-            int.parse(currentProduct.productId),
-            currentProduct.idMove ?? 0,
-          ));
+          add(
+            ChangeIsOkQuantity(
+              currentProduct.idRecepcion ?? 0,
+              true,
+              int.parse(currentProduct.productId),
+              currentProduct.idMove ?? 0,
+            ),
+          );
         }
       }
     }
     productIsOk = event.productIsOk;
-    emit(ChangeProductOrderIsOkState(
-      productIsOk,
-    ));
+    emit(ChangeProductOrderIsOkState(productIsOk));
   }
 
   void _onChangeLoteIsOkEvent(
-      SelectecLoteEvent event, Emitter<RecepcionState> emit) async {
+    SelectecLoteEvent event,
+    Emitter<RecepcionState> emit,
+  ) async {
     //agregamos el lote al producto
 
     selectLote = event.lote.name ?? '';
@@ -1399,22 +1595,24 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
     if (configurations.result?.result?.scanDestinationLocationReception ==
         false) {
-      add(ChangeIsOkQuantity(
-        currentProduct.idRecepcion ?? 0,
-        true,
-        int.parse(currentProduct.productId),
-        currentProduct.idMove ?? 0,
-      ));
+      add(
+        ChangeIsOkQuantity(
+          currentProduct.idRecepcion ?? 0,
+          true,
+          int.parse(currentProduct.productId),
+          currentProduct.idMove ?? 0,
+        ),
+      );
     }
 
-    emit(ChangeLoteOrderIsOkState(
-      loteIsOk,
-    ));
+    emit(ChangeLoteOrderIsOkState(loteIsOk));
   }
 
   //*metodo para validar los campos de la vista
   void _onValidateFieldsOrder(
-      ValidateFieldsOrderEvent event, Emitter<RecepcionState> emit) {
+    ValidateFieldsOrderEvent event,
+    Emitter<RecepcionState> emit,
+  ) {
     switch (event.field) {
       case 'product':
         isProductOk = event.isOk;
@@ -1431,13 +1629,16 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         break;
     }
     debugPrint(
-        ' Product: $isProductOk, lote: $isLoteOk, Quantity: $isQuantityOk');
+      ' Product: $isProductOk, lote: $isLoteOk, Quantity: $isQuantityOk',
+    );
     emit(ValidateFieldsOrderState(isOk: event.isOk));
   }
 
   //*metodo para cargar la informacion del producto actual
   void _onFetchPorductOrder(
-      FetchPorductOrder event, Emitter<RecepcionState> emit) async {
+    FetchPorductOrder event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       isProductOk = true;
       isQuantityOk = true;
@@ -1456,10 +1657,11 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       listOfBarcodes.clear();
       currentProduct = event.product;
       listOfBarcodes = await db.barcodesPackagesRepository.getBarcodesProduct(
-          currentProduct.idRecepcion ?? 0,
-          int.parse(currentProduct.productId),
-          currentProduct.idMove ?? 0,
-          'reception');
+        currentProduct.idRecepcion ?? 0,
+        int.parse(currentProduct.productId),
+        currentProduct.idMove ?? 0,
+        'reception',
+      );
 
       //validamos si el prodcuto tiene lote, si es asi llamamos los lotes de ese producto
       if (currentProduct.productTracking == 'lot') {
@@ -1515,7 +1717,8 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         // Validamos si el productId ya existe en la lista 'positions'
         if (!listOfProductsName.contains(product.idMove)) {
           listOfProductsName.add(
-              product); // Agregamos el productId a la lista 'listOfProductsName'
+            product,
+          ); // Agregamos el productId a la lista 'listOfProductsName'
         }
       }
     }
@@ -1523,21 +1726,26 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
   //*metodo para obtener los productos de una entrada por id
   void _onGetProductsToEntrada(
-      GetPorductsToEntrada event, Emitter<RecepcionState> emit) async {
+    GetPorductsToEntrada event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(GetProductsToEntradaLoading());
-      final response = await db.productEntradaRepository
+
+      // Lanzar las 2 queries en paralelo (ambas usan event.idEntrada, son independientes)
+      final futureProducts = db.productEntradaRepository
           .getProductsByRecepcionId(event.idEntrada);
+      final futureBarcodes = db.barcodesPackagesRepository
+          .getBarcodesByBatchIdAndType(event.idEntrada, event.type);
+
+      final response = await futureProducts;
+      final responseBarcodes = await futureBarcodes;
 
       if (response != null && response is List) {
         listProductsEntrada = [];
         listProductsEntrada = response;
 
-        //despues de obtener los productos, obtenemos todos los barcodes de esta entrada
         listAllOfBarcodes.clear();
-        final responseBarcodes = await db.barcodesPackagesRepository
-            .getBarcodesByBatchIdAndType(event.idEntrada, event.type);
-
         if (responseBarcodes != null && responseBarcodes is List) {
           listAllOfBarcodes = responseBarcodes;
         }
@@ -1546,19 +1754,27 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
         emit(GetProductsToEntradaSuccess(response));
       } else {
-        emit(GetProductsToEntradaFailure(
-            'Error al obtener los productos de la entrada'));
+        emit(
+          GetProductsToEntradaFailure(
+            'Error al obtener los productos de la entrada',
+          ),
+        );
       }
     } catch (e, s) {
-      emit(GetProductsToEntradaFailure(
-          'Error al obtener los productos de la entrada'));
+      emit(
+        GetProductsToEntradaFailure(
+          'Error al obtener los productos de la entrada',
+        ),
+      );
       debugPrint('Error en el _onGetProductsToEntrada: $e, $s');
     }
   }
 
-//*metodo para obtener los permisos del usuario
+  //*metodo para obtener los permisos del usuario
   void _onAssignUserToOrder(
-      AssignUserToOrder event, Emitter<RecepcionState> emit) async {
+    AssignUserToOrder event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       int userId = await PrefUtils.getUserId();
       String nameUser = await PrefUtils.getUserName();
@@ -1588,15 +1804,15 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
           1,
         );
 
-        add(StartOrStopTimeOrder(
-          event.order.id ?? 0,
-          "start_time_reception",
-        ));
+        add(StartOrStopTimeOrder(event.order.id ?? 0, "start_time_reception"));
 
         emit(AssignUserToOrderSuccess(event.order));
       } else {
-        emit(AssignUserToOrderFailure(
-            "La recepción ya tiene un responsable asignado"));
+        emit(
+          AssignUserToOrderFailure(
+            "La recepción ya tiene un responsable asignado",
+          ),
+        );
       }
     } catch (e, s) {
       emit(AssignUserToOrderFailure('Error al asignar el usuario'));
@@ -1607,7 +1823,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   //*metodo para buscar una entrada
 
   void _onSearchOrderEvent(
-      SearchOrdenCompraEvent event, Emitter<RecepcionState> emit) async {
+    SearchOrdenCompraEvent event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       listFiltersOrdenesCompra = [];
       listFiltersOrdenesCompra = listOrdenesCompra;
@@ -1638,7 +1856,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
   //*metodo para obtener las entradas desde wms
   void _onFetchOrdenesCompra(
-      FetchOrdenesCompra event, Emitter<RecepcionState> emit) async {
+    FetchOrdenesCompra event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(FetchOrdenesCompraLoading());
 
@@ -1646,8 +1866,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
       await db.deleRecepcion('reception');
 
-      final response =
-          await _recepcionRepository.fetchAllReceptions(event.isLoadinDialog);
+      final response = await _recepcionRepository.fetchAllReceptions(
+        event.isLoadinDialog,
+      );
 
       if ((response.result?.updateVersion ?? false) == true) {
         emit(NeedUpdateVersionState());
@@ -1657,26 +1878,37 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
         if (response.result?.result?.isNotEmpty == true) {
           final listRecepcion = response.result?.result;
 
-          await db.entradasRepository
-              .insertEntrada(response.result?.result ?? [], 'reception');
+          await db.entradasRepository.insertEntrada(
+            response.result?.result ?? [],
+            'reception',
+          );
 
-          final productsToInsert =
-              _getAllProducts(listRecepcion!).toList(growable: false);
-          final productsSedToInsert =
-              _getAllSentProducts(listRecepcion).toList(growable: false);
-          final allBarcodes =
-              _getAllBarcodes(listRecepcion).toList(growable: false);
+          final productsToInsert = _getAllProducts(
+            listRecepcion!,
+          ).toList(growable: false);
+          final productsSedToInsert = _getAllSentProducts(
+            listRecepcion,
+          ).toList(growable: false);
+          final allBarcodes = _getAllBarcodes(
+            listRecepcion,
+          ).toList(growable: false);
 
           // Enviar la lista agrupada a insertBatchProducts
-          await db.productEntradaRepository
-              .insertarProductoEntrada(productsToInsert, 'reception');
+          await db.productEntradaRepository.insertarProductoEntrada(
+            productsToInsert,
+            'reception',
+          );
 
-          await db.productEntradaRepository
-              .insertarProductoEntrada(productsSedToInsert, 'reception');
+          await db.productEntradaRepository.insertarProductoEntrada(
+            productsSedToInsert,
+            'reception',
+          );
 
           // Enviar la lista agrupada de barcodes de un producto para packing
-          await db.barcodesPackagesRepository
-              .insertOrUpdateBarcodes(allBarcodes, 'reception');
+          await db.barcodesPackagesRepository.insertOrUpdateBarcodes(
+            allBarcodes,
+            'reception',
+          );
 
           debugPrint("listRecepcion: ${listRecepcion.length}");
           debugPrint("productsToInsert: ${productsToInsert.length}");
@@ -1684,13 +1916,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
           debugPrint("allBarcodes: ${allBarcodes.length}");
 
           add(FetchOrdenesCompraOfBd());
-          emit(FetchOrdenesCompraSuccess(
-            response.result?.result ?? [],
-          ));
+          emit(FetchOrdenesCompraSuccess(response.result?.result ?? []));
         } else {
-          emit(FetchOrdenesCompraSuccess(
-            response.result?.result ?? [],
-          ));
+          emit(FetchOrdenesCompraSuccess(response.result?.result ?? []));
         }
       } else {
         if (response.result?.code == 403) {
@@ -1705,14 +1933,16 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   }
 
   Iterable<LineasTransferencia> _getAllProducts(
-      List<ResultEntrada> batches) sync* {
+    List<ResultEntrada> batches,
+  ) sync* {
     for (final batch in batches) {
       if (batch.lineasRecepcion != null) yield* batch.lineasRecepcion!;
     }
   }
 
   Iterable<LineasTransferencia> _getAllSentProducts(
-      List<ResultEntrada> batches) sync* {
+    List<ResultEntrada> batches,
+  ) sync* {
     for (final batch in batches) {
       if (batch.lineasRecepcionEnviadas != null) {
         yield* batch.lineasRecepcionEnviadas!;
@@ -1733,7 +1963,9 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
   //*metodo para obtener las entradas desde la bd
   void _onFetchOrdenesCompraOfBd(
-      FetchOrdenesCompraOfBd event, Emitter<RecepcionState> emit) async {
+    FetchOrdenesCompraOfBd event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       emit(FetchOrdenesCompraOfBdLoading());
       final listbd = await db.entradasRepository.getAllEntradas('reception');
@@ -1745,14 +1977,18 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
         tiposRecepcion = obtenerTiposReceptions(listFiltersOrdenesCompra);
       } else {
-        emit(FetchOrdenesCompraOfBdFailure(
-            'No hay ordenes de compra en la base de datos'));
+        emit(
+          FetchOrdenesCompraOfBdFailure(
+            'No hay ordenes de compra en la base de datos',
+          ),
+        );
       }
 
       emit(FetchOrdenesCompraOfBdSuccess(listFiltersOrdenesCompra));
     } catch (e, s) {
-      emit(FetchOrdenesCompraOfBdFailure(
-          'Error al obtener las ordenes de compra'));
+      emit(
+        FetchOrdenesCompraOfBdFailure('Error al obtener las ordenes de compra'),
+      );
       debugPrint('Error en el _onFetchOrdenesCompraOfBd: $e, $s');
     }
   }
@@ -1777,11 +2013,14 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
 
   //*metodo para cargar la configuracion del usuario
   void _onLoadConfigurationsUserEvent(
-      LoadConfigurationsUserOrder event, Emitter<RecepcionState> emit) async {
+    LoadConfigurationsUserOrder event,
+    Emitter<RecepcionState> emit,
+  ) async {
     try {
       int userId = await PrefUtils.getUserId();
-      final response =
-          await db.configurationsRepository.getConfiguration(userId);
+      final response = await db.configurationsRepository.getConfiguration(
+        userId,
+      );
 
       if (response != null) {
         configurations = response;

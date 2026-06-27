@@ -163,7 +163,9 @@ class FinalizarTransferProductoSplit extends TransferenciaEvent {
 class SendProductToTransfer extends TransferenciaEvent {
   final bool isDividio;
   final dynamic quantity;
-  SendProductToTransfer(this.isDividio, this.quantity);
+  final double quantitySegundaUnidad;
+  SendProductToTransfer(this.isDividio, this.quantity,
+      {this.quantitySegundaUnidad = 0.0});
 }
 
 class LoadLocations extends TransferenciaEvent {}

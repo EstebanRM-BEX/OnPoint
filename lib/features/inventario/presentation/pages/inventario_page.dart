@@ -290,7 +290,7 @@ class _InventarioScreenState extends State<InventarioScreen>
       orElse: () => const BarcodeProducto(),
     );
     if (matchedBarcode.barcode != null) {
-      print("entre al if");
+      debugPrint("entre al if");
       bloc.add(AddQuantitySeparate(matchedBarcode.cantidad, false));
       return false;
     }

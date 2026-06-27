@@ -19,7 +19,6 @@ class PickingBatchCard extends StatelessWidget {
         child: Card(
           elevation: 3,
           child: ListTile(
-            trailing: Icon(Icons.arrow_forward_ios, color: primaryColorApp),
             leading: Container(
               padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
@@ -68,9 +67,12 @@ class PickingBatchCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Text(
-                        batch.propietario ?? "Sin propietario",
-                        style: TextStyle(fontSize: 12, color: black),
+                      Flexible(
+                        child: Text(
+                          batch.propietario ?? "Sin propietario",
+                          maxLines: 2,
+                          style: TextStyle(fontSize: 12, color: black),
+                        ),
                       ),
                     ],
                   ),

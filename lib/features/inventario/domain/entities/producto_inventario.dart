@@ -33,6 +33,8 @@ class ProductoInventario {
   final String? propietario;
   final int? idPropietario;
   final dynamic manejoPropietario;
+  final dynamic manejaSegundaUnidad;
+  final String? uomSegundaUnidad;
 
   const ProductoInventario({
     this.productId,
@@ -65,5 +67,7 @@ class ProductoInventario {
     this.propietario,
     this.idPropietario,
     this.manejoPropietario,
+    this.manejaSegundaUnidad,
+    this.uomSegundaUnidad,
   });
 }

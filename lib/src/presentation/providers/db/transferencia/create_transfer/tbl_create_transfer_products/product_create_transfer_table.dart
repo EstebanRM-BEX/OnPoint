@@ -47,6 +47,9 @@ class ProductCreateTransferTable {
   static const String columnManejoPropietario = 'manejo_propietario';
   static const String columnPropietario = 'propietario';
   static const String columnIdPropietario = 'id_propietario';
+  static const String columnQuantitySegundaUnidad = 'quantity_segunda_unidad';
+  static const String columnManejaSegundaUnidad = 'maneja_segunda_unidad';
+  static const String columnUomSegundaUnidad = 'uom_segunda_unidad';
 
   static String createTable() {
     return '''
@@ -78,7 +81,10 @@ class ProductCreateTransferTable {
         $columnVolumeUomName TEXT,
         $columnPropietario TEXT,
         $columnIdPropietario INTEGER,
-        $columnManejoPropietario INTEGER DEFAULT 0
+        $columnManejoPropietario INTEGER DEFAULT 0,
+        $columnQuantitySegundaUnidad REAL DEFAULT 0,
+        $columnManejaSegundaUnidad INTEGER DEFAULT 0,
+        $columnUomSegundaUnidad TEXT DEFAULT ''
         )
 
         ''';

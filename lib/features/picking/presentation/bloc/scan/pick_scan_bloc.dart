@@ -172,6 +172,14 @@ class PickScanBloc extends Bloc<PickScanEvent, PickScanState> {
     on<PickOkEvent>(_onPickOkEvent);
   }
 
+  @override
+  Future<void> close() {
+    searchController.dispose();
+    searchPickController.dispose();
+    editProductController.dispose();
+    return super.close();
+  }
+
   // ── UI puro ──────────────────────────────────────────────────────────────
 
   void _onValidateFields(
