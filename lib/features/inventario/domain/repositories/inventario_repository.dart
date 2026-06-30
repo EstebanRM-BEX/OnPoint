@@ -11,7 +11,10 @@ import 'package:wms_app/features/inventario/domain/entities/ubicacion_inventario
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 
 abstract class InventarioRepository {
-  Future<Either<Failure, void>> syncProductosInventario(bool isLoadingDialog);
+  Future<Either<Failure, void>> syncProductosInventario(
+    bool isLoadingDialog, {
+    void Function(String phase, int processed, int total)? onProgress,
+  });
 
   Future<Either<Failure, List<ProductoInventario>>> getProductosLocal();
 

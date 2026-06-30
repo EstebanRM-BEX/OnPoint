@@ -166,6 +166,10 @@ class PackingConsolidateBloc
     //*evento para desseleccionar productos sin certificar
     on<UnSelectProductPackingEvent>(_onUnSelectProductPackingEvent);
 
+    //*evento para buscar productos del pedido por barcode, codigo o nombre
+    on<SearchProductConsolidatePackingEvent>(
+        _onSearchProductConsolidatePackingEvent);
+
     //evento para eliminar un producto del paquete temporal
     on<DeleteProductFromTemporaryPackageEvent>(
         _onDeleteProductFromTemporaryPackageEvent);
@@ -1425,6 +1429,31 @@ class PackingConsolidateBloc
     listOfProductosProgress.sort((a, b) {
       return a.locationId!.compareTo(b.locationId!);
     });
+  }
+
+  //*metodo para buscar productos del pedido por barcode, codigo o nombre
+  void _onSearchProductConsolidatePackingEvent(
+      SearchProductConsolidatePackingEvent event,
+      Emitter<PackingConsolidateState> emit) async {
+    final query = event.query.toLowerCase().trim();
+    final pendingProducts = listOfProductos.where((product) {
+      return product.isSeparate == null || product.isSeparate == 0;
+    });
+
+    if (query.isEmpty) {
+      listOfProductosProgress = pendingProducts.toList();
+    } else {
+      listOfProductosProgress = pendingProducts.where((product) {
+        return (product.barcode?.toString().toLowerCase().contains(query) ??
+                false) ||
+            (product.productCode?.toString().toLowerCase().contains(query) ??
+                false) ||
+            (product.productId?.toString().toLowerCase().contains(query) ??
+                false);
+      }).toList();
+    }
+    ordenarProducts();
+    emit(SearchProductConsolidatePackingState());
   }
 
   //*evento para ver el detalle

@@ -40,6 +40,8 @@ class _InventarioScreenState extends State<InventarioScreen>
     with WidgetsBindingObserver {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
+  final ValueNotifier<String> _syncPhaseNotifier =
+      ValueNotifier('Cargando productos...');
   FocusNode focusNode1 = FocusNode(); // ubicacion de origen
   FocusNode focusNode2 = FocusNode(); // producto
   FocusNode focusNode3 = FocusNode(); // cantidad por pda
@@ -50,6 +52,13 @@ class _InventarioScreenState extends State<InventarioScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    _syncPhaseNotifier.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
@@ -391,16 +400,26 @@ class _InventarioScreenState extends State<InventarioScreen>
         }
 
         if (state is GetProductsLoadingInventory) {
+          _syncPhaseNotifier.value = 'Cargando productos...';
           showDialog(
             barrierDismissible: false,
             context: context,
             builder: (context) {
               return WillPopScope(
                 onWillPop: () async => false,
-                child: const DialogLoading(message: "Cargando productos..."),
+                child: ValueListenableBuilder<String>(
+                  valueListenable: _syncPhaseNotifier,
+                  builder: (_, phase, __) => DialogLoading(message: phase),
+                ),
               );
             },
           );
+        }
+
+        if (state is SyncProgressState) {
+          _syncPhaseNotifier.value = state.total > 0
+              ? '${state.phase}\n${state.processed} / ${state.total} productos'
+              : state.phase;
         }
 
         if (state is GetProductsLoadingBD) {

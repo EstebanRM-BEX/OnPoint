@@ -94,7 +94,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 48,
+      version: 49,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -102,7 +102,8 @@ class DataBaseSqlite {
           // Este usualmente no retorna, pero por seguridad puedes usar execute o rawQuery
           await db.execute('PRAGMA synchronous = NORMAL;');
           // Este tampoco retorna filas
-          await db.execute('PRAGMA cache_size = -10000;');
+          await db.execute('PRAGMA cache_size = -65536;'); // 64 MB
+          await db.execute('PRAGMA temp_store = MEMORY;');
         } catch (e) {
           debugPrint("Error configurando PRAGMA: $e");
         }
@@ -876,6 +877,17 @@ class DataBaseSqlite {
       for (final entry in [
         (ProductCreateTransferTable.tableName, ProductCreateTransferTable.columnManejaSegundaUnidad, 'INTEGER DEFAULT 0'),
         (ProductCreateTransferTable.tableName, ProductCreateTransferTable.columnUomSegundaUnidad, 'TEXT DEFAULT \'\''),
+      ]) {
+        try {
+          await db.execute('ALTER TABLE ${entry.$1} ADD COLUMN ${entry.$2} ${entry.$3}');
+        } catch (_) {}
+      }
+    }
+    if (oldVersion < 49) {
+      for (final entry in [
+        (ProductDevolucionTable.tableName, ProductDevolucionTable.columnManejaSegundaUnidad, 'INTEGER DEFAULT 0'),
+        (ProductDevolucionTable.tableName, ProductDevolucionTable.columnUomSegundaUnidad, 'TEXT DEFAULT \'\''),
+        (ProductDevolucionTable.tableName, ProductDevolucionTable.columnQuantitySegundaUnidad, 'REAL DEFAULT 0'),
       ]) {
         try {
           await db.execute('ALTER TABLE ${entry.$1} ADD COLUMN ${entry.$2} ${entry.$3}');

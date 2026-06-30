@@ -154,6 +154,12 @@ class UnSelectProductPackingEvent extends PackingConsolidateEvent {
   UnSelectProductPackingEvent(this.producto);
 }
 
+/// Busca productos del pedido por barcode, codigo o nombre (productId).
+class SearchProductConsolidatePackingEvent extends PackingConsolidateEvent {
+  final String query;
+  SearchProductConsolidatePackingEvent(this.query);
+}
+
 class DeleteProductFromTemporaryPackageEvent extends PackingConsolidateEvent {
   final ProductoPedido product;
 

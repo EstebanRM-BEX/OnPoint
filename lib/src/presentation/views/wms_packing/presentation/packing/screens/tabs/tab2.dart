@@ -17,6 +17,7 @@ import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
 class Tab2PedidoScreen extends StatefulWidget {
   const Tab2PedidoScreen({
@@ -34,10 +35,25 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
 
   final TextEditingController _controllerToDo = TextEditingController();
 
+  bool _isSearchVisible = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Mientras el buscador de productos está visible no le robamos el foco
+    // al campo de escaneo: el escáner sigue activo de fondo, pero el
+    // usuario está escribiendo en el buscador.
+    if (_isSearchVisible) return;
     FocusScope.of(context).requestFocus(focusNodeBuscar);
+  }
+
+  void _toggleSearch(PackingPedidoBloc bloc) {
+    setState(() => _isSearchVisible = !_isSearchVisible);
+    if (!_isSearchVisible) {
+      bloc.searchControllerProduct.clear();
+      bloc.add(SearchProductPedidoPackingEvent(''));
+      Future.microtask(() => focusNodeBuscar.requestFocus());
+    }
   }
 
   @override
@@ -326,9 +342,10 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
               : null,
           body: BlocBuilder<PackingPedidoBloc, PackingPedidoState>(
             builder: (context, state) {
+              final bloc = context.read<PackingPedidoBloc>();
               // Copiamos la lista de productos
               final productosOrdenados = List<ProductoPedido>.from(
-                context.read<PackingPedidoBloc>().listOfProductosProgress,
+                bloc.listOfProductosProgress,
               );
 
               // Ordenamos por ubicación
@@ -342,6 +359,36 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
                   height: size.height * 0.8,
                   child: Column(
                     children: [
+                      // //*buscador de productos por barcode, codigo o nombre
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Row(
+                          children: [
+                            if (_isSearchVisible)
+                              Expanded(
+                                child: DynamicSearchBar(
+                                  controller: bloc.searchControllerProduct,
+                                  hintText: 'Buscar producto',
+                                  onSearchChanged: (value) => bloc.add(
+                                      SearchProductPedidoPackingEvent(value)),
+                                  onSearchCleared: () => bloc.add(
+                                      SearchProductPedidoPackingEvent('')),
+                                ),
+                              )
+                            else
+                              const Spacer(),
+                            IconButton(
+                              icon: Icon(
+                                _isSearchVisible
+                                    ? Icons.close
+                                    : Icons.search,
+                                color: primaryColorApp,
+                              ),
+                              onPressed: () => _toggleSearch(bloc),
+                            ),
+                          ],
+                        ),
+                      ),
                       //*espacio para escanear y buscar el producto
                       BarcodeScannerField(
                         controller: _controllerToDo,

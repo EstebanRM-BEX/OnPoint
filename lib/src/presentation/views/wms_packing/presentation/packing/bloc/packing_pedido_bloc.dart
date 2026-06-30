@@ -188,6 +188,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     //*evento para desseleccionar productos sin certificar
     on<UnSelectProductPackingEvent>(_onUnSelectProductPackingEvent);
 
+    //*evento para buscar productos del pedido por barcode, codigo o nombre
+    on<SearchProductPedidoPackingEvent>(_onSearchProductPedidoPackingEvent);
+
     //*metodo para desempacar productos
     on<UnPackingEvent>(_onUnPackingEvent);
 
@@ -1702,6 +1705,30 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     listOfProductosProgress.sort((a, b) {
       return a.locationId!.compareTo(b.locationId!);
     });
+  }
+
+  //*metodo para buscar productos del pedido por barcode, codigo o nombre
+  void _onSearchProductPedidoPackingEvent(SearchProductPedidoPackingEvent event,
+      Emitter<PackingPedidoState> emit) async {
+    final query = event.query.toLowerCase().trim();
+    final pendingProducts = listOfProductos.where((product) {
+      return product.isSeparate == null || product.isSeparate == 0;
+    });
+
+    if (query.isEmpty) {
+      listOfProductosProgress = pendingProducts.toList();
+    } else {
+      listOfProductosProgress = pendingProducts.where((product) {
+        return (product.barcode?.toString().toLowerCase().contains(query) ??
+                false) ||
+            (product.productCode?.toString().toLowerCase().contains(query) ??
+                false) ||
+            (product.productId?.toString().toLowerCase().contains(query) ??
+                false);
+      }).toList();
+    }
+    ordenarProducts();
+    emit(SearchProductPedidoPackingState());
   }
 
   void getPosicions() {

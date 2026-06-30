@@ -882,21 +882,27 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
     }
   }
 
-  //metodo para buscar un producto de un pedido
+  //metodo para buscar un producto de un pedido por barcode, codigo o nombre
   void _onSearchProductPackingEvent(
       SearchProductPackingEvent event, Emitter<WmsPackingState> emit) async {
-    final query = event.query.toLowerCase();
+    final query = event.query.toLowerCase().trim();
+    final pendingProducts = listOfProductos.where((product) {
+      return product.isSeparate == null || product.isSeparate == 0;
+    });
+
     if (query.isEmpty) {
-      listOfProductosProgress = listOfProductos.where((product) {
-        return product.isSeparate == null || product.isSeparate == 0;
-      }).toList();
-      emit(WmsPackingLoaded(listOfBatchs: listOfBatchsDB));
+      listOfProductosProgress = pendingProducts.toList();
     } else {
-      listOfProductosProgress = listOfProductos.where((product) {
-        return product.productId?.toLowerCase().contains(query) ?? false;
+      listOfProductosProgress = pendingProducts.where((product) {
+        return (product.barcode?.toString().toLowerCase().contains(query) ??
+                false) ||
+            (product.productCode?.toString().toLowerCase().contains(query) ??
+                false) ||
+            (product.productId?.toString().toLowerCase().contains(query) ??
+                false);
       }).toList();
-      emit(WmsPackingLoaded(listOfBatchs: listOfBatchsDB));
     }
+    emit(WmsPackingLoaded(listOfBatchs: listOfBatchsDB));
 
     // ordenarProducts() ;
   }

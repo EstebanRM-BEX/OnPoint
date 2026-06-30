@@ -29,6 +29,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   TextEditingController newLoteController = TextEditingController();
   TextEditingController dateLoteController = TextEditingController();
   TextEditingController searchControllerLocationDest = TextEditingController();
+  TextEditingController segundaUnidadController = TextEditingController();
   String scannedValue1 = ''; //foco
   String scannedValue2 = ''; //cantidad
   String scannedValue3 = ''; //location
@@ -352,10 +353,10 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
             ubicacionDestino: currentLocation.id ?? 0,
             cantidadEnviada: product.quantity ?? 0,
             idOperario: userid,
-            timeLine: 1, // Puedes ajustar este valor según tu lógica
+            timeLine: 1,
             fechaTransaccion: fechaFormateada,
-            observacion:
-                'Sin novedad', // Puedes agregar una observación si es necesario
+            observacion: 'Sin novedad',
+            quantitySegundaUnidad: product.quantitySegundaUnidad ?? 0.0,
           );
         }).toList(),
       );
@@ -421,6 +422,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       newLoteController.clear();
       dateLoteController.clear();
       searchControllerLocationDest.clear();
+      segundaUnidadController.clear();
       scannedValue1 = '';
       scannedValue2 = '';
       viewQuantity = false;
@@ -774,18 +776,16 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   void _onUpdateProductInfoEvent(
       UpdateProductInfoEvent event, Emitter<DevolucionesState> emit) async {
     try {
+      final qSegunda = double.tryParse(segundaUnidadController.text.trim()) ?? 0.0;
       //actualizamso el producto actual en la bd
       await db.devolucionRepository.updateProductoDevolucion(
         ProductDevolucion(
           productId: currentProduct.productId,
           barcode: currentProduct.barcode,
           name: currentProduct.name,
-          quantity:
-
-              //validamos si la cantidad es para incrementar o es para remplazar
-              event.isIncrement
-                  ? (currentProduct.quantity ?? 0) + (event.quantityManual ?? 0)
-                  : quantitySelected,
+          quantity: event.isIncrement
+              ? (currentProduct.quantity ?? 0) + (event.quantityManual ?? 0)
+              : quantitySelected,
           code: currentProduct.code,
           category: currentProduct.category,
           lotId: lotesProductCurrent.id ?? 0,
@@ -802,6 +802,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
           uom: currentProduct.uom,
           locationId: currentProduct.locationId,
           locationName: currentProduct.locationName,
+          manejaSegundaUnidad: currentProduct.manejaSegundaUnidad,
+          uomSegundaUnidad: currentProduct.uomSegundaUnidad,
+          quantitySegundaUnidad: qSegunda,
         ),
       );
       //acutalizamos el producto actual en la lista de devoluciones
@@ -831,6 +834,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
           uom: currentProduct.uom,
           locationId: currentProduct.locationId,
           locationName: currentProduct.locationName,
+          manejaSegundaUnidad: currentProduct.manejaSegundaUnidad,
+          uomSegundaUnidad: currentProduct.uomSegundaUnidad,
+          quantitySegundaUnidad: qSegunda,
         );
       }
       add(GetProductsList());
@@ -963,12 +969,14 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       currentProduct = product;
       viewQuantity = false;
       quantitySelected = 0;
-    } else {
+    } else {//1349
       // Buscar coincidencia directa por barcode o code
+      print("escaneo....");
+      final scannedCode = event.barcode.toLowerCase();
       final matchedProduct = productos.firstWhere(
         (p) =>
-            p.barcode?.toLowerCase() == event.barcode ||
-            p.code?.toLowerCase() == event.barcode,
+            p.barcode?.toLowerCase() == scannedCode ||
+            p.code?.toLowerCase() == scannedCode,
         orElse: () => Product(),
       );
 
@@ -978,7 +986,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
         debugPrint('❌ Producto no encontrado por codigo principal');
         // Buscar en barcodes adicionales
         final matchedBarcode = allBarcodeInventario.firstWhere(
-          (b) => b.barcode?.toLowerCase() == event.barcode,
+          (b) => b.barcode?.toLowerCase() == scannedCode,
           orElse: () => BarcodeInventario(),
         );
 

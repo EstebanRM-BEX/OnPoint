@@ -203,6 +203,12 @@ class SelectProductPackingEvent extends PackingPedidoEvent {
   SelectProductPackingEvent(this.producto);
 }
 
+/// Busca productos del pedido por barcode, codigo o nombre (productId).
+class SearchProductPedidoPackingEvent extends PackingPedidoEvent {
+  final String query;
+  SearchProductPedidoPackingEvent(this.query);
+}
+
 class UnSelectProductPackingEvent extends PackingPedidoEvent {
   final ProductoPedido producto;
   UnSelectProductPackingEvent(this.producto);

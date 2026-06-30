@@ -8,6 +8,7 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
+import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
 class SearchProductDevScreen extends StatefulWidget {
   const SearchProductDevScreen({super.key});
@@ -37,7 +38,16 @@ class _SearchProductDevScreenState extends State<SearchProductDevScreen> {
                 child: Column(
                   children: [
                     _AppBarInfo(size: size),
-                    _SearchBar(size: size),
+                    DynamicSearchBar(
+                      controller: bloc.searchControllerProducts,
+                      hintText: 'Buscar producto',
+                      closeKeyboardOnClear: false,
+                      persistentKeyboard: true,
+                      onSearchChanged: (value) =>
+                          bloc.add(SearchProductEvent(value)),
+                      onSearchCleared: () =>
+                          bloc.add(SearchProductEvent('')),
+                    ),
                     Expanded(
                       child: bloc.productosFilters.isEmpty
                           ? const _NoProductsMessage()
@@ -159,6 +169,22 @@ class ProductListTile extends StatelessWidget {
                             .productosFilters[index]
                             .code!
                             .isEmpty),
+                _buildProductRow(
+                    '2nd Unidad',
+                    context
+                        .read<DevolucionesBloc>()
+                        .productosFilters[index]
+                        .uomSegundaUnidad,
+                    isError: context
+                                .read<DevolucionesBloc>()
+                                .productosFilters[index]
+                                .uomSegundaUnidad ==
+                            null ||
+                        context
+                            .read<DevolucionesBloc>()
+                            .productosFilters[index]
+                            .uomSegundaUnidad!
+                            .isEmpty),
               ],
             ),
           ),
@@ -234,47 +260,6 @@ class _AppBarInfo extends StatelessWidget {
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SearchBar extends StatelessWidget {
-  const _SearchBar({required this.size});
-
-  final Size size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: Card(
-        elevation: 3,
-        child: TextFormField(
-          controller: context.read<DevolucionesBloc>().searchControllerProducts,
-          textAlignVertical: TextAlignVertical.center,
-          showCursor: true,
-          style: const TextStyle(color: black, fontSize: 14),
-          decoration: InputDecoration(
-            prefixIcon: const Icon(Icons.search, color: grey, size: 20),
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.close, color: grey, size: 20),
-              onPressed: () {
-                context
-                    .read<DevolucionesBloc>()
-                    .searchControllerProducts
-                    .clear();
-                context.read<DevolucionesBloc>().add(SearchProductEvent(''));
-                FocusScope.of(context).unfocus();
-              },
-            ),
-            hintText: "Buscar producto",
-            hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-            border: InputBorder.none,
-          ),
-          onChanged: (value) =>
-              context.read<DevolucionesBloc>().add(SearchProductEvent(value)),
         ),
       ),
     );

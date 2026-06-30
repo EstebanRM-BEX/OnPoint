@@ -86,8 +86,12 @@ class ProductDevolucionRepository {
                   producto.quantity == false ? 0.0 : producto.quantity ?? 0.0,
               ProductDevolucionTable.columnUseExpirationDate:
                   producto.useExpirationDate == false ? 0 : 1,
-
-              // ✅ Marcamos este registro como sincronizado/válido
+              ProductDevolucionTable.columnManejaSegundaUnidad:
+                  (producto.manejaSegundaUnidad == true || producto.manejaSegundaUnidad == 1) ? 1 : 0,
+              ProductDevolucionTable.columnUomSegundaUnidad:
+                  producto.uomSegundaUnidad ?? '',
+              ProductDevolucionTable.columnQuantitySegundaUnidad:
+                  producto.quantitySegundaUnidad ?? 0.0,
               ProductDevolucionTable.columnIsSynced: 1,
             };
 
@@ -166,8 +170,12 @@ class ProductDevolucionRepository {
             producto.quantity == false ? 0.0 : producto.quantity ?? 0.0,
         ProductDevolucionTable.columnUseExpirationDate:
             producto.useExpirationDate == false ? 0 : 1,
-
-        // ✅ También marcamos como sincronizado en inserción individual
+        ProductDevolucionTable.columnManejaSegundaUnidad:
+            (producto.manejaSegundaUnidad == true || producto.manejaSegundaUnidad == 1) ? 1 : 0,
+        ProductDevolucionTable.columnUomSegundaUnidad:
+            producto.uomSegundaUnidad ?? '',
+        ProductDevolucionTable.columnQuantitySegundaUnidad:
+            producto.quantitySegundaUnidad ?? 0.0,
         ProductDevolucionTable.columnIsSynced: 1,
       };
 
@@ -286,7 +294,12 @@ class ProductDevolucionRepository {
             producto.quantity == false ? 0.0 : producto.quantity ?? 0.0,
         ProductDevolucionTable.columnUseExpirationDate:
             producto.useExpirationDate == false ? 0 : 1,
-        // Al actualizar manualmente, asumimos que sigue sincronizado o lo marcamos
+        ProductDevolucionTable.columnManejaSegundaUnidad:
+            (producto.manejaSegundaUnidad == true || producto.manejaSegundaUnidad == 1) ? 1 : 0,
+        ProductDevolucionTable.columnUomSegundaUnidad:
+            producto.uomSegundaUnidad ?? '',
+        ProductDevolucionTable.columnQuantitySegundaUnidad:
+            producto.quantitySegundaUnidad ?? 0.0,
         ProductDevolucionTable.columnIsSynced: 1,
       };
 

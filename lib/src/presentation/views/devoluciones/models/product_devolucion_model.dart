@@ -26,6 +26,9 @@ class ProductDevolucion {
   int? locationId;
   String? locationName;
   dynamic quantity;
+  dynamic manejaSegundaUnidad;
+  String? uomSegundaUnidad;
+  double? quantitySegundaUnidad;
 
   ProductDevolucion(
       {this.productId,
@@ -48,7 +51,10 @@ class ProductDevolucion {
       this.uom,
       this.locationId,
       this.locationName,
-      this.quantity});
+      this.quantity,
+      this.manejaSegundaUnidad,
+      this.uomSegundaUnidad,
+      this.quantitySegundaUnidad});
 
   Product toProduct({
     bool clearLotId = false,
@@ -77,6 +83,9 @@ class ProductDevolucion {
         locationId: locationId,
         locationName: locationName,
         quantity: clearQuantity ? null : quantity,
+        manejaSegundaUnidad: manejaSegundaUnidad,
+        uomSegundaUnidad: uomSegundaUnidad,
+        quantitySegundaUnidad: quantitySegundaUnidad,
       );
 
   factory ProductDevolucion.fromMap(Map<String, dynamic> json) =>
@@ -108,6 +117,9 @@ class ProductDevolucion {
         locationId: json['location_id'],
         locationName: json['location_name'],
         quantity: json['quantity'],
+        manejaSegundaUnidad: json['maneja_segunda_unidad'],
+        uomSegundaUnidad: json['uom_segunda_unidad'] is bool ? null : json['uom_segunda_unidad'] as String?,
+        quantitySegundaUnidad: (json['quantity_segunda_unidad'] as num?)?.toDouble(),
       );
 
   Map<String, dynamic> toMap() => {
@@ -136,5 +148,8 @@ class ProductDevolucion {
         "location_id": locationId,
         "location_name": locationName,
         "quantity": quantity,
+        "maneja_segunda_unidad": manejaSegundaUnidad,
+        "uom_segunda_unidad": uomSegundaUnidad,
+        "quantity_segunda_unidad": quantitySegundaUnidad,
       };
 }

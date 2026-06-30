@@ -95,6 +95,8 @@ class LoadAllProductsFromPedidoLoaded extends PackingConsolidateState {
   LoadAllProductsFromPedidoLoaded({required this.listOfProducts});
 }
 
+class SearchProductConsolidatePackingState extends PackingConsolidateState {}
+
 class ErrorLoadAllProductsFromPedido extends PackingConsolidateState {
   final String error;
 

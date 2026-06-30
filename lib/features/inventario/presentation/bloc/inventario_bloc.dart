@@ -325,7 +325,12 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
     emit(GetProductsLoadingInventory());
 
     final syncResult = await syncProductosInventario(
-      SyncProductosParams(isLoadingDialog: event.isDialogLoading),
+      SyncProductosParams(
+        isLoadingDialog: event.isDialogLoading,
+        onProgress: (phase, processed, total) {
+          emit(SyncProgressState(phase: phase, processed: processed, total: total));
+        },
+      ),
     );
 
     final syncFailure = syncResult.fold<Failure?>((f) => f, (_) => null);

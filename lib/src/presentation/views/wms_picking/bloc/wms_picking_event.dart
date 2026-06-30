@@ -5,7 +5,7 @@ part of 'wms_picking_bloc.dart';
 @immutable
 sealed class PickingEvent {}
 
-//*evento para cargar todos los productos de odoo
+//*evento para cargar todos los productos de WMS
 class LoadAllProductsEvent extends PickingEvent {
   LoadAllProductsEvent();
 }

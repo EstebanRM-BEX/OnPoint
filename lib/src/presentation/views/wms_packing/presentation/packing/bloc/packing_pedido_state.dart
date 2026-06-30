@@ -91,6 +91,8 @@ class LoadPedidoAndProductsLoaded extends PackingPedidoState {
   LoadPedidoAndProductsLoaded(this.pedidoPackingResult);
 }
 
+class SearchProductPedidoPackingState extends PackingPedidoState {}
+
 class LoadPedidoAndProductsError extends PackingPedidoState {
   final String error;
 

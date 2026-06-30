@@ -17,6 +17,7 @@ import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/bloc/packing_consolidade_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
 class Tab2Screen extends StatefulWidget {
   const Tab2Screen({super.key, this.packingModel, this.batchModel});
@@ -36,10 +37,25 @@ class _Tab2ScreenState extends State<Tab2Screen> {
 
   final TextEditingController _controllerToDo = TextEditingController();
 
+  bool _isSearchVisible = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Mientras el buscador de productos está visible no le robamos el foco
+    // al campo de escaneo: el escáner sigue activo de fondo, pero el
+    // usuario está escribiendo en el buscador.
+    if (_isSearchVisible) return;
     FocusScope.of(context).requestFocus(focusNode1);
+  }
+
+  void _toggleSearch(PackingConsolidateBloc bloc) {
+    setState(() => _isSearchVisible = !_isSearchVisible);
+    if (!_isSearchVisible) {
+      bloc.searchControllerProduct.clear();
+      bloc.add(SearchProductConsolidatePackingEvent(''));
+      Future.microtask(() => focusNode1.requestFocus());
+    }
   }
 
   @override
@@ -285,12 +301,45 @@ class _Tab2ScreenState extends State<Tab2Screen> {
               : null,
           body: BlocBuilder<PackingConsolidateBloc, PackingConsolidateState>(
             builder: (context, state) {
+              final bloc = context.read<PackingConsolidateBloc>();
               return Container(
                   margin: const EdgeInsets.only(top: 5),
                   width: double.infinity,
                   height: size.height * 0.8,
                   child: Column(
                     children: [
+                      // //*buscador de productos por barcode, codigo o nombre
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Row(
+                          children: [
+                            if (_isSearchVisible)
+                              Expanded(
+                                child: DynamicSearchBar(
+                                  controller: bloc.searchControllerProduct,
+                                  hintText: 'Buscar producto',
+                                  onSearchChanged: (value) => bloc.add(
+                                      SearchProductConsolidatePackingEvent(
+                                          value)),
+                                  onSearchCleared: () => bloc.add(
+                                      SearchProductConsolidatePackingEvent(
+                                          '')),
+                                ),
+                              )
+                            else
+                              const Spacer(),
+                            IconButton(
+                              icon: Icon(
+                                _isSearchVisible
+                                    ? Icons.close
+                                    : Icons.search,
+                                color: primaryColorApp,
+                              ),
+                              onPressed: () => _toggleSearch(bloc),
+                            ),
+                          ],
+                        ),
+                      ),
                       //*espacio para escanear y buscar el producto
                       context.read<UserBloc>().fabricante.contains("Zebra")
                           ? Container(

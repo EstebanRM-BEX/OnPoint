@@ -58,6 +58,7 @@ class ProductRequest {
   final int timeLine;
   final String fechaTransaccion;
   final String observacion;
+  final double quantitySegundaUnidad;
 
   ProductRequest({
     required this.idProducto,
@@ -68,6 +69,7 @@ class ProductRequest {
     required this.timeLine,
     required this.fechaTransaccion,
     required this.observacion,
+    this.quantitySegundaUnidad = 0.0,
   });
 
   Map<String, dynamic> toJson() {
@@ -80,6 +82,7 @@ class ProductRequest {
       'time_line': timeLine,
       'fecha_transaccion': fechaTransaccion,
       'observacion': observacion,
+      'quantity_segunda_unidad': quantitySegundaUnidad,
     };
   }
 
@@ -93,7 +96,7 @@ class ProductRequest {
       timeLine: json['time_line'],
       fechaTransaccion: json['fecha_transaccion'],
       observacion: json['observacion'],
-     
+      quantitySegundaUnidad: (json['quantity_segunda_unidad'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }

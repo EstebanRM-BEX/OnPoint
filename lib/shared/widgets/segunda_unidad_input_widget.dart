@@ -70,7 +70,6 @@ class SegundaUnidadInputWidget extends StatelessWidget {
                       fontSize: 12,
                       color: Colors.grey[400],
                     ),
-                    suffixText: uomLabel,
                     suffixStyle: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,

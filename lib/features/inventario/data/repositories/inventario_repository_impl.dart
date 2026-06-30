@@ -32,12 +32,16 @@ class InventarioRepositoryImpl implements InventarioRepository {
 
   @override
   Future<Either<Failure, void>> syncProductosInventario(
-      bool isLoadingDialog) async {
+    bool isLoadingDialog, {
+    void Function(String phase, int processed, int total)? onProgress,
+  }) async {
     if (!await networkInfo.isConnected) {
       return const Left(NetworkFailure('No hay conexión a Internet'));
     }
 
     try {
+      onProgress?.call('Descargando productos de WMS...', 0, 0);
+
       // Future.wait propaga la excepción original sin envolverla en
       // ParallelWaitError (a diferencia del record .wait de Dart 3).
       final results = await Future.wait([
@@ -46,11 +50,15 @@ class InventarioRepositoryImpl implements InventarioRepository {
       ]);
       final syncResult = results[1] as ProductosSyncResult;
 
+      final total = syncResult.productos.length;
+      onProgress?.call('Guardando $total productos en base de datos...', 0, total);
+
       await localDataSource.saveProductosYBarcodes(
         syncResult.productos,
         syncResult.barcodes,
       );
 
+      onProgress?.call('Sincronización completada', total, total);
       return const Right(null);
     } on SessionExpiredException catch (e) {
       return Left(SessionExpiredFailure(e.message));

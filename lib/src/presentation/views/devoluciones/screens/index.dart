@@ -97,6 +97,13 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
   void _handleFocusAccordingToState() {
     debugPrint('_handleFocusAccordingToState');
     final bloc = context.read<DevolucionesBloc>();
+    // Mientras hay un diálogo visible (ej. buscador de productos), esta
+    // pantalla queda detrás pero sigue montada y sigue recibiendo
+    // didChangeDependencies (p.ej. al aparecer/ocultarse el teclado del
+    // diálogo). Si seguimos pidiendo foco aquí, se lo robamos al campo de
+    // texto del diálogo y el teclado se cierra solo mientras el usuario
+    // escribe.
+    if (bloc.isDialogVisible) return;
     final step = getCurrentStep(bloc);
 
     final focusNodeByStep = {
@@ -260,7 +267,13 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
 
   @override
   Widget build(BuildContext context) {
+    final devolucionesBlocRef = context.read<DevolucionesBloc>();
     return BlocConsumer<DevolucionesBloc, DevolucionesState>(
+      // Evita reconstruir la pantalla de fondo (y su BuildBarcodeInputField
+      // con autofocus) mientras hay un diálogo visible (ej. buscador de
+      // productos). Si se reconstruye, compite por el foco con el campo de
+      // texto del diálogo y le cierra el teclado al usuario mientras escribe.
+      buildWhen: (previous, current) => !devolucionesBlocRef.isDialogVisible,
       listener: (context, state) {
         debugPrint('Estado actual ❤️‍🔥: $state');
 
@@ -719,6 +732,31 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                                                       ],
                                                     ),
                                                   ),
+                                                 Visibility(
+                                            visible:
+                                                state.productosRelacionados[index].manejaSegundaUnidad ==
+                                                    1 ||
+                                                state.productosRelacionados[index].manejaSegundaUnidad ==
+                                                    true,
+                                            child: Row(
+                                              children: [
+                                                Text(
+                                                  "2nd Unidad: ",
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: primaryColorApp,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  "${state.productosRelacionados[index].uomSegundaUnidad}",
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: black,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                                 ],
                                               ),
                                             ),
@@ -1311,20 +1349,23 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                                   color: primaryColorApp,
                                 ),
                               ),
-                              Text(
-                                devolucionesBloc.currentTercero.name ??
-                                    'Esperando escaneo',
-                                maxLines: 2,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color:
-                                      devolucionesBloc.currentTercero.name ==
-                                          null
-                                      ? red
-                                      : black,
+                              Expanded(
+                                child: Text(
+                                  devolucionesBloc.currentTercero.name ??
+                                      'Esperando escaneo',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color:
+                                        devolucionesBloc.currentTercero.name ==
+                                            null
+                                        ? red
+                                        : black,
+                                  ),
                                 ),
                               ),
-                              const Spacer(),
+                              const SizedBox(width: 4),
                               Icon(
                                 Icons.person,
                                 color: primaryColorApp,

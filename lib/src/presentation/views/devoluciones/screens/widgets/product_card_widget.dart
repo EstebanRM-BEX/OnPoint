@@ -138,6 +138,33 @@ class ProductDevolucionCard extends StatelessWidget {
                       ],
                     ),
                   ),
+                  Visibility(
+                    visible: product.manejaSegundaUnidad == true ||
+                        product.manejaSegundaUnidad == 1,
+                    child: Row(
+                      children: [
+                        Text(
+                          'Cant. 2da unidad: ',
+                          style:
+                              TextStyle(fontSize: 11, color: primaryColorApp),
+                        ),
+                        Text(
+                          '${product.quantitySegundaUnidad ?? 0}',
+                          style: const TextStyle(fontSize: 11, color: black),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'UoM: ',
+                          style:
+                              TextStyle(fontSize: 11, color: primaryColorApp),
+                        ),
+                        Text(
+                          product.uomSegundaUnidad ?? '',
+                          style: const TextStyle(fontSize: 11, color: black),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),

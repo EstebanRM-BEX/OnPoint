@@ -21,8 +21,10 @@ class ProductDevolucionTable {
   static const String columnQuantity = 'quantity';
   static const String columnUseExpirationDate = 'use_expiration_date';
   
-  // ✅ NUEVO: Columna de sincronización
   static const String columnIsSynced = 'is_synced';
+  static const String columnManejaSegundaUnidad = 'maneja_segunda_unidad';
+  static const String columnUomSegundaUnidad = 'uom_segunda_unidad';
+  static const String columnQuantitySegundaUnidad = 'quantity_segunda_unidad';
 
   static String createTable() {
     return '''
@@ -45,7 +47,10 @@ class ProductDevolucionTable {
         $columnQuantity REAL,
         $columnUseExpirationDate INTEGER,
         $columnVolumeUomName TEXT,
-        $columnIsSynced INTEGER DEFAULT 0
+        $columnIsSynced INTEGER DEFAULT 0,
+        $columnManejaSegundaUnidad INTEGER DEFAULT 0,
+        $columnUomSegundaUnidad TEXT DEFAULT '',
+        $columnQuantitySegundaUnidad REAL DEFAULT 0
       );
 
       -- ✅ ÍNDICES DE RENDIMIENTO

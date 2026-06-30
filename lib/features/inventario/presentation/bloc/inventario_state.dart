@@ -231,6 +231,20 @@ class LoadProductosCountSuccess extends InventarioState {
   LoadProductosCountSuccess(this.count);
 }
 
+// ─── Progreso de sincronización ──────────────────────────────────────────────
+
+class SyncProgressState extends InventarioState {
+  final String phase;
+  final int processed;
+  final int total;
+
+  SyncProgressState({
+    required this.phase,
+    this.processed = 0,
+    this.total = 0,
+  });
+}
+
 // ─── Sesión expirada (nuevo) ─────────────────────────────────────────────────
 
 class InventarioSessionExpiredState extends InventarioState {}
