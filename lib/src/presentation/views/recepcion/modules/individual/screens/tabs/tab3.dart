@@ -9,16 +9,24 @@ import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_respon
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 
-class Tab3ScreenRecep extends StatelessWidget {
+class Tab3ScreenRecep extends StatefulWidget {
   const Tab3ScreenRecep({
     super.key,
     required this.ordenCompra,
   });
 
   final ResultEntrada? ordenCompra;
+
+  @override
+  State<Tab3ScreenRecep> createState() => _Tab3ScreenRecepState();
+}
+
+class _Tab3ScreenRecepState extends State<Tab3ScreenRecep>
+    with LoadingDialogMixin {
+  ResultEntrada? get ordenCompra => widget.ordenCompra;
 
   @override
   Widget build(BuildContext context) {
@@ -30,14 +38,7 @@ class Tab3ScreenRecep extends StatelessWidget {
       child: BlocConsumer<RecepcionBloc, RecepcionState>(
         listener: (context, state) {
           if (state is DelectedProductWmsLoading) {
-            showDialog(
-              context: context,
-              builder: (context) {
-                return const DialogLoading(
-                  message: "Eliminando producto",
-                );
-              },
-            );
+            showLoadingDialog("Eliminando producto");
           }
 
           if (state is ViewProductImageSuccess) {
@@ -47,7 +48,7 @@ class Tab3ScreenRecep extends StatelessWidget {
           }
 
           if (state is DelectedProductWmsSuccess) {
-            Navigator.pop(context);
+            hideLoadingDialog();
             //mostramos una alerta
             Get.snackbar("360 Software Informa", state.message,
                 backgroundColor: white,
@@ -56,7 +57,7 @@ class Tab3ScreenRecep extends StatelessWidget {
           }
 
           if (state is DelectedProductWmsFailure) {
-            Navigator.pop(context);
+            hideLoadingDialog();
             showScrollableErrorDialog(state.error);
           }
         },

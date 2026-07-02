@@ -14,6 +14,7 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_model.dart';
@@ -28,7 +29,6 @@ import 'package:wms_app/shared/widgets/lote_scanner_widget.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/product/product_card_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
 import 'package:wms_app/shared/widgets/segunda_unidad_input_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
@@ -49,7 +49,7 @@ class ScanProductOrderScreen extends StatefulWidget {
 }
 
 class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   @override
@@ -69,19 +69,8 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
 
     if (state == AppLifecycleState.resumed) {
       if (mounted) {
-        // Aquí se ejecutan las acciones solo si la pantalla aún está montada
-        showDialog(
-          context: context,
-          builder: (context) {
-            return const DialogLoading(
-              message: "Espere un momento...",
-            );
-          },
-        );
+        // Restauramos el foco del scanner al volver del background.
         _handleDependencies();
-        Future.delayed(const Duration(seconds: 1), () {
-          Navigator.pop(context);
-        });
       }
     }
   }
@@ -383,9 +372,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
 
                         if (state is GetTemperatureProduct) {
                           //cerramos el dialogo de envio de producto
-                          if (Navigator.canPop(context)) {
-                            Navigator.pop(context);
-                          }
+                          hideLoadingDialog();
 
                           //validamos que el permiso de enviar imagenes de temperatura este activo
                           if (recepcionBloc.configurations.result?.result
@@ -421,23 +408,20 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
 
                         if (state is SendTemperatureSuccess) {
                           //cerramos el dialogo de envio de temperatura
-                          if (Navigator.canPop(context)) {
-                            Navigator.pop(context);
-                          }
+                          hideLoadingDialog();
                           Navigator.pushReplacementNamed(context, 'recepcion',
                               arguments: [widget.ordenCompra, 1]);
                         }
 
                         if (state is SendProductToOrderSuccess) {
                           //cerramos el dialogo
-                          if (Navigator.canPop(context)) {
-                            Navigator.pop(context);
-                          }
+                          hideLoadingDialog();
                           Navigator.pushReplacementNamed(context, 'recepcion',
                               arguments: [widget.ordenCompra, 1]);
                         }
 
                         if (state is SendProductToOrderFailure) {
+                          hideLoadingDialog();
                           Get.snackbar("360 Software Informa", state.error,
                               backgroundColor: white,
                               colorText: primaryColorApp,
@@ -445,12 +429,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
                         }
 
                         if (state is SendProductToOrderLoading) {
-                          showDialog(
-                            context: context,
-                            builder: (context) => const DialogLoading(
-                              message: "Enviando producto...",
-                            ),
-                          );
+                          showLoadingDialog("Enviando producto...");
                         }
 
                         //*estado cuando el producto es leido ok

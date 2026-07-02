@@ -11,16 +11,24 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 
-class Tab1ScreenRecep extends StatelessWidget {
+class Tab1ScreenRecep extends StatefulWidget {
   const Tab1ScreenRecep({
     super.key,
     required this.ordenCompra,
   });
 
   final ResultEntrada? ordenCompra;
+
+  @override
+  State<Tab1ScreenRecep> createState() => _Tab1ScreenRecepState();
+}
+
+class _Tab1ScreenRecepState extends State<Tab1ScreenRecep>
+    with LoadingDialogMixin {
+  ResultEntrada? get ordenCompra => widget.ordenCompra;
 
   @override
   Widget build(BuildContext context) {
@@ -32,18 +40,11 @@ class Tab1ScreenRecep extends StatelessWidget {
       child: BlocConsumer<RecepcionBloc, RecepcionState>(
         listener: (context, state) {
           if (state is SendTemperatureLoading) {
-            showDialog(
-              context: context,
-              builder: (context) {
-                return const DialogLoading(
-                  message: "Enviando temperatura...",
-                );
-              },
-            );
+            showLoadingDialog("Enviando temperatura...");
           }
 
           if (state is SendTemperatureSuccess) {
-            Navigator.pop(context);
+            hideLoadingDialog();
             Get.snackbar("360 Software Informa", state.message,
                 backgroundColor: white,
                 colorText: primaryColorApp,
@@ -52,7 +53,7 @@ class Tab1ScreenRecep extends StatelessWidget {
           }
 
           if (state is SendTemperatureFailure) {
-            Navigator.pop(context);
+            hideLoadingDialog();
             Get.snackbar("360 Software Informa", state.error,
                 backgroundColor: white,
                 colorText: primaryColorApp,
@@ -62,18 +63,11 @@ class Tab1ScreenRecep extends StatelessWidget {
 
           debugPrint("State: $state");
           if (state is CreateBackOrderOrNotLoading) {
-            showDialog(
-              context: context,
-              builder: (context) {
-                return const DialogLoading(
-                  message: "Validando informacion...",
-                );
-              },
-            );
+            showLoadingDialog("Validando informacion...");
           }
 
           if (state is CreateBackOrderOrNotFailure) {
-            Navigator.pop(context);
+            hideLoadingDialog();
             if (state.result?.tipoError == 'LOTE_VENCIDO') {
               showDialog(
                 context: context,
@@ -206,7 +200,7 @@ class Tab1ScreenRecep extends StatelessWidget {
                 backgroundColor: white,
                 colorText: primaryColorApp,
                 icon: Icon(Icons.error, color: Colors.green));
-            Navigator.pop(context);
+            hideLoadingDialog();
 
             if (ordenCompra?.type == 'dev') {
               Navigator.pushReplacementNamed(
@@ -222,18 +216,11 @@ class Tab1ScreenRecep extends StatelessWidget {
           }
 
           if (state is ConfirmarLoteVencidoLoading) {
-            showDialog(
-              context: context,
-              builder: (context) {
-                return const DialogLoading(
-                  message: "Confirmando lotes vencidos...",
-                );
-              },
-            );
+            showLoadingDialog("Confirmando lotes vencidos...");
           }
 
           if (state is ConfirmarLoteVencidoFailure) {
-            Navigator.pop(context);
+            hideLoadingDialog();
             showScrollableErrorDialog(state.error);
           }
 
@@ -242,7 +229,7 @@ class Tab1ScreenRecep extends StatelessWidget {
                 backgroundColor: white,
                 colorText: primaryColorApp,
                 icon: Icon(Icons.error, color: Colors.green));
-            Navigator.pop(context);
+            hideLoadingDialog();
 
             if (ordenCompra?.type == 'dev') {
               Navigator.pushReplacementNamed(

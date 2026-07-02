@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
@@ -177,7 +178,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     on<GetLotesProduct>(_onGetLotesProduct);
 
     //*metodo para enviar el producto a wms
-    on<SendProductToOrder>(_onSendProductToOrder);
+    on<SendProductToOrder>(_onSendProductToOrder, transformer: droppable());
 
     //*metodo para crear un lote a un producto
     on<CreateLoteProduct>(_onCreateLoteProduct);
@@ -186,8 +187,11 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     on<StartOrStopTimeOrder>(_onStartOrStopTimeOrder);
 
     //*metodo para crear barckorder o no
-    on<CreateBackOrderOrNot>(_onCreateBackOrder);
-    on<ConfirmarLoteVencidoEvent>(_onConfirmarLoteVencido);
+    on<CreateBackOrderOrNot>(_onCreateBackOrder, transformer: droppable());
+    on<ConfirmarLoteVencidoEvent>(
+      _onConfirmarLoteVencido,
+      transformer: droppable(),
+    );
 
     //metodo para buscar un lote
     on<SearchLotevent>(_onSearchLoteEvent);
@@ -206,12 +210,18 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     on<FilterUbicacionesAlmacenEvent>(_onFilterUbicacionesEvent);
 
     //enviar temperatura
-    on<SendTemperatureEvent>(_onSendTemperatureEvent);
-    on<SendTemperatureManualEvent>(_onSendTemperatureManualEvent);
+    on<SendTemperatureEvent>(_onSendTemperatureEvent, transformer: droppable());
+    on<SendTemperatureManualEvent>(
+      _onSendTemperatureManualEvent,
+      transformer: droppable(),
+    );
     on<GetTemperatureEvent>(_onGetTemperatureEvent);
 
     //evento para eliminar un producto ya enviado
-    on<DelectedProductWmsEvent>(_onDelectedProductWmsEvent);
+    on<DelectedProductWmsEvent>(
+      _onDelectedProductWmsEvent,
+      transformer: droppable(),
+    );
 
     on<SendImageNovedad>(_onSendImageNovedad);
 

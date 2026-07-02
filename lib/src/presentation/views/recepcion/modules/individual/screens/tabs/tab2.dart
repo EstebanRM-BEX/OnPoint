@@ -12,7 +12,6 @@ import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_respon
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 
 class Tab2ScreenRecep extends StatefulWidget {
@@ -64,9 +63,6 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
 
     /// Función auxiliar para procesar un producto encontrado
     void processProduct(LineasTransferencia product) {
-      // Variable para almacenar el contexto creado por showDialog
-      BuildContext? dialogContext;
-
       // Disparar eventos del BLoC (sin cambios)
       bloc
         ..add(ValidateFieldsOrderEvent(field: "product", isOk: true))
@@ -89,36 +85,13 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
         )
         ..add(FetchPorductOrder(product));
 
-      Future.microtask(() => focusNodeBuscar.requestFocus());
-
-      // 1. ABRIR DIÁLOGO Y CAPTURAR SU CONTEXTO
-      showDialog(
-        context: context,
-        builder: (ctx) {
-          // ✅ Capturamos el contexto del diálogo como 'ctx'
-          dialogContext = ctx; // Almacenamos la referencia
-          return const DialogLoading(
-            message: 'Cargando información del producto...',
-          );
-        },
+      // Navegamos directo: la pantalla de scan se reconstruye via BlocBuilder
+      // cuando FetchPorductOrder termina de cargar el producto.
+      Navigator.pushReplacementNamed(
+        context,
+        'scan-product-order',
+        arguments: [widget.ordenCompra, product],
       );
-
-      // 2. TEMPORIZADOR PARA CERRAR Y NAVEGAR
-      Future.delayed(const Duration(milliseconds: 1000), () {
-        if (!mounted) return;
-        // 3. ✅ CORRECCIÓN CLAVE: Usar el contexto capturado para el POP
-        if (dialogContext != null && dialogContext!.mounted) {
-          // El 'pop' ahora es seguro y usa el contexto válido del diálogo
-          Navigator.of(dialogContext!, rootNavigator: true).pop();
-        }
-
-        // 4. Navegación a la siguiente vista
-        Navigator.pushReplacementNamed(
-          context,
-          'scan-product-order',
-          arguments: [widget.ordenCompra, product],
-        );
-      });
 
       debugPrint('✅ Producto procesado: ${product.toMap()}');
     }
@@ -266,46 +239,21 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
                                   child: Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: GestureDetector(
-                                      onTap: () async {
+                                      onTap: () {
                                         context.read<RecepcionBloc>().add(
                                           FetchPorductOrder(product),
                                         );
 
-                                        Future.microtask(() {
-                                          showDialog(
-                                            context: context,
-                                            barrierDismissible: false,
-                                            builder: (context) {
-                                              return const DialogLoading(
-                                                message:
-                                                    'Cargando información del producto...',
-                                              );
-                                            },
-                                          );
-                                        });
-
-                                        Future.delayed(
-                                          const Duration(milliseconds: 1000),
-                                          () {
-                                            if (!mounted) return;
-
-                                            // 4.1. Cerrar el diálogo de carga (usando el context del widget, ya que el diálogo fue abierto con él)
-                                            Navigator.of(
-                                              context,
-                                              rootNavigator: true,
-                                            ).pop();
-
-                                            // 4.2. Navegar a la vista 'Packing' (Línea 450)
-                                            // Se asume que la vista 'Packing' ahora puede usar los datos que el BLoC ya cargó.
-                                            Navigator.pushReplacementNamed(
-                                              context,
-                                              'scan-product-order',
-                                              arguments: [
-                                                widget.ordenCompra,
-                                                product,
-                                              ],
-                                            );
-                                          },
+                                        // Navegamos directo: la pantalla de scan
+                                        // se reconstruye via BlocBuilder cuando
+                                        // FetchPorductOrder termina de cargar.
+                                        Navigator.pushReplacementNamed(
+                                          context,
+                                          'scan-product-order',
+                                          arguments: [
+                                            widget.ordenCompra,
+                                            product,
+                                          ],
                                         );
                                       },
                                       child: Column(
