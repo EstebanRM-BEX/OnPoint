@@ -12,6 +12,7 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/shared/widgets/scanner_locationDest_widget.dart';
 import 'package:wms_app/shared/widgets/scanner_location_widget.dart';
 import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
@@ -44,7 +45,7 @@ class ScanProductPickScreen extends StatefulWidget {
 }
 
 class _ScanProductPickScreenState extends State<ScanProductPickScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   String scannedValue6 = '';
@@ -483,24 +484,10 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                               }
 
                               if (state is CreateBackOrderOrNotLoading) {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return const DialogLoading(
-                                      message: "Validando informacion...",
-                                    );
-                                  },
-                                );
+                                showLoadingDialog("Validando informacion...");
                               }
                               if (state is ValidateConfirmLoading) {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return const DialogLoading(
-                                      message: "Validando informacion...",
-                                    );
-                                  },
-                                );
+                                showLoadingDialog("Validando informacion...");
                               }
 
                               if (state is ValidateConfirmSuccess) {
@@ -529,7 +516,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                   );
                                 }
 
-                                Navigator.pop(context);
+                                hideLoadingDialog();
                                 if (batchBloc.pickWithProducts.pick?.typePick ==
                                     'pick') {
                                   Navigator.pushReplacementNamed(
@@ -545,29 +532,22 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                               }
 
                               if (state is SendProductPickOdooError) {
-                                Navigator.pop(context);
+                                hideLoadingDialog();
                                 showScrollableErrorDialog(state.error);
                               }
 
                               if (state is MuellesLoadingState) {
-                                showDialog(
-                                  context: context,
-                                  barrierDismissible:
-                                      false, // No permitir que el usuario cierre el diálogo manualmente
-                                  builder: (context) => const DialogLoading(
-                                    message: 'Cargando muelles...',
-                                  ),
-                                );
+                                showLoadingDialog('Cargando muelles...');
                               }
 
                               if (state is MuellesErrorState) {
-                                Navigator.pop(context);
+                                hideLoadingDialog();
 
                                 showScrollableErrorDialog(state.error);
                               }
 
                               if (state is MuellesLoadedState) {
-                                Navigator.pop(context);
+                                hideLoadingDialog();
                                 showModalBottomSheet(
                                   backgroundColor: white,
                                   context: context,
@@ -583,13 +563,13 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                               }
 
                               if (state is ValidateConfirmFailure) {
-                                Navigator.pop(context);
+                                hideLoadingDialog();
 
                                 showScrollableErrorDialog(state.error);
                               }
 
                               if (state is CreateBackOrderOrNotFailure) {
-                                Navigator.pop(context);
+                                hideLoadingDialog();
 
                                 if (state.error.contains(
                                   'expiry.picking.confirmation',
@@ -688,7 +668,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                   );
                                 }
 
-                                Navigator.pop(context);
+                                hideLoadingDialog();
                                 if (batchBloc.pickWithProducts.pick?.typePick ==
                                     'pick') {
                                   Navigator.pushReplacementNamed(
@@ -704,7 +684,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                               }
 
                               if (state is PickOkEventSuccess) {
-                                Navigator.pop(context);
+                                hideLoadingDialog();
                                 if (batchBloc.pickWithProducts.pick?.typePick ==
                                     'pick') {
                                   Navigator.pushReplacementNamed(
@@ -727,25 +707,11 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                               }
 
                               if (state is CurrentProductChangedStateLoading) {
-                                showDialog(
-                                  context: context,
-                                  barrierDismissible:
-                                      false, // No permitir que el usuario cierre el diálogo manualmente
-                                  builder: (context) => const DialogLoading(
-                                    message: 'Cargando producto...',
-                                  ),
-                                );
+                                showLoadingDialog('Cargando producto...');
                               }
 
                               if (state is CurrentProductChangedState) {
-                                Future.delayed(const Duration(seconds: 1), () {
-                                  if (mounted) {
-                                    Navigator.of(
-                                      context,
-                                      rootNavigator: true,
-                                    ).pop();
-                                  }
-                                });
+                                hideLoadingDialog();
                               }
 
                               if (state is ChangeQuantitySeparateStateError) {
