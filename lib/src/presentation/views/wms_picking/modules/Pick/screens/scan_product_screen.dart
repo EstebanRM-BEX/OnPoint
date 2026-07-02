@@ -32,6 +32,7 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/widgets/
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/widgets/others/DialogAdvetenciaCantidadPick_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/widgets/others/SelectSubMuelleBottomSheet_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/widgets/others/dialog_backorder_widget.dart';
+import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/widgets/others/dialog_expiry_confirmation_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/widgets/others/dialog_picking_incompleted_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/widgets/others/popunButton_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/widgets/product/product_widget.dart';
@@ -565,23 +566,11 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                 if (state.error.contains(
                                   'expiry.picking.confirmation',
                                 )) {
-                                  Get.defaultDialog(
-                                    title: '360 Software Informa',
-                                    titleStyle: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 18,
-                                    ),
-                                    middleText:
-                                        'Algunos productos tienen fecha de caducidad alcanzada.\n¿Desea continuar con la confirmacion aceptando los productos vencidos?',
-                                    middleTextStyle: TextStyle(
-                                      color: black,
-                                      fontSize: 14,
-                                    ),
-                                    backgroundColor: Colors.white,
-                                    radius: 10,
-                                    actions: [
-                                      ElevatedButton(
-                                        onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return DialogExpiryConfirmation(
+                                        onConfirm: () {
                                           batchBloc.add(
                                             ValidateConfirmEvent(
                                               batchBloc
@@ -593,40 +582,9 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                               false,
                                             ),
                                           );
-
-                                          Get.back();
                                         },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: primaryColorApp,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'Continuar',
-                                          style: TextStyle(color: white),
-                                        ),
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: () {
-                                          Get.back();
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: grey,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'Descartar',
-                                          style: TextStyle(color: white),
-                                        ),
-                                      ),
-                                    ],
+                                      );
+                                    },
                                   );
                                 } else {
                                   showScrollableErrorDialog(state.error);
@@ -1730,7 +1688,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
         if (batchBloc.configurations.result?.result?.hideValidatePicking ==
             false) {
           showDialog(
-            context: Navigator.of(context, rootNavigator: true).context,
+            context: context,
             builder: (context) {
               return DialogBackorderPick(
                 isHistory: false,
