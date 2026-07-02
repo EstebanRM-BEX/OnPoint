@@ -981,18 +981,20 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                       padding: const EdgeInsets.symmetric(
                                           vertical: 8),
                                       child: ElevatedButton(
-                                          onPressed: batchBloc.filteredProducts
-                                                  .where((e) {
-                                                    return (e.isSeparate ==
-                                                            1) &&
-                                                        (e.locationDestId ==
-                                                            batchBloc
-                                                                .pickWithProducts
-                                                                .pick
-                                                                ?.muelle);
-                                                  })
-                                                  .toList()
-                                                  .isEmpty
+                                          onPressed: state
+                                                      is MuellesLoadingState ||
+                                                  batchBloc.filteredProducts
+                                                      .where((e) {
+                                                        return (e.isSeparate ==
+                                                                1) &&
+                                                            (e.locationDestId ==
+                                                                batchBloc
+                                                                    .pickWithProducts
+                                                                    .pick
+                                                                    ?.muelle);
+                                                      })
+                                                      .toList()
+                                                      .isEmpty
                                               ? null
                                               : () {
                                                   batchBloc

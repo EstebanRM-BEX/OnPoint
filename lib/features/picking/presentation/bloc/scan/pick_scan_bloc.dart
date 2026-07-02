@@ -4,6 +4,7 @@
 // UI handlers (no I/O) are kept unchanged.
 
 import 'package:bloc/bloc.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/features/picking/domain/usecases/assign_muelle_usecase.dart';
@@ -160,13 +161,13 @@ class PickScanBloc extends Bloc<PickScanEvent, PickScanState> {
     on<PickingOkEvent>(_onPickingOkEvent);
 
     // ── Odoo API ───────────────────────────────────────────────────────────
-    on<FetchMuellesEvent>(_onFetchMuellesEvent);
+    on<FetchMuellesEvent>(_onFetchMuellesEvent, transformer: droppable());
     on<ViewProductImageEvent>(_onViewProductImageEvent);
-    on<ValidateConfirmEvent>(_onValidateConfirmEvent);
-    on<CreateBackOrderOrNot>(_onCreateBackOrder);
+    on<ValidateConfirmEvent>(_onValidateConfirmEvent, transformer: droppable());
+    on<CreateBackOrderOrNot>(_onCreateBackOrder, transformer: droppable());
 
     // ── Mixto ──────────────────────────────────────────────────────────────
-    on<ChangeCurrentProduct>(_onChangeCurrentProduct);
+    on<ChangeCurrentProduct>(_onChangeCurrentProduct, transformer: droppable());
     on<AssignSubmuelleEvent>(_onAssignSubmuelleEvent);
     on<StartOrStopTimeTransfer>(_onStartOrStopTimeTransfer);
     on<PickOkEvent>(_onPickOkEvent);

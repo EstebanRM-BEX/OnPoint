@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_is_empty
 
 import 'package:bloc/bloc.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -137,7 +138,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     on<ChangeProductIsOkEvent>(_onChangeProductIsOkEvent);
     on<ChangeIsOkQuantity>(_onChangeQuantityIsOkEvent);
     //*cambiar el producto actual
-    on<ChangeCurrentProduct>(_onChangeCurrentProduct);
+    on<ChangeCurrentProduct>(_onChangeCurrentProduct, transformer: droppable());
 
     on<SelectNovedadEvent>(_onSelectNovedadEvent);
 
@@ -183,14 +184,14 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     on<SearchPickEvent>(_onSearchPickEvent);
 
     //*metodo para crear barckorder o no
-    on<CreateBackOrderOrNot>(_onCreateBackOrder);
+    on<CreateBackOrderOrNot>(_onCreateBackOrder, transformer: droppable());
     //*metodo para cerrar el pick sin validarlo
     on<PickOkEvent>(_onPickOkEvent);
 
     //*metodo para validar la confirmacion
-    on<ValidateConfirmEvent>(_onValidateConfirmEvent);
+    on<ValidateConfirmEvent>(_onValidateConfirmEvent, transformer: droppable());
     //evento par aobtener todos los muelles disponibles
-    on<FetchMuellesEvent>(_onFetchMuellesEvent);
+    on<FetchMuellesEvent>(_onFetchMuellesEvent, transformer: droppable());
 
     //*evento para cargar un producto seleccionado
     on<LoadSelectedProductEvent>(_onLoadSelectedProductEvent);

@@ -1155,17 +1155,18 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                   ),
                                   child: ElevatedButton(
                                     onPressed:
-                                        batchBloc.filteredProducts
-                                            .where((e) {
-                                              return (e.isSeparate == 1) &&
-                                                  (e.locationDestId ==
-                                                      batchBloc
-                                                          .pickWithProducts
-                                                          .pick
-                                                          ?.muelle);
-                                            })
-                                            .toList()
-                                            .isEmpty
+                                        state is MuellesLoadingState ||
+                                            batchBloc.filteredProducts
+                                                .where((e) {
+                                                  return (e.isSeparate == 1) &&
+                                                      (e.locationDestId ==
+                                                          batchBloc
+                                                              .pickWithProducts
+                                                              .pick
+                                                              ?.muelle);
+                                                })
+                                                .toList()
+                                                .isEmpty
                                         ? null
                                         : () {
                                             batchBloc.add(FetchMuellesEvent());
