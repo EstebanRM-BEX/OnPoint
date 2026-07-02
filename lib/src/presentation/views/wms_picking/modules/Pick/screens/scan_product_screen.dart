@@ -23,7 +23,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_
 
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/cant_lineas_muelle_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/progressIndicatos_widget.dart';
@@ -81,16 +80,8 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
 
     if (state == AppLifecycleState.resumed) {
       if (mounted) {
-        // Aquí se ejecutan las acciones solo si la pantalla aún está montada
-        showDialog(
-          context: context,
-          builder: (context) {
-            return const DialogLoading(message: "Espere un momento...");
-          },
-        );
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) Navigator.of(context, rootNavigator: true).pop();
-        });
+        // Restauramos el foco del scanner al volver del background.
+        _handleDependencies();
       }
     }
   }
