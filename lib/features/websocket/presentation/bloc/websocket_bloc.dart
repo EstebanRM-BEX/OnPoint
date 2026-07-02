@@ -59,10 +59,10 @@ class WebSocketBloc extends Bloc<WebSocketEvent, WebSocketState> {
             state is WebSocketReconnecting
                 ? (state as WebSocketReconnecting).attempt + 1
                 : 1;
-        debugPrint('🔄 WebSocketBloc: Reconectando (intento $attempt)');
+        // debugPrint('🔄 WebSocketBloc: Reconectando (intento $attempt)');
         emit(WebSocketReconnecting(attempt: attempt));
       case WebSocketConnectionStatus.disconnected:
-        debugPrint('🔌 WebSocketBloc: Desconectado');
+        // debugPrint('🔌 WebSocketBloc: Desconectado');
         emit(WebSocketDisconnected());
       case WebSocketConnectionStatus.error:
         debugPrint('❌ WebSocketBloc: Error al procesar mensaje');
