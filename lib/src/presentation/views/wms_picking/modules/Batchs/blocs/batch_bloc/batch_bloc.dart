@@ -18,6 +18,7 @@ import 'package:wms_app/src/presentation/views/wms_picking/models/item_picking_r
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/product_template_model.dart';
 import 'package:bloc/bloc.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter/material.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/submeuelle_model.dart';
 
@@ -134,7 +135,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
     on<ChangeProductIsOkEvent>(_onChangeProductIsOkEvent);
     on<ChangeIsOkQuantity>(_onChangeQuantityIsOkEvent);
     //*cambiar el producto actual
-    on<ChangeCurrentProduct>(_onChangeCurrentProduct);
+    on<ChangeCurrentProduct>(_onChangeCurrentProduct, transformer: droppable());
 
     on<SelectNovedadEvent>(_onSelectNovedadEvent);
 
@@ -187,7 +188,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
     on<ShowQuantityEvent>(_onShowQuantityEvent);
 
     //evento par aobtener todos los muelles disponibles
-    on<FetchMuellesEvent>(_onFetchMuellesEvent);
+    on<FetchMuellesEvent>(_onFetchMuellesEvent, transformer: droppable());
 
     //*evento para cargar un producto seleccionado
     on<LoadSelectedProductEvent>(_onLoadSelectedProductEvent);

@@ -11,6 +11,7 @@ import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/shared/widgets/scanner_locationDest_widget.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
@@ -24,7 +25,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/SelectSubMuelleBottomSheet_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/cant_lineas_muelle_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_picking_incompleted_widget.dart';
 import 'package:wms_app/features/picking_cluster/presentation/widgets/dropdowbutton_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
@@ -44,7 +44,7 @@ class BatchScreen extends StatefulWidget {
 }
 
 class _BatchDetailScreenState extends State<BatchScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
 
@@ -79,28 +79,8 @@ class _BatchDetailScreenState extends State<BatchScreen>
     super.didChangeAppLifecycleState(state);
 
     if (state == AppLifecycleState.resumed && mounted) {
-      // 1. Variable para capturar el contexto del diálogo
-      BuildContext? dialogContext;
-
-      showDialog(
-        context: context,
-        barrierDismissible: false, // Evita cierre manual
-        builder: (ctx) {
-          // 2. Capturamos el contexto del builder
-          dialogContext = ctx;
-          return const DialogLoading(message: "Espere un momento...");
-        },
-      );
-
-      Future.delayed(const Duration(seconds: 1), () {
-        // 3. Verificamos que la pantalla siga montada
-        if (!mounted) return;
-
-        // 4. Verificamos que el diálogo siga existiendo y usamos SU contexto
-        if (dialogContext != null && dialogContext!.mounted) {
-          Navigator.of(dialogContext!).pop();
-        }
-      });
+      // Restauramos el foco del scanner al volver del background.
+      _handleFocusAccordingToState();
     }
   }
 
@@ -372,21 +352,11 @@ class _BatchDetailScreenState extends State<BatchScreen>
                           }
 
                           if (state is CurrentProductChangedStateLoading) {
-                            showDialog(
-                              context: context,
-                              barrierDismissible:
-                                  false, // No permitir que el usuario cierre el diálogo manualmente
-                              builder: (context) => const DialogLoading(
-                                message: 'Cargando producto...',
-                              ),
-                            );
+                            showLoadingDialog('Cargando producto...');
                           }
 
                           if (state is CurrentProductChangedState) {
-                            Future.delayed(const Duration(seconds: 1), () {
-                              // _handleDependencies();
-                              Navigator.pop(context);
-                            });
+                            hideLoadingDialog();
                           }
 
                           if (state is ChangeQuantitySeparateStateError) {
@@ -398,7 +368,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
                           }
 
                           if (state is CurrentProductChangedStateError) {
-                            Navigator.pop(context);
+                            hideLoadingDialog();
                             showScrollableErrorDialog(state.msg);
                           }
 
@@ -463,24 +433,17 @@ class _BatchDetailScreenState extends State<BatchScreen>
                           }
 
                           if (state is MuellesLoadingState) {
-                            showDialog(
-                              context: context,
-                              barrierDismissible:
-                                  false, // No permitir que el usuario cierre el diálogo manualmente
-                              builder: (context) => const DialogLoading(
-                                message: 'Cargando muelles...',
-                              ),
-                            );
+                            showLoadingDialog('Cargando muelles...');
                           }
 
                           if (state is MuellesErrorState) {
-                            Navigator.pop(context);
+                            hideLoadingDialog();
 
                             showScrollableErrorDialog(state.error);
                           }
 
                           if (state is MuellesLoadedState) {
-                            Navigator.pop(context);
+                            hideLoadingDialog();
                             showModalBottomSheet(
                               backgroundColor: white,
                               context: context,
@@ -722,18 +685,20 @@ class _BatchDetailScreenState extends State<BatchScreen>
                                       padding: const EdgeInsets.symmetric(
                                           vertical: 8),
                                       child: ElevatedButton(
-                                          onPressed: batchBloc.filteredProducts
-                                                  .where((e) {
-                                                    return (e.isSeparate ==
-                                                            1) &&
-                                                        (e.locationDestId ==
-                                                            batchBloc
-                                                                .batchWithProducts
-                                                                .batch
-                                                                ?.muelle);
-                                                  })
-                                                  .toList()
-                                                  .isEmpty
+                                          onPressed: state
+                                                      is MuellesLoadingState ||
+                                                  batchBloc.filteredProducts
+                                                      .where((e) {
+                                                        return (e.isSeparate ==
+                                                                1) &&
+                                                            (e.locationDestId ==
+                                                                batchBloc
+                                                                    .batchWithProducts
+                                                                    .batch
+                                                                    ?.muelle);
+                                                      })
+                                                      .toList()
+                                                      .isEmpty
                                               ? null
                                               : () {
                                                   batchBloc
