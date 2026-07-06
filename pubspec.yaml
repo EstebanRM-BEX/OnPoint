@@ -123,6 +123,7 @@ dev_dependencies:
   mocktail: ^1.0.4
   bloc_test: ^10.0.0
   sqflite_common_ffi: ^2.4.0
+  leak_tracker_flutter_testing: ^3.0.10
 dependency_overrides:
   rive: ^0.14.7
 
