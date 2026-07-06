@@ -226,6 +226,7 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
                       .listOfProductosProgress
                       .isNotEmpty
               ? Stack(
+                  clipBehavior: Clip.none,
                   children: [
                     // El FloatingActionButton
                     Positioned(
@@ -337,6 +338,47 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
                           : const SizedBox
                               .shrink(), // No mostrar el número si no hay productos seleccionados
                     ),
+                    // El total de unidades de los productos seleccionados, esquina inferior del FAB
+                    Positioned(
+                      bottom: -8.0, // Esquina inferior
+                      right: -8.0, // Esquina derecha, igual estilo que el rojo
+                      child: context
+                              .read<PackingPedidoBloc>()
+                              .listOfProductsForPacking
+                              .isNotEmpty
+                          ? Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                context
+                                    .read<PackingPedidoBloc>()
+                                    .listOfProductsForPacking
+                                    .fold<double>(
+                                      0.0,
+                                      (total, product) =>
+                                          total +
+                                          ((product.isProductSplit == 1 &&
+                                                      product.isSeparate == 1
+                                                  ? product.pendingQuantity
+                                                  : product.quantity ??
+                                                      0.0) as num)
+                                              .toDouble(),
+                                    )
+                                    .toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            )
+                          : const SizedBox
+                              .shrink(), // No mostrar el total si no hay productos seleccionados
+                    ),
                   ],
                 )
               : null,
@@ -364,6 +406,36 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         child: Row(
                           children: [
+                            // Seleccionar/deseleccionar todos los productos.
+                            // Se oculta mientras el buscador está activo.
+                            if (!_isSearchVisible &&
+                                bloc.configurations.result?.result
+                                        ?.scanProduct ==
+                                    true)
+                              IconButton(
+                                icon: Icon(
+                                  productosOrdenados.isNotEmpty &&
+                                          bloc.listOfProductsForPacking
+                                                  .length ==
+                                              productosOrdenados.length
+                                      ? Icons.checklist_rtl
+                                      : Icons.checklist,
+                                  color: primaryColorApp,
+                                ),
+                                onPressed: () {
+                                  final allSelected =
+                                      productosOrdenados.isNotEmpty &&
+                                          bloc.listOfProductsForPacking
+                                                  .length ==
+                                              productosOrdenados.length;
+                                  if (allSelected) {
+                                    bloc.add(UnSelectAllProductsPackingEvent());
+                                  } else {
+                                    bloc.add(SelectAllProductsPackingEvent(
+                                        productosOrdenados));
+                                  }
+                                },
+                              ),
                             if (_isSearchVisible)
                               Expanded(
                                 child: DynamicSearchBar(

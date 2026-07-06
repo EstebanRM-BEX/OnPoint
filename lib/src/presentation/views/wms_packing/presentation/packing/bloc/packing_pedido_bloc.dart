@@ -187,6 +187,10 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     on<SelectProductPackingEvent>(_onSelectProductPackingEvent);
     //*evento para desseleccionar productos sin certificar
     on<UnSelectProductPackingEvent>(_onUnSelectProductPackingEvent);
+    //*evento para seleccionar todos los productos sin certificar
+    on<SelectAllProductsPackingEvent>(_onSelectAllProductsPackingEvent);
+    //*evento para deseleccionar todos los productos sin certificar
+    on<UnSelectAllProductsPackingEvent>(_onUnSelectAllProductsPackingEvent);
 
     //*evento para buscar productos del pedido por barcode, codigo o nombre
     on<SearchProductPedidoPackingEvent>(_onSearchProductPedidoPackingEvent);
@@ -878,6 +882,30 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       }
     } catch (e, s) {
       debugPrint('Error en el _onUnSelectProductPackingEvent: $e, $s');
+      emit(WmsPackingErrorState(e.toString()));
+    }
+  }
+
+  //*metodo para seleccionar todos los productos sin certificar
+  void _onSelectAllProductsPackingEvent(SelectAllProductsPackingEvent event,
+      Emitter<PackingPedidoState> emit) async {
+    try {
+      listOfProductsForPacking = List<ProductoPedido>.from(event.productos);
+      emit(ListOfProductsForPackingState(listOfProductsForPacking));
+    } catch (e, s) {
+      debugPrint('Error en el _onSelectAllProductsPackingEvent: $e, $s');
+      emit(WmsPackingErrorState(e.toString()));
+    }
+  }
+
+  //*metodo para deseleccionar todos los productos sin certificar
+  void _onUnSelectAllProductsPackingEvent(UnSelectAllProductsPackingEvent event,
+      Emitter<PackingPedidoState> emit) async {
+    try {
+      listOfProductsForPacking = [];
+      emit(ListOfProductsForPackingState(listOfProductsForPacking));
+    } catch (e, s) {
+      debugPrint('Error en el _onUnSelectAllProductsPackingEvent: $e, $s');
       emit(WmsPackingErrorState(e.toString()));
     }
   }

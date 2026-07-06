@@ -7,8 +7,8 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
-import 'package:wms_app/src/presentation/views/info%20rapida/models/info_rapida_model.dart';
-import 'package:wms_app/src/presentation/views/info%20rapida/modules/transfer/bloc/transfer_info_bloc.dart';
+import 'package:wms_app/src/presentation/views/info_rapida/models/info_rapida_model.dart';
+import 'package:wms_app/src/presentation/views/info_rapida/modules/transfer/bloc/transfer_info_bloc.dart';
 
 class LocationDestTransfInfoScreen extends StatefulWidget {
   const LocationDestTransfInfoScreen(

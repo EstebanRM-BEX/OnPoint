@@ -7,6 +7,7 @@ import 'package:wms_app/injection_container.dart';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/widgets/disposable_controllers_mixin.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -32,7 +33,7 @@ class DevolucionesScreen extends StatefulWidget {
 }
 
 class _DevolucionesScreenState extends State<DevolucionesScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, DisposableControllersMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
 
@@ -47,6 +48,21 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
   final FocusNode focusNodePropietario = FocusNode(); //foco de propietario
   final FocusNode focusNode4 = FocusNode();
   final FocusNode focusNode5 = FocusNode();
+
+  @override
+  List<ChangeNotifier> get disposables => [
+        focusNode1,
+        focusNode2,
+        focusNode3,
+        focusNodePropietario,
+        focusNode4,
+        focusNode5,
+        _controllerSearch,
+        _controllerLocation,
+        _controllerContacto,
+        _controllerPropietario,
+        _controllerQuantity,
+      ];
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -140,16 +156,6 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
 
   @override
   void dispose() {
-    for (final node in [
-      focusNode1,
-      focusNode2,
-      focusNode3,
-      focusNodePropietario,
-      focusNode4,
-      focusNode5,
-    ]) {
-      node.dispose();
-    }
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

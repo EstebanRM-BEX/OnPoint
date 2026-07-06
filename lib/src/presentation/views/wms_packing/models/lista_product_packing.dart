@@ -226,4 +226,21 @@ class ProductoPedido {
         "cantidad_total_productos": cantidadTotalProductos,
         "time_separate_end": timeSeparateEnd,
       };
+
+  // Cada línea de pedido/movimiento se identifica de forma única por
+  // idMove (viene de Odoo). Sin esta igualdad por valor, List.contains()/
+  // remove() comparan por identidad de instancia: cuando la pantalla
+  // recarga listOfProductosProgress con nuevas instancias tras cada scan,
+  // el checkbox deja de reconocer productos ya seleccionados y las
+  // instancias viejas quedan huérfanas en listOfProductsForPacking,
+  // duplicando el conteo de unidades al des/re-seleccionar.
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ProductoPedido &&
+          runtimeType == other.runtimeType &&
+          idMove == other.idMove;
+
+  @override
+  int get hashCode => idMove.hashCode;
 }

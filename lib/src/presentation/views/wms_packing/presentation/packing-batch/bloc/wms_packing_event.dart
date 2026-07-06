@@ -148,6 +148,16 @@ class UnSelectProductPackingEvent extends WmsPackingEvent {
   UnSelectProductPackingEvent(this.producto);
 }
 
+/// Selecciona todos los productos pasados (usado por el botón de
+/// "seleccionar todos" al lado del buscador).
+class SelectAllProductsPackingEvent extends WmsPackingEvent {
+  final List<ProductoPedido> productos;
+  SelectAllProductsPackingEvent(this.productos);
+}
+
+/// Deselecciona todos los productos previamente seleccionados.
+class UnSelectAllProductsPackingEvent extends WmsPackingEvent {}
+
 class LoadAllNovedadesPackingEvent extends WmsPackingEvent {}
 
 class LoadConfigurationsUserPack extends WmsPackingEvent {

@@ -5,6 +5,7 @@ import 'package:wms_app/injection_container.dart';
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously, avoid_print
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/widgets/disposable_controllers_mixin.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
@@ -41,7 +42,8 @@ class ScanPackScreen extends StatefulWidget {
   State<ScanPackScreen> createState() => _PackingScreenState();
 }
 
-class _PackingScreenState extends State<ScanPackScreen> {
+class _PackingScreenState extends State<ScanPackScreen>
+    with DisposableControllersMixin {
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   final IAudioService _audioService = getIt<IAudioService>();
   FocusNode focusNode1 = FocusNode(); // ubicacion  de origen
@@ -56,6 +58,18 @@ class _PackingScreenState extends State<ScanPackScreen> {
   final TextEditingController _controllerProduct = TextEditingController();
   final TextEditingController _controllerQuantity = TextEditingController();
   final TextEditingController cantidadController = TextEditingController();
+
+  @override
+  List<ChangeNotifier> get disposables => [
+        focusNode1,
+        focusNode2,
+        focusNode3,
+        focusNode4,
+        _controllerLocation,
+        _controllerProduct,
+        _controllerQuantity,
+        cantidadController,
+      ];
 
   @override
   void didChangeDependencies() {
@@ -99,15 +113,6 @@ class _PackingScreenState extends State<ScanPackScreen> {
       focusNode2.unfocus();
       focusNode4.unfocus();
     }
-  }
-
-  @override
-  void dispose() {
-    focusNode1.dispose();
-    focusNode2.dispose();
-    focusNode3.dispose();
-    focusNode4.dispose();
-    super.dispose();
   }
 
   void validateLocation(String value) {

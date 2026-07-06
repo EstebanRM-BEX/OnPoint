@@ -4,6 +4,7 @@ import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously, unrelated_type_equality_checks
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/widgets/disposable_controllers_mixin.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
@@ -48,7 +49,7 @@ class ScanProductRceptionBatchScreen extends StatefulWidget {
 }
 
 class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, DisposableControllersMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   @override
@@ -96,6 +97,18 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
   final TextEditingController _controllerProduct = TextEditingController();
   final TextEditingController _controllerQuantity = TextEditingController();
   final TextEditingController _cantidadController = TextEditingController();
+
+  @override
+  List<ChangeNotifier> get disposables => [
+        focusNode2,
+        focusNode3,
+        focusNode4,
+        focusNode5,
+        focusNode6,
+        _controllerProduct,
+        _controllerQuantity,
+        _cantidadController,
+      ];
 
   @override
   void didChangeDependencies() {
@@ -195,8 +208,7 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
 
   @override
   void dispose() {
-    focusNode2.dispose(); //product
-    focusNode3.dispose(); //quantity
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 

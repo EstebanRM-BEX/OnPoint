@@ -154,6 +154,16 @@ class UnSelectProductPackingEvent extends PackingConsolidateEvent {
   UnSelectProductPackingEvent(this.producto);
 }
 
+/// Selecciona todos los productos pasados (usado por el botón de
+/// "seleccionar todos" al lado del buscador).
+class SelectAllProductsPackingEvent extends PackingConsolidateEvent {
+  final List<ProductoPedido> productos;
+  SelectAllProductsPackingEvent(this.productos);
+}
+
+/// Deselecciona todos los productos previamente seleccionados.
+class UnSelectAllProductsPackingEvent extends PackingConsolidateEvent {}
+
 /// Busca productos del pedido por barcode, codigo o nombre (productId).
 class SearchProductConsolidatePackingEvent extends PackingConsolidateEvent {
   final String query;

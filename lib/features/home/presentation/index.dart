@@ -929,10 +929,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           Text(label, style: const TextStyle(fontSize: 10)),
           const Spacer(),
           isLoading
-              ? const SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+              ? Text(
+                  'cargando…',
+                  style: TextStyle(
+                      fontSize: 10,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey.shade600),
                 )
               : Text(
                   '$count',

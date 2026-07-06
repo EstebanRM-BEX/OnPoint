@@ -214,6 +214,16 @@ class UnSelectProductPackingEvent extends PackingPedidoEvent {
   UnSelectProductPackingEvent(this.producto);
 }
 
+/// Selecciona todos los productos pasados (usado por el botón de
+/// "seleccionar todos" al lado del buscador).
+class SelectAllProductsPackingEvent extends PackingPedidoEvent {
+  final List<ProductoPedido> productos;
+  SelectAllProductsPackingEvent(this.productos);
+}
+
+/// Deselecciona todos los productos previamente seleccionados.
+class UnSelectAllProductsPackingEvent extends PackingPedidoEvent {}
+
 class UnPackingEvent extends PackingPedidoEvent {
   final UnPackRequest request;
 

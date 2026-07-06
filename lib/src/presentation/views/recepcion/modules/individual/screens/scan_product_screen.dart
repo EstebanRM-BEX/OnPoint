@@ -14,6 +14,7 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/shared/widgets/disposable_controllers_mixin.dart';
 import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
@@ -49,7 +50,7 @@ class ScanProductOrderScreen extends StatefulWidget {
 }
 
 class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
-    with WidgetsBindingObserver, LoadingDialogMixin {
+    with WidgetsBindingObserver, LoadingDialogMixin, DisposableControllersMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   @override
@@ -91,6 +92,19 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
   final TextEditingController _controllerProduct = TextEditingController();
   final TextEditingController _controllerQuantity = TextEditingController();
   final TextEditingController _cantidadController = TextEditingController();
+
+  @override
+  List<ChangeNotifier> get disposables => [
+        focusNode2,
+        focusNode3,
+        focusNode4,
+        focusNode5,
+        focusNode6,
+        focusNodeSegundaUnidad,
+        _controllerProduct,
+        _controllerQuantity,
+        _cantidadController,
+      ];
 
   @override
   void didChangeDependencies() {
@@ -190,12 +204,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
 
   @override
   void dispose() {
-    focusNode2.dispose();
-    focusNode3.dispose();
-    focusNode4.dispose();
-    focusNode5.dispose();
-    focusNode6.dispose();
-    focusNodeSegundaUnidad.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 

@@ -12,6 +12,7 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/shared/widgets/disposable_controllers_mixin.dart';
 import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/shared/widgets/scanner_locationDest_widget.dart';
 import 'package:wms_app/shared/widgets/scanner_location_widget.dart';
@@ -45,7 +46,7 @@ class ScanProductPickScreen extends StatefulWidget {
 }
 
 class _ScanProductPickScreenState extends State<ScanProductPickScreen>
-    with WidgetsBindingObserver, LoadingDialogMixin {
+    with WidgetsBindingObserver, LoadingDialogMixin, DisposableControllersMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   String scannedValue6 = '';
@@ -66,6 +67,22 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
   final TextEditingController _controllerMuelle = TextEditingController();
   final TextEditingController _controllerSubMuelle = TextEditingController();
   final TextEditingController cantidadController = TextEditingController();
+
+  @override
+  List<ChangeNotifier> get disposables => [
+        focusNode1,
+        focusNode2,
+        focusNode3,
+        focusNode4,
+        focusNode5,
+        focusNode6,
+        _controllerLocation,
+        _controllerProduct,
+        _controllerQuantity,
+        _controllerMuelle,
+        _controllerSubMuelle,
+        cantidadController,
+      ];
 
   @override
   void initState() {
@@ -159,12 +176,6 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
 
   @override
   void dispose() {
-    focusNode1.dispose();
-    focusNode2.dispose();
-    focusNode3.dispose();
-    focusNode4.dispose();
-    focusNode5.dispose();
-    focusNode6.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

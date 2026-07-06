@@ -4,6 +4,7 @@ import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/widgets/disposable_controllers_mixin.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
@@ -42,7 +43,7 @@ class ScanProductTrasnferScreen extends StatefulWidget {
 }
 
 class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, DisposableControllersMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   @override
@@ -98,13 +99,23 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
   final TextEditingController _cantidadController = TextEditingController();
 
   @override
+  List<ChangeNotifier> get disposables => [
+        focusNode1,
+        focusNode2,
+        focusNode3,
+        focusNode4,
+        focusNode5,
+        focusNodeSegundaUnidad,
+        _controllerLocation,
+        _controllerLocationDest,
+        _controllerProduct,
+        _controllerQuantity,
+        _cantidadController,
+      ];
+
+  @override
   void dispose() {
-    focusNode1.dispose(); //location
-    focusNode2.dispose(); //product
-    focusNode3.dispose(); //cantidad por pda
-    focusNode4.dispose(); //cantidad textformfieldƒ
-    focusNode5.dispose(); //location dest
-    focusNodeSegundaUnidad.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 

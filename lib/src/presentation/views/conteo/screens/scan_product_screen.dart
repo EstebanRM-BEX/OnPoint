@@ -4,6 +4,7 @@ import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/widgets/disposable_controllers_mixin.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
@@ -40,7 +41,7 @@ class ScanProductConteoScreen extends StatefulWidget {
 }
 
 class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, DisposableControllersMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
 
@@ -57,6 +58,20 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
   final TextEditingController _controllerQuantity = TextEditingController();
   final TextEditingController _controllerLote = TextEditingController();
   final TextEditingController cantidadController = TextEditingController();
+
+  @override
+  List<ChangeNotifier> get disposables => [
+        focusNode1,
+        focusNode2,
+        focusNode3,
+        focusNode4,
+        focusNode5,
+        _controllerLocation,
+        _controllerProduct,
+        _controllerQuantity,
+        _controllerLote,
+        cantidadController,
+      ];
 
   String? selectedLocation;
 
@@ -164,14 +179,6 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
 
   @override
   void dispose() {
-    for (final node in [
-      focusNode1,
-      focusNode2,
-      focusNode3,
-      focusNode4,
-    ]) {
-      node.dispose();
-    }
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

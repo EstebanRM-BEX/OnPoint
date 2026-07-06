@@ -3,6 +3,7 @@ import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/widgets/disposable_controllers_mixin.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
@@ -41,7 +42,8 @@ class ScanProductPackingConsolidateScreen extends StatefulWidget {
 }
 
 class _ScanProductPackingConsolidateScreenState
-    extends State<ScanProductPackingConsolidateScreen> {
+    extends State<ScanProductPackingConsolidateScreen>
+    with DisposableControllersMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
 
@@ -57,6 +59,18 @@ class _ScanProductPackingConsolidateScreenState
   final TextEditingController _controllerProduct = TextEditingController();
   final TextEditingController _controllerQuantity = TextEditingController();
   final TextEditingController cantidadController = TextEditingController();
+
+  @override
+  List<ChangeNotifier> get disposables => [
+        focusNode1,
+        focusNode2,
+        focusNode3,
+        focusNode4,
+        _controllerLocation,
+        _controllerProduct,
+        _controllerQuantity,
+        cantidadController,
+      ];
 
   @override
   void didChangeDependencies() {
@@ -104,15 +118,6 @@ class _ScanProductPackingConsolidateScreenState
       focusNode2.unfocus();
       focusNode4.unfocus();
     }
-  }
-
-  @override
-  void dispose() {
-    focusNode1.dispose();
-    focusNode2.dispose();
-    focusNode3.dispose();
-    focusNode4.dispose();
-    super.dispose();
   }
 
   void validateLocation(String value) {

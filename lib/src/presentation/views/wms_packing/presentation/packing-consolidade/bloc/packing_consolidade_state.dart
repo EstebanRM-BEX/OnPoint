@@ -159,6 +159,20 @@ class UnSelectProductPackingLoadedState extends PackingConsolidateState {
   UnSelectProductPackingLoadedState({required this.listOfProductsForPacking});
 }
 
+class SelectAllProductsPackingLoadedState extends PackingConsolidateState {
+  final List<ProductoPedido> listOfProductsForPacking;
+
+  SelectAllProductsPackingLoadedState(
+      {required this.listOfProductsForPacking});
+}
+
+class UnSelectAllProductsPackingLoadedState extends PackingConsolidateState {
+  final List<ProductoPedido> listOfProductsForPacking;
+
+  UnSelectAllProductsPackingLoadedState(
+      {required this.listOfProductsForPacking});
+}
+
 class DeleteProductFromTemporaryPackageLoading
     extends PackingConsolidateState {}
 

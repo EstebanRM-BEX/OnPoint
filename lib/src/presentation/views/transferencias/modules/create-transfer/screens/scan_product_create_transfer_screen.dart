@@ -4,6 +4,7 @@ import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/widgets/disposable_controllers_mixin.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -33,7 +34,7 @@ class CreateTransferScreen extends StatefulWidget {
 }
 
 class _CreateTransferScreenState extends State<CreateTransferScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, DisposableControllersMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
 
@@ -55,6 +56,22 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
   final TextEditingController _controllerLote = TextEditingController();
   final TextEditingController cantidadController = TextEditingController();
 
+  @override
+  List<ChangeNotifier> get disposables => [
+        focusNode1,
+        focusNode2,
+        focusNode3,
+        focusNode4,
+        focusNode5,
+        focusNode6,
+        focusNodeSegundaUnidad,
+        _controllerLocation,
+        _controllerProduct,
+        _controllerQuantity,
+        _controllerLote,
+        cantidadController,
+      ];
+
   String? selectedLocation;
 
   @override
@@ -71,7 +88,6 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    focusNodeSegundaUnidad.dispose();
     super.dispose();
   }
 

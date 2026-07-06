@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/widgets/disposable_controllers_mixin.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
@@ -44,7 +45,7 @@ class ScanProductCluster extends StatefulWidget {
 }
 
 class _ScanProductClusterState extends State<ScanProductCluster>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, DisposableControllersMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   //focus
@@ -62,6 +63,22 @@ class _ScanProductClusterState extends State<ScanProductCluster>
   final TextEditingController _controllerQuantity = TextEditingController();
   final TextEditingController _controllerCantidad = TextEditingController();
   final TextEditingController _controllerPedido = TextEditingController();
+
+  @override
+  List<ChangeNotifier> get disposables => [
+        focusNode1,
+        focusNode2,
+        focusNode3,
+        focusNode4,
+        focusNode6,
+        focusNode7,
+        _controllerLocation,
+        _controllerProduct,
+        _controllerLote,
+        _controllerQuantity,
+        _controllerCantidad,
+        _controllerPedido,
+      ];
 
   String? selectedMuelle;
 
@@ -179,12 +196,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
 
   @override
   void dispose() {
-    focusNode1.dispose(); //
-    focusNode2.dispose(); //
-    focusNode3.dispose(); //
-    focusNode4.dispose(); //
-    focusNode6.dispose(); //
-    focusNode7.dispose(); //
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 

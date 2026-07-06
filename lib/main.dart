@@ -35,8 +35,8 @@ import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.d
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
 import 'package:wms_app/features/login/presentation/bloc/login_bloc.dart';
-import 'package:wms_app/src/presentation/views/info%20rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
-import 'package:wms_app/src/presentation/views/info%20rapida/modules/transfer/bloc/transfer_info_bloc.dart';
+import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
+import 'package:wms_app/src/presentation/views/info_rapida/modules/transfer/bloc/transfer_info_bloc.dart';
 import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/batchs/bloc/recepcion_batch_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
@@ -104,15 +104,16 @@ void main() {
     // Initialize Dependency Injection
     await configureDependencies();
 
-    // 5. Iniciar WebSocket (Usando DI)
-    await getIt<IWebSocketService>().connect();
-
     apiRequestService.initialize(
       unencodePath: '/api',
       httpHandler: HttpResponseHandler(),
     );
 
     runApp(const MyApp());
+
+    // WebSocket en background: no debe bloquear el primer frame.
+    // connect() ya retorna solo si no hay sesión activa.
+    unawaited(getIt<IWebSocketService>().connect());
   }, (error, stack) {
     // Zona de captura de errores globales
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);

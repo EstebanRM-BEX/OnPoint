@@ -177,6 +177,10 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
     on<SelectProductPackingEvent>(_onSelectProductPackingEvent);
     //*evento para desseleccionar productos sin certificar
     on<UnSelectProductPackingEvent>(_onUnSelectProductPackingEvent);
+    //*evento para seleccionar todos los productos sin certificar
+    on<SelectAllProductsPackingEvent>(_onSelectAllProductsPackingEvent);
+    //*evento para deseleccionar todos los productos sin certificar
+    on<UnSelectAllProductsPackingEvent>(_onUnSelectAllProductsPackingEvent);
     //*evento para obtener las novedades
     on<LoadAllNovedadesPackingEvent>(_onLoadAllNovedadesEvent);
     add(LoadAllNovedadesPackingEvent());
@@ -878,6 +882,30 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       }
     } catch (e, s) {
       debugPrint('Error en el _onUnSelectProductPackingEvent: $e, $s');
+      emit(WmsPackingError(e.toString()));
+    }
+  }
+
+  //*metodo para seleccionar todos los productos sin certificar
+  void _onSelectAllProductsPackingEvent(SelectAllProductsPackingEvent event,
+      Emitter<WmsPackingState> emit) async {
+    try {
+      listOfProductsForPacking = List<ProductoPedido>.from(event.productos);
+      emit(ListOfProductsForPackingState(listOfProductsForPacking));
+    } catch (e, s) {
+      debugPrint('Error en el _onSelectAllProductsPackingEvent: $e, $s');
+      emit(WmsPackingError(e.toString()));
+    }
+  }
+
+  //*metodo para deseleccionar todos los productos sin certificar
+  void _onUnSelectAllProductsPackingEvent(UnSelectAllProductsPackingEvent event,
+      Emitter<WmsPackingState> emit) async {
+    try {
+      listOfProductsForPacking = [];
+      emit(ListOfProductsForPackingState(listOfProductsForPacking));
+    } catch (e, s) {
+      debugPrint('Error en el _onUnSelectAllProductsPackingEvent: $e, $s');
       emit(WmsPackingError(e.toString()));
     }
   }

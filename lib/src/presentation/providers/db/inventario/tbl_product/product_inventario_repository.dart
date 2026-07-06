@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart'; // Import para compute
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/product_inventario_table.dart';
-import 'package:wms_app/src/presentation/views/info%20rapida/models/update_product_request.dart';
+import 'package:wms_app/src/presentation/views/info_rapida/models/update_product_request.dart';
 import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 import 'dart:core';
 

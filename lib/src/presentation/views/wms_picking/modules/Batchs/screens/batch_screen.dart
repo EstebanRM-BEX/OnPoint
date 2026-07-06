@@ -11,6 +11,7 @@ import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
+import 'package:wms_app/shared/widgets/disposable_controllers_mixin.dart';
 import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/shared/widgets/scanner_locationDest_widget.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
@@ -44,7 +45,7 @@ class BatchScreen extends StatefulWidget {
 }
 
 class _BatchDetailScreenState extends State<BatchScreen>
-    with WidgetsBindingObserver, LoadingDialogMixin {
+    with WidgetsBindingObserver, LoadingDialogMixin, DisposableControllersMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
 
@@ -66,6 +67,22 @@ class _BatchDetailScreenState extends State<BatchScreen>
   final TextEditingController _controllerMuelle = TextEditingController();
   final TextEditingController _controllerSubMuelle = TextEditingController();
   final TextEditingController cantidadController = TextEditingController();
+
+  @override
+  List<ChangeNotifier> get disposables => [
+        focusNode1,
+        focusNode2,
+        focusNode3,
+        focusNode4,
+        focusNode5,
+        focusNode6,
+        _controllerLocation,
+        _controllerProduct,
+        _controllerQuantity,
+        _controllerMuelle,
+        _controllerSubMuelle,
+        cantidadController,
+      ];
   Timer? _debounce;
 
   @override
@@ -281,16 +298,6 @@ class _BatchDetailScreenState extends State<BatchScreen>
   @override
   void dispose() {
     _debounce?.cancel();
-    for (final node in [
-      focusNode1,
-      focusNode2,
-      focusNode3,
-      focusNode4,
-      focusNode5,
-      focusNode6
-    ]) {
-      node.dispose();
-    }
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
