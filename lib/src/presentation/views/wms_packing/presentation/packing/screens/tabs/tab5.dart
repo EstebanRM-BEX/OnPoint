@@ -34,6 +34,29 @@ class _Tab5ScreenState extends State<Tab5Screen> {
 
   final Set<int> _selectedPackageIds = {};
 
+  /// Id del paquete cuya card está expandida en la UI. Se usa el id (único)
+  /// en vez del nombre/barcode del paquete, que puede venir vacío para
+  /// varios paquetes a la vez y hacía que todos se expandieran juntos.
+  int? _expandedPackageId;
+
+  /// Los checkboxes solo aparecen cuando hay más de un paquete: con uno solo
+  /// no hay nada que elegir y el icono de imprimir de la fila ya lo cubre.
+  bool _canSelectPackages(BuildContext context) =>
+      context.read<PackingPedidoBloc>().packages.length > 1;
+
+  void _togglePackage(BuildContext context, int packageId, bool isSelected) {
+    setState(() {
+      if (isSelected) {
+        _selectedPackageIds.add(packageId);
+      } else {
+        _selectedPackageIds.remove(packageId);
+      }
+    });
+    context.read<PackingPedidoBloc>().add(
+          SelectPackageEvent(packageIds: List<int>.from(_selectedPackageIds)),
+        );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -228,6 +251,25 @@ class _Tab5ScreenState extends State<Tab5Screen> {
       builder: (context, state) {
         return Scaffold(
           backgroundColor: Colors.white,
+          // FAB de impresión en lote: aparece con más de 1 paquete seleccionado
+          // y manda todos los ids como lista [1,2,3] al modal de impresoras.
+          floatingActionButton: _selectedPackageIds.length > 1
+              ? FloatingActionButton.extended(
+                  backgroundColor: primaryColorApp,
+                  onPressed: () {
+                    ModalPrintersList.show(
+                      context,
+                      resIds: _selectedPackageIds.toList(),
+                      companyId: 1,
+                    );
+                  },
+                  icon: const Icon(Icons.print, color: Colors.white),
+                  label: Text(
+                    '(${_selectedPackageIds.length})',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                )
+              : null,
           body: Column(
             children: [
               if (context
@@ -257,11 +299,8 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                       )
                     : Column(
                         children: [
-                          if (context
-                                  .read<PackingPedidoBloc>()
-                                  .currentPedidoPack
-                                  .configPacking ==
-                              'cluster')
+                          // La selección solo tiene sentido con varios paquetes.
+                          if (_canSelectPackages(context))
                             // ── Fila seleccionar todos ──
                             Padding(
                               padding:
@@ -326,11 +365,9 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                 // --- LÓGICA DE ORDENAMIENTO ---
                                 List<Paquete> sortedPackages =
                                     List.from(bloc.packages);
-                                if (bloc.expandedPackage.isNotEmpty) {
+                                if (_expandedPackageId != null) {
                                   final foundIdx = sortedPackages.indexWhere(
-                                      (p) =>
-                                          p.packingBarcode?.toLowerCase() ==
-                                          bloc.expandedPackage.toLowerCase());
+                                      (p) => p.id == _expandedPackageId);
                                   if (foundIdx != -1) {
                                     final pToMove =
                                         sortedPackages.removeAt(foundIdx);
@@ -354,12 +391,28 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                     '';
                                 return CustomExpansionTile(
                                   key: ValueKey(package.id ?? package.name),
-                                  isExpanded:
-                                      bloc.expandedPackage.toLowerCase() ==
-                                          packageId.toLowerCase(),
+                                  leading: (_canSelectPackages(context) &&
+                                          package.id != null)
+                                      ? Checkbox(
+                                          activeColor: primaryColorApp,
+                                          value: _selectedPackageIds
+                                              .contains(package.id),
+                                          onChanged: (val) => _togglePackage(
+                                              context, package.id!, val ?? false),
+                                        )
+                                      : null,
+                                  isExpanded: package.id != null &&
+                                      package.id == _expandedPackageId,
                                   onTap: () {
-                                    if (bloc.expandedPackage.toLowerCase() ==
-                                        packageId.toLowerCase()) {
+                                    final isCurrentlyExpanded =
+                                        package.id == _expandedPackageId;
+                                    setState(() {
+                                      _expandedPackageId =
+                                          isCurrentlyExpanded
+                                              ? null
+                                              : package.id;
+                                    });
+                                    if (isCurrentlyExpanded) {
                                       bloc.add(ExpandPackageEvent(''));
                                     } else {
                                       bloc.add(ExpandPackageEvent(packageId));
@@ -431,7 +484,7 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                       Row(
                                         children: [
                                           Text(
-                                            "Cantidad de productos: ${package.cantidadProductos}",
+                                            "Cant. productos: ${package.cantidadProductos}",
                                             style: const TextStyle(
                                                 fontSize: 12, color: black),
                                           ),

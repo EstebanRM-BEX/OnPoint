@@ -227,6 +227,23 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     on<SelectLocationEvent>(_onSelectLocationEvent);
 
     on<SortPackingListEvent>((event, emit) {
+      switch (event.field) {
+        case 'priority':
+          currentFilterKey =
+              event.ascending ? 'priority_normal' : 'priority_high';
+          break;
+        case 'backorder':
+          currentFilterKey =
+              event.ascending ? 'backorder_asc' : 'backorder_desc';
+          break;
+        case 'date':
+          currentFilterKey = event.ascending ? 'date_asc' : 'date_desc';
+          break;
+        case 'name':
+          currentFilterKey = event.ascending ? 'name_asc' : 'name_desc';
+          break;
+      }
+
       List<PedidoPackingResult> sortedList =
           List.from(listOfPedidosFilters);
       sortedList.sort((a, b) {
@@ -237,9 +254,6 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
             final String pB = b.priority ?? '0';
             // Si es ascendente: 0 -> 1 (Normal primero).
             // Si es descendente: 1 -> 0 (Alta primero).
-            currentFilterKey =
-                event.ascending ? 'priority_normal' : 'priority_high';
-
             return event.ascending ? pA.compareTo(pB) : pB.compareTo(pA);
 
           case 'backorder':
@@ -254,8 +268,6 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
             // 0 = No tiene
             final int valA = hasBackorderA ? 1 : 0;
             final int valB = hasBackorderB ? 1 : 0;
-            currentFilterKey =
-                event.ascending ? 'backorder_asc' : 'backorder_desc';
             // Si es ascendente (true): 0 va primero (Sin backorder -> Con backorder)
             // Si es descendente (false): 1 va primero (Con backorder -> Sin backorder)
             return event.ascending
@@ -270,13 +282,11 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
                 DateTime.tryParse(b.fechaCreacion.toString()) ?? DateTime(1900);
 
             int resultDate = dateA.compareTo(dateB);
-            currentFilterKey = event.ascending ? 'date_asc' : 'date_desc';
             return event.ascending ? resultDate : -resultDate;
 
           case 'name':
             final nameA = a.name ?? '';
             final nameB = b.name ?? '';
-            currentFilterKey = event.ascending ? 'name_asc' : 'name_desc';
             int resultName = nameA.toLowerCase().compareTo(nameB.toLowerCase());
             return event.ascending ? resultName : -resultName;
 
@@ -1653,6 +1663,10 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     try {
       emit(LoadPedidoAndProductsLoading());
 
+      // Limpiamos la selección de productos para empacar del pedido anterior,
+      // de lo contrario el FAB de tab2 muestra selección/cantidades de otro pedido.
+      listOfProductsForPacking = [];
+
       // Lanzar las 4 queries en paralelo (todas usan event.idPedido, son independientes)
       final futurePedido =
           db.pedidoPackRepository.getPedidoPackById(event.idPedido);
@@ -1920,7 +1934,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       }
 
       // Emite el nuevo estado con la lista filtrada
-      emit(PackingPedidoLoadedFromDBState(listOfPedidos: listOfPedidosBD));
+      emit(PackingPedidoLoadedFromDBState(listOfPedidos: listOfPedidosFilters));
     } catch (e, s) {
       debugPrint('Error en el _onSearchPedidoEvent: $e, $s');
       // Emite un estado de error si algo sale mal durante la búsqueda

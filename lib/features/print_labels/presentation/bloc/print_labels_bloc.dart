@@ -1,7 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
-import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
+import 'package:wms_app/features/print_labels/data/models/product_label.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
@@ -12,8 +12,8 @@ part 'print_labels_state.dart';
 class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
   List<ResultUbicaciones> ubicaciones = [];
   List<ResultUbicaciones> ubicacionesFilters = [];
-  List<Product> productos = [];
-  List<Product> productosFilters = [];
+  List<ProductLabel> productos = [];
+  List<ProductLabel> productosFilters = [];
   UserConfigurationModel configurations = UserConfigurationModel();
 
   TextEditingController searchControllerLocation = TextEditingController();
@@ -22,7 +22,11 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
   TextEditingController rangeEndController = TextEditingController();
 
   List<ResultUbicaciones> ubicacionesRange = [];
-  List<Product> productosSelected = [];
+
+  /// Ids de productos seleccionados para imprimir. Un `Set` da membresía O(1)
+  /// (antes era `List<Product>.any(...)` recorrido por item en cada rebuild) y
+  /// solo guardamos lo que la impresión necesita: el id.
+  final Set<int> selectedProductIds = {};
 
   DataBaseSqlite db = DataBaseSqlite();
 
@@ -76,15 +80,16 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
       GetProductsList event, Emitter<PrintLabelsState> emit) async {
     try {
       emit(GetProductsLoading());
-      final response =
-          await db.productoInventarioRepository.getAllUniqueProducts();
+      // Proyección liviana (id/name/code/barcode) en vez de SELECT * + parseo
+      // de las ~35 columnas del modelo Product.
+      final rows = await db.productoInventarioRepository.getProductLabelRows();
       productos.clear();
       productosFilters.clear();
-      if (response.isNotEmpty) {
-        productos = response;
+      if (rows.isNotEmpty) {
+        productos = rows.map(ProductLabel.fromMap).toList();
         productosFilters = List.from(productos);
         debugPrint('####################>>>>>productos ${productos.length}');
-        emit(GetProductsSuccess(response));
+        emit(GetProductsSuccess(productos));
       } else {
         emit(GetProductsFailure('No se encontraron productos'));
       }
@@ -135,9 +140,9 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
       productosFilters = List.from(productos);
     } else {
       productosFilters = productos.where((product) {
-        return (product.name?.toLowerCase().contains(query) ?? false) ||
-            (product.code?.toLowerCase().contains(query) ?? false) ||
-            (product.barcode?.toLowerCase().contains(query) ?? false);
+        return product.name.toLowerCase().contains(query) ||
+            product.code.toLowerCase().contains(query) ||
+            product.barcode.toLowerCase().contains(query);
       }).toList();
     }
     emit(SearchProductSuccess(productosFilters));
@@ -187,18 +192,13 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
 
   void _onAddSelectedProductEvent(
       AddSelectedProductEvent event, Emitter<PrintLabelsState> emit) {
-    final alreadyAdded = productosSelected.any((p) => p.productId == event.product.productId);
-    if (!alreadyAdded) {
-      productosSelected = [...productosSelected, event.product];
-      productosSelected.sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
-    }
+    selectedProductIds.add(event.productId);
     emit(SearchProductSuccess(productosFilters));
   }
 
   void _onRemoveSelectedProductEvent(
       RemoveSelectedProductEvent event, Emitter<PrintLabelsState> emit) {
-    productosSelected =
-        productosSelected.where((p) => p.productId != event.productId).toList();
+    selectedProductIds.remove(event.productId);
     emit(SearchProductSuccess(productosFilters));
   }
 }

@@ -79,6 +79,12 @@ class _PackingScreenState extends State<ScanPackScreen>
 
   void _handleDependencies() {
     final batchBloc = context.read<PackingPedidoBloc>();
+
+    // ⛔️ Mientras el campo de cantidad manual está abierto no re-arbitramos el
+    // foco (el teclado cambia el MediaQuery y dispara didChangeDependencies;
+    // sin este guard se hacía focusNode4.unfocus() y el teclado se cerraba solo).
+    if (batchBloc.viewQuantity) return;
+
     if (!batchBloc.locationIsOk && //false
         !batchBloc.productIsOk && //false
         !batchBloc.quantityIsOk && //false
@@ -377,8 +383,14 @@ class _PackingScreenState extends State<ScanPackScreen>
                                 if (state is ChangeLocationPackingIsOkState) {
                                   Future.delayed(const Duration(seconds: 1),
                                       () {
-                                    FocusScope.of(context)
-                                        .requestFocus(focusNode2);
+                                    // No robar el foco si el usuario abrió el
+                                    // campo de cantidad manual (evita cerrar el
+                                    // teclado).
+                                    if (mounted &&
+                                        !packingBloc.viewQuantity) {
+                                      FocusScope.of(context)
+                                          .requestFocus(focusNode2);
+                                    }
                                   });
                                   _handleDependencies();
                                 }
@@ -386,8 +398,14 @@ class _PackingScreenState extends State<ScanPackScreen>
                                 if (state is ChangeProductPackingIsOkState) {
                                   Future.delayed(const Duration(seconds: 1),
                                       () {
-                                    FocusScope.of(context)
-                                        .requestFocus(focusNode3);
+                                    // No robar el foco si el usuario abrió el
+                                    // campo de cantidad manual (evita cerrar el
+                                    // teclado).
+                                    if (mounted &&
+                                        !packingBloc.viewQuantity) {
+                                      FocusScope.of(context)
+                                          .requestFocus(focusNode3);
+                                    }
                                   });
                                   _handleDependencies();
                                 }
@@ -687,6 +705,10 @@ class _PackingScreenState extends State<ScanPackScreen>
                                     //tmano del campo
 
                                     focusNode: focusNode4,
+                                    // Al montarse (viewQuantity == true) toma el
+                                    // foco de forma determinista, sin depender
+                                    // del Future.delayed que causaba la carrera.
+                                    autofocus: true,
                                     inputFormatters: [
                                       FilteringTextInputFormatter.allow(
                                           RegExp(r'[0-9.]')),

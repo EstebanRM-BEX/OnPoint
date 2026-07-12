@@ -5,24 +5,64 @@ import 'package:wms_app/features/expedition/domain/entities/item_suelto_expedici
 class ExpedicionItemSueltoRowWidget extends StatelessWidget {
   final ItemSueltoExpedicion item;
 
-  const ExpedicionItemSueltoRowWidget({super.key, required this.item});
+  /// Si se provee, se muestra un ícono de deshacer en vez de la flecha
+  /// (usado en la tab "Listo", que es de solo lectura y no navega).
+  final VoidCallback? onUndo;
+
+  /// Si es true, la fila entra en modo selección múltiple: aparece el
+  /// checkbox y la card se resalta al estar marcada. Lo decide únicamente el
+  /// permiso allow_validate_multiple (tab "Por hacer") — no depende de
+  /// onSelectedChanged, que puede venir null por otro motivo (ej. el item no
+  /// tiene packingId) sin que eso deba ocultar el checkbox, solo
+  /// deshabilitarlo.
+  final bool seleccionable;
+  final bool isSelected;
+  final ValueChanged<bool>? onSelectedChanged;
+
+  const ExpedicionItemSueltoRowWidget({
+    super.key,
+    required this.item,
+    this.onUndo,
+    this.seleccionable = false,
+    this.isSelected = false,
+    this.onSelectedChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: white,
+      color: seleccionable && isSelected ? primaryColorAppLigth : white,
       elevation: 2,
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       child: ListTile(
-        trailing: Icon(
-          Icons.arrow_forward_ios,
-          size: 15,
-          color: primaryColorApp,
-        ),
-        leading: Icon(
-          Icons.inventory_2_outlined,
-          size: 20,
-          color: primaryColorApp,
+        trailing: onUndo != null
+            ? IconButton(
+                icon: const Icon(Icons.delete, color: red,size: 20),
+                tooltip: 'Deshacer validación',
+                onPressed: onUndo,
+              )
+            : Icon(
+                Icons.arrow_forward_ios,
+                size: 15,
+                color: primaryColorApp,
+              ),
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (seleccionable)
+              Checkbox(
+                activeColor: primaryColorApp,
+                value: isSelected,
+                onChanged: onSelectedChanged == null
+                    ? null
+                    : (value) => onSelectedChanged!(value ?? false),
+              ),
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 20,
+              color: primaryColorApp,
+            ),
+          ],
         ),
         title: Text(
           item.productName ?? 'Producto sin nombre',

@@ -37,10 +37,7 @@ class ExpedicionCardWidget extends StatelessWidget {
               ),
               Text('Operación: ${expedicion.pickingType ?? ""}',
                   style: const TextStyle(fontSize: 12, color: primaryColorApp)),
-              Text(
-                'Estado: ${expedicion.estado ?? "Sin estado"}',
-                style: const TextStyle(fontSize: 12, color: primaryColorApp),
-              ),
+          
               if (expedicion.observacion != null &&
                   expedicion.observacion!.isNotEmpty)
                 Text('Observación: ${expedicion.observacion}',

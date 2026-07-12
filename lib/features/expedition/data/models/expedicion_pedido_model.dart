@@ -30,6 +30,7 @@ class ExpedicionPedidoModel extends ExpedicionPedido {
     super.startTimeTransfer,
     super.endTimeTransfer,
     super.zonaEntrega,
+    super.isTerminated,
     super.itemsPackValidados = const [],
     super.itemsPackPendientes = const [],
     super.itemsValidados = const [],
@@ -88,6 +89,7 @@ class ExpedicionPedidoModel extends ExpedicionPedido {
       startTimeTransfer: dynamicToString(json['start_time_transfer']),
       endTimeTransfer: dynamicToString(json['end_time_transfer']),
       zonaEntrega: dynamicToString(json['zona_entrega']),
+      isTerminated: dynamicToBool(json['is_terminated']),
       itemsPackValidados: validados,
       itemsPackPendientes: pendientes,
       itemsValidados: itemsSueltosValidados,
@@ -129,6 +131,8 @@ class ExpedicionPedidoModel extends ExpedicionPedido {
       endTimeTransfer:
           map[ExpedicionPedidosTable.columnEndTimeTransfer] as String?,
       zonaEntrega: map[ExpedicionPedidosTable.columnZonaEntrega] as String?,
+      isTerminated:
+          (map[ExpedicionPedidosTable.columnIsTerminated] as int?) == 1,
     );
   }
 
@@ -157,6 +161,8 @@ class ExpedicionPedidoModel extends ExpedicionPedido {
       ExpedicionPedidosTable.columnStartTimeTransfer: startTimeTransfer,
       ExpedicionPedidosTable.columnEndTimeTransfer: endTimeTransfer,
       ExpedicionPedidosTable.columnZonaEntrega: zonaEntrega,
+      ExpedicionPedidosTable.columnIsTerminated:
+          isTerminated == null ? null : (isTerminated == true ? 1 : 0),
     };
     data.removeWhere((key, value) => value == null);
     return data;

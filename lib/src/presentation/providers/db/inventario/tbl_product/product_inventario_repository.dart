@@ -173,6 +173,29 @@ class ProductInventarioRepository {
     }
   }
 
+  /// Proyección liviana (id/name/code/barcode) para pantallas que NO necesitan
+  /// las ~35 columnas del producto, p.ej. impresión de etiquetas. Reduce el I/O
+  /// de SQLite, el parseo y la memoria frente a `getAllUniqueProducts`
+  /// (que hace `SELECT *`). Devuelve filas crudas; el caller las mapea a su
+  /// propio modelo liviano para no acoplar la capa DB a un feature.
+  Future<List<Map<String, Object?>>> getProductLabelRows() async {
+    try {
+      final db = await DataBaseSqlite().getDatabaseInstance();
+      final maps = await db.rawQuery('''
+        SELECT ${ProductInventarioTable.columnProductId},
+               ${ProductInventarioTable.columnProductName},
+               ${ProductInventarioTable.columnProductCode},
+               ${ProductInventarioTable.columnBarcode}
+        FROM ${ProductInventarioTable.tableName}
+        GROUP BY ${ProductInventarioTable.columnProductId}
+      ''');
+      return maps;
+    } catch (e, s) {
+      debugPrint("Error al obtener filas de etiquetas: $e ==> $s");
+      return [];
+    }
+  }
+
   Future<Product?> getProductById(int productId) async {
     try {
       Database db = await DataBaseSqlite().getDatabaseInstance();

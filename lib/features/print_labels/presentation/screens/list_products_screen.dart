@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -6,6 +8,7 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/print_labels/presentation/bloc/print_labels_bloc.dart';
+import 'package:wms_app/features/print_labels/data/models/product_label.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 
@@ -18,6 +21,16 @@ class PrintLabelsProductsScreen extends StatefulWidget {
 }
 
 class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
+  // Debounce del buscador: evita filtrar toda la lista en cada tecla; solo
+  // dispara la búsqueda 200ms después de la última pulsación.
+  Timer? _searchDebounce;
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
@@ -41,9 +54,18 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
                       controller: bloc.searchControllerProducts,
                       hintText: "Buscar producto",
                       onSearchChanged: (value) {
-                        bloc.add(SearchProductEvent(value));
+                        _searchDebounce?.cancel();
+                        _searchDebounce = Timer(
+                          const Duration(milliseconds: 200),
+                          () {
+                            if (mounted) bloc.add(SearchProductEvent(value));
+                          },
+                        );
                       },
                       onSearchCleared: () {
+                        // Cancelamos cualquier búsqueda pendiente para que no
+                        // pise el "limpiar".
+                        _searchDebounce?.cancel();
                         bloc.searchControllerProducts.clear();
                         bloc.add(SearchProductEvent(''));
                         Future.microtask(() {
@@ -61,22 +83,23 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
                               itemCount: bloc.productosFilters.length,
                               itemBuilder: (_, index) {
                                 final product = bloc.productosFilters[index];
-                                final alreadyAdded = bloc.productosSelected.any(
-                                  (p) => p.productId == product.productId,
-                                );
+                                final alreadyAdded = bloc.selectedProductIds
+                                    .contains(product.productId);
                                 return ProductListTile(
-                                  index: index,
+                                  product: product,
                                   isAdded: alreadyAdded,
                                   onAddRemove: () {
                                     if (alreadyAdded) {
                                       bloc.add(
                                         RemoveSelectedProductEvent(
-                                          product.productId!,
+                                          product.productId,
                                         ),
                                       );
                                     } else {
                                       bloc.add(
-                                        AddSelectedProductEvent(product),
+                                        AddSelectedProductEvent(
+                                          product.productId,
+                                        ),
                                       );
                                     }
                                   },
@@ -84,7 +107,7 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
                               },
                             ),
                     ),
-                    if (bloc.productosSelected.isNotEmpty)
+                    if (bloc.selectedProductIds.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         child: ElevatedButton(
@@ -92,9 +115,7 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
                             FocusScope.of(context).unfocus();
                             ModalPrintersList.show(
                               context,
-                              resIds: bloc.productosSelected
-                                  .map((e) => e.productId!)
-                                  .toList(),
+                              resIds: bloc.selectedProductIds.toList(),
                               companyId: 1,
                             );
                           },
@@ -125,76 +146,65 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
 class ProductListTile extends StatelessWidget {
   const ProductListTile({
     super.key,
-    required this.index,
+    required this.product,
     required this.isAdded,
     required this.onAddRemove,
   });
 
-  final int index;
+  final ProductLabel product;
   final bool isAdded;
   final VoidCallback onAddRemove;
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<PrintLabelsBloc, PrintLabelsState>(
-      builder: (context, state) {
-        final bloc = context.read<PrintLabelsBloc>();
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: GestureDetector(
-            onTap: onAddRemove,
-            child: Card(
-              elevation: 3,
-              color: isAdded ? Colors.green[100] : white,
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildProductRow(
-                            'Nombre',
-                            bloc.productosFilters[index].name,
-                            isError: false,
-                          ),
-                          _buildProductRow(
-                            'Barcode',
-                            bloc.productosFilters[index].barcode,
-                            isError:
-                                bloc.productosFilters[index].barcode == null ||
-                                bloc.productosFilters[index].barcode!.isEmpty,
-                          ),
-                          _buildProductRow(
-                            'Code',
-                            bloc.productosFilters[index].code,
-                            isError:
-                                bloc.productosFilters[index].code == null ||
-                                bloc.productosFilters[index].code!.isEmpty,
-                          ),
-                        ],
+    // Sin BlocBuilder por item: los datos llegan por parámetro, así que solo se
+    // reconstruye cuando el ListView.builder padre lo pide (no todos los tiles
+    // en cada cambio de estado del bloc).
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: GestureDetector(
+        onTap: onAddRemove,
+        child: Card(
+          elevation: 3,
+          color: isAdded ? Colors.green[100] : white,
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildProductRow('Nombre', product.name, isError: false),
+                      _buildProductRow(
+                        'Barcode',
+                        product.barcode,
+                        isError: product.barcode.isEmpty,
                       ),
-                    ),
-                    Icon(
-                      isAdded ? Icons.check_circle : Icons.add_circle_outline,
-                      color: isAdded ? Colors.green : primaryColorApp,
-                      size: 24,
-                    ),
-                  ],
+                      _buildProductRow(
+                        'Code',
+                        product.code,
+                        isError: product.code.isEmpty,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                Icon(
+                  isAdded ? Icons.check_circle : Icons.add_circle_outline,
+                  color: isAdded ? Colors.green : primaryColorApp,
+                  size: 24,
+                ),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildProductRow(String label, String? value, {bool isError = false}) {
-    final displayValue = (value == null || value.isEmpty)
-        ? 'Sin ${label.toLowerCase()}'
-        : value;
+  Widget _buildProductRow(String label, String value, {bool isError = false}) {
+    final displayValue =
+        value.isEmpty ? 'Sin ${label.toLowerCase()}' : value;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(

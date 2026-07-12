@@ -44,6 +44,12 @@ class ExpeditionRepositoryImpl implements ExpeditionRepository {
       );
       final pedidos = response.result;
 
+      // El backend manda la foto completa de lo que está pendiente, así que
+      // lo local se reemplaza entero. Va después del fetch (no antes) para no
+      // dejar la lista vacía si la petición falla, y también cuando `pedidos`
+      // viene vacío: en ese caso justamente no debe quedar nada.
+      await localDataSource.limpiarExpediciones();
+
       if (pedidos.isNotEmpty) {
         await localDataSource.saveExpediciones(pedidos);
 
@@ -171,6 +177,179 @@ class ExpeditionRepositoryImpl implements ExpeditionRepository {
       return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(CacheFailure('Error al obtener el detalle: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> validarPaquete({
+    required int expeditionId,
+    required int packingId,
+  }) async {
+    try {
+      final ok = await remoteDataSource.validarPaquete(
+        expeditionId: expeditionId,
+        packingId: packingId,
+      );
+      if (!ok) {
+        return const Left(ServerFailure('No se pudo validar el paquete'));
+      }
+      await localDataSource.actualizarValidacionPaquete(packingId, true);
+      return const Right(unit);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Error al validar el paquete: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> validarItemSuelto({
+    required int expeditionId,
+    required int packingId,
+  }) async {
+    try {
+      final ok = await remoteDataSource.validarItemSuelto(
+        expeditionId: expeditionId,
+        packingId: packingId,
+      );
+      if (!ok) {
+        return const Left(ServerFailure('No se pudo validar el producto'));
+      }
+      await localDataSource.actualizarValidacionItemSuelto(
+          expeditionId, packingId, true);
+      return const Right(unit);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Error al validar el producto: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> validarMultiple({
+    required int expeditionId,
+    required List<int> packingIdsPaquetes,
+    required List<int> packingIdsItemsSueltos,
+  }) async {
+    final todos = [...packingIdsPaquetes, ...packingIdsItemsSueltos];
+    if (todos.isEmpty) {
+      return const Left(ServerFailure('No hay elementos seleccionados'));
+    }
+
+    try {
+      final ok = await remoteDataSource.validarMultiple(
+        expeditionId: expeditionId,
+        packingIds: todos,
+      );
+      if (!ok) {
+        return const Left(ServerFailure('No se pudo validar la selección'));
+      }
+
+      // El backend confirmó todos los packing_id de una sola vez; recién ahí
+      // los marcamos como validados en local, cada tipo en su tabla.
+      for (final packingId in packingIdsPaquetes) {
+        await localDataSource.actualizarValidacionPaquete(packingId, true);
+      }
+      for (final packingId in packingIdsItemsSueltos) {
+        await localDataSource.actualizarValidacionItemSuelto(
+            expeditionId, packingId, true);
+      }
+      return const Right(unit);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Error al validar la selección: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> deshacerPaquete({
+    required int expeditionId,
+    required int packingId,
+  }) async {
+    try {
+      final ok = await remoteDataSource.deshacerPaquete(
+        expeditionId: expeditionId,
+        packingId: packingId,
+      );
+      if (!ok) {
+        return const Left(
+            ServerFailure('No se pudo deshacer la validación del paquete'));
+      }
+      await localDataSource.actualizarValidacionPaquete(packingId, false);
+      return const Right(unit);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(
+          ServerFailure('Error al deshacer la validación del paquete: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> deshacerItemSuelto({
+    required int expeditionId,
+    required int packingId,
+  }) async {
+    try {
+      final ok = await remoteDataSource.deshacerItemSuelto(
+        expeditionId: expeditionId,
+        packingId: packingId,
+      );
+      if (!ok) {
+        return const Left(
+            ServerFailure('No se pudo deshacer la validación del producto'));
+      }
+      await localDataSource.actualizarValidacionItemSuelto(
+          expeditionId, packingId, false);
+      return const Right(unit);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(
+          ServerFailure('Error al deshacer la validación del producto: $e'));
+    }
+  }
+
+  // ── confirmarPedido ───────────────────────────────────────────────────────
+  // El flujo normal ya no pasa por complete_transfer de transferencias: usa
+  // api/complete_out, propio de expedition. El reintento por productos
+  // vencidos sigue yendo a complete_transfer/expire (confirmationValidate),
+  // que es el único endpoint /expire disponible hoy.
+  @override
+  Future<Either<Failure, Unit>> confirmarPedido({
+    required int expeditionId,
+    bool forzarVencidos = false,
+  }) async {
+    try {
+      if (forzarVencidos) {
+        final response = await transferRepository.confirmationValidate(
+            expeditionId, false, false);
+
+        if (response.result?.code != 200) {
+          return Left(ServerFailure(
+              response.result?.msg ?? 'Error al confirmar la expedición'));
+        }
+      } else {
+        // Lanza ServerException con el msg del backend si no responde 200;
+        // ese msg es el que la UI inspecta para detectar vencidos.
+        await remoteDataSource.confirmarPedido(expeditionId: expeditionId);
+      }
+
+      final time = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+      await localDataSource.marcarPedidoTerminado(expeditionId, time);
+      await transferRepository.sendTime(
+        expeditionId,
+        'end_time_transfer',
+        time,
+        false,
+      );
+
+      return const Right(unit);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Error al confirmar la expedición: $e'));
     }
   }
 }

@@ -26,6 +26,11 @@ class RecepcionBatchBloc
   DataBaseSqlite db = DataBaseSqlite();
   //*configuracion del usuario //permisos
   UserConfigurationModel configurations = UserConfigurationModel();
+
+  /// `true` solo si la configuración/permisos ya se cargaron. Si es `false`,
+  /// los `permiso == true` darían falso por ausencia de datos, no porque el
+  /// usuario no tenga el permiso; hay que recargar antes de decidir.
+  bool get isConfigurationLoaded => configurations.result?.result != null;
   //*repository
   final RecepcionRepository _recepcionRepository = RecepcionRepository();
 

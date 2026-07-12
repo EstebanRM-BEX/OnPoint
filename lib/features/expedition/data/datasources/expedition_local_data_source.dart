@@ -8,6 +8,12 @@ import 'package:wms_app/features/expedition/domain/entities/expedicion_detail.da
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 
 abstract class ExpeditionLocalDataSource {
+  /// Borra las 4 tablas de expedición. Se llama antes de persistir un fetch
+  /// nuevo: el guardado es un upsert por id, así que sin este barrido las
+  /// expediciones que el backend ya no devuelve (por ejemplo, las que se
+  /// confirmaron) se quedarían para siempre en la lista.
+  Future<Unit> limpiarExpediciones();
+
   Future<Unit> saveExpediciones(List<ExpedicionPedidoModel> pedidos);
   Future<Unit> savePaquetesForExpedicion(
       int expeditionId, List<PaqueteExpedicionModel> paquetes);
@@ -21,11 +27,21 @@ abstract class ExpeditionLocalDataSource {
       int expeditionId, int userId, String userName);
   Future<Unit> updateStartTime(int expeditionId, String time);
   Future<ExpedicionDetail?> getExpedicionDetail(int expeditionId);
+  Future<Unit> actualizarValidacionPaquete(int packingId, bool value);
+  Future<Unit> actualizarValidacionItemSuelto(
+      int expeditionId, int packingId, bool value);
+  Future<Unit> marcarPedidoTerminado(int expeditionId, String endTime);
 }
 
 @LazySingleton(as: ExpeditionLocalDataSource)
 class ExpeditionLocalDataSourceImpl implements ExpeditionLocalDataSource {
   final DataBaseSqlite db = DataBaseSqlite();
+
+  @override
+  Future<Unit> limpiarExpediciones() async {
+    await db.deleExpedicion();
+    return unit;
+  }
 
   @override
   Future<Unit> saveExpediciones(List<ExpedicionPedidoModel> pedidos) async {
@@ -112,5 +128,33 @@ class ExpeditionLocalDataSourceImpl implements ExpeditionLocalDataSource {
       paquetes: paquetesConItems,
       itemsSueltos: itemsSueltos,
     );
+  }
+
+  @override
+  Future<Unit> actualizarValidacionPaquete(int packingId, bool value) async {
+    await db.expedicionPaquetesRepository.updateIsValidate(packingId, value);
+    await db.expedicionItemsRepository
+        .updateIsValidateForPaquete(packingId, value);
+    return unit;
+  }
+
+  @override
+  Future<Unit> actualizarValidacionItemSuelto(
+      int expeditionId, int packingId, bool value) async {
+    await db.expedicionItemsSueltosRepository.updateIsValidate(
+      expeditionId: expeditionId,
+      packingId: packingId,
+      value: value,
+    );
+    return unit;
+  }
+
+  @override
+  Future<Unit> marcarPedidoTerminado(int expeditionId, String endTime) async {
+    await db.expedicionPedidosRepository
+        .updateField(expeditionId, 'is_terminated', 1);
+    await db.expedicionPedidosRepository
+        .updateField(expeditionId, 'end_time_transfer', endTime);
+    return unit;
   }
 }

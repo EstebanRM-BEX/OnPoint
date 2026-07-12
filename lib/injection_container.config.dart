@@ -55,14 +55,28 @@ import 'features/expedition/domain/repositories/expedition_repository.dart'
     as _i777;
 import 'features/expedition/domain/usecases/asignar_responsable_usecase.dart'
     as _i598;
+import 'features/expedition/domain/usecases/confirmar_pedido_usecase.dart'
+    as _i868;
+import 'features/expedition/domain/usecases/deshacer_item_suelto_usecase.dart'
+    as _i888;
+import 'features/expedition/domain/usecases/deshacer_paquete_usecase.dart'
+    as _i502;
 import 'features/expedition/domain/usecases/fetch_expediciones_usecase.dart'
     as _i913;
 import 'features/expedition/domain/usecases/get_expedicion_detail_usecase.dart'
     as _i324;
 import 'features/expedition/domain/usecases/get_expediciones_from_db_usecase.dart'
     as _i683;
+import 'features/expedition/domain/usecases/validar_item_suelto_usecase.dart'
+    as _i944;
+import 'features/expedition/domain/usecases/validar_multiple_usecase.dart'
+    as _i955;
+import 'features/expedition/domain/usecases/validar_paquete_usecase.dart'
+    as _i749;
 import 'features/expedition/presentation/bloc/assignment/expedicion_assignment_bloc.dart'
     as _i522;
+import 'features/expedition/presentation/bloc/confirm/expedicion_confirm_bloc.dart'
+    as _i777;
 import 'features/expedition/presentation/bloc/detail/expedicion_detail_bloc.dart'
     as _i45;
 import 'features/expedition/presentation/bloc/list/expedition_list_bloc.dart'
@@ -280,7 +294,6 @@ extension GetItInjectableX on _i174.GetIt {
   }) async {
     final gh = _i526.GetItHelper(this, environment, environmentFilter);
     final registerModule = _$RegisterModule();
-    gh.factory<_i770.ExpedicionScanBloc>(() => _i770.ExpedicionScanBloc());
     gh.lazySingleton<_i519.Client>(() => registerModule.httpClient);
     gh.lazySingleton<_i895.Connectivity>(() => registerModule.connectivity);
     gh.lazySingleton<_i552.DataBaseSqlite>(() => registerModule.database);
@@ -597,6 +610,15 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i598.AsignarResponsableUseCase>(
       () => _i598.AsignarResponsableUseCase(gh<_i777.ExpeditionRepository>()),
     );
+    gh.lazySingleton<_i868.ConfirmarPedidoUseCase>(
+      () => _i868.ConfirmarPedidoUseCase(gh<_i777.ExpeditionRepository>()),
+    );
+    gh.lazySingleton<_i888.DeshacerItemSueltoUseCase>(
+      () => _i888.DeshacerItemSueltoUseCase(gh<_i777.ExpeditionRepository>()),
+    );
+    gh.lazySingleton<_i502.DeshacerPaqueteUseCase>(
+      () => _i502.DeshacerPaqueteUseCase(gh<_i777.ExpeditionRepository>()),
+    );
     gh.lazySingleton<_i913.FetchExpedicionesUseCase>(
       () => _i913.FetchExpedicionesUseCase(gh<_i777.ExpeditionRepository>()),
     );
@@ -606,6 +628,15 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i683.GetExpedicionesFromDbUseCase>(
       () =>
           _i683.GetExpedicionesFromDbUseCase(gh<_i777.ExpeditionRepository>()),
+    );
+    gh.lazySingleton<_i944.ValidarItemSueltoUseCase>(
+      () => _i944.ValidarItemSueltoUseCase(gh<_i777.ExpeditionRepository>()),
+    );
+    gh.lazySingleton<_i955.ValidarMultipleUseCase>(
+      () => _i955.ValidarMultipleUseCase(gh<_i777.ExpeditionRepository>()),
+    );
+    gh.lazySingleton<_i749.ValidarPaqueteUseCase>(
+      () => _i749.ValidarPaqueteUseCase(gh<_i777.ExpeditionRepository>()),
     );
     gh.factory<_i573.LoteProductoBloc>(
       () => _i573.LoteProductoBloc(
@@ -754,6 +785,20 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i335.PrintingBloc(
         getPrinters: gh<_i277.GetPrinters>(),
         printReport: gh<_i152.PrintReport>(),
+      ),
+    );
+    gh.factory<_i777.ExpedicionConfirmBloc>(
+      () => _i777.ExpedicionConfirmBloc(
+        confirmarPedidoUseCase: gh<_i868.ConfirmarPedidoUseCase>(),
+      ),
+    );
+    gh.factory<_i770.ExpedicionScanBloc>(
+      () => _i770.ExpedicionScanBloc(
+        validarPaqueteUseCase: gh<_i749.ValidarPaqueteUseCase>(),
+        validarItemSueltoUseCase: gh<_i944.ValidarItemSueltoUseCase>(),
+        validarMultipleUseCase: gh<_i955.ValidarMultipleUseCase>(),
+        deshacerPaqueteUseCase: gh<_i502.DeshacerPaqueteUseCase>(),
+        deshacerItemSueltoUseCase: gh<_i888.DeshacerItemSueltoUseCase>(),
       ),
     );
     gh.factory<_i363.AuthBloc>(

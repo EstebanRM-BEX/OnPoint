@@ -102,7 +102,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 53,
+      version: 57,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -945,6 +945,54 @@ class DataBaseSqlite {
         debugPrint("Error actualizando a v53 (tbl_expedicion_paquetes): $e");
       }
     }
+    if (oldVersion < 54) {
+      // Nuevo flag local: si el pedido de expedición ya fue confirmado/
+      // terminado, para no volver a mostrarlo en list_expedition_screen.
+      try {
+        await db.execute('''
+        ALTER TABLE ${ExpedicionPedidosTable.tableName}
+        ADD COLUMN ${ExpedicionPedidosTable.columnIsTerminated} INTEGER DEFAULT 0
+      ''');
+      } catch (e) {
+        debugPrint("Error actualizando a v54 (tbl_expedicion_pedidos): $e");
+      }
+    }
+    if (oldVersion < 55) {
+      // Nuevo permiso: oculta el botón "Confirmar pedido" en expedition,
+      // igual patrón que hide_validate_packing.
+      try {
+        await db.execute('''
+        ALTER TABLE ${ConfigurationsTable.tableName}
+        ADD COLUMN ${ConfigurationsTable.columnHideValidateExpedition} INTEGER
+      ''');
+      } catch (e) {
+        debugPrint("Error actualizando a v55 (tblconfigurations): $e");
+      }
+    }
+    if (oldVersion < 56) {
+      // Nuevo permiso: habilita la selección y validación múltiple de
+      // paquetes/productos sueltos en expedición.
+      try {
+        await db.execute('''
+        ALTER TABLE ${ConfigurationsTable.tableName}
+        ADD COLUMN ${ConfigurationsTable.columnAllowValidateMultiple} INTEGER
+      ''');
+      } catch (e) {
+        debugPrint("Error actualizando a v56 (tblconfigurations): $e");
+      }
+    }
+    if (oldVersion < 57) {
+      // Nuevo permiso: oculta la acción de validar un paquete/producto suelto
+      // individual dentro de la expedición.
+      try {
+        await db.execute('''
+        ALTER TABLE ${ConfigurationsTable.tableName}
+        ADD COLUMN ${ConfigurationsTable.columnHideValidateItemExpedition} INTEGER
+      ''');
+      } catch (e) {
+        debugPrint("Error actualizando a v57 (tblconfigurations): $e");
+      }
+    }
   }
 
   //todo repositorios de las tablas
@@ -1550,6 +1598,15 @@ class DataBaseSqlite {
     await deleBarcodes("reception");
   }
 
+  /// Borra las 4 tablas del módulo de expedición. El orden va de hijas a padre
+  /// para no dejar filas huérfanas si alguna eliminación falla a medias.
+  Future<void> deleExpedicion() async {
+    await expedicionItemsRepository.deleteAllItems();
+    await expedicionItemsSueltosRepository.deleteAllItemsSueltos();
+    await expedicionPaquetesRepository.deleteAllPaquetes();
+    await expedicionPedidosRepository.deleteAllExpediciones();
+  }
+
   Future<void> deleteBDCloseSession() async {
     await deleAllPicking();
     await delePickAll();
@@ -1561,6 +1618,7 @@ class DataBaseSqlite {
     await deleReceptionBatch();
     await deleAllBarcodes();
     await deleConteo();
+    await deleExpedicion();
   }
 
   //*metodo para actualizar la tabla de productos de un batch

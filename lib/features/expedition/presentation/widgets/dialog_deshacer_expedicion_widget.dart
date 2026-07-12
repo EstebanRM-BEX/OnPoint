@@ -3,25 +3,17 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:wms_app/core/constants/colors.dart';
 
-/// Diálogo de confirmación antes de validar en expedition: un solo paquete o
-/// producto suelto (scan_product_screen) o una selección múltiple (tab "Por
-/// hacer"). Propio de expedition.
-class DialogValidarExpedicionWidget extends StatelessWidget {
+/// Diálogo de confirmación antes de deshacer la validación de un paquete o
+/// producto suelto en la tab "Listo" (vuelve a "Por hacer"). Propio de
+/// expedition, mismo patrón visual que DialogValidarExpedicionWidget.
+class DialogDeshacerExpedicionWidget extends StatelessWidget {
   final String message;
-
-  /// Detalle línea por línea de lo que se va a validar (nombres de paquetes,
-  /// sus cantidades de productos, productos sueltos). Va alineado a la
-  /// izquierda porque una lista centrada se vuelve ilegible. Vacío en la
-  /// validación de a uno, donde [message] ya lo dice todo.
-  final List<String> details;
-
   final VoidCallback onAccepted;
   final VoidCallback onCancel;
 
-  const DialogValidarExpedicionWidget({
+  const DialogDeshacerExpedicionWidget({
     super.key,
     required this.message,
-    this.details = const [],
     required this.onAccepted,
     required this.onCancel,
   });
@@ -35,7 +27,7 @@ class DialogValidarExpedicionWidget extends StatelessWidget {
         actionsAlignment: MainAxisAlignment.center,
         title: Center(
           child: Text(
-            'Validar expedición',
+            'Deshacer validación',
             textAlign: TextAlign.center,
             style: TextStyle(color: primaryColorApp, fontSize: 18),
           ),
@@ -43,26 +35,12 @@ class DialogValidarExpedicionWidget extends StatelessWidget {
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
                 message,
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: black, fontSize: 14),
               ),
-              if (details.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                ...details.map(
-                  (linea) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Text(
-                      linea,
-                      textAlign: TextAlign.left,
-                      style: const TextStyle(color: black, fontSize: 13),
-                    ),
-                  ),
-                ),
-              ],
               const SizedBox(height: 10),
             ],
           ),
@@ -86,7 +64,7 @@ class DialogValidarExpedicionWidget extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            child: const Text('Validar', style: TextStyle(color: white)),
+            child: const Text('Deshacer', style: TextStyle(color: white)),
           ),
         ],
       ),

@@ -1336,6 +1336,24 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
       } else if (cantidad > (currentProduct.cantidadFaltante ?? 0)) {
         //validamos si tiene el permiso de mover mas de lo planteado
 
+        // Si la configuración no cargó, el permiso se leería como falso por
+        // falta de datos, no porque el usuario no lo tenga. No bloqueamos en
+        // silencio: avisamos y recargamos.
+        if (!batchBloc.isConfigurationLoaded) {
+          _audioService.playErrorSound();
+          _vibrationService.vibrate();
+          Get.snackbar(
+            'Configuración no cargada',
+            'No se pudieron verificar tus permisos. Reintentando, vuelve a intentarlo.',
+            backgroundColor: white,
+            colorText: primaryColorApp,
+            icon: Icon(Icons.error, color: Colors.amber),
+            snackPosition: SnackPosition.TOP,
+          );
+          batchBloc.add(LoadConfigurationsUserReception());
+          return;
+        }
+
         if (batchBloc.configurations.result?.result?.allowMoveExcess == true) {
           batchBloc.add(ChangeQuantitySeparate(
               cantidad,

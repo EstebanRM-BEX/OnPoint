@@ -23,6 +23,7 @@ class ExpedicionPedidosTable {
   static const String columnStartTimeTransfer = 'start_time_transfer';
   static const String columnEndTimeTransfer = 'end_time_transfer';
   static const String columnZonaEntrega = 'zona_entrega';
+  static const String columnIsTerminated = 'is_terminated';
 
   static String createTable() {
     return '''
@@ -48,7 +49,8 @@ class ExpedicionPedidosTable {
         $columnPickingType TEXT,
         $columnStartTimeTransfer TEXT,
         $columnEndTimeTransfer TEXT,
-        $columnZonaEntrega TEXT
+        $columnZonaEntrega TEXT,
+        $columnIsTerminated INTEGER DEFAULT 0
       );
 
       CREATE INDEX idx_expedicion_pedidos_fecha ON $tableName ($columnFecha);

@@ -1,5 +1,10 @@
 import 'dart:convert';
 
+/// Odoo devuelve `false` (bool) en campos de texto vacíos en lugar de `null`
+/// o `""`. Asignar ese `false` a un `String?` lanza un error de tipo, así que
+/// normalizamos cualquier valor no-String a `null`.
+String? _asString(dynamic value) => value is String ? value : null;
+
 class RespondePickDoneId {
   final String? jsonrpc;
   final dynamic id;
@@ -18,7 +23,7 @@ class RespondePickDoneId {
 
   factory RespondePickDoneId.fromMap(Map<String, dynamic> json) =>
       RespondePickDoneId(
-        jsonrpc: json["jsonrpc"],
+        jsonrpc: _asString(json["jsonrpc"]),
         id: json["id"],
         result: json["result"] == null
             ? null
@@ -152,29 +157,29 @@ class ResultResult {
 
   factory ResultResult.fromMap(Map<String, dynamic> json) => ResultResult(
         id: json["id"],
-        name: json["name"],
+        name: _asString(json["name"]),
         fechaCreacion: json["fecha_creacion"] != null
             ? DateTime.tryParse(json["fecha_creacion"])
             : null,
         locationId: json["location_id"],
-        locationName: json["location_name"],
-        locationBarcode: json["location_barcode"],
+        locationName: _asString(json["location_name"]),
+        locationBarcode: _asString(json["location_barcode"]),
         locationDestId: json["location_dest_id"],
-        locationDestName: json["location_dest_name"],
-        locationDestBarcode: json["location_dest_barcode"],
-        proveedor: json["proveedor"],
-        numeroTransferencia: json["numero_transferencia"],
+        locationDestName: _asString(json["location_dest_name"]),
+        locationDestBarcode: _asString(json["location_dest_barcode"]),
+        proveedor: _asString(json["proveedor"]),
+        numeroTransferencia: _asString(json["numero_transferencia"]),
         pesoTotal: json["peso_total"],
         numeroItems: json["numero_items"],
-        state: json["state"],
-        createBackorder: json["create_backorder"],
-        origin: json["origin"],
-        priority: json["priority"],
+        state: _asString(json["state"]),
+        createBackorder: _asString(json["create_backorder"]),
+        origin: _asString(json["origin"]),
+        priority: _asString(json["priority"]),
         warehouseId: json["warehouse_id"],
-        warehouseName: json["warehouse_name"],
+        warehouseName: _asString(json["warehouse_name"]),
         responsableId: json["responsable_id"],
-        responsable: json["responsable"],
-        pickingType: json["picking_type"],
+        responsable: _asString(json["responsable"]),
+        pickingType: _asString(json["picking_type"]),
         startTimeTransfer: json["start_time_transfer"] != null
             ? DateTime.tryParse(json["start_time_transfer"])
             : null,
@@ -184,15 +189,15 @@ class ResultResult {
             : null,
 
         backorderId: json["backorder_id"],
-        backorderName: json["backorder_name"],
+        backorderName: _asString(json["backorder_name"]),
         showCheckAvailability: json["show_check_availability"],
-        orderBy: json["order_by"],
-        orderPicking: json["order_picking"],
-        muelle: json["muelle"],
+        orderBy: _asString(json["order_by"]),
+        orderPicking: _asString(json["order_picking"]),
+        muelle: _asString(json["muelle"]),
         muelleId: json["muelle_id"],
         idMuellePadre: json["id_muelle_padre"],
-        barcodeMuelle: json["barcode_muelle"],
-        zonaEntrega: json["zona_entrega"],
+        barcodeMuelle: _asString(json["barcode_muelle"]),
+        zonaEntrega: _asString(json["zona_entrega"]),
         lineasTransferencia: json["lineas_transferencia"] == null
             ? []
             : List<LineasTransferenciaEnviada>.from(
@@ -361,11 +366,11 @@ class LineasTransferenciaEnviada {
         productId: json["product_id"] == null
             ? []
             : List<dynamic>.from(json["product_id"]!.map((x) => x)),
-        productName: json["product_name"],
-        productCode: json["product_code"],
-        barcode: json["barcode"],
-        productTracking: json["product_tracking"],
-        diasVencimiento: json["dias_vencimiento"],
+        productName: _asString(json["product_name"]),
+        productCode: _asString(json["product_code"]),
+        barcode: _asString(json["barcode"]),
+        productTracking: _asString(json["product_tracking"]),
+        diasVencimiento: _asString(json["dias_vencimiento"]),
         otherBarcodes: json["other_barcodes"] == null
             ? []
             : List<dynamic>.from(json["other_barcodes"]!.map((x) => x)),
@@ -377,38 +382,38 @@ class LineasTransferenciaEnviada {
         quantityToTransfer: json["quantity_to_transfer"],
         quantityDone: json["quantity_done"],
         cantidadFaltante: json["cantidad_faltante"],
-        unidades: json["unidades"],
+        unidades: _asString(json["unidades"]),
         locationDestId: json["location_dest_id"] == null
             ? []
             : List<dynamic>.from(json["location_dest_id"]!.map((x) => x)),
-        locationDestName: json["location_dest_name"],
-        barcodeLocationDest: json["barcode_location_dest"],
+        locationDestName: _asString(json["location_dest_name"]),
+        barcodeLocationDest: _asString(json["barcode_location_dest"]),
         locationId: json["location_id"] == null
             ? []
             : List<dynamic>.from(json["location_id"]!.map((x) => x)),
-        locationName: json["location_name"],
-        barcodeLocation: json["barcode_location"],
+        locationName: _asString(json["location_name"]),
+        barcodeLocation: _asString(json["barcode_location"]),
         weight: json["weight"],
         rimovalPriority: json["rimoval_priority"],
-        zonaEntrega: json["zona_entrega"],
+        zonaEntrega: _asString(json["zona_entrega"]),
         otherBarcode: json["other_barcode"] == null
             ? []
             : List<dynamic>.from(json["other_barcode"]!.map((x) => x)),
-        pedido: json["pedido"],
+        pedido: _asString(json["pedido"]),
         pedidoId: json["pedido_id"],
-        origin: json["origin"],
+        origin: _asString(json["origin"]),
         loteId: json["lote_id"],
-        lote: json["lote"],
+        lote: _asString(json["lote"]),
         quantitySeparate: json["quantity_separate"],
         isDoneItem: json["is_done_item"],
         dateTransaction: json["date_transaction"] != null
             ? DateTime.tryParse(json["date_transaction"])
             : null,
-        observation: json["observation"],
-        timeSeparate: json["time_separate"],
+        observation: _asString(json["observation"]),
+        timeSeparate: _asString(json["time_separate"]),
         time: json["time"],
         userOperatorId: json["user_operator_id"],
-        expireDate: json["expire_date"],
+        expireDate: _asString(json["expire_date"]),
         isSeparate: json["is_separate"],
       );
 
@@ -493,7 +498,7 @@ class ProductPacking {
   String toJson() => json.encode(toMap());
 
   factory ProductPacking.fromMap(Map<String, dynamic> json) => ProductPacking(
-        barcode: json["barcode"],
+        barcode: _asString(json["barcode"]),
         cantidad: json["cantidad"],
         idProduct: json["id_product"],
         idMove: json["id_move"],

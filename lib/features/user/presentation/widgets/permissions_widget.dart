@@ -1022,6 +1022,99 @@ class PermissionsWidget extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 10),
+
+            //todo permisos de expedicion
+            Card(
+              elevation: 3,
+              color: white,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    Center(
+                      child: Text("Permisos Expedicion:",
+                          style:
+                              TextStyle(fontSize: 14, color: primaryColorApp)),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const Text(
+                            "Ocultar accion de confirmar\npedido de expedicion: ",
+                            style: TextStyle(fontSize: 14, color: black)),
+                        const Spacer(),
+                        Checkbox(
+                            value: profile.hideValidateExpedition ?? false,
+                            onChanged: null),
+                        IconButton(
+                            onPressed: () {
+                              showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return const DialogInfo(
+                                      title:
+                                          "Ocultar accion de confirmar pedido",
+                                      body:
+                                          "Oculta el boton de confirmar el pedido completo de expedicion",
+                                    );
+                                  });
+                            },
+                            icon: Icon(Icons.help, color: primaryColorApp))
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        const Text(
+                            "Ocultar accion de validar\npaquete o producto: ",
+                            style: TextStyle(fontSize: 14, color: black)),
+                        const Spacer(),
+                        Checkbox(
+                            value: profile.hideValidateItemExpedition ?? false,
+                            onChanged: null),
+                        IconButton(
+                            onPressed: () {
+                              showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return const DialogInfo(
+                                      title:
+                                          "Ocultar accion de validar paquete o producto",
+                                      body:
+                                          "Oculta el boton de validar un paquete o producto suelto individual dentro de la expedicion",
+                                    );
+                                  });
+                            },
+                            icon: Icon(Icons.help, color: primaryColorApp))
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        const Text("Validacion multiple: ",
+                            style: TextStyle(fontSize: 14, color: black)),
+                        const Spacer(),
+                        Checkbox(
+                            value: profile.allowValidateMultiple ?? false,
+                            onChanged: null),
+                        IconButton(
+                            onPressed: () {
+                              showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return const DialogInfo(
+                                      title: "Validacion multiple",
+                                      body:
+                                          "Permite seleccionar varios paquetes y/o productos sueltos en la expedicion y validarlos todos en una sola accion",
+                                    );
+                                  });
+                            },
+                            icon: Icon(Icons.help, color: primaryColorApp))
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),

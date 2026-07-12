@@ -239,7 +239,24 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
     );
 
     await Future.delayed(const Duration(seconds: 1));
-    Navigator.pop(context);
+    if (!mounted) return;
+    Navigator.pop(context); // cerramos el loading
+
+    // ✅ Verificamos que el batch cargó TODA su info antes de entrar.
+    // Si no cargó (o cargó otro batch), no dejamos acceder y volvemos al listado.
+    final bool loaded = batchBloc.pickWithProducts.pick != null &&
+        batchBloc.pickWithProducts.pick?.id == batch.id &&
+        (batchBloc.pickWithProducts.products?.isNotEmpty ?? false);
+
+    if (!loaded) {
+      _audioService.playErrorSound();
+      _vibrationService.vibrate();
+      showScrollableErrorDialog(
+        'No se pudo cargar la información del pick. Intenta nuevamente.',
+      );
+      Future.microtask(() => focusNodeBuscar.requestFocus());
+      return;
+    }
 
     if (batch.isSeparate != 1) {
       batchBloc.searchPickController.clear();

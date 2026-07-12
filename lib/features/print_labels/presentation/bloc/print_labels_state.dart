@@ -20,7 +20,7 @@ class LoadLocationsFailure extends PrintLabelsState {
 class GetProductsLoading extends PrintLabelsState {}
 
 class GetProductsSuccess extends PrintLabelsState {
-  final List<Product> products;
+  final List<ProductLabel> products;
   GetProductsSuccess(this.products);
 }
 
@@ -45,7 +45,7 @@ class SearchLocationSuccess extends PrintLabelsState {
 }
 
 class SearchProductSuccess extends PrintLabelsState {
-  final List<Product> products;
+  final List<ProductLabel> products;
   SearchProductSuccess(this.products);
 }
 

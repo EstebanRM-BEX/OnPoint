@@ -11,6 +11,7 @@ import 'package:wms_app/features/expedition/presentation/widgets/dialog_asignar_
 import 'package:wms_app/features/expedition/presentation/widgets/expedicion_card_widget.dart';
 import 'package:wms_app/features/expedition/presentation/widgets/expedicion_propietario_filter_sheet.dart';
 import 'package:wms_app/features/expedition/presentation/widgets/expedicion_sort_menu_widget.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
@@ -32,6 +33,12 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen> {
   void initState() {
     super.initState();
     context.read<ExpedicionListBloc>().add(const FetchExpedicionesFromDbEvent());
+    // Los permisos (hide_validate_expedition, hide_validate_item_expedition,
+    // etc.) viven en tbl_configurations, pero esa tabla solo se llena cuando
+    // el usuario entra manualmente a "información del usuario" en Home — acá
+    // forzamos la carga (fetch remoto + persistencia local) para que ya
+    // estén disponibles al entrar al detalle/scan de una expedición.
+    context.read<UserBloc>().add(LoadUserInfoEvent());
   }
 
   @override
@@ -233,8 +240,9 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen> {
 
                       final listToShow = expediciones
                           .where((e) =>
-                              _selectedPropietario == null ||
-                              e.propietario == _selectedPropietario)
+                              e.isTerminated != true &&
+                              (_selectedPropietario == null ||
+                                  e.propietario == _selectedPropietario))
                           .toList();
 
                       if (listToShow.isEmpty) {

@@ -81,6 +81,11 @@ class _ScanProductPackingConsolidateScreenState
   void _handleDependencies() {
     final batchBloc = context.read<PackingConsolidateBloc>();
 
+    // ⛔️ Mientras el campo de cantidad manual está abierto no re-arbitramos el
+    // foco (el teclado cambia el MediaQuery y dispara didChangeDependencies;
+    // sin este guard se hacía focusNode4.unfocus() y el teclado se cerraba solo).
+    if (batchBloc.viewQuantity) return;
+
     debugPrint(
         '❤️‍🔥 locationIsOk: ${batchBloc.locationIsOk},\n productIsOk: ${batchBloc.productIsOk},\n quantityIsOk: ${batchBloc.quantityIsOk},\n locationDestIsOk: ${batchBloc.locationDestIsOk}, \nviewQuantity: ${batchBloc.viewQuantity}');
 
@@ -360,8 +365,10 @@ class _ScanProductPackingConsolidateScreenState
           }
 
           if (state is ChangeLocationPackingIsOkState) {
+            final bloc = context.read<PackingConsolidateBloc>();
             Future.delayed(const Duration(seconds: 1), () {
-              if (mounted) {
+              // No robar el foco si el usuario abrió el campo de cantidad manual.
+              if (mounted && !bloc.viewQuantity) {
                 FocusScope.of(context).requestFocus(focusNode2);
               }
             });
@@ -369,8 +376,10 @@ class _ScanProductPackingConsolidateScreenState
           }
 
           if (state is ChangeProductPackingIsOkState) {
+            final bloc = context.read<PackingConsolidateBloc>();
             Future.delayed(const Duration(seconds: 1), () {
-              if (mounted) {
+              // No robar el foco si el usuario abrió el campo de cantidad manual.
+              if (mounted && !bloc.viewQuantity) {
                 FocusScope.of(context).requestFocus(focusNode3);
               }
             });
@@ -857,6 +866,9 @@ class _ScanProductPackingConsolidateScreenState
                                   //tmano del campo
 
                                   focusNode: focusNode4,
+                                  // Toma el foco de forma determinista al
+                                  // montarse (evita la carrera del delayed).
+                                  autofocus: true,
                                   inputFormatters: [
                                     FilteringTextInputFormatter.allow(
                                         RegExp(r'[0-9.]')),

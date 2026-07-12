@@ -1,16 +1,9 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
-import 'package:wms_app/src/presentation/providers/db/database.dart';
+import 'package:wms_app/core/services/session_manager.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
-import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
-import 'package:wms_app/injection_container.dart';
 
 class CloseSession extends StatelessWidget {
   const CloseSession({
@@ -60,7 +53,6 @@ class CloseSession extends StatelessWidget {
               ),
             ),
             onPressed: () async {
-              // Mostrar el diálogo de carga
               showDialog(
                 context: context,
                 barrierDismissible: false,
@@ -69,24 +61,9 @@ class CloseSession extends StatelessWidget {
                 ),
               );
 
-              // Limpiar estado en memoria del HomeBloc antes de navegar
-              context.read<HomeBloc>().add(ClearDataEvent());
-
-              PrefUtils.clearPrefs();
-              getIt<IStorageService>().removeUrlWebsite();
-              await DataBaseSqlite().deleteBDCloseSession();
-              await Future.delayed(const Duration(seconds: 1));
-              PrefUtils.setIsLoggedIn(false);
-
-              // Cerrar el diálogo de carga
-              Navigator.pop(context);
-
-              // Navegar a la pantalla de inicio
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                'enterprice',
-                (route) => false,
-              );
+              // Reinicia el árbol: destruye todos los blocs y el diálogo de
+              // carga junto con ellos, y redirige vía CheckAuthPage.
+              await SessionManager.closeSession();
             },
             child: const Text(
               'Aceptar',

@@ -54,6 +54,7 @@ class UserProfile {
   final bool? hideValidateTransfer;
   final bool? hideValidateReception;
   final bool? hideValidatePacking;
+  final bool? hideValidateExpedition;
 
   final bool? updateItemInventory;
 
@@ -68,6 +69,12 @@ class UserProfile {
   final bool? manageExpirationDateWithoutLot;
   // show_button_validate_cluster_picking
   final bool? showButtonValidateClusterPicking;
+  // allow_validate_multiple: habilita seleccionar varios paquetes/productos
+  // sueltos en expedición y validarlos en una sola operación.
+  final bool? allowValidateMultiple;
+  // hide_validate_item_expedition: oculta la acción de validar un paquete o
+  // producto suelto individual dentro de la expedición.
+  final bool? hideValidateItemExpedition;
 
   const UserProfile({
     this.id,
@@ -107,6 +114,7 @@ class UserProfile {
     this.hideValidateTransfer,
     this.hideValidateReception,
     this.hideValidatePacking,
+    this.hideValidateExpedition,
     this.updateItemInventory,
     this.scanDestinationLocationReception,
     this.updateLocationInventory,
@@ -116,6 +124,8 @@ class UserProfile {
     this.manualProductSelectionInventory,
     this.manageExpirationDateWithoutLot,
     this.showButtonValidateClusterPicking,
+    this.allowValidateMultiple,
+    this.hideValidateItemExpedition,
   });
 
   @override
@@ -154,6 +164,7 @@ class UserProfile {
         hideValidateTransfer,
         hideValidateReception,
         hideValidatePacking,
+        hideValidateExpedition,
         updateItemInventory,
         scanDestinationLocationReception,
         updateLocationInventory,
@@ -163,6 +174,8 @@ class UserProfile {
         manualProductSelectionInventory,
         manageExpirationDateWithoutLot,
         showButtonValidateClusterPicking,
+        allowValidateMultiple,
+        hideValidateItemExpedition,
       ];
 }
 

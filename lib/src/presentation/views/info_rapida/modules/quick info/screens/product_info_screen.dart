@@ -575,8 +575,6 @@ class ProductInfoScreen extends StatelessWidget {
                         child: ListView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemExtent:
-                              195, // Altura fija por item para mejor rendimiento
                           cacheExtent: 500, // Precarga 500px adicionales
                           padding: const EdgeInsets.all(0),
                           itemCount: bloc.ubicacionesProducto?.length ?? 0,

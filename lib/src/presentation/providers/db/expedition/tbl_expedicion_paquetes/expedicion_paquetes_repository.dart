@@ -53,4 +53,27 @@ class ExpedicionPaquetesRepository {
       return [];
     }
   }
+
+  Future<void> updateIsValidate(int packingId, bool value) async {
+    try {
+      final Database db = await DataBaseSqlite().getDatabaseInstance();
+      await db.update(
+        ExpedicionPaquetesTable.tableName,
+        {ExpedicionPaquetesTable.columnIsValidate: value ? 1 : 0},
+        where: '${ExpedicionPaquetesTable.columnPackingId} = ?',
+        whereArgs: [packingId],
+      );
+    } catch (e, s) {
+      debugPrint("Error al actualizar is_validate del paquete $packingId: $e\n$s");
+    }
+  }
+
+  Future<void> deleteAllPaquetes() async {
+    try {
+      final Database db = await DataBaseSqlite().getDatabaseInstance();
+      await db.delete(ExpedicionPaquetesTable.tableName);
+    } catch (e, s) {
+      debugPrint("Error al eliminar tbl_expedicion_paquetes: $e\n$s");
+    }
+  }
 }

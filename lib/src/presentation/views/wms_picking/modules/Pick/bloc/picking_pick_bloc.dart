@@ -121,7 +121,10 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     //*evento para obtener todas las novedades
     on<LoadAllNovedadesPickEvent>(_onLoadAllNovedadesEvent);
     // //* Cargar los productos de un pick desde SQLite
-    on<FetchPickWithProductsEvent>(_onFetchPickWithProductsEvent);
+    on<FetchPickWithProductsEvent>(
+      _onFetchPickWithProductsEvent,
+      transformer: sequential(),
+    );
     //*evento para obtener los barcodes de un producto por paquete
     on<FetchBarcodesProductEvent>(_onFetchBarcodesProductEvent);
     //*evento para cargaar la informacion del pick
@@ -2070,20 +2073,23 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   ) async {
     try {
       debugPrint('Fetching pick with ID: ${event.pickId}');
-      pickWithProducts = PickWithProducts();
+
+      // ⛔️ Evitamos wipes por peticiones con id 0 (carreras entre eventos en
+      // la última línea). Si llega un id inválido NO borramos el batch actual.
+      if (event.pickId == 0) {
+        debugPrint('⚠️ FetchPickWithProductsEvent ignorado: pickId == 0');
+        return;
+      }
 
       final response = await db.pickProductsRepository.getPickWithProducts(
         event.pickId,
       );
 
-      if (response != null) {
+      // Solo reemplazamos el batch en memoria si la carga trae info completa.
+      if (response != null &&
+          response.pick != null &&
+          (response.products?.isNotEmpty ?? false)) {
         pickWithProducts = response;
-
-        if (pickWithProducts.products!.isEmpty) {
-          debugPrint('No hay productos en el batch');
-          emit(EmptyProductsPick());
-          return;
-        }
 
         listProducts.clear();
         listProducts.addAll(pickWithProducts.products!);
@@ -2103,9 +2109,10 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
           LoadProductsBatchSuccesStateBD(listOfProductsBatch: filteredProducts),
         );
       } else {
-        pickWithProducts = PickWithProducts();
+        // No sobreescribimos pickWithProducts: así no perdemos el batch actual
+        // por un fetch vacío/espurio.
+        debugPrint('No se encontró info completa del batch: ${event.pickId}');
         emit(EmptyProductsPick());
-        debugPrint('No se encontró el batch con ID: ${event.pickId}');
       }
     } catch (e, s) {
       debugPrint("❌ Error en el FetchBatchWithProductsEvent $e ->$s");

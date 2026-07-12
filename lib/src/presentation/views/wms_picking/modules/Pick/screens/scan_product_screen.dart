@@ -115,6 +115,11 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
 
     final batchBloc = context.read<PickingPickBloc>();
 
+    // ⛔️ Mientras el campo de cantidad manual está abierto no re-arbitramos el
+    // foco (el teclado cambia el MediaQuery y dispara didChangeDependencies;
+    // sin este guard se hacía focusNode4.unfocus() y el teclado se cerraba solo).
+    if (batchBloc.viewQuantity) return;
+
     if (!batchBloc.locationIsOk && //false
         !batchBloc.productIsOk && //false
         !batchBloc.quantityIsOk && //false
@@ -738,7 +743,12 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                               if (state is ChangeLocationIsOkState) {
                                 //cambiamos el foco
                                 Future.delayed(const Duration(seconds: 1), () {
-                                  if (mounted) {
+                                  // No robar el foco si el usuario abrió el campo
+                                  // de cantidad manual (evita cerrar el teclado).
+                                  if (mounted &&
+                                      !context
+                                          .read<PickingPickBloc>()
+                                          .viewQuantity) {
                                     FocusScope.of(
                                       context,
                                     ).requestFocus(focusNode2);
@@ -751,7 +761,12 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                               if (state is ChangeProductIsOkState) {
                                 //cambiamos el foco a cantidad
                                 Future.delayed(const Duration(seconds: 1), () {
-                                  if (mounted) {
+                                  // No robar el foco si el usuario abrió el campo
+                                  // de cantidad manual (evita cerrar el teclado).
+                                  if (mounted &&
+                                      !context
+                                          .read<PickingPickBloc>()
+                                          .viewQuantity) {
                                     FocusScope.of(
                                       context,
                                     ).requestFocus(focusNode3);
@@ -1306,6 +1321,10 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                 child: TextFormField(
                                   //tmano del campo
                                   focusNode: focusNode4,
+                                  // Al montarse (viewQuantity == true) toma el
+                                  // foco de forma determinista, sin depender del
+                                  // Future.delayed que causaba la carrera.
+                                  autofocus: true,
                                   inputFormatters: [
                                     FilteringTextInputFormatter.allow(
                                       RegExp(r'[0-9.]'),

@@ -49,6 +49,8 @@ class ConfigurationsTable {
       'update_location_inventory';
   static const String columnCreateBackorder = 'create_backorder';
   static const String columnHideValidatePacking = 'hide_validate_packing';
+  static const String columnHideValidateExpedition =
+      'hide_validate_expedition';
   static const String columnHideValidatePicking = 'hide_validate_picking';
   static const String columnShowPhotoTemperature = 'show_photo_temperature';
   static const String columnReturnsLocationDestOption =
@@ -72,6 +74,14 @@ class ConfigurationsTable {
 //show_button_validate_cluster_picking
   static const String columnShowButtonValidateClusterPicking =
       'show_button_validate_cluster_picking';
+
+//allow_validate_multiple
+  static const String columnAllowValidateMultiple =
+      'allow_validate_multiple';
+
+//hide_validate_item_expedition
+  static const String columnHideValidateItemExpedition =
+      'hide_validate_item_expedition';
 
   static String createTable() {
     return '''
@@ -111,6 +121,7 @@ class ConfigurationsTable {
         $columnUpdateLocationInventory INTEGER,
         $columnCreateBackorder INTEGER,
         $columnHideValidatePacking INTEGER,
+        $columnHideValidateExpedition INTEGER,
         $columnHideValidatePicking INTEGER,
         $columnShowPhotoTemperature INTEGER,
         $columnReturnsLocationDestOption TEXT,
@@ -122,6 +133,8 @@ class ConfigurationsTable {
         $columnAllowPriorExpirationDate INTEGER,
         $columnManageExpirationDateWithoutLot INTEGER,
         $columnShowButtonValidateClusterPicking INTEGER,
+        $columnAllowValidateMultiple INTEGER,
+        $columnHideValidateItemExpedition INTEGER,
         $columnIsSynced INTEGER DEFAULT 0
       )
     ''';

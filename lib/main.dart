@@ -56,6 +56,7 @@ import 'package:wms_app/src/presentation/providers/network_overlay/network_overl
 import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
 import 'package:wms_app/features/websocket/presentation/bloc/websocket_bloc.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/assignment/expedicion_assignment_bloc.dart';
+import 'package:wms_app/features/expedition/presentation/bloc/confirm/expedicion_confirm_bloc.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/detail/expedicion_detail_bloc.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/list/expedition_list_bloc.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/scan/expedicion_scan_bloc.dart';
@@ -187,6 +188,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => getIt<ExpedicionAssignmentBloc>()),
         BlocProvider(create: (_) => getIt<ExpedicionDetailBloc>()),
         BlocProvider(create: (_) => getIt<ExpedicionScanBloc>()),
+        BlocProvider(create: (_) => getIt<ExpedicionConfirmBloc>()),
       ],
       child: GetMaterialApp(
         navigatorKey: navigatorKey,

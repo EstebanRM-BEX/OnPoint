@@ -3,7 +3,6 @@ import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously
 
-import 'package:animated_notch_bottom_bar/animated_notch_bottom_bar/animated_notch_bottom_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
@@ -30,7 +29,6 @@ class ListPackingScreen extends StatefulWidget {
 }
 
 class _WmsPackingScreenState extends State<ListPackingScreen> {
-  NotchBottomBarController controller = NotchBottomBarController();
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   final FocusNode focusNodeBuscar = FocusNode();
@@ -93,9 +91,7 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
 
   void validateBarcode(String value, BuildContext context) {
     final bloc = context.read<PackingPedidoBloc>();
-    final scan = (bloc.scannedValue5.isEmpty ? value : bloc.scannedValue5)
-        .trim()
-        .toLowerCase();
+    final scan = value.trim().toLowerCase();
 
     _controllerToDo.clear();
     debugPrint('🔎 Scan barcode (batch picking): $scan');
@@ -144,10 +140,37 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
   }
 
   @override
+  void dispose() {
+    focusNodeBuscar.dispose();
+    _controllerToDo.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
 
     return BlocConsumer<PackingPedidoBloc, PackingPedidoState>(
+        listenWhen: (previous, current) =>
+            current is NeedUpdateVersionState ||
+            current is LoadPedidoAndProductsLoading ||
+            current is LoadPedidoAndProductsLoaded ||
+            current is PackingPedidoError ||
+            current is AssignUserToPedidoError ||
+            current is AssignUserToPedidoLoading ||
+            current is AssignUserToPedidoLoaded,
+        buildWhen: (previous, current) =>
+            current is PackingPedidoLoadedFromDBState ||
+            current is WmsPackingPedidoWMSLoading ||
+            current is WmsPackingPedidoWMSLoaded ||
+            current is PackingPackSuccess ||
+            current is NeedUpdateVersionState ||
+            current is LoadPedidoAndProductsLoading ||
+            current is LoadPedidoAndProductsLoaded ||
+            current is PackingPedidoError ||
+            current is AssignUserToPedidoError ||
+            current is AssignUserToPedidoLoading ||
+            current is AssignUserToPedidoLoaded,
         listener: (context, state) {
       debugPrint("Estado del bloc: $state");
 
@@ -222,11 +245,15 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
         // cerramos el dialogo de carga
         // Navigator.pop(context);
 
-        validateTime(state.pedido, context);
+        // El inicio de tiempo ya se registró en _onAssignUserToPedido
+        // (StartOrStopTimePedido), no hay que volver a dispararlo aquí.
+        final packingPedidoBloc = context.read<PackingPedidoBloc>();
+        packingPedidoBloc.searchController.clear();
+        packingPedidoBloc.add(SearchPedidoEvent(''));
 
-        context.read<PackingPedidoBloc>().add(LoadConfigurationsUser());
+        packingPedidoBloc.add(LoadConfigurationsUser());
         //traemos el pedido y los productos
-        context.read<PackingPedidoBloc>().add(LoadPedidoAndProductsEvent(
+        packingPedidoBloc.add(LoadPedidoAndProductsEvent(
               state.id,
             ));
 
@@ -236,8 +263,11 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
     }, builder: (context, state) {
       final bloc = context.read<PackingPedidoBloc>();
 
-      List<PedidoPackingResult> listToShow = bloc.listOfPedidosFilters
+      final List<PedidoPackingResult> activePedidos = bloc.listOfPedidosFilters
           .where((batch) => batch.isTerminate == 0)
+          .toList();
+
+      List<PedidoPackingResult> listToShow = activePedidos
           .where((b) =>
               _selectedPropietario == null ||
               b.propietario == _selectedPropietario)
@@ -342,12 +372,7 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                                             color: Colors.amber),
                                         onPressed: () => _showPropietarioFilter(
                                           context,
-                                          context
-                                              .read<PackingPedidoBloc>()
-                                              .listOfPedidosFilters
-                                              .where((b) =>
-                                                  b.isTerminate == 0)
-                                              .toList(),
+                                          activePedidos,
                                         ),
                                       ),
                                     // ✅ MENU DE FILTROS
@@ -393,10 +418,7 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                                           case 'filter_propietario':
                                             _showPropietarioFilter(
                                               context,
-                                              bloc.listOfPedidosFilters
-                                                  .where((b) =>
-                                                      b.isTerminate == 0)
-                                                  .toList(),
+                                              activePedidos,
                                             );
                                             break;
                                         }
@@ -750,24 +772,6 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
                             physics: const AlwaysScrollableScrollPhysics(),
                             itemCount: listToShow.length,
                             itemBuilder: (contextBuilder, index) {
-                              final List<PedidoPackingResult>
-                                  inProgressBatches = context
-                                      .read<PackingPedidoBloc>()
-                                      .listOfPedidosFilters
-                                      .where((batch) => batch.isTerminate == 0)
-                                      .toList(); // Convertir a lista
-
-                              // Asegurarse de que hay batches en progreso
-                              if (inProgressBatches.isEmpty) {
-                                return const Center(
-                                    child: Text('No hay batches en progreso.'));
-                              }
-
-                              // Comprobar que el índice no está fuera de rango
-                              if (index >= inProgressBatches.length) {
-                                return const SizedBox(); // O manejar de otra forma
-                              }
-
                               final batch = listToShow[index];
 
                               return Padding(
@@ -1226,7 +1230,7 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
             false, // No permitir que el usuario cierre el diálogo manualmente
         builder: (dialogContext) => DialogStartTimeWidget(
           onAccepted: () async {
-            packingPedidoBloc.searchControllerPedido.clear();
+            packingPedidoBloc.searchController.clear();
             packingPedidoBloc.add(SearchPedidoEvent(''));
             packingPedidoBloc.add(
                 StartOrStopTimePack(pedido.id ?? 0, "start_time_transfer"));

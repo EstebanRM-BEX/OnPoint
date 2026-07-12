@@ -5,20 +5,49 @@ import 'package:wms_app/features/expedition/domain/entities/paquete_expedicion.d
 class ExpedicionPaqueteRowWidget extends StatelessWidget {
   final PaqueteExpedicion paquete;
 
-  const ExpedicionPaqueteRowWidget({super.key, required this.paquete});
+  /// Si es true, la fila entra en modo selección múltiple: aparece el
+  /// checkbox y la card se resalta al estar marcada. Lo decide únicamente el
+  /// permiso allow_validate_multiple (tab "Por hacer") — no depende de
+  /// onSelectedChanged, que puede venir null por otro motivo (ej. el paquete
+  /// no tiene packingId) sin que eso deba ocultar el checkbox, solo
+  /// deshabilitarlo.
+  final bool seleccionable;
+  final bool isSelected;
+  final ValueChanged<bool>? onSelectedChanged;
+
+  const ExpedicionPaqueteRowWidget({
+    super.key,
+    required this.paquete,
+    this.seleccionable = false,
+    this.isSelected = false,
+    this.onSelectedChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: white,
+      color: seleccionable && isSelected ? primaryColorAppLigth : white,
       elevation: 2,
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       child: ListTile(
-        leading: Image.asset(
-          'assets/icons/package_barcode.png',
-          width: 20,
-          height: 20,
-          color: primaryColorApp,
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (seleccionable)
+              Checkbox(
+                activeColor: primaryColorApp,
+                value: isSelected,
+                onChanged: onSelectedChanged == null
+                    ? null
+                    : (value) => onSelectedChanged!(value ?? false),
+              ),
+            Image.asset(
+              'assets/icons/package_barcode.png',
+              width: 20,
+              height: 20,
+              color: primaryColorApp,
+            ),
+          ],
         ),
         title: Text(
           paquete.packageName ?? 'Paquete sin nombre',

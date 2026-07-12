@@ -1076,6 +1076,17 @@ class _BatchDetailScreenState extends State<BatchScreen>
           // Esperar 1 segundo y llamar los códigos de barras del producto
           await Future.delayed(const Duration(seconds: 1));
           batchBloc.add(FetchBarcodesProductEvent());
+
+          // Reasignamos el foco al escáner del nuevo producto (ubicación o
+          // producto según corresponda). La cascada de estados
+          // (ChangeCurrentProduct -> FetchBatch -> LoadDataInfo) deja los
+          // TextFormField deshabilitados momentáneamente y Flutter suelta el
+          // foco; lo restauramos tras el frame, cuando ya están habilitados.
+          if (mounted) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _handleFocusAccordingToState();
+            });
+          }
         }
       }
 

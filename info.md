@@ -145,3 +145,28 @@ Reporte de Memory Leaks — wms_app
   dumpsys meminfo <package> antes/después de la Fase 1.
 
   ¿Quieres que aplique los fixes de la Fase 1 directamente (los dispose() faltantes en las ~15 pantallas + quitar cached_network_image)?
+
+
+
+
+  2.1 — Mixin DisposableControllersMixin (~16 archivos)
+  - Nuevo: lib/shared/mixins/disposable_controllers_mixin.dart
+  - Migrar las 15 pantallas que toqué en Fase 1 (las de scan de pick ×3, batch, conteo ×2, devoluciones, recepción ×2, packing ×3, transferencias ×2, create-transfer)
+
+  2.2 — Sacar controllers de los Blocs (el punto más grande: ~29 archivos)
+  - Los 11 Blocs: recepcion_bloc, devoluciones_bloc, packing_pedido_bloc, crate_transfer_bloc, recepcion_batch_bloc, packing_consolidade_bloc, wms_packing_bloc,
+  picking_pick_bloc, transferencia_bloc, wms_picking_bloc, batch_bloc
+  - Más los 18 archivos de UI que hoy referencian bloc.xxxController (acabo de verificar): los index/list screens de packing, picking, recepción y transferencias, los
+  diálogos de editar producto, new_lote_widget, etc. Cada uno pasa a tener su controller local
+
+  2.3 — Mover add() fuera de build() (~12 archivos)
+  - devoluciones/index.dart, wms_packing/packing/screens/index.dart, packing_detail.dart, tab1.dart, conteo/scan_product_screen.dart, new_lote_widget.dart,
+  devoluciones/lote_screen.dart, y los diálogos dialog_backorder_widget, dialog_packing_advetencia_cantidad_widget, dialog_delete_product_widget, entre otros
+
+  2.4 — Acotar scope de Blocs por módulo (2 archivos + ruteo)
+  - lib/main.dart (los 35 BlocProvider de la raíz)
+  - lib/core/routes/app_router.dart (envolver rutas de módulo con su provider)
+  - Riesgo: pantallas que asumen estado persistente entre navegaciones — requiere probar módulo por módulo
+
+  Recomendación de orden: 2.2 primero solo para los Blocs de módulos ya migrados a Clean Architecture, 2.1 después (el mixin deja de tener sentido si luego reescribes las
+  pantallas), 2.3 es mecánico y seguro, y 2.4 al final porque es el de mayor riesgo funcional. ¿Arranco con alguno?

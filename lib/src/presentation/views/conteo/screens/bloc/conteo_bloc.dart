@@ -943,6 +943,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
             isLocationIsOk: 1,
             weight: event.currentProduct.weight ?? 0,
             uom: event.currentProduct.uom ?? '',
+            useExpirationDate: event.currentProduct.useExpirationDate,
           );
 
           await db.productoOrdenConteoRepository.addNewProductConteo(
@@ -1318,6 +1319,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
           fechaVencimiento: event.productSelect.expirationDate,
           weight: event.productSelect.weight,
           categoryName: event.productSelect.category,
+          useExpirationDate: event.productSelect.useExpirationDate,
         );
 
         //valdiamos si tiene lote para traerlos

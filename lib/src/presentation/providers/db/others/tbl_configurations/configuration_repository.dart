@@ -190,6 +190,8 @@ class ConfigurationsRepository {
           _boolToInt(res?.updateLocationInventory),
       ConfigurationsTable.columnHideValidatePacking:
           _boolToInt(res?.hideValidatePacking),
+      ConfigurationsTable.columnHideValidateExpedition:
+          _boolToInt(res?.hideValidateExpedition),
       ConfigurationsTable.columnHideValidatePicking:
           _boolToInt(res?.hideValidatePicking),
       ConfigurationsTable.columnShowPhotoTemperature:
@@ -210,6 +212,10 @@ class ConfigurationsRepository {
           _boolToInt(res?.manageExpirationDateWithoutLot),
       ConfigurationsTable.columnShowButtonValidateClusterPicking:
           _boolToInt(res?.showButtonValidateClusterPicking),
+      ConfigurationsTable.columnAllowValidateMultiple:
+          _boolToInt(res?.allowValidateMultiple),
+      ConfigurationsTable.columnHideValidateItemExpedition:
+          _boolToInt(res?.hideValidateItemExpedition),
       // ✅ Mark as synced
       ConfigurationsTable.columnIsSynced: 1,
     };
@@ -284,6 +290,8 @@ class ConfigurationsRepository {
               map[ConfigurationsTable.columnUpdateLocationInventory]),
           hideValidatePacking:
               _intToBool(map[ConfigurationsTable.columnHideValidatePacking]),
+          hideValidateExpedition: _intToBool(
+              map[ConfigurationsTable.columnHideValidateExpedition]),
           hideValidatePicking:
               _intToBool(map[ConfigurationsTable.columnHideValidatePicking]),
           showPhotoTemperature:
@@ -306,6 +314,10 @@ class ConfigurationsRepository {
               map[ConfigurationsTable.columnManageExpirationDateWithoutLot]),
           showButtonValidateClusterPicking: _intToBool(
               map[ConfigurationsTable.columnShowButtonValidateClusterPicking]),
+          allowValidateMultiple: _intToBool(
+              map[ConfigurationsTable.columnAllowValidateMultiple]),
+          hideValidateItemExpedition: _intToBool(
+              map[ConfigurationsTable.columnHideValidateItemExpedition]),
         ),
       ),
     );
