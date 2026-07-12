@@ -1,6 +1,11 @@
 // app_routes.dart
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/features/expedition/domain/entities/item_suelto_expedicion.dart';
+import 'package:wms_app/features/expedition/domain/entities/paquete_expedicion.dart';
+import 'package:wms_app/features/expedition/presentation/screens/expedition_screen.dart';
+import 'package:wms_app/features/expedition/presentation/screens/list_expedition_screen.dart';
+import 'package:wms_app/features/expedition/presentation/screens/scan_product_screen.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/detail_screen.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/index.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/scan_product_scree.dart';
@@ -91,68 +96,68 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/picking_compo
 import 'package:wms_app/src/presentation/views/wms_picking/modules/picking_componentes/index_list_picking_componentes_screen.dart';
 
 class AppRoutes {
-  //todo  Print Labels
+  //todas las pantallas de Print Labels
   static const String printLabels = 'print-labels';
   static const String printLabelsProducts = 'print-labels-products';
   static const String printLabelsLocations = 'print-labels-locations';
 
-  //todo  Mapa estático de rutas
+  //todas las pantallas de Mapa estático de rutas
   static const String enterprice = 'enterprice';
   static const String auth = 'auth';
   static const String checkout = 'checkout';
   static const String updateRequired = 'update-required';
 
-  //todo  WMS Picking
+  //todas las pantallas de WMS Picking
   static const String wmsPicking = 'wms-picking';
   static const String batch = 'batch';
   static const String batchDetail = 'batch-detail';
   static const String historyLits = 'history-list';
   static const String historyDetail = 'history-detail';
 
-  //todo picking cluster
+  //todas las pantallas de picking cluster
   static const String pickingCluster = 'picking-cluster';
   static const String scanProductCluster = 'scan-product-cluster';
   static const String detailCluster = 'detail-cluster';
   static const String validateCluster = 'validate-cluster';
   static const String selectLoteCluster = 'select-lote-cluster';
 
-  //todo pick
+  //todas las pantallas de pick
   static const String pick = 'pick';
   static const String pickDone = 'pick-done';
   static const String scanProductPick = "scan-product-pick";
   static const String pickDetail = 'pick-detail';
   static const String detailPickDone = 'detail-pick-done';
 
-  //todo picking componentes
+  //todas las pantallas de picking componentes
   static const String pickingComponentes = 'picking-componentes';
   //por batch
   static const String pickingComponentesBatch = 'picking-componentes-batch';
 
-  //todo WMS Packing
+  //todas las pantallas de WMS Packing
   static const String wmsPacking = 'wms-packing';
   static const String packingList = 'packing-list';
   static const String packing = 'Packing';
   static const String packingDetail = 'packing-detail';
 
-  //todo packing consolidade
+  //todas las pantallas de packing consolidade
   static const String listPackingConsolidade = 'list-packing-consolidade';
   static const String packingConsolidateList = 'pedido-packing-consolidate-list';
   static const String packingConsolidateDetail = 'packing-consolidate-detail';
   static const String scanProductConsolidate = 'scan-product-consolidate';
 
-  //todo packing por pedido
+  //todas las pantallas de packing por pedido
   static const String listPacking = 'list-packing';
   static const String detailPackingPedido = 'detail-packing-pedido';
   static const String scanPack = 'scan-pack';
   static const String locationsDestPacking = 'locations-dest-packing';
 
-  //todo inventario
+  //todas las pantallas de inventario
   static const String inventario = 'inventario';
   static const String searchLocation = 'search-location';
   static const String searchProduct = 'search-product';
   static const String newLoteInventario = 'new-lote-inventario';
 
-  //todo transferencias
+  //todas las pantallas de transferencias
   static const String transferencias = 'transferencias';
   static const String transferenciaDetail = 'transferencia-detail';
   static const String transferExterna = 'transfer-externa';
@@ -160,46 +165,46 @@ class AppRoutes {
   static const String scanProductTransfer = 'scan-product-transfer';
   static const String searchLocationDestTrans = 'seacrh-locationsDest-trans';
 
-  //todo create transfer
+  //todas las pantallas de create transfer
   static const String createTransfer = 'create-transfer';
   static const String searchLocationCreateTransfer = 'search-location-create-transfer';
   static const String searchProductsCreateTransfer = 'search-product-create-transfer';
   static const String searchLoteCreateTransfer = 'search-lote-create-transfer';
   static const String detailCreateTransfer = 'detail-create-transfer';
 
-  //todo entrada de productos
+  //todas las pantallas de entrada de productos
   static const String entradaProductos = 'list-entrada-productos';
 
-  //todo Global
+  //todas las pantallas de Global
   static const String home = '/home';
   static const String user = 'user';
 
-  //todo devoluciones individual
+  //todas las pantallas de devoluciones individual
   static const String devoluciones = 'list-devoluciones';
 
-  //todo recepcion
+  //todas las pantallas de recepcion
   static const String recepcion = 'recepcion';
   static const String listOrdenesCompra = 'list-ordenes-compra';
   static const String scanProductOrder = 'scan-product-order';
   static const String locationDestSearch = 'search-location-recep';
-  //todo recepcion batch
+  //todas las pantallas de recepcion batch
   static const String listReceptionBatch = 'list-recepction-batch';
   static const String recepcionBatch = 'recepcion-batch';
   static const String scanProductReceptionBatch = 'scan-product-reception-batch';
   static const String locationDestReceptionBatchSearch = 'search-location-recep-batch';
   static const String newLoteRecepBatch = 'new-lote-recep-batch';
 
-  //todo new lote
+  //todas las pantallas de new lote
   static const String newLote = 'new-lote';
 
-  //todo devoluciones
+  //todas las pantallas de devoluciones
   static const String devolucionesCreate = 'devoluciones-create';
   static const String terceros = 'terceros';
   static const String propietarioDevoluciones = 'propietario-devoluciones';
   static const String almacenesDevoluciones = 'almacenes-devoluciones';
   static const String ubicacionesDevoluciones = 'ubicaciones-devoluciones';
 
-  //todo info rapida
+  //todas las pantallas de info rapida
   static const String infoRapida = 'info-rapida';
   static const String productInfo = 'product-info';
   static const String locationInfo = 'location-info';
@@ -211,10 +216,10 @@ class AppRoutes {
   static const String createMassTransfer = 'create-mass-transfer';
   static const String searchLocationCreateMassTransfer = 'search-location-create-mass-transfer';
 
-  //todo: asistente ia
+  //todas las pantallas de asistente ia
   static const String asistenteIa = 'asistente-ia';
 
-  //todo: conteo
+  //todas las pantallas de conteo
   static const String conteo = 'conteo';
   static const String conteoDetail = 'conteo-detail';
   static const String scanProductConteo = 'scan-product-conteo';
@@ -223,6 +228,14 @@ class AppRoutes {
   static const String searchLocationConteo = 'search-location-conteo';
   static const String searchProductConteo = 'search-product-conteo';
   static const String searchLoteConteo = 'search-lote-conteo';
+
+
+  //todas las pantallas de expedición
+  static const String listExpedition = 'list-expedition';
+  static const String scanProductExpedition = 'scan-product-expedition';
+  static const String expeditionDetail = 'expedition-detail';
+
+
 
   // ─── Helpers de extracción segura de argumentos ───────────────────────────
 
@@ -266,6 +279,21 @@ class AppRoutes {
       AppRoutes.printLabels: (_) => const PrintLabelsScreen(),
       AppRoutes.printLabelsProducts: (_) => const PrintLabelsProductsScreen(),
       AppRoutes.printLabelsLocations: (_) => const PrintLabelsLocationsScreen(),
+
+      //todo expedición
+      listExpedition: (_) => const ListExpeditionScreen(),
+      scanProductExpedition: (context) {
+        final args = _args(context);
+        final paquete = _arg<PaqueteExpedicion>(args, 0);
+        final itemSuelto = _arg<ItemSueltoExpedicion>(args, 1);
+        return ScanProductExpeditionScreen(
+            paquete: paquete, itemSuelto: itemSuelto);
+      },
+      expeditionDetail: (context) {
+        final args = _args(context);
+        final expeditionId = _arg<int>(args, 0) ?? 0;
+        return ExpedicionDetailScreen(expeditionId: expeditionId);
+      },
 
       //todo conteo
       conteo: (_) => const ListConteoScreen(),

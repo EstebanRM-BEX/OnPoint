@@ -872,6 +872,49 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                             ),
                                           ),
                                         ),
+                                        GestureDetector(
+                                          onTap: () {
+                                            Navigator.pushReplacementNamed(
+                                                context,
+                                                AppRoutes.listExpedition);
+                                          },
+                                          child: Card(
+                                            color: const Color.fromARGB(
+                                                215, 255, 255, 255),
+                                            elevation: 5,
+                                            child: SizedBox(
+                                              height: 100,
+                                              width: 100,
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  SizedBox(
+                                                    height: 60,
+                                                    width: 60,
+                                                    child: Image.asset(
+                                                      "assets/icons/expedition.png",
+                                                      // color: Colors.black,
+                                                      width: 60,
+                                                      height: 60,
+                                                    ),
+                                                  ),
+                                                  const Text(
+                                                    'Expedición',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      color: primaryColorApp,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ],

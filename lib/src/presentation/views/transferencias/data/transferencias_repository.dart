@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/network/connectivity_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -19,6 +20,7 @@ import 'package:wms_app/src/presentation/views/transferencias/modules/create-tra
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/response_create_transfer_mode.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/response_validate_stock_model.dart';
 
+@lazySingleton
 class TransferenciasRepository {
   Future<ResponseTransferenciasResult> fetAllTransferencias(
     bool isLoadinDialog,

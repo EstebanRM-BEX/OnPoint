@@ -28,9 +28,9 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
 import 'package:wms_app/src/api/http_response_handler.dart';
-import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/services/session_manager.dart';
+import 'package:wms_app/core/utils/widgets/app_restart_widget.dart';
 import 'package:wms_app/core/utils/widgets/error_widget.dart';
-import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
@@ -53,9 +53,12 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/pic
 import 'package:wms_app/src/presentation/widgets/session_timeout_manager_widget.dart';
 import 'package:wms_app/src/presentation/widgets/network_quality_overlay.dart';
 import 'package:wms_app/src/presentation/providers/network_overlay/network_overlay_cubit.dart';
-import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
 import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
 import 'package:wms_app/features/websocket/presentation/bloc/websocket_bloc.dart';
+import 'package:wms_app/features/expedition/presentation/bloc/assignment/expedicion_assignment_bloc.dart';
+import 'package:wms_app/features/expedition/presentation/bloc/detail/expedicion_detail_bloc.dart';
+import 'package:wms_app/features/expedition/presentation/bloc/list/expedition_list_bloc.dart';
+import 'package:wms_app/features/expedition/presentation/bloc/scan/expedicion_scan_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -109,7 +112,7 @@ void main() {
       httpHandler: HttpResponseHandler(),
     );
 
-    runApp(const MyApp());
+    runApp(AppRestart(child: const MyApp()));
 
     // WebSocket en background: no debe bloquear el primer frame.
     // connect() ya retorna solo si no hay sesión activa.
@@ -126,20 +129,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     void logOut() async {
-      debugPrint("��� Sesión expirada por inactividad.");
-      final contextWithProviders = navigatorKey.currentContext;
-      if (contextWithProviders != null) {
-        PrefUtils.clearPrefs();
-        getIt<IStorageService>().removeUrlWebsite();
-        await DataBaseSqlite().deleteBDCloseSession();
-        await Future.delayed(const Duration(seconds: 1));
-        PrefUtils.setIsLoggedIn(false);
-        // Restablecer overlay a visible por defecto
-        contextWithProviders.read<NetworkOverlayCubit>().reset();
-      }
-
-      navigatorKey.currentState
-          ?.pushNamedAndRemoveUntil('enterprice', (route) => false);
+      debugPrint("⏱️ Sesión expirada por inactividad.");
+      await SessionManager.closeSession();
     }
 
     return MultiBlocProvider(
@@ -192,6 +183,10 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => getIt<PrintingBloc>()),
         BlocProvider(create: (_) => PrintLabelsBloc()),
         BlocProvider(create: (_) => getIt<WebSocketBloc>()),
+        BlocProvider(create: (_) => getIt<ExpedicionListBloc>()),
+        BlocProvider(create: (_) => getIt<ExpedicionAssignmentBloc>()),
+        BlocProvider(create: (_) => getIt<ExpedicionDetailBloc>()),
+        BlocProvider(create: (_) => getIt<ExpedicionScanBloc>()),
       ],
       child: GetMaterialApp(
         navigatorKey: navigatorKey,

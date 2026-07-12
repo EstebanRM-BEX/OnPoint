@@ -13,6 +13,14 @@ import 'package:wms_app/src/presentation/providers/db/conteo/tbl_ubicaciones_ord
 import 'package:wms_app/src/presentation/providers/db/conteo/tbl_ubicaciones_orden_conteo/ubicaciones_conteo_table.dart';
 import 'package:wms_app/src/presentation/providers/db/devoluciones/tbl_product/product_devolucion_repository.dart';
 import 'package:wms_app/src/presentation/providers/db/devoluciones/tbl_product/product_devolucion_table.dart';
+import 'package:wms_app/src/presentation/providers/db/expedition/tbl_expedicion_items/expedicion_items_repository.dart';
+import 'package:wms_app/src/presentation/providers/db/expedition/tbl_expedicion_items/expedicion_items_table.dart';
+import 'package:wms_app/src/presentation/providers/db/expedition/tbl_expedicion_items_sueltos/expedicion_items_sueltos_repository.dart';
+import 'package:wms_app/src/presentation/providers/db/expedition/tbl_expedicion_items_sueltos/expedicion_items_sueltos_table.dart';
+import 'package:wms_app/src/presentation/providers/db/expedition/tbl_expedicion_paquetes/expedicion_paquetes_repository.dart';
+import 'package:wms_app/src/presentation/providers/db/expedition/tbl_expedicion_paquetes/expedicion_paquetes_table.dart';
+import 'package:wms_app/src/presentation/providers/db/expedition/tbl_expedicion_pedidos/expedicion_pedidos_repository.dart';
+import 'package:wms_app/src/presentation/providers/db/expedition/tbl_expedicion_pedidos/expedicion_pedidos_table.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_barcode/barcodes_inventario_repository.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_barcode/barcodes_inventario_table.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/product_inventario_repository.dart';
@@ -94,7 +102,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 49,
+      version: 53,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -189,6 +197,12 @@ class DataBaseSqlite {
     await db.execute(BatchPackingConsolidateTable.createTable());
 
     await db.execute(PedidosPackingConsolidateTable.createTable());
+
+    //* tablas del módulo de expedición (pedidos, paquetes, items)
+    await db.execute(ExpedicionPedidosTable.createTable());
+    await db.execute(ExpedicionPaquetesTable.createTable());
+    await db.execute(ExpedicionItemsTable.createTable());
+    await db.execute(ExpedicionItemsSueltosTable.createTable());
 
     // tabla de historial de conversación del asistente IA
     await db.execute('''
@@ -894,6 +908,43 @@ class DataBaseSqlite {
         } catch (_) {}
       }
     }
+    if (oldVersion < 50) {
+      try {
+        await db.execute(ExpedicionPedidosTable.createTable());
+        await db.execute(ExpedicionPaquetesTable.createTable());
+        await db.execute(ExpedicionItemsTable.createTable());
+      } catch (e) {
+        debugPrint("Error actualizando a v50 (tablas de expedición): $e");
+      }
+    }
+    if (oldVersion < 51) {
+      try {
+        await db.execute(ExpedicionItemsSueltosTable.createTable());
+      } catch (e) {
+        debugPrint(
+            "Error actualizando a v51 (tbl_expedicion_items_sueltos): $e");
+      }
+    }
+    if (oldVersion < 52) {
+      // barcode pasa de INTEGER(bool) a TEXT y quantity de INTEGER a REAL.
+      // La tabla se resincroniza completa en cada fetch, así que se recrea.
+      try {
+        await db.execute('DROP TABLE IF EXISTS ${ExpedicionItemsTable.tableName}');
+        await db.execute(ExpedicionItemsTable.createTable());
+      } catch (e) {
+        debugPrint("Error actualizando a v52 (tbl_expedicion_items): $e");
+      }
+    }
+    if (oldVersion < 53) {
+      // packing_type pasa de INTEGER(bool) a TEXT (viene como string, ej.
+      // "Paquete"). Tabla resincronizada completa en cada fetch, se recrea.
+      try {
+        await db.execute('DROP TABLE IF EXISTS ${ExpedicionPaquetesTable.tableName}');
+        await db.execute(ExpedicionPaquetesTable.createTable());
+      } catch (e) {
+        debugPrint("Error actualizando a v53 (tbl_expedicion_paquetes): $e");
+      }
+    }
   }
 
   //todo repositorios de las tablas
@@ -991,6 +1042,19 @@ class DataBaseSqlite {
   //repositorio de batchs de packing consolidade
   BatchPackingConsolidateRepository get batchPackingConsolidateRepository =>
       BatchPackingConsolidateRepository();
+
+  //repositorios del módulo de expedición
+  ExpedicionPedidosRepository get expedicionPedidosRepository =>
+      ExpedicionPedidosRepository();
+
+  ExpedicionPaquetesRepository get expedicionPaquetesRepository =>
+      ExpedicionPaquetesRepository();
+
+  ExpedicionItemsRepository get expedicionItemsRepository =>
+      ExpedicionItemsRepository();
+
+  ExpedicionItemsSueltosRepository get expedicionItemsSueltosRepository =>
+      ExpedicionItemsSueltosRepository();
 
   Future<Database> getDatabaseInstance() async {
     if (_database != null) {

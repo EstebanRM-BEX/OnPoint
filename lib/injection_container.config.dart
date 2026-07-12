@@ -45,6 +45,30 @@ import 'features/enterprise/domain/usecases/get_recent_urls.dart' as _i91;
 import 'features/enterprise/domain/usecases/save_recent_url.dart' as _i747;
 import 'features/enterprise/domain/usecases/search_enterprise.dart' as _i138;
 import 'features/enterprise/presentation/bloc/enterprise_bloc.dart' as _i20;
+import 'features/expedition/data/datasources/expedition_local_data_source.dart'
+    as _i486;
+import 'features/expedition/data/datasources/expedition_remote_data_source.dart'
+    as _i260;
+import 'features/expedition/data/repositories/expedition_repository_impl.dart'
+    as _i838;
+import 'features/expedition/domain/repositories/expedition_repository.dart'
+    as _i777;
+import 'features/expedition/domain/usecases/asignar_responsable_usecase.dart'
+    as _i598;
+import 'features/expedition/domain/usecases/fetch_expediciones_usecase.dart'
+    as _i913;
+import 'features/expedition/domain/usecases/get_expedicion_detail_usecase.dart'
+    as _i324;
+import 'features/expedition/domain/usecases/get_expediciones_from_db_usecase.dart'
+    as _i683;
+import 'features/expedition/presentation/bloc/assignment/expedicion_assignment_bloc.dart'
+    as _i522;
+import 'features/expedition/presentation/bloc/detail/expedicion_detail_bloc.dart'
+    as _i45;
+import 'features/expedition/presentation/bloc/list/expedition_list_bloc.dart'
+    as _i239;
+import 'features/expedition/presentation/bloc/scan/expedicion_scan_bloc.dart'
+    as _i770;
 import 'features/home/data/datasources/home_local_data_source.dart' as _i205;
 import 'features/home/data/datasources/home_remote_data_source.dart' as _i359;
 import 'features/home/data/repositories/home_repository_impl.dart' as _i689;
@@ -256,11 +280,15 @@ extension GetItInjectableX on _i174.GetIt {
   }) async {
     final gh = _i526.GetItHelper(this, environment, environmentFilter);
     final registerModule = _$RegisterModule();
+    gh.factory<_i770.ExpedicionScanBloc>(() => _i770.ExpedicionScanBloc());
     gh.lazySingleton<_i519.Client>(() => registerModule.httpClient);
     gh.lazySingleton<_i895.Connectivity>(() => registerModule.connectivity);
     gh.lazySingleton<_i552.DataBaseSqlite>(() => registerModule.database);
     gh.lazySingleton<_i319.ApiRequestService>(
       () => registerModule.apiRequestService,
+    );
+    gh.lazySingleton<_i895.TransferenciasRepository>(
+      () => _i895.TransferenciasRepository(),
     );
     gh.lazySingleton<_i380.PickScanLocalDataSource>(
       () => _i380.PickScanLocalDataSourceImpl(),
@@ -274,6 +302,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i537.IVibrationService>(
       () => _i869.VibrationServiceImpl(),
+    );
+    gh.lazySingleton<_i486.ExpeditionLocalDataSource>(
+      () => _i486.ExpeditionLocalDataSourceImpl(),
     );
     gh.lazySingleton<_i359.HomeRemoteDataSource>(
       () => _i359.HomeRemoteDataSourceImpl(gh<_i319.ApiRequestService>()),
@@ -308,6 +339,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i918.EnterpriseRemoteDataSource>(
       () => _i918.EnterpriseRemoteDataSourceImpl(gh<_i319.ApiRequestService>()),
+    );
+    gh.lazySingleton<_i260.ExpeditionRemoteDataSource>(
+      () => _i260.ExpeditionRemoteDataSourceImpl(),
     );
     gh.lazySingleton<_i846.PackagingTypeRemoteDataSource>(
       () => _i846.PackagingTypeRemoteDataSourceImpl(
@@ -344,6 +378,14 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i1062.IWebSocketService>(() => _i1020.WebSocketService());
     gh.lazySingleton<_i854.EnterpriseLocalDataSource>(
       () => _i854.EnterpriseLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()),
+    );
+    gh.lazySingleton<_i777.ExpeditionRepository>(
+      () => _i838.ExpeditionRepositoryImpl(
+        remoteDataSource: gh<_i260.ExpeditionRemoteDataSource>(),
+        localDataSource: gh<_i486.ExpeditionLocalDataSource>(),
+        networkInfo: gh<_i75.NetworkInfo>(),
+        transferRepository: gh<_i895.TransferenciasRepository>(),
+      ),
     );
     gh.lazySingleton<_i309.EnterpriseRepository>(
       () => _i331.EnterpriseRepositoryImpl(
@@ -552,6 +594,19 @@ extension GetItInjectableX on _i174.GetIt {
         networkInfo: gh<_i75.NetworkInfo>(),
       ),
     );
+    gh.lazySingleton<_i598.AsignarResponsableUseCase>(
+      () => _i598.AsignarResponsableUseCase(gh<_i777.ExpeditionRepository>()),
+    );
+    gh.lazySingleton<_i913.FetchExpedicionesUseCase>(
+      () => _i913.FetchExpedicionesUseCase(gh<_i777.ExpeditionRepository>()),
+    );
+    gh.lazySingleton<_i324.GetExpedicionDetailUseCase>(
+      () => _i324.GetExpedicionDetailUseCase(gh<_i777.ExpeditionRepository>()),
+    );
+    gh.lazySingleton<_i683.GetExpedicionesFromDbUseCase>(
+      () =>
+          _i683.GetExpedicionesFromDbUseCase(gh<_i777.ExpeditionRepository>()),
+    );
     gh.factory<_i573.LoteProductoBloc>(
       () => _i573.LoteProductoBloc(
         getLotesProductoUseCase: gh<_i799.GetLotesProductoUseCase>(),
@@ -604,11 +659,21 @@ extension GetItInjectableX on _i174.GetIt {
         deleteRecentUrlUseCase: gh<_i552.DeleteRecentUrl>(),
       ),
     );
+    gh.factory<_i522.ExpedicionAssignmentBloc>(
+      () => _i522.ExpedicionAssignmentBloc(
+        asignarResponsableUseCase: gh<_i598.AsignarResponsableUseCase>(),
+      ),
+    );
     gh.lazySingleton<_i277.GetPrinters>(
       () => _i277.GetPrinters(gh<_i681.PrintingRepository>()),
     );
     gh.lazySingleton<_i152.PrintReport>(
       () => _i152.PrintReport(gh<_i681.PrintingRepository>()),
+    );
+    gh.factory<_i45.ExpedicionDetailBloc>(
+      () => _i45.ExpedicionDetailBloc(
+        getExpedicionDetailUseCase: gh<_i324.GetExpedicionDetailUseCase>(),
+      ),
     );
     gh.lazySingleton<_i52.ValidateSession>(
       () => _i52.ValidateSession(gh<_i1015.AuthRepository>()),
@@ -635,6 +700,12 @@ extension GetItInjectableX on _i174.GetIt {
         getPendingSendProductsUseCase:
             gh<_i542.GetPendingSendProductsUseCase>(),
         networkInfo: gh<_i75.NetworkInfo>(),
+      ),
+    );
+    gh.factory<_i239.ExpedicionListBloc>(
+      () => _i239.ExpedicionListBloc(
+        fetchExpedicionesUseCase: gh<_i913.FetchExpedicionesUseCase>(),
+        getExpedicionesFromDbUseCase: gh<_i683.GetExpedicionesFromDbUseCase>(),
       ),
     );
     gh.lazySingleton<_i589.CrearLoteInventario>(
