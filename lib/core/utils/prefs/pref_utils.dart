@@ -1,4 +1,5 @@
 import 'package:wms_app/core/utils/prefs/pref_keys.dart';
+import 'package:wms_app/core/utils/prefs/secure_storage_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PrefUtils {
@@ -24,9 +25,11 @@ class PrefUtils {
     return preferences.getBool(PrefKeys.isLoggedIn) ?? false;
   }
 
-  static getUserPass() async {
+  /// Elimina el password que versiones anteriores guardaban en SharedPreferences.
+  /// El password ahora vive únicamente en SecureStorage.
+  static Future<void> removeLegacyPass() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
-    return preferences.getString(PrefKeys.pass) ?? "";
+    await preferences.remove(PrefKeys.pass);
   }
 
 //guardamos la cookie de la ultima petición
@@ -128,12 +131,6 @@ class PrefUtils {
     return preferences.getInt(PrefKeys.userId) ?? 0;
   }
 
-//*contraseña
-  static Future<void> setUserPass(String pass) async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    await preferences.setString(PrefKeys.pass, pass);
-  }
-
 //*obtenemos los datos del usuario
   static Future<String> getUserName() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
@@ -152,6 +149,7 @@ class PrefUtils {
 
   //METODO PARA ELIMINAR LOS DATOS DEL USUARIO
   static Future<void> clearUserData() async {
+    await SecureStorage.deleteUserPass();
     SharedPreferences preferences = await SharedPreferences.getInstance();
     await preferences.remove(PrefKeys.user);
     await preferences.remove(PrefKeys.email);
@@ -163,6 +161,7 @@ class PrefUtils {
 
   //metodo apra borrar los prefs pero no los de la pda
   static Future<void> clearPrefs() async {
+    await SecureStorage.deleteUserPass();
     SharedPreferences preferences = await SharedPreferences.getInstance();
     await preferences.remove(PrefKeys.enterprise);
     await preferences.remove(PrefKeys.cookie);
@@ -188,6 +187,7 @@ class PrefUtils {
   }
 
   static Future<void> clearSession() async {
+    await SecureStorage.deleteUserPass();
     SharedPreferences preferences = await SharedPreferences.getInstance();
 
     // 1. Borramos la hora de actividad (CRÍTICO para que no haga loop infinito de logout)

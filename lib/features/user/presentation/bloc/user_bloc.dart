@@ -31,6 +31,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   final GetUserLocations getUserLocations;
   final GetUserNovelties getUserNovelties;
   final RegisterDevice registerDevice;
+  final SaveUserSession saveUserSession;
 
   List<UserLocation> locations = [];
   List<Novedad> novelties = [];
@@ -48,6 +49,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     required this.getUserLocations,
     required this.getUserNovelties,
     required this.registerDevice,
+    required this.saveUserSession,
   }) : super(UserInitial()) {
     on<LoadUserInfoEvent>(_onLoadUserInfo);
     on<RegisterDeviceEvent>(_onRegisterDevice);
@@ -224,7 +226,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
           if (registration.isAuthorized == 'yes') {
             // Guardar sesión solo después de que el dispositivo esté autorizado
             if (event.user != null && event.password != null) {
-              final saveResult = await getIt<SaveUserSession>()(
+              final saveResult = await saveUserSession(
                 SaveSessionParams(
                   user: event.user!,
                   password: event.password!,

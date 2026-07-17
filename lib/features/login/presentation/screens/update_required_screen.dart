@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
@@ -7,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/features/home/domain/entities/app_version.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
@@ -27,7 +26,10 @@ class _UpdateRequiredScreenState extends State<UpdateRequiredScreen> {
 
     bool launched = false;
     try {
-      launched = await launch(urlDownload);
+      launched = await launchUrl(
+        Uri.parse(urlDownload),
+        mode: LaunchMode.externalApplication,
+      );
     } catch (_) {
       launched = false;
     }
@@ -44,12 +46,11 @@ class _UpdateRequiredScreenState extends State<UpdateRequiredScreen> {
       return;
     }
 
-    // URL abierta correctamente → cerrar sesión
-    PrefUtils.clearPrefs();
+    // URL abierta correctamente → cerrar sesión.
+    // Todo con await: la navegación solo ocurre con la sesión ya limpia.
+    await PrefUtils.clearPrefs();
     getIt<IStorageService>().removeUrlWebsite();
     await DataBaseSqlite().deleteBDCloseSession();
-    await Future.delayed(const Duration(seconds: 1));
-    PrefUtils.setIsLoggedIn(false);
 
     if (!mounted) return;
     context.read<HomeBloc>().add(ClearDataEvent());
@@ -58,14 +59,16 @@ class _UpdateRequiredScreenState extends State<UpdateRequiredScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final homeBloc = context.read<HomeBloc>();
-    final versionResult = homeBloc.appVersion.result?.result;
+    // La versión llega como argumento de ruta desde el flujo de login
+    final appVersion =
+        ModalRoute.of(context)?.settings.arguments as AppVersion?;
+    final versionResult = appVersion?.result?.result;
     final serverVersion = versionResult?.version ?? '';
     final notes = versionResult?.notes ?? [];
     final urlDownload = versionResult?.urlDownload ?? '';
 
-    return WillPopScope(
-      onWillPop: () async => false,
+    return PopScope(
+      canPop: false,
       child: Scaffold(
         backgroundColor: Colors.white,
         // Botón fijo en la parte inferior — nunca se desborda

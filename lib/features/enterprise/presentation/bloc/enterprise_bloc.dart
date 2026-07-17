@@ -3,7 +3,6 @@ import 'package:injectable/injectable.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../domain/usecases/delete_recent_url.dart';
 import '../../domain/usecases/get_recent_urls.dart';
-import '../../domain/usecases/save_recent_url.dart';
 import '../../domain/usecases/search_enterprise.dart';
 import 'enterprise_event.dart';
 import 'enterprise_state.dart';
@@ -12,18 +11,15 @@ import 'enterprise_state.dart';
 class EnterpriseBloc extends Bloc<EnterpriseEvent, EnterpriseState> {
   final SearchEnterprise searchEnterpriseUseCase;
   final GetRecentUrls getRecentUrlsUseCase;
-  final SaveRecentUrl saveRecentUrlUseCase;
   final DeleteRecentUrl deleteRecentUrlUseCase;
 
   EnterpriseBloc({
     required this.searchEnterpriseUseCase,
     required this.getRecentUrlsUseCase,
-    required this.saveRecentUrlUseCase,
     required this.deleteRecentUrlUseCase,
-  }) : super(EnterpriseInitial()) {
+  }) : super(const EnterpriseState()) {
     on<SearchEnterpriseEvent>(_onSearchEnterprise);
     on<GetRecentUrlsEvent>(_onGetRecentUrls);
-    on<SaveRecentUrlEvent>(_onSaveRecentUrl);
     on<DeleteRecentUrlEvent>(_onDeleteRecentUrl);
     on<SelectDatabaseEvent>(_onSelectDatabase);
   }
@@ -32,16 +28,25 @@ class EnterpriseBloc extends Bloc<EnterpriseEvent, EnterpriseState> {
     SearchEnterpriseEvent event,
     Emitter<EnterpriseState> emit,
   ) async {
-    emit(EnterpriseLoading());
+    emit(state.copyWith(status: EnterpriseStatus.searching));
     final result =
         await searchEnterpriseUseCase(SearchEnterpriseParams(url: event.url));
 
     result.fold(
-      (failure) => emit(EnterpriseFailure(failure.message)),
-      (enterpriseInfo) => emit(EnterpriseSuccess(
-        enterpriseInfo: enterpriseInfo,
-        url: event.url,
+      (failure) => emit(state.copyWith(
+        status: EnterpriseStatus.failure,
+        errorMessage: failure.message,
       )),
+      (enterpriseInfo) {
+        emit(state.copyWith(
+          status: EnterpriseStatus.success,
+          enterpriseInfo: enterpriseInfo,
+          url: event.url,
+        ));
+        // La búsqueda exitosa agrega la URL al historial (lo hace el
+        // repositorio); refrescamos la lista visible.
+        add(const GetRecentUrlsEvent());
+      },
     );
   }
 
@@ -49,21 +54,15 @@ class EnterpriseBloc extends Bloc<EnterpriseEvent, EnterpriseState> {
     GetRecentUrlsEvent event,
     Emitter<EnterpriseState> emit,
   ) async {
-    emit(EnterpriseLoading());
     final result = await getRecentUrlsUseCase(NoParams());
 
     result.fold(
-      (failure) => emit(EnterpriseFailure(failure.message)),
-      (recentUrls) => emit(RecentUrlsLoaded(recentUrls)),
+      (failure) => emit(state.copyWith(
+        status: EnterpriseStatus.failure,
+        errorMessage: failure.message,
+      )),
+      (recentUrls) => emit(state.copyWith(recentUrls: recentUrls)),
     );
-  }
-
-  Future<void> _onSaveRecentUrl(
-    SaveRecentUrlEvent event,
-    Emitter<EnterpriseState> emit,
-  ) async {
-    await saveRecentUrlUseCase(SaveRecentUrlParams(recentUrl: event.recentUrl));
-    add(const GetRecentUrlsEvent());
   }
 
   Future<void> _onDeleteRecentUrl(
@@ -78,6 +77,10 @@ class EnterpriseBloc extends Bloc<EnterpriseEvent, EnterpriseState> {
     SelectDatabaseEvent event,
     Emitter<EnterpriseState> emit,
   ) {
-    emit(DatabaseSelectedState(database: event.database, url: event.url));
+    emit(state.copyWith(
+      status: EnterpriseStatus.databaseSelected,
+      selectedDatabase: event.database,
+      url: event.url,
+    ));
   }
 }

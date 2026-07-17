@@ -1,19 +1,15 @@
-// ignore_for_file: use_build_context_synchronously, unused_element, unnecessary_null_comparison, avoid_print, must_be_immutable, prefer_final_fields
-
-import 'dart:io';
-
-import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/utils/prefs/secure_storage_utils.dart';
 import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_bloc.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_event.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/core/utils/validator_utils.dart';
-import 'package:wms_app/core/utils/widgets/dialog_loading_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/login/presentation/bloc/login_bloc.dart';
+import 'package:wms_app/features/login/presentation/coordinator/post_login_coordinator.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
@@ -22,9 +18,14 @@ import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> with LoadingDialogMixin {
   @override
   Widget build(BuildContext context) {
     // LoginBloc is now provided in main.dart via getIt
@@ -32,15 +33,11 @@ class LoginPage extends StatelessWidget {
     return BlocListener<LoginBloc, LoginState>(
       listener: (context, state) async {
         if (state is LoginLoading) {
-          Get.dialog(
-            DialogLoadingNetwork(titel: 'Login'),
-            barrierDismissible:
-                false, // No permitir cerrar tocando fuera del diálogo
-          );
+          showLoadingDialog('Iniciando sesión...');
         }
         if (state is LoginSuccess) {
-          // El password fue guardado en PrefUtils por el BLoC antes del emit
-          final password = await PrefUtils.getUserPass();
+          // El password fue guardado en SecureStorage por el BLoC antes del emit
+          final password = await SecureStorage.getUserPass();
           if (!context.mounted) return;
           context.read<UserBloc>().add(
             RegisterDeviceEvent(user: state.user, password: password),
@@ -49,7 +46,7 @@ class LoginPage extends StatelessWidget {
         }
 
         if (state is LoginFailure) {
-          Get.back();
+          hideLoadingDialog();
           showScrollableErrorDialog(state.message);
         }
       },
@@ -57,89 +54,43 @@ class LoginPage extends StatelessWidget {
       child: BlocListener<UserBloc, UserState>(
         listener: (context, state) async {
           if (state is DeviceRegistrationFailure) {
-            Get.back();
+            hideLoadingDialog();
             showScrollableErrorDialog(state.message);
           }
 
           if (state is UserLoaded) {
             if (!context.mounted) return;
 
-            // ── PASO 1: Configuraciones ───────────────────────────────
-            // Recargar datos del nuevo usuario (nombre, email, rol) en HomeBloc
-            context.read<HomeBloc>().add(HomeLoadData());
-            context.read<HomeBloc>().add(LoadConfigurationsEvent());
-
-            HomeState? configState;
-            try {
-              configState = await context
-                  .read<HomeBloc>()
-                  .stream
-                  .firstWhere(
-                    (s) =>
-                        s is ConfigurationLoadedHomeState ||
-                        s is ConfigurationErrorHomeState,
-                  )
-                  .timeout(const Duration(seconds: 15));
-            } catch (_) {
-              configState = null;
-            }
-
-            debugPrint(
-              '⚙️ [Login] Configuraciones: ${configState?.runtimeType}',
-            );
+            final result = await PostLoginCoordinator(
+              homeBloc: context.read<HomeBloc>(),
+              devolucionesBloc: context.read<DevolucionesBloc>(),
+              pickingBloc: context.read<WMSPickingBloc>(),
+              inventarioBloc: context.read<InventarioBloc>(),
+            ).run();
 
             if (!context.mounted) return;
 
-            // ── PASO 2: Versión de la app ─────────────────────────────
-            context.read<HomeBloc>().add(AppVersionEvent());
+            hideLoadingDialog();
 
-            HomeState? versionState;
-            try {
-              versionState = await context
-                  .read<HomeBloc>()
-                  .stream
-                  .firstWhere(
-                    (s) =>
-                        s is AppVersionUpdateState ||
-                        s is AppVersionLoadedState ||
-                        s is AppVersionLoadErrorState,
-                  )
-                  .timeout(const Duration(seconds: 10));
-            } catch (_) {
-              versionState = null;
-            }
-
-            debugPrint('📱 [Login] Versión: ${versionState?.runtimeType}');
-
-            if (!context.mounted) return;
-
-            // ── PASO 3: Pre-cargas en background (fire & forget) ──────
-            context.read<DevolucionesBloc>().add(DownloadAllTercerosEvent());
-            context.read<WMSPickingBloc>().add(LoadAllNovedades(context));
-            context.read<InventarioBloc>().add(
-              GetProductsEvent(isDialogLoading: false),
-            );
-
-            // ── PASO 4: Navegar ───────────────────────────────────────
-            Get.back();
-
-            if (versionState is AppVersionUpdateState) {
-              Navigator.pushReplacementNamed(context, 'update-required');
+            if (result.destination == PostLoginDestination.updateRequired) {
+              Navigator.pushReplacementNamed(
+                context,
+                'update-required',
+                arguments: result.appVersion,
+              );
             } else {
               Navigator.pushReplacementNamed(context, '/home');
             }
           }
 
           if (state is UserError) {
-            Get.back();
+            hideLoadingDialog();
             showScrollableErrorDialog(state.message);
           }
         },
         // 3. UI Visual (Hijo del segundo): El Scaffold
-        child: WillPopScope(
-          onWillPop: () async {
-            return false;
-          },
+        child: PopScope(
+          canPop: false,
           child: Scaffold(
             body: Container(
               width: double.infinity,
@@ -228,9 +179,12 @@ class _LoginFormState extends State<_LoginForm> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  FocusNode _focusNodeEmail = FocusNode();
-  FocusNode _focusNodePassword = FocusNode();
-  GlobalKey<FormState> formkey = GlobalKey<FormState>();
+  final FocusNode _focusNodeEmail = FocusNode();
+  final FocusNode _focusNodePassword = FocusNode();
+  final GlobalKey<FormState> formkey = GlobalKey<FormState>();
+
+  // Estado puramente visual: no necesita pasar por el BLoC
+  bool _isPasswordVisible = false;
 
   @override
   void dispose() {
@@ -296,61 +250,51 @@ class _LoginFormState extends State<_LoginForm> {
                   ),
                   validator: (value) => Validator.email(value, context),
                 ),
-                BlocBuilder<LoginBloc, LoginState>(
-                  buildWhen: (previous, current) =>
-                      current is PasswordVisibilityToggled,
-                  builder: (context, state) {
-                    final isPasswordVisible = context
-                        .read<LoginBloc>()
-                        .isPasswordVisible;
-                    return TextFormField(
-                      controller: _passwordController,
-                      autocorrect: false,
-                      obscureText: !isPasswordVisible,
-                      focusNode: _focusNodePassword,
-                      style: const TextStyle(fontSize: 13),
-                      onTap:
-                          !context.read<UserBloc>().fabricante.contains("Zebra")
-                          ? null
-                          : () => FocusScope.of(
-                              context,
-                            ).requestFocus(_focusNodePassword),
-                      decoration: InputDecoration(
-                        disabledBorder: const OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.all(10),
-                        prefixIcon: Icon(
-                          Icons.lock,
-                          size: 15,
-                          color: primaryColorApp,
-                        ),
-                        suffixIcon: IconButton(
-                          onPressed: () {
-                            context.read<LoginBloc>().add(
-                              TogglePasswordVisibility(),
-                            );
-                          },
-                          icon: Icon(
-                            isPasswordVisible
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            size: 15,
-                            color: primaryColorApp,
-                          ),
-                        ),
-                        hintText: "Contraseña",
-                        errorStyle: const TextStyle(
-                          color: Colors.red,
-                          fontSize: 10,
-                        ),
-                        hintStyle: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                        ),
-                        border: InputBorder.none,
+                TextFormField(
+                  controller: _passwordController,
+                  autocorrect: false,
+                  obscureText: !_isPasswordVisible,
+                  focusNode: _focusNodePassword,
+                  style: const TextStyle(fontSize: 13),
+                  onTap: !context.read<UserBloc>().fabricante.contains("Zebra")
+                      ? null
+                      : () => FocusScope.of(
+                          context,
+                        ).requestFocus(_focusNodePassword),
+                  decoration: InputDecoration(
+                    disabledBorder: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.all(10),
+                    prefixIcon: Icon(
+                      Icons.lock,
+                      size: 15,
+                      color: primaryColorApp,
+                    ),
+                    suffixIcon: IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                      icon: Icon(
+                        _isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        size: 15,
+                        color: primaryColorApp,
                       ),
-                      validator: (value) => Validator.password(value, context),
-                    );
-                  },
+                    ),
+                    hintText: "Contraseña",
+                    errorStyle: const TextStyle(
+                      color: Colors.red,
+                      fontSize: 10,
+                    ),
+                    hintStyle: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 12,
+                    ),
+                    border: InputBorder.none,
+                  ),
+                  validator: (value) => Validator.password(value, context),
                 ),
                 const SizedBox(height: 5),
               ],
@@ -365,55 +309,25 @@ class _LoginFormState extends State<_LoginForm> {
               disabledColor: Colors.grey,
               elevation: 0,
               color: primaryColorApp,
-              onPressed: () async {
+              onPressed: () {
                 if (!context.read<UserBloc>().fabricante.contains("Zebra")) {
                   FocusScope.of(context).unfocus();
                 }
 
-                // ⚡️ CORRECCIÓN 1: Validación segura (evita el crash si currentState es null)
+                // Validación segura (evita el crash si currentState es null)
                 if (formkey.currentState?.validate() != true) return;
 
-                try {
-                  final result = await InternetAddress.lookup('example.com');
-                  if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-                    // Aquí inicia el proceso. El Dialog se mostrará en el Listener, no aquí.
-                    // Get database from Preferences
-                    final database = getIt<IStorageService>().nameDatabase;
+                // La conectividad la valida el repositorio (NetworkInfo);
+                // si no hay red llega un LoginFailure al listener.
+                final database = getIt<IStorageService>().nameDatabase;
 
-                    context.read<LoginBloc>().add(
-                      LoginButtonPressed(
-                        email: _emailController.text,
-                        password: _passwordController.text,
-                        database: database,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  // ⚡️ CORRECCIÓN 2: Eliminado Navigator.pop().
-                  // No debemos cerrar nada aquí porque el diálogo de carga NUNCA se mostró.
-                  // (El diálogo solo se muestra si el evento LoginButtonPressed se dispara y el Bloc emite Loading)
-
-                  Get.defaultDialog(
-                    title: '360 Software Informa',
-                    titleStyle: TextStyle(color: Colors.red, fontSize: 18),
-                    middleText: 'No tiene conexión a internet',
-                    middleTextStyle: TextStyle(color: black, fontSize: 14),
-                    backgroundColor: Colors.white,
-                    radius: 10,
-                    actions: [
-                      ElevatedButton(
-                        onPressed: () => Get.back(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColorApp,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: Text('Aceptar', style: TextStyle(color: white)),
-                      ),
-                    ],
-                  );
-                }
+                context.read<LoginBloc>().add(
+                  LoginButtonPressed(
+                    email: _emailController.text,
+                    password: _passwordController.text,
+                    database: database,
+                  ),
+                );
               },
               child: Container(
                 width: size.width * 0.9,

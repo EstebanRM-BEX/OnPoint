@@ -24,7 +24,7 @@ class ValidateSession implements UseCase<SessionValidationResult, NoParams> {
           return const Right(SessionValidationResult.notLoggedIn());
         }
 
-        // Sesión expirada (más de 1 hora de inactividad)
+        // Sesión expirada (más de 4 horas de inactividad)
         if (session.isExpired()) {
           await repository.clearSession();
           return const Right(SessionValidationResult.expired());

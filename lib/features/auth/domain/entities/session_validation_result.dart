@@ -4,8 +4,6 @@ import 'package:equatable/equatable.dart';
 class SessionValidationResult extends Equatable {
   final SessionValidationStatus status;
 
-  const SessionValidationResult._(this.status);
-
   const SessionValidationResult.valid()
       : status = SessionValidationStatus.valid;
   const SessionValidationResult.expired()

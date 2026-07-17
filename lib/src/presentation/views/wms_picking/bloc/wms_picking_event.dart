@@ -116,10 +116,7 @@ class FilterBatchesByTypeEvent extends PickingEvent {
   FilterBatchesByTypeEvent(this.isWave, this.indexMenu);
 }
 
-class LoadAllNovedades extends PickingEvent {
-  final BuildContext context;
-  LoadAllNovedades(this.context);
-}
+class LoadAllNovedades extends PickingEvent {}
 
 class LoadDocOriginsEvent extends PickingEvent {
   final int idBatch;

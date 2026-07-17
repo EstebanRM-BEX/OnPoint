@@ -1,7 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
 import 'package:wms_app/core/utils/validator_utils.dart';
@@ -9,7 +7,6 @@ import 'package:wms_app/injection_container.dart';
 import '../../../../src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import '../../../../features/user/presentation/bloc/user_bloc.dart';
 import '../../../../src/presentation/widgets/dialog_error_widget.dart';
-import '../../domain/entities/recent_url.dart';
 import '../bloc/enterprise_bloc.dart';
 import '../bloc/enterprise_event.dart';
 import '../bloc/enterprise_state.dart';
@@ -42,28 +39,32 @@ class _EnterprisePageState extends State<EnterprisePage> {
   @override
   Widget build(BuildContext context) {
     return BlocListener<EnterpriseBloc, EnterpriseState>(
+      listenWhen: (previous, current) => previous.status != current.status,
       listener: (context, state) {
-        if (state is EnterpriseFailure) {
-          showScrollableErrorDialog(state.message);
-        }
-
-        if (state is EnterpriseSuccess) {
-          showModalBottomSheet(
-            context: context,
-            builder: (_) => BlocProvider.value(
-              value: context.read<EnterpriseBloc>(),
-              child: DatabaseSelectionBottomSheet(
-                databases: state.enterpriseInfo.databases,
-                url: state.url,
+        switch (state.status) {
+          case EnterpriseStatus.failure:
+            showScrollableErrorDialog(
+                state.errorMessage ?? 'Error al procesar la solicitud');
+            break;
+          case EnterpriseStatus.success:
+            showModalBottomSheet(
+              context: context,
+              builder: (_) => BlocProvider.value(
+                value: context.read<EnterpriseBloc>(),
+                child: DatabaseSelectionBottomSheet(
+                  databases: state.enterpriseInfo?.databases ?? const [],
+                  url: state.url,
+                ),
               ),
-            ),
-          );
-        }
-
-        if (state is DatabaseSelectedState) {
-          getIt<IStorageService>().nameDatabase = state.database;
-          // Navigation logic after selection
-          Navigator.pushReplacementNamed(context, 'auth');
+            );
+            break;
+          case EnterpriseStatus.databaseSelected:
+            getIt<IStorageService>().nameDatabase = state.selectedDatabase!;
+            Navigator.pushReplacementNamed(context, 'auth');
+            break;
+          case EnterpriseStatus.initial:
+          case EnterpriseStatus.searching:
+            break;
         }
       },
       child: Scaffold(
@@ -186,12 +187,10 @@ class _EnterprisePageState extends State<EnterprisePage> {
 
   Widget _buildRecentUrlsList() {
     return BlocBuilder<EnterpriseBloc, EnterpriseState>(
-      buildWhen: (previous, current) => current is RecentUrlsLoaded,
+      buildWhen: (previous, current) =>
+          previous.recentUrls != current.recentUrls,
       builder: (context, state) {
-        List<RecentUrl> recentUrls = [];
-        if (state is RecentUrlsLoaded) {
-          recentUrls = state.recentUrls;
-        }
+        final recentUrls = state.recentUrls;
 
         return Container(
           margin: const EdgeInsets.only(top: 10),
@@ -233,7 +232,7 @@ class _EnterprisePageState extends State<EnterprisePage> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       minWidth: double.infinity,
       color: primaryColorApp,
-      onPressed: () async {
+      onPressed: () {
         FocusScope.of(context).unfocus();
         if (!_formKey.currentState!.validate()) return;
 
@@ -242,27 +241,16 @@ class _EnterprisePageState extends State<EnterprisePage> {
           _urlController.text = url.substring(0, url.length - 1);
         }
 
-        try {
-          final result = await InternetAddress.lookup('example.com');
-          if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-            context
-                .read<EnterpriseBloc>()
-                .add(SearchEnterpriseEvent(_urlController.text));
-          }
-        } catch (e) {
-          Get.defaultDialog(
-            title: 'Error',
-            middleText: 'Error al procesar la solicitud',
-            onConfirm: () => Get.back(),
-            textConfirm: 'Aceptar',
-            confirmTextColor: Colors.white,
-            buttonColor: primaryColorApp,
-          );
-        }
+        // La conectividad la valida el repositorio (NetworkInfo);
+        // si no hay red llega un status failure al listener.
+        context
+            .read<EnterpriseBloc>()
+            .add(SearchEnterpriseEvent(_urlController.text));
       },
       child: BlocBuilder<EnterpriseBloc, EnterpriseState>(
+        buildWhen: (previous, current) => previous.status != current.status,
         builder: (context, state) {
-          if (state is EnterpriseLoading) {
+          if (state.status == EnterpriseStatus.searching) {
             return const SizedBox(
               height: 20,
               width: 20,

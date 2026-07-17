@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/error/exceptions.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
@@ -43,9 +42,6 @@ class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
 
       if (response.statusCode < 400) {
         final jsonResponse = jsonDecode(response.body);
-
-        // Log the full response for debugging
-        debugPrint('📥 Server response: $jsonResponse');
 
         // Check if there's an error in the response
         if (jsonResponse['error'] != null) {

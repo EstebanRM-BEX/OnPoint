@@ -1,12 +1,12 @@
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/error/exceptions.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/utils/prefs/secure_storage_utils.dart';
 import 'package:wms_app/features/login/domain/entities/user.dart';
 
 /// Local data source for login operations.
-/// Handles saving user session data with encrypted password.
+/// Saves user session data; the password goes to SecureStorage (Keystore/Keychain),
+/// never to SharedPreferences.
 abstract class LoginLocalDataSource {
   Future<void> saveUserSession({
     required User user,
@@ -24,25 +24,18 @@ class LoginLocalDataSourceImpl implements LoginLocalDataSource {
     required String password,
   }) async {
     try {
-      // Encrypt password before saving
-      final encryptedPassword = _encryptPassword(password);
+      await SecureStorage.setUserPass(password);
+      // Limpia el password que versiones anteriores guardaban en SharedPreferences
+      await PrefUtils.removeLegacyPass();
 
       // Save user data to SharedPreferences
       await PrefUtils.setUserName(user.name);
       await PrefUtils.setUserEmail(user.username);
-      await PrefUtils.setUserPass(encryptedPassword);
       await PrefUtils.setUserId(user.uid);
       await PrefUtils.setIsLoggedIn(true);
       await PrefUtils.saveLastActiveTime();
     } catch (e) {
       throw CacheException('Error al guardar sesión: $e');
     }
-  }
-
-  /// Encrypt password using SHA-256
-  String _encryptPassword(String password) {
-    final bytes = utf8.encode(password);
-    final digest = sha256.convert(bytes);
-    return digest.toString();
   }
 }

@@ -3,7 +3,6 @@ import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import '../../../../src/presentation/providers/db/database.dart';
 import '../../../../src/presentation/providers/db/others/tbl_urlrecientes/urlrecientes_table.dart';
 import '../models/recent_url_model.dart';
-import 'package:sqflite/sqflite.dart';
 
 abstract class EnterpriseLocalDataSource {
   Future<List<RecentUrlModel>> getRecentUrls();
@@ -24,13 +23,29 @@ class EnterpriseLocalDataSourceImpl implements EnterpriseLocalDataSource {
     final List<Map<String, dynamic>> maps =
         await db.query(UrlsRecientesTable.tableName);
 
-    return maps
-        .map((map) => RecentUrlModel.fromJson({
-              'id': map[UrlsRecientesTable.columnId],
-              'url': map[UrlsRecientesTable.columnUrl],
-              'fecha': _parseOldDateFormat(map[UrlsRecientesTable.columnFecha]),
-            }))
-        .toList();
+    final models = <RecentUrlModel>[];
+    for (final map in maps) {
+      final String? rawFecha = map[UrlsRecientesTable.columnFecha];
+      final normalized = _parseOldDateFormat(rawFecha);
+
+      // Si la fila tenía el formato legacy (day/month/year), la normalizamos
+      // en la BD para que las próximas cargas no vuelvan a convertirla.
+      if (normalized != rawFecha) {
+        await db.update(
+          UrlsRecientesTable.tableName,
+          {UrlsRecientesTable.columnFecha: normalized},
+          where: '${UrlsRecientesTable.columnId} = ?',
+          whereArgs: [map[UrlsRecientesTable.columnId]],
+        );
+      }
+
+      models.add(RecentUrlModel.fromJson({
+        'id': map[UrlsRecientesTable.columnId],
+        'url': map[UrlsRecientesTable.columnUrl],
+        'fecha': normalized,
+      }));
+    }
+    return models;
   }
 
   /// The old implementation saved dates as "day/month/year".
@@ -58,22 +73,19 @@ class EnterpriseLocalDataSourceImpl implements EnterpriseLocalDataSource {
   Future<void> saveRecentUrl(RecentUrlModel recentUrl) async {
     final db = await database.getDatabaseInstance();
 
-    // Check if the URL already exists
-    final List<Map<String, dynamic>> maps = await db.query(
-      UrlsRecientesTable.tableName,
-      where: '${UrlsRecientesTable.columnUrl} = ?',
-      whereArgs: [recentUrl.url],
-    );
-
-    // If it exists, we do nothing (per requirement "si esta url ya esta agregada en l bd omitir")
-    if (maps.isNotEmpty) {
-      return;
-    }
-
-    await db.insert(
-      UrlsRecientesTable.tableName,
-      recentUrl.toJson(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
+    // Insert atómico: solo inserta si la URL no existe todavía.
+    // Evita la carrera del patrón "query y después insert".
+    await db.rawInsert(
+      '''
+      INSERT INTO ${UrlsRecientesTable.tableName}
+        (${UrlsRecientesTable.columnUrl}, ${UrlsRecientesTable.columnFecha})
+      SELECT ?, ?
+      WHERE NOT EXISTS (
+        SELECT 1 FROM ${UrlsRecientesTable.tableName}
+        WHERE ${UrlsRecientesTable.columnUrl} = ?
+      )
+      ''',
+      [recentUrl.url, recentUrl.fecha.toIso8601String(), recentUrl.url],
     );
   }
 

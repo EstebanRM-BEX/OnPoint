@@ -42,7 +42,6 @@ import 'features/enterprise/domain/repositories/enterprise_repository.dart'
     as _i309;
 import 'features/enterprise/domain/usecases/delete_recent_url.dart' as _i552;
 import 'features/enterprise/domain/usecases/get_recent_urls.dart' as _i91;
-import 'features/enterprise/domain/usecases/save_recent_url.dart' as _i747;
 import 'features/enterprise/domain/usecases/search_enterprise.dart' as _i138;
 import 'features/enterprise/presentation/bloc/enterprise_bloc.dart' as _i20;
 import 'features/expedition/data/datasources/expedition_local_data_source.dart'
@@ -400,12 +399,6 @@ extension GetItInjectableX on _i174.GetIt {
         transferRepository: gh<_i895.TransferenciasRepository>(),
       ),
     );
-    gh.lazySingleton<_i309.EnterpriseRepository>(
-      () => _i331.EnterpriseRepositoryImpl(
-        remoteDataSource: gh<_i918.EnterpriseRemoteDataSource>(),
-        localDataSource: gh<_i854.EnterpriseLocalDataSource>(),
-      ),
-    );
     gh.lazySingleton<_i932.GetDeviceInfo>(
       () => _i932.GetDeviceInfo(gh<_i180.UserRepository>()),
     );
@@ -463,18 +456,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i205.HomeLocalDataSource>(
       () => _i205.HomeLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()),
     );
-    gh.lazySingleton<_i552.DeleteRecentUrl>(
-      () => _i552.DeleteRecentUrl(gh<_i309.EnterpriseRepository>()),
-    );
-    gh.lazySingleton<_i91.GetRecentUrls>(
-      () => _i91.GetRecentUrls(gh<_i309.EnterpriseRepository>()),
-    );
-    gh.lazySingleton<_i747.SaveRecentUrl>(
-      () => _i747.SaveRecentUrl(gh<_i309.EnterpriseRepository>()),
-    );
-    gh.lazySingleton<_i138.SearchEnterprise>(
-      () => _i138.SearchEnterprise(gh<_i309.EnterpriseRepository>()),
-    );
     gh.lazySingleton<_i3.PackagingTypeLocalDataSource>(
       () => _i3.PackagingTypeLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()),
     );
@@ -489,6 +470,13 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i676.WebSocketBloc>(
       () =>
           _i676.WebSocketBloc(webSocketService: gh<_i1062.IWebSocketService>()),
+    );
+    gh.lazySingleton<_i309.EnterpriseRepository>(
+      () => _i331.EnterpriseRepositoryImpl(
+        remoteDataSource: gh<_i918.EnterpriseRemoteDataSource>(),
+        localDataSource: gh<_i854.EnterpriseLocalDataSource>(),
+        networkInfo: gh<_i75.NetworkInfo>(),
+      ),
     );
     gh.lazySingleton<_i1015.AuthRepository>(
       () => _i111.AuthRepositoryImpl(
@@ -587,17 +575,14 @@ extension GetItInjectableX on _i174.GetIt {
         networkInfo: gh<_i75.NetworkInfo>(),
       ),
     );
+    gh.factory<_i1070.LoginBloc>(
+      () => _i1070.LoginBloc(authenticateUser: gh<_i792.AuthenticateUser>()),
+    );
     gh.lazySingleton<_i925.InventarioRepository>(
       () => _i426.InventarioRepositoryImpl(
         remoteDataSource: gh<_i592.InventarioRemoteDataSource>(),
         localDataSource: gh<_i812.InventarioLocalDataSource>(),
         networkInfo: gh<_i75.NetworkInfo>(),
-      ),
-    );
-    gh.factory<_i1070.LoginBloc>(
-      () => _i1070.LoginBloc(
-        authenticateUser: gh<_i792.AuthenticateUser>(),
-        saveUserSession: gh<_i311.SaveUserSession>(),
       ),
     );
     gh.lazySingleton<_i649.HomeRepository>(
@@ -660,6 +645,7 @@ extension GetItInjectableX on _i174.GetIt {
         getUserLocations: gh<_i247.GetUserLocations>(),
         getUserNovelties: gh<_i465.GetUserNovelties>(),
         registerDevice: gh<_i902.RegisterDevice>(),
+        saveUserSession: gh<_i311.SaveUserSession>(),
       ),
     );
     gh.lazySingleton<_i601.FetchComponentsFromDbUseCase>(
@@ -682,14 +668,6 @@ extension GetItInjectableX on _i174.GetIt {
         localDataSource: gh<_i3.PackagingTypeLocalDataSource>(),
       ),
     );
-    gh.factory<_i20.EnterpriseBloc>(
-      () => _i20.EnterpriseBloc(
-        searchEnterpriseUseCase: gh<_i138.SearchEnterprise>(),
-        getRecentUrlsUseCase: gh<_i91.GetRecentUrls>(),
-        saveRecentUrlUseCase: gh<_i747.SaveRecentUrl>(),
-        deleteRecentUrlUseCase: gh<_i552.DeleteRecentUrl>(),
-      ),
-    );
     gh.factory<_i522.ExpedicionAssignmentBloc>(
       () => _i522.ExpedicionAssignmentBloc(
         asignarResponsableUseCase: gh<_i598.AsignarResponsableUseCase>(),
@@ -701,6 +679,15 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i152.PrintReport>(
       () => _i152.PrintReport(gh<_i681.PrintingRepository>()),
     );
+    gh.lazySingleton<_i552.DeleteRecentUrl>(
+      () => _i552.DeleteRecentUrl(gh<_i309.EnterpriseRepository>()),
+    );
+    gh.lazySingleton<_i91.GetRecentUrls>(
+      () => _i91.GetRecentUrls(gh<_i309.EnterpriseRepository>()),
+    );
+    gh.lazySingleton<_i138.SearchEnterprise>(
+      () => _i138.SearchEnterprise(gh<_i309.EnterpriseRepository>()),
+    );
     gh.factory<_i45.ExpedicionDetailBloc>(
       () => _i45.ExpedicionDetailBloc(
         getExpedicionDetailUseCase: gh<_i324.GetExpedicionDetailUseCase>(),
@@ -708,6 +695,13 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i52.ValidateSession>(
       () => _i52.ValidateSession(gh<_i1015.AuthRepository>()),
+    );
+    gh.factory<_i20.EnterpriseBloc>(
+      () => _i20.EnterpriseBloc(
+        searchEnterpriseUseCase: gh<_i138.SearchEnterprise>(),
+        getRecentUrlsUseCase: gh<_i91.GetRecentUrls>(),
+        deleteRecentUrlUseCase: gh<_i552.DeleteRecentUrl>(),
+      ),
     );
     gh.factory<_i545.ClusterPickingBloc>(
       () => _i545.ClusterPickingBloc(

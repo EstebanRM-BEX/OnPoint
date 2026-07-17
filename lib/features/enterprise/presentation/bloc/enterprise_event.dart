@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import '../../domain/entities/recent_url.dart';
 
 abstract class EnterpriseEvent extends Equatable {
   const EnterpriseEvent();
@@ -19,15 +18,6 @@ class SearchEnterpriseEvent extends EnterpriseEvent {
 
 class GetRecentUrlsEvent extends EnterpriseEvent {
   const GetRecentUrlsEvent();
-}
-
-class SaveRecentUrlEvent extends EnterpriseEvent {
-  final RecentUrl recentUrl;
-
-  const SaveRecentUrlEvent(this.recentUrl);
-
-  @override
-  List<Object?> get props => [recentUrl];
 }
 
 class DeleteRecentUrlEvent extends EnterpriseEvent {

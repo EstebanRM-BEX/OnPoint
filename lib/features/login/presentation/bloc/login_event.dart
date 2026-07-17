@@ -15,6 +15,3 @@ class LoginButtonPressed extends LoginEvent {
     required this.database,
   });
 }
-
-/// Event to toggle password visibility
-class TogglePasswordVisibility extends LoginEvent {}

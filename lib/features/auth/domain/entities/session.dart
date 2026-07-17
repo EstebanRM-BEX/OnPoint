@@ -12,7 +12,7 @@ class Session extends Equatable {
     this.userId,
   });
 
-  /// Verifica si la sesión ha expirado (más de 1 hora de inactividad)
+  /// Verifica si la sesión ha expirado (más de 4 horas de inactividad)
   bool isExpired() {
     if (lastActiveTime == null) return false;
     final difference = DateTime.now().difference(lastActiveTime!);

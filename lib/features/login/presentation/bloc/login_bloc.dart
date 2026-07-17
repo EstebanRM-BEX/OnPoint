@@ -1,34 +1,25 @@
-// ignore_for_file: avoid_print
-
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
-import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/utils/prefs/secure_storage_utils.dart';
 import 'package:wms_app/features/login/domain/entities/user.dart';
 import 'package:wms_app/features/login/domain/usecases/authenticate_user.dart';
-import 'package:wms_app/features/login/domain/usecases/save_user_session.dart';
 
 part 'login_event.dart';
 part 'login_state.dart';
 
 /// LoginBloc with Clean Architecture and Dependency Injection.
 ///
-/// Note: TextEditingController should be in the UI layer, not here.
-/// Password visibility state is kept for backward compatibility.
+/// Note: UI-only state (TextEditingControllers, password visibility)
+/// lives in the UI layer, not here.
 @injectable
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
   final AuthenticateUser authenticateUser;
-  final SaveUserSession saveUserSession;
-
-  // Password visibility state (UI concern, but kept for compatibility)
-  bool isPasswordVisible = false;
 
   LoginBloc({
     required this.authenticateUser,
-    required this.saveUserSession,
   }) : super(LoginInitial()) {
     on<LoginButtonPressed>(_onLoginButtonPressed);
-    on<TogglePasswordVisibility>(_onTogglePasswordVisibility);
   }
 
   /// Handle login button pressed event
@@ -56,19 +47,11 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       // Authentication successful
       (user) async {
         debugPrint('✅ Login successful: ${user.name}');
-        // Guardar el password antes del emit para no exponerlo en el estado
-        await PrefUtils.setUserPass(event.password);
+        // Guardar el password en secure storage antes del emit para no exponerlo en el estado
+        await SecureStorage.setUserPass(event.password);
         emit(LoginSuccess(user));
       },
     );
   }
 
-  /// Handle password visibility toggle
-  void _onTogglePasswordVisibility(
-    TogglePasswordVisibility event,
-    Emitter<LoginState> emit,
-  ) {
-    isPasswordVisible = !isPasswordVisible;
-    emit(PasswordVisibilityToggled(isPasswordVisible));
-  }
 }

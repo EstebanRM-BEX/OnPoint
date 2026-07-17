@@ -20,9 +20,3 @@ class LoginFailure extends LoginState {
   final String message;
   LoginFailure(this.message);
 }
-
-/// Password visibility toggled state
-class PasswordVisibilityToggled extends LoginState {
-  final bool isVisible;
-  PasswordVisibilityToggled(this.isVisible);
-}
