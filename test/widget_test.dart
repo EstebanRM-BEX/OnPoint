@@ -41,6 +41,7 @@ void main() {
     // Register fallbacks for mocktail if needed
     registerFallbackValue(AuthInitial());
     registerFallbackValue(const GetRecentUrlsEvent());
+    registerFallbackValue(const EnterpriseState());
   });
 
   setUp(() async {
@@ -73,7 +74,7 @@ void main() {
 
     // EnterpriseBloc Mock
     final mockEnt = MockEnterpriseBloc();
-    when(() => mockEnt.state).thenReturn(EnterpriseInitial());
+    when(() => mockEnt.state).thenReturn(const EnterpriseState());
     getIt.registerLazySingleton<EnterpriseBloc>(() => mockEnt);
 
     // WebSocket Mock
