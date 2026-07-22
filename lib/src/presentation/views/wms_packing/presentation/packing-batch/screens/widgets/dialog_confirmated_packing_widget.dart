@@ -86,117 +86,120 @@ class _DialogConfirmatedPackingState extends State<DialogConfirmatedPacking> {
               ],
             ),
           ),
-          content: widget.isCertificate
-              ? SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // const Text(
-                      //   'Incluir sticker de certificación',
-                      //   style: TextStyle(color: black, fontSize: 14),
-                      // ),
-                      // Row(
-                      //   mainAxisAlignment: MainAxisAlignment.center,
-                      //   children: [
-                      //     Checkbox(
-                      //       value: localSticker,
-                      //       onChanged: (value) {
-                      //         if (value != null) {
-                      //           setState(() {
-                      //             localSticker = value;
-                      //           });
-                      //           widget.onToggleSticker(value);
-                      //         }
-                      //       },
-                      //     ),
-                      //     Icon(Icons.print, color: primaryColorApp),
-                      //   ],
-                      // ),
-                      if (widget.manejaTipoEmpaque)
-                        BlocBuilder<PackagingTypeBloc, PackagingTypeState>(
-                          builder: (context, state) {
-                            if (state is PackagingTypesLoadInProgress) {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            } else if (state is PackagingTypesLoadSuccess) {
-                              return SizedBox(
-                                child: DropdownButtonFormField<PackagingType>(
-                                  isExpanded: true,
-                                  decoration: InputDecoration(
-                                    labelText: 'Tipo de Empaque *',
-                                    labelStyle: const TextStyle(
-                                        color: black, fontSize: 12),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                  value: _selectedPackagingType,
-                                  items: state.packagingTypes
-                                      .map((PackagingType type) {
-                                    return DropdownMenuItem<PackagingType>(
-                                      value: type,
-                                      child: Text(
-                                        type.name,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                            color: black, fontSize: 12),
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (PackagingType? newValue) {
-                                    setState(() {
-                                      _selectedPackagingType = newValue;
-                                    });
-                                  },
-                                  validator: (value) => value == null
-                                      ? 'Seleccione un tipo'
-                                      : null,
-                                ),
-                              );
-                            } else if (state is PackagingTypeLoadFailure) {
-                              return Center(
-                                child: Text(
-                                  'Error al cargar tipos: ${state.message}',
-                                  style: const TextStyle(color: Colors.red),
-                                ),
-                              );
-                            }
-                            return const SizedBox();
-                          },
-                        ),
-                      const SizedBox(height: 10),
-                      if (widget.manejaPeso)
-                        TextFormField(
-                          controller: _weightController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
-                          decoration: InputDecoration(
-                            hintStyle: TextStyle(color: black, fontSize: 12),
-                            labelText: 'Peso (kg) *',
-                            labelStyle: TextStyle(color: black, fontSize: 12),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingrese el peso';
-                            }
-                            if (double.tryParse(value) == null) {
-                              return 'Ingrese un número válido';
-                            }
-                            return null;
-                          },
-                        ),
-                    ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // const Text(
+                //   'Incluir sticker de certificación',
+                //   style: TextStyle(color: black, fontSize: 14),
+                // ),
+                // Row(
+                //   mainAxisAlignment: MainAxisAlignment.center,
+                //   children: [
+                //     Checkbox(
+                //       value: localSticker,
+                //       onChanged: (value) {
+                //         if (value != null) {
+                //           setState(() {
+                //             localSticker = value;
+                //           });
+                //           widget.onToggleSticker(value);
+                //         }
+                //       },
+                //     ),
+                //     Icon(Icons.print, color: primaryColorApp),
+                //   ],
+                // ),
+                if (!widget.isCertificate)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: Text(
+                      "Está realizando una separación sin certificado, tampoco se incluirá el sticker de certificación.",
+                      style: TextStyle(color: black, fontSize: 14),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                )
-              : const Text(
-                  "Está realizando una separación sin certificado, tampoco se incluirá el sticker de certificación.",
-                  style: TextStyle(color: black, fontSize: 14),
-                  textAlign: TextAlign.center,
-                ),
+                if (widget.manejaTipoEmpaque)
+                  BlocBuilder<PackagingTypeBloc, PackagingTypeState>(
+                    builder: (context, state) {
+                      if (state is PackagingTypesLoadInProgress) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (state is PackagingTypesLoadSuccess) {
+                        return SizedBox(
+                          child: DropdownButtonFormField<PackagingType>(
+                            isExpanded: true,
+                            decoration: InputDecoration(
+                              labelText: 'Tipo de Empaque *',
+                              labelStyle: const TextStyle(
+                                color: black,
+                                fontSize: 12,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            value: _selectedPackagingType,
+                            items: state.packagingTypes.map((
+                              PackagingType type,
+                            ) {
+                              return DropdownMenuItem<PackagingType>(
+                                value: type,
+                                child: Text(
+                                  type.name,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: black, fontSize: 12),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (PackagingType? newValue) {
+                              setState(() {
+                                _selectedPackagingType = newValue;
+                              });
+                            },
+                            validator: (value) =>
+                                value == null ? 'Seleccione un tipo' : null,
+                          ),
+                        );
+                      } else if (state is PackagingTypeLoadFailure) {
+                        return Center(
+                          child: Text(
+                            'Error al cargar tipos: ${state.message}',
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        );
+                      }
+                      return const SizedBox();
+                    },
+                  ),
+                const SizedBox(height: 10),
+                if (widget.manejaPeso)
+                  TextFormField(
+                    controller: _weightController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      hintStyle: TextStyle(color: black, fontSize: 12),
+                      labelText: 'Peso (kg) *',
+                      labelStyle: TextStyle(color: black, fontSize: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Ingrese el peso';
+                      }
+                      if (double.tryParse(value) == null) {
+                        return 'Ingrese un número válido';
+                      }
+                      return null;
+                    },
+                  ),
+              ],
+            ),
+          ),
           actions: [
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
@@ -216,21 +219,25 @@ class _DialogConfirmatedPackingState extends State<DialogConfirmatedPacking> {
                 //validamos que se haya seleccionado un tipo de empaque
                 if (_selectedPackagingType == null &&
                     widget.manejaTipoEmpaque) {
-                  Get.snackbar("360 Software Informa",
-                      "Por favor seleccione un tipo de empaque",
-                      backgroundColor: white,
-                      colorText: primaryColorApp,
-                      icon: Icon(Icons.error, color: Colors.amber));
+                  Get.snackbar(
+                    "360 Software Informa",
+                    "Por favor seleccione un tipo de empaque",
+                    backgroundColor: white,
+                    colorText: primaryColorApp,
+                    icon: Icon(Icons.error, color: Colors.amber),
+                  );
                   return;
                 }
 
                 //validamos que se haya seleccionado un peso
                 if (_weightController.text.isEmpty && widget.manejaPeso) {
                   Get.snackbar(
-                      "360 Software Informa", "Por favor seleccione un peso",
-                      backgroundColor: white,
-                      colorText: primaryColorApp,
-                      icon: Icon(Icons.error, color: Colors.amber));
+                    "360 Software Informa",
+                    "Por favor seleccione un peso",
+                    backgroundColor: white,
+                    colorText: primaryColorApp,
+                    icon: Icon(Icons.error, color: Colors.amber),
+                  );
                   return;
                 }
 
