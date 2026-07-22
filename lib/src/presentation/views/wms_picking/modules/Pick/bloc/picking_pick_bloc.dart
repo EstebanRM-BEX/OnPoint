@@ -981,6 +981,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       // }
     } catch (e, s) {
       debugPrint("❌ Error en el SendProductEditOdooEvent :$e->$s");
+      emit(ProductEditError('Error al enviar el producto'));
     }
   }
 

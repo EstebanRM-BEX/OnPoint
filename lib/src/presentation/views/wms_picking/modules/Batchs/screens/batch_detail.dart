@@ -18,20 +18,26 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_edit_product_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiredate_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 
-class BatchDetailScreen extends StatelessWidget {
+class BatchDetailScreen extends StatefulWidget {
   const BatchDetailScreen({super.key});
 
+  @override
+  State<BatchDetailScreen> createState() => _BatchDetailScreenState();
+}
+
+class _BatchDetailScreenState extends State<BatchDetailScreen>
+    with LoadingDialogMixin {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     return BlocConsumer<BatchBloc, BatchState>(
       listener: (context, state) {
         if (state is ProductEditOk) {
-          Navigator.pop(context);
+          hideLoadingDialog();
           Get.snackbar(
             '360 Software Informa',
             'Producto ajustado correctamente',
@@ -44,31 +50,23 @@ class BatchDetailScreen extends StatelessWidget {
         }
 
         if (state is SendProductOdooLoading) {
-          showDialog(
-              context: context,
-              builder: (context) {
-                return const DialogLoading(message: "Enviando producto...");
-              });
+          showLoadingDialog('Enviando producto...');
         }
         if (state is SendProductOdooError) {
-          Navigator.pop(context);
+          hideLoadingDialog();
           showScrollableErrorDialog(state.error);
         }
         if (state is LoadingSendProductEdit) {
-          showDialog(
-              context: context,
-              builder: (context) {
-                return const DialogLoading(message: "Enviando producto...");
-              });
+          showLoadingDialog('Actualizando producto...');
         }
 
         if (state is ProductEditError) {
-          Navigator.pop(context);
+          hideLoadingDialog();
           showScrollableErrorDialog(state.error);
         }
 
         if (state is SendProductOdooSuccess) {
-          Navigator.pop(context);
+          hideLoadingDialog();
           Get.snackbar(
             '360 Software Informa',
             'Producto enviado correctamente',

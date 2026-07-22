@@ -21,25 +21,40 @@ import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiredate_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/widgets/others/dialog_edit_product_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 
-class PickDetailScreen extends StatelessWidget {
+class PickDetailScreen extends StatefulWidget {
   const PickDetailScreen({super.key});
 
+  @override
+  State<PickDetailScreen> createState() => _PickDetailScreenState();
+}
+
+class _PickDetailScreenState extends State<PickDetailScreen>
+    with LoadingDialogMixin {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     return BlocConsumer<PickingPickBloc, PickingPickState>(
       listener: (context, state) {
+        if (state is LoadingSendProductEdit) {
+          showLoadingDialog('Actualizando producto...');
+        }
+
         if (state is ProductEditOk) {
+          hideLoadingDialog();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text("Producto ajustado correctamente"),
               backgroundColor: Colors.green,
             ),
           );
+          // Refresca la lista de productos de la pantalla tras el envío.
+          context.read<PickingPickBloc>().add(LoadProductEditEvent());
         }
 
         if (state is ProductEditError) {
+          hideLoadingDialog();
           showScrollableErrorDialog(state.error);
         }
 

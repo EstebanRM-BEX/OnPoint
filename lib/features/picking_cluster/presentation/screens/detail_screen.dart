@@ -14,16 +14,22 @@ import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.da
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiredate_widget.dart';
 import 'package:wms_app/shared/widgets/dialog_confirm_product_load_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 
 import 'picking_cluster/widgets/dialog_edit_product_widget.dart';
 
-class DetailClusterScreen extends StatelessWidget {
+class DetailClusterScreen extends StatefulWidget {
   const DetailClusterScreen({super.key});
 
+  @override
+  State<DetailClusterScreen> createState() => _DetailClusterScreenState();
+}
+
+class _DetailClusterScreenState extends State<DetailClusterScreen>
+    with LoadingDialogMixin {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
@@ -33,17 +39,12 @@ class DetailClusterScreen extends StatelessWidget {
         BlocListener<DetailClusterBloc, DetailClusterState>(
           listener: (context, state) {
             if (state is ImageDetailLoading) {
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (_) =>
-                    const DialogLoading(message: "Cargando imagen..."),
-              );
+              showLoadingDialog('Cargando imagen...');
             } else if (state is ImageDetailSuccess) {
-              if (Navigator.canPop(context)) Navigator.pop(context);
+              hideLoadingDialog();
               showImageDialog(context, state.url);
             } else if (state is ImageDetailFailure) {
-              if (Navigator.canPop(context)) Navigator.pop(context);
+              hideLoadingDialog();
               showScrollableErrorDialog(state.error);
             }
           },
@@ -52,14 +53,9 @@ class DetailClusterScreen extends StatelessWidget {
         BlocListener<ClusterPickingBloc, ClusterPickingState>(
           listener: (context, state) {
             if (state is LoadingSendProductEdit) {
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (_) =>
-                    const DialogLoading(message: "Enviando producto..."),
-              );
+              showLoadingDialog('Enviando producto...');
             } else if (state is SendProductEditOdooStateSuccess) {
-              if (Navigator.canPop(context)) Navigator.pop(context);
+              hideLoadingDialog();
               Get.snackbar(
                 '360 Software Informa',
                 'Cantidad de producto ajustada correctamente',
@@ -70,7 +66,7 @@ class DetailClusterScreen extends StatelessWidget {
                 duration: const Duration(seconds: 2),
               );
             } else if (state is SendProductEditOdooStateError) {
-              if (Navigator.canPop(context)) Navigator.pop(context);
+              hideLoadingDialog();
               showScrollableErrorDialog(state.msg);
             }
 

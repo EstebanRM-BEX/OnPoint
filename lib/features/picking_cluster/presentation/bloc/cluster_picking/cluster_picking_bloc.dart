@@ -386,6 +386,7 @@ class ClusterPickingBloc
       }
     } catch (e, s) {
       debugPrint("❌ Error en el SendProductEditOdooEvent :$e->$s");
+      emit(SendProductEditOdooStateError('Error al enviar el producto'));
     }
   }
 

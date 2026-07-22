@@ -721,6 +721,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       }
     } catch (e, s) {
       debugPrint("❌ Error en el SendProductEditOdooEvent :$e->$s");
+      emit(ProductEditError('Error al enviar el producto'));
     }
   }
 
@@ -887,8 +888,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       final bool esExceso = cantidadSeparada > cantidadSolicitada;
       final bool esComponentes = type == 'components';
       final bool tienePermisoExceso =
-          configurations.result?.result?.allowMoveExcessProduction == 1 ||
-              configurations.result?.result?.allowMoveExcessProduction == true;
+          configurations.result?.result?.allowMoveExcessProduction == true;
 
       double cantidadFinal = cantidadSeparada;
       if (esExceso && !(esComponentes && tienePermisoExceso)) {
@@ -1061,8 +1061,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
       final bool esComponentes = type == 'components';
       // Asumimos que la variable 'configurations' es accesible en este Bloc
       final bool tienePermisoExceso =
-          configurations.result?.result?.allowMoveExcessProduction == 1 ||
-              configurations.result?.result?.allowMoveExcessProduction == true;
+          configurations.result?.result?.allowMoveExcessProduction == true;
 
       // 3. Determinamos la cantidad final
       double cantidadFinal = cantidadSeparada;
