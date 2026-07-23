@@ -184,12 +184,16 @@ class _Tab2ScreenState extends State<Tab2Screen> {
         return Scaffold(
           backgroundColor: Colors.white,
           floatingActionButton: context
+                          .read<WmsPackingBloc>()
+                          .configurations
+                          .result
+                          ?.result
+                          ?.scanProduct ==
+                      true &&
+                  context
                       .read<WmsPackingBloc>()
-                      .configurations
-                      .result
-                      ?.result
-                      ?.scanProduct ==
-                  true
+                      .listOfProductosProgress
+                      .isNotEmpty
               ? Stack(
                   clipBehavior: Clip.none,
                   children: [
@@ -218,8 +222,8 @@ class _Tab2ScreenState extends State<Tab2Screen> {
                                   builder: (_) {
                                     final bloc = context.read<WmsPackingBloc>();
                                     return DialogConfirmatedPacking(
-                                      manejaPeso: false,
-                                      manejaTipoEmpaque: false,
+                                      manejaPeso: true,
+                                      manejaTipoEmpaque: true,
                                       productos: context
                                           .read<WmsPackingBloc>()
                                           .listOfProductsForPacking,
@@ -231,11 +235,17 @@ class _Tab2ScreenState extends State<Tab2Screen> {
                                       onConfirm:
                                           (PackagingType? type, String weight) {
                                         bloc.add(SetPackingsEvent(
-                                            context
-                                                .read<WmsPackingBloc>()
-                                                .listOfProductsForPacking,
-                                            bloc.isSticker,
-                                            false));
+                                          context
+                                              .read<WmsPackingBloc>()
+                                              .listOfProductsForPacking,
+                                          bloc.isSticker,
+                                          false,
+                                          'cluster',
+                                          weight == "" || weight.isEmpty
+                                              ? 0.0
+                                              : double.parse(weight),
+                                          type ?? PackagingType(),
+                                        ));
                                       },
                                     );
                                   },

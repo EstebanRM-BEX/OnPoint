@@ -610,6 +610,34 @@ class Tab1Screen extends StatelessWidget {
                                           ),
                                           Row(
                                             children: [
+                                              Icon(Icons.scale,
+                                                  size: 12,
+                                                  color: primaryColorApp),
+                                              const SizedBox(width: 5),
+                                              Text(
+                                                package.peso == null
+                                                    ? "0.0"
+                                                    : "${package.peso}",
+                                                style: const TextStyle(
+                                                    fontSize: 12, color: black),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                "Tipo de empaque: ",
+                                                style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: primaryColorApp),
+                                              ),
+                                              Text(
+                                                package.typePaquete ??
+                                                    'No asignado',
+                                                style: const TextStyle(
+                                                    fontSize: 12, color: black),
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
                                               Text(
                                                 "Cantidad de productos: ${package.cantidadProductos}",
                                                 style: const TextStyle(

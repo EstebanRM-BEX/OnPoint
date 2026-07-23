@@ -51,8 +51,8 @@ class Tab3Screen extends StatelessWidget {
                                   builder: (_) {
                                     final bloc = context.read<WmsPackingBloc>();
                                     return DialogConfirmatedPacking(
-                                      manejaPeso: false,
-                                      manejaTipoEmpaque: false,
+                                      manejaPeso: true,
+                                      manejaTipoEmpaque: true,
                                       productos: context
                                           .read<WmsPackingBloc>()
                                           .productsDone,
@@ -64,11 +64,17 @@ class Tab3Screen extends StatelessWidget {
                                       onConfirm:
                                           (PackagingType? type, String weight) {
                                         bloc.add(SetPackingsEvent(
-                                            context
-                                                .read<WmsPackingBloc>()
-                                                .productsDone,
-                                            bloc.isSticker,
-                                            true));
+                                          context
+                                              .read<WmsPackingBloc>()
+                                              .productsDone,
+                                          bloc.isSticker,
+                                          true,
+                                          'cluster',
+                                          weight == "" || weight.isEmpty
+                                              ? 0.0
+                                              : double.parse(weight),
+                                          type ?? PackagingType(),
+                                        ));
                                       },
                                     );
                                   },

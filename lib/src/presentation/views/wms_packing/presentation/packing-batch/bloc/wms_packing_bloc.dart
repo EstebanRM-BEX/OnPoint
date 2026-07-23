@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:wms_app/features/packaging_types/domain/entities/packaging_type.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
@@ -250,7 +251,8 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
           event.product.pedidoId ?? 0,
           event.product.idProduct ?? 0,
           event.product.idMove ?? 0,
-          'packing-batch');
+          'packing-batch',
+          id: event.product.id);
 
       //actualizamos todas las listas
       add(LoadAllProductsFromPedidoEvent(event.product.pedidoId ?? 0));
@@ -1060,6 +1062,8 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
         isCertificate: event.isCertificate,
         pesoTotalPaquete: 34.0, // Considera calcular esto dinámicamente
         listItem: listItems,
+        pesoCaja: event.peso,
+         tipoEmpaque: event.packagingType.id,
       );
 
       final responsePacking = await wmsPackingRepository.sendPackingRequest(
@@ -1081,6 +1085,11 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
         listaProductosInPacking: event.productos,
         isSticker: event.isSticker,
         consecutivo: responsePacking.result?.result?[0].consecutivo ?? '',
+        // El "tipo_paquete" que devuelve la creación del paquete es el id
+        // (usado para la request a la API), no el nombre — guardamos el
+        // nombre que el usuario seleccionó en el diálogo.
+        typePaquete: event.packagingType.name,
+        peso: responsePacking.result?.result?[0].pesoCaja ?? event.peso,
       );
 
       packages.add(paquete);

@@ -68,6 +68,12 @@ class ResultElement {
     final dynamic? peso;
     final dynamic consecutivo;
     final List<ListItem>? listItem;
+    // En la respuesta de creación de paquete este campo llega como el id
+    // del tipo de empaque (int), no el nombre (a diferencia de /batch_packing
+    // donde sí llega el nombre) — por eso es dynamic y no se usa para
+    // mostrar/guardar el nombre localmente (ver _onSetPackingsEvent).
+    final dynamic tipoPaquete;
+    final dynamic pesoCaja;
 
     ResultElement({
         this.idPaquete,
@@ -79,6 +85,8 @@ class ResultElement {
         this.peso,
         this.consecutivo,
         this.listItem,
+        this.tipoPaquete,
+        this.pesoCaja,
     });
 
     factory ResultElement.fromJson(String str) => ResultElement.fromMap(json.decode(str));
@@ -95,6 +103,8 @@ class ResultElement {
         peso: json["peso"],
         consecutivo: json["consecutivo"],
         listItem: json["list_item"] == null ? [] : List<ListItem>.from(json["list_item"]!.map((x) => ListItem.fromMap(x))),
+        tipoPaquete: json["tipo_paquete"],
+        pesoCaja: json["peso_caja"],
     );
 
     Map<String, dynamic> toMap() => {
@@ -107,6 +117,8 @@ class ResultElement {
         "peso": peso,
         "consecutivo": consecutivo,
         "list_item": listItem == null ? [] : List<dynamic>.from(listItem!.map((x) => x.toMap())),
+        "tipo_paquete": tipoPaquete,
+        "peso_caja": pesoCaja,
     };
 }
 

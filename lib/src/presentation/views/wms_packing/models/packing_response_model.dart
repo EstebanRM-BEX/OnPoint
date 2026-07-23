@@ -396,8 +396,8 @@ class Paquete {
         isCertificate: json["is_certificate"],
         type: json["type"],
         consecutivo: json["consecutivo"],
-        typePaquete: json["type_paquete"],
-        peso: json["peso"],
+        typePaquete: json["tipo_paquete"],
+        peso: json["peso_caja"],
       );
 
   Map<String, dynamic> toMap() => {
@@ -418,8 +418,8 @@ class Paquete {
         "is_certificate": isCertificate,
         "type": type,
         "consecutivo": consecutivo,
-        "type_paquete": typePaquete,
-        "peso": peso,
+        "tipo_paquete": typePaquete,
+        "peso_caja": peso,
       };
 
   Paquete copyWith({
