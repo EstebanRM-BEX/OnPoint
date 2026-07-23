@@ -609,11 +609,24 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         productosFilters.clear();
         productosFiltersSearch.clear();
 
-        final productosMap = {for (final p in productos) p.productId: p};
-        productosFilters = productosOrdenConteo
-            .map((allowed) => productosMap[allowed.id])
-            .whereType<Product>()
-            .toList();
+        if (ordenConteo.filterType == "category") {
+          // Para filterType "category" los productos válidos se determinan
+          // por las categorías de la orden (categoriasConteo), no por una
+          // lista explícita de productos (productosOrdenConteo, que para
+          // este tipo de orden viene vacía).
+          final allowedCategories = categoriasConteo
+              .map((c) => c.name)
+              .toSet();
+          productosFilters = productos
+              .where((p) => allowedCategories.contains(p.category))
+              .toList();
+        } else {
+          final productosMap = {for (final p in productos) p.productId: p};
+          productosFilters = productosOrdenConteo
+              .map((allowed) => productosMap[allowed.id])
+              .whereType<Product>()
+              .toList();
+        }
         productosFiltersSearch = productosFilters;
 
         //llenamos el listado de ubicacioones de la maestra
