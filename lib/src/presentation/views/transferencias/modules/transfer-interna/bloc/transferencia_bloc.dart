@@ -1319,6 +1319,12 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       productIsOk = currentProduct.productIsOk == 1 ? true : false;
       quantityIsOk = currentProduct.isQuantityIsOk == 1 ? true : false;
       quantityEdit = currentProduct.isQuantityIsOk == 1 ? true : false;
+      // sincronizamos con el valor persistido del producto; si no se hace,
+      // un producto anterior que se haya quedado con locationDestIsOk=true
+      // (p.ej. por la carrera descrita abajo) deja ese flag "pegado" para
+      // el siguiente producto y el paso de ubicación destino nunca se activa.
+      locationDestIsOk = currentProduct.locationDestIsOk == 1 ||
+          currentProduct.locationDestIsOk == true;
       quantitySelected = currentProduct.isProductSplit == 1
           ? 0
           : currentProduct.quantityDone ?? 0;

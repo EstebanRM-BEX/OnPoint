@@ -46,6 +46,11 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
     with WidgetsBindingObserver, DisposableControllersMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
+
+  // Evita disparar el flujo de finalización más de una vez para esta
+  // instancia de pantalla (ver nota en _validateQuantityFinish).
+  bool _finishTriggered = false;
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +58,23 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
     focusNodeSegundaUnidad.addListener(() {
       if (!focusNodeSegundaUnidad.hasFocus && mounted) {
         Future.microtask(() => _handleDependencies());
+      }
+    });
+
+    // Cuando la ubicación destino se selecciona desde la pantalla de
+    // búsqueda ('seacrh-locationsDest-trans'), esa pantalla dispara
+    // ChangeLocationDestIsOkEvent (async, escribe en BD) y navega de
+    // regreso aquí de inmediato. Si el evento del bloc termina de
+    // procesarse antes de que este widget alcance a suscribirse, el
+    // estado ChangeLocationDestIsOkState se pierde (stream broadcast, sin
+    // buffer) y la pantalla se queda "sin hacer nada". Como red de
+    // seguridad, si al montar ya está todo validado en el bloc,
+    // completamos el flujo aquí mismo.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final bloc = context.read<TransferenciaBloc>();
+      if (bloc.locationIsOk && bloc.productIsOk && bloc.locationDestIsOk) {
+        _validateQuantityFinish();
       }
     });
   }
@@ -480,6 +502,9 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
   }
 
   void _validateQuantityFinish() {
+    if (_finishTriggered) return;
+    _finishTriggered = true;
+
     final batchBloc = context.read<TransferenciaBloc>();
     final currentProduct = batchBloc.currentProduct;
 

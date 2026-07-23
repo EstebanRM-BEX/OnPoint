@@ -273,7 +273,7 @@ class _LocationDestScreenState extends State<LocationDestTransScreen> {
                               FocusScope.of(context).unfocus();
 
                               setState(() {
-                                selectedIndex == null;
+                                selectedIndex = null;
                               });
 
                               Navigator.pushReplacementNamed(
