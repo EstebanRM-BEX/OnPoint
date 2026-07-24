@@ -386,6 +386,19 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                         product.idPackage == package.id)
                                     .toList();
 
+                                // Total de unidades del paquete = sumatoria de
+                                // la cantidad empacada (quantity) de cada
+                                // producto. `unidades` es solo la etiqueta
+                                // (ej. "Unidades"), no una cifra.
+                                final totalUnidades =
+                                    filteredProducts.fold<double>(
+                                  0.0,
+                                  (sum, p) =>
+                                      sum +
+                                      (double.tryParse('${p.quantity ?? 0}') ??
+                                          0),
+                                );
+
                                 final packageId = package.packingBarcode ??
                                     package.name ??
                                     '';
@@ -483,10 +496,21 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                       ),
                                       Row(
                                         children: [
-                                          Text(
-                                            "Cant. productos: ${package.cantidadProductos}",
-                                            style: const TextStyle(
-                                                fontSize: 12, color: black),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                "Cant. productos: ${package.cantidadProductos}",
+                                                style: const TextStyle(
+                                                    fontSize: 12, color: black),
+                                              ),
+                                              Text(
+                                                "Unidades totales: ${totalUnidades % 1 == 0 ? totalUnidades.toInt() : totalUnidades}",
+                                                style: const TextStyle(
+                                                    fontSize: 12, color: black),
+                                              ),
+                                            ],
                                           ),
                                           const Spacer(),
                                           GestureDetector(
@@ -536,31 +560,6 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                                   fontSize: 12, color: black),
                                             ),
                                             const Spacer(),
-                                            if (package.id != null)
-                                              Checkbox(
-                                                activeColor: primaryColorApp,
-                                                value: _selectedPackageIds
-                                                    .contains(package.id),
-                                                onChanged: (val) {
-                                                  setState(() {
-                                                    if (val == true) {
-                                                      _selectedPackageIds
-                                                          .add(package.id!);
-                                                    } else {
-                                                      _selectedPackageIds
-                                                          .remove(package.id);
-                                                    }
-                                                  });
-                                                  // Sincronizar con el bloc
-                                                  context
-                                                      .read<PackingPedidoBloc>()
-                                                      .add(SelectPackageEvent(
-                                                        packageIds: List<
-                                                                int>.from(
-                                                            _selectedPackageIds),
-                                                      ));
-                                                },
-                                              ),
                                           ],
                                         ),
                                     ],

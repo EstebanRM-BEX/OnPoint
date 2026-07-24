@@ -396,7 +396,7 @@ class Paquete {
         isCertificate: json["is_certificate"],
         type: json["type"],
         consecutivo: json["consecutivo"],
-        typePaquete: json["tipo_paquete"],
+        typePaquete: json["type_paquete"],
         peso: json["peso_caja"],
       );
 
