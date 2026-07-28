@@ -9,8 +9,20 @@ import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 ///
 /// Esta página valida la sesión del usuario al iniciar la aplicación
 /// y redirige a la pantalla correspondiente según el estado de la sesión.
-class CheckAuthPage extends StatelessWidget {
+class CheckAuthPage extends StatefulWidget {
   const CheckAuthPage({super.key});
+
+  @override
+  State<CheckAuthPage> createState() => _CheckAuthPageState();
+}
+
+class _CheckAuthPageState extends State<CheckAuthPage> {
+  /// El gate solo debe navegar una vez. `UserBloc` es global y otras pantallas
+  /// (p.ej. Expedición) re-disparan `LoadUserInfoEvent`, emitiendo `UserLoaded`
+  /// de nuevo; sin esta bandera, este listener robaba la navegación y rebotaba
+  /// al usuario a /home. Con ella, solo reacciona al primer `UserLoaded` (el
+  /// del arranque) e ignora los posteriores.
+  bool _yaNavego = false;
 
   @override
   Widget build(BuildContext context) {
@@ -27,11 +39,14 @@ class CheckAuthPage extends StatelessWidget {
         },
         child: BlocListener<UserBloc, UserState>(
           listener: (context, state) {
+            if (_yaNavego) return;
             if (state is DeviceRegistrationFailure) {
+              _yaNavego = true;
               showScrollableErrorDialog(state.message);
               Navigator.pushReplacementNamed(context, 'enterprice');
             }
             if (state is UserLoaded) {
+              _yaNavego = true;
               Navigator.pushReplacementNamed(context, '/home');
             }
           },
