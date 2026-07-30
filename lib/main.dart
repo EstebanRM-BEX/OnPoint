@@ -54,6 +54,7 @@ import 'package:wms_app/src/presentation/widgets/session_timeout_manager_widget.
 import 'package:wms_app/src/presentation/widgets/network_quality_overlay.dart';
 import 'package:wms_app/src/presentation/providers/network_overlay/network_overlay_cubit.dart';
 import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
+import 'package:wms_app/features/expedition/data/services/expedition_sync_coordinator.dart';
 import 'package:wms_app/features/websocket/presentation/bloc/websocket_bloc.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/assignment/expedicion_assignment_bloc.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/confirm/expedicion_confirm_bloc.dart';
@@ -118,6 +119,10 @@ void main() {
     // WebSocket en background: no debe bloquear el primer frame.
     // connect() ya retorna solo si no hay sesión activa.
     unawaited(getIt<IWebSocketService>().connect());
+
+    // Instancia el coordinator de expedición (empieza a escuchar la red) e
+    // intenta enviar validaciones offline pendientes al arrancar. Background.
+    getIt<ExpeditionSyncCoordinator>().requestSync();
   }, (error, stack) {
     // Zona de captura de errores globales
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);

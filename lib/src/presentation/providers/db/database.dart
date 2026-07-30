@@ -102,7 +102,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 59,
+      version: 60,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -1037,6 +1037,23 @@ class DataBaseSqlite {
         }
       }
     }
+
+    if (oldVersion < 60) {
+      // Validación offline de expedición: sync_pending marca paquetes/productos
+      // sueltos validados sin conexión que aún no se enviaron al backend
+      // (send_out pendiente). El coordinator los reintenta hasta dejarlos en 0.
+      for (final table in [
+        ExpedicionPaquetesTable.tableName,
+        ExpedicionItemsSueltosTable.tableName,
+      ]) {
+        try {
+          await db.execute(
+              'ALTER TABLE $table ADD COLUMN sync_pending INTEGER DEFAULT 0');
+        } catch (e) {
+          debugPrint("Error actualizando a v60 ($table.sync_pending): $e");
+        }
+      }
+    }
   }
 
   //todo repositorios de las tablas
@@ -1150,10 +1167,35 @@ class DataBaseSqlite {
 
   Future<Database> getDatabaseInstance() async {
     if (_database != null) {
+      await _ensureExpeditionSyncColumns(_database!);
       return _database!; // Si la base de datos ya está abierta, retornarla
     }
     _database = await initDB(); // Intenta abrir la base de datos
+    await _ensureExpeditionSyncColumns(_database!);
     return _database!;
+  }
+
+  // Se ejecuta una sola vez por proceso.
+  static bool _syncColumnsEnsured = false;
+
+  /// Garantiza que las columnas sync_pending existan en las tablas de
+  /// expedición aunque la migración v60 no haya corrido (por ejemplo tras un
+  /// hot reload con la BD ya abierta en la versión anterior). Es idempotente:
+  /// si la columna ya existe, el ALTER falla con "duplicate column" y se ignora.
+  Future<void> _ensureExpeditionSyncColumns(Database db) async {
+    if (_syncColumnsEnsured) return;
+    _syncColumnsEnsured = true;
+    for (final table in [
+      ExpedicionPaquetesTable.tableName,
+      ExpedicionItemsSueltosTable.tableName,
+    ]) {
+      try {
+        await db.execute(
+            'ALTER TABLE $table ADD COLUMN sync_pending INTEGER DEFAULT 0');
+      } catch (_) {
+        // La columna ya existe (caso normal): nada que hacer.
+      }
+    }
   }
 
   //Todo: Métodos para batchs_products
@@ -1649,6 +1691,43 @@ class DataBaseSqlite {
     await expedicionItemsSueltosRepository.deleteAllItemsSueltos();
     await expedicionPaquetesRepository.deleteAllPaquetes();
     await expedicionPedidosRepository.deleteAllExpediciones();
+  }
+
+  /// Como [deleExpedicion] pero conserva las expediciones cuyos ids están en
+  /// [keepExpeditionIds] (y todos sus hijos). Se usa en el re-fetch para no
+  /// borrar expediciones con paquetes/productos validados sin conexión que
+  /// todavía están pendientes de enviar al backend. Si el set viene vacío,
+  /// equivale a [deleExpedicion] (borra todo).
+  Future<void> deleExpedicionExcept(Set<int> keepExpeditionIds) async {
+    if (keepExpeditionIds.isEmpty) {
+      await deleExpedicion();
+      return;
+    }
+
+    final db = await getDatabaseInstance();
+    final keep = keepExpeditionIds.toList();
+    final ph = List.filled(keep.length, '?').join(',');
+
+    await db.delete(
+      ExpedicionItemsTable.tableName,
+      where: 'expedition_id NOT IN ($ph)',
+      whereArgs: keep,
+    );
+    await db.delete(
+      ExpedicionItemsSueltosTable.tableName,
+      where: 'expedition_id NOT IN ($ph)',
+      whereArgs: keep,
+    );
+    await db.delete(
+      ExpedicionPaquetesTable.tableName,
+      where: 'expedition_id NOT IN ($ph)',
+      whereArgs: keep,
+    );
+    await db.delete(
+      ExpedicionPedidosTable.tableName,
+      where: 'expedition_id NOT IN ($ph)',
+      whereArgs: keep,
+    );
   }
 
   Future<void> deleteBDCloseSession() async {

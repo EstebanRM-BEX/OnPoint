@@ -44,20 +44,28 @@ class ExpeditionRepositoryImpl implements ExpeditionRepository {
       );
       final pedidos = response.result;
 
-      // El backend manda la foto completa de lo que está pendiente, así que
-      // lo local se reemplaza entero. Va después del fetch (no antes) para no
-      // dejar la lista vacía si la petición falla, y también cuando `pedidos`
-      // viene vacío: en ese caso justamente no debe quedar nada.
-      await localDataSource.limpiarExpediciones();
+      // Expediciones con validaciones sin conexión pendientes de enviar: NO se
+      // borran ni se sobreescriben con el snapshot del backend; su verdad local
+      // manda hasta que el coordinator las sincronice. El resto se reemplaza
+      // entero (el backend manda la foto completa de lo pendiente).
+      final keep = await localDataSource.getExpedicionIdsConPendientes();
 
-      if (pedidos.isNotEmpty) {
-        await localDataSource.saveExpediciones(pedidos);
+      // Va después del fetch (no antes) para no dejar la lista vacía si la
+      // petición falla, y también cuando `pedidos` viene vacío.
+      await localDataSource.limpiarExpedicionesExcepto(keep);
+
+      // Solo persistimos las expediciones que NO estamos preservando localmente.
+      final pedidosAGuardar =
+          pedidos.where((p) => !keep.contains(p.expeditionId)).toList();
+
+      if (pedidosAGuardar.isNotEmpty) {
+        await localDataSource.saveExpediciones(pedidosAGuardar);
 
         // itemsPackValidados/Pendientes siempre vienen de
         // ExpedicionPedidoModel.fromJson, que los puebla con
         // PaqueteExpedicionModel (y sus items con ItemExpedicionModel) — el
         // cast es seguro dentro de este flujo (remoto → persistencia local).
-        for (final pedido in pedidos) {
+        for (final pedido in pedidosAGuardar) {
           if (pedido.expeditionId == null) continue;
 
           final paquetes = <PaqueteExpedicionModel>[
@@ -186,17 +194,34 @@ class ExpeditionRepositoryImpl implements ExpeditionRepository {
     required int packingId,
   }) async {
     try {
-      final ok = await remoteDataSource.validarPaquete(
-        expeditionId: expeditionId,
-        packingId: packingId,
-      );
-      if (!ok) {
-        return const Left(ServerFailure('No se pudo validar el paquete'));
+      // Sin conexión: se valida local marcado como pendiente de enviar; el
+      // coordinator lo reintenta solo cuando vuelva la red.
+      if (!await networkInfo.isConnected) {
+        await localDataSource.actualizarValidacionPaquete(packingId, true,
+            syncPending: true);
+        return const Right(unit);
       }
-      await localDataSource.actualizarValidacionPaquete(packingId, true);
-      return const Right(unit);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+
+      try {
+        final ok = await remoteDataSource.validarPaquete(
+          expeditionId: expeditionId,
+          packingId: packingId,
+        );
+        if (!ok) {
+          return const Left(ServerFailure('No se pudo validar el paquete'));
+        }
+        await localDataSource.actualizarValidacionPaquete(packingId, true);
+        return const Right(unit);
+      } on ServerException catch (e) {
+        // Error de negocio del backend (rechazo): se muestra al operario.
+        return Left(ServerFailure(e.message));
+      } on NetworkException catch (_) {
+        // Sin conexión real con el servidor (o red caída a mitad del envío):
+        // validamos local y encolamos para que el coordinator lo reintente.
+        await localDataSource.actualizarValidacionPaquete(packingId, true,
+            syncPending: true);
+        return const Right(unit);
+      }
     } catch (e) {
       return Left(ServerFailure('Error al validar el paquete: $e'));
     }
@@ -208,18 +233,32 @@ class ExpeditionRepositoryImpl implements ExpeditionRepository {
     required int packingId,
   }) async {
     try {
-      final ok = await remoteDataSource.validarItemSuelto(
-        expeditionId: expeditionId,
-        packingId: packingId,
-      );
-      if (!ok) {
-        return const Left(ServerFailure('No se pudo validar el producto'));
+      if (!await networkInfo.isConnected) {
+        await localDataSource.actualizarValidacionItemSuelto(
+            expeditionId, packingId, true,
+            syncPending: true);
+        return const Right(unit);
       }
-      await localDataSource.actualizarValidacionItemSuelto(
-          expeditionId, packingId, true);
-      return const Right(unit);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+
+      try {
+        final ok = await remoteDataSource.validarItemSuelto(
+          expeditionId: expeditionId,
+          packingId: packingId,
+        );
+        if (!ok) {
+          return const Left(ServerFailure('No se pudo validar el producto'));
+        }
+        await localDataSource.actualizarValidacionItemSuelto(
+            expeditionId, packingId, true);
+        return const Right(unit);
+      } on ServerException catch (e) {
+        return Left(ServerFailure(e.message));
+      } on NetworkException catch (_) {
+        await localDataSource.actualizarValidacionItemSuelto(
+            expeditionId, packingId, true,
+            syncPending: true);
+        return const Right(unit);
+      }
     } catch (e) {
       return Left(ServerFailure('Error al validar el producto: $e'));
     }
@@ -236,27 +275,42 @@ class ExpeditionRepositoryImpl implements ExpeditionRepository {
       return const Left(ServerFailure('No hay elementos seleccionados'));
     }
 
-    try {
-      final ok = await remoteDataSource.validarMultiple(
-        expeditionId: expeditionId,
-        packingIds: todos,
-      );
-      if (!ok) {
-        return const Left(ServerFailure('No se pudo validar la selección'));
-      }
-
-      // El backend confirmó todos los packing_id de una sola vez; recién ahí
-      // los marcamos como validados en local, cada tipo en su tabla.
+    // Marca la selección completa como validada local; [syncPending] decide si
+    // queda pendiente de enviar (offline / fallo transitorio) o ya sincronizada.
+    Future<void> marcarLocal({required bool syncPending}) async {
       for (final packingId in packingIdsPaquetes) {
-        await localDataSource.actualizarValidacionPaquete(packingId, true);
+        await localDataSource.actualizarValidacionPaquete(packingId, true,
+            syncPending: syncPending);
       }
       for (final packingId in packingIdsItemsSueltos) {
         await localDataSource.actualizarValidacionItemSuelto(
-            expeditionId, packingId, true);
+            expeditionId, packingId, true,
+            syncPending: syncPending);
       }
-      return const Right(unit);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+    }
+
+    try {
+      if (!await networkInfo.isConnected) {
+        await marcarLocal(syncPending: true);
+        return const Right(unit);
+      }
+
+      try {
+        final ok = await remoteDataSource.validarMultiple(
+          expeditionId: expeditionId,
+          packingIds: todos,
+        );
+        if (!ok) {
+          return const Left(ServerFailure('No se pudo validar la selección'));
+        }
+        await marcarLocal(syncPending: false);
+        return const Right(unit);
+      } on ServerException catch (e) {
+        return Left(ServerFailure(e.message));
+      } on NetworkException catch (_) {
+        await marcarLocal(syncPending: true);
+        return const Right(unit);
+      }
     } catch (e) {
       return Left(ServerFailure('Error al validar la selección: $e'));
     }
@@ -268,6 +322,15 @@ class ExpeditionRepositoryImpl implements ExpeditionRepository {
     required int packingId,
   }) async {
     try {
+      // Si estaba validado sin conexión (nunca llegó al backend), deshacer es
+      // solo revertir el estado local; no hay nada que devolver en Odoo.
+      final pendientes = await localDataSource.getPaquetesPendientesSync();
+      final eraOffline = pendientes.any((p) => p.packingId == packingId);
+      if (eraOffline) {
+        await localDataSource.actualizarValidacionPaquete(packingId, false);
+        return const Right(unit);
+      }
+
       final ok = await remoteDataSource.deshacerPaquete(
         expeditionId: expeditionId,
         packingId: packingId,
@@ -292,6 +355,15 @@ class ExpeditionRepositoryImpl implements ExpeditionRepository {
     required int packingId,
   }) async {
     try {
+      final pendientes = await localDataSource.getItemsSueltosPendientesSync();
+      final eraOffline = pendientes.any(
+          (i) => i.packingId == packingId && i.expeditionId == expeditionId);
+      if (eraOffline) {
+        await localDataSource.actualizarValidacionItemSuelto(
+            expeditionId, packingId, false);
+        return const Right(unit);
+      }
+
       final ok = await remoteDataSource.deshacerItemSuelto(
         expeditionId: expeditionId,
         packingId: packingId,

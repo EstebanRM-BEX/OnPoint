@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/features/expedition/domain/entities/item_suelto_expedicion.dart';
 import 'package:wms_app/features/expedition/domain/entities/paquete_expedicion.dart';
+import 'package:wms_app/features/expedition/data/services/expedition_sync_coordinator.dart';
 import 'package:wms_app/features/expedition/domain/usecases/deshacer_item_suelto_usecase.dart';
 import 'package:wms_app/features/expedition/domain/usecases/deshacer_paquete_usecase.dart';
 import 'package:wms_app/features/expedition/domain/usecases/validar_item_suelto_usecase.dart';
@@ -24,6 +25,7 @@ class ExpedicionScanBloc extends Bloc<ExpedicionScanEvent, ExpedicionScanState> 
   final ValidarMultipleUseCase validarMultipleUseCase;
   final DeshacerPaqueteUseCase deshacerPaqueteUseCase;
   final DeshacerItemSueltoUseCase deshacerItemSueltoUseCase;
+  final ExpeditionSyncCoordinator syncCoordinator;
 
   ExpedicionScanBloc({
     required this.validarPaqueteUseCase,
@@ -31,6 +33,7 @@ class ExpedicionScanBloc extends Bloc<ExpedicionScanEvent, ExpedicionScanState> 
     required this.validarMultipleUseCase,
     required this.deshacerPaqueteUseCase,
     required this.deshacerItemSueltoUseCase,
+    required this.syncCoordinator,
   }) : super(const ExpedicionScanInitial()) {
     on<ValidarExpedicionScanEvent>(_onValidar);
     on<ValidarMultipleExpedicionScanEvent>(_onValidarMultiple);
@@ -71,6 +74,10 @@ class ExpedicionScanBloc extends Bloc<ExpedicionScanEvent, ExpedicionScanState> 
       (_) => emit(ExpedicionScanValidatedMultiple(
           idsPaquetes.length + idsItemsSueltos.length)),
     );
+
+    // Por si la validación quedó pendiente (offline o fallo transitorio),
+    // pide un ciclo de envío en background.
+    syncCoordinator.requestSync();
   }
 
   Future<void> _onValidar(
@@ -95,6 +102,7 @@ class ExpedicionScanBloc extends Bloc<ExpedicionScanEvent, ExpedicionScanState> 
             ? const ExpedicionScanValidatedDirecto()
             : const ExpedicionScanValidated()),
       );
+      syncCoordinator.requestSync();
       return;
     }
 
@@ -112,6 +120,7 @@ class ExpedicionScanBloc extends Bloc<ExpedicionScanEvent, ExpedicionScanState> 
             ? const ExpedicionScanValidatedDirecto()
             : const ExpedicionScanValidated()),
       );
+      syncCoordinator.requestSync();
     }
   }
 

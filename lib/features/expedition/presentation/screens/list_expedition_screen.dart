@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/routes/app_router.dart';
+import 'package:wms_app/features/expedition/data/services/expedition_sync_coordinator.dart';
 import 'package:wms_app/features/expedition/domain/entities/expedicion_pedido.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/assignment/expedicion_assignment_bloc.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/list/expedition_list_bloc.dart';
@@ -12,6 +15,7 @@ import 'package:wms_app/features/expedition/presentation/widgets/expedicion_card
 import 'package:wms_app/features/expedition/presentation/widgets/expedicion_propietario_filter_sheet.dart';
 import 'package:wms_app/features/expedition/presentation/widgets/expedicion_sort_menu_widget.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
@@ -29,11 +33,21 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   String? _selectedPropietario;
+  StreamSubscription<void>? _syncedSub;
 
   @override
   void initState() {
     super.initState();
     context.read<ExpedicionListBloc>().add(const FetchExpedicionesFromDbEvent());
+
+    // Al sincronizar validaciones offline, relee la lista desde SQLite para
+    // reflejar el estado actualizado de las expediciones preservadas.
+    _syncedSub = getIt<ExpeditionSyncCoordinator>().onSynced.listen((_) {
+      if (!mounted) return;
+      context
+          .read<ExpedicionListBloc>()
+          .add(const FetchExpedicionesFromDbEvent());
+    });
     // Los permisos (hide_validate_expedition, hide_validate_item_expedition,
     // etc.) viven en tbl_configurations, pero esa tabla solo se llena cuando
     // el usuario entra manualmente a "información del usuario" en Home — acá
@@ -44,6 +58,7 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen> {
 
   @override
   void dispose() {
+    _syncedSub?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();

@@ -11,6 +11,10 @@ class ItemSueltoExpedicion {
   final String? uom;
   final bool? isValidate;
 
+  /// true = validado sin conexión, aún pendiente de enviar al backend.
+  /// Con isValidate=true vive en "Listo" pero marcado como "por enviar".
+  final bool? syncPending;
+
   const ItemSueltoExpedicion({
     this.expeditionId,
     this.packingId,
@@ -21,5 +25,6 @@ class ItemSueltoExpedicion {
     this.quantity,
     this.uom,
     this.isValidate,
+    this.syncPending,
   });
 }

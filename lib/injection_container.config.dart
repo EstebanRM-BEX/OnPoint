@@ -50,6 +50,8 @@ import 'features/expedition/data/datasources/expedition_remote_data_source.dart'
     as _i260;
 import 'features/expedition/data/repositories/expedition_repository_impl.dart'
     as _i838;
+import 'features/expedition/data/services/expedition_sync_coordinator.dart'
+    as _i169;
 import 'features/expedition/domain/repositories/expedition_repository.dart'
     as _i777;
 import 'features/expedition/domain/usecases/asignar_responsable_usecase.dart'
@@ -456,6 +458,14 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i205.HomeLocalDataSource>(
       () => _i205.HomeLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()),
     );
+    gh.lazySingleton<_i169.ExpeditionSyncCoordinator>(
+      () => _i169.ExpeditionSyncCoordinator(
+        networkInfo: gh<_i75.NetworkInfo>(),
+        remoteDataSource: gh<_i260.ExpeditionRemoteDataSource>(),
+        localDataSource: gh<_i486.ExpeditionLocalDataSource>(),
+      ),
+      dispose: (i) => i.dispose(),
+    );
     gh.lazySingleton<_i3.PackagingTypeLocalDataSource>(
       () => _i3.PackagingTypeLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()),
     );
@@ -703,6 +713,16 @@ extension GetItInjectableX on _i174.GetIt {
         deleteRecentUrlUseCase: gh<_i552.DeleteRecentUrl>(),
       ),
     );
+    gh.factory<_i770.ExpedicionScanBloc>(
+      () => _i770.ExpedicionScanBloc(
+        validarPaqueteUseCase: gh<_i749.ValidarPaqueteUseCase>(),
+        validarItemSueltoUseCase: gh<_i944.ValidarItemSueltoUseCase>(),
+        validarMultipleUseCase: gh<_i955.ValidarMultipleUseCase>(),
+        deshacerPaqueteUseCase: gh<_i502.DeshacerPaqueteUseCase>(),
+        deshacerItemSueltoUseCase: gh<_i888.DeshacerItemSueltoUseCase>(),
+        syncCoordinator: gh<_i169.ExpeditionSyncCoordinator>(),
+      ),
+    );
     gh.factory<_i545.ClusterPickingBloc>(
       () => _i545.ClusterPickingBloc(
         getPickingClusterData: gh<_i524.GetPickingClusterData>(),
@@ -784,15 +804,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i777.ExpedicionConfirmBloc>(
       () => _i777.ExpedicionConfirmBloc(
         confirmarPedidoUseCase: gh<_i868.ConfirmarPedidoUseCase>(),
-      ),
-    );
-    gh.factory<_i770.ExpedicionScanBloc>(
-      () => _i770.ExpedicionScanBloc(
-        validarPaqueteUseCase: gh<_i749.ValidarPaqueteUseCase>(),
-        validarItemSueltoUseCase: gh<_i944.ValidarItemSueltoUseCase>(),
-        validarMultipleUseCase: gh<_i955.ValidarMultipleUseCase>(),
-        deshacerPaqueteUseCase: gh<_i502.DeshacerPaqueteUseCase>(),
-        deshacerItemSueltoUseCase: gh<_i888.DeshacerItemSueltoUseCase>(),
       ),
     );
     gh.factory<_i363.AuthBloc>(

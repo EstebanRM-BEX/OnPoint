@@ -9,6 +9,9 @@ class ExpedicionPaquetesTable {
   static const String columnPackingType = 'packing_type';
   static const String columnOrderPacking = 'order_packing';
   static const String columnIsValidate = 'is_validate';
+  // 1 = validado sin conexión, aún no enviado al backend (send_out pendiente).
+  // El coordinator de sync lo reintenta hasta que quede en 0.
+  static const String columnSyncPending = 'sync_pending';
 
   static String createTable() {
     return '''
@@ -20,7 +23,8 @@ class ExpedicionPaquetesTable {
         $columnPackingBarcode TEXT,
         $columnPackingType TEXT,
         $columnOrderPacking INTEGER,
-        $columnIsValidate INTEGER DEFAULT 0
+        $columnIsValidate INTEGER DEFAULT 0,
+        $columnSyncPending INTEGER DEFAULT 0
       );
 
       CREATE INDEX idx_expedicion_paquetes_expedition_id ON $tableName ($columnExpeditionId);

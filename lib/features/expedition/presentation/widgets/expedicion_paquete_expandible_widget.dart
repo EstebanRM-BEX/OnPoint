@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/expedition/domain/entities/paquete_expedicion.dart';
 import 'package:wms_app/features/expedition/presentation/widgets/expedicion_scan_item_widget.dart';
+import 'package:wms_app/features/expedition/presentation/widgets/expedicion_sync_badge_widget.dart';
 
 /// Card de paquete expandible para la tab "Listo": el resumen se ve igual
 /// que ExpedicionPaqueteRowWidget, pero al tocarla despliega la lista
@@ -67,6 +68,7 @@ class ExpedicionPaqueteExpandibleWidget extends StatelessWidget {
                         style: const TextStyle(fontSize: 12, color: black)),
                   ],
                 ),
+                ExpedicionSyncBadge(syncPending: paquete.syncPending == true),
               ],
             ),
           ),

@@ -392,14 +392,20 @@ class ApiRequestService {
     }
   }
 
+  /// [showNetworkErrorSnackbar]: si es false, no muestra el snackbar global
+  /// "No se pudo conectar al servidor". Lo usan los flujos que manejan la
+  /// falta de conexión por su cuenta (ej. validación offline de expedición,
+  /// que valida local y encola el envío) para no confundir al operario con un
+  /// error cuando la acción sí se completó localmente.
   Future<http.Response> postPacking({
     required String endpoint,
     required Map<String, dynamic>? body,
     required bool isLoadinDialog,
+    bool showNetworkErrorSnackbar = true,
   }) async {
     if (!await _isConnected()) {
       debugPrint('🔴 [postPacking] Sin conexión');
-      _showNetworkError();
+      if (showNetworkErrorSnackbar) _showNetworkError();
       return buildClientErrorResponse(404, 'Error de red');
     }
 
@@ -443,7 +449,7 @@ class ApiRequestService {
     } on SocketException catch (e) {
       debugPrint('🔴 [postPacking] SocketException: $e');
       if (loadingDialogOpened) Get.back();
-      _showNetworkError();
+      if (showNetworkErrorSnackbar) _showNetworkError();
       return buildClientErrorResponse(404, 'Error de red');
     } catch (e) {
       debugPrint('🔴 [postPacking] Error: $e');

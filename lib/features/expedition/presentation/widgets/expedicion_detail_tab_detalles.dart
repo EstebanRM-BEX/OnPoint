@@ -78,6 +78,21 @@ class _ExpedicionDetailTabDetallesState
       return;
     }
 
+    // No se puede cerrar la expedición completa si hay validaciones hechas sin
+    // conexión que todavía no llegaron al backend: se enviarán solas al volver
+    // la red y recién ahí podrá confirmarse.
+    if (detail.tienePendientesDeSync) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text(
+            'Hay validaciones sin conexión pendientes de enviar. Se enviarán '
+            'automáticamente al recuperar conexión; espera a que se sincronicen '
+            'para confirmar.'),
+        backgroundColor: Colors.orange,
+        duration: Duration(seconds: 4),
+      ));
+      return;
+    }
+
     final totalPaquetes = detail.paquetesListos.length;
     final totalItems = detail.itemsSueltosListos.length;
     final hayPendientes = detail.paquetesPendientes.isNotEmpty ||

@@ -26,4 +26,11 @@ class ExpedicionDetail {
 
   List<ItemSueltoExpedicion> get itemsSueltosListos =>
       itemsSueltos.where((i) => i.isValidate == true).toList();
+
+  /// true si hay algún paquete o producto suelto validado sin conexión que
+  /// todavía no se envió al backend. Con esto se bloquea la confirmación del
+  /// pedido completo hasta que el coordinator los sincronice.
+  bool get tienePendientesDeSync =>
+      paquetes.any((p) => p.syncPending == true) ||
+      itemsSueltos.any((i) => i.syncPending == true);
 }

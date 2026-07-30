@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/features/expedition/data/services/expedition_sync_coordinator.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/detail/expedicion_detail_bloc.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/features/expedition/presentation/widgets/expedicion_detail_tab_detalles.dart';
 import 'package:wms_app/features/expedition/presentation/widgets/expedicion_detail_tab_listo.dart';
 import 'package:wms_app/features/expedition/presentation/widgets/expedicion_detail_tab_por_hacer.dart';
@@ -20,6 +24,7 @@ class ExpedicionDetailScreen extends StatefulWidget {
 class _ExpedicionDetailScreenState extends State<ExpedicionDetailScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  StreamSubscription<void>? _syncedSub;
 
   @override
   void initState() {
@@ -28,10 +33,20 @@ class _ExpedicionDetailScreenState extends State<ExpedicionDetailScreen>
     context
         .read<ExpedicionDetailBloc>()
         .add(LoadExpedicionDetailEvent(widget.expeditionId));
+
+    // Cuando el coordinator sincroniza validaciones offline, relee el detalle
+    // desde SQLite para que los badges pasen de "pendiente" a "enviado".
+    _syncedSub = getIt<ExpeditionSyncCoordinator>().onSynced.listen((_) {
+      if (!mounted) return;
+      context
+          .read<ExpedicionDetailBloc>()
+          .add(LoadExpedicionDetailEvent(widget.expeditionId));
+    });
   }
 
   @override
   void dispose() {
+    _syncedSub?.cancel();
     _tabController.dispose();
     super.dispose();
   }

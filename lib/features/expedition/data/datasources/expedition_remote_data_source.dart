@@ -180,10 +180,20 @@ class ExpeditionRemoteDataSourceImpl implements ExpeditionRemoteDataSource {
         }
       },
       isLoadinDialog: false,
+      // La validación offline maneja la falta de conexión (valida local +
+      // encola): no debe salir el snackbar global de "No se pudo conectar".
+      showNetworkErrorSnackbar: false,
     );
 
+    // statusCode >= 400 aquí es siempre un fallo de infraestructura/conexión:
+    // ApiRequestService sintetiza estos códigos (404 'Error de red', 408
+    // timeout, 500) cuando no hay red o el servidor no responde. Los rechazos
+    // de negocio del backend llegan con statusCode 200 + result.msg (abajo).
+    // Se lanza NetworkException (no ServerException) para que el repositorio
+    // valide offline y encole el envío en vez de mostrar error al operario.
     if (response.statusCode >= 400) {
-      throw ServerException('Error de conexión (${response.statusCode})');
+      throw NetworkException('Sin conexión con el servidor '
+          '(${response.statusCode})');
     }
 
     final Map<String, dynamic> jsonResponse = jsonDecode(response.body);

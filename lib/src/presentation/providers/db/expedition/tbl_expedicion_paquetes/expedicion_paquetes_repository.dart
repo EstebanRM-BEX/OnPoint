@@ -54,17 +54,55 @@ class ExpedicionPaquetesRepository {
     }
   }
 
-  Future<void> updateIsValidate(int packingId, bool value) async {
+  /// Actualiza is_validate y sync_pending de un paquete.
+  /// - Validado online / deshacer / sincronizado: [syncPending] = false.
+  /// - Validado sin conexión (pendiente de enviar): [syncPending] = true.
+  Future<void> updateIsValidate(int packingId, bool value,
+      {bool syncPending = false}) async {
     try {
       final Database db = await DataBaseSqlite().getDatabaseInstance();
       await db.update(
         ExpedicionPaquetesTable.tableName,
-        {ExpedicionPaquetesTable.columnIsValidate: value ? 1 : 0},
+        {
+          ExpedicionPaquetesTable.columnIsValidate: value ? 1 : 0,
+          ExpedicionPaquetesTable.columnSyncPending: syncPending ? 1 : 0,
+        },
         where: '${ExpedicionPaquetesTable.columnPackingId} = ?',
         whereArgs: [packingId],
       );
     } catch (e, s) {
       debugPrint("Error al actualizar is_validate del paquete $packingId: $e\n$s");
+    }
+  }
+
+  /// Marca un paquete ya enviado al backend (send_out ok): baja sync_pending.
+  Future<void> marcarSincronizado(int packingId) async {
+    try {
+      final Database db = await DataBaseSqlite().getDatabaseInstance();
+      await db.update(
+        ExpedicionPaquetesTable.tableName,
+        {ExpedicionPaquetesTable.columnSyncPending: 0},
+        where: '${ExpedicionPaquetesTable.columnPackingId} = ?',
+        whereArgs: [packingId],
+      );
+    } catch (e, s) {
+      debugPrint("Error al marcar sincronizado el paquete $packingId: $e\n$s");
+    }
+  }
+
+  /// Todos los paquetes validados sin conexión pendientes de enviar
+  /// (sync_pending = 1), de todas las expediciones.
+  Future<List<PaqueteExpedicionModel>> getPendientesSync() async {
+    try {
+      final Database db = await DataBaseSqlite().getDatabaseInstance();
+      final maps = await db.query(
+        ExpedicionPaquetesTable.tableName,
+        where: '${ExpedicionPaquetesTable.columnSyncPending} = 1',
+      );
+      return maps.map((m) => PaqueteExpedicionModel.fromMap(m)).toList();
+    } catch (e, s) {
+      debugPrint("Error al obtener paquetes pendientes de sync: $e\n$s");
+      return [];
     }
   }
 

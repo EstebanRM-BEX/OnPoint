@@ -14,6 +14,28 @@ abstract class ExpeditionLocalDataSource {
   /// confirmaron) se quedarían para siempre en la lista.
   Future<Unit> limpiarExpediciones();
 
+  /// Como [limpiarExpediciones] pero conserva las expediciones de
+  /// [keepExpeditionIds] (y sus hijos). Se usa en el re-fetch para no perder
+  /// las que tienen validaciones sin conexión pendientes de enviar.
+  Future<Unit> limpiarExpedicionesExcepto(Set<int> keepExpeditionIds);
+
+  /// Ids de expediciones con al menos un paquete o producto suelto validado
+  /// sin conexión pendiente de enviar (sync_pending = 1).
+  Future<Set<int>> getExpedicionIdsConPendientes();
+
+  /// Paquetes validados sin conexión pendientes de enviar, de todas las
+  /// expediciones.
+  Future<List<PaqueteExpedicionModel>> getPaquetesPendientesSync();
+
+  /// Productos sueltos validados sin conexión pendientes de enviar.
+  Future<List<ItemSueltoExpedicionModel>> getItemsSueltosPendientesSync();
+
+  /// Baja sync_pending de un paquete ya enviado al backend.
+  Future<Unit> marcarPaqueteSincronizado(int packingId);
+
+  /// Baja sync_pending de un producto suelto ya enviado al backend.
+  Future<Unit> marcarItemSueltoSincronizado(int expeditionId, int packingId);
+
   Future<Unit> saveExpediciones(List<ExpedicionPedidoModel> pedidos);
   Future<Unit> savePaquetesForExpedicion(
       int expeditionId, List<PaqueteExpedicionModel> paquetes);
@@ -27,9 +49,11 @@ abstract class ExpeditionLocalDataSource {
       int expeditionId, int userId, String userName);
   Future<Unit> updateStartTime(int expeditionId, String time);
   Future<ExpedicionDetail?> getExpedicionDetail(int expeditionId);
-  Future<Unit> actualizarValidacionPaquete(int packingId, bool value);
+  Future<Unit> actualizarValidacionPaquete(int packingId, bool value,
+      {bool syncPending});
   Future<Unit> actualizarValidacionItemSuelto(
-      int expeditionId, int packingId, bool value);
+      int expeditionId, int packingId, bool value,
+      {bool syncPending});
   Future<Unit> marcarPedidoTerminado(int expeditionId, String endTime);
 }
 
@@ -40,6 +64,47 @@ class ExpeditionLocalDataSourceImpl implements ExpeditionLocalDataSource {
   @override
   Future<Unit> limpiarExpediciones() async {
     await db.deleExpedicion();
+    return unit;
+  }
+
+  @override
+  Future<Unit> limpiarExpedicionesExcepto(Set<int> keepExpeditionIds) async {
+    await db.deleExpedicionExcept(keepExpeditionIds);
+    return unit;
+  }
+
+  @override
+  Future<Set<int>> getExpedicionIdsConPendientes() async {
+    final paquetes = await db.expedicionPaquetesRepository.getPendientesSync();
+    final itemsSueltos =
+        await db.expedicionItemsSueltosRepository.getPendientesSync();
+    return {
+      ...paquetes.map((p) => p.expeditionId).whereType<int>(),
+      ...itemsSueltos.map((i) => i.expeditionId).whereType<int>(),
+    };
+  }
+
+  @override
+  Future<List<PaqueteExpedicionModel>> getPaquetesPendientesSync() {
+    return db.expedicionPaquetesRepository.getPendientesSync();
+  }
+
+  @override
+  Future<List<ItemSueltoExpedicionModel>> getItemsSueltosPendientesSync() {
+    return db.expedicionItemsSueltosRepository.getPendientesSync();
+  }
+
+  @override
+  Future<Unit> marcarPaqueteSincronizado(int packingId) async {
+    await db.expedicionPaquetesRepository.marcarSincronizado(packingId);
+    return unit;
+  }
+
+  @override
+  Future<Unit> marcarItemSueltoSincronizado(
+      int expeditionId, int packingId) async {
+    await db.expedicionItemsSueltosRepository
+        .marcarSincronizado(expeditionId, packingId);
     return unit;
   }
 
@@ -131,8 +196,10 @@ class ExpeditionLocalDataSourceImpl implements ExpeditionLocalDataSource {
   }
 
   @override
-  Future<Unit> actualizarValidacionPaquete(int packingId, bool value) async {
-    await db.expedicionPaquetesRepository.updateIsValidate(packingId, value);
+  Future<Unit> actualizarValidacionPaquete(int packingId, bool value,
+      {bool syncPending = false}) async {
+    await db.expedicionPaquetesRepository
+        .updateIsValidate(packingId, value, syncPending: syncPending);
     await db.expedicionItemsRepository
         .updateIsValidateForPaquete(packingId, value);
     return unit;
@@ -140,11 +207,13 @@ class ExpeditionLocalDataSourceImpl implements ExpeditionLocalDataSource {
 
   @override
   Future<Unit> actualizarValidacionItemSuelto(
-      int expeditionId, int packingId, bool value) async {
+      int expeditionId, int packingId, bool value,
+      {bool syncPending = false}) async {
     await db.expedicionItemsSueltosRepository.updateIsValidate(
       expeditionId: expeditionId,
       packingId: packingId,
       value: value,
+      syncPending: syncPending,
     );
     return unit;
   }

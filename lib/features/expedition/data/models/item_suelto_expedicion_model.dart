@@ -17,6 +17,7 @@ class ItemSueltoExpedicionModel extends ItemSueltoExpedicion {
     super.quantity,
     super.uom,
     super.isValidate,
+    super.syncPending,
     required this.origen,
   });
 
@@ -34,6 +35,8 @@ class ItemSueltoExpedicionModel extends ItemSueltoExpedicion {
       quantity: dynamicToDouble(json['quantity']),
       uom: dynamicToString(json['uom']),
       isValidate: dynamicToBool(json['is_validate']),
+      // El backend nunca manda pendientes de sync.
+      syncPending: false,
       origen: origen,
     );
   }
@@ -51,6 +54,8 @@ class ItemSueltoExpedicionModel extends ItemSueltoExpedicion {
       uom: map[ExpedicionItemsSueltosTable.columnUom] as String?,
       isValidate:
           (map[ExpedicionItemsSueltosTable.columnIsValidate] as int?) == 1,
+      syncPending:
+          (map[ExpedicionItemsSueltosTable.columnSyncPending] as int?) == 1,
       origen: map[ExpedicionItemsSueltosTable.columnOrigen] as String? ?? '',
     );
   }
@@ -67,6 +72,7 @@ class ItemSueltoExpedicionModel extends ItemSueltoExpedicion {
       ExpedicionItemsSueltosTable.columnUom: uom,
       ExpedicionItemsSueltosTable.columnIsValidate: isValidate == true ? 1 : 0,
       ExpedicionItemsSueltosTable.columnOrigen: origen,
+      ExpedicionItemsSueltosTable.columnSyncPending: syncPending == true ? 1 : 0,
     };
   }
 }

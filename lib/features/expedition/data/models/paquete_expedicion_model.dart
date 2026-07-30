@@ -13,6 +13,7 @@ class PaqueteExpedicionModel extends PaqueteExpedicion {
     super.packingType,
     super.orderPacking,
     super.isValidate,
+    super.syncPending,
     super.items = const [],
   });
 
@@ -30,6 +31,9 @@ class PaqueteExpedicionModel extends PaqueteExpedicion {
       packingType: dynamicToString(json['packing_type']),
       orderPacking: dynamicToInt(json['order_packing']),
       isValidate: dynamicToBool(json['is_validate']),
+      // El backend nunca manda pendientes de sync: lo que viene del servidor
+      // ya está confirmado allá.
+      syncPending: false,
       items: items,
     );
   }
@@ -45,6 +49,8 @@ class PaqueteExpedicionModel extends PaqueteExpedicion {
       orderPacking: map[ExpedicionPaquetesTable.columnOrderPacking] as int?,
       isValidate:
           (map[ExpedicionPaquetesTable.columnIsValidate] as int?) == 1,
+      syncPending:
+          (map[ExpedicionPaquetesTable.columnSyncPending] as int?) == 1,
     );
   }
 
@@ -57,6 +63,7 @@ class PaqueteExpedicionModel extends PaqueteExpedicion {
       ExpedicionPaquetesTable.columnPackingType: packingType,
       ExpedicionPaquetesTable.columnOrderPacking: orderPacking,
       ExpedicionPaquetesTable.columnIsValidate: isValidate == true ? 1 : 0,
+      ExpedicionPaquetesTable.columnSyncPending: syncPending == true ? 1 : 0,
     };
   }
 
@@ -71,6 +78,7 @@ class PaqueteExpedicionModel extends PaqueteExpedicion {
       packingType: packingType,
       orderPacking: orderPacking,
       isValidate: isValidate,
+      syncPending: syncPending,
       items: newItems,
     );
   }

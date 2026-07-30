@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/expedition/domain/entities/item_suelto_expedicion.dart';
+import 'package:wms_app/features/expedition/presentation/widgets/expedicion_sync_badge_widget.dart';
 
 class ExpedicionItemSueltoRowWidget extends StatelessWidget {
   final ItemSueltoExpedicion item;
@@ -92,11 +93,17 @@ class ExpedicionItemSueltoRowWidget extends StatelessWidget {
                   style:  TextStyle(fontSize: 12, color: (item.barcode == "" ||
                                 item.barcode!.isEmpty)
                             ? red
-                            : black), 
+                            : black),
                 ),
               ],
-            )
-                       
+            ),
+            // Solo en "Listo" (item validado): distingue enviado vs pendiente.
+            if (item.isValidate == true)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: ExpedicionSyncBadge(
+                    syncPending: item.syncPending == true),
+              ),
           ],
         ),
       ),

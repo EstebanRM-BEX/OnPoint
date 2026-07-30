@@ -15,6 +15,9 @@ class ExpedicionItemsSueltosTable {
   // (items_validados / items_pendientes), no necesariamente igual a
   // is_validate.
   static const String columnOrigen = 'origen';
+  // 1 = validado sin conexión, aún no enviado al backend (send_out pendiente).
+  // El coordinator de sync lo reintenta hasta que quede en 0.
+  static const String columnSyncPending = 'sync_pending';
 
   static String createTable() {
     return '''
@@ -29,7 +32,8 @@ class ExpedicionItemsSueltosTable {
         $columnQuantity REAL,
         $columnUom TEXT,
         $columnIsValidate INTEGER DEFAULT 0,
-        $columnOrigen TEXT
+        $columnOrigen TEXT,
+        $columnSyncPending INTEGER DEFAULT 0
       );
 
       CREATE INDEX idx_expedicion_items_sueltos_expedition_id ON $tableName ($columnExpeditionId);
