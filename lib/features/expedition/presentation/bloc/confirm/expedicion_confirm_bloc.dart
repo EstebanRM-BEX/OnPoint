@@ -28,6 +28,7 @@ class ExpedicionConfirmBloc
     final result = await confirmarPedidoUseCase(ConfirmarPedidoParams(
       expeditionId: event.expeditionId,
       forzarVencidos: event.forzarVencidos,
+      crearBackorder: event.crearBackorder,
     ));
 
     result.fold(

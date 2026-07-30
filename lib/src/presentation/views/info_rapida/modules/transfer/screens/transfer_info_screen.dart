@@ -73,9 +73,40 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
 
   String? selectedLocation;
 
+  // Controla el diálogo "Actualizando información..." para poder cerrarlo
+  // siempre y no reaccionar a estados de InfoRapidaBloc que no pedimos.
+  bool _isUpdatingDialogOpen = false;
+
   //controller
   final TextEditingController _controllerLocationDest = TextEditingController();
   final TextEditingController _cantidadController = TextEditingController();
+
+  void _closeUpdatingDialog(BuildContext context) {
+    if (!_isUpdatingDialogOpen) return;
+    _isUpdatingDialogOpen = false;
+    final navigator = Navigator.of(context, rootNavigator: true);
+    if (navigator.canPop()) navigator.pop();
+  }
+
+  void _showTransferError(String message) {
+    _audioService.playErrorSound();
+    _vibrationService.vibrate();
+    Get.snackbar(
+      '360 Software Informa',
+      message.isEmpty
+          ? 'No se pudo realizar la transferencia. Intente nuevamente.'
+          : message,
+      backgroundColor: white,
+      colorText: primaryColorApp,
+      duration: const Duration(seconds: 4),
+      icon: Icon(Icons.error, color: Colors.red),
+      snackPosition: SnackPosition.TOP,
+    );
+    // Devolvemos el foco al escáner para que el operario pueda reintentar.
+    Future.microtask(() {
+      if (mounted) focusNode1.requestFocus();
+    });
+  }
 
   @override
   void didChangeDependencies() {
@@ -306,32 +337,44 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                     child: BlocListener<TransferInfoBloc, TransferInfoState>(
                       // 1. PRIMER LISTENER: ESCUCHA DE TRANSFERENCIA
                       listenWhen: (prev, current) =>
-                          current is SendTransferInfoSuccess,
+                          current is SendTransferInfoSuccess ||
+                          current is SendTransferInfoFailureTransfer,
                       listener: (listenerContext, state) {
                         if (state is SendTransferInfoSuccess) {
+                          _cantidadController.clear();
+
                           // 💥 Paso 1: DISPARAR la carga de datos en el BLoC de destino
                           listenerContext.read<InfoRapidaBloc>().add(
                               GetInfoRapida(state.productId.toString(), true,
                                   true, false));
 
                           // Opcional: Mostrar diálogo de carga AQUI
+                          _isUpdatingDialogOpen = true;
                           showDialog(
                             context: listenerContext,
                             barrierDismissible: false,
                             builder: (_) => const DialogLoading(
                                 message: "Actualizando información..."),
                           );
+                        } else if (state is SendTransferInfoFailureTransfer) {
+                          // Antes este estado no se escuchaba: la pantalla
+                          // quedaba muda y el usuario no sabía si había fallado.
+                          _showTransferError(state.error);
                         }
                       },
                       // 2. SEGUNDO LISTENER (ANIDADO): INFORMACIÓN RÁPIDA
                       child: BlocListener<InfoRapidaBloc, InfoRapidaState>(
+                        // NeedUpdateVersionState no es terminal (le sigue
+                        // Loaded o Error), por eso no se escucha aquí.
                         listenWhen: (prev, current) =>
                             current is InfoRapidaLoaded ||
-                            current is InfoRapidaError,
+                            current is InfoRapidaError ||
+                            current is DeviceNotAuthorized,
                         listener: (listenerContext, state) {
-                          // Cerramos el diálogo de carga de forma segura
-                          // Verificamos si hay un diálogo o ruta activa para cerrar
-                          Navigator.of(listenerContext).pop();
+                          // Solo reaccionamos si el diálogo lo abrimos nosotros,
+                          // para no cerrar la pantalla por emisiones ajenas.
+                          if (!_isUpdatingDialogOpen) return;
+                          _closeUpdatingDialog(listenerContext);
 
                           if (state is InfoRapidaLoaded) {
                             // ✅ Paso 2: La carga fue exitosa. La navegación es segura.
@@ -341,10 +384,29 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                               listenerContext,
                               'product-info',
                             );
+                          } else if (state is DeviceNotAuthorized) {
+                            // La transferencia sí se aplicó, solo falló el
+                            // refresco: informamos y volvemos igualmente.
+                            Get.snackbar(
+                              '360 Software Informa',
+                              'Transferencia realizada. Dispositivo no autorizado para consultar la información.',
+                              backgroundColor: white,
+                              colorText: primaryColorApp,
+                              icon: Icon(Icons.warning, color: Colors.amber),
+                            );
+                            Navigator.pushReplacementNamed(
+                                listenerContext, 'product-info');
                           } else if (state is InfoRapidaError) {
                             // Manejo del error de carga de Info Rápida
-                            Get.snackbar('Error',
-                                state.error ?? 'Fallo al cargar información.');
+                            Get.snackbar(
+                              '360 Software Informa',
+                              'Transferencia realizada, pero no se pudo actualizar la información: ${state.error ?? 'error desconocido'}',
+                              backgroundColor: white,
+                              colorText: primaryColorApp,
+                              icon: Icon(Icons.warning, color: Colors.amber),
+                            );
+                            Navigator.pushReplacementNamed(
+                                listenerContext, 'product-info');
                           }
                         },
                         // 3. HIJO FINAL: TU UI VISUAL (El BlocBuilder original)

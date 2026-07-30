@@ -52,9 +52,12 @@ abstract class ExpeditionRepository {
   /// Confirma (cierra) el pedido de expedición completo. [forzarVencidos]
   /// reintenta con el endpoint que ignora productos con fecha de vencimiento
   /// superada (mismo patrón que packing: se usa solo tras un primer intento
-  /// fallido con error `expiry.picking.confirmation`).
+  /// fallido con error `expiry.picking.confirmation`). [crearBackorder] se
+  /// usa cuando quedan paquetes o productos sueltos pendientes en "Por
+  /// hacer": crea una backorder con lo pendiente en vez de bloquear el cierre.
   Future<Either<Failure, Unit>> confirmarPedido({
     required int expeditionId,
     bool forzarVencidos = false,
+    bool crearBackorder = false,
   });
 }

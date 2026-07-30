@@ -31,6 +31,8 @@ class ExpedicionPedidoModel extends ExpedicionPedido {
     super.endTimeTransfer,
     super.zonaEntrega,
     super.isTerminated,
+    super.backorderId,
+    super.backorderName,
     super.itemsPackValidados = const [],
     super.itemsPackPendientes = const [],
     super.itemsValidados = const [],
@@ -90,6 +92,8 @@ class ExpedicionPedidoModel extends ExpedicionPedido {
       endTimeTransfer: dynamicToString(json['end_time_transfer']),
       zonaEntrega: dynamicToString(json['zona_entrega']),
       isTerminated: dynamicToBool(json['is_terminated']),
+      backorderId: dynamicToInt(json['backorder_id']),
+      backorderName: dynamicToString(json['backorder_name']),
       itemsPackValidados: validados,
       itemsPackPendientes: pendientes,
       itemsValidados: itemsSueltosValidados,
@@ -133,6 +137,8 @@ class ExpedicionPedidoModel extends ExpedicionPedido {
       zonaEntrega: map[ExpedicionPedidosTable.columnZonaEntrega] as String?,
       isTerminated:
           (map[ExpedicionPedidosTable.columnIsTerminated] as int?) == 1,
+      backorderId: map[ExpedicionPedidosTable.columnBackorderId] as int?,
+      backorderName: map[ExpedicionPedidosTable.columnBackorderName] as String?,
     );
   }
 
@@ -163,6 +169,8 @@ class ExpedicionPedidoModel extends ExpedicionPedido {
       ExpedicionPedidosTable.columnZonaEntrega: zonaEntrega,
       ExpedicionPedidosTable.columnIsTerminated:
           isTerminated == null ? null : (isTerminated == true ? 1 : 0),
+      ExpedicionPedidosTable.columnBackorderId: backorderId,
+      ExpedicionPedidosTable.columnBackorderName: backorderName,
     };
     data.removeWhere((key, value) => value == null);
     return data;

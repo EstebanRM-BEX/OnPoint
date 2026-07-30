@@ -6,17 +6,23 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/screens/history_pick/index_list_pick__done_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/widgets/others/dialog_backorder_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 
-class DetailPickDoneScreen extends StatelessWidget {
+class DetailPickDoneScreen extends StatefulWidget {
   final bool isFromPick;
   const DetailPickDoneScreen({super.key, required this.isFromPick});
 
+  @override
+  State<DetailPickDoneScreen> createState() => _DetailPickDoneScreenState();
+}
+
+class _DetailPickDoneScreenState extends State<DetailPickDoneScreen>
+    with LoadingDialogMixin {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
@@ -27,18 +33,11 @@ class DetailPickDoneScreen extends StatelessWidget {
             debugPrint("estado del listener $state");
 
             if (state is CreateBackOrderOrNotLoading) {
-              showDialog(
-                context: context,
-                builder: (context) {
-                  return const DialogLoading(
-                    message: "Validando informacion...",
-                  );
-                },
-              );
+              showLoadingDialog("Validando informacion...");
             }
 
             if (state is CreateBackOrderOrNotSuccess) {
-              Navigator.pop(context);
+              hideLoadingDialog();
               //volvemos a llamar las entradas que tenemos guardadas en la bd
               if (state.isBackorder) {
                 Get.snackbar("360 Software Informa", state.msg,
@@ -54,7 +53,7 @@ class DetailPickDoneScreen extends StatelessWidget {
             }
 
             if (state is CreateBackOrderOrNotFailure) {
-              Navigator.pop(context);
+              hideLoadingDialog();
 
               if (state.error.contains('expiry.picking.confirmation')) {
                 Get.defaultDialog(
@@ -150,7 +149,8 @@ class DetailPickDoneScreen extends StatelessWidget {
                                               MaterialPageRoute(
                                                   builder: (context) =>
                                                       IndexListPickDoneScreen(
-                                                        isFromPick: isFromPick,
+                                                        isFromPick:
+                                                            widget.isFromPick,
                                                       )),
                                               (route) => false);
                                         },

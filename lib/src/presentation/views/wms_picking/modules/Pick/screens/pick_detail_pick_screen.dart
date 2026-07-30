@@ -16,7 +16,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 // import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_edit_product_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiredate_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
@@ -59,12 +58,7 @@ class _PickDetailScreenState extends State<PickDetailScreen>
         }
 
         if (state is SendProductPickOdooLoading) {
-          showDialog(
-            context: context,
-            builder: (context) {
-              return const DialogLoading(message: "Enviando producto...");
-            },
-          );
+          showLoadingDialog("Enviando producto...");
         }
 
         if (state is ViewProductImageSuccess) {
@@ -74,13 +68,13 @@ class _PickDetailScreenState extends State<PickDetailScreen>
         }
 
         if (state is SendProductPickOdooError) {
-          Navigator.pop(context);
+          hideLoadingDialog();
 
           showScrollableErrorDialog(state.error);
         }
 
         if (state is SendProductPickOdooSuccess) {
-          Navigator.pop(context);
+          hideLoadingDialog();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text("Producto enviado correctamente"),

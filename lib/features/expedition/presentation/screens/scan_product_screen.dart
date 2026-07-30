@@ -19,7 +19,7 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 
 /// Screen de detalle de un paquete (items_pack_pendientes) o de un producto
 /// suelto (items_pendientes), con la acción "Validar expedición": llama al
-/// backend (por ahora simulado) y, si responde ok, marca is_validate=true en
+/// backend y, si responde ok, marca is_validate=true en
 /// SQLite. Al validar con éxito hace pop(true) para que quien navegó hasta
 /// acá (expedicion_detail_tab_por_hacer.dart) sepa que debe refrescar.
 ///

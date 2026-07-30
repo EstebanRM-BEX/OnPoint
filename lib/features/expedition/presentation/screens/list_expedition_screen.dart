@@ -15,6 +15,7 @@ import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
 class ListExpeditionScreen extends StatefulWidget {
@@ -215,23 +216,49 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen> {
                         );
                       }
                       if (state is ExpedicionListError) {
-                        Get.snackbar(
-                          'Error',
-                          state.message,
-                          backgroundColor: white,
-                          colorText: red,
-                          snackPosition: SnackPosition.TOP,
-                        );
+                        showScrollableErrorDialog(state.message);
                       }
                     },
                     buildWhen: (previous, current) =>
                         current is ExpedicionesLoaded ||
                         current is ExpedicionListLoading ||
-                        current is ExpedicionListDbLoading,
+                        current is ExpedicionListDbLoading ||
+                        current is ExpedicionListError,
                     builder: (context, state) {
                       if (state is ExpedicionListLoading ||
                           state is ExpedicionListDbLoading) {
                         return const Center(child: CircularProgressIndicator());
+                      }
+
+                      if (state is ExpedicionListError) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.error_outline,
+                                    color: red, size: 40),
+                                const SizedBox(height: 10),
+                                const Text(
+                                  'No se pudieron cargar las expediciones.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: grey, fontSize: 14),
+                                ),
+                                const SizedBox(height: 10),
+                                ElevatedButton(
+                                  onPressed: () => bloc.add(
+                                      const FetchExpedicionesFromDbEvent()),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryColorApp,
+                                  ),
+                                  child: const Text('Reintentar',
+                                      style: TextStyle(color: white)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
                       }
 
                       final expediciones = state is ExpedicionesLoaded

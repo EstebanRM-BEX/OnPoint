@@ -387,15 +387,17 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                     .toList();
 
                                 // Total de unidades del paquete = sumatoria de
-                                // la cantidad empacada (quantity) de cada
-                                // producto. `unidades` es solo la etiqueta
-                                // (ej. "Unidades"), no una cifra.
+                                // la cantidad separada/empacada
+                                // (quantity_separate) de cada producto.
+                                // `unidades` es solo la etiqueta (ej.
+                                // "Unidades"), no una cifra.
                                 final totalUnidades =
                                     filteredProducts.fold<double>(
                                   0.0,
                                   (sum, p) =>
                                       sum +
-                                      (double.tryParse('${p.quantity ?? 0}') ??
+                                      (double.tryParse(
+                                              '${p.quantitySeparate ?? 0}') ??
                                           0),
                                 );
 

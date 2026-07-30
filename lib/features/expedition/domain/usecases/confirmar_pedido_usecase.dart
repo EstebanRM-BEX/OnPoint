@@ -7,10 +7,12 @@ import 'package:wms_app/features/expedition/domain/repositories/expedition_repos
 class ConfirmarPedidoParams {
   final int expeditionId;
   final bool forzarVencidos;
+  final bool crearBackorder;
 
   const ConfirmarPedidoParams({
     required this.expeditionId,
     this.forzarVencidos = false,
+    this.crearBackorder = false,
   });
 }
 
@@ -25,6 +27,7 @@ class ConfirmarPedidoUseCase implements UseCase<Unit, ConfirmarPedidoParams> {
     return await repository.confirmarPedido(
       expeditionId: params.expeditionId,
       forzarVencidos: params.forzarVencidos,
+      crearBackorder: params.crearBackorder,
     );
   }
 }

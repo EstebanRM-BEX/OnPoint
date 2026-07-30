@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 
 class ProductoPedido {
+  final int? id;
   final dynamic productId;
   final int? batchId;
   final int? pedidoId;
@@ -64,7 +65,8 @@ class ProductoPedido {
   final dynamic cantidadTotalProductos;
 
   ProductoPedido(
-      {this.productId,
+      {this.id,
+      this.productId,
       this.batchId,
       this.pedidoId,
       this.idProduct,
@@ -119,6 +121,7 @@ class ProductoPedido {
   String toJson() => json.encode(toMap());
 
   factory ProductoPedido.fromMap(Map<String, dynamic> json) => ProductoPedido(
+      id: json["id"],
       productId: json["product_id"],
       batchId: json["batch_id"],
       pedidoId: json["pedido_id"],
@@ -174,6 +177,7 @@ class ProductoPedido {
       timeSeparateEnd: json["time_separate_end"]);
 
   Map<String, dynamic> toMap() => {
+        "id": id,
         "product_id": productId,
         "batch_id": batchId,
         "pedido_id": pedidoId,

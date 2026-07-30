@@ -102,7 +102,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 57,
+      version: 59,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -991,6 +991,50 @@ class DataBaseSqlite {
       ''');
       } catch (e) {
         debugPrint("Error actualizando a v57 (tblconfigurations): $e");
+      }
+    }
+    if (oldVersion < 58) {
+      // Nuevos datos del backend: si el pedido de expedición ya generó una
+      // backorder (mismo patrón que tbl_packing_pedido/backorder_id).
+      try {
+        await db.execute('''
+        ALTER TABLE ${ExpedicionPedidosTable.tableName}
+        ADD COLUMN ${ExpedicionPedidosTable.columnBackorderId} INTEGER DEFAULT 0
+      ''');
+      } catch (e) {
+        debugPrint("Error actualizando a v58 (tbl_expedicion_pedidos.backorder_id): $e");
+      }
+      try {
+        await db.execute('''
+        ALTER TABLE ${ExpedicionPedidosTable.tableName}
+        ADD COLUMN ${ExpedicionPedidosTable.columnBackorderName} TEXT
+      ''');
+      } catch (e) {
+        debugPrint("Error actualizando a v58 (tbl_expedicion_pedidos.backorder_name): $e");
+      }
+    }
+    if (oldVersion < 59) {
+      // tbl_entradas_recepcion: columnas agregadas al createTable() en su
+      // momento (maneja_temperatura, temperatura, type, propietario,
+      // create_backorder) nunca tuvieron su ALTER TABLE correspondiente para
+      // dispositivos que ya tenían la tabla creada — solo manejo_propietario
+      // se migró (v35/v37). Resultado: en esos dispositivos insertEntrada()
+      // fallaba con "no such column" de forma silenciosa y la lista de
+      // recepciones quedaba vacía sin error visible.
+      for (final col in [
+        '${EntradasRepeccionTable.columnManejaTemperatura} INTEGER',
+        '${EntradasRepeccionTable.columnTemperatura} REAL',
+        '${EntradasRepeccionTable.columnType} TEXT',
+        '${EntradasRepeccionTable.columnPropietario} TEXT',
+        '${EntradasRepeccionTable.columnManejoPropietario} INTEGER DEFAULT 0',
+        '${EntradasRepeccionTable.columnCreateBackorder} TEXT',
+      ]) {
+        try {
+          await db.execute(
+              'ALTER TABLE ${EntradasRepeccionTable.tableName} ADD COLUMN $col');
+        } catch (e) {
+          debugPrint("Error actualizando a v59 (tbl_entradas_recepcion.$col): $e");
+        }
       }
     }
   }

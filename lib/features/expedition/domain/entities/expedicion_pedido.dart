@@ -25,6 +25,8 @@ class ExpedicionPedido {
   final String? endTimeTransfer;
   final String? zonaEntrega;
   final bool? isTerminated;
+  final int? backorderId;
+  final String? backorderName;
   final List<PaqueteExpedicion> itemsPackValidados;
   final List<PaqueteExpedicion> itemsPackPendientes;
   final List<ItemSueltoExpedicion> itemsValidados;
@@ -54,6 +56,8 @@ class ExpedicionPedido {
     this.endTimeTransfer,
     this.zonaEntrega,
     this.isTerminated,
+    this.backorderId,
+    this.backorderName,
     this.itemsPackValidados = const [],
     this.itemsPackPendientes = const [],
     this.itemsValidados = const [],

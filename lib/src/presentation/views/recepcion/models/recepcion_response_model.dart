@@ -12,6 +12,20 @@ Recepcionresponse recepcionresponseFromMap(String str) =>
 String recepcionresponseToMap(Recepcionresponse data) =>
     json.encode(data.toMap());
 
+// Odoo devuelve `false` (no null/0) en campos numéricos vacíos (many2one sin
+// valor, floats sin configurar). Sin este guard, asignarlo directo a un campo
+// int?/double? revienta con un type error y tumba el parseo de toda la lista.
+int? _asIntOrNull(dynamic value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return null;
+}
+
+double? _asDoubleOrNull(dynamic value) {
+  if (value is num) return value.toDouble();
+  return null;
+}
+
 class Recepcionresponse {
   String? jsonrpc;
   dynamic id;
@@ -159,28 +173,28 @@ class ResultEntrada {
   });
 
   factory ResultEntrada.fromMap(Map<String, dynamic> json) => ResultEntrada(
-    id: json["id"],
+    id: _asIntOrNull(json["id"]),
     name: json["name"],
     fechaCreacion: json["fecha_creacion"],
     proveedorId: json["proveedor_id"],
     proveedor: json["proveedor"],
-    locationDestId: json["location_dest_id"],
+    locationDestId: _asIntOrNull(json["location_dest_id"]),
     locationDestName: json["location_dest_name"],
     locationDestBarode: json["location_dest_barode"],
-    purchaseOrderId: json["purchase_order_id"],
+    purchaseOrderId: _asIntOrNull(json["purchase_order_id"]),
     purchaseOrderName: json["purchase_order_name"],
     numeroEntrada: json["numero_entrada"],
-    pesoTotal: json["peso_total"]?.toDouble(),
+    pesoTotal: _asDoubleOrNull(json["peso_total"]),
     numeroLineas: json["numero_lineas"],
     numeroItems: json["numero_items"],
     state: json["state"],
     origin: json["origin"],
     priority: json["priority"],
-    warehouseId: json["warehouse_id"],
+    warehouseId: _asIntOrNull(json["warehouse_id"]),
     warehouseName: json["warehouse_name"],
-    locationId: json["location_id"],
+    locationId: _asIntOrNull(json["location_id"]),
     locationName: json["location_name"],
-    responsableId: json["responsable_id"],
+    responsableId: _asIntOrNull(json["responsable_id"]),
     responsable: json["responsable"],
     pickingType: json["picking_type"],
     startTimeReception: json["start_time_reception"],
@@ -375,7 +389,7 @@ class LineasTransferencia {
 
   factory LineasTransferencia.fromMap(Map<String, dynamic> json) =>
       LineasTransferencia(
-        id: json["id"],
+        id: _asIntOrNull(json["id"]),
         productId: json["product_id"],
         idRecepcion: json["id_recepcion"],
         idMove: json["id_move"],
@@ -399,14 +413,14 @@ class LineasTransferencia {
         quantityToReceive: json["quantity_to_receive"],
         quantityDone: json["quantity_done"],
         uom: json["uom"],
-        locationDestId: json["location_dest_id"],
+        locationDestId: _asIntOrNull(json["location_dest_id"]),
         locationDestName: json["location_dest_name"],
         locationDestBarcode: json["location_dest_barcode"],
-        locationId: json["location_id"],
+        locationId: _asIntOrNull(json["location_id"]),
         locationName: json["location_name"],
         locationBarcode: json["location_barcode"],
-        weight: json["weight"]?.toDouble(),
-        loteId: json["lote_id"],
+        weight: _asDoubleOrNull(json["weight"]),
+        loteId: _asIntOrNull(json["lote_id"]),
         lotName: json["lot_name"],
         loteDate: json["lote_date"],
         productIsOk: json["product_is_ok"],
@@ -432,7 +446,7 @@ class LineasTransferencia {
         useExpirationDate: json["use_expiration_date"],
         manejaSegundaUnidad: json["maneja_segunda_unidad"],
         uomSegundaUnidad: json["uom_segunda_unidad"],
-        quantitySegundaUnidad: json["quantity_segunda_unidad"]?.toDouble(),
+        quantitySegundaUnidad: _asDoubleOrNull(json["quantity_segunda_unidad"]),
       );
 
   Map<String, dynamic> toMap() => {

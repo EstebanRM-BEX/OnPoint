@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/expedition/domain/entities/expedicion_pedido.dart';
+import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
 
 class ExpedicionCardWidget extends StatelessWidget {
   final ExpedicionPedido expedicion;
@@ -61,22 +62,26 @@ class ExpedicionCardWidget extends StatelessWidget {
                 children: [
                   const Icon(Icons.receipt_long, size: 14, color: primaryColorApp),
                   const SizedBox(width: 4),
-                  Text('Doc. Origen: ${expedicion.documentoOrigen ?? ""}',
-                      style: const TextStyle(fontSize: 12, color: black)),
+                  Flexible(
+                    child: Text('Doc. Origen: ${expedicion.documentoOrigen ?? ""}',
+                        style: const TextStyle(fontSize: 12, color: black)),
+                  ),
                 ],
               ),
               Row(
                 children: [
                   const Icon(Icons.person, size: 14, color: primaryColorApp),
                   const SizedBox(width: 4),
-                  Text(
-                    expedicion.cliente ?? 'Sin cliente',
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: (expedicion.cliente == null ||
-                                expedicion.cliente!.isEmpty)
-                            ? red
-                            : black),
+                  Flexible(
+                    child: Text(
+                      expedicion.cliente ?? 'Sin cliente',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: (expedicion.cliente == null ||
+                                  expedicion.cliente!.isEmpty)
+                              ? red
+                              : black),
+                    ),
                   ),
                 ],
               ),
@@ -117,19 +122,52 @@ class ExpedicionCardWidget extends StatelessWidget {
                         style: const TextStyle(fontSize: 12, color: black)),
                   ],
                 ),
+              Visibility(
+                visible: expedicion.backorderId != null &&
+                    expedicion.backorderId != 0,
+                child: Row(
+                  children: [
+                    const Icon(Icons.file_copy, size: 14, color: primaryColorApp),
+                    const SizedBox(width: 4),
+                    Text(expedicion.backorderName ?? '',
+                        style: const TextStyle(
+                            fontSize: 12,
+                            color: black,
+                            fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
               Row(
                 children: [
                   const Icon(Icons.badge_outlined, size: 14, color: primaryColorApp),
                   const SizedBox(width: 4),
-                  Text(
-                    expedicion.responsable == "" ? 'Sin responsable' : expedicion.responsable!,
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: (expedicion.responsable == null ||
-                                expedicion.responsable!.isEmpty)
-                            ? red
-                            : black), 
+                  Expanded(
+                    child: Text(
+                      expedicion.responsable == "" ? 'Sin responsable' : expedicion.responsable!,
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: (expedicion.responsable == null ||
+                                  expedicion.responsable!.isEmpty)
+                              ? red
+                              : black),
+                    ),
                   ),
+                  if (expedicion.startTimeTransfer != null &&
+                      expedicion.startTimeTransfer!.isNotEmpty)
+                    GestureDetector(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => DialogInfo(
+                            title: 'Tiempo de inicio',
+                            body:
+                                'Este pedido fue iniciado a las ${expedicion.startTimeTransfer}',
+                          ),
+                        );
+                      },
+                      child: const Icon(Icons.timer_sharp,
+                          color: primaryColorApp, size: 15),
+                    ),
                 ],
               ),
             ],

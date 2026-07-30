@@ -269,7 +269,14 @@ class InfoRapidaRepository {
 
     if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
-      return SendTransferResponse(); // Si no hay conexión, terminamos la ejecución
+      // Nunca devolvemos una respuesta muda: el bloc necesita un msg para
+      // poder informar al usuario que la transferencia NO se aplicó.
+      return SendTransferResponse(
+        result: Result(
+          code: 400,
+          msg: 'Sin conexión a internet. La transferencia no se realizó.',
+        ),
+      );
     }
 
     debugPrint("transferRequest ${transferInfoRequest.toMap()}");
@@ -310,20 +317,43 @@ class InfoRapidaRepository {
           id: jsonResponse['id'],
           result: resultData != null
               ? Result.fromMap(resultData) // Usa el fromMap del resultado
-              : null, // Si 'result' no existe, asigna null a 'result'
+              : Result(
+                  code: 500,
+                  msg: 'El servidor respondió sin resultado. '
+                      'Verifique si la transferencia se aplicó.',
+                ),
         );
       } else {
         // Manejo de error si la respuesta no es exitosa
         debugPrint("Error en la respuesta: ${response.statusCode}");
-        return SendTransferResponse(); // Retornamos un objeto vacío en caso de error
+        return SendTransferResponse(
+          result: Result(
+            code: response.statusCode,
+            msg: response.statusCode == 408
+                ? 'El servidor tardó demasiado en responder. '
+                    'La transferencia no se realizó.'
+                : 'Error del servidor (${response.statusCode}). '
+                    'La transferencia no se realizó.',
+          ),
+        );
       }
     } on SocketException catch (e) {
       debugPrint('Error de red: $e');
-      return SendTransferResponse(); // Retornamos un objeto vacío en caso de error de red
+      return SendTransferResponse(
+        result: Result(
+          code: 500,
+          msg: 'Error de red. La transferencia no se realizó.',
+        ),
+      );
     } catch (e, s) {
       // Manejo de otros errores
       debugPrint('Error en sendProductTransferInfo: $e, $s');
-      return SendTransferResponse(); // Retornamos un objeto vacío en caso de error de red
+      return SendTransferResponse(
+        result: Result(
+          code: 500,
+          msg: 'Error inesperado al crear la transferencia: $e',
+        ),
+      );
     }
   }
 

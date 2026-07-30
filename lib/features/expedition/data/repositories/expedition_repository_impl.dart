@@ -320,11 +320,12 @@ class ExpeditionRepositoryImpl implements ExpeditionRepository {
   Future<Either<Failure, Unit>> confirmarPedido({
     required int expeditionId,
     bool forzarVencidos = false,
+    bool crearBackorder = false,
   }) async {
     try {
       if (forzarVencidos) {
         final response = await transferRepository.confirmationValidate(
-            expeditionId, false, false);
+            expeditionId, crearBackorder, false);
 
         if (response.result?.code != 200) {
           return Left(ServerFailure(
@@ -333,7 +334,10 @@ class ExpeditionRepositoryImpl implements ExpeditionRepository {
       } else {
         // Lanza ServerException con el msg del backend si no responde 200;
         // ese msg es el que la UI inspecta para detectar vencidos.
-        await remoteDataSource.confirmarPedido(expeditionId: expeditionId);
+        await remoteDataSource.confirmarPedido(
+          expeditionId: expeditionId,
+          crearBackorder: crearBackorder,
+        );
       }
 
       final time = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());

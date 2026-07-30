@@ -1,4 +1,4 @@
-package com.example.appwms
+package com.onpoint.wms
 
 import android.net.wifi.WifiManager
 import android.content.Context

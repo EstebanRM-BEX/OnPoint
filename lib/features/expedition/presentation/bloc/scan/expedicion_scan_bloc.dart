@@ -77,7 +77,9 @@ class ExpedicionScanBloc extends Bloc<ExpedicionScanEvent, ExpedicionScanState> 
     ValidarExpedicionScanEvent event,
     Emitter<ExpedicionScanState> emit,
   ) async {
-    emit(const ExpedicionScanValidating());
+    emit(event.porEscaneo
+        ? const ExpedicionScanValidatingDirecto()
+        : const ExpedicionScanValidating());
 
     if (event.paquete != null) {
       final paquete = event.paquete!;
@@ -86,8 +88,12 @@ class ExpedicionScanBloc extends Bloc<ExpedicionScanEvent, ExpedicionScanState> 
         packingId: paquete.packingId ?? 0,
       ));
       result.fold(
-        (failure) => emit(ExpedicionScanError(failure.message)),
-        (_) => emit(const ExpedicionScanValidated()),
+        (failure) => emit(event.porEscaneo
+            ? ExpedicionScanErrorDirecto(failure.message)
+            : ExpedicionScanError(failure.message)),
+        (_) => emit(event.porEscaneo
+            ? const ExpedicionScanValidatedDirecto()
+            : const ExpedicionScanValidated()),
       );
       return;
     }
@@ -99,8 +105,12 @@ class ExpedicionScanBloc extends Bloc<ExpedicionScanEvent, ExpedicionScanState> 
         packingId: item.packingId ?? 0,
       ));
       result.fold(
-        (failure) => emit(ExpedicionScanError(failure.message)),
-        (_) => emit(const ExpedicionScanValidated()),
+        (failure) => emit(event.porEscaneo
+            ? ExpedicionScanErrorDirecto(failure.message)
+            : ExpedicionScanError(failure.message)),
+        (_) => emit(event.porEscaneo
+            ? const ExpedicionScanValidatedDirecto()
+            : const ExpedicionScanValidated()),
       );
     }
   }

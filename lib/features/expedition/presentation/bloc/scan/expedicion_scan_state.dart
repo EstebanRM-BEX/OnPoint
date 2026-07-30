@@ -19,6 +19,30 @@ final class ExpedicionScanValidated extends ExpedicionScanState {
   const ExpedicionScanValidated();
 }
 
+/// Estados propios de validar un solo paquete/ítem por escaneo directo desde
+/// el tab "Por hacer" (sin diálogo de confirmación ni scan_product_screen).
+/// Son clases aparte y NO extienden ExpedicionScanValidating/Validated/Error
+/// a propósito: el tab "Listo" está montado al mismo tiempo y escucha
+/// ExpedicionScanError para su propio flujo de deshacer, así que reusar ese
+/// estado de error haría que su listener reaccione a un flujo que no le
+/// corresponde y haga un pop de más (mismo motivo que las *Multiple de abajo).
+final class ExpedicionScanValidatingDirecto extends ExpedicionScanState {
+  const ExpedicionScanValidatingDirecto();
+}
+
+final class ExpedicionScanValidatedDirecto extends ExpedicionScanState {
+  const ExpedicionScanValidatedDirecto();
+}
+
+final class ExpedicionScanErrorDirecto extends ExpedicionScanState {
+  final String message;
+
+  const ExpedicionScanErrorDirecto(this.message);
+
+  @override
+  List<Object> get props => [message];
+}
+
 /// Estados propios de la validación múltiple (tab "Por hacer"). Son clases
 /// aparte y NO extienden las de la validación de a uno a propósito: el tab
 /// "Listo" está montado al mismo tiempo y escucha este mismo bloc, así que

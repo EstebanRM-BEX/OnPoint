@@ -36,10 +36,11 @@ class WmsPackingRepository {
     if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return PackingModelResponseResult(
-          code: 500,
-          result: [],
-          msg: 'No hay conexión a Internet',
-          updateVersion: false);
+        code: 500,
+        result: [],
+        msg: 'No hay conexión a Internet',
+        updateVersion: false,
+      );
     }
 
     try {
@@ -58,16 +59,17 @@ class WmsPackingRepository {
         if (jsonResponse.containsKey('result')) {
           if (jsonResponse['result']['code'] == 400) {
             return PackingModelResponseResult(
-                code: 400,
-                result: [],
-                msg: jsonResponse['result']['msg'] ?? 'Error desconocido',
-                updateVersion:
-                    jsonResponse['result']['update_version'] ?? false);
+              code: 400,
+              result: [],
+              msg: jsonResponse['result']['msg'] ?? 'Error desconocido',
+              updateVersion: jsonResponse['result']['update_version'] ?? false,
+            );
           } else if (jsonResponse['result']['code'] == 200) {
             List<dynamic> batches = jsonResponse['result']['result'];
             // Mapea los datos decodificados a una lista de BatchsModel
-            List<BatchPackingModel> batchs =
-                batches.map((data) => BatchPackingModel.fromMap(data)).toList();
+            List<BatchPackingModel> batchs = batches
+                .map((data) => BatchPackingModel.fromMap(data))
+                .toList();
 
             return PackingModelResponseResult(
               code: 200,
@@ -79,9 +81,10 @@ class WmsPackingRepository {
             Get.defaultDialog(
               title: 'Dispositivo no autorizado',
               titleStyle: TextStyle(
-                  color: primaryColorApp,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16),
+                color: primaryColorApp,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
               middleText:
                   'Este dispositivo no está autorizado para usar la aplicación. su suscripción ha expirado o no está activa, por favor contacte con el administrador.',
               middleTextStyle: TextStyle(color: black, fontSize: 14),
@@ -93,10 +96,11 @@ class WmsPackingRepository {
             );
 
             return PackingModelResponseResult(
-                code: 403,
-                result: [],
-                msg: 'Dispositivo no autorizado',
-                updateVersion: false);
+              code: 403,
+              result: [],
+              msg: 'Dispositivo no autorizado',
+              updateVersion: false,
+            );
           }
         } else if (jsonResponse.containsKey('error')) {
           if (jsonResponse['error']['code'] == 100) {
@@ -123,23 +127,32 @@ class WmsPackingRepository {
               ],
             );
             return PackingModelResponseResult(
-                code: 100,
-                result: [],
-                msg: 'Sesion expirada, por favor inicie sesión nuevamente',
-                updateVersion: false);
+              code: 100,
+              result: [],
+              msg: 'Sesion expirada, por favor inicie sesión nuevamente',
+              updateVersion: false,
+            );
           }
         }
       } else {}
     } on SocketException catch (e) {
       debugPrint('Error de red: $e');
       return PackingModelResponseResult(
-          code: 500, result: [], msg: 'Error de red: $e', updateVersion: false);
+        code: 500,
+        result: [],
+        msg: 'Error de red: $e',
+        updateVersion: false,
+      );
     } catch (e, s) {
       // Manejo de otros errores
       debugPrint('Error resBatchsPacking: $e, $s');
     }
     return PackingModelResponseResult(
-        code: 500, result: [], msg: 'Error desconocido', updateVersion: false);
+      code: 500,
+      result: [],
+      msg: 'Error desconocido',
+      updateVersion: false,
+    );
   }
 
   Future<PackingModelResponseResult> resBatchsPackingConsolidate(
@@ -151,10 +164,11 @@ class WmsPackingRepository {
     if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return PackingModelResponseResult(
-          code: 500,
-          result: [],
-          msg: 'No hay conexión a Internet',
-          updateVersion: false);
+        code: 500,
+        result: [],
+        msg: 'No hay conexión a Internet',
+        updateVersion: false,
+      );
     }
 
     try {
@@ -173,16 +187,17 @@ class WmsPackingRepository {
         if (jsonResponse.containsKey('result')) {
           if (jsonResponse['result']['code'] == 400) {
             return PackingModelResponseResult(
-                code: 400,
-                result: [],
-                msg: jsonResponse['result']['msg'] ?? 'Error desconocido',
-                updateVersion:
-                    jsonResponse['result']['update_version'] ?? false);
+              code: 400,
+              result: [],
+              msg: jsonResponse['result']['msg'] ?? 'Error desconocido',
+              updateVersion: jsonResponse['result']['update_version'] ?? false,
+            );
           } else if (jsonResponse['result']['code'] == 200) {
             List<dynamic> batches = jsonResponse['result']['result'];
             // Mapea los datos decodificados a una lista de BatchsModel
-            List<BatchPackingModel> batchs =
-                batches.map((data) => BatchPackingModel.fromMap(data)).toList();
+            List<BatchPackingModel> batchs = batches
+                .map((data) => BatchPackingModel.fromMap(data))
+                .toList();
 
             return PackingModelResponseResult(
               code: 200,
@@ -194,9 +209,10 @@ class WmsPackingRepository {
             Get.defaultDialog(
               title: 'Dispositivo no autorizado',
               titleStyle: TextStyle(
-                  color: primaryColorApp,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16),
+                color: primaryColorApp,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
               middleText:
                   'Este dispositivo no está autorizado para usar la aplicación. su suscripción ha expirado o no está activa, por favor contacte con el administrador.',
               middleTextStyle: TextStyle(color: black, fontSize: 14),
@@ -208,10 +224,11 @@ class WmsPackingRepository {
             );
 
             return PackingModelResponseResult(
-                code: 403,
-                result: [],
-                msg: 'Dispositivo no autorizado',
-                updateVersion: false);
+              code: 403,
+              result: [],
+              msg: 'Dispositivo no autorizado',
+              updateVersion: false,
+            );
           }
         } else if (jsonResponse.containsKey('error')) {
           if (jsonResponse['error']['code'] == 100) {
@@ -238,35 +255,45 @@ class WmsPackingRepository {
               ],
             );
             return PackingModelResponseResult(
-                code: 100,
-                result: [],
-                msg: 'Sesion expirada, por favor inicie sesión nuevamente',
-                updateVersion: false);
+              code: 100,
+              result: [],
+              msg: 'Sesion expirada, por favor inicie sesión nuevamente',
+              updateVersion: false,
+            );
           }
         }
       } else {}
     } on SocketException catch (e) {
       debugPrint('Error de red: $e');
       return PackingModelResponseResult(
-          code: 500, result: [], msg: 'Error de red: $e', updateVersion: false);
+        code: 500,
+        result: [],
+        msg: 'Error de red: $e',
+        updateVersion: false,
+      );
     } catch (e, s) {
       // Manejo de otros errores
       debugPrint('Error resBatchsPacking consolidate: $e, $s');
     }
     return PackingModelResponseResult(
-        code: 500, result: [], msg: 'Error desconocido', updateVersion: false);
+      code: 500,
+      result: [],
+      msg: 'Error desconocido',
+      updateVersion: false,
+    );
   }
 
-  Future<PackingPedidoResult> resPackingPedido(
-    bool isLoadinDialog,
-  ) async {
+  Future<PackingPedidoResult> resPackingPedido(bool isLoadinDialog) async {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
       return PackingPedidoResult(
-          code: 500, msg: 'No hay conexión a Internet', updateVersion: false);
+        code: 500,
+        msg: 'No hay conexión a Internet',
+        updateVersion: false,
+      );
     }
 
     try {
@@ -285,15 +312,17 @@ class WmsPackingRepository {
         if (jsonResponse.containsKey('result')) {
           if (jsonResponse['result']['code'] == 400) {
             return PackingPedidoResult(
-                code: 400,
-                msg: jsonResponse['result']['msg'] ?? 'Error desconocido',
-                updateVersion:
-                    jsonResponse['result']['update_version'] ?? false);
+              code: 400,
+              msg: jsonResponse['result']['msg'] ?? 'Error desconocido',
+              updateVersion: jsonResponse['result']['update_version'] ?? false,
+            );
           } else if (jsonResponse['result']['code'] == 200) {
             final List<dynamic> rawBatches = jsonResponse['result']['result'];
             final List<PedidoPackingResult> pedidos = rawBatches
-                .map((data) =>
-                    PedidoPackingResult.fromMap(data as Map<String, dynamic>))
+                .map(
+                  (data) =>
+                      PedidoPackingResult.fromMap(data as Map<String, dynamic>),
+                )
                 .toList();
 
             return PackingPedidoResult(
@@ -306,9 +335,10 @@ class WmsPackingRepository {
             Get.defaultDialog(
               title: 'Dispositivo no autorizado',
               titleStyle: TextStyle(
-                  color: primaryColorApp,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16),
+                color: primaryColorApp,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
               middleText:
                   'Este dispositivo no está autorizado para usar la aplicación. su suscripción ha expirado o no está activa, por favor contacte con el administrador.',
               middleTextStyle: TextStyle(color: black, fontSize: 14),
@@ -320,9 +350,10 @@ class WmsPackingRepository {
             );
           }
           return PackingPedidoResult(
-              code: 403,
-              msg: 'Dispositivo no autorizado',
-              updateVersion: false);
+            code: 403,
+            msg: 'Dispositivo no autorizado',
+            updateVersion: false,
+          );
         } else if (jsonResponse.containsKey('error')) {
           if (jsonResponse['error']['code'] == 100) {
             Get.defaultDialog(
@@ -348,22 +379,29 @@ class WmsPackingRepository {
               ],
             );
             return PackingPedidoResult(
-                code: 100,
-                msg: 'Sesion expirada, por favor inicie sesión nuevamente',
-                updateVersion: false);
+              code: 100,
+              msg: 'Sesion expirada, por favor inicie sesión nuevamente',
+              updateVersion: false,
+            );
           }
         }
       } else {}
     } on SocketException catch (e) {
       debugPrint('Error de red: $e');
       return PackingPedidoResult(
-          code: 500, msg: 'Error de red: $e', updateVersion: false);
+        code: 500,
+        msg: 'Error de red: $e',
+        updateVersion: false,
+      );
     } catch (e, s) {
       // Manejo de otros errores
       debugPrint('Error resPackingPedido: $e, $s');
     }
     return PackingPedidoResult(
-        code: 500, msg: 'Error desconocido', updateVersion: false);
+      code: 500,
+      msg: 'Error desconocido',
+      updateVersion: false,
+    );
   }
 
   //metodo para asignar un usuario a una orden de compra
@@ -382,14 +420,12 @@ class WmsPackingRepository {
 
     try {
       var response = await ApiRequestService().postPacking(
-          endpoint: 'transferencias/asignar',
-          isLoadinDialog: isLoadinDialog,
-          body: {
-            "params": {
-              "id_transferencia": idTransfer,
-              "id_responsable": idUser,
-            }
-          });
+        endpoint: 'transferencias/asignar',
+        isLoadinDialog: isLoadinDialog,
+        body: {
+          "params": {"id_transferencia": idTransfer, "id_responsable": idUser},
+        },
+      );
 
       if (response.statusCode < 400) {
         // Decodifica la respuesta JSON a un mapa
@@ -465,9 +501,9 @@ class WmsPackingRepository {
           "params": {
             "transfer_id": idTransfer,
             "time": date,
-            "field_name": field
+            "field_name": field,
             // "field_name": "end_time_reception"
-          }
+          },
         },
         isLoadinDialog: false,
       );
@@ -546,7 +582,7 @@ class WmsPackingRepository {
           "params": {
             "id_transferencia": idTransfer,
             "crear_backorder": isBackorder,
-          }
+          },
         },
         isLoadinDialog: isLoadingDialog,
       );
@@ -623,7 +659,7 @@ class WmsPackingRepository {
           "params": {
             "id_transferencia": idTransfer,
             "crear_backorder": isBackorder,
-          }
+          },
         },
         isLoadinDialog: isLoadingDialog,
       );
@@ -701,9 +737,9 @@ class WmsPackingRepository {
           "params": {
             "transfer_id": idPedido,
             "time": date,
-            "field_name": field
+            "field_name": field,
             // "field_name": "end_time_reception"
-          }
+          },
         },
         isLoadinDialog: false,
       );
@@ -761,10 +797,8 @@ class WmsPackingRepository {
     return false; // Retornamos un objeto vacío en caso de error de red
   }
 
-//endpoint para desempacar productos de su caja
-  Future<UnPacking> unPacking(
-    UnPackingRequest request,
-  ) async {
+  //endpoint para desempacar productos de su caja
+  Future<UnPacking> unPacking(UnPackingRequest request) async {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
@@ -794,15 +828,19 @@ class WmsPackingRepository {
         var resultData = jsonResponse['result'];
 
         return UnPacking(
-            jsonrpc: jsonResponse['jsonrpc'],
-            id: jsonResponse['id'],
-            result: UnPackingResult(
-              code: resultData['code'],
-              result: resultData['result'] != null
-                  ? List<UnPackingElement>.from(resultData['result']
-                      .map((x) => UnPackingElement.fromMap(x)))
-                  : [], // Si no hay elementos en 'result', se retorna una lista vacía
-            ));
+          jsonrpc: jsonResponse['jsonrpc'],
+          id: jsonResponse['id'],
+          result: UnPackingResult(
+            code: resultData['code'],
+            result: resultData['result'] != null
+                ? List<UnPackingElement>.from(
+                    resultData['result'].map(
+                      (x) => UnPackingElement.fromMap(x),
+                    ),
+                  )
+                : [], // Si no hay elementos en 'result', se retorna una lista vacía
+          ),
+        );
       } else {
         // Manejo de error si la respuesta no es exitosa
         // ...
@@ -818,9 +856,7 @@ class WmsPackingRepository {
     return UnPacking(); // Retornamos un objeto vacío en caso de error de red
   }
 
-  Future<UnPacking> unPackingConsolidate(
-    UnPackingRequest request,
-  ) async {
+  Future<UnPacking> unPackingConsolidate(UnPackingRequest request) async {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
@@ -850,15 +886,19 @@ class WmsPackingRepository {
         var resultData = jsonResponse['result'];
 
         return UnPacking(
-            jsonrpc: jsonResponse['jsonrpc'],
-            id: jsonResponse['id'],
-            result: UnPackingResult(
-              code: resultData['code'],
-              result: resultData['result'] != null
-                  ? List<UnPackingElement>.from(resultData['result']
-                      .map((x) => UnPackingElement.fromMap(x)))
-                  : [], // Si no hay elementos en 'result', se retorna una lista vacía
-            ));
+          jsonrpc: jsonResponse['jsonrpc'],
+          id: jsonResponse['id'],
+          result: UnPackingResult(
+            code: resultData['code'],
+            result: resultData['result'] != null
+                ? List<UnPackingElement>.from(
+                    resultData['result'].map(
+                      (x) => UnPackingElement.fromMap(x),
+                    ),
+                  )
+                : [], // Si no hay elementos en 'result', se retorna una lista vacía
+          ),
+        );
       } else {
         // Manejo de error si la respuesta no es exitosa
         // ...
@@ -874,9 +914,7 @@ class WmsPackingRepository {
     return UnPacking(); // Retornamos un objeto vacío en caso de error de red
   }
 
-  Future<UnPacking> unPack(
-    UnPackRequest request,
-  ) async {
+  Future<UnPacking> unPack(UnPackRequest request) async {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
@@ -893,8 +931,9 @@ class WmsPackingRepository {
           "params": {
             "id_transferencia": request.idTransferencia,
             "id_paquete": request.idPaquete,
-            "list_items":
-                request.listItems.map((item) => item.toMap()).toList(),
+            "list_items": request.listItems
+                .map((item) => item.toMap())
+                .toList(),
           },
         },
         isLoadinDialog: true,
@@ -907,15 +946,19 @@ class WmsPackingRepository {
         var resultData = jsonResponse['result'];
 
         return UnPacking(
-            jsonrpc: jsonResponse['jsonrpc'],
-            id: jsonResponse['id'],
-            result: UnPackingResult(
-              code: resultData['code'],
-              result: resultData['result'] != null
-                  ? List<UnPackingElement>.from(resultData['result']
-                      .map((x) => UnPackingElement.fromMap(x)))
-                  : [], // Si no hay elementos en 'result', se retorna una lista vacía
-            ));
+          jsonrpc: jsonResponse['jsonrpc'],
+          id: jsonResponse['id'],
+          result: UnPackingResult(
+            code: resultData['code'],
+            result: resultData['result'] != null
+                ? List<UnPackingElement>.from(
+                    resultData['result'].map(
+                      (x) => UnPackingElement.fromMap(x),
+                    ),
+                  )
+                : [], // Si no hay elementos en 'result', se retorna una lista vacía
+          ),
+        );
       } else {
         // Manejo de error si la respuesta no es exitosa
         // ...
@@ -953,9 +996,12 @@ class WmsPackingRepository {
             "id_batch": packingRequest.idBatch,
             "is_sticker": packingRequest.isSticker,
             "is_certificate": packingRequest.isCertificate,
+            "tipo_paquete": packingRequest.tipoEmpaque,
+            "peso_caja": packingRequest.pesoCaja,
             "peso_total_paquete": packingRequest.pesoTotalPaquete,
-            "list_item":
-                packingRequest.listItem.map((item) => item.toMap()).toList(),
+            "list_item": packingRequest.listItem
+                .map((item) => item.toMap())
+                .toList(),
           },
         },
         isLoadinDialog: true,
@@ -975,8 +1021,11 @@ class WmsPackingRepository {
                   code: resultData['code'],
                   msg: resultData['msg'],
                   result: resultData['result'] != null
-                      ? List<ResultElement>.from(resultData['result']
-                          .map((x) => ResultElement.fromMap(x)))
+                      ? List<ResultElement>.from(
+                          resultData['result'].map(
+                            (x) => ResultElement.fromMap(x),
+                          ),
+                        )
                       : [], // Si no hay elementos en 'result', se retorna una lista vacía
                 )
               : null, // Si 'result' no existe, asigna null a 'result'
@@ -1018,8 +1067,9 @@ class WmsPackingRepository {
             "is_sticker": packingRequest.isSticker,
             "is_certificate": packingRequest.isCertificate,
             "peso_total_paquete": packingRequest.pesoTotalPaquete,
-            "list_item":
-                packingRequest.listItem.map((item) => item.toMap()).toList(),
+            "list_item": packingRequest.listItem
+                .map((item) => item.toMap())
+                .toList(),
           },
         },
         isLoadinDialog: true,
@@ -1039,8 +1089,11 @@ class WmsPackingRepository {
                   code: resultData['code'],
                   msg: resultData['msg'],
                   result: resultData['result'] != null
-                      ? List<ResultElement>.from(resultData['result']
-                          .map((x) => ResultElement.fromMap(x)))
+                      ? List<ResultElement>.from(
+                          resultData['result'].map(
+                            (x) => ResultElement.fromMap(x),
+                          ),
+                        )
                       : [], // Si no hay elementos en 'result', se retorna una lista vacía
                 )
               : null, // Si 'result' no existe, asigna null a 'result'
@@ -1086,8 +1139,9 @@ class WmsPackingRepository {
             "tipo_paquete": packingRequest.tipoEmpaque,
             "peso_caja": packingRequest.pesoCaja,
             "peso_total_paquete": packingRequest.pesoTotalPaquete,
-            "list_items":
-                packingRequest.listItems.map((item) => item.toMap()).toList(),
+            "list_items": packingRequest.listItems
+                .map((item) => item.toMap())
+                .toList(),
           },
         },
         isLoadinDialog: true,
@@ -1107,8 +1161,11 @@ class WmsPackingRepository {
                   code: resultData['code'],
                   msg: resultData['msg'],
                   result: resultData['result'] != null
-                      ? List<ResultElementPack>.from(resultData['result']
-                          .map((x) => ResultElementPack.fromMap(x)))
+                      ? List<ResultElementPack>.from(
+                          resultData['result'].map(
+                            (x) => ResultElementPack.fromMap(x),
+                          ),
+                        )
                       : [], // Si no hay elementos en 'result', se retorna una lista vacía
                 )
               : null, // Si 'result' no existe, asigna null a 'result'
@@ -1128,8 +1185,13 @@ class WmsPackingRepository {
     return ResponseSendPack(); // Retornamos un objeto vacío en caso de error de red
   }
 
-  Future<bool> timePackingUser(int batchId, String time, String endpoint,
-      String type, int userId) async {
+  Future<bool> timePackingUser(
+    int batchId,
+    String time,
+    String endpoint,
+    String type,
+    int userId,
+  ) async {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
@@ -1140,17 +1202,18 @@ class WmsPackingRepository {
 
     try {
       var response = await ApiRequestService().postPicking(
-          endpoint: endpoint,
-          isunecodePath: true,
-          isLoadinDialog: false,
-          body: {
-            "params": {
-              "id_batch": "$batchId",
-              "user_id": "$userId",
-              type: time,
-              "operation_type": "packing"
-            }
-          });
+        endpoint: endpoint,
+        isunecodePath: true,
+        isLoadinDialog: false,
+        body: {
+          "params": {
+            "id_batch": "$batchId",
+            "user_id": "$userId",
+            type: time,
+            "operation_type": "packing",
+          },
+        },
+      );
 
       if (response.statusCode < 400) {
         // Decodifica la respuesta JSON a un mapa
@@ -1204,8 +1267,13 @@ class WmsPackingRepository {
     return false;
   }
 
-  Future<bool> timePackingBatch(int batchId, String time, String endpoint,
-      String field, String type) async {
+  Future<bool> timePackingBatch(
+    int batchId,
+    String time,
+    String endpoint,
+    String field,
+    String type,
+  ) async {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
@@ -1216,16 +1284,13 @@ class WmsPackingRepository {
 
     try {
       var response = await ApiRequestService().postPicking(
-          endpoint: endpoint,
-          isunecodePath: true,
-          isLoadinDialog: false,
-          body: {
-            "params": {
-              "picking_id": "$batchId",
-              type: time,
-              "field_name": field,
-            }
-          });
+        endpoint: endpoint,
+        isunecodePath: true,
+        isLoadinDialog: false,
+        body: {
+          "params": {"picking_id": "$batchId", type: time, "field_name": field},
+        },
+      );
 
       if (response.statusCode < 400) {
         // Decodifica la respuesta JSON a un mapa
@@ -1307,10 +1372,7 @@ class WmsPackingRepository {
     return TemperatureIa(); // Retorna vacío en caso de fallo
   }
 
-  Future<ImageSendNovedad> sendImageNoved(
-    int idMove,
-    File imageFile,
-  ) async {
+  Future<ImageSendNovedad> sendImageNoved(int idMove, File imageFile) async {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
@@ -1321,12 +1383,11 @@ class WmsPackingRepository {
 
     try {
       final response = await ApiRequestService().postMultipartDynamic(
-          endpoint: 'send_imagen_observation/batch',
-          imageFile: imageFile,
-          fields: {
-            'move_line_id': idMove,
-          },
-          isLoadingDialog: true);
+        endpoint: 'send_imagen_observation/batch',
+        imageFile: imageFile,
+        fields: {'move_line_id': idMove},
+        isLoadingDialog: true,
+      );
 
       if (response.statusCode < 400) {
         // Decodifica la respuesta JSON a un mapa
@@ -1382,11 +1443,12 @@ class WmsPackingRepository {
 
     try {
       final response = await ApiRequestService().postMultipart(
-          endpoint: 'send_image_linea_recepcion/batch',
-          imageFile: imageFile,
-          idMoveLine: idMoveLine,
-          temperature: temperature,
-          isLoadinDialog: isLoadingDialog);
+        endpoint: 'send_image_linea_recepcion/batch',
+        imageFile: imageFile,
+        idMoveLine: idMoveLine,
+        temperature: temperature,
+        isLoadinDialog: isLoadingDialog,
+      );
 
       if (response.statusCode < 400) {
         // Decodifica la respuesta JSON a un mapa
@@ -1439,10 +1501,11 @@ class WmsPackingRepository {
 
     try {
       final response = await ApiRequestService().postMultipartManual(
-          endpoint: 'send_image_linea_recepcion/batch',
-          idMoveLine: idMoveLine,
-          temperature: temperature,
-          isLoadinDialog: isLoadingDialog);
+        endpoint: 'send_image_linea_recepcion/batch',
+        idMoveLine: idMoveLine,
+        temperature: temperature,
+        isLoadinDialog: isLoadingDialog,
+      );
 
       if (response.statusCode < 400) {
         // Decodifica la respuesta JSON a un mapa

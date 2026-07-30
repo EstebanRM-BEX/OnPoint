@@ -1041,7 +1041,7 @@ class PermissionsWidget extends StatelessWidget {
                     Row(
                       children: [
                         const Text(
-                            "Ocultar accion de confirmar\npedido de expedicion: ",
+                            "Mostrar accion de confirmar\npedido de expedicion: ",
                             style: TextStyle(fontSize: 14, color: black)),
                         const Spacer(),
                         Checkbox(
@@ -1054,9 +1054,9 @@ class PermissionsWidget extends StatelessWidget {
                                   builder: (context) {
                                     return const DialogInfo(
                                       title:
-                                          "Ocultar accion de confirmar pedido",
+                                          "Mostrar accion de confirmar pedido",
                                       body:
-                                          "Oculta el boton de confirmar el pedido completo de expedicion",
+                                          "Muestra el boton de confirmar el pedido completo de expedicion",
                                     );
                                   });
                             },
@@ -1066,7 +1066,7 @@ class PermissionsWidget extends StatelessWidget {
                     Row(
                       children: [
                         const Text(
-                            "Ocultar accion de validar\npaquete o producto: ",
+                            "Mostrar accion de validar\npaquete o producto: ",
                             style: TextStyle(fontSize: 14, color: black)),
                         const Spacer(),
                         Checkbox(
@@ -1079,9 +1079,9 @@ class PermissionsWidget extends StatelessWidget {
                                   builder: (context) {
                                     return const DialogInfo(
                                       title:
-                                          "Ocultar accion de validar paquete o producto",
+                                          "Mostrar accion de validar paquete o producto",
                                       body:
-                                          "Oculta el boton de validar un paquete o producto suelto individual dentro de la expedicion",
+                                          "Muestra el boton de validar un paquete o producto suelto individual dentro de la expedicion",
                                     );
                                   });
                             },

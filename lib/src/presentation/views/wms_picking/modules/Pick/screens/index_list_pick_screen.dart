@@ -15,8 +15,8 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_start_picking_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/response_pick_model.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
@@ -30,7 +30,8 @@ class IndexListPickScreen extends StatefulWidget {
   State<IndexListPickScreen> createState() => _IndexListPickScreenState();
 }
 
-class _IndexListPickScreenState extends State<IndexListPickScreen> {
+class _IndexListPickScreenState extends State<IndexListPickScreen>
+    with LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   final FocusNode focusNodeBuscar = FocusNode();
@@ -232,15 +233,11 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
     PickingPickBloc batchBloc,
     ResultPick batch,
   ) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const DialogLoading(message: 'Cargando interfaz...'),
-    );
+    showLoadingDialog('Cargando interfaz...');
 
     await Future.delayed(const Duration(seconds: 1));
     if (!mounted) return;
-    Navigator.pop(context); // cerramos el loading
+    hideLoadingDialog(); // cerramos el loading
 
     // ✅ Verificamos que el batch cargó TODA su info antes de entrar.
     // Si no cargó (o cargó otro batch), no dejamos acceder y volvemos al listado.
@@ -291,24 +288,16 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
           }
 
           if (state is AssignUserToPickError) {
-            //cerramos algun dialogo si esta abierto
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            }
+            hideLoadingDialog();
             showScrollableErrorDialog(state.error);
           }
 
           if (state is AssignUserToPickLoading) {
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (_) =>
-                  const DialogLoading(message: 'Cargando interfaz...'),
-            );
+            showLoadingDialog('Cargando interfaz...');
           }
 
           if (state is AssignUserToPickSuccess) {
-            Navigator.pop(context);
+            hideLoadingDialog();
             context.read<PickingPickBloc>().add(
               FetchPickWithProductsEvent(state.id),
             );

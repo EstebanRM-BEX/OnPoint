@@ -6,6 +6,14 @@ import 'package:wms_app/src/presentation/providers/db/recepcion/entradas/tbl_ent
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_model.dart';
 
 class EntradasRepository {
+  // Odoo puede devolver `false` en vez de 0/null para campos numéricos vacíos;
+  // sqflite solo acepta num/String/Uint8List, así que normalizamos antes de guardar.
+  int _dynamicToInt(dynamic value) {
+    if (value is bool) return value ? 1 : 0;
+    if (value is num) return value.toInt();
+    return 0;
+  }
+
   //metodo para insertar todas las entradas
   Future<void> insertEntrada(List<ResultEntrada> entradas, String type) async {
     try {
@@ -13,21 +21,6 @@ class EntradasRepository {
 
       await db.transaction((txn) async {
         final Batch batch = txn.batch();
-
-        final entradaIds = entradas.map((e) => e.id ?? 0).toList();
-
-        // Obtener entradas existentes en una sola consulta
-        final List<Map<String, dynamic>> existing = await txn.query(
-          EntradasRepeccionTable.tableName,
-          columns: [EntradasRepeccionTable.columnId],
-          where:
-              '${EntradasRepeccionTable.columnId} IN (${List.filled(entradaIds.length, '?').join(',')})',
-          whereArgs: entradaIds,
-        );
-
-        final Set<int> existingIds = existing
-            .map((e) => e[EntradasRepeccionTable.columnId] as int)
-            .toSet();
 
         for (final entrada in entradas) {
           final id = entrada.id ?? 0;
@@ -75,32 +68,24 @@ class EntradasRepository {
             EntradasRepeccionTable.columnType: type,
             //maneja_temperatura
             EntradasRepeccionTable.columnManejaTemperatura:
-                entrada.manejaTemperatura ?? 0,
+                _dynamicToInt(entrada.manejaTemperatura),
             //temperatura
             EntradasRepeccionTable.columnTemperatura: entrada.temperatura ?? 0,
             //propietario
             EntradasRepeccionTable.columnPropietario: entrada.propietario ?? "",
-            EntradasRepeccionTable.columnManejoPropietario: entrada.manejoPropietario ?? 0,
+            EntradasRepeccionTable.columnManejoPropietario:
+                _dynamicToInt(entrada.manejoPropietario),
 
             //create_backorder
             EntradasRepeccionTable.columnCreateBackorder:
                 entrada.createBackorder ?? "",
           };
 
-          if (existingIds.contains(id)) {
-            batch.update(
-              EntradasRepeccionTable.tableName,
-              data,
-              where: '${EntradasRepeccionTable.columnId} = ?',
-              whereArgs: [id],
-            );
-          } else {
-            batch.insert(
-              EntradasRepeccionTable.tableName,
-              data,
-              conflictAlgorithm: ConflictAlgorithm.replace,
-            );
-          }
+          batch.insert(
+            EntradasRepeccionTable.tableName,
+            data,
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
         }
 
         await batch.commit(noResult: true);

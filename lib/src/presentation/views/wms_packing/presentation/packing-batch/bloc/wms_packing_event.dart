@@ -5,9 +5,7 @@ sealed class WmsPackingEvent {}
 
 class LoadAllPackingEvent extends WmsPackingEvent {
   final bool isLoadinDialog;
-  LoadAllPackingEvent(
-    this.isLoadinDialog,
-  );
+  LoadAllPackingEvent(this.isLoadinDialog);
 }
 
 class LoadBatchPackingFromDBEvent extends WmsPackingEvent {
@@ -16,23 +14,17 @@ class LoadBatchPackingFromDBEvent extends WmsPackingEvent {
 
 class LoadAllPedidosFromBatchEvent extends WmsPackingEvent {
   final int batchId;
-  LoadAllPedidosFromBatchEvent(
-    this.batchId,
-  );
+  LoadAllPedidosFromBatchEvent(this.batchId);
 }
 
 class FetchProductEvent extends WmsPackingEvent {
   final ProductoPedido pedido;
-  FetchProductEvent(
-    this.pedido,
-  );
+  FetchProductEvent(this.pedido);
 }
 
 class LoadAllProductsFromPedidoEvent extends WmsPackingEvent {
   final int pedidoId;
-  LoadAllProductsFromPedidoEvent(
-    this.pedidoId,
-  );
+  LoadAllProductsFromPedidoEvent(this.pedidoId);
 }
 
 class SearchBatchPackingEvent extends WmsPackingEvent {
@@ -61,7 +53,11 @@ class ChangeQuantitySeparate extends WmsPackingEvent {
   final int pedidoId;
   final int idMove;
   ChangeQuantitySeparate(
-      this.quantity, this.productId, this.pedidoId, this.idMove);
+    this.quantity,
+    this.productId,
+    this.pedidoId,
+    this.idMove,
+  );
 }
 
 //
@@ -86,8 +82,13 @@ class ChangeProductIsOkEvent extends WmsPackingEvent {
   final int pedidoId;
   final dynamic quantity;
   final int idMove;
-  ChangeProductIsOkEvent(this.productIsOk, this.productId, this.pedidoId,
-      this.quantity, this.idMove);
+  ChangeProductIsOkEvent(
+    this.productIsOk,
+    this.productId,
+    this.pedidoId,
+    this.quantity,
+    this.idMove,
+  );
 }
 
 class ChangeIsOkQuantity extends WmsPackingEvent {
@@ -104,19 +105,39 @@ class AddQuantitySeparate extends WmsPackingEvent {
   final dynamic quantity;
   final int pedidoId;
   AddQuantitySeparate(
-      this.quantity, this.idMove, this.productId, this.pedidoId);
+    this.quantity,
+    this.idMove,
+    this.productId,
+    this.pedidoId,
+  );
 }
 
 class SetPackingsEvent extends WmsPackingEvent {
   final List<ProductoPedido> productos;
   final bool isSticker;
+  final double peso;
+  final String tipoEmpaque;
   final bool isCertificate;
+  final PackagingType packagingType;
 
   SetPackingsEvent(
     this.productos,
     this.isSticker,
     this.isCertificate,
-  );
+    this.tipoEmpaque, [
+    this.peso = 0.0,
+    this.packagingType = const PackagingType(
+      id: 0,
+      name: '',
+      barcode: '',
+      maxWeight: 0.0,
+      height: 0.0,
+      width: 0.0,
+      packagingLength: 0.0,
+      size: '',
+      carrier: '',
+    ),
+  ]);
 }
 
 class ChangeStickerEvent extends WmsPackingEvent {
@@ -133,9 +154,7 @@ class FilterBatchPackingStatusEvent extends WmsPackingEvent {
 class SearchProductPackingEvent extends WmsPackingEvent {
   final String query;
 
-  SearchProductPackingEvent(
-    this.query,
-  );
+  SearchProductPackingEvent(this.query);
 }
 
 class SelectProductPackingEvent extends WmsPackingEvent {
@@ -171,7 +190,12 @@ class SetPickingSplitEvent extends WmsPackingEvent {
   final int productId;
   final int pedidoId;
   SetPickingSplitEvent(
-      this.producto, this.idMove, this.quantity, this.productId, this.pedidoId);
+    this.producto,
+    this.idMove,
+    this.quantity,
+    this.productId,
+    this.pedidoId,
+  );
 }
 
 class SetPickingsEvent extends WmsPackingEvent {
@@ -216,17 +240,12 @@ class EndTimePack extends WmsPackingEvent {
 class SendTemperatureEvent extends WmsPackingEvent {
   final File file;
   final int moveLineId;
-  SendTemperatureEvent({
-    required this.file,
-    required this.moveLineId,
-  });
+  SendTemperatureEvent({required this.file, required this.moveLineId});
 }
 
 class SendTemperaturePackingEvent extends WmsPackingEvent {
   final int moveLineId;
-  SendTemperaturePackingEvent({
-    required this.moveLineId,
-  });
+  SendTemperaturePackingEvent({required this.moveLineId});
 }
 
 class SendImageNovedad extends WmsPackingEvent {
@@ -248,9 +267,7 @@ class SendImageNovedad extends WmsPackingEvent {
 class GetTemperatureEvent extends WmsPackingEvent {
   final File file;
 
-  GetTemperatureEvent({
-    required this.file,
-  });
+  GetTemperatureEvent({required this.file});
 }
 
 class LoadDocOriginsEvent extends WmsPackingEvent {
@@ -261,9 +278,7 @@ class LoadDocOriginsEvent extends WmsPackingEvent {
 class DeleteProductFromTemporaryPackageEvent extends WmsPackingEvent {
   final ProductoPedido product;
 
-  DeleteProductFromTemporaryPackageEvent({
-    required this.product,
-  });
+  DeleteProductFromTemporaryPackageEvent({required this.product});
 }
 
 class ViewProductImageEvent extends WmsPackingEvent {

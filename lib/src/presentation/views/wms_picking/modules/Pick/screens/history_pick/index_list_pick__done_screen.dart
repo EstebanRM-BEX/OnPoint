@@ -11,16 +11,23 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/response_pick_model.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 
-class IndexListPickDoneScreen extends StatelessWidget {
+class IndexListPickDoneScreen extends StatefulWidget {
   final bool isFromPick;
 
   const IndexListPickDoneScreen({super.key, required this.isFromPick});
 
+  @override
+  State<IndexListPickDoneScreen> createState() =>
+      _IndexListPickDoneScreenState();
+}
+
+class _IndexListPickDoneScreenState extends State<IndexListPickDoneScreen>
+    with LoadingDialogMixin {
   @override
   Widget build(BuildContext context) {
     final IAudioService _audioService = getIt<IAudioService>();
@@ -126,11 +133,11 @@ class IndexListPickDoneScreen extends StatelessWidget {
                                           icon: const Icon(Icons.arrow_back,
                                               color: white),
                                           onPressed: () {
-                                            if (isFromPick) {
+                                            if (widget.isFromPick) {
                                               Navigator.pushReplacementNamed(
                                                   context, 'pick');
                                             }
-                                            if (!isFromPick) {
+                                            if (!widget.isFromPick) {
                                               Navigator.pushReplacementNamed(
                                                   context,
                                                   'picking-componentes');
@@ -142,11 +149,11 @@ class IndexListPickDoneScreen extends StatelessWidget {
                                         ),
                                         Padding(
                                           padding: EdgeInsets.only(
-                                              left: isFromPick
+                                              left: widget.isFromPick
                                                   ? size.width * 0.15
                                                   : 20),
                                           child: Text(
-                                            isFromPick
+                                            widget.isFromPick
                                                 ? 'HISTORIAL PICK'
                                                 : 'HISTORIAL COMPONENTES',
                                             style: TextStyle(
@@ -257,7 +264,7 @@ class IndexListPickDoneScreen extends StatelessWidget {
 
                                         Navigator.pushReplacementNamed(
                                             context, 'detail-pick-done',
-                                            arguments: [isFromPick]);
+                                            arguments: [widget.isFromPick]);
                                       },
                                       child: Card(
                                         color: batch.isSeparate == 1
@@ -722,17 +729,11 @@ class IndexListPickDoneScreen extends StatelessWidget {
     ResultPick batch,
   ) async {
     // mostramos un dialogo de carga y despues
-    showDialog(
-      context: context,
-      barrierDismissible:
-          false, // No permitir que el usuario cierre el diálogo manualmente
-      builder: (_) => const DialogLoading(
-        message: 'Cargando interfaz...',
-      ),
-    );
+    showLoadingDialog('Cargando interfaz...');
 
     await Future.delayed(const Duration(seconds: 1));
-    Navigator.pop(context);
+    if (!mounted) return;
+    hideLoadingDialog();
     // Si batch.isSeparate es 1, entonces navegamos a "batch-detail"
     if (batch.isSeparate != 1) {
       batchBloc.searchPickController.clear();

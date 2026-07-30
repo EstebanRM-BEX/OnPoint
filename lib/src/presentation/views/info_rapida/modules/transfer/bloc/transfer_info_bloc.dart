@@ -161,17 +161,37 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
           true);
 
       if (responseSend.result?.code == 200) {
+        // idProducto viene como dynamic desde Odoo (int, String o double).
+        // Un cast directo lanzaba TypeError y el error se tragaba en el catch,
+        // dejando al usuario sin ninguna respuesta.
+        final productId = _parseProductId(responseSend.result?.idProducto);
+
         //limpiamos los valores
         clearFields();
 
-        emit(SendTransferInfoSuccess(responseSend.result?.msg ?? "",
-            responseSend.result?.idProducto ?? 0));
+        emit(SendTransferInfoSuccess(
+            responseSend.result?.msg ?? "Transferencia realizada", productId));
       } else {
-        emit(SendTransferInfoFailureTransfer(responseSend.result?.msg ?? ""));
+        emit(SendTransferInfoFailureTransfer(
+          responseSend.result?.msg?.isNotEmpty == true
+              ? responseSend.result!.msg!
+              : 'No se pudo realizar la transferencia. Intente nuevamente.',
+        ));
       }
     } catch (e, s) {
       debugPrint("❌ Error en el SetQuantity $e ->$s");
+      // Sin este emit el estado quedaba en Loading y la pantalla no daba
+      // ninguna señal al usuario.
+      emit(SendTransferInfoFailureTransfer(
+          'Error inesperado al realizar la transferencia: $e'));
     }
+  }
+
+  int _parseProductId(dynamic value) {
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 
   void clearFields() {

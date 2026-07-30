@@ -2,15 +2,18 @@ class PackingRequest {
   final int idBatch;
   final bool isSticker;
   final bool isCertificate;
+  final double pesoCaja;
   final double pesoTotalPaquete;
+  final int tipoEmpaque;
   final List<ListItem> listItem;
-  
 
   PackingRequest({
     required this.idBatch,
     required this.isSticker,
     required this.isCertificate,
+    required this.pesoCaja,
     required this.pesoTotalPaquete,
+    required this.tipoEmpaque,
     required this.listItem,
   });
 
@@ -20,6 +23,8 @@ class PackingRequest {
       "is_sticker": isSticker,
       "is_certificate": isCertificate,
       "peso_total_paquete": pesoTotalPaquete,
+      "tipo_paquete": tipoEmpaque,
+      "peso_caja": pesoCaja,
       "list_item": listItem.map((item) => item.toMap()).toList(),
     };
   }

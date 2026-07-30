@@ -30,7 +30,10 @@ abstract class ExpeditionRemoteDataSource {
 
   /// POST api/complete_out: confirma (cierra) el pedido de expedición
   /// completo. Reemplaza al complete_transfer de TransferenciasRepository.
-  Future<void> confirmarPedido({required int expeditionId});
+  Future<void> confirmarPedido({
+    required int expeditionId,
+    bool crearBackorder = false,
+  });
 
   Future<bool> deshacerPaquete({
     required int expeditionId,
@@ -99,21 +102,24 @@ class ExpeditionRemoteDataSourceImpl implements ExpeditionRemoteDataSource {
   }
 
   /// Mismo body que el viejo complete_transfer (id_transferencia +
-  /// crear_backorder), pero contra api/complete_out. crear_backorder va
-  /// siempre en false: en expedition se bloquea confirmar si quedan
-  /// pendientes, así que no hay backorder parcial.
+  /// crear_backorder), pero contra api/complete_out. [crearBackorder] llega
+  /// en true cuando el usuario confirmó con paquetes o productos sueltos
+  /// pendientes en "Por hacer" y eligió crear backorder para lo pendiente.
   ///
   /// El `msg` del backend se propaga tal cual en la excepción porque la UI
   /// lo inspecciona: si contiene `expiry.picking.confirmation` ofrece el
   /// reintento forzando productos vencidos.
   @override
-  Future<void> confirmarPedido({required int expeditionId}) async {
+  Future<void> confirmarPedido({
+    required int expeditionId,
+    bool crearBackorder = false,
+  }) async {
     final response = await ApiRequestService().postPacking(
       endpoint: 'complete_out',
       body: {
         "params": {
           "id_transferencia": expeditionId,
-          "crear_backorder": false,
+          "crear_backorder": crearBackorder,
         }
       },
       isLoadinDialog: false,

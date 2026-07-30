@@ -734,34 +734,34 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                           ),
                                           GestureDetector(
                                             onTap: () async {
-                                              final homeConfig = context
-                                                  .read<HomeBloc>()
-                                                  .configurations
-                                                  .result
-                                                  ?.result;
-                                              final userConfig = context
-                                                  .read<UserBloc>()
-                                                  .configurations;
-                                              final hasAccess = homeConfig
-                                                      ?.accessProductionModule ??
-                                                  userConfig
-                                                      ?.accessProductionModule ??
-                                                  false;
-                                              if (hasAccess) {
+                                              // final homeConfig = context
+                                              //     .read<HomeBloc>()
+                                              //     .configurations
+                                              //     .result
+                                              //     ?.result;
+                                              // final userConfig = context
+                                              //     .read<UserBloc>()
+                                              //     .configurations;
+                                              // final hasAccess = homeConfig
+                                              //         ?.accessProductionModule ??
+                                              //     userConfig
+                                              //         ?.accessProductionModule ??
+                                              //     false;
+                                              // if (hasAccess) {
                                                 showDialog(
                                                     context: context,
                                                     builder: (context) =>
                                                         DialogPickingComponentes(
                                                             contextHome:
                                                                 context));
-                                              } else {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(const SnackBar(
-                                                        content: Text(
-                                                            'Su usuario no tiene permisos para acceder a este módulo'),
-                                                        duration: Duration(
-                                                            seconds: 4)));
-                                              }
+                                              // } else {
+                                              //   ScaffoldMessenger.of(context)
+                                              //       .showSnackBar(const SnackBar(
+                                              //           content: Text(
+                                              //               'Su usuario no tiene permisos para acceder a este módulo'),
+                                              //           duration: Duration(
+                                              //               seconds: 4)));
+                                              // }
                                             },
                                             child: ImteModule(
                                                 urlImg: 'pc.svg',

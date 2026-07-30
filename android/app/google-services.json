@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:107187715333:android:3252e9a5d7e61cd9278b6c",
         "android_client_info": {
-          "package_name": "com.example.appwms"
+          "package_name": "com.onpoint.wms"
         }
       },
       "oauth_client": [],

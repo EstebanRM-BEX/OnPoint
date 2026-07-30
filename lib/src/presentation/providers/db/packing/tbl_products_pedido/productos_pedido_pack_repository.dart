@@ -500,9 +500,14 @@ class ProductosPedidosRepository {
     return resUpdate;
   }
 
-  // Revertir varios campos de un producto en productos_pedidos a sus valores predeterminados
+  // Revertir varios campos de un producto en productos_pedidos a sus valores predeterminados.
+  // Si se conoce el `id` (PK) de la fila se filtra únicamente por él: cuando un
+  // producto se divide varias veces existen varias filas certificadas con el
+  // mismo idProduct/pedidoId/idMove/type, y el filtro compuesto revertía todas
+  // a la vez en lugar de solo la fila seleccionada por el usuario.
   Future<int?> revertProductFields(
-      int pedidoId, int productId, int idMove, String type) async {
+      int pedidoId, int productId, int idMove, String type,
+      {int? id}) async {
     Database db = await DataBaseSqlite().getDatabaseInstance();
 
     // El mapa de valores que se van a actualizar
@@ -525,14 +530,24 @@ class ProductosPedidosRepository {
       "is_package": null,
     };
 
+    final String where;
+    final List<Object?> whereArgs;
+    if (id != null) {
+      where = '${ProductosPedidosTable.columnId} = ?';
+      whereArgs = [id];
+    } else {
+      where = '${ProductosPedidosTable.columnIdProduct} = ? AND '
+          '${ProductosPedidosTable.columnPedidoId} = ? AND '
+          '${ProductosPedidosTable.columnIdMove} = ? AND '
+          '${ProductosPedidosTable.columnType} = ?';
+      whereArgs = [productId, pedidoId, idMove, type];
+    }
+
     final resUpdate = await db.update(
       ProductosPedidosTable.tableName,
       updatedValues,
-      where: '${ProductosPedidosTable.columnIdProduct} = ? AND '
-          '${ProductosPedidosTable.columnPedidoId} = ? AND '
-          '${ProductosPedidosTable.columnIdMove} = ? AND '
-          '${ProductosPedidosTable.columnType} = ?',
-      whereArgs: [productId, pedidoId, idMove, type],
+      where: where,
+      whereArgs: whereArgs,
     );
 
     debugPrint("✅ Producto revertido en la BD. Filas afectadas: $resUpdate");
@@ -581,8 +596,13 @@ class ProductosPedidosRepository {
     return resUpdate;
   }
 
+  // `certifiedRowId` identifica la fila certificada exacta que se está
+  // deshaciendo (su PK). Sin él, cuando un producto se dividió más de una
+  // vez y hay varias filas certificadas con el mismo idProduct/idMove, el
+  // DELETE borraba todas en lugar de solo la seleccionada por el usuario.
   Future<int?> findAndAddQuantityAndDelete(int productId, int idMoveToUpdate,
-      dynamic quantityToAdd, int idPedido, String type) async {
+      dynamic quantityToAdd, int idPedido, String type,
+      {int? certifiedRowId}) async {
     // Renombrado idMove a idMoveToUpdate para claridad
     Database db = await DataBaseSqlite().getDatabaseInstance();
     int? rowsAffected;
@@ -594,7 +614,10 @@ class ProductosPedidosRepository {
       // 1️⃣ Buscar y obtener la cantidad del producto para actualizar (Búsqueda por idMoveToUpdate)
       final List<Map<String, dynamic>> productsToUpdate = await txn.query(
         ProductosPedidosTable.tableName,
-        columns: [ProductosPedidosTable.columnQuantity],
+        columns: [
+          ProductosPedidosTable.columnId,
+          ProductosPedidosTable.columnQuantity
+        ],
         where: '${ProductosPedidosTable.columnIdProduct} = ? AND '
             '${ProductosPedidosTable.columnIdMove} = ? AND '
             '${ProductosPedidosTable.columnPedidoId} = ? AND '
@@ -608,35 +631,44 @@ class ProductosPedidosRepository {
       );
 
       if (productsToUpdate.isNotEmpty) {
+        final pendingRowId =
+            productsToUpdate.first[ProductosPedidosTable.columnId] as int;
         final currentQuantity = (productsToUpdate
                 .first[ProductosPedidosTable.columnQuantity] as num)
             .toDouble();
         final newQuantity = currentQuantity + safeQuantityToAdd;
 
-        // 2️⃣ Actualizar la cantidad del producto encontrado (CORRECCIÓN DEL AND COLGANTE)
+        // 2️⃣ Actualizar la cantidad de la fila pendiente encontrada (por su id exacto)
         rowsAffected = await txn.update(
           ProductosPedidosTable.tableName,
           {ProductosPedidosTable.columnQuantity: newQuantity},
-          where: '${ProductosPedidosTable.columnIdProduct} = ? AND '
-              '${ProductosPedidosTable.columnIdMove} = ? AND '
-              '${ProductosPedidosTable.columnType} = ?', // ✅ SINTAXIS CORREGIDA
-          whereArgs: [productId, idMoveToUpdate, type],
+          where: '${ProductosPedidosTable.columnId} = ?',
+          whereArgs: [pendingRowId],
         );
 
-        // 3️⃣ Eliminar el producto que ya fue procesado (Se asume que idMoveToDelete es idMoveToUpdate)
-        final int rowsDeleted = await txn.delete(
-          ProductosPedidosTable.tableName,
-          where: '${ProductosPedidosTable.columnIdProduct} = ? AND '
-              '${ProductosPedidosTable.columnIdMove} = ? AND '
-              '${ProductosPedidosTable.columnPedidoId} = ? AND '
-              '${ProductosPedidosTable.columnIsSeparate} = 1 AND '
-              '${ProductosPedidosTable.columnIsSelected} = 1 AND '
-              '${ProductosPedidosTable.columnIsPackage} = 0 AND '
-              '${ProductosPedidosTable.columnIsCertificate} = 1 AND '
-              '${ProductosPedidosTable.columnIsProductSplit} = 1 AND '
-              '${ProductosPedidosTable.columnType} = ?', // ✅ CONCATENACIÓN Y TIPO CORRECTO
-          whereArgs: [productId, idMoveToUpdate, idPedido, type],
-        );
+        // 3️⃣ Eliminar únicamente la fila certificada seleccionada por el usuario
+        final int rowsDeleted;
+        if (certifiedRowId != null) {
+          rowsDeleted = await txn.delete(
+            ProductosPedidosTable.tableName,
+            where: '${ProductosPedidosTable.columnId} = ?',
+            whereArgs: [certifiedRowId],
+          );
+        } else {
+          rowsDeleted = await txn.delete(
+            ProductosPedidosTable.tableName,
+            where: '${ProductosPedidosTable.columnIdProduct} = ? AND '
+                '${ProductosPedidosTable.columnIdMove} = ? AND '
+                '${ProductosPedidosTable.columnPedidoId} = ? AND '
+                '${ProductosPedidosTable.columnIsSeparate} = 1 AND '
+                '${ProductosPedidosTable.columnIsSelected} = 1 AND '
+                '${ProductosPedidosTable.columnIsPackage} = 0 AND '
+                '${ProductosPedidosTable.columnIsCertificate} = 1 AND '
+                '${ProductosPedidosTable.columnIsProductSplit} = 1 AND '
+                '${ProductosPedidosTable.columnType} = ?',
+            whereArgs: [productId, idMoveToUpdate, idPedido, type],
+          );
+        }
 
         debugPrint(
             "✅ Producto actualizado exitosamente. Filas afectadas: $rowsAffected");

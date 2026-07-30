@@ -424,6 +424,10 @@ class AppBar extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   GestureDetector(
+                    // Área de toque ampliada (~44px): el Icon de 20px sin
+                    // padding hacía muy difícil acertar la flecha de atrás
+                    // en algunos dispositivos.
+                    behavior: HitTestBehavior.opaque,
                     onTap: () {
                       context.read<InfoRapidaBloc>().add(IsEditEvent(false));
                       context
@@ -434,10 +438,13 @@ class AppBar extends StatelessWidget {
                         'info-rapida',
                       );
                     },
-                    child: Icon(
-                      Icons.arrow_back,
-                      color: white,
-                      size: 20,
+                    child: const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Icon(
+                        Icons.arrow_back,
+                        color: white,
+                        size: 20,
+                      ),
                     ),
                   ),
                   Padding(

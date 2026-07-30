@@ -509,6 +509,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           event.product.quantitySeparate ?? 0,
           event.product.pedidoId ?? 0,
           'packing-pack',
+          certifiedRowId: event.product.id,
         );
         //actualizamos todas las listas
         add(LoadPedidoAndProductsEvent(event.product.pedidoId ?? 0));
@@ -523,7 +524,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           event.product.pedidoId ?? 0,
           event.product.idProduct ?? 0,
           event.product.idMove ?? 0,
-          'packing-pack');
+          'packing-pack',
+          id: event.product.id);
 
       //actualizamos todas las listas
       add(LoadPedidoAndProductsEvent(event.product.pedidoId ?? 0));

@@ -62,9 +62,25 @@ class _ExpedicionDetailTabPorHacerState
   int get _totalSeleccionados =>
       _selectedPaquetes.length + _selectedItemsSueltos.length;
 
-  /// El FAB de validación masiva aparece recién con 2 o más seleccionados:
-  /// para validar uno solo ya está el flujo normal de scan_product_screen.
-  bool get _puedeValidarSeleccion => _totalSeleccionados >= 2;
+  /// Suma de unidades de todos los productos de las cajas/paquetes
+  /// seleccionados más los productos sueltos seleccionados (mismo cálculo
+  /// que el badge verde del FAB en tab2.dart de packing).
+  double get _totalUnidadesSeleccionadas {
+    final unidadesPaquetes = widget.detail.paquetesPendientes
+        .where((p) => _selectedPaquetes.contains(p.packingId))
+        .fold<double>(
+          0,
+          (total, p) => total +
+              p.items.fold<double>(0, (t, i) => t + (i.quantity ?? 0)),
+        );
+    final unidadesSueltos = widget.detail.itemsSueltosPendientes
+        .where((i) => _selectedItemsSueltos.contains(i.packingId))
+        .fold<double>(0, (total, i) => total + (i.quantity ?? 0));
+    return unidadesPaquetes + unidadesSueltos;
+  }
+
+  /// El FAB de validación masiva aparece desde el primer seleccionado.
+  bool get _puedeValidarSeleccion => _totalSeleccionados >= 1;
 
   /// El permiso vive en SQLite (tbl_configurations), no en UserBloc — ese
   /// bloc solo se carga si el usuario entra manualmente a "información del
@@ -247,8 +263,12 @@ class _ExpedicionDetailTabPorHacerState
     final detalles = <String>[
       if (paquetes.isNotEmpty) ...[
         'Paquetes (${paquetes.length}):',
-        ...paquetes.map((p) =>
-            '  • ${p.packageName ?? "Paquete sin nombre"} — ${p.items.length} producto(s)'),
+        ...paquetes.map((p) {
+          final unidades =
+              p.items.fold<double>(0, (t, i) => t + (i.quantity ?? 0));
+          return '  • ${p.packageName ?? "Paquete sin nombre"} — '
+              '${p.items.length} producto(s), $unidades unidad(es)';
+        }),
       ],
       if (paquetes.isNotEmpty && itemsSueltos.isNotEmpty) '',
       if (itemsSueltos.isNotEmpty) ...[
@@ -285,7 +305,7 @@ class _ExpedicionDetailTabPorHacerState
 
     for (final paquete in widget.detail.paquetesPendientes) {
       if (paquete.packingBarcode?.toLowerCase() == scan) {
-        _navigateToPaquete(context, paquete);
+        _validarPorScan(context, paquete: paquete);
         Future.microtask(() => _scanFocusNode.requestFocus());
         return;
       }
@@ -293,13 +313,30 @@ class _ExpedicionDetailTabPorHacerState
 
     for (final item in widget.detail.itemsSueltosPendientes) {
       if (item.barcode?.toLowerCase() == scan) {
-        _navigateToItemSuelto(context, item);
+        _validarPorScan(context, itemSuelto: item);
         Future.microtask(() => _scanFocusNode.requestFocus());
         return;
       }
     }
 
     _showScanError();
+  }
+
+  /// Al encontrar match en el escaneo se valida de una, sin el diálogo de
+  /// confirmación ni pasar por scan_product_screen (misma acción que el botón
+  /// "Validar expedición" de esa pantalla, pero directo).
+  void _validarPorScan(
+    BuildContext context, {
+    PaqueteExpedicion? paquete,
+    ItemSueltoExpedicion? itemSuelto,
+  }) {
+    context.read<ExpedicionScanBloc>().add(
+          ValidarExpedicionScanEvent(
+            paquete: paquete,
+            itemSuelto: itemSuelto,
+            porEscaneo: true,
+          ),
+        );
   }
 
   void _showScanError() {
@@ -345,6 +382,30 @@ class _ExpedicionDetailTabPorHacerState
         ),
         BlocListener<ExpedicionScanBloc, ExpedicionScanState>(
           listener: (context, state) {
+            if (state is ExpedicionScanValidatingDirecto) {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) =>
+                    const DialogLoading(message: 'Validando expedición...'),
+              );
+            }
+            if (state is ExpedicionScanValidatedDirecto) {
+              Navigator.pop(context); // cierra el diálogo de carga
+              _refreshDetail(context);
+            }
+            if (state is ExpedicionScanErrorDirecto) {
+              Navigator.pop(context); // cierra el diálogo de carga
+              _audioService.playErrorSound();
+              _vibrationService.vibrate();
+              Get.snackbar(
+                'Error',
+                state.message,
+                backgroundColor: white,
+                colorText: red,
+                snackPosition: SnackPosition.TOP,
+              );
+            }
             if (state is ExpedicionScanValidatingMultiple) {
               showDialog(
                 context: context,
@@ -406,6 +467,26 @@ class _ExpedicionDetailTabPorHacerState
                       ),
                       child: Text(
                         '$_totalSeleccionados',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: -8,
+                    right: -8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '$_totalUnidadesSeleccionadas',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,

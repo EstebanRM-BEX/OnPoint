@@ -60,6 +60,39 @@ class ApiRequestService {
     return result.isOnline;
   }
 
+  /// Construye una respuesta sintética (no vino del servidor) con un cuerpo
+  /// JSON-RPC válido.
+  ///
+  /// Antes se devolvía texto plano ('Error de red'). Varios repositorios
+  /// parsean el body en errores con guards `statusCode <= 500` —necesario para
+  /// leer los errores de Odoo, que llegan como HTTP 500 con body JSON, entre
+  /// ellos la sesión expirada (code 100)— y ese texto plano reventaba el
+  /// jsonDecode con FormatException, degradando el fallo a un modelo vacío
+  /// sin mensaje.
+  ///
+  /// El `code` nunca es 100, así que no dispara el diálogo de sesión expirada.
+  @visibleForTesting
+  static http.Response buildClientErrorResponse(
+      int statusCode, String message) {
+    return http.Response(
+      jsonEncode({
+        'jsonrpc': '2.0',
+        'id': null,
+        'error': {
+          'code': statusCode,
+          'message': message,
+          'msg': message,
+          'data': {
+            'name': 'client_network_error',
+            'message': message,
+          },
+        },
+      }),
+      statusCode,
+      headers: {'content-type': 'application/json'},
+    );
+  }
+
   void _showNetworkError() {
     // Evita el spam: varias peticiones fallando en ráfaga sin conexión
     // mostraban un snackbar de 5s por cada una.
@@ -86,7 +119,7 @@ class ApiRequestService {
     if (!await _isConnected()) {
       debugPrint('🔴 [POST] Sin conexión');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     var url = await PrefUtils.getEnterprise();
@@ -124,7 +157,7 @@ class ApiRequestService {
     if (!await _isConnected()) {
       debugPrint('🔴 [searchEnterprice] Sin conexión');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     try {
@@ -153,7 +186,7 @@ class ApiRequestService {
     if (!await _isConnected()) {
       debugPrint('🔴 [postMultipartImage] Sin conexión');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     const urlBase = 'http://34.127.73.152:5005';
@@ -180,7 +213,7 @@ class ApiRequestService {
     } catch (e, s) {
       if (isLoadinDialog) Get.back();
       debugPrint('🔴 [postMultipartImage] Error: $e\n$s');
-      return http.Response('Error en la solicitud: $e', 500);
+      return buildClientErrorResponse(500, 'Error en la solicitud: $e');
     }
   }
 
@@ -194,7 +227,7 @@ class ApiRequestService {
     if (!await _isConnected()) {
       debugPrint('🔴 [postMultipart] Sin conexión');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     final urlBase = await PrefUtils.getEnterprise();
@@ -224,7 +257,7 @@ class ApiRequestService {
     } catch (e, s) {
       if (isLoadinDialog) Get.back();
       debugPrint('🔴 [postMultipart] Error: $e\n$s');
-      return http.Response('Error en la solicitud: $e', 500);
+      return buildClientErrorResponse(500, 'Error en la solicitud: $e');
     }
   }
 
@@ -237,7 +270,7 @@ class ApiRequestService {
     if (!await _isConnected()) {
       debugPrint('🔴 [postMultipartManual] Sin conexión');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     final urlBase = await PrefUtils.getEnterprise();
@@ -260,7 +293,7 @@ class ApiRequestService {
     } catch (e, s) {
       if (isLoadinDialog) Get.back();
       debugPrint('🔴 [postMultipartManual] Error: $e\n$s');
-      return http.Response('Error en la solicitud: $e', 500);
+      return buildClientErrorResponse(500, 'Error en la solicitud: $e');
     }
   }
 
@@ -273,7 +306,7 @@ class ApiRequestService {
     if (!await _isConnected()) {
       debugPrint('🔴 [postMultipartDynamic] Sin conexión');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     final urlBase = await PrefUtils.getEnterprise();
@@ -304,7 +337,7 @@ class ApiRequestService {
     } catch (e, s) {
       if (isLoadingDialog) Get.back();
       debugPrint('🔴 [postMultipartDynamic] Error: $e\n$s');
-      return http.Response('Error en la solicitud: $e', 500);
+      return buildClientErrorResponse(500, 'Error en la solicitud: $e');
     }
   }
 
@@ -317,7 +350,7 @@ class ApiRequestService {
     if (!await _isConnected()) {
       debugPrint('🔴 [postPicking] Sin conexión');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     var url = await PrefUtils.getEnterprise();
@@ -346,7 +379,7 @@ class ApiRequestService {
     } on TimeoutException catch (e) {
       debugPrint('🔴 [postPicking] Timeout: $e');
       if (isLoadinDialog) Get.back();
-      return http.Response('La solicitud superó el tiempo de espera', 408);
+      return buildClientErrorResponse(408, 'La solicitud superó el tiempo de espera');
     } on SocketException catch (e) {
       debugPrint('🔴 [postPicking] SocketException: $e');
       if (isLoadinDialog) Get.back();
@@ -367,7 +400,7 @@ class ApiRequestService {
     if (!await _isConnected()) {
       debugPrint('🔴 [postPacking] Sin conexión');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     var url = await PrefUtils.getEnterprise();
@@ -391,7 +424,10 @@ class ApiRequestService {
       request.body = json.encode(body);
       request.headers.addAll(headers);
 
-      final response = await http.Response.fromStream(await request.send());
+      // Sin timeout el diálogo de carga se quedaba abierto para siempre si el
+      // servidor no respondía. Mismo límite que postPicking.
+      final streamed = await request.send().timeout(const Duration(seconds: 100));
+      final response = await http.Response.fromStream(streamed);
 
       if (loadingDialogOpened) {
         Get.back();
@@ -400,11 +436,15 @@ class ApiRequestService {
 
       debugPrint('✅ POST PACKING $endpoint → ${response.statusCode}');
       return response;
+    } on TimeoutException catch (e) {
+      debugPrint('🔴 [postPacking] Timeout: $e');
+      if (loadingDialogOpened) Get.back();
+      return buildClientErrorResponse(408, 'La solicitud superó el tiempo de espera');
     } on SocketException catch (e) {
       debugPrint('🔴 [postPacking] SocketException: $e');
       if (loadingDialogOpened) Get.back();
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     } catch (e) {
       debugPrint('🔴 [postPacking] Error: $e');
       if (loadingDialogOpened) Get.back();
@@ -420,7 +460,7 @@ class ApiRequestService {
     if (!await _isConnected()) {
       debugPrint('🔴 [postPrint] Sin conexión');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     var url = await PrefUtils.getEnterprise();
@@ -465,7 +505,7 @@ class ApiRequestService {
     if (!await _isConnected()) {
       debugPrint('🔴 [getInfo] Sin conexión');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     var url = await PrefUtils.getEnterprise();
@@ -510,7 +550,7 @@ class ApiRequestService {
     if (!await _isConnected()) {
       debugPrint('🔴 [GET] Sin conexión');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     var url = await PrefUtils.getEnterprise();
@@ -519,7 +559,7 @@ class ApiRequestService {
 
     if (sessionId.isEmpty) {
       debugPrint('🔴 [GET] Session ID vacío');
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     url = url + (isunecodePath ? '$unencodePath/$endpoint' : '/$endpoint');
@@ -561,7 +601,7 @@ class ApiRequestService {
     if (!await _isConnected()) {
       debugPrint('🔴 [getValidation] Sin conexión');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     var url = await PrefUtils.getEnterprise();
@@ -571,7 +611,7 @@ class ApiRequestService {
     if (sessionId.isEmpty) {
       debugPrint('🔴 [getValidation] Session ID vacío');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     final packageInfo = await PackageInfo.fromPlatform();
@@ -701,7 +741,7 @@ class ApiRequestService {
     if (!await _isConnected()) {
       debugPrint('🔴 [getInventario] Sin conexión');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     var url = await PrefUtils.getEnterprise();
@@ -711,7 +751,7 @@ class ApiRequestService {
     if (sessionId.isEmpty) {
       debugPrint('🔴 [getInventario] Session ID vacío');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     url = url + (isunecodePath ? '/op$unencodePath/$endpoint' : '/$endpoint');
@@ -756,7 +796,7 @@ class ApiRequestService {
     if (!await _isConnected()) {
       debugPrint('🔴 [postInventario] Sin conexión');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     var url = await PrefUtils.getEnterprise();
@@ -766,7 +806,7 @@ class ApiRequestService {
     if (sessionId.isEmpty) {
       debugPrint('🔴 [postInventario] Session ID vacío');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     url = url + (isunecodePath ? '/op$unencodePath/$endpoint' : '/$endpoint');
@@ -812,7 +852,7 @@ class ApiRequestService {
     if (!await _isConnected()) {
       debugPrint('🔴 [getHistory] Sin conexión');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     var url = await PrefUtils.getEnterprise();
@@ -822,7 +862,7 @@ class ApiRequestService {
     if (sessionId.isEmpty) {
       debugPrint('🔴 [getHistory] Session ID vacío');
       _showNetworkError();
-      return http.Response('Error de red', 404);
+      return buildClientErrorResponse(404, 'Error de red');
     }
 
     url = url + (isunecodePath ? '$unencodePath/$endpoint' : '/$endpoint');

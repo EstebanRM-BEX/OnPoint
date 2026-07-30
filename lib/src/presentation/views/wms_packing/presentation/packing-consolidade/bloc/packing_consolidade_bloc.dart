@@ -1004,6 +1004,9 @@ class PackingConsolidateBloc
         isCertificate: event.isCertificate,
         pesoTotalPaquete: 34.0, // Considera calcular esto dinámicamente
         listItem: listItems,
+        pesoCaja : 0.0,
+        tipoEmpaque : 0, 
+
       );
 
       final responsePacking =
@@ -1190,7 +1193,8 @@ class PackingConsolidateBloc
           event.product.pedidoId ?? 0,
           event.product.idProduct ?? 0,
           event.product.idMove ?? 0,
-          'packing-batch-consolidate');
+          'packing-batch-consolidate',
+          id: event.product.id);
 
       //actualizamos todas las listas
       add(LoadAllProductsFromPedidoEvent(event.product.pedidoId ?? 0));
