@@ -804,7 +804,11 @@ class RecepcionRepository {
             "list_items": listItemsFormatted,
           },
         },
-        isLoadinDialog: true,
+        // Honramos el parámetro en vez de forzar true: Tab3 ya muestra su
+        // propio diálogo blindado por LoadingDialogMixin ("Eliminando
+        // producto"). Forzar el diálogo global de GetX aquí apilaba un segundo
+        // loading que, en borrados repetidos, se quedaba pegado.
+        isLoadinDialog: isLoadingDialog,
       );
       if (response.statusCode < 400) {
         debugPrint('Se elimino correctamente la linea');

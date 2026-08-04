@@ -699,6 +699,20 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
     try {
       emit(SendProductToTransferLoading());
 
+      // Normalizamos la cantidad a un número real ANTES de armar el request.
+      // event.quantity es dynamic y puede llegar null/no-numérico (viene de
+      // cantidadFaltante, que puede ser null). Si se enviaba null, Odoo hacía
+      // float(None) → "Error interno: float() argument must be a String or a
+      // real number, not None type". Abortamos con mensaje claro.
+      final num? cantidadEnviar = event.quantity is num
+          ? event.quantity as num
+          : num.tryParse('${event.quantity}'.replaceAll(',', '.'));
+      if (cantidadEnviar == null) {
+        emit(SendProductToTransferFailure(
+            'Cantidad inválida. Escanea o ingresa la cantidad antes de enviar.'));
+        return;
+      }
+
       final userid = await PrefUtils.getUserId();
 
       //calculamos la fecha de transaccion
@@ -747,10 +761,14 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
             ListItem(
               idMove: productBD?.idMove ?? 0,
               idProducto: int.parse(productBD?.productId),
-              idLote: int.parse(productBD!.lotId.toString()),
-              idUbicacionOrigen: int.parse(productBD.locationId.toString()),
+              // tryParse ?? 0: si el producto no maneja lote o la ubicación
+              // origen viene null, "null".toString() rompía int.parse y
+              // abortaba el envío. 0 es el centinela de "sin lote/ubicación".
+              idLote: int.tryParse(productBD!.lotId.toString()) ?? 0,
+              idUbicacionOrigen:
+                  int.tryParse(productBD.locationId.toString()) ?? 0,
               idUbicacionDestino: currentLocationDest.id ?? 0,
-              cantidadEnviada: event.quantity,
+              cantidadEnviada: cantidadEnviar,
               idOperario: userid,
               timeLine: time,
               fechaTransaccion: fechaFormateada,
@@ -813,7 +831,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
         if (event.isDividio) {
           //calculamos la cantidad pendiente del producto
           var pendingQuantity =
-              (currentProduct.cantidadFaltante - event.quantity);
+              (currentProduct.cantidadFaltante - cantidadEnviar);
 
           //creamos un nuevo producto (duplicado) con la cantidad separada
           await db.productTransferenciaRepository.insertDuplicateProducto(

@@ -51,7 +51,12 @@ class ListItem {
       "id_lote": idLote,
       "id_ubicacion_origen": idUbicacionOrigen,
       "id_ubicacion_destino": idUbicacionDestino,
-      "cantidad_enviada": cantidadEnviada,
+      // Nunca enviar null: Odoo hace float() sobre este campo y float(None)
+      // revienta con "Error interno: float() argument must be a String or a
+      // real number, not None type". Coaccionamos a número como última red.
+      "cantidad_enviada": cantidadEnviada is num
+          ? cantidadEnviada
+          : (num.tryParse('$cantidadEnviada'.replaceAll(',', '.')) ?? 0),
       "id_operario": idOperario,
       "time_line": timeLine,
       "fecha_transaccion": fechaTransaccion,

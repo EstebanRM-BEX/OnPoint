@@ -7,10 +7,10 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 
-class Tab3ScreenTrans extends StatelessWidget {
+class Tab3ScreenTrans extends StatefulWidget {
   const Tab3ScreenTrans({
     super.key,
     // required this.ordenCompra,
@@ -18,6 +18,12 @@ class Tab3ScreenTrans extends StatelessWidget {
 
   // final ResultEntrada? ordenCompra;
 
+  @override
+  State<Tab3ScreenTrans> createState() => _Tab3ScreenTransState();
+}
+
+class _Tab3ScreenTransState extends State<Tab3ScreenTrans>
+    with LoadingDialogMixin {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
@@ -36,19 +42,15 @@ class Tab3ScreenTrans extends StatelessWidget {
           }
 
           if (state is DeleteLineTransferLoading) {
-            showDialog(
-              context: context,
-              builder: (context) {
-                return const DialogLoading(
-                  message: "Eliminando producto",
-                );
-              },
-            );
+            // Diálogo único y blindado por el mixin: showDialog crudo +
+            // Navigator.pop ciego apilaban loadings al deshacer varias líneas
+            // seguidas y dejaban uno pegado si el pop llegaba antes del montaje.
+            showLoadingDialog("Eliminando producto");
           } else if (state is DeleteLineTransferFailure) {
-            Navigator.pop(context);
+            hideLoadingDialog();
             showScrollableErrorDialog(state.error);
           } else if (state is DeleteLineTransferSuccess) {
-            Navigator.pop(context);
+            hideLoadingDialog();
             //mostramos una alerta
             Get.snackbar(
                 "360 Software Informa", "Producto eliminado correctamente",

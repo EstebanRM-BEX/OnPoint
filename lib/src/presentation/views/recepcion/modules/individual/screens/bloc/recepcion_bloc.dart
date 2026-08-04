@@ -1064,6 +1064,21 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     try {
       emit(SendProductToOrderLoading());
 
+      // Normalizamos la cantidad a un número real ANTES de armar el request.
+      // event.quantity es dynamic y puede llegar null/no-numérico (viene de
+      // cantidadFaltante, que Odoo puede mandar en null). Si se enviaba null,
+      // el backend hacía float(None) y devolvía "Error interno: float()
+      // argument must be a String or a real number, not None type". Abortamos
+      // con un mensaje claro en vez de mandar basura (o un 0 silencioso).
+      final num? cantidadEnviar = event.quantity is num
+          ? event.quantity as num
+          : num.tryParse('${event.quantity}'.replaceAll(',', '.'));
+      if (cantidadEnviar == null) {
+        emit(SendProductToOrderFailure(
+            'Cantidad inválida. Escanea o ingresa la cantidad antes de enviar.'));
+        return;
+      }
+
       final userid = await PrefUtils.getUserId();
 
       debugPrint("loteeeeeee: ${lotesProductCurrent.toMap()}");
@@ -1128,7 +1143,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
                       true
                   ? currentUbicationDest?.id ?? 0
                   : productBD?.locationDestId ?? 0,
-              cantidadSeparada: event.quantity,
+              cantidadSeparada: cantidadEnviar,
               observacion: productBD?.observation == ""
                   ? "Sin novedad"
                   : productBD?.observation ?? "Sin novedad",
@@ -1190,7 +1205,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
           currentProduct.idRecepcion ?? 0,
           int.parse(currentProduct.productId),
           "quantity_done",
-          event.quantity ?? 0,
+          cantidadEnviar,
           currentProduct.idMove,
         );
 
