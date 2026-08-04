@@ -18,7 +18,7 @@ import 'package:wms_app/features/inventario/domain/entities/producto_inventario.
 import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
 import 'package:wms_app/features/inventario/presentation/widgets/session_expired_helper.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_advertencia_lote_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:intl/intl.dart';
@@ -32,7 +32,8 @@ class NewLoteInventarioScreen extends StatefulWidget {
   State<NewLoteInventarioScreen> createState() => _NewLoteScreenState();
 }
 
-class _NewLoteScreenState extends State<NewLoteInventarioScreen> {
+class _NewLoteScreenState extends State<NewLoteInventarioScreen>
+    with LoadingDialogMixin {
   bool viewList = true;
   DateTime? selectedDate;
   int? selectedIndex;
@@ -82,16 +83,12 @@ class _NewLoteScreenState extends State<NewLoteInventarioScreen> {
             }
 
             if (state is CreateLoteProductLoading) {
-              showDialog(
-                context: context,
-                builder: (_) => const DialogLoading(
-                    message: "Creando lote espere un momento..."),
-              );
+              showLoadingDialog("Creando lote espere un momento...");
             } else if (state is CreateLoteProductSuccess) {
-              Navigator.pop(context);
+              hideLoadingDialog();
               Navigator.pushReplacementNamed(context, 'inventario');
             } else if (state is CreateLoteProductFailure) {
-              Navigator.pop(context);
+              hideLoadingDialog();
               if (state.code == 400) {
                 showScrollableErrorDialog(state.error);
               } else if (state.code == 202 &&

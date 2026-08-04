@@ -12,7 +12,7 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_advertencia_lote_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 
@@ -28,7 +28,7 @@ class NewLoteScreen extends StatefulWidget {
   State<NewLoteScreen> createState() => _NewLoteScreenState();
 }
 
-class _NewLoteScreenState extends State<NewLoteScreen> {
+class _NewLoteScreenState extends State<NewLoteScreen> with LoadingDialogMixin {
   bool viewList = true;
   DateTime? selectedDate; // Para almacenar la fecha seleccionada
   int? selectedIndex; // Para almacenar el índice del lote seleccionado
@@ -73,7 +73,7 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                           debugPrint('STATE ❤️‍🔥 $state');
 
                           if (state is CreateLoteProductSuccess) {
-                            Navigator.pop(context);
+                            hideLoadingDialog();
                             Navigator.pushReplacementNamed(
                                 context, 'scan-product-order', arguments: [
                               widget.ordenCompra,
@@ -82,18 +82,12 @@ class _NewLoteScreenState extends State<NewLoteScreen> {
                           }
 
                           if (state is CreateLoteProductLoading) {
-                            showDialog(
-                              context: context,
-                              builder: (context) {
-                                return const DialogLoading(
-                                  message: "Creando lote espere un momento...",
-                                );
-                              },
-                            );
+                            showLoadingDialog(
+                                "Creando lote espere un momento...");
                           }
 
                           if (state is CreateLoteProductFailure) {
-                            Navigator.pop(context);
+                            hideLoadingDialog();
                             if (state.code == 400) {
                               showScrollableErrorDialog(state.error);
                             } else if (state.code == 202 &&

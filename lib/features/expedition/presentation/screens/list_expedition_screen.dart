@@ -18,7 +18,7 @@ import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
@@ -29,7 +29,8 @@ class ListExpeditionScreen extends StatefulWidget {
   State<ListExpeditionScreen> createState() => _ListExpeditionScreenState();
 }
 
-class _ListExpeditionScreenState extends State<ListExpeditionScreen> {
+class _ListExpeditionScreenState extends State<ListExpeditionScreen>
+    with LoadingDialogMixin {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   String? _selectedPropietario;
@@ -101,15 +102,10 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen> {
         BlocListener<ExpedicionAssignmentBloc, ExpedicionAssignmentState>(
           listener: (context, state) {
             if (state is ExpedicionAssignmentLoading) {
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) =>
-                    const DialogLoading(message: 'Asignando responsable...'),
-              );
+              showLoadingDialog('Asignando responsable...');
             }
             if (state is ExpedicionAssignmentSuccess) {
-              Navigator.pop(context);
+              hideLoadingDialog();
               context
                   .read<ExpedicionListBloc>()
                   .add(const FetchExpedicionesFromDbEvent());
@@ -117,7 +113,7 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen> {
                   arguments: [state.pedido.expeditionId]);
             }
             if (state is ExpedicionAssignmentError) {
-              Navigator.pop(context);
+              hideLoadingDialog();
               Get.snackbar(
                 'Error',
                 state.message,

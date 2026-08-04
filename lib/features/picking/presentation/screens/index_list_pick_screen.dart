@@ -18,7 +18,7 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/response_pick_model.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
@@ -31,7 +31,8 @@ class IndexListPickScreen extends StatefulWidget {
   State<IndexListPickScreen> createState() => _IndexListPickScreenState();
 }
 
-class _IndexListPickScreenState extends State<IndexListPickScreen> {
+class _IndexListPickScreenState extends State<IndexListPickScreen>
+    with LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   final FocusNode focusNodeBuscar = FocusNode();
@@ -182,13 +183,7 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
     PickingListBloc batchBloc,
     ResultPick batch,
   ) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const DialogLoading(
-        message: 'Cargando interfaz...',
-      ),
-    );
+    showLoadingDialog('Cargando interfaz...');
 
     // Esperar a que PickScanBloc termine de cargar el pick antes de navegar
     // evita race condition donde currentProduct está vacío al abrir la pantalla
@@ -201,7 +196,7 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
     }
 
     if (!context.mounted) return;
-    Navigator.pop(context);
+    hideLoadingDialog();
 
     if (batch.isSeparate != 1) {
       batchBloc.searchPickController.clear();
@@ -222,6 +217,8 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
         listener: (context, state) {
          
           if (state is AssignUserToPickError) {
+            // El error no cerraba el loader y quedaba pegado.
+            hideLoadingDialog();
             Get.snackbar(
               '360 Software Informa',
               state.message,
@@ -232,17 +229,11 @@ class _IndexListPickScreenState extends State<IndexListPickScreen> {
           }
 
           if (state is AssignUserToPickLoading) {
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (_) => const DialogLoading(
-                message: 'Cargando interfaz...',
-              ),
-            );
+            showLoadingDialog('Cargando interfaz...');
           }
 
           if (state is AssignUserToPickSuccess) {
-            Navigator.pop(context);
+            hideLoadingDialog();
             context.read<PickingListBloc>().add(LoadPickWithProductsEvent(state.id));
             context.read<PickingListBloc>().add(LoadPickConfigurationsEvent());
             // Puente: cargar en PickScanBloc y PickingPickBloc
