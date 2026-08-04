@@ -11,7 +11,7 @@ import 'package:wms_app/features/expedition/presentation/bloc/list/expedition_li
 import 'package:wms_app/features/expedition/presentation/widgets/dialog_confirmar_pedido_widget.dart';
 import 'package:wms_app/features/expedition/presentation/widgets/dialog_vencidos_expedicion_widget.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 
 /// Tab "Detalles" de expedition_screen.dart: mismo resumen que
 /// ExpedicionCardWidget, más el botón "Confirmar pedido" (mismo par de
@@ -32,7 +32,7 @@ class ExpedicionDetailTabDetalles extends StatefulWidget {
 }
 
 class _ExpedicionDetailTabDetallesState
-    extends State<ExpedicionDetailTabDetalles> {
+    extends State<ExpedicionDetailTabDetalles> with LoadingDialogMixin {
   ExpedicionDetail get detail => widget.detail;
 
   // El botón "Confirmar pedido" solo se muestra con este permiso en true —
@@ -173,15 +173,10 @@ class _ExpedicionDetailTabDetallesState
     return BlocListener<ExpedicionConfirmBloc, ExpedicionConfirmState>(
       listener: (context, state) {
         if (state is ExpedicionConfirmLoading) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) =>
-                const DialogLoading(message: 'Confirmando expedición...'),
-          );
+          showLoadingDialog('Confirmando expedición...');
         }
         if (state is ExpedicionConfirmSuccess) {
-          Navigator.pop(context); // cierra el diálogo de carga
+          hideLoadingDialog(); // cierra el diálogo de carga
           // Confirmar (con o sin backorder) cambia el estado en el backend,
           // así que acá no alcanza con releer la caché local: hay que volver
           // a pedir /api/transferencias/out para traer la lista al día.
@@ -198,7 +193,7 @@ class _ExpedicionDetailTabDetallesState
           );
         }
         if (state is ExpedicionConfirmError) {
-          Navigator.pop(context);
+          hideLoadingDialog();
           if (state.message.contains('expiry.picking.confirmation')) {
             showDialog(
               context: context,

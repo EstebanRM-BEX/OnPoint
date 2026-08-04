@@ -25,6 +25,7 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/quantity/scanner_quantity_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/shared/widgets/segunda_unidad_input_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 
 class CreateTransferScreen extends StatefulWidget {
   const CreateTransferScreen({super.key});
@@ -34,7 +35,7 @@ class CreateTransferScreen extends StatefulWidget {
 }
 
 class _CreateTransferScreenState extends State<CreateTransferScreen>
-    with WidgetsBindingObserver, DisposableControllersMixin {
+    with WidgetsBindingObserver, DisposableControllersMixin, LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
 
@@ -461,44 +462,29 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
         }
 
         if (state is ValidateStockLoading) {
-          showDialog(
-            context: context,
-            builder: (context) =>
-                const DialogLoading(message: "Validando stock..."),
-          );
+          // Diálogo único blindado (el mixin cierra solo el suyo, sin el
+          // canPop ciego que podía cerrar otra ruta).
+          showLoadingDialog("Validando stock...");
         }
 
         if (state is ValidateStockSuccess) {
-          //validamos si tenemos dialog abierto para cerrarlo
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context);
-          }
+          hideLoadingDialog();
         }
 
         if (state is ValidateStockFailure) {
-          //validamos si tenemos dialog abierto para cerrarlo
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context);
-          }
+          hideLoadingDialog();
           showScrollableErrorDialog(state.error);
         } else if (state is CreateTransferFailure) {
-          //validamos si tenemos dialog abierto para cerrarlo
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context);
-          }
+          hideLoadingDialog();
           showScrollableErrorDialog(state.error);
         } else
         //estado para cuando estamos agregando un producto a la transferencia
         if (state is ProductAddingToTransferLoadingState) {
-          showDialog(
-            context: context,
-            builder: (context) =>
-                const DialogLoading(message: "Agregando producto..."),
-          );
+          showLoadingDialog("Agregando producto...");
         } else
         //estado para cuando agregamos un producto a la transferencia
         if (state is ProductAddedToTransferState) {
-          Navigator.pop(context); //cerramos el dialog de carga
+          hideLoadingDialog(); //cerramos el dialog de carga
           Get.snackbar(
             '360 Software Informa',
             'Producto agregado a la transferencia correctamente',

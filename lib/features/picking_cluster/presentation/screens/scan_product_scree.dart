@@ -26,6 +26,7 @@ import 'package:wms_app/src/presentation/views/recepcion/modules/individual/scre
 import 'package:wms_app/features/picking_cluster/domain/entities/batch_product.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/features/picking_cluster/presentation/widgets/dropdowbutton_widget.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/lote_producto/lote_producto_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/progressIndicatos_widget.dart';
@@ -45,7 +46,7 @@ class ScanProductCluster extends StatefulWidget {
 }
 
 class _ScanProductClusterState extends State<ScanProductCluster>
-    with WidgetsBindingObserver, DisposableControllersMixin {
+    with WidgetsBindingObserver, DisposableControllersMixin, LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   //focus
@@ -666,25 +667,18 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                 }
 
                 if (state is PickingClustersLoading) {
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) =>
-                        const DialogLoading(message: "Cargando Clústers..."),
-                  );
+                  // Diálogo único blindado (el mixin cierra solo el suyo, sin
+                  // el canPop ciego que podía cerrar una ruta que no era loader).
+                  showLoadingDialog("Cargando Clústers...");
                 }
 
                 if (state is PickingClustersLoaded) {
-                  if (Navigator.canPop(context)) {
-                    Navigator.pop(context); // Cierra el loader
-                  }
+                  hideLoadingDialog();
                   Navigator.pushReplacementNamed(context, 'picking-cluster');
                 }
 
                 if (state is PickingClustersError) {
-                  if (Navigator.canPop(context)) {
-                    Navigator.pop(context); // Cierra el loader
-                  }
+                  hideLoadingDialog();
                   Get.snackbar(
                     '360 Software Informa',
                     state.message,
@@ -698,33 +692,22 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                 }
 
                 if (state is SendToOdooStateSuccess) {
-                  if (Navigator.canPop(context)) {
-                    Navigator.pop(context); // Cierra el loader
-                  }
+                  hideLoadingDialog();
                 }
 
                 if (state is LoadValidatePedidoState) {
-                  if (Navigator.canPop(context)) {
-                    Navigator.pop(context); // Cierra el loader
-                  }
+                  hideLoadingDialog();
                   //mostramos dialogo para
                   validatePicking(context.read<ClusterPickingBloc>(), context,
                       context.read<ClusterPickingBloc>().currentProduct!);
                 }
 
                 if (state is CurrentProductChangedStateLoading) {
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) =>
-                        const DialogLoading(message: "Enviando producto..."),
-                  );
+                  showLoadingDialog("Enviando producto...");
                 }
 
                 if (state is CurrentProductChangedStateError) {
-                  if (Navigator.canPop(context)) {
-                    Navigator.pop(context); // Cierra el loader
-                  }
+                  hideLoadingDialog();
                   showScrollableErrorDialog(state.msg);
                 }
 
@@ -791,15 +774,12 @@ class _ScanProductClusterState extends State<ScanProductCluster>
             BlocListener<LoteProductoBloc, LoteProductoState>(
               listener: (context, state) {
                 if (state is LoteProductoLoading) {
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) {
-                      return const DialogLoading(message: "Procesando Lote...");
-                    },
-                  );
+                  showLoadingDialog("Procesando Lote...");
+                } else if (state is LoteProductoCreated) {
+                  // El éxito no cerraba el loader local y quedaba pegado.
+                  hideLoadingDialog();
                 } else if (state is LoteProductoError) {
-                  Navigator.pop(context); // Cerrar loading
+                  hideLoadingDialog(); // Cerrar loading
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       duration: const Duration(seconds: 4),

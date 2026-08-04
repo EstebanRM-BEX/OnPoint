@@ -28,6 +28,7 @@ import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 
 class InventarioScreen extends StatefulWidget {
   const InventarioScreen({super.key});
@@ -37,7 +38,7 @@ class InventarioScreen extends StatefulWidget {
 }
 
 class _InventarioScreenState extends State<InventarioScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   final ValueNotifier<String> _syncPhaseNotifier =
@@ -484,15 +485,11 @@ class _InventarioScreenState extends State<InventarioScreen>
         }
 
         if (state is SendProductLoading) {
-          showDialog(
-            context: context,
-            builder: (context) {
-              return const DialogLoading(message: "Validando informacion...");
-            },
-          );
+          // Diálogo único blindado contra aglomeración al reenviar productos.
+          showLoadingDialog("Validando informacion...");
         }
         if (state is SendProductSuccess) {
-          Navigator.pop(context);
+          hideLoadingDialog();
           context.read<InventarioBloc>().add(CleanFieldsEent());
           Get.snackbar(
             '360 Software Informa',
@@ -504,7 +501,7 @@ class _InventarioScreenState extends State<InventarioScreen>
         }
 
         if (state is SendProductFailure) {
-          Navigator.pop(context);
+          hideLoadingDialog();
           showScrollableErrorDialog(state.message);
         }
       },

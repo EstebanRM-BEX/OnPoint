@@ -10,14 +10,20 @@ import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/views/transferencias/models/response_transferencias.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 
-class Tab1ScreenTrans extends StatelessWidget {
+class Tab1ScreenTrans extends StatefulWidget {
   const Tab1ScreenTrans({super.key, required this.transFerencia});
 
   final ResultTransFerencias? transFerencia;
 
+  @override
+  State<Tab1ScreenTrans> createState() => _Tab1ScreenTransState();
+}
+
+class _Tab1ScreenTransState extends State<Tab1ScreenTrans>
+    with LoadingDialogMixin {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
@@ -38,7 +44,7 @@ class Tab1ScreenTrans extends StatelessWidget {
           }
 
           if (state is CheckAvailabilitySuccess) {
-            Navigator.pop(context);
+            hideLoadingDialog();
             Get.snackbar(
               '360 Software Informa',
               "Se ha comprobado la disponibilidad correctamente",
@@ -49,30 +55,18 @@ class Tab1ScreenTrans extends StatelessWidget {
           }
 
           if (state is CreateBackOrderOrNotLoading) {
-            showDialog(
-              context: context,
-              builder: (context) {
-                return const DialogLoading(message: "Validando informacion...");
-              },
-            );
+            showLoadingDialog("Validando informacion...");
           }
           if (state is CheckAvailabilityLoading) {
-            showDialog(
-              context: context,
-              builder: (context) {
-                return const DialogLoading(
-                  message: "Comprobando disponibilidad...",
-                );
-              },
-            );
+            showLoadingDialog("Comprobando disponibilidad...");
           }
 
           if (state is CheckAvailabilityFailure) {
-            Navigator.pop(context);
+            hideLoadingDialog();
             showScrollableErrorDialog(state.error);
           }
           if (state is CreateBackOrderOrNotFailure) {
-            Navigator.pop(context);
+            hideLoadingDialog();
             if (state.error.contains('expiry.picking.confirmation')) {
               Get.defaultDialog(
                 title: '360 Software Informa',
@@ -87,7 +81,7 @@ class Tab1ScreenTrans extends StatelessWidget {
                     onPressed: () {
                       context.read<TransferenciaBloc>().add(
                         ValidateConfirmEvent(
-                          transFerencia?.id ?? 0,
+                          widget.transFerencia?.id ?? 0,
                           state.isBackorder,
                         ),
                       );
@@ -121,20 +115,15 @@ class Tab1ScreenTrans extends StatelessWidget {
           }
 
           if (state is ValidateConfirmLoading) {
-            showDialog(
-              context: context,
-              builder: (context) {
-                return const DialogLoading(message: "Validando informacion...");
-              },
-            );
+            showLoadingDialog("Validando informacion...");
           }
 
           if (state is ValidateConfirmSuccess) {
-            if (transFerencia?.type == "transfer") {
+            if (widget.transFerencia?.type == "transfer") {
               context.read<TransferenciaBloc>().add(
                 FetchAllTransferencias(true),
               );
-            } else if (transFerencia?.type == "entrega") {
+            } else if (widget.transFerencia?.type == "entrega") {
               context.read<TransferenciaBloc>().add(FetchAllEntrega(true));
             }
 
@@ -157,27 +146,27 @@ class Tab1ScreenTrans extends StatelessWidget {
               );
             }
 
-            Navigator.pop(context);
+            hideLoadingDialog();
 
-            if (transFerencia?.type == "transfer") {
+            if (widget.transFerencia?.type == "transfer") {
               Navigator.pushReplacementNamed(context, 'transferencias');
-            } else if (transFerencia?.type == "entrega") {
+            } else if (widget.transFerencia?.type == "entrega") {
               Navigator.pushReplacementNamed(context, 'list-entrada-productos');
             }
           }
 
           if (state is ValidateConfirmFailure) {
-            Navigator.pop(context);
+            hideLoadingDialog();
 
             showScrollableErrorDialog(state.error);
           }
 
           if (state is CreateBackOrderOrNotSuccess) {
-            if (transFerencia?.type == "transfer") {
+            if (widget.transFerencia?.type == "transfer") {
               context.read<TransferenciaBloc>().add(
                 FetchAllTransferencias(true),
               );
-            } else if (transFerencia?.type == "entrega") {
+            } else if (widget.transFerencia?.type == "entrega") {
               context.read<TransferenciaBloc>().add(FetchAllEntrega(true));
             }
 
@@ -200,11 +189,11 @@ class Tab1ScreenTrans extends StatelessWidget {
               );
             }
 
-            Navigator.pop(context);
+            hideLoadingDialog();
 
-            if (transFerencia?.type == "transfer") {
+            if (widget.transFerencia?.type == "transfer") {
               Navigator.pushReplacementNamed(context, 'transferencias');
-            } else if (transFerencia?.type == "entrega") {
+            } else if (widget.transFerencia?.type == "entrega") {
               Navigator.pushReplacementNamed(context, 'list-entrada-productos');
             }
           }
@@ -734,7 +723,7 @@ class Tab1ScreenTrans extends StatelessWidget {
                                                   .read<TransferenciaBloc>()
                                                   .add(
                                                     CreateBackOrderOrNot(
-                                                      transFerencia?.id ?? 0,
+                                                      widget.transFerencia?.id ?? 0,
                                                       true,
                                                     ),
                                                   );
@@ -764,12 +753,12 @@ class Tab1ScreenTrans extends StatelessWidget {
                                           onPressed: () async {
                                             context.read<TransferenciaBloc>().add(
                                               CreateBackOrderOrNot(
-                                                transFerencia?.id ?? 0,
-                                                transFerencia
+                                                widget.transFerencia?.id ?? 0,
+                                                widget.transFerencia
                                                             ?.createBackorder ==
                                                         "never"
                                                     ? false
-                                                    : transFerencia
+                                                    : widget.transFerencia
                                                               ?.createBackorder ==
                                                           "always"
                                                     ? true

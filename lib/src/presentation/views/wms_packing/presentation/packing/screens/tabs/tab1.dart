@@ -7,14 +7,20 @@ import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/widgets/others/dialog_backorder_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 
-class Tab1PedidoScreen extends StatelessWidget {
+class Tab1PedidoScreen extends StatefulWidget {
   const Tab1PedidoScreen({
     super.key,
   });
 
+  @override
+  State<Tab1PedidoScreen> createState() => _Tab1PedidoScreenState();
+}
+
+class _Tab1PedidoScreenState extends State<Tab1PedidoScreen>
+    with LoadingDialogMixin {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
@@ -48,6 +54,7 @@ class Tab1PedidoScreen extends StatelessWidget {
                       colorText: primaryColorApp,
                       icon: Icon(Icons.error, color: Colors.green));
                 }
+                hideLoadingDialog();
                 Navigator.pushReplacementNamed(
                   context,
                   'list-packing',
@@ -55,25 +62,11 @@ class Tab1PedidoScreen extends StatelessWidget {
               }
 
               if (state is CreateBackOrderOrNotLoading) {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return const DialogLoading(
-                      message: "Validando informacion...",
-                    );
-                  },
-                );
+                showLoadingDialog("Validando informacion...");
               }
 
               if (state is ValidateConfirmLoading) {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return const DialogLoading(
-                      message: "Validando informacion...",
-                    );
-                  },
-                );
+                showLoadingDialog("Validando informacion...");
               }
 
               if (state is ValidateConfirmSuccess) {
@@ -90,6 +83,7 @@ class Tab1PedidoScreen extends StatelessWidget {
                       icon: Icon(Icons.error, color: Colors.green));
                 }
 
+                hideLoadingDialog();
                 Navigator.pushReplacementNamed(
                   context,
                   'list-packing',
@@ -97,13 +91,13 @@ class Tab1PedidoScreen extends StatelessWidget {
               }
 
               if (state is ValidateConfirmFailure) {
-                Navigator.pop(context);
+                hideLoadingDialog();
 
                 showScrollableErrorDialog(state.error);
               }
 
               if (state is CreateBackOrderOrNotFailure) {
-                Navigator.pop(context);
+                hideLoadingDialog();
 
                 if (state.error.contains('expiry.picking.confirmation')) {
                   Get.defaultDialog(

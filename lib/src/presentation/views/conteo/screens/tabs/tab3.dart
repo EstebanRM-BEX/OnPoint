@@ -9,8 +9,8 @@ import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_mod
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/others/products_empty_widget.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 
 class Tab3ScreenConteo extends StatefulWidget {
   const Tab3ScreenConteo({
@@ -24,7 +24,8 @@ class Tab3ScreenConteo extends StatefulWidget {
   State<Tab3ScreenConteo> createState() => _Tab3ScreenRecepState();
 }
 
-class _Tab3ScreenRecepState extends State<Tab3ScreenConteo> {
+class _Tab3ScreenRecepState extends State<Tab3ScreenConteo>
+    with LoadingDialogMixin {
   Map<String, List<CountedLine>> _groupByLocation(List<CountedLine> productos) {
     final map = <String, List<CountedLine>>{};
     for (final producto in productos) {
@@ -44,11 +45,10 @@ class _Tab3ScreenRecepState extends State<Tab3ScreenConteo> {
       child: BlocConsumer<ConteoBloc, ConteoState>(
         listener: (context, state) {
           if (state is DeleteProductConteoLoading) {
-            showDialog(
-              context: context,
-              builder: (context) =>
-                  const DialogLoading(message: "Eliminando registro..."),
-            );
+            // Diálogo único blindado: al deshacer varios registros seguidos el
+            // showDialog crudo + Navigator.pop ciego apilaba cargas que se
+            // quedaban pegadas. El mixin garantiza un solo diálogo a la vez.
+            showLoadingDialog("Eliminando registro...");
           }
 
           if (state is ViewProductImageSuccess) {
@@ -57,11 +57,11 @@ class _Tab3ScreenRecepState extends State<Tab3ScreenConteo> {
             showScrollableErrorDialog(state.error);
           }
           if (state is DeleteProductConteoSuccess) {
-            Navigator.pop(context); // Cierra el diálogo de carga
+            hideLoadingDialog();
           }
 
           if (state is DeleteProductConteoFailure) {
-            Navigator.pop(context); // Cierra el diálogo de carga
+            hideLoadingDialog();
             showScrollableErrorDialog(state.error);
           }
         },
