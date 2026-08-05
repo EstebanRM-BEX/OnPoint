@@ -69,6 +69,7 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:wms_app/injection_container.dart';
+import 'package:wms_app/features/chat/presentation/widgets/global_chat_overlay.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final ApiRequestService apiRequestService = ApiRequestService();
@@ -219,7 +220,9 @@ class MyApp extends StatelessWidget {
             duration: const Duration(minutes: 240),
             onSessionExpired: logOut,
             child: NetworkQualityOverlay(
-              child: navigator ?? const SizedBox.shrink(),
+              child: GlobalChatOverlay(
+                child: navigator ?? const SizedBox.shrink(),
+              ),
             ),
           );
         },

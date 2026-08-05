@@ -32,6 +32,16 @@ import 'features/auth/data/repositories/auth_repository_impl.dart' as _i111;
 import 'features/auth/domain/repositories/auth_repository.dart' as _i1015;
 import 'features/auth/domain/usecases/validate_session.dart' as _i52;
 import 'features/auth/presentation/bloc/auth_bloc.dart' as _i363;
+import 'features/chat/data/datasources/chat_local_data_source.dart' as _i804;
+import 'features/chat/data/repositories/chat_repository_impl.dart' as _i382;
+import 'features/chat/domain/repositories/chat_repository.dart' as _i453;
+import 'features/chat/domain/usecases/ensure_conversation.dart' as _i476;
+import 'features/chat/domain/usecases/get_contacts.dart' as _i100;
+import 'features/chat/domain/usecases/get_conversations.dart' as _i720;
+import 'features/chat/domain/usecases/get_current_user.dart' as _i708;
+import 'features/chat/domain/usecases/get_messages.dart' as _i537;
+import 'features/chat/domain/usecases/send_message.dart' as _i422;
+import 'features/chat/presentation/bloc/chat_bloc.dart' as _i1026;
 import 'features/enterprise/data/datasources/enterprise_local_data_source.dart'
     as _i854;
 import 'features/enterprise/data/datasources/enterprise_remote_data_source.dart'
@@ -384,6 +394,9 @@ extension GetItInjectableX on _i174.GetIt {
       final i = _i243.StorageService();
       return i.init().then((_) => i);
     }, preResolve: true);
+    gh.lazySingleton<_i804.ChatLocalDataSource>(
+      () => _i804.ChatLocalDataSourceImpl(),
+    );
     gh.lazySingleton<_i681.PickingClusterRemoteDataSource>(
       () => _i681.PickingClusterRemoteDataSourceImpl(
         gh<_i319.ApiRequestService>(),
@@ -392,6 +405,27 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i1062.IWebSocketService>(() => _i1020.WebSocketService());
     gh.lazySingleton<_i854.EnterpriseLocalDataSource>(
       () => _i854.EnterpriseLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()),
+    );
+    gh.lazySingleton<_i453.ChatRepository>(
+      () => _i382.ChatRepositoryImpl(gh<_i804.ChatLocalDataSource>()),
+    );
+    gh.lazySingleton<_i476.EnsureConversation>(
+      () => _i476.EnsureConversation(gh<_i453.ChatRepository>()),
+    );
+    gh.lazySingleton<_i100.GetContacts>(
+      () => _i100.GetContacts(gh<_i453.ChatRepository>()),
+    );
+    gh.lazySingleton<_i720.GetConversations>(
+      () => _i720.GetConversations(gh<_i453.ChatRepository>()),
+    );
+    gh.lazySingleton<_i708.GetCurrentUser>(
+      () => _i708.GetCurrentUser(gh<_i453.ChatRepository>()),
+    );
+    gh.lazySingleton<_i537.GetMessages>(
+      () => _i537.GetMessages(gh<_i453.ChatRepository>()),
+    );
+    gh.lazySingleton<_i422.SendMessage>(
+      () => _i422.SendMessage(gh<_i453.ChatRepository>()),
     );
     gh.lazySingleton<_i777.ExpeditionRepository>(
       () => _i838.ExpeditionRepositoryImpl(
@@ -593,6 +627,16 @@ extension GetItInjectableX on _i174.GetIt {
         remoteDataSource: gh<_i592.InventarioRemoteDataSource>(),
         localDataSource: gh<_i812.InventarioLocalDataSource>(),
         networkInfo: gh<_i75.NetworkInfo>(),
+      ),
+    );
+    gh.factory<_i1026.ChatBloc>(
+      () => _i1026.ChatBloc(
+        getCurrentUser: gh<_i708.GetCurrentUser>(),
+        getConversations: gh<_i720.GetConversations>(),
+        getContacts: gh<_i100.GetContacts>(),
+        getMessages: gh<_i537.GetMessages>(),
+        sendMessage: gh<_i422.SendMessage>(),
+        ensureConversation: gh<_i476.EnsureConversation>(),
       ),
     );
     gh.lazySingleton<_i649.HomeRepository>(
