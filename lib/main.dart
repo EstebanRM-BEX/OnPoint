@@ -69,7 +69,8 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:wms_app/injection_container.dart';
-import 'package:wms_app/features/chat/presentation/widgets/global_chat_overlay.dart';
+// Chat global desactivado en desarrollo.
+// import 'package:wms_app/features/chat/presentation/widgets/global_chat_overlay.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final ApiRequestService apiRequestService = ApiRequestService();
@@ -219,10 +220,10 @@ class MyApp extends StatelessWidget {
           return SessionTimeoutManager(
             duration: const Duration(minutes: 240),
             onSessionExpired: logOut,
+            // Chat global desactivado en desarrollo. Para reactivarlo, envolver
+            // de nuevo el navigator con GlobalChatOverlay.
             child: NetworkQualityOverlay(
-              child: GlobalChatOverlay(
-                child: navigator ?? const SizedBox.shrink(),
-              ),
+              child: navigator ?? const SizedBox.shrink(),
             ),
           );
         },

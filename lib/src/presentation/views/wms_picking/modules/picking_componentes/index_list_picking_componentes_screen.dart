@@ -18,6 +18,7 @@ import 'package:wms_app/src/presentation/views/recepcion/modules/individual/scre
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_start_picking_widget.dart';
+import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/response_pick_model.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
@@ -83,6 +84,12 @@ class IndexListPickComponentsScreen extends StatelessWidget {
       },
       child: BlocConsumer<PickingPickBloc, PickingPickState>(
         listener: (context, state) {
+          if (state is PickingPickCompoError) {
+            // Muestra el motivo del backend (p.ej. "El usuario no tiene zonas
+            // asignadas") cuando falla la carga de componentes.
+            showScrollableErrorDialog(state.error);
+          }
+
           if (state is AssignUserToPickError) {
             Get.snackbar(
               '360 Software Informa',

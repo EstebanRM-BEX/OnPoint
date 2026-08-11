@@ -189,7 +189,7 @@ class ApiRequestService {
       return buildClientErrorResponse(404, 'Error de red');
     }
 
-    const urlBase = 'http://34.127.73.152:5005';
+    const urlBase = 'https://apitemperature.360software.com.co';
     final fullUrl = Uri.parse('$urlBase/$endpoint');
     final ext = p.extension(imageFile.path).toLowerCase();
     final subtype = ext == '.png' ? 'png' : 'jpeg';

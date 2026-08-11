@@ -6,6 +6,7 @@ import 'package:wms_app/injection_container.dart';
 
 import 'package:flutter/material.dart';
 import 'package:wms_app/shared/widgets/disposable_controllers_mixin.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
@@ -28,7 +29,6 @@ import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/widgets/product/product_pack_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
@@ -43,7 +43,7 @@ class ScanPackScreen extends StatefulWidget {
 }
 
 class _PackingScreenState extends State<ScanPackScreen>
-    with DisposableControllersMixin {
+    with DisposableControllersMixin, LoadingDialogMixin {
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   final IAudioService _audioService = getIt<IAudioService>();
   FocusNode focusNode1 = FocusNode(); // ubicacion  de origen
@@ -289,18 +289,21 @@ class _PackingScreenState extends State<ScanPackScreen>
                                 }
 
                                 if (state is SetPickingPackingLoadingState) {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => const DialogLoading(
-                                      message: "Separando producto...",
-                                    ),
-                                  );
+                                  showLoadingDialog("Separando producto...");
+                                }
+
+                                if (state is SetPickingPackingErrorState) {
+                                  hideLoadingDialog();
+                                  showScrollableErrorDialog(state.message);
+                                }
+
+                                if (state is SplitProductError) {
+                                  hideLoadingDialog();
+                                  showScrollableErrorDialog(state.message);
                                 }
 
                                 if (state is SetPickingPackingOkState) {
-                                  if (Navigator.canPop(context)) {
-                                    Navigator.pop(context);
-                                  }
+                                  hideLoadingDialog();
 
                                   //validamos si el producto maneja temperatura
                                   if (packingBloc.currentProduct
@@ -365,8 +368,9 @@ class _PackingScreenState extends State<ScanPackScreen>
                                 }
 
                                 if (state is SendTemperatureFailure) {
-                                  Navigator.pop(context);
-
+                                  if (Navigator.canPop(context)) {
+                                    Navigator.pop(context);
+                                  }
                                   showScrollableErrorDialog(state.error);
                                 }
 

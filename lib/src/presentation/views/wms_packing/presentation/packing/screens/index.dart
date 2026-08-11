@@ -15,7 +15,7 @@ import 'package:wms_app/src/presentation/views/recepcion/modules/individual/scre
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/response_packing_pedido_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
@@ -28,7 +28,8 @@ class ListPackingScreen extends StatefulWidget {
   State<ListPackingScreen> createState() => _WmsPackingScreenState();
 }
 
-class _WmsPackingScreenState extends State<ListPackingScreen> {
+class _WmsPackingScreenState extends State<ListPackingScreen>
+    with LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   final FocusNode focusNodeBuscar = FocusNode();
@@ -155,6 +156,7 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
             current is NeedUpdateVersionState ||
             current is LoadPedidoAndProductsLoading ||
             current is LoadPedidoAndProductsLoaded ||
+            current is LoadPedidoAndProductsError ||
             current is PackingPedidoError ||
             current is AssignUserToPedidoError ||
             current is AssignUserToPedidoLoading ||
@@ -187,25 +189,17 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
       }
 
       if (state is LoadPedidoAndProductsLoading) {
-        if (Navigator.canPop(context)) {
-          Navigator.pop(context);
-        }
-        //dialogo de cargando
-        showDialog(
-          context: context,
-          barrierDismissible:
-              false, // No permitir que el usuario cierre el diálogo manualmente
-          builder: (_) => const DialogLoading(
-            message: 'Cargando pedido...',
-          ),
-        );
+        showLoadingDialog('Cargando pedido...');
+      }
+
+      if (state is LoadPedidoAndProductsError) {
+        hideLoadingDialog();
+        showScrollableErrorDialog(state.error);
       }
 
       if (state is LoadPedidoAndProductsLoaded) {
         //cerramos el dialogo de cargando
-        if (Navigator.canPop(context)) {
-          Navigator.pop(context);
-        }
+        hideLoadingDialog();
         //navegamos a la pantalla de detalle
         Navigator.pushReplacementNamed(context, 'detail-packing-pedido',
             arguments: [0]);
@@ -217,9 +211,7 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
 
       if (state is AssignUserToPedidoError) {
         //validamos que este un dialog abierto
-        if (Navigator.canPop(context)) {
-          Navigator.pop(context);
-        }
+        hideLoadingDialog();
         Get.snackbar(
           '360 Software Informa',
           state.error,
@@ -230,15 +222,8 @@ class _WmsPackingScreenState extends State<ListPackingScreen> {
       }
 
       if (state is AssignUserToPedidoLoading) {
-        // mostramos un dialogo de carga y despues
-        showDialog(
-          context: context,
-          barrierDismissible:
-              false, // No permitir que el usuario cierre el diálogo manualmente
-          builder: (_) => const DialogLoading(
-            message: 'Cargando interfaz...',
-          ),
-        );
+        // mostramos un dialogo de carga (idempotente: no apila duplicados).
+        showLoadingDialog('Cargando interfaz...');
       }
 
       if (state is AssignUserToPedidoLoaded) {

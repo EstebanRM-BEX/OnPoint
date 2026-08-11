@@ -31,12 +31,14 @@
 
 
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!-- Chat: grabación de notas de voz, cámara y galería -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- Cámara: fotos de temperatura y novedades en recepción/packing. -->
     <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32"/>
+    <!-- READ_MEDIA_IMAGES / READ_EXTERNAL_STORAGE se removieron: solo los usaba
+         el chat (galería), hoy desactivado. RECORD_AUDIO lo reinyecta el plugin
+         `record` (notas de voz del chat); lo removemos del manifest final porque
+         el chat está desactivado. Reactivar junto con GlobalChatOverlay. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"
+        tools:node="remove" />
 
     <application
         android:usesCleartextTraffic="true"

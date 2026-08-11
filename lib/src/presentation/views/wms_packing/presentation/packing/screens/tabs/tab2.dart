@@ -16,7 +16,7 @@ import 'package:wms_app/src/presentation/views/wms_packing/models/lista_product_
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/screens/widgets/dialog_confirmated_packing_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
 class Tab2PedidoScreen extends StatefulWidget {
@@ -28,7 +28,8 @@ class Tab2PedidoScreen extends StatefulWidget {
   State<Tab2PedidoScreen> createState() => _Tab2ScreenState();
 }
 
-class _Tab2ScreenState extends State<Tab2PedidoScreen> {
+class _Tab2ScreenState extends State<Tab2PedidoScreen>
+    with LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   FocusNode focusNodeBuscar = FocusNode(); //cantidad textformfield
@@ -75,9 +76,6 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
 
     // Función auxiliar para procesar un producto encontrado
     void processProduct(ProductoPedido product) {
-      // Variable para almacenar el contexto creado por showDialog
-      BuildContext? dialogContext;
-
       // VERIFICAR que el producto tenga los datos necesarios
       if (product.idProduct == null ||
           product.pedidoId == null ||
@@ -109,28 +107,13 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
         ));
       Future.microtask(() => focusNodeBuscar.requestFocus());
 
-      // 1. ABRIR DIÁLOGO Y CAPTURAR SU CONTEXTO
-      showDialog(
-        context: context,
-        builder: (ctx) {
-          // ✅ Capturamos el contexto del diálogo como 'ctx'
-          dialogContext = ctx; // Almacenamos la referencia
-          return const DialogLoading(
-            message: 'Cargando información del producto...',
-          );
-        },
-      );
+      // Loading idempotente y blindado (LoadingDialogMixin).
+      showLoadingDialog('Cargando información del producto...');
 
-      // 2. TEMPORIZADOR PARA CERRAR Y NAVEGAR
+      // Temporizador para cerrar y navegar.
       Future.delayed(const Duration(seconds: 1), () {
         if (!mounted) return;
-        // 3. ✅ CORRECCIÓN CLAVE: Usar el contexto capturado para el POP
-        if (dialogContext != null && dialogContext!.mounted) {
-          // El 'pop' ahora es seguro y usa el contexto válido del diálogo
-          Navigator.of(dialogContext!, rootNavigator: true).pop();
-        }
-
-        // 4. Navegación a la siguiente vista
+        hideLoadingDialog();
         Navigator.pushReplacementNamed(context, 'scan-pack');
       });
 
@@ -596,37 +579,16 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> {
                                                       .add(FetchProductEvent(
                                                           product));
 
-                                                  // Variable para capturar el contexto del diálogo
-                                                  BuildContext? dialogContext;
-
-                                                  showDialog(
-                                                    context: context,
-                                                    builder: (ctx) {
-                                                      // Capturamos el contexto del diálogo
-                                                      dialogContext = ctx;
-                                                      return const DialogLoading(
-                                                        message:
-                                                            'Cargando información del producto...',
-                                                      );
-                                                    },
-                                                  );
+                                                  // Loading idempotente y
+                                                  // blindado (LoadingDialogMixin).
+                                                  showLoadingDialog(
+                                                      'Cargando información del producto...');
 
                                                   Future.delayed(
                                                       const Duration(
                                                           seconds: 1), () {
                                                     if (!mounted) return;
-
-                                                    // Cerrar el diálogo de carga usando el contexto capturado
-                                                    if (dialogContext != null &&
-                                                        dialogContext!
-                                                            .mounted) {
-                                                      Navigator.of(
-                                                              dialogContext!,
-                                                              rootNavigator:
-                                                                  true)
-                                                          .pop();
-                                                    }
-
+                                                    hideLoadingDialog();
                                                     // Ahora navegar a la vista "batch"
                                                     Navigator
                                                         .pushReplacementNamed(

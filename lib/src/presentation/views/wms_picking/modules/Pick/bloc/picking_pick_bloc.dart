@@ -478,6 +478,15 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         event.isLoadinDialog,
       );
 
+      // El backend responde HTTP 200 con result.code == 400 y un msg de negocio
+      // (p.ej. "El usuario no tiene zonas asignadas"). Antes se trataba como
+      // lista vacía y el motivo se perdía; ahora lo surface como error.
+      if (result.code == 400) {
+        emit(PickingPickCompoError(
+            result.msg ?? 'No se pudieron cargar los componentes.'));
+        return;
+      }
+
       listOfPickCompo = [];
       listOfPickCompoFiltered = [];
 

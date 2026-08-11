@@ -383,18 +383,14 @@ class PickingPickRepository {
         // Asegúrate de que 'result' exista y sea una lista
         if (jsonResponse.containsKey('result')) {
           if (jsonResponse['result']['code'] == 400) {
-            Get.snackbar(
-              'Error',
-              'Error : ${jsonResponse['result']['msg']}',
-              backgroundColor: white,
-              colorText: primaryColorApp,
-              icon: Icon(Icons.check, color: Colors.red),
-            );
+            // No mostramos UI desde la capa de datos: el bloc emite
+            // PickingPickCompoError y lela pantalla muestra el diálogo con el msg.
             return ResponsePickResult(
               code: 400,
               msg: jsonResponse['result']['msg'],
               result: [],
               updateVersion: false,
+
             );
           } else if (jsonResponse['result']['code'] == 200) {
             if (jsonResponse['result'].containsKey('result')) {

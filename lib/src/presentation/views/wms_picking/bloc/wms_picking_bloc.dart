@@ -208,6 +208,14 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
         event.isLoadinDialog,
       );
 
+      // HTTP 200 con code == 400 y msg de negocio (p.ej. "El usuario no tiene
+      // zonas asignadas"): antes quedaba como lista vacía silenciosa.
+      if (response.code == 400) {
+        emit(BatchsPickingErrorState(
+            response.msg ?? 'No se pudieron cargar los batches.'));
+        return;
+      }
+
       listOfBatchsByComponents.clear();
       filteredBatchsByComponents.clear();
 
