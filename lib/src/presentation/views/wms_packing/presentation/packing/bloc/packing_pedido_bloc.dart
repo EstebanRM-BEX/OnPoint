@@ -661,6 +661,72 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         //si es exitoso procedemos a desemapcar los productos
         //recorremos todo los productos del request
         for (var product in event.request.listItems) {
+          // ── Cantidad realmente empacada de esta fila ───────────────
+          // Localizamos la fila empacada exacta (mismo idMove + paquete). La
+          // cantidad empacada real vive en `quantity_separate`; pero algunos
+          // flujos (ej. empaque cluster por lote) NO lo setean y dejan la
+          // cantidad en `quantity`. Por eso usamos quantity_separate si es > 0
+          // y, si no, caemos a quantity. Nunca debe quedar en 0.
+          double packedQty = 0.0;
+          int? packedRowId;
+          for (final p in listOfProductos) {
+            // Si viene el PK exacto (fila gemela de un split), matcheamos por él;
+            // si no, por la clave compuesta (idMove + paquete + empacado).
+            final bool matches = event.rowId != null
+                ? p.id == event.rowId
+                : (p.idMove == product.idMove &&
+                    p.idPackage == event.request.idPaquete &&
+                    p.isPackage == 1);
+            if (matches) {
+              final double sep = (p.quantitySeparate is num)
+                  ? (p.quantitySeparate as num).toDouble()
+                  : 0.0;
+              final double qty =
+                  (p.quantity is num) ? (p.quantity as num).toDouble() : 0.0;
+              packedQty = sep > 0 ? sep : qty;
+              packedRowId = p.id;
+              break;
+            }
+          }
+
+          // CASO 1 — ya hay un remanente del mismo idMove en "por hacer":
+          // desempacar SUMA la cantidad empacada a ese remanente (ej: 4 + 6 = 10)
+          // y borra la fila empacada. Mismo criterio que al quitar un producto
+          // de un paquete temporal (findAndAddQuantityAndDelete).
+          final bool tieneRemanente = listOfProductosProgress
+              .any((p) => p.idMove == product.idMove);
+          if (tieneRemanente) {
+            await db.productosPedidosRepository.findAndAddQuantityAndDelete(
+              event.productId,
+              product.idMove,
+              packedQty,
+              event.pedidoId,
+              'packing-pack',
+              certifiedRowId: event.rowId ?? packedRowId,
+            );
+            continue;
+          }
+
+          // CASO 2 — no hay remanente: esta fila vuelve sola a "por hacer".
+          // Igualamos `quantity` a la cantidad empacada para que aparezca solo
+          // lo que estaba en este paquete (ej. 13, o 6 si venía de un split que
+          // dejó quantity con el total viejo). Solo si packedQty > 0, para no
+          // pisar una cantidad válida con 0 cuando no se pudo determinar.
+          // Se hace ANTES de anular campos, mientras id_package aún apunta a
+          // este paquete (el WHERE filtra por id_package).
+          if (packedQty > 0) {
+            await db.productosPedidosRepository
+                .setFieldTableProductosPedidosUnPacking(
+                    event.pedidoId,
+                    event.productId,
+                    "quantity",
+                    packedQty,
+                    product.idMove,
+                    event.request.idPaquete,
+                    'packing-pack',
+                    rowId: event.rowId);
+          }
+
           //actualizamos el estado del producto como no separado
           await db.productosPedidosRepository
               .setFieldTableProductosPedidosUnPacking(
@@ -670,7 +736,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
                   null,
                   product.idMove,
                   event.request.idPaquete,
-                  'packing-pack');
+                  'packing-pack',
+                  rowId: event.rowId);
           //actualizamso el estado del producto como no empaquetado
           await db.productosPedidosRepository
               .setFieldTableProductosPedidosUnPacking(
@@ -680,18 +747,16 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
                   null,
                   product.idMove,
                   event.request.idPaquete,
-                  'packing-pack');
+                  'packing-pack',
+                  rowId: event.rowId);
 
-          //actualizamos el estado del producto como no dividido
-          await db.productosPedidosRepository
-              .setFieldTableProductosPedidosUnPacking(
-                  event.pedidoId,
-                  event.productId,
-                  "is_product_split",
-                  null,
-                  product.idMove,
-                  event.request.idPaquete,
-                  'packing-pack');
+          // NO anulamos `is_product_split`: si este producto se dividió en
+          // gemelas (ej. 6 y 4) empacadas juntas, al desempacar la primera
+          // debe quedar en "por hacer" conservando la marca de split, para que
+          // al desempacar la segunda gemela `findAndAddQuantityAndDelete`
+          // (que exige is_product_split=1) encuentre este remanente y sume.
+          // Para un producto no dividido ya venía en null, así que no cambia.
+
           //actualizamos el estado del producto como no certificado
           await db.productosPedidosRepository
               .setFieldTableProductosPedidosUnPacking(
@@ -701,7 +766,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
                   null,
                   product.idMove,
                   event.request.idPaquete,
-                  'packing-pack');
+                  'packing-pack',
+                  rowId: event.rowId);
 
           //actualizamos el valor de is_location
           await db.productosPedidosRepository
@@ -712,7 +778,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
                   null,
                   product.idMove,
                   event.request.idPaquete,
-                  'packing-pack');
+                  'packing-pack',
+                  rowId: event.rowId);
 
           //actualizamos el valor de quantity_separate
           await db.productosPedidosRepository
@@ -723,18 +790,23 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
                   null,
                   product.idMove,
                   event.request.idPaquete,
-                  'packing-pack');
+                  'packing-pack',
+                  rowId: event.rowId);
 
           //actualizamos el valor de is_selected
+          // 0 (no null): así la fila revertida queda como un remanente de split
+          // genuino (igual que insertDuplicate) y `findAndAddQuantityAndDelete`
+          // —que exige is_selected=0— puede sumarle una gemela desempacada luego.
           await db.productosPedidosRepository
               .setFieldTableProductosPedidosUnPacking(
                   event.pedidoId,
                   event.productId,
                   "is_selected",
-                  null,
+                  0,
                   product.idMove,
                   event.request.idPaquete,
-                  'packing-pack');
+                  'packing-pack',
+                  rowId: event.rowId);
 
           //actualizamos el valor de product_is_ok
           await db.productosPedidosRepository
@@ -745,7 +817,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
                   null,
                   product.idMove,
                   event.request.idPaquete,
-                  'packing-pack');
+                  'packing-pack',
+                  rowId: event.rowId);
 
           //actualzamos el valor de is_quantity_is_ok
           await db.productosPedidosRepository
@@ -756,7 +829,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
                   null,
                   product.idMove,
                   event.request.idPaquete,
-                  'packing-pack');
+                  'packing-pack',
+                  rowId: event.rowId);
 
           //actualizamos el valor de package_name
           await db.productosPedidosRepository
@@ -767,7 +841,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
                   null,
                   product.idMove,
                   event.request.idPaquete,
-                  'packing-pack');
+                  'packing-pack',
+                  rowId: event.rowId);
 
           //acrtualizamos el valor del id_paquete en el producto
           await db.productosPedidosRepository
@@ -778,7 +853,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
                   null,
                   product.idMove,
                   event.request.idPaquete,
-                  'packing-pack');
+                  'packing-pack',
+                  rowId: event.rowId);
 
           await db.productosPedidosRepository
               .setFieldTableProductosPedidosUnPacking(
@@ -788,7 +864,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
                   null,
                   product.idMove,
                   event.request.idPaquete,
-                  'packing-pack');
+                  'packing-pack',
+                  rowId: event.rowId);
         }
 
         //restamos la cantidad de productos desempacados a un paquete

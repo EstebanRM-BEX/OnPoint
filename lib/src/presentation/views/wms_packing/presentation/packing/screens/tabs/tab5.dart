@@ -9,6 +9,8 @@ import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
+import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/un_pack_request.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/screens/widgets/dialog_unPacking.dart';
@@ -23,7 +25,7 @@ class Tab5Screen extends StatefulWidget {
   State<Tab5Screen> createState() => _Tab5ScreenState();
 }
 
-class _Tab5ScreenState extends State<Tab5Screen> {
+class _Tab5ScreenState extends State<Tab5Screen> with LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   FocusNode focusNodeBuscar = FocusNode(); //cantidad textformfield
@@ -163,7 +165,10 @@ class _Tab5ScreenState extends State<Tab5Screen> {
       }
     }
 
-    Future.microtask(() => focusNodeBuscar.requestFocus());
+    Future.microtask(() {
+      if (!mounted) return;
+      focusNodeBuscar.requestFocus();
+    });
   }
 
   void _showQRDialog(BuildContext context, String data) {
@@ -221,12 +226,22 @@ class _Tab5ScreenState extends State<Tab5Screen> {
   Widget build(BuildContext context) {
     return BlocConsumer<PackingPedidoBloc, PackingPedidoState>(
       listener: (context, state) {
+        if (state is UnPackingLoading) {
+          showLoadingDialog("Desempacando producto...");
+        }
+
         if (state is UnPackignSuccess) {
+          hideLoadingDialog();
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             duration: const Duration(milliseconds: 1000),
             content: Text(state.message),
             backgroundColor: Colors.green[200],
           ));
+        }
+
+        if (state is UnPackignError) {
+          hideLoadingDialog();
+          showScrollableErrorDialog(state.message);
         }
 
         if (state is AssignLocationSuccess) {
@@ -432,8 +447,10 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                     } else {
                                       bloc.add(ExpandPackageEvent(packageId));
                                     }
-                                    Future.microtask(
-                                        () => focusNodeBuscar.requestFocus());
+                                    Future.microtask(() {
+                                      if (!mounted) return;
+                                      focusNodeBuscar.requestFocus();
+                                    });
                                   },
                                   title: Column(
                                     crossAxisAlignment:
@@ -665,64 +682,10 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                                     if (product.barcode != null)
                                                       GestureDetector(
                                                         onTap: () {
-                                                          //validar si el producto  actual se encuentra  la lista de por hacer
-
-                                                          bool isInProgress = context
-                                                              .read<
-                                                                  PackingPedidoBloc>()
-                                                              .listOfProductosProgress
-                                                              .any((p) =>
-                                                                  p.productId ==
-                                                                  product
-                                                                      .productId);
-                                                          if (isInProgress) {
-                                                            Get.defaultDialog(
-                                                              title:
-                                                                  '360 Software Informa',
-                                                              titleStyle:
-                                                                  const TextStyle(
-                                                                      color: Colors
-                                                                          .red,
-                                                                      fontSize:
-                                                                          18),
-                                                              middleText:
-                                                                  "Este producto se encuentra en estado por hacer, por favor seleccione otro para desempacar",
-                                                              middleTextStyle:
-                                                                  const TextStyle(
-                                                                      color:
-                                                                          black,
-                                                                      fontSize:
-                                                                          14),
-                                                              backgroundColor:
-                                                                  Colors.white,
-                                                              radius: 10,
-                                                              actions: [
-                                                                ElevatedButton(
-                                                                  onPressed:
-                                                                      () {
-                                                                    Get.back();
-                                                                  },
-                                                                  style: ElevatedButton
-                                                                      .styleFrom(
-                                                                    backgroundColor:
-                                                                        primaryColorApp,
-                                                                    shape:
-                                                                        RoundedRectangleBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                              10),
-                                                                    ),
-                                                                  ),
-                                                                  child: const Text(
-                                                                      'Aceptar',
-                                                                      style: TextStyle(
-                                                                          color:
-                                                                              white)),
-                                                                ),
-                                                              ],
-                                                            );
-                                                            return;
-                                                          }
+                                                          // Un producto dividido deja un remanente en "por hacer" con
+                                                          // el mismo idMove; antes eso bloqueaba el desempaque. Ahora se
+                                                          // permite: el bloc suma la cantidad empacada al remanente
+                                                          // (findAndAddQuantityAndDelete) en vez de dejar dos filas.
                                                           //mensaje de confirmacion de desempacar el
                                                           showDialog(
                                                             context: context,
@@ -769,6 +732,8 @@ class _Tab5ScreenState extends State<Tab5Screen> {
                                                                           0,
                                                                       package
                                                                           .consecutivo,
+                                                                      rowId: product
+                                                                          .id,
                                                                     ));
                                                               },
                                                             ),

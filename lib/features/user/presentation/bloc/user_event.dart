@@ -31,3 +31,9 @@ class LoadUserLocationsCountEvent extends UserEvent {}
 class LoadUserNoveltiesCountEvent extends UserEvent {}
 
 class LoadWarehousesCountEvent extends UserEvent {}
+
+/// Descargas bajo demanda (botones). Antes se disparaban solas al entrar a la
+/// pantalla de usuario (GET ubicaciones y GET picking_novelties).
+class DownloadLocationsEvent extends UserEvent {}
+
+class DownloadNoveltiesEvent extends UserEvent {}

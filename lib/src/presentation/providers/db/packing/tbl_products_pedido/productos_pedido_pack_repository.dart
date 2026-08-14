@@ -439,6 +439,10 @@ class ProductosPedidosRepository {
   }
 
   // Actualizar el campo de la tabla productos_pedidos (unpacking)
+  // `rowId` (PK) apunta a una fila exacta: cuando un producto se dividió
+  // varias veces y quedaron filas gemelas con el mismo idProduct/idMove/
+  // idPackage en un mismo paquete, el filtro compuesto desempacaba todas a la
+  // vez. Con `rowId` se revierte únicamente la fila seleccionada por el usuario.
   Future<int?> setFieldTableProductosPedidosUnPacking(
       int pedidoId,
       int productId,
@@ -446,12 +450,21 @@ class ProductosPedidosRepository {
       dynamic setValue,
       int idMove,
       int idPackage,
-      String type) async {
+      String type,
+      {int? rowId}) async {
     Database db = await DataBaseSqlite().getDatabaseInstance();
-    final resUpdate = await db.rawUpdate(
-      'UPDATE ${ProductosPedidosTable.tableName} SET $field = ? WHERE ${ProductosPedidosTable.columnIdProduct} = ? AND ${ProductosPedidosTable.columnPedidoId} = ? AND ${ProductosPedidosTable.columnIdMove} = ? AND ${ProductosPedidosTable.columnIdPackage} = ? AND ${ProductosPedidosTable.columnType} = ?',
-      [setValue, productId, pedidoId, idMove, idPackage, type],
-    );
+    final int? resUpdate;
+    if (rowId != null) {
+      resUpdate = await db.rawUpdate(
+        'UPDATE ${ProductosPedidosTable.tableName} SET $field = ? WHERE ${ProductosPedidosTable.columnId} = ?',
+        [setValue, rowId],
+      );
+    } else {
+      resUpdate = await db.rawUpdate(
+        'UPDATE ${ProductosPedidosTable.tableName} SET $field = ? WHERE ${ProductosPedidosTable.columnIdProduct} = ? AND ${ProductosPedidosTable.columnPedidoId} = ? AND ${ProductosPedidosTable.columnIdMove} = ? AND ${ProductosPedidosTable.columnIdPackage} = ? AND ${ProductosPedidosTable.columnType} = ?',
+        [setValue, productId, pedidoId, idMove, idPackage, type],
+      );
+    }
     debugPrint("update unpacking tblproductos_pedidos: $resUpdate");
     return resUpdate;
   }

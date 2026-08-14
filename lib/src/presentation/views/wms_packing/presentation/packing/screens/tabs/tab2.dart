@@ -53,7 +53,10 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen>
     if (!_isSearchVisible) {
       bloc.searchControllerProduct.clear();
       bloc.add(SearchProductPedidoPackingEvent(''));
-      Future.microtask(() => focusNodeBuscar.requestFocus());
+      Future.microtask(() {
+        if (!mounted) return;
+        focusNodeBuscar.requestFocus();
+      });
     }
   }
 
@@ -105,7 +108,10 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen>
           product.pedidoId!,
           product.idMove!,
         ));
-      Future.microtask(() => focusNodeBuscar.requestFocus());
+      Future.microtask(() {
+        if (!mounted) return;
+        focusNodeBuscar.requestFocus();
+      });
 
       // Loading idempotente y blindado (LoadingDialogMixin).
       showLoadingDialog('Cargando información del producto...');
@@ -180,7 +186,10 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen>
   void _showError(BuildContext context, PackingPedidoBloc bloc) {
     _audioService.playErrorSound();
     _vibrationService.vibrate();
-    Future.microtask(() => focusNodeBuscar.requestFocus());
+    Future.microtask(() {
+      if (!mounted) return;
+      focusNodeBuscar.requestFocus();
+    });
     // 3️⃣ Si no se encuentra nada → mostrar error
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Código no encontrado en la lista')),

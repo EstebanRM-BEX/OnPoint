@@ -161,6 +161,33 @@ class _UserPageState extends State<UserPage> {
                   if (state is UserError) {
                     showScrollableErrorDialog(state.message);
                   }
+                  if (state is DownloadUserDataLoading) {
+                    showDialog(
+                        context: context,
+                        builder: (context) =>
+                            DialogLoading(message: state.message));
+                  }
+                  if (state is DownloadUserDataSuccess) {
+                    if (Navigator.canPop(context)) Navigator.pop(context);
+                    Get.snackbar(
+                      '360 Software Informa',
+                      state.message,
+                      backgroundColor: white,
+                      colorText: primaryColorApp,
+                      icon:
+                          const Icon(Icons.check_circle, color: Colors.green),
+                    );
+                  }
+                  if (state is DownloadUserDataError) {
+                    if (Navigator.canPop(context)) Navigator.pop(context);
+                    Get.snackbar(
+                      '360 Software Informa',
+                      state.message,
+                      backgroundColor: white,
+                      colorText: primaryColorApp,
+                      icon: const Icon(Icons.error, color: Colors.red),
+                    );
+                  }
                   if (state is DeviceRegistrationSuccess) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -318,6 +345,30 @@ class _UserPageState extends State<UserPage> {
                   backgroundColor: grey),
               child: const Text(
                 "Descargar productos",
+                style: TextStyle(color: white),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                context.read<UserBloc>().add(DownloadLocationsEvent());
+              },
+              style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 30),
+                  backgroundColor: grey),
+              child: const Text(
+                "Descargar ubicaciones",
+                style: TextStyle(color: white),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                context.read<UserBloc>().add(DownloadNoveltiesEvent());
+              },
+              style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 30),
+                  backgroundColor: grey),
+              child: const Text(
+                "Descargar novedades",
                 style: TextStyle(color: white),
               ),
             ),

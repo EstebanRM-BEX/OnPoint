@@ -230,8 +230,16 @@ class UnPackingEvent extends PackingPedidoEvent {
   final int pedidoId;
   final int productId;
   final dynamic consecutivoPackage;
+
+  /// PK (`id`) de la fila empacada exacta que se está desempacando. Necesario
+  /// cuando un producto se dividió varias veces (ej. 6 y 4) y quedaron dos
+  /// filas gemelas con el mismo idProduct/idMove/idPackage en el mismo paquete:
+  /// sin el PK, revertir por clave compuesta desempaca ambas.
+  final int? rowId;
+
   UnPackingEvent(
-      this.request, this.pedidoId, this.productId, this.consecutivoPackage);
+      this.request, this.pedidoId, this.productId, this.consecutivoPackage,
+      {this.rowId});
 }
 
 class StartOrStopTimePack extends PackingPedidoEvent {

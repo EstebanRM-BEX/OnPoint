@@ -143,3 +143,29 @@ class LoadWarehousesCountSuccess extends UserState {
   @override
   List<Object?> get props => [count];
 }
+
+/// Descargas bajo demanda (ubicaciones / novedades). El `message` permite
+/// reusar los mismos estados para ambos botones con su texto propio.
+class DownloadUserDataLoading extends UserState {
+  final String message;
+  const DownloadUserDataLoading(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+class DownloadUserDataSuccess extends UserState {
+  final String message;
+  const DownloadUserDataSuccess(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+class DownloadUserDataError extends UserState {
+  final String message;
+  const DownloadUserDataError(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}

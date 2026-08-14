@@ -59,6 +59,55 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     on<LoadUserLocationsCountEvent>(_onLoadUserLocationsCount);
     on<LoadUserNoveltiesCountEvent>(_onLoadUserNoveltiesCount);
     on<LoadWarehousesCountEvent>(_onLoadWarehousesCount);
+    on<DownloadLocationsEvent>(_onDownloadLocations);
+    on<DownloadNoveltiesEvent>(_onDownloadNovelties);
+  }
+
+  /// Descarga bajo demanda de ubicaciones (GET) con feedback propio.
+  Future<void> _onDownloadLocations(
+      DownloadLocationsEvent event, Emitter<UserState> emit) async {
+    emit(const DownloadUserDataLoading('Descargando ubicaciones...'));
+    try {
+      final result = await getUserLocations(NoParams());
+      String? error;
+      result.fold(
+        (failure) => error = failure.message,
+        (data) => locations = data,
+      );
+      if (error != null) {
+        emit(DownloadUserDataError(error!));
+        return;
+      }
+      locationsCount = await DataBaseSqlite().getUbicacionesCount();
+      emit(DownloadUserDataSuccess(
+          'Se descargaron $locationsCount ubicaciones'));
+    } catch (e) {
+      debugPrint("❌ Error en _onDownloadLocations: $e");
+      emit(DownloadUserDataError(e.toString()));
+    }
+  }
+
+  /// Descarga bajo demanda de novedades (GET picking_novelties) con feedback.
+  Future<void> _onDownloadNovelties(
+      DownloadNoveltiesEvent event, Emitter<UserState> emit) async {
+    emit(const DownloadUserDataLoading('Descargando novedades...'));
+    try {
+      final result = await getUserNovelties(NoParams());
+      String? error;
+      result.fold(
+        (failure) => error = failure.message,
+        (data) => novelties = data,
+      );
+      if (error != null) {
+        emit(DownloadUserDataError(error!));
+        return;
+      }
+      noveltiesCount = await DataBaseSqlite().getNovedadesCount();
+      emit(DownloadUserDataSuccess('Se descargaron $noveltiesCount novedades'));
+    } catch (e) {
+      debugPrint("❌ Error en _onDownloadNovelties: $e");
+      emit(DownloadUserDataError(e.toString()));
+    }
   }
 
   Future<void> _onLoadInfoDeviceUser(
@@ -157,20 +206,12 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     //   },
     //   (data) => locations = data,
     // );
-    add(LoadUserLocationsEvent());
-
-    // 4. Get Novelties
-    // final noveltiesResult = await getUserNovelties(NoParams());
-    // noveltiesResult.fold(
-    //   (failure) {
-    //     debugPrint('Failed to load novelties: ${failure.message}');
-    //   },
-    //   (data) {
-    //     novelties = data;
-    //     debugPrint('Novelties loaded: ${novelties.length}');
-    //   },
-    // );
-    add(LoadUserNoveltiesEvent());
+    // Ubicaciones y novedades ya NO se piden por red al entrar a la pantalla
+    // (se evita el GET de ubicaciones y el GET picking_novelties automáticos).
+    // Solo cargamos los conteos locales; la descarga se hace con el botón
+    // "Descargar novedades y ubicaciones" (DownloadNoveltiesAndLocationsEvent).
+    add(LoadUserLocationsCountEvent());
+    add(LoadUserNoveltiesCountEvent());
 
     if (config != null && deviceInfo != null) {
       userConfiguration = config;
