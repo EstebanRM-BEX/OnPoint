@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:wms_app/features/home/domain/entities/app_version.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
 import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
 
@@ -29,12 +30,14 @@ class PostLoginCoordinator {
   final DevolucionesBloc devolucionesBloc;
   final WMSPickingBloc pickingBloc;
   final InventarioBloc inventarioBloc;
+  final UserBloc userBloc;
 
   PostLoginCoordinator({
     required this.homeBloc,
     required this.devolucionesBloc,
     required this.pickingBloc,
     required this.inventarioBloc,
+    required this.userBloc,
   });
 
   Future<PostLoginResult> run() async {
@@ -64,6 +67,10 @@ class PostLoginCoordinator {
     devolucionesBloc.add(DownloadAllTercerosEvent());
     pickingBloc.add(LoadAllNovedades());
     inventarioBloc.add(GetProductsEvent(isDialogLoading: false));
+    // Descarga de red de ubicaciones y novedades (GET picking_novelties), igual
+    // que productos y terceros. Antes solo estaban bajo demanda en el perfil.
+    userBloc.add(DownloadLocationsEvent());
+    userBloc.add(DownloadNoveltiesEvent());
 
     if (versionState is AppVersionUpdateState) {
       return PostLoginResult(

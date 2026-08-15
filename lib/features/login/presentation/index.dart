@@ -66,6 +66,7 @@ class _LoginPageState extends State<LoginPage> with LoadingDialogMixin {
               devolucionesBloc: context.read<DevolucionesBloc>(),
               pickingBloc: context.read<WMSPickingBloc>(),
               inventarioBloc: context.read<InventarioBloc>(),
+              userBloc: context.read<UserBloc>(),
             ).run();
 
             if (!context.mounted) return;

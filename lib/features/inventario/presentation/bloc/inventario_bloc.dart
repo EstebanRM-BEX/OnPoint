@@ -233,15 +233,36 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
     Emitter<InventarioState> emit,
   ) async {
     emit(SearchLoading());
-    final query = event.query.toLowerCase();
+    final query = event.query.trim().toLowerCase();
+
+    if (query.isEmpty) {
+      productosFilters = List.from(productos);
+      emit(SearchProductSuccess(productosFilters));
+      return;
+    }
+
+    // Normaliza cualquier campo a texto en minúsculas para que la coincidencia
+    // sea exacta también con valores alfanuméricos (referencias, barcodes).
+    String norm(dynamic v) => (v ?? '').toString().toLowerCase();
+
     final filtrados = productos.where((product) {
-      final name = (product.name ?? '').toLowerCase();
-      final code = (product.code ?? '').toString().trim();
-      final barcode = (product.barcode ?? '').toString().trim();
-      return name.contains(query) ||
-          code.contains(query) ||
-          barcode.contains(query);
+      final campos = <String>[
+        norm(product.name), // nombre
+        norm(product.code), // referencia / código de producto
+        norm(product.barcode), // barcode principal
+        norm(product.lotName), // lote
+        norm(product.locationName), // ubicación
+      ];
+      // Barcodes alternos y de empaque (pueden ser alfanuméricos).
+      for (final b in (product.otherBarcodes ?? const [])) {
+        campos.add(norm(b.barcode));
+      }
+      for (final b in (product.productPacking ?? const [])) {
+        campos.add(norm(b.barcode));
+      }
+      return campos.any((campo) => campo.contains(query));
     }).toList();
+
     productosFilters = filtrados;
     emit(SearchProductSuccess(filtrados));
   }

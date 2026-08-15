@@ -598,16 +598,31 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
       SearchProductEvent event, Emitter<InfoRapidaState> emit) async {
     try {
       emit(SearchLoading());
-      productosFilters = [];
-      productosFilters = productos;
-      final query = event.query.toLowerCase();
+      final query = event.query.trim().toLowerCase();
       if (query.isEmpty) {
         productosFilters = productos;
       } else {
+        // Normaliza cualquier campo a texto en minúsculas: así la coincidencia
+        // es exacta también con valores alfanuméricos y no truena cuando code/
+        // barcode vienen como número o bool (son dynamic).
+        String norm(dynamic v) => (v ?? '').toString().toLowerCase();
+
         productosFilters = productos.where((product) {
-          return (product.name?.toLowerCase().contains(query) ?? false) ||
-              (product.code?.toLowerCase().contains(query) ?? false) ||
-              (product.barcode?.toLowerCase().contains(query) ?? false);
+          final campos = <String>[
+            norm(product.name), // nombre
+            norm(product.code), // referencia / código
+            norm(product.barcode), // barcode principal
+            norm(product.lotName), // lote
+            norm(product.locationName), // ubicación
+          ];
+          // Barcodes alternos y de empaque (pueden ser alfanuméricos).
+          for (final b in (product.otherBarcodes ?? const [])) {
+            campos.add(norm(b.barcode));
+          }
+          for (final b in (product.productPacking ?? const [])) {
+            campos.add(norm(b.barcode));
+          }
+          return campos.any((campo) => campo.contains(query));
         }).toList();
       }
       emit(SearchProductSuccess(productosFilters));
