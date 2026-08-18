@@ -11,11 +11,17 @@ class ModalPrintersList extends StatefulWidget {
   final String? model;
   final dynamic companyId;
 
+  /// Se dispara solo cuando la impresión fue exitosa. Lo usa cada pantalla para
+  /// limpiar su selección (productos/ubicaciones). En error no se llama, así la
+  /// selección permanece intacta.
+  final VoidCallback? onPrintSuccess;
+
   const ModalPrintersList({
     super.key,
     required this.resIds,
     this.model,
     required this.companyId,
+    this.onPrintSuccess,
   });
 
   static Future<void> show(
@@ -23,14 +29,19 @@ class ModalPrintersList extends StatefulWidget {
     required List<dynamic> resIds,
     String? model,
     required dynamic companyId,
+    VoidCallback? onPrintSuccess,
   }) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      builder: (context) =>
-          ModalPrintersList(resIds: resIds, model: model, companyId: companyId),
+      builder: (context) => ModalPrintersList(
+        resIds: resIds,
+        model: model,
+        companyId: companyId,
+        onPrintSuccess: onPrintSuccess,
+      ),
     );
   }
 
@@ -54,6 +65,9 @@ class _ModalPrintersListState extends State<ModalPrintersList> {
     return BlocListener<PrintingBloc, PrintingState>(
       listener: (context, state) {
         if (state is PrintSuccess) {
+          // Impresión OK: la pantalla limpia su selección y cerramos el modal.
+          widget.onPrintSuccess?.call();
+          Navigator.of(context, rootNavigator: true).pop();
           Get.snackbar(
             "360 Software Informa",
             state.message,

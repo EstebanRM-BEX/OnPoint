@@ -41,6 +41,8 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
     on<AddRangeLocationEvent>(_onAddRangeLocationEvent);
     on<AddSelectedProductEvent>(_onAddSelectedProductEvent);
     on<RemoveSelectedProductEvent>(_onRemoveSelectedProductEvent);
+    on<ClearSelectedProductsEvent>(_onClearSelectedProducts);
+    on<ClearRangeLocationsEvent>(_onClearRangeLocations);
   }
 
   @override
@@ -200,5 +202,17 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
       RemoveSelectedProductEvent event, Emitter<PrintLabelsState> emit) {
     selectedProductIds.remove(event.productId);
     emit(SearchProductSuccess(productosFilters));
+  }
+
+  void _onClearSelectedProducts(
+      ClearSelectedProductsEvent event, Emitter<PrintLabelsState> emit) {
+    selectedProductIds.clear();
+    emit(SearchProductSuccess(productosFilters));
+  }
+
+  void _onClearRangeLocations(
+      ClearRangeLocationsEvent event, Emitter<PrintLabelsState> emit) {
+    ubicacionesRange = [];
+    emit(SearchRangeLocationSuccess(ubicacionesRange));
   }
 }

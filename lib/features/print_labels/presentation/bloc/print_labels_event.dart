@@ -44,3 +44,9 @@ class RemoveSelectedProductEvent extends PrintLabelsEvent {
   final int productId;
   RemoveSelectedProductEvent(this.productId);
 }
+
+/// Limpia toda la selección de productos (tras una impresión exitosa).
+class ClearSelectedProductsEvent extends PrintLabelsEvent {}
+
+/// Limpia el rango de ubicaciones seleccionadas (tras una impresión exitosa).
+class ClearRangeLocationsEvent extends PrintLabelsEvent {}

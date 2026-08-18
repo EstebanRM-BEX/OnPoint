@@ -117,6 +117,8 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
                               context,
                               resIds: bloc.selectedProductIds.toList(),
                               companyId: 1,
+                              onPrintSuccess: () =>
+                                  bloc.add(ClearSelectedProductsEvent()),
                             );
                           },
                           style: ElevatedButton.styleFrom(

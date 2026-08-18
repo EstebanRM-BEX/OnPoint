@@ -219,7 +219,9 @@ class _PrintLabelsLocationsScreenState
                                         bloc.ubicacionesRange
                                             .map((e) => e.id)
                                             .toList(),
-                                    companyId: 1);
+                                    companyId: 1,
+                                    onPrintSuccess: () =>
+                                        bloc.add(ClearRangeLocationsEvent()));
                               }
                             },
                             style: ElevatedButton.styleFrom(
