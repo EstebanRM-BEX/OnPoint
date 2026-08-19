@@ -79,13 +79,24 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
                     Expanded(
                       child: bloc.productosFilters.isEmpty
                           ? const _NoProductsMessage()
-                          : ListView.builder(
-                              itemCount: bloc.productosFilters.length,
-                              itemBuilder: (_, index) {
-                                final product = bloc.productosFilters[index];
-                                final alreadyAdded = bloc.selectedProductIds
-                                    .contains(product.productId);
-                                return ProductListTile(
+                          : Builder(
+                              builder: (_) {
+                                // Los seleccionados van primero para no tener
+                                // que buscarlos; el resto conserva su orden.
+                                final selectedIds = bloc.selectedProductIds;
+                                final ordered = <ProductLabel>[
+                                  ...bloc.productosFilters.where(
+                                      (p) => selectedIds.contains(p.productId)),
+                                  ...bloc.productosFilters.where(
+                                      (p) => !selectedIds.contains(p.productId)),
+                                ];
+                                return ListView.builder(
+                                  itemCount: ordered.length,
+                                  itemBuilder: (_, index) {
+                                    final product = ordered[index];
+                                    final alreadyAdded = selectedIds
+                                        .contains(product.productId);
+                                    return ProductListTile(
                                   product: product,
                                   isAdded: alreadyAdded,
                                   onAddRemove: () {
@@ -104,33 +115,43 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
                                     }
                                   },
                                 );
+                                  },
+                                );
                               },
                             ),
                     ),
                     if (bloc.selectedProductIds.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            FocusScope.of(context).unfocus();
-                            ModalPrintersList.show(
-                              context,
-                              resIds: bloc.selectedProductIds.toList(),
-                              companyId: 1,
-                              onPrintSuccess: () =>
-                                  bloc.add(ClearSelectedProductsEvent()),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColorApp,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                        child: Badge(
+                          // Contador tipo notificación con el número de
+                          // productos seleccionados.
+                          label: Text('${bloc.selectedProductIds.length}'),
+                          backgroundColor: Colors.red,
+                          largeSize: 20,
+                          offset: const Offset(-8, 2),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              FocusScope.of(context).unfocus();
+                              ModalPrintersList.show(
+                                context,
+                                resIds: bloc.selectedProductIds.toList(),
+                                companyId: 1,
+                                onPrintSuccess: () =>
+                                    bloc.add(ClearSelectedProductsEvent()),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColorApp,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              minimumSize: Size(size.width * 0.9, 40),
                             ),
-                            minimumSize: Size(size.width * 0.9, 40),
-                          ),
-                          child: const Text(
-                            "Imprimir Etiqueta",
-                            style: TextStyle(color: white),
+                            child: const Text(
+                              "Imprimir Etiqueta",
+                              style: TextStyle(color: white),
+                            ),
                           ),
                         ),
                       ),
