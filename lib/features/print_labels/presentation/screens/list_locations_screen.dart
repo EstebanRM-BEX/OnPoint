@@ -117,11 +117,14 @@ class _PrintLabelsLocationsScreenState
                                           style: TextStyle(
                                               color: black, fontSize: 12),
                                         ),
-                                        Text(location.name ?? '',
-                                            style: const TextStyle(
-                                              color: primaryColorApp,
-                                              fontSize: 12,
-                                            )),
+                                        Expanded(
+                                          child: Text(location.name ?? '',
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: primaryColorApp,
+                                                fontSize: 12,
+                                              )),
+                                        ),
                                       ],
                                     ),
                                     subtitle: Row(
@@ -131,12 +134,15 @@ class _PrintLabelsLocationsScreenState
                                           style: TextStyle(
                                               color: black, fontSize: 12),
                                         ),
-                                        Text(
-                                            location.barcode?.toString() ??
-                                                'Sin barcode',
-                                            style: const TextStyle(
-                                                fontSize: 12,
-                                                color: primaryColorApp)),
+                                        Expanded(
+                                          child: Text(
+                                              location.barcode?.toString() ??
+                                                  'Sin barcode',
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: primaryColorApp)),
+                                        ),
                                       ],
                                     ),
                                     trailing: Row(
