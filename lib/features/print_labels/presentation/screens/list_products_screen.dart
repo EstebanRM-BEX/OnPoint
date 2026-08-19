@@ -83,22 +83,24 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
                               builder: (_) {
                                 // Los seleccionados van primero para no tener
                                 // que buscarlos; el resto conserva su orden.
-                                final selectedIds = bloc.selectedProductIds;
+                                final selected = bloc.selectedProducts;
                                 final ordered = <ProductLabel>[
                                   ...bloc.productosFilters.where(
-                                      (p) => selectedIds.contains(p.productId)),
+                                      (p) => selected.containsKey(p.productId)),
                                   ...bloc.productosFilters.where(
-                                      (p) => !selectedIds.contains(p.productId)),
+                                      (p) => !selected.containsKey(p.productId)),
                                 ];
                                 return ListView.builder(
                                   itemCount: ordered.length,
                                   itemBuilder: (_, index) {
                                     final product = ordered[index];
-                                    final alreadyAdded = selectedIds
-                                        .contains(product.productId);
+                                    final alreadyAdded = selected
+                                        .containsKey(product.productId);
                                     return ProductListTile(
                                   product: product,
                                   isAdded: alreadyAdded,
+                                  // cantidad de etiquetas a imprimir del producto
+                                  quantity: selected[product.productId] ?? 0,
                                   onAddRemove: () {
                                     if (alreadyAdded) {
                                       bloc.add(
@@ -114,19 +116,25 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
                                       );
                                     }
                                   },
+                                  onIncrement: () => bloc.add(
+                                    IncrementProductQtyEvent(product.productId),
+                                  ),
+                                  onDecrement: () => bloc.add(
+                                    DecrementProductQtyEvent(product.productId),
+                                  ),
                                 );
                                   },
                                 );
                               },
                             ),
                     ),
-                    if (bloc.selectedProductIds.isNotEmpty)
+                    if (bloc.selectedProducts.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         child: Badge(
                           // Contador tipo notificación con el número de
-                          // productos seleccionados.
-                          label: Text('${bloc.selectedProductIds.length}'),
+                          // productos distintos seleccionados.
+                          label: Text('${bloc.selectedProducts.length}'),
                           backgroundColor: Colors.red,
                           largeSize: 20,
                           offset: const Offset(-8, 2),
@@ -135,7 +143,8 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
                               FocusScope.of(context).unfocus();
                               ModalPrintersList.show(
                                 context,
-                                resIds: bloc.selectedProductIds.toList(),
+                                // ids expandidos según la cantidad de cada uno
+                                resIds: bloc.expandedResIds,
                                 companyId: 1,
                                 onPrintSuccess: () =>
                                     bloc.add(ClearSelectedProductsEvent()),
@@ -172,11 +181,19 @@ class ProductListTile extends StatelessWidget {
     required this.product,
     required this.isAdded,
     required this.onAddRemove,
+    required this.quantity,
+    required this.onIncrement,
+    required this.onDecrement,
   });
 
   final ProductLabel product;
   final bool isAdded;
   final VoidCallback onAddRemove;
+
+  /// Cantidad de etiquetas a imprimir de este producto (0 si no está seleccionado).
+  final int quantity;
+  final VoidCallback onIncrement;
+  final VoidCallback onDecrement;
 
   @override
   Widget build(BuildContext context) {
@@ -186,7 +203,9 @@ class ProductListTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: GestureDetector(
-        onTap: onAddRemove,
+        // Si ya está seleccionado, el toque en la tarjeta no lo quita: se
+        // gestiona con el stepper (bajar de 1 lo deselecciona).
+        onTap: isAdded ? null : onAddRemove,
         child: Card(
           elevation: 3,
           color: isAdded ? Colors.green[100] : white,
@@ -212,11 +231,47 @@ class ProductListTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(
-                  isAdded ? Icons.check_circle : Icons.add_circle_outline,
-                  color: isAdded ? Colors.green : primaryColorApp,
-                  size: 24,
-                ),
+                if (isAdded)
+                  // Stepper de cantidad de etiquetas del producto.
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        visualDensity: VisualDensity.compact,
+                        onPressed: onDecrement,
+                        icon: const Icon(Icons.remove_circle_outline,
+                            color: primaryColorApp, size: 26),
+                      ),
+                      Container(
+                        width: 30,
+                        alignment: Alignment.center,
+                        child: Text(
+                          '$quantity',
+                          style: const TextStyle(
+                            color: primaryColorApp,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        visualDensity: VisualDensity.compact,
+                        onPressed: onIncrement,
+                        icon: const Icon(Icons.add_circle,
+                            color: primaryColorApp, size: 26),
+                      ),
+                    ],
+                  )
+                else
+                  const Icon(
+                    Icons.add_circle_outline,
+                    color: primaryColorApp,
+                    size: 24,
+                  ),
               ],
             ),
           ),

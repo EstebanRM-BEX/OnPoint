@@ -23,10 +23,17 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
 
   List<ResultUbicaciones> ubicacionesRange = [];
 
-  /// Ids de productos seleccionados para imprimir. Un `Set` da membresía O(1)
-  /// (antes era `List<Product>.any(...)` recorrido por item en cada rebuild) y
-  /// solo guardamos lo que la impresión necesita: el id.
-  final Set<int> selectedProductIds = {};
+  /// Productos seleccionados para imprimir: productId → cantidad de etiquetas.
+  /// El `Map` da membresía O(1) por id y guarda cuántas veces se debe imprimir
+  /// cada producto (se repite el id en `active_ids` al enviar).
+  final Map<int, int> selectedProducts = {};
+
+  /// Lista de ids expandida según la cantidad de cada producto:
+  /// {21558: 3} → [21558, 21558, 21558]. Es lo que viaja como `active_ids`.
+  List<int> get expandedResIds => [
+        for (final e in selectedProducts.entries)
+          for (int i = 0; i < e.value; i++) e.key,
+      ];
 
   DataBaseSqlite db = DataBaseSqlite();
 
@@ -41,6 +48,8 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
     on<AddRangeLocationEvent>(_onAddRangeLocationEvent);
     on<AddSelectedProductEvent>(_onAddSelectedProductEvent);
     on<RemoveSelectedProductEvent>(_onRemoveSelectedProductEvent);
+    on<IncrementProductQtyEvent>(_onIncrementProductQty);
+    on<DecrementProductQtyEvent>(_onDecrementProductQty);
     on<ClearSelectedProductsEvent>(_onClearSelectedProducts);
     on<ClearRangeLocationsEvent>(_onClearRangeLocations);
   }
@@ -194,19 +203,39 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
 
   void _onAddSelectedProductEvent(
       AddSelectedProductEvent event, Emitter<PrintLabelsState> emit) {
-    selectedProductIds.add(event.productId);
+    //al seleccionar arranca en 1 etiqueta
+    selectedProducts[event.productId] = 1;
     emit(SearchProductSuccess(productosFilters));
   }
 
   void _onRemoveSelectedProductEvent(
       RemoveSelectedProductEvent event, Emitter<PrintLabelsState> emit) {
-    selectedProductIds.remove(event.productId);
+    selectedProducts.remove(event.productId);
+    emit(SearchProductSuccess(productosFilters));
+  }
+
+  void _onIncrementProductQty(
+      IncrementProductQtyEvent event, Emitter<PrintLabelsState> emit) {
+    final actual = selectedProducts[event.productId] ?? 0;
+    selectedProducts[event.productId] = actual + 1;
+    emit(SearchProductSuccess(productosFilters));
+  }
+
+  void _onDecrementProductQty(
+      DecrementProductQtyEvent event, Emitter<PrintLabelsState> emit) {
+    final actual = selectedProducts[event.productId] ?? 0;
+    if (actual <= 1) {
+      //mínimo 1: bajar de 1 deselecciona el producto
+      selectedProducts.remove(event.productId);
+    } else {
+      selectedProducts[event.productId] = actual - 1;
+    }
     emit(SearchProductSuccess(productosFilters));
   }
 
   void _onClearSelectedProducts(
       ClearSelectedProductsEvent event, Emitter<PrintLabelsState> emit) {
-    selectedProductIds.clear();
+    selectedProducts.clear();
     emit(SearchProductSuccess(productosFilters));
   }
 

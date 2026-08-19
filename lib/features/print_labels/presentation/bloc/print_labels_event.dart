@@ -45,6 +45,18 @@ class RemoveSelectedProductEvent extends PrintLabelsEvent {
   RemoveSelectedProductEvent(this.productId);
 }
 
+/// Aumenta en 1 la cantidad de etiquetas de un producto seleccionado.
+class IncrementProductQtyEvent extends PrintLabelsEvent {
+  final int productId;
+  IncrementProductQtyEvent(this.productId);
+}
+
+/// Disminuye en 1 la cantidad; al llegar a 0 deselecciona el producto.
+class DecrementProductQtyEvent extends PrintLabelsEvent {
+  final int productId;
+  DecrementProductQtyEvent(this.productId);
+}
+
 /// Limpia toda la selección de productos (tras una impresión exitosa).
 class ClearSelectedProductsEvent extends PrintLabelsEvent {}
 
