@@ -231,6 +231,23 @@ class PickingOkError extends PickingPickState {}
 
 class PickingOkLoading extends PickingPickState {}
 
+/// Cierre del pick bloqueado: hay [pendientes] productos sin enviar a Odoo
+/// (guardados sin conexión). Se reintenta la sincronización automáticamente.
+class PickingOkBlockedPendingSendPick extends PickingPickState {
+  final int pendientes;
+  PickingOkBlockedPendingSendPick(this.pendientes);
+}
+
+/// Sincronización de pendientes en curso.
+class SyncPendingProductsPickLoading extends PickingPickState {}
+
+/// Sincronización de pendientes finalizada: [enviados] de [total].
+class SyncPendingProductsPickSuccess extends PickingPickState {
+  final int enviados;
+  final int total;
+  SyncPendingProductsPickSuccess(this.enviados, this.total);
+}
+
 class StartOrStopTimeTransferSuccess extends PickingPickState {
   final String isStarted;
   StartOrStopTimeTransferSuccess(this.isStarted);

@@ -193,6 +193,18 @@ class _PickingPageState extends State<WMSPickingPage> {
               duration: Duration(seconds: 5),
             );
           }
+
+          //recarga bloqueada: hay productos separados sin enviar (offline)
+          if (state is BatchRefreshBlockedPendingState) {
+            Get.snackbar(
+              '360 Software Informa',
+              'No se puede recargar sin conexión: tienes ${state.pendientes} producto(s) pendiente(s) de enviar. Se sincronizarán al recuperar la conexión.',
+              backgroundColor: white,
+              colorText: primaryColorApp,
+              icon: Icon(Icons.wifi_off, color: Colors.orange),
+              duration: const Duration(seconds: 4),
+            );
+          }
         },
         // 2. Segundo Listener (Hijo): BatchBloc
         child: BlocListener<BatchBloc, BatchState>(

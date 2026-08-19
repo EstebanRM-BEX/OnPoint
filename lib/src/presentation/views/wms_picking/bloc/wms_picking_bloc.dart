@@ -1,10 +1,13 @@
 // ignore_for_file: unnecessary_type_check, unnecessary_null_comparison, avoid_print, unnecessary_import, unrelated_type_equality_checks, use_build_context_synchronously
 
 
+import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/data/wms_picking_repository.dart';
+import 'package:wms_app/src/presentation/views/wms_picking/models/item_picking_request.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/history/models/batch_history_id_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/history/models/hisotry_done_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
@@ -44,6 +47,9 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
 
   //*instancia de la base de datos
   final DataBaseSqlite _databas = DataBaseSqlite();
+
+  //*conectividad: para proteger pendientes offline al refrescar la lista
+  final NetworkInfo _networkInfo = getIt<NetworkInfo>();
 
   WMSPickingBloc() : super(ProductspickingInitial()) {
     //*obtener todos los batchs desde odoo
@@ -129,6 +135,26 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
     try {
       emit(BatchsPickingLoadingState());
 
+      // --- PROTECCIÓN DE PENDIENTES OFFLINE ---
+      // Antes de borrar la data local (delePicking), aseguramos que no se
+      // pierdan productos separados sin conexión (is_send_odoo = 0).
+      final locales = await _databas.getProducts('batch');
+      final pendientes = locales.where((p) => p.isSendOdoo == 0).toList();
+      if (pendientes.isNotEmpty) {
+        if (await _networkInfo.isConnected) {
+          // hay conexión → los enviamos primero, luego sí refrescamos
+          for (final product in pendientes) {
+            await _sendPendingBatchToOdoo(product, 'batch');
+          }
+        } else {
+          // sin conexión → NO borramos nada; avisamos y restauramos la lista
+          // local (no destructivo), dejando los pendientes intactos.
+          emit(BatchRefreshBlockedPendingState(pendientes.length));
+          add(FilterBatchesBStatusEvent('', 'batch'));
+          return;
+        }
+      }
+
       await DataBaseSqlite().delePicking('batch');
 
       final response = await wmsPickingRepository.resBatchs(
@@ -196,6 +222,65 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
     } catch (e, s) {
       debugPrint('Error LoadAllBatchsEvent: $e, $s');
       emit(BatchsPickingErrorState(e.toString()));
+    }
+  }
+
+  //* reenvía un producto batch pendiente a odoo (guardado sin conexion).
+  //* Sin acceso a la config de permisos aquí: recortamos el exceso a lo
+  //* solicitado (comportamiento seguro por defecto para tipo 'batch').
+  Future<bool> _sendPendingBatchToOdoo(
+      ProductsBatch product, String type) async {
+    try {
+      final double cantidadSeparada = (product.quantitySeparate ?? 0).toDouble();
+      final double cantidadSolicitada = (product.quantity ?? 0).toDouble();
+      final double cantidadFinal = cantidadSeparada > cantidadSolicitada
+          ? cantidadSolicitada
+          : cantidadSeparada;
+
+      final userid = await PrefUtils.getUserId();
+      final batchDB =
+          await _databas.getBatchWithProducts(product.batchId ?? 0, type);
+
+      final response = await wmsPickingRepository.sendPicking(
+        tipoPicking: type,
+        idBatch: product.batchId ?? 0,
+        timeTotal: 0.0,
+        cantItemsSeparados: batchDB?.batch?.productSeparateQty ?? 0,
+        listItem: [
+          Item(
+            idMove: product.idMove ?? 0,
+            productId: product.idProduct ?? 0,
+            lote: product.lotId ?? '',
+            cantidad: cantidadFinal,
+            novedad: product.observation == ""
+                ? 'Sin novedad'
+                : product.observation ?? '',
+            timeLine: product.timeSeparate == null
+                ? 30.0
+                : product.timeSeparate.toDouble(),
+            muelle: product.muelleId ?? 0,
+            idOperario: userid,
+            fechaTransaccion:
+                product.fechaTransaccion ?? DateTime.now().toString(),
+          ),
+        ],
+      );
+
+      if (response.result?.code == 200) {
+        await _databas.setFieldTableBatchProducts(
+          product.batchId ?? 0,
+          product.idProduct ?? 0,
+          'is_send_odoo',
+          1,
+          product.idMove ?? 0,
+          type,
+        );
+        return true;
+      }
+      return false;
+    } catch (e, s) {
+      debugPrint("❌ Error en _sendPendingBatchToOdoo $e -> $s");
+      return false;
     }
   }
 

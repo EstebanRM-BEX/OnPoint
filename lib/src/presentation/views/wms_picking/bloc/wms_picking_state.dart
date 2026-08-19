@@ -26,6 +26,13 @@ final class BatchsPickingErrorState extends PickingState {
   BatchsPickingErrorState(this.error);
 }
 
+/// Recarga de la lista bloqueada: hay [pendientes] productos separados sin
+/// enviar a Odoo (guardados sin conexión). No se borró la data local.
+final class BatchRefreshBlockedPendingState extends PickingState {
+  final int pendientes;
+  BatchRefreshBlockedPendingState(this.pendientes);
+}
+
 final class BatchHistoryLoadingState extends PickingState {}
 
 final class BatchHistoryLoadedState extends PickingState {

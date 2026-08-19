@@ -1,11 +1,14 @@
 // ignore_for_file: prefer_is_empty
 
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
+import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
@@ -54,6 +57,11 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   Muelles subMuelleSelected = Muelles();
 
   DataBaseSqlite db = DataBaseSqlite();
+
+  //*conectividad: para el modo offline y el reenvío automático de pendientes
+  final NetworkInfo _networkInfo = getIt<NetworkInfo>();
+  StreamSubscription<ConnectionStatus>? _networkSubscription;
+  bool _isSyncingPending = false;
 
   PickWithProducts pickWithProducts = PickWithProducts();
   //*producto en posicion actual
@@ -277,7 +285,24 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       listOfPickFiltered = sortedList;
       emit(PickingPickSuccess(sortedList));
     });
+
+    //*evento para reenviar productos guardados sin conexion
+    on<SyncPendingProductsPickEvent>(_onSyncPendingProductsEvent);
+
+    //*al recuperar conexion, reenviamos automaticamente los pendientes
+    _networkSubscription = _networkInfo.onStatusChanged.listen((status) {
+      if (status == ConnectionStatus.online) {
+        add(SyncPendingProductsPickEvent());
+      }
+    });
   }
+
+  @override
+  Future<void> close() {
+    _networkSubscription?.cancel();
+    return super.close();
+  }
+
   void _onViewProductImageEvent(
     ViewProductImageEvent event,
     Emitter<PickingPickState> emit,
@@ -644,6 +669,19 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     try {
       emit(CreateBackOrderOrNotLoading());
 
+      //bloqueamos el cierre del pick si hay productos pendientes de envio
+      //(guardados sin conexion con is_send_odoo = 0). No cerramos ni navegamos.
+      final productosPick =
+          await db.pickProductsRepository.getBatchProducts(event.idPick);
+      final pendientes =
+          productosPick.where((p) => p.isSendOdoo == 0).length;
+      if (pendientes > 0) {
+        emit(PickingOkBlockedPendingSendPick(pendientes));
+        //intentamos sincronizar de una vez por si ya hay conexion
+        add(SyncPendingProductsPickEvent());
+        return;
+      }
+
       add(StartOrStopTimeTransfer(event.idPick, 'end_time_transfer'));
 
       add(ValidateFieldsEvent(field: "locationDest", isOk: true));
@@ -866,6 +904,19 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   ) async {
     try {
       emit(PickingOkLoading());
+
+      //bloqueamos el cierre del pick si hay productos pendientes de envio
+      //(guardados sin conexion con is_send_odoo = 0)
+      final products =
+          await db.pickProductsRepository.getBatchProducts(event.batchId);
+      final pendientes = products.where((p) => p.isSendOdoo == 0).length;
+      if (pendientes > 0) {
+        emit(PickingOkBlockedPendingSendPick(pendientes));
+        //intentamos sincronizar de una vez por si ya hay conexion
+        add(SyncPendingProductsPickEvent());
+        return;
+      }
+
       await db.pickRepository.setFieldTablePick(
         event.batchId,
         'is_separate',
@@ -876,6 +927,95 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     } catch (e, s) {
       emit(PickingOkError());
       debugPrint("❌ Error en PickingOkEvent $e -> $s");
+    }
+  }
+
+  //*evento para reenviar los productos guardados sin conexion (is_send_odoo = 0)
+  void _onSyncPendingProductsEvent(
+    SyncPendingProductsPickEvent event,
+    Emitter<PickingPickState> emit,
+  ) async {
+    if (_isSyncingPending) return;
+    _isSyncingPending = true;
+    try {
+      if (!await _networkInfo.isConnected) return;
+
+      //todos los productos pendientes, sin importar el pick:
+      //cubre pendientes de varios picks acumulados sin conexion
+      final products = await db.pickProductsRepository.getProducts();
+      final pendientes = products.where((p) => p.isSendOdoo == 0).toList();
+      if (pendientes.isEmpty) return;
+
+      debugPrint(
+          "📡 Sincronizando ${pendientes.length} producto(s) pendiente(s)");
+      emit(SyncPendingProductsPickLoading());
+
+      int enviados = 0;
+      for (final product in pendientes) {
+        final ok = await _sendPendingProductToOdoo(product);
+        if (ok) enviados++;
+        debugPrint(
+            "📡 Pendiente ${product.idProduct} (pick ${product.batchId}): ${ok ? 'enviado ✅' : 'falló ❌'}");
+      }
+
+      emit(SyncPendingProductsPickSuccess(enviados, pendientes.length));
+    } catch (e, s) {
+      debugPrint("❌ Error en SyncPendingProductsPickEvent $e -> $s");
+    } finally {
+      _isSyncingPending = false;
+    }
+  }
+
+  //* reenvía un producto pendiente a odoo (mismo request que _onSendProductOdooEvent)
+  Future<bool> _sendPendingProductToOdoo(ProductsBatch product) async {
+    try {
+      final userid = await PrefUtils.getUserId();
+      final String fechaFormateada = formatoFecha(DateTime.now());
+
+      final response = await repository.sendProductTransferPick(
+        TransferRequest(
+          idTransferencia: product.batchId ?? 0,
+          listItems: [
+            ListItem(
+              idMove: product.idMove ?? 0,
+              idProducto: product.idProduct ?? 0,
+              idLote: product.loteId ?? 0,
+              idUbicacionDestino: product.muelleId ?? 0,
+              cantidadEnviada: product.quantitySeparate ?? 0,
+              idOperario: userid,
+              timeLine: product.timeSeparate == null
+                  ? 30.0
+                  : product.timeSeparate.toDouble(),
+              fechaTransaccion:
+                  product.fechaTransaccion == "" || product.fechaTransaccion == null
+                      ? fechaFormateada
+                      : product.fechaTransaccion ?? "",
+              observacion: product.observation == ""
+                  ? 'Sin novedad'
+                  : product.observation ?? 'Sin novedad',
+              dividida: false,
+            ),
+          ],
+        ),
+        false,
+      );
+
+      final msg = response.result?.msg ?? '';
+      if (response.result?.code == 200 ||
+          msg.contains('ya fue procesada anteriormente')) {
+        await db.pickProductsRepository.setFieldTablePickProducts(
+          product.batchId ?? 0,
+          product.idProduct ?? 0,
+          'is_send_odoo',
+          1,
+          product.idMove ?? 0,
+        );
+        return true;
+      }
+      return false;
+    } catch (e, s) {
+      debugPrint("❌ Error en _sendPendingProductToOdoo $e -> $s");
+      return false;
     }
   }
 
@@ -1108,6 +1248,33 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       String fechaFormateada = formatoFecha(fechaTransaccion);
 
       debugPrint('Enviando producto a Odoo: ${event.product.toMap()}');
+
+      // --- VALIDACIÓN DE CONEXIÓN (modo offline) ---
+      // Sin conexión: el proceso local ya quedó completo (is_separate = 1,
+      // quantity_separate intacta). Marcamos is_send_odoo = 0 para que el
+      // producto quede pendiente y se reenvíe al recuperar la conexión.
+      if (!await _networkInfo.isConnected) {
+        await db.pickProductsRepository.setFieldTablePickProducts(
+          event.product.batchId ?? 0,
+          event.product.idProduct ?? 0,
+          'is_send_odoo',
+          0,
+          event.product.idMove ?? 0,
+        );
+
+        //refrescamos la lista local para reflejar el producto separado
+        final localResponse = await db.pickProductsRepository
+            .getPickWithProducts(pickWithProducts.pick?.id ?? 0);
+        if (localResponse != null) {
+          pickWithProducts.products = localResponse.products;
+          filteredProducts.clear();
+          filteredProducts.addAll(localResponse.products!);
+        }
+
+        emit(SendProductPickOdooSuccess());
+        _isProcessing = false;
+        return;
+      }
 
       final response = await repository.sendProductTransferPick(
         TransferRequest(
@@ -2295,6 +2462,26 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   ) async {
     emit(PickingPickLoading());
     try {
+      // --- PROTECCIÓN DE PENDIENTES OFFLINE ---
+      // Antes de borrar la data local (delePick), aseguramos que no se pierdan
+      // productos escaneados sin conexión (is_send_odoo = 0).
+      final locales = await db.pickProductsRepository.getProducts();
+      final pendientes = locales.where((p) => p.isSendOdoo == 0).toList();
+      if (pendientes.isNotEmpty) {
+        if (await _networkInfo.isConnected) {
+          // hay conexión → los enviamos primero, luego sí refrescamos
+          for (final product in pendientes) {
+            await _sendPendingProductToOdoo(product);
+          }
+        } else {
+          // sin conexión → NO borramos nada; avisamos y restauramos la lista
+          // local (no destructivo), dejando los pendientes intactos.
+          emit(PickingOkBlockedPendingSendPick(pendientes.length));
+          add(FetchPickingPickFromDBEvent(false));
+          return;
+        }
+      }
+
       await DataBaseSqlite().delePick('pick');
       oldLocation = '';
 

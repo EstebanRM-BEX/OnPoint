@@ -287,6 +287,30 @@ class _IndexListPickScreenState extends State<IndexListPickScreen>
             );
           }
 
+          //recarga bloqueada: hay productos escaneados sin enviar (offline)
+          if (state is PickingOkBlockedPendingSendPick) {
+            hideLoadingDialog();
+            Get.snackbar(
+              '360 Software Informa',
+              'No se puede recargar sin conexión: tienes ${state.pendientes} producto(s) pendiente(s) de enviar. Se sincronizarán al recuperar la conexión.',
+              backgroundColor: white,
+              colorText: primaryColorApp,
+              duration: const Duration(seconds: 4),
+              icon: const Icon(Icons.cloud_off, color: Colors.orange),
+            );
+          }
+
+          //resultado de la sincronización de pendientes
+          if (state is SyncPendingProductsPickSuccess) {
+            Get.snackbar(
+              '360 Software Informa',
+              'Sincronizados ${state.enviados}/${state.total} producto(s) pendiente(s).',
+              backgroundColor: white,
+              colorText: primaryColorApp,
+              icon: const Icon(Icons.cloud_done, color: Colors.green),
+            );
+          }
+
           if (state is AssignUserToPickError) {
             hideLoadingDialog();
             showScrollableErrorDialog(state.error);

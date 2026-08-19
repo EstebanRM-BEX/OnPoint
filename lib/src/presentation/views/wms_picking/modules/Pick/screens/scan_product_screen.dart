@@ -664,6 +664,32 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                 }
                               }
 
+                              //cierre bloqueado: hay productos pendientes de envio
+                              if (state is PickingOkBlockedPendingSendPick) {
+                                hideLoadingDialog();
+                                Get.snackbar(
+                                  "360 Software Informa",
+                                  "No se puede cerrar el pick: hay ${state.pendientes} producto(s) sin enviar. Se sincronizarán al recuperar la conexión.",
+                                  backgroundColor: white,
+                                  colorText: primaryColorApp,
+                                  duration: const Duration(seconds: 4),
+                                  icon: const Icon(Icons.cloud_off,
+                                      color: Colors.orange),
+                                );
+                              }
+
+                              //resultado de la sincronizacion de pendientes
+                              if (state is SyncPendingProductsPickSuccess) {
+                                Get.snackbar(
+                                  "360 Software Informa",
+                                  "Sincronizados ${state.enviados}/${state.total} producto(s) pendiente(s).",
+                                  backgroundColor: white,
+                                  colorText: primaryColorApp,
+                                  icon: const Icon(Icons.cloud_done,
+                                      color: Colors.green),
+                                );
+                              }
+
                               // * validamos en todo cambio de estado de cantidad separada
                               if (state is ChangeQuantitySeparateStateSuccess) {
                                 if (state.quantity == currentProduct.quantity) {

@@ -145,6 +145,10 @@ class ProductPendingEvent extends PickingPickEvent {
   ProductPendingEvent(this.batchId, this.product);
 }
 
+/// Reenvía a Odoo los productos guardados sin conexión (is_send_odoo = 0).
+/// Se dispara automáticamente al recuperar la conexión.
+class SyncPendingProductsPickEvent extends PickingPickEvent {}
+
 class ClearSearchProudctsPickEvent extends PickingPickEvent {}
 
 class SearchProductsPickEvent extends PickingPickEvent {

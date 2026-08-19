@@ -479,26 +479,44 @@ class ApiRequestService {
       'Cookie': sessionId,
     };
 
+    bool loadingDialogOpened = false;
     try {
-      if (isLoadinDialog) Get.dialog(DialogLoadingNetwork(titel: endpoint), barrierDismissible: false);
+      if (isLoadinDialog) {
+        Get.dialog(DialogLoadingNetwork(titel: endpoint),
+            barrierDismissible: false);
+        loadingDialogOpened = true;
+      }
 
       final request = http.Request('POST', Uri.parse(url));
       request.body = json.encode(body);
       request.headers.addAll(headers);
 
-      final response = await http.Response.fromStream(await request.send());
+      // Sin timeout el diálogo de carga se quedaba abierto para siempre si el
+      // servidor de impresión no respondía. Mismo límite que postPacking.
+      final streamed =
+          await request.send().timeout(const Duration(seconds: 100));
+      final response = await http.Response.fromStream(streamed);
 
-      if (isLoadinDialog) Get.back();
+      if (loadingDialogOpened) {
+        Get.back();
+        loadingDialogOpened = false;
+      }
+
       debugPrint('✅ POST PRINT $endpoint → ${response.statusCode}');
       return response;
+    } on TimeoutException catch (e) {
+      debugPrint('🔴 [postPrint] Timeout: $e');
+      if (loadingDialogOpened) Get.back();
+      return buildClientErrorResponse(
+          408, 'La solicitud de impresión superó el tiempo de espera');
     } on SocketException catch (e) {
       debugPrint('🔴 [postPrint] SocketException: $e');
-      if (isLoadinDialog) Get.back();
+      if (loadingDialogOpened) Get.back();
       _showNetworkError();
-      rethrow;
+      return buildClientErrorResponse(404, 'Error de red');
     } catch (e) {
       debugPrint('🔴 [postPrint] Error: $e');
-      if (isLoadinDialog) Get.back();
+      if (loadingDialogOpened) Get.back();
       rethrow;
     }
   }
