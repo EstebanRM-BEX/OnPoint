@@ -23,6 +23,18 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
 
   List<ResultUbicaciones> ubicacionesRange = [];
 
+  /// Cantidad de etiquetas por ubicación del rango: locationId → cantidad.
+  /// Si no hay entrada, se asume 1. Se repite el id en `active_ids` al enviar.
+  final Map<int, int> locationQuantities = {};
+
+  /// Ids de ubicaciones expandidos según su cantidad (mín 1 por ubicación),
+  /// preservando el orden de `ubicacionesRange`.
+  List<int> get expandedLocationResIds => [
+        for (final loc in ubicacionesRange)
+          if (loc.id != null)
+            for (int i = 0; i < (locationQuantities[loc.id] ?? 1); i++) loc.id!,
+      ];
+
   /// Productos seleccionados para imprimir: productId → cantidad de etiquetas.
   /// El `Map` da membresía O(1) por id y guarda cuántas veces se debe imprimir
   /// cada producto (se repite el id en `active_ids` al enviar).
@@ -50,6 +62,8 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
     on<RemoveSelectedProductEvent>(_onRemoveSelectedProductEvent);
     on<IncrementProductQtyEvent>(_onIncrementProductQty);
     on<DecrementProductQtyEvent>(_onDecrementProductQty);
+    on<IncrementLocationQtyEvent>(_onIncrementLocationQty);
+    on<DecrementLocationQtyEvent>(_onDecrementLocationQty);
     on<ClearSelectedProductsEvent>(_onClearSelectedProducts);
     on<ClearRangeLocationsEvent>(_onClearRangeLocations);
   }
@@ -162,6 +176,8 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
   void _onSearchRangeLocationEvent(
       SearchRangeLocationEvent event, Emitter<PrintLabelsState> emit) {
     ubicacionesRange = [];
+    //nueva búsqueda de rango reemplaza la lista: limpiamos cantidades previas
+    locationQuantities.clear();
     final start = event.start.toLowerCase();
     final end = event.end.toLowerCase();
 
@@ -188,6 +204,24 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
       RemoveRangeLocationEvent event, Emitter<PrintLabelsState> emit) {
     ubicacionesRange =
         ubicacionesRange.where((l) => l.id != event.locationId).toList();
+    locationQuantities.remove(event.locationId);
+    emit(SearchRangeLocationSuccess(ubicacionesRange));
+  }
+
+  void _onIncrementLocationQty(
+      IncrementLocationQtyEvent event, Emitter<PrintLabelsState> emit) {
+    final actual = locationQuantities[event.locationId] ?? 1;
+    locationQuantities[event.locationId] = actual + 1;
+    emit(SearchRangeLocationSuccess(ubicacionesRange));
+  }
+
+  void _onDecrementLocationQty(
+      DecrementLocationQtyEvent event, Emitter<PrintLabelsState> emit) {
+    //mínimo 1: el stepper no elimina la ubicación (eso lo hace la X)
+    final actual = locationQuantities[event.locationId] ?? 1;
+    if (actual > 1) {
+      locationQuantities[event.locationId] = actual - 1;
+    }
     emit(SearchRangeLocationSuccess(ubicacionesRange));
   }
 
@@ -242,6 +276,7 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
   void _onClearRangeLocations(
       ClearRangeLocationsEvent event, Emitter<PrintLabelsState> emit) {
     ubicacionesRange = [];
+    locationQuantities.clear();
     emit(SearchRangeLocationSuccess(ubicacionesRange));
   }
 }

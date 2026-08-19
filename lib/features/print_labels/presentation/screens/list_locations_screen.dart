@@ -118,8 +118,10 @@ class _PrintLabelsLocationsScreenState
                                               color: black, fontSize: 12),
                                         ),
                                         Expanded(
+                                          // Nombre completo: envuelve en varias
+                                          // líneas en vez de cortar con "…".
                                           child: Text(location.name ?? '',
-                                              overflow: TextOverflow.ellipsis,
+                                              softWrap: true,
                                               style: const TextStyle(
                                                 color: primaryColorApp,
                                                 fontSize: 12,
@@ -220,11 +222,9 @@ class _PrintLabelsLocationsScreenState
                                 );
                               } else {
                                 ModalPrintersList.show(context,
-                                    resIds:
-                                        //todos los ids de las ubicaciones encontradas
-                                        bloc.ubicacionesRange
-                                            .map((e) => e.id)
-                                            .toList(),
+                                    // ids expandidos según la cantidad de cada
+                                    // ubicación (se repite el id N veces)
+                                    resIds: bloc.expandedLocationResIds,
                                     companyId: 1,
                                     onPrintSuccess: () =>
                                         bloc.add(ClearRangeLocationsEvent()));
@@ -511,7 +511,42 @@ class _RangeSearchSection extends StatelessWidget {
                               color: primaryColorApp,
                               fontWeight: FontWeight.bold,
                               fontSize: 10)),
-                      trailing: GestureDetector(
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Stepper de cantidad de etiquetas de la ubicación.
+                          IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () => bloc.add(
+                                DecrementLocationQtyEvent(location.id!)),
+                            icon: const Icon(Icons.remove_circle_outline,
+                                color: primaryColorApp, size: 20),
+                          ),
+                          SizedBox(
+                            width: 22,
+                            child: Text(
+                              '${bloc.locationQuantities[location.id] ?? 1}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: primaryColorApp,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () => bloc.add(
+                                IncrementLocationQtyEvent(location.id!)),
+                            icon: const Icon(Icons.add_circle,
+                                color: primaryColorApp, size: 20),
+                          ),
+                          const SizedBox(width: 4),
+                          GestureDetector(
                         onTap: () {
                           //mostramos un dialog para confirmar la seleciona
                           Get.dialog(
@@ -568,6 +603,8 @@ class _RangeSearchSection extends StatelessWidget {
                           );
                         },
                         child: const Icon(Icons.close, color: red, size: 16),
+                          ),
+                        ],
                       ),
                       onTap: () => onLocationSelected(location),
                     ),

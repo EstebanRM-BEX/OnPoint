@@ -57,6 +57,18 @@ class DecrementProductQtyEvent extends PrintLabelsEvent {
   DecrementProductQtyEvent(this.productId);
 }
 
+/// Aumenta en 1 la cantidad de etiquetas de una ubicación del rango.
+class IncrementLocationQtyEvent extends PrintLabelsEvent {
+  final int locationId;
+  IncrementLocationQtyEvent(this.locationId);
+}
+
+/// Disminuye en 1 la cantidad de una ubicación (mínimo 1; la X la remueve).
+class DecrementLocationQtyEvent extends PrintLabelsEvent {
+  final int locationId;
+  DecrementLocationQtyEvent(this.locationId);
+}
+
 /// Limpia toda la selección de productos (tras una impresión exitosa).
 class ClearSelectedProductsEvent extends PrintLabelsEvent {}
 
