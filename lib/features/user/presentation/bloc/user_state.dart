@@ -15,6 +15,11 @@ class UserInitial extends UserState {}
 
 class UserLoading extends UserState {}
 
+/// Aviso liviano: no hay conexión real a internet, se están mostrando los
+/// permisos/datos guardados localmente en vez de los más recientes del
+/// servidor. No bloquea la carga (que sigue con la config en caché).
+class UserOfflineWarning extends UserState {}
+
 class UserLoaded extends UserState {
   final UserConfiguration configuration;
   final DeviceInfo deviceInfo;

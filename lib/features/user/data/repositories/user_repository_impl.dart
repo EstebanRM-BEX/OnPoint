@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:injectable/injectable.dart';
@@ -35,6 +38,12 @@ class UserRepositoryImpl implements UserRepository {
       } on ServerException catch (e) {
         return Left(ServerFailure(e.message));
       } catch (e) {
+        // Falla la petición remota aunque _isConnected() dio positivo (server
+        // caído, DNS intermitente, timeout): en vez de mostrar la excepción
+        // cruda (p.ej. "ClientException"), caemos a la config guardada si
+        // existe.
+        final localConfig = await localDataSource.getCachedUserConfiguration();
+        if (localConfig != null) return Right(localConfig);
         return Left(ServerFailure(e.toString()));
       }
     } else {
@@ -117,8 +126,22 @@ class UserRepositoryImpl implements UserRepository {
     }
   }
 
+  // connectivity_plus solo reporta si hay una interfaz de red activa (WiFi/
+  // datos), no si esa red llega realmente a internet. Con WiFi sin salida a
+  // internet o servidor inalcanzable, checkConnectivity() daba falso positivo
+  // y la petición remota terminaba lanzando una excepción cruda al usuario.
+  // Verificamos con una resolución DNS real, igual que NetworkInfoImpl.
   Future<bool> _isConnected() async {
-    final result = await Connectivity().checkConnectivity();
-    return result.isOnline;
+    final connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult.isOffline) return false;
+    try {
+      final result = await InternetAddress.lookup('google.com')
+          .timeout(const Duration(seconds: 3));
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } on SocketException catch (_) {
+      return false;
+    } on TimeoutException catch (_) {
+      return false;
+    }
   }
 }

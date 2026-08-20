@@ -161,6 +161,16 @@ class _UserPageState extends State<UserPage> {
                   if (state is UserError) {
                     showScrollableErrorDialog(state.message);
                   }
+                  if (state is UserOfflineWarning) {
+                    Get.snackbar(
+                      '360 Software Informa',
+                      'Sin conexión: mostrando los datos guardados localmente.',
+                      backgroundColor: white,
+                      colorText: primaryColorApp,
+                      icon: const Icon(Icons.cloud_off, color: Colors.orange),
+                      duration: const Duration(seconds: 3),
+                    );
+                  }
                   if (state is DownloadUserDataLoading) {
                     showDialog(
                         context: context,
@@ -206,7 +216,9 @@ class _UserPageState extends State<UserPage> {
                   final bloc = context.read<UserBloc>();
                   debugPrint('state user page: $state');
 
-                  if (state is UserLoading) {
+                  if (state is UserLoading ||
+                      (state is UserOfflineWarning &&
+                          bloc.userConfiguration == null)) {
                     return const DialogLoading(message: 'Cargando...');
                   } else if (bloc.userConfiguration != null &&
                       bloc.deviceInfo != null) {

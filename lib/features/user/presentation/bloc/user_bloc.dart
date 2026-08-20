@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wms_app/core/interfaces/i_device_info_service.dart';
+import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/features/login/domain/usecases/save_user_session.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -42,6 +43,8 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
   UserConfiguration? userConfiguration;
   DeviceInfo? deviceInfo;
+
+  final NetworkInfo _networkInfo = getIt<NetworkInfo>();
 
   UserBloc({
     required this.getUserConfiguration,
@@ -170,6 +173,14 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     }
 
     // 2. Get Configuration
+    // getUserConfiguration ya cae a la config guardada en caché si no hay
+    // conexión real (o si la petición remota falla); avisamos aquí para que
+    // la UI muestre el aviso de "sin conexión" en vez de dejar que el usuario
+    // piense que está viendo los datos más recientes del servidor.
+    if (!await _networkInfo.isConnected) {
+      emit(UserOfflineWarning());
+    }
+
     final configResult = await getUserConfiguration(NoParams());
     configResult.fold(
       (failure) => errorMessage = failure.message,
