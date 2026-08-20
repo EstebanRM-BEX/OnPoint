@@ -574,22 +574,31 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   void _onGetProductsBD(
       GetProductsList event, Emitter<InfoRapidaState> emit) async {
     try {
-      emit(GetProductsLoading());
+      // Ya están en memoria (InitInfoRapidaEvent o una carga previa): mostramos
+      // de inmediato sin esperar a SQLite. Evita la demora percibida al
+      // navegar detalle → lista repetidamente (antes se re-consultaba y
+      // re-parseaba toda la maestra en cada vuelta).
+      if (productos.isNotEmpty) {
+        productosFilters = productos;
+        emit(GetProductsSuccess(productos));
+      } else {
+        emit(GetProductsLoading());
+      }
+
       final response =
           await db.productoInventarioRepository.getAllUniqueProducts();
-      productos.clear();
-      productosFilters.clear();
       debugPrint('productos: ${response.length}');
       if (response.isNotEmpty) {
         productos = response;
         productosFilters = productos;
-
         emit(GetProductsSuccess(response));
-      } else {
+      } else if (productos.isEmpty) {
         emit(GetProductsFailure('No se encontraron productos'));
       }
     } catch (e, s) {
-      emit(GetProductsFailure('Error al cargar los productos'));
+      if (productos.isEmpty) {
+        emit(GetProductsFailure('Error al cargar los productos'));
+      }
       debugPrint('Error en el fetch de productos: $e=>$s');
     }
   }
@@ -677,63 +686,35 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   void _onLoadLocations(
       GetListLocationsEvent event, Emitter<InfoRapidaState> emit) async {
     try {
-      emit(LoadLocationsLoading());
-
-      // // Verificar si las ubicaciones ya están cargadas en UserBloc
-      // var userLocations = userBloc.ubicaciones;
-
-      // // Si están vacías, cargar las ubicaciones desde UserBloc
-      // if (userLocations.isEmpty) {
-      //   debugPrint('Ubicaciones vacías, cargando desde UserBloc...');
-      //   userBloc.add(LoadUserLocationsEvent());
-
-      //   // Esperar a que se carguen las ubicaciones
-      //   await for (final state in userBloc.stream) {
-      //     if (state is UserLocationsLoaded) {
-      //       userLocations = state.locations;
-      //       debugPrint(
-      //           'Ubicaciones cargadas desde UserBloc: ${userLocations.length}');
-      //       break;
-      //     } else if (state is UserLocationsError) {
-      //       debugPrint('Error al cargar ubicaciones: ${state.message}');
-      //       emit(LoadLocationsFailure(
-      //           'Error al cargar ubicaciones: ${state.message}'));
-      //       return;
-      //     }
-      //   }
-      // }
-
-      // Convertir UserLocation a ResultUbicaciones
-      // final List<ResultUbicaciones> convertedLocations =
-      //     userLocations.map((userLoc) {
-      //   return ResultUbicaciones(
-      //     id: userLoc.id,
-      //     name: userLoc.name,
-      //     idWarehouse: userLoc.idWarehouse,
-      //     barcode: userLoc.barcode,
-      //     warehouseName: userLoc.warehouseName,
-      //   );
-      // }).toList();
-
-      ubicaciones.clear();
-      ubicacionesFilters.clear();
+      // Ya están en memoria (InitInfoRapidaEvent o una carga previa): mostramos
+      // de inmediato sin esperar a SQLite. Si en ese momento hay una sync
+      // masiva de login corriendo (transacción larga), la lectura a SQLite
+      // quedaría bloqueada hasta que termine; mostrar desde memoria evita que
+      // el usuario perciba esa demora. Luego igual se refresca en segundo
+      // plano.
+      if (ubicaciones.isNotEmpty) {
+        ubicacionesFilters = ubicaciones;
+        emit(LoadLocationsSuccess(ubicaciones));
+      } else {
+        emit(LoadLocationsLoading());
+      }
 
       //CARGAMOS LAS UBICACIONES DESDE LA BASE DE DATOS LOCAL
       final response = await db.ubicacionesRepository.getAllUbicaciones();
       debugPrint('📍 ubicaciones: ${response.length}');
-      ubicaciones.clear();
-      ubicacionesFilters.clear();
       if (response.isNotEmpty) {
         ubicaciones = response;
         ubicacionesFilters = ubicaciones;
         debugPrint('ubicaciones cargadas: ${ubicaciones.length}');
         emit(LoadLocationsSuccess(ubicaciones));
-      } else {
+      } else if (ubicaciones.isEmpty) {
         debugPrint('No se encontraron ubicaciones en UserBloc');
         emit(LoadLocationsFailure('No se encontraron ubicaciones'));
       }
     } catch (e, s) {
-      emit(LoadLocationsFailure('Error al cargar las ubicaciones'));
+      if (ubicaciones.isEmpty) {
+        emit(LoadLocationsFailure('Error al cargar las ubicaciones'));
+      }
       debugPrint('Error en el fetch de ubicaciones: $e=>$s');
     }
   }

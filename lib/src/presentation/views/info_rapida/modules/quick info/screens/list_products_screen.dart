@@ -1,5 +1,7 @@
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
@@ -23,6 +25,15 @@ class ListProductsScreen extends StatefulWidget {
 class _ListProductsScreenState extends State<ListProductsScreen> {
   int? selectedIndex;
   String? _selectedPropietario;
+  // Debounce del buscador: evita filtrar toda la lista en cada tecla; solo
+  // dispara la búsqueda 200ms después de la última pulsación.
+  Timer? _searchDebounce;
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
+  }
 
   List<String> _getPropietarios(InfoRapidaBloc bloc) {
     return bloc.productos
@@ -241,9 +252,18 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
                       controller: bloc.searchControllerProducts,
                       hintText: "Buscar producto",
                       onSearchChanged: (value) {
-                        bloc.add(SearchProductEvent(value));
+                        _searchDebounce?.cancel();
+                        _searchDebounce = Timer(
+                          const Duration(milliseconds: 200),
+                          () {
+                            if (mounted) bloc.add(SearchProductEvent(value));
+                          },
+                        );
                       },
                       onSearchCleared: () {
+                        // Cancelamos cualquier búsqueda pendiente para que no
+                        // pise el "limpiar".
+                        _searchDebounce?.cancel();
                         bloc.searchControllerProducts.clear();
                         bloc.add(SearchProductEvent(''));
 
