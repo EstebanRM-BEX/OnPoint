@@ -308,10 +308,16 @@ class _Tab3ScreenTransState extends State<Tab3ScreenTrans>
                                                 color: primaryColorApp,
                                               ),
                                             ),
-                                            Text("${product.locationName}",
-                                                style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color: black)),
+                                            Expanded(
+                                              // Nombre completo: envuelve en
+                                              // varias líneas en vez de cortar.
+                                              child: Text(
+                                                  "${product.locationName}",
+                                                  softWrap: true,
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: black)),
+                                            ),
                                           ],
                                         ),
                                         Row(
@@ -323,10 +329,16 @@ class _Tab3ScreenTransState extends State<Tab3ScreenTrans>
                                                 color: primaryColorApp,
                                               ),
                                             ),
-                                            Text("${product.locationDestName}",
-                                                style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color: black)),
+                                            Expanded(
+                                              // Nombre completo: envuelve en
+                                              // varias líneas en vez de cortar.
+                                              child: Text(
+                                                  "${product.locationDestName}",
+                                                  softWrap: true,
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: black)),
+                                            ),
                                           ],
                                         ),
                                         Row(
