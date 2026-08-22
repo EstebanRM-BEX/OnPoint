@@ -1880,6 +1880,13 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
         // Restablecemos los estados de la UI para el nuevo producto
         productIsOk = false;
         quantityIsOk = false;
+        // locationDestIsOk también debe resetearse aquí: si queda en `true`
+        // (heredado del producto anterior), LocationScannerWidget se
+        // deshabilita (enabled requiere que los 4 flags estén en false) y el
+        // escaneo de la ubicación de origen del nuevo producto no hace nada
+        // hasta que LoadDataInfoEvent (asíncrono, vía FetchPickWithProducts)
+        // lo corrija más tarde.
+        locationDestIsOk = false;
 
         // Seleccionamos el siguiente producto de la lista
         currentProduct = nextProducts.first;
