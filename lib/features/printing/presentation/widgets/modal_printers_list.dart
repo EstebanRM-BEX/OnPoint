@@ -347,6 +347,35 @@ class _ReportTile extends StatelessWidget {
                       buttonColor: primaryColorApp,
                       onConfirm: () {
                         Get.back();
+
+                        // resIds puede traer valores null (p.ej. idMove/id de
+                        // un producto/batch que aún no tiene ese campo
+                        // asignado); `List<int>.from` con un null revienta
+                        // con "type 'Null' is not a subtype of type 'int'" y
+                        // no hay feedback para el usuario. Filtramos y
+                        // validamos antes de construir el evento.
+                        final safeResIds =
+                            resIds.whereType<int>().toList();
+                        if (safeResIds.isEmpty) {
+                          Get.snackbar(
+                            '360 Software Informa',
+                            'No se pudo imprimir: el producto/lote no tiene un identificador válido.',
+                            backgroundColor: white,
+                            colorText: primaryColorApp,
+                            icon: const Icon(Icons.error, color: Colors.red),
+                          );
+                          return;
+                        }
+
+                        // companyId también puede llegar null (p.ej.
+                        // warehouseId nulo de un pedido sin ese dato) desde
+                        // algún caller que no le puso el `?? 1` de respaldo;
+                        // int.parse('null') lanza FormatException. tryParse
+                        // + fallback a 1 evita ese crash sin depender de que
+                        // cada pantalla lo maneje.
+                        final safeCompanyId =
+                            int.tryParse(companyId.toString()) ?? 1;
+
                         context
                             .read<PrintingBloc>()
                             .add(SelectPrinterEvent(printer));
@@ -354,8 +383,8 @@ class _ReportTile extends StatelessWidget {
                             .read<PrintingBloc>()
                             .add(SelectReportEvent(report));
                         context.read<PrintingBloc>().add(ExecutePrintEvent(
-                            resIds: List<int>.from(resIds),
-                            companyId: int.parse(companyId.toString()),
+                            resIds: safeResIds,
+                            companyId: safeCompanyId,
                             copies: copies));
                         debugPrint(printer.hostmachine);
                         debugPrint(printer.printerType);
