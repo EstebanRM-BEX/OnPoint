@@ -379,8 +379,8 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
                 : event.product.timeSeparate.toDouble(),
             muelle: event.product.muelleId ?? 0,
             idOperario: userid,
-            fechaTransaccion:
-                event.product.fechaTransaccion ?? dateTimeActuality.toString(),
+            fechaTransaccion: fechaNaive(event.product.fechaTransaccion,
+                fallback: dateTimeActuality),
           ),
         ],
       );
@@ -645,7 +645,6 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
         final userid = await PrefUtils.getUserId();
 
         DateTime fechaTransaccion = DateTime.now();
-        String fechaFormateada = formatoFecha(fechaTransaccion);
 
         // Creamos los Item a enviar
         itemsToSend.add(Item(
@@ -663,10 +662,8 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
               : product.timeSeparate.toDouble(),
           muelle: event.muelle.id ?? 0,
           idOperario: userid,
-          fechaTransaccion:
-              product.fechaTransaccion == "" || product.fechaTransaccion == null
-                  ? fechaFormateada
-                  : product.fechaTransaccion ?? "",
+          fechaTransaccion: fechaNaive(product.fechaTransaccion,
+              fallback: fechaTransaccion),
         ));
       }
 
@@ -920,8 +917,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
                 : product.timeSeparate.toDouble(),
             muelle: product.muelleId ?? 0,
             idOperario: userid,
-            fechaTransaccion:
-                product.fechaTransaccion ?? DateTime.now().toString(),
+            fechaTransaccion: fechaNaive(product.fechaTransaccion),
           ),
         ],
       );
@@ -1117,8 +1113,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
               muelle: product?.muelleId ?? 0,
               idOperario: userid,
 
-              fechaTransaccion:
-                  product?.fechaTransaccion ?? DateTime.now().toString(),
+              fechaTransaccion: fechaNaive(product?.fechaTransaccion),
             ),
           ]);
 
@@ -1215,7 +1210,6 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
     }
 
     DateTime fechaTransaccion = DateTime.now();
-    String fechaFormateada = formatoFecha(fechaTransaccion);
 
     //enviamos el producto a odoo
     final response = await repository.sendPicking(
@@ -1237,7 +1231,8 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
                   : product?.timeSeparate.toDouble(),
               muelle: product?.muelleId ?? 0,
               idOperario: userid,
-              fechaTransaccion: product?.fechaTransaccion ?? fechaFormateada),
+              fechaTransaccion: fechaNaive(product?.fechaTransaccion,
+                  fallback: fechaTransaccion)),
         ]);
 
     if (response.result?.code == 200) {
