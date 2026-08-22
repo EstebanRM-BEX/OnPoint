@@ -21,6 +21,7 @@ class EnterprisePage extends StatefulWidget {
 
 class _EnterprisePageState extends State<EnterprisePage> {
   final TextEditingController _urlController = TextEditingController();
+  final FocusNode _urlFocusNode = FocusNode();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
@@ -28,11 +29,22 @@ class _EnterprisePageState extends State<EnterprisePage> {
     super.initState();
     context.read<EnterpriseBloc>().add(const GetRecentUrlsEvent());
     context.read<UserBloc>().add(LoadInfoDeviceEventUser());
+
+    // Se pide el foco después del primer frame (en vez de `autofocus: true`)
+    // para que no compita con la carga de GetRecentUrlsEvent: si esa carga
+    // resuelve justo cuando el teclado está animando su apertura, el salto de
+    // layout de la lista de "recientes" (ver _buildRecentUrlsList) podía
+    // hacer que el teclado apareciera y se escondiera un par de veces antes
+    // de estabilizarse.
+    Future.microtask(() {
+      if (mounted) _urlFocusNode.requestFocus();
+    });
   }
 
   @override
   void dispose() {
     _urlController.dispose();
+    _urlFocusNode.dispose();
     super.dispose();
   }
 
@@ -160,8 +172,8 @@ class _EnterprisePageState extends State<EnterprisePage> {
             ),
             child: TextFormField(
               controller: _urlController,
+              focusNode: _urlFocusNode,
               autocorrect: false,
-              autofocus: true,
               style: const TextStyle(fontSize: 12),
               decoration: InputDecoration(
                 hintText: "Ingrese la url",
@@ -194,8 +206,19 @@ class _EnterprisePageState extends State<EnterprisePage> {
 
         return Container(
           margin: const EdgeInsets.only(top: 10),
-          height: recentUrls.isEmpty ? 100 : 200,
-          child: ListView.builder(
+          // Altura fija (antes 100/200 según si había datos): ese salto de
+          // layout, si coincidía con la animación de apertura del teclado
+          // (autofocus + esta carga resolviendo casi al mismo tiempo), podía
+          // hacer que el teclado se mostrara y ocultara varias veces.
+          height: 200,
+          child: recentUrls.isEmpty
+              ? Center(
+                  child: Text(
+                    'Sin URLs recientes',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                  ),
+                )
+              : ListView.builder(
             padding: EdgeInsets.zero,
             itemCount: recentUrls.length,
             itemBuilder: (context, index) {
