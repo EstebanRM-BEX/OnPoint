@@ -12,6 +12,7 @@ import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/tabs/tab4.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/tabs/tab5.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 
 class PackingPedidoDetailScreen extends StatefulWidget {
   const PackingPedidoDetailScreen({
@@ -26,7 +27,7 @@ class PackingPedidoDetailScreen extends StatefulWidget {
 }
 
 class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, LoadingDialogMixin {
   late TabController _tabController;
 
   @override
@@ -50,7 +51,20 @@ class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
   Widget build(BuildContext context) {
     return BlocConsumer<PackingPedidoBloc, PackingPedidoState>(
       listener: (context, state) {
+        // Diálogo de carga propio de esta pantalla (idempotente, no se apila
+        // aunque llegue más de un WmsPackingLoadingState): reemplaza al que
+        // abría la API por su cuenta (GetX, sin dueño ni orden garantizado).
+        if (state is WmsPackingLoadingState) {
+          showLoadingDialog('Empacando...');
+        }
+        if (state is WmsPackingSuccessState) {
+          hideLoadingDialog();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.msg)),
+          );
+        }
         if (state is WmsPackingErrorState) {
+          hideLoadingDialog();
           showScrollableErrorDialog(state.error);
         }
       },

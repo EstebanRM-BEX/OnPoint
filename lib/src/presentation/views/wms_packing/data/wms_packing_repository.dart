@@ -1114,10 +1114,10 @@ class WmsPackingRepository {
   }
 
   Future<ResponseSendPack> sendPackRequest(
-    PackingPackRequest packingRequest,
-    bool isLoadingDialog,
-    bool isCluster,
-  ) async {
+    PackingPackRequest packingRequest, {
+    required bool isLoadingDialog,
+    required bool isCluster,
+  }) async {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
@@ -1144,7 +1144,7 @@ class WmsPackingRepository {
                 .toList(),
           },
         },
-        isLoadinDialog: true,
+        isLoadinDialog: isLoadingDialog,
       );
       if (response.statusCode < 400) {
         // Decodifica la respuesta JSON a un mapa

@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -181,7 +182,11 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     on<ChangeStickerEvent>(_onChangeStickerEvent);
 
     //*packing
-    on<SetPackingsEvent>(_onSetPackingsEvent);
+    // droppable: ignora un segundo SetPackingsEvent mientras el primero sigue
+    // en curso (doble tap en el FAB/confirmar). Sin esto, dos peticiones
+    // concurrentes abren dos diálogos de carga apilados (GetX) y al cerrarse
+    // fuera de orden uno queda pegado en pantalla.
+    on<SetPackingsEvent>(_onSetPackingsEvent, transformer: droppable());
 
     //*evento para seleccionar productos sin certificar
     on<SelectProductPackingEvent>(_onSelectProductPackingEvent);
@@ -1056,10 +1061,17 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         listItems: listItems,
       );
 
+      // Antes estos dos argumentos posicionales estaban intercambiados en su
+      // intención: `event.tipoEmpaque == 'cluster'` caía en isLoadingDialog
+      // (ignorado, la API igual abría su propio diálogo) e isCluster quedaba
+      // hardcodeado en `true` — siempre pegaba a send_cluster/pack sin
+      // importar el tipo real de empaque. isLoadingDialog ahora en false: el
+      // diálogo de carga lo maneja esta pantalla (WmsPackingLoadingState),
+      // no la API, para evitar diálogos apilados con doble tap.
       final responsePacking = await wmsPackingRepository.sendPackRequest(
         packingRequest,
-        event.tipoEmpaque == 'cluster',
-        true,
+        isLoadingDialog: false,
+        isCluster: event.tipoEmpaque == 'cluster',
       );
 
       if (responsePacking.result?.code != 200) {
