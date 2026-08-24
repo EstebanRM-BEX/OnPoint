@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
+import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 
 class QuantityScannerWidget extends StatefulWidget {
   final Size size;
@@ -58,16 +59,27 @@ class QuantityScannerWidget extends StatefulWidget {
   State<QuantityScannerWidget> createState() => _QuantityScannerWidgetState();
 }
 
-class _QuantityScannerWidgetState extends State<QuantityScannerWidget> {
+class _QuantityScannerWidgetState extends State<QuantityScannerWidget>
+    with WidgetsBindingObserver {
   Timer? _debounce;
+  // Watchdog: reabre el teclado si el IME del PDA (Zebra/Urovo/Chainway) lo
+  // cierra solo mientras el campo de cantidad manual conserva el foco.
+  late final KeyboardWatchdog _kbWatchdog =
+      KeyboardWatchdog(state: this, focusNode: widget.manualFocusNode);
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
+  void didChangeMetrics() => _kbWatchdog.onMetricsChanged();
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _kbWatchdog.dispose();
     _debounce?.cancel();
     super.dispose();
   }

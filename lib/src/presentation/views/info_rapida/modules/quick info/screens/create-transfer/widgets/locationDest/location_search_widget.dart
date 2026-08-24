@@ -8,6 +8,7 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
+import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 
 class SearchLocationCreateMassTransfercreen extends StatefulWidget {
   const SearchLocationCreateMassTransfercreen(
@@ -20,8 +21,31 @@ class SearchLocationCreateMassTransfercreen extends StatefulWidget {
 }
 
 class _SearchLocationScreenState
-    extends State<SearchLocationCreateMassTransfercreen> {
+    extends State<SearchLocationCreateMassTransfercreen>
+    with WidgetsBindingObserver {
   int? selectedIndex;
+  final FocusNode _searchFocusNode = FocusNode();
+  // Watchdog: reabre el teclado si el IME del PDA (Zebra/Urovo/Chainway) lo
+  // cierra solo mientras el buscador conserva el foco.
+  late final KeyboardWatchdog _kbWatchdog =
+      KeyboardWatchdog(state: this, focusNode: _searchFocusNode);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeMetrics() => _kbWatchdog.onMetricsChanged();
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _kbWatchdog.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +85,7 @@ class _SearchLocationScreenState
                                     color: Colors.white,
                                     elevation: 3,
                                     child: TextFormField(
+                                      focusNode: _searchFocusNode,
                                       showCursor: true,
                                       textAlignVertical:
                                           TextAlignVertical.center,

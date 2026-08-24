@@ -251,6 +251,9 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
                     DynamicSearchBar(
                       controller: bloc.searchControllerProducts,
                       hintText: "Buscar producto",
+                      // watchdog: reabre el teclado si el IME del PDA
+                      // (Zebra/Urovo/Chainway) lo cierra solo.
+                      persistentKeyboard: true,
                       onSearchChanged: (value) {
                         _searchDebounce?.cancel();
                         _searchDebounce = Timer(

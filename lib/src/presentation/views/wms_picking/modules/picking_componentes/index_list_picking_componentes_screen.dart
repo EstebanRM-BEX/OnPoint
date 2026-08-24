@@ -242,6 +242,9 @@ class IndexListPickComponentsScreen extends StatelessWidget {
                                 .read<PickingPickBloc>()
                                 .searchPickController,
                             hintText: "Buscar pick",
+                            // watchdog: reabre el teclado si el IME del PDA
+                            // (Zebra/Urovo/Chainway) lo cierra solo.
+                            persistentKeyboard: true,
                             onSearchChanged: (value) {
                               context
                                   .read<PickingPickBloc>()

@@ -118,6 +118,9 @@ class _ListLocationsScreenState extends State<ListLocationsScreen> {
                       DynamicSearchBar(
                         controller: bloc.searchControllerLocation,
                         hintText: "Buscar ubicación",
+                        // watchdog: reabre el teclado si el IME del PDA
+                        // (Zebra/Urovo/Chainway) lo cierra solo.
+                        persistentKeyboard: true,
                         onSearchChanged: (value) {
                           bloc.add(SearchLocationEvent(value));
                         },

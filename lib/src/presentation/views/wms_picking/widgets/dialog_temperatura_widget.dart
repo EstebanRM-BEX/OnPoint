@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
+import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 
-class DialogTemperature extends StatelessWidget {
+class DialogTemperature extends StatefulWidget {
   final VoidCallback onConfirm;
   final VoidCallback onCancel;
   final TextEditingController controller;
@@ -15,6 +16,35 @@ class DialogTemperature extends StatelessWidget {
     required this.onCancel,
     required this.controller,
   });
+
+  @override
+  State<DialogTemperature> createState() => _DialogTemperatureState();
+}
+
+class _DialogTemperatureState extends State<DialogTemperature>
+    with WidgetsBindingObserver {
+  final FocusNode _focusNode = FocusNode();
+  // Watchdog: reabre el teclado si el IME del PDA (Zebra/Urovo/Chainway) lo
+  // cierra solo mientras el campo conserva el foco.
+  late final KeyboardWatchdog _kbWatchdog =
+      KeyboardWatchdog(state: this, focusNode: _focusNode);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeMetrics() => _kbWatchdog.onMetricsChanged();
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _kbWatchdog.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +75,8 @@ class DialogTemperature extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
-                  controller: controller,
+                  controller: widget.controller,
+                  focusNode: _focusNode,
                   keyboardType: TextInputType.number,
                   decoration: InputDecorations.authInputDecoration(
                     labelText: 'Temperatura (°C)',
@@ -53,7 +84,7 @@ class DialogTemperature extends StatelessWidget {
                       onPressed: () {
                         //cerramos el dialog
                         //limapiamos el controller
-                        controller.clear();
+                        widget.controller.clear();
                       },
                       icon: Icon(
                         Icons.clear,
@@ -68,7 +99,7 @@ class DialogTemperature extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () {
                     //validamos que el campo no este vacio
-                    if (controller.text.isEmpty) {
+                    if (widget.controller.text.isEmpty) {
                       Get.snackbar("360 Software Informa", 'Campo vacio',
                           duration: const Duration(seconds: 2),
                           backgroundColor: Colors.white,
@@ -77,7 +108,7 @@ class DialogTemperature extends StatelessWidget {
                       return;
                     }
 
-                    onConfirm();
+                    widget.onConfirm();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColorApp,
@@ -94,8 +125,8 @@ class DialogTemperature extends StatelessWidget {
                     //cerramos el dialog
                     //limpiamos el controller
 
-                    controller.clear();
-                    onCancel();
+                    widget.controller.clear();
+                    widget.onCancel();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: grey,

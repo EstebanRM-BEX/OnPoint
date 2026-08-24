@@ -3,6 +3,7 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
+import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
@@ -47,6 +48,10 @@ class _InventarioScreenState extends State<InventarioScreen>
   FocusNode focusNode2 = FocusNode(); // producto
   FocusNode focusNode3 = FocusNode(); // cantidad por pda
   FocusNode focusNode4 = FocusNode(); // cantidad textformfield
+  // Watchdog: reabre el teclado si el IME del PDA lo cierra solo mientras
+  // el campo de cantidad manual conserva el foco.
+  late final KeyboardWatchdog _kbWatchdog =
+      KeyboardWatchdog(state: this, focusNode: focusNode4);
   FocusNode focusNode5 = FocusNode(); // lote
 
   @override
@@ -56,9 +61,13 @@ class _InventarioScreenState extends State<InventarioScreen>
   }
 
   @override
+  void didChangeMetrics() => _kbWatchdog.onMetricsChanged();
+
+  @override
   void dispose() {
     _syncPhaseNotifier.dispose();
     WidgetsBinding.instance.removeObserver(this);
+    _kbWatchdog.dispose();
     super.dispose();
   }
 

@@ -1,5 +1,6 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 import 'package:wms_app/features/picking/presentation/bloc/components/picking_components_bloc.dart';
 import 'package:wms_app/features/picking/presentation/bloc/list/picking_list_bloc.dart';
 import 'package:wms_app/features/picking/presentation/bloc/scan/pick_scan_bloc.dart';
@@ -59,6 +60,10 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
   FocusNode focusNode2 = FocusNode(); // producto
   FocusNode focusNode3 = FocusNode(); // cantidad por pda
   FocusNode focusNode4 = FocusNode(); //cantidad textformfield
+  // Watchdog: reabre el teclado si el IME del PDA lo cierra solo mientras
+  // el campo de cantidad manual conserva el foco.
+  late final KeyboardWatchdog _kbWatchdog =
+      KeyboardWatchdog(state: this, focusNode: focusNode4);
   FocusNode focusNode5 = FocusNode(); //cantidad muelle
   FocusNode focusNode6 = FocusNode(); //Submuelle
 
@@ -93,6 +98,9 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
     // Añadimos el observer para escuchar el ciclo de vida de la app.
     WidgetsBinding.instance.addObserver(this);
   }
+
+  @override
+  void didChangeMetrics() => _kbWatchdog.onMetricsChanged();
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -187,6 +195,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _kbWatchdog.dispose();
     super.dispose();
   }
 

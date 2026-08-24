@@ -21,6 +21,7 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiredate_widget.dart';
 import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
+import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 
 class BatchDetailScreen extends StatefulWidget {
   const BatchDetailScreen({super.key});
@@ -30,7 +31,30 @@ class BatchDetailScreen extends StatefulWidget {
 }
 
 class _BatchDetailScreenState extends State<BatchDetailScreen>
-    with LoadingDialogMixin {
+    with LoadingDialogMixin, WidgetsBindingObserver {
+  final FocusNode _searchFocusNode = FocusNode();
+  // Watchdog: reabre el teclado si el IME del PDA (Zebra/Urovo/Chainway) lo
+  // cierra solo mientras el buscador conserva el foco.
+  late final KeyboardWatchdog _kbWatchdog =
+      KeyboardWatchdog(state: this, focusNode: _searchFocusNode);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeMetrics() => _kbWatchdog.onMetricsChanged();
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _kbWatchdog.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
@@ -323,6 +347,7 @@ class _BatchDetailScreenState extends State<BatchDetailScreen>
                                     color: Colors.white,
                                     elevation: 2,
                                     child: TextFormField(
+                                      focusNode: _searchFocusNode,
                                       textAlignVertical:
                                           TextAlignVertical.center,
                                       onChanged: (value) {

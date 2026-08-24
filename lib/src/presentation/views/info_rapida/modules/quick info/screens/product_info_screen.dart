@@ -557,6 +557,9 @@ class ProductInfoScreen extends StatelessWidget {
                         child: DynamicSearchBar(
                           controller: bloc.searchControllerLocation,
                           hintText: "Buscar ubicaion",
+                          // watchdog: reabre el teclado si el IME del PDA
+                          // (Zebra/Urovo/Chainway) lo cierra solo.
+                          persistentKeyboard: true,
                           onSearchChanged: (value) {
                             bloc.add(SearchLocationProductsEvent(value));
                           },

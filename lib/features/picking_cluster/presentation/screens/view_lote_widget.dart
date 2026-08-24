@@ -5,6 +5,7 @@ import 'package:wms_app/features/picking_cluster/presentation/bloc/cluster_picki
 import 'package:wms_app/features/picking_cluster/presentation/screens/scan_product_scree.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/lote_producto.dart';
+import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 
 class ViewLoteScreen extends StatefulWidget {
   final List<LoteProducto> lotes;
@@ -20,7 +21,8 @@ class ViewLoteScreen extends StatefulWidget {
   State<ViewLoteScreen> createState() => _ViewLoteScreenState();
 }
 
-class _ViewLoteScreenState extends State<ViewLoteScreen> {
+class _ViewLoteScreenState extends State<ViewLoteScreen>
+    with WidgetsBindingObserver {
   int? selectedIndex;
 
   List<LoteProducto> allLotes = [];
@@ -28,12 +30,17 @@ class _ViewLoteScreenState extends State<ViewLoteScreen> {
 
   late final TextEditingController searchController;
   late final FocusNode searchFocusNode;
+  // Watchdog: reabre el teclado si el IME del PDA (Zebra/Urovo/Chainway) lo
+  // cierra solo mientras el buscador conserva el foco.
+  late final KeyboardWatchdog _kbWatchdog;
 
   @override
   void initState() {
     super.initState();
     searchController = TextEditingController();
     searchFocusNode = FocusNode();
+    _kbWatchdog = KeyboardWatchdog(state: this, focusNode: searchFocusNode);
+    WidgetsBinding.instance.addObserver(this);
 
     // Arrange the lots array to move the suggested lot to index 0, if provided
     var initialLotes = List<LoteProducto>.from(widget.lotes);
@@ -65,7 +72,12 @@ class _ViewLoteScreenState extends State<ViewLoteScreen> {
   }
 
   @override
+  void didChangeMetrics() => _kbWatchdog.onMetricsChanged();
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _kbWatchdog.dispose();
     searchController.dispose();
     searchFocusNode.dispose();
     super.dispose();

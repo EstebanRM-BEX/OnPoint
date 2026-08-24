@@ -19,6 +19,7 @@ import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.da
 import 'package:wms_app/features/inventario/presentation/widgets/session_expired_helper.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart';
 import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
+import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_advertencia_lote_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:intl/intl.dart';
@@ -33,19 +34,28 @@ class NewLoteInventarioScreen extends StatefulWidget {
 }
 
 class _NewLoteScreenState extends State<NewLoteInventarioScreen>
-    with LoadingDialogMixin {
+    with LoadingDialogMixin, WidgetsBindingObserver {
   bool viewList = true;
   DateTime? selectedDate;
   int? selectedIndex;
 
   // FocusNode persistente — sobrevive todos los rebuilds del árbol
   final FocusNode _searchFocusNode = FocusNode();
+  final FocusNode _nombreLoteFocusNode = FocusNode();
   Timer? _debounce;
+
+  // Watchdog: reabre el teclado si el IME del PDA (Zebra/Urovo/Chainway) lo
+  // cierra solo mientras alguno de estos campos conserva el foco.
+  late final KeyboardWatchdog _kbWatchdogSearch =
+      KeyboardWatchdog(state: this, focusNode: _searchFocusNode);
+  late final KeyboardWatchdog _kbWatchdogNombreLote =
+      KeyboardWatchdog(state: this, focusNode: _nombreLoteFocusNode);
 
   @override
   void initState() {
     super.initState();
     viewList = true;
+    WidgetsBinding.instance.addObserver(this);
     // Abre el teclado automáticamente al entrar a la pantalla
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _searchFocusNode.requestFocus();
@@ -53,8 +63,18 @@ class _NewLoteScreenState extends State<NewLoteInventarioScreen>
   }
 
   @override
+  void didChangeMetrics() {
+    _kbWatchdogSearch.onMetricsChanged();
+    _kbWatchdogNombreLote.onMetricsChanged();
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _kbWatchdogSearch.dispose();
+    _kbWatchdogNombreLote.dispose();
     _searchFocusNode.dispose();
+    _nombreLoteFocusNode.dispose();
     _debounce?.cancel();
     super.dispose();
   }
@@ -454,6 +474,7 @@ class _NewLoteScreenState extends State<NewLoteInventarioScreen>
               height: 40,
               child: TextFormField(
                 controller: bloc.newLoteController,
+                focusNode: _nombreLoteFocusNode,
                 style: TextStyle(color: black, fontSize: 14),
                 textCapitalization: TextCapitalization.characters,
                 inputFormatters: [

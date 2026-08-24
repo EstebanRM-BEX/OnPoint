@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
+import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 
 class DialogInfoQuick extends StatelessWidget {
   final BuildContext contextScreen;
@@ -84,13 +85,20 @@ class SearchPackageDialog extends StatefulWidget {
   State<SearchPackageDialog> createState() => _SearchPackageDialogState();
 }
 
-class _SearchPackageDialogState extends State<SearchPackageDialog> {
+class _SearchPackageDialogState extends State<SearchPackageDialog>
+    with WidgetsBindingObserver {
   final TextEditingController _scanController = TextEditingController();
+  final FocusNode _scanFocusNode = FocusNode();
   final _formKey = GlobalKey<FormState>();
+  // Watchdog: reabre el teclado si el IME del PDA (Zebra/Urovo/Chainway) lo
+  // cierra solo mientras el campo conserva el foco.
+  late final KeyboardWatchdog _kbWatchdog =
+      KeyboardWatchdog(state: this, focusNode: _scanFocusNode);
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // ✅ Inicializar el controlador con la palabra "PACK"
     _scanController.text = 'PACK';
     // ✅ Mover el cursor al final del texto para que el usuario pueda escribir
@@ -100,7 +108,13 @@ class _SearchPackageDialogState extends State<SearchPackageDialog> {
   }
 
   @override
+  void didChangeMetrics() => _kbWatchdog.onMetricsChanged();
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _kbWatchdog.dispose();
+    _scanFocusNode.dispose();
     _scanController.dispose();
     super.dispose();
   }
@@ -127,6 +141,7 @@ class _SearchPackageDialogState extends State<SearchPackageDialog> {
             ),
             const SizedBox(height: 10),
             TextFormField(
+              focusNode: _scanFocusNode,
               style: const TextStyle(fontSize: 14, color: Colors.black),
               controller: _scanController,
               // ✅ El cambio crucial: aplicamos el formatter aquí

@@ -637,6 +637,9 @@ class _IndexListPickScreenState extends State<IndexListPickScreen>
                           width: size.width * 0.8,
                           controller: bloc.searchPickController,
                           hintText: "Buscar pick",
+                          // watchdog: reabre el teclado si el IME del PDA
+                          // (Zebra/Urovo/Chainway) lo cierra solo.
+                          persistentKeyboard: true,
                           onSearchChanged: (value) {
                             bloc.add(SearchPickListEvent(value, false));
                           },

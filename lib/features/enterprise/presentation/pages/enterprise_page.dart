@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
 import 'package:wms_app/core/utils/validator_utils.dart';
 import 'package:wms_app/injection_container.dart';
+import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 import '../../../../src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import '../../../../features/user/presentation/bloc/user_bloc.dart';
 import '../../../../src/presentation/widgets/dialog_error_widget.dart';
@@ -19,16 +21,24 @@ class EnterprisePage extends StatefulWidget {
   State<EnterprisePage> createState() => _EnterprisePageState();
 }
 
-class _EnterprisePageState extends State<EnterprisePage> {
+class _EnterprisePageState extends State<EnterprisePage>
+    with WidgetsBindingObserver {
   final TextEditingController _urlController = TextEditingController();
   final FocusNode _urlFocusNode = FocusNode();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  // Watchdog de teclado: en PDAs con escáner activo (Zebra/Urovo/Chainway)
+  // el IME del sistema puede ocultar el teclado suave por sí solo mientras
+  // el campo conserva el foco. Ver lib/shared/utils/keyboard_watchdog.dart.
+  late final KeyboardWatchdog _kbWatchdog =
+      KeyboardWatchdog(state: this, focusNode: _urlFocusNode);
 
   @override
   void initState() {
     super.initState();
     context.read<EnterpriseBloc>().add(const GetRecentUrlsEvent());
     context.read<UserBloc>().add(LoadInfoDeviceEventUser());
+    WidgetsBinding.instance.addObserver(this);
 
     // Se pide el foco después del primer frame (en vez de `autofocus: true`)
     // para que no compita con la carga de GetRecentUrlsEvent: si esa carga
@@ -43,10 +53,15 @@ class _EnterprisePageState extends State<EnterprisePage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _kbWatchdog.dispose();
     _urlController.dispose();
     _urlFocusNode.dispose();
     super.dispose();
   }
+
+  @override
+  void didChangeMetrics() => _kbWatchdog.onMetricsChanged();
 
   @override
   Widget build(BuildContext context) {
@@ -175,6 +190,11 @@ class _EnterprisePageState extends State<EnterprisePage> {
               focusNode: _urlFocusNode,
               autocorrect: false,
               style: const TextStyle(fontSize: 12),
+              onTap: () {
+                // Cubre el caso donde el campo ya tenía foco pero el IME del
+                // PDA cerró el teclado (Chainway/Android 13 y similares).
+                SystemChannels.textInput.invokeMethod('TextInput.show');
+              },
               decoration: InputDecoration(
                 hintText: "Ingrese la url",
                 hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),

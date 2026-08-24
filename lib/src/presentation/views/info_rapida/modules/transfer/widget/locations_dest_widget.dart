@@ -9,6 +9,7 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/models/info_rapida_model.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/modules/transfer/bloc/transfer_info_bloc.dart';
+import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 
 class LocationDestTransfInfoScreen extends StatefulWidget {
   const LocationDestTransfInfoScreen(
@@ -22,8 +23,31 @@ class LocationDestTransfInfoScreen extends StatefulWidget {
       _LocationDestScreenState();
 }
 
-class _LocationDestScreenState extends State<LocationDestTransfInfoScreen> {
+class _LocationDestScreenState extends State<LocationDestTransfInfoScreen>
+    with WidgetsBindingObserver {
   int? selectedIndex;
+  final FocusNode _searchFocusNode = FocusNode();
+  // Watchdog: reabre el teclado si el IME del PDA (Zebra/Urovo/Chainway) lo
+  // cierra solo mientras el buscador conserva el foco.
+  late final KeyboardWatchdog _kbWatchdog =
+      KeyboardWatchdog(state: this, focusNode: _searchFocusNode);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeMetrics() => _kbWatchdog.onMetricsChanged();
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _kbWatchdog.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -174,6 +198,7 @@ class _LocationDestScreenState extends State<LocationDestTransfInfoScreen> {
                                     color: Colors.white,
                                     elevation: 3,
                                     child: TextFormField(
+                                      focusNode: _searchFocusNode,
                                       showCursor: true,
                                       textAlignVertical:
                                           TextAlignVertical.center,

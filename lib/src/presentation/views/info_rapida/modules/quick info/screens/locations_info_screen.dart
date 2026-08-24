@@ -298,6 +298,9 @@ class _LocationInfoScreenState extends State<LocationInfoScreen> {
                       child: DynamicSearchBar(
                         controller: bloc.searchControllerProducts,
                         hintText: "Buscar producto",
+                        // watchdog: reabre el teclado si el IME del PDA
+                        // (Zebra/Urovo/Chainway) lo cierra solo.
+                        persistentKeyboard: true,
                         onSearchChanged: (value) {
                           bloc.add(SearchProductLocationEvent(value));
                         },

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 
 // Widget reutilizable para mostrar las filas con título y valor
 class ProductInfoRow extends StatelessWidget {
@@ -34,7 +35,7 @@ class ProductInfoRow extends StatelessWidget {
   }
 }
 
-class EditableReferenceRow extends StatelessWidget {
+class EditableReferenceRow extends StatefulWidget {
   final String title;
   final bool isEditMode;
   final void Function()? onTap;
@@ -55,11 +56,40 @@ class EditableReferenceRow extends StatelessWidget {
   });
 
   @override
+  State<EditableReferenceRow> createState() => _EditableReferenceRowState();
+}
+
+class _EditableReferenceRowState extends State<EditableReferenceRow>
+    with WidgetsBindingObserver {
+  final FocusNode _focusNode = FocusNode();
+  // Watchdog: reabre el teclado si el IME del PDA (Zebra/Urovo/Chainway) lo
+  // cierra solo mientras el campo conserva el foco.
+  late final KeyboardWatchdog _kbWatchdog =
+      KeyboardWatchdog(state: this, focusNode: _focusNode);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeMetrics() => _kbWatchdog.onMetricsChanged();
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _kbWatchdog.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
     return Visibility(
-      visible: isExpanded,
+      visible: widget.isExpanded,
       child: Padding(
         padding: const EdgeInsets.only(
           bottom: 1,
@@ -71,7 +101,7 @@ class EditableReferenceRow extends StatelessWidget {
               width: size.width * 0.25,
               alignment: Alignment.centerLeft,
               child: Text(
-                title,
+                widget.title,
                 style: TextStyle(
                   fontSize: 12,
                   color: primaryColorApp,
@@ -82,16 +112,18 @@ class EditableReferenceRow extends StatelessWidget {
             // Campo editable
             SizedBox(
               width: size.width * 0.6,
-              height: isName ? 40 : 25,
+              height: widget.isName ? 40 : 25,
               child: TextFormField(
                 //tipo de campo
-                keyboardType:
-                    isNumber ? TextInputType.number : TextInputType.text,
-                controller: controller,
+                keyboardType: widget.isNumber
+                    ? TextInputType.number
+                    : TextInputType.text,
+                controller: widget.controller,
+                focusNode: _focusNode,
                 // initialValue:
                 //     controller == null ? (reference ?? 'Sin referencia') : null,
-                maxLines: isName ? 2 : 1,
-                readOnly: !isEditMode,
+                maxLines: widget.isName ? 2 : 1,
+                readOnly: !widget.isEditMode,
                 style: TextStyle(
                   fontSize: 12,
                   color: black,
@@ -107,9 +139,10 @@ class EditableReferenceRow extends StatelessWidget {
                   enabledBorder: _getBorder(),
                   focusedBorder: _getBorder(),
                   filled: true,
-                  fillColor: isEditMode ? Colors.white : Colors.transparent,
+                  fillColor:
+                      widget.isEditMode ? Colors.white : Colors.transparent,
                 ),
-                onTap: onTap,
+                onTap: widget.onTap,
               ),
             ),
           ],
@@ -119,7 +152,7 @@ class EditableReferenceRow extends StatelessWidget {
   }
 
   InputBorder? _getBorder() {
-    return isEditMode
+    return widget.isEditMode
         ? OutlineInputBorder(
             borderRadius: BorderRadius.circular(5),
             borderSide: BorderSide(

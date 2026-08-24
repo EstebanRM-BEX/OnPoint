@@ -1,6 +1,7 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
+import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 // ignore_for_file: use_build_context_synchronously, unrelated_type_equality_checks
 
 import 'package:flutter/material.dart';
@@ -70,6 +71,10 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
 
   FocusNode focusNode1 = FocusNode(); // ubicacion Dest
   FocusNode focusNodeCantidad = FocusNode(); // Cantidad
+  // Watchdog: reabre el teclado si el IME del PDA lo cierra solo mientras
+  // el campo de cantidad manual conserva el foco.
+  late final KeyboardWatchdog _kbWatchdog =
+      KeyboardWatchdog(state: this, focusNode: focusNodeCantidad);
 
   String? selectedLocation;
 
@@ -296,7 +301,11 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
   }
 
   @override
+  void didChangeMetrics() => _kbWatchdog.onMetricsChanged();
+
+  @override
   void dispose() {
+    _kbWatchdog.dispose();
     focusNode1.dispose(); //ubicaicon Dest
     focusNodeCantidad.dispose();
     super.dispose();
