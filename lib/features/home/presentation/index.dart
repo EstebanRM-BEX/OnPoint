@@ -15,9 +15,9 @@ import 'package:wms_app/features/home/presentation/widgets/dialog_devoluciones_w
 import 'package:wms_app/features/home/presentation/widgets/dialog_inventario_widget.dart';
 import 'package:wms_app/features/home/presentation/widgets/dialog_picking_componentes_widget.dart';
 import 'package:wms_app/features/home/presentation/widgets/dialog_picking_widget.dart';
+import 'package:wms_app/features/home/presentation/widgets/dialog_recepcion_widget.dart';
 import 'package:wms_app/features/home/presentation/widgets/widget.dart';
 import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
-import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/bloc/wms_packing_bloc.dart';
@@ -626,27 +626,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                   .userRol;
                                               if (rol == 'reception' ||
                                                   rol == 'admin') {
-                                                context
-                                                    .read<RecepcionBloc>()
-                                                    .add(
-                                                        GetLocationsDestEvent());
-                                                context
-                                                    .read<RecepcionBloc>()
-                                                    .add(
-                                                        LoadAllNovedadesOrderEvent());
                                                 showDialog(
                                                     context: context,
-                                                    builder: (context) =>
-                                                        const DialogLoading(
-                                                            message:
-                                                                'Cargando recepciones...'));
-                                                await Future.delayed(
-                                                    const Duration(seconds: 1));
-                                                if (!mounted) return;
-                                                Navigator.pop(context);
-                                                Navigator.pushReplacementNamed(
-                                                    context,
-                                                    'list-ordenes-compra');
+                                                    builder: (dialogContext) =>
+                                                        DialogRecepcion(
+                                                            contextHome:
+                                                                context));
                                               } else {
                                                 ScaffoldMessenger.of(context)
                                                     .showSnackBar(const SnackBar(

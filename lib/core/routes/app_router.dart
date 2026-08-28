@@ -15,6 +15,11 @@ import 'package:wms_app/features/picking_cluster/domain/entities/lote_producto.d
 import 'package:wms_app/features/print_labels/presentation/index.dart';
 import 'package:wms_app/features/print_labels/presentation/screens/list_products_screen.dart';
 import 'package:wms_app/features/print_labels/presentation/screens/list_locations_screen.dart';
+import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_claim.dart';
+import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/list_recepcion_multiusuario_screen.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/recepcion_multiusuario_detail_screen.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/recepcion_multiusuario_scan_product_screen.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/conteo_screen.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/list_conteo_screen.dart';
@@ -235,6 +240,14 @@ class AppRoutes {
   static const String scanProductExpedition = 'scan-product-expedition';
   static const String expeditionDetail = 'expedition-detail';
 
+  //todas las pantallas de recepción multiusuario
+  static const String listRecepcionMultiusuario =
+      'list-recepcion-multiusuario';
+  static const String recepcionMultiusuarioDetail =
+      'recepcion-multiusuario-detail';
+  static const String recepcionMultiusuarioScanProduct =
+      'recepcion-multiusuario-scan-product';
+
 
 
   // ─── Helpers de extracción segura de argumentos ───────────────────────────
@@ -293,6 +306,24 @@ class AppRoutes {
         final args = _args(context);
         final expeditionId = _arg<int>(args, 0) ?? 0;
         return ExpedicionDetailScreen(expeditionId: expeditionId);
+      },
+
+      //todo recepción multiusuario
+      listRecepcionMultiusuario: (_) =>
+          const ListRecepcionMultiusuarioScreen(),
+      recepcionMultiusuarioDetail: (context) {
+        final args = _args(context);
+        final session = _arg<RecepcionSession>(args, 0);
+        if (session == null) return _invalidArgs(context);
+        return RecepcionMultiusuarioDetailScreen(session: session);
+      },
+      recepcionMultiusuarioScanProduct: (context) {
+        final args = _args(context);
+        final session = _arg<RecepcionSession>(args, 0);
+        final claim = _arg<RecepcionClaim>(args, 1);
+        if (session == null || claim == null) return _invalidArgs(context);
+        return RecepcionMultiusuarioScanProductScreen(
+            session: session, claim: claim);
       },
 
       //todo conteo

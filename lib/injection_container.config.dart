@@ -278,6 +278,36 @@ import 'features/printing/domain/repositories/printing_repository.dart'
 import 'features/printing/domain/usecases/get_printers.dart' as _i277;
 import 'features/printing/domain/usecases/print_report.dart' as _i152;
 import 'features/printing/presentation/bloc/printing_bloc.dart' as _i335;
+import 'features/recepcion_multiusuario/data/datasources/recepcion_multiusuario_local_data_source.dart'
+    as _i330;
+import 'features/recepcion_multiusuario/data/datasources/recepcion_multiusuario_remote_data_source.dart'
+    as _i106;
+import 'features/recepcion_multiusuario/data/repositories/recepcion_multiusuario_repository_impl.dart'
+    as _i107;
+import 'features/recepcion_multiusuario/domain/repositories/recepcion_multiusuario_repository.dart'
+    as _i300;
+import 'features/recepcion_multiusuario/domain/usecases/claim_recepcion_product_usecase.dart'
+    as _i985;
+import 'features/recepcion_multiusuario/domain/usecases/fetch_my_claims_usecase.dart'
+    as _i546;
+import 'features/recepcion_multiusuario/domain/usecases/fetch_recepcion_pool_usecase.dart'
+    as _i102;
+import 'features/recepcion_multiusuario/domain/usecases/fetch_recepcion_sessions_usecase.dart'
+    as _i874;
+import 'features/recepcion_multiusuario/domain/usecases/get_recepcion_pool_from_db_usecase.dart'
+    as _i280;
+import 'features/recepcion_multiusuario/domain/usecases/get_recepcion_sessions_from_db_usecase.dart'
+    as _i231;
+import 'features/recepcion_multiusuario/domain/usecases/release_claim_usecase.dart'
+    as _i950;
+import 'features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_my_claims_bloc.dart'
+    as _i91;
+import 'features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_pool_bloc.dart'
+    as _i544;
+import 'features/recepcion_multiusuario/presentation/bloc/list/recepcion_multiusuario_list_bloc.dart'
+    as _i101;
+import 'features/recepcion_multiusuario/presentation/bloc/scan/recepcion_multiusuario_scan_bloc.dart'
+    as _i381;
 import 'features/user/data/datasources/user_local_data_source.dart' as _i232;
 import 'features/user/data/datasources/user_remote_data_source.dart' as _i1071;
 import 'features/user/data/repositories/user_repository_impl.dart' as _i39;
@@ -355,6 +385,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i1071.UserRemoteDataSource>(
       () => _i1071.UserRemoteDataSourceImpl(gh<_i319.ApiRequestService>()),
     );
+    gh.lazySingleton<_i330.RecepcionMultiusuarioLocalDataSource>(
+      () => _i330.RecepcionMultiusuarioLocalDataSourceImpl(),
+    );
     gh.lazySingleton<_i161.PickingComponentsLocalDataSource>(
       () => _i161.PickingComponentsLocalDataSourceImpl(),
     );
@@ -371,6 +404,9 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i846.PackagingTypeRemoteDataSourceImpl(
         gh<_i319.ApiRequestService>(),
       ),
+    );
+    gh.lazySingleton<_i106.RecepcionMultiusuarioRemoteDataSource>(
+      () => _i106.RecepcionMultiusuarioRemoteDataSourceImpl(),
     );
     gh.lazySingleton<_i18.LoginRemoteDataSource>(
       () => _i18.LoginRemoteDataSourceImpl(gh<_i319.ApiRequestService>()),
@@ -629,6 +665,13 @@ extension GetItInjectableX on _i174.GetIt {
         networkInfo: gh<_i75.NetworkInfo>(),
       ),
     );
+    gh.lazySingleton<_i300.RecepcionMultiusuarioRepository>(
+      () => _i107.RecepcionMultiusuarioRepositoryImpl(
+        remoteDataSource: gh<_i106.RecepcionMultiusuarioRemoteDataSource>(),
+        localDataSource: gh<_i330.RecepcionMultiusuarioLocalDataSource>(),
+        networkInfo: gh<_i75.NetworkInfo>(),
+      ),
+    );
     gh.factory<_i1026.ChatBloc>(
       () => _i1026.ChatBloc(
         getCurrentUser: gh<_i708.GetCurrentUser>(),
@@ -702,6 +745,41 @@ extension GetItInjectableX on _i174.GetIt {
         saveUserSession: gh<_i311.SaveUserSession>(),
       ),
     );
+    gh.lazySingleton<_i985.ClaimRecepcionProductUseCase>(
+      () => _i985.ClaimRecepcionProductUseCase(
+        gh<_i300.RecepcionMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i546.FetchMyClaimsUseCase>(
+      () => _i546.FetchMyClaimsUseCase(
+        gh<_i300.RecepcionMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i102.FetchRecepcionPoolUseCase>(
+      () => _i102.FetchRecepcionPoolUseCase(
+        gh<_i300.RecepcionMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i874.FetchRecepcionSessionsUseCase>(
+      () => _i874.FetchRecepcionSessionsUseCase(
+        gh<_i300.RecepcionMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i280.GetRecepcionPoolFromDbUseCase>(
+      () => _i280.GetRecepcionPoolFromDbUseCase(
+        gh<_i300.RecepcionMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i231.GetRecepcionSessionsFromDbUseCase>(
+      () => _i231.GetRecepcionSessionsFromDbUseCase(
+        gh<_i300.RecepcionMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i950.ReleaseClaimUseCase>(
+      () => _i950.ReleaseClaimUseCase(
+        gh<_i300.RecepcionMultiusuarioRepository>(),
+      ),
+    );
     gh.lazySingleton<_i601.FetchComponentsFromDbUseCase>(
       () => _i601.FetchComponentsFromDbUseCase(
         gh<_i268.PickingComponentsRepository>(),
@@ -715,6 +793,12 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i192.FetchComponentsUseCase>(
       () =>
           _i192.FetchComponentsUseCase(gh<_i268.PickingComponentsRepository>()),
+    );
+    gh.factory<_i91.RecepcionMultiusuarioMyClaimsBloc>(
+      () => _i91.RecepcionMultiusuarioMyClaimsBloc(
+        fetchMyClaimsUseCase: gh<_i546.FetchMyClaimsUseCase>(),
+        releaseClaimUseCase: gh<_i950.ReleaseClaimUseCase>(),
+      ),
     );
     gh.lazySingleton<_i72.PackagingTypeRepository>(
       () => _i690.PackagingTypeRepositoryImpl(
@@ -765,6 +849,14 @@ extension GetItInjectableX on _i174.GetIt {
         deshacerPaqueteUseCase: gh<_i502.DeshacerPaqueteUseCase>(),
         deshacerItemSueltoUseCase: gh<_i888.DeshacerItemSueltoUseCase>(),
         syncCoordinator: gh<_i169.ExpeditionSyncCoordinator>(),
+      ),
+    );
+    gh.factory<_i101.RecepcionMultiusuarioListBloc>(
+      () => _i101.RecepcionMultiusuarioListBloc(
+        fetchRecepcionSessionsUseCase:
+            gh<_i874.FetchRecepcionSessionsUseCase>(),
+        getRecepcionSessionsFromDbUseCase:
+            gh<_i231.GetRecepcionSessionsFromDbUseCase>(),
       ),
     );
     gh.factory<_i545.ClusterPickingBloc>(
@@ -850,6 +942,11 @@ extension GetItInjectableX on _i174.GetIt {
         confirmarPedidoUseCase: gh<_i868.ConfirmarPedidoUseCase>(),
       ),
     );
+    gh.factory<_i381.RecepcionMultiusuarioScanBloc>(
+      () => _i381.RecepcionMultiusuarioScanBloc(
+        claimRecepcionProductUseCase: gh<_i985.ClaimRecepcionProductUseCase>(),
+      ),
+    );
     gh.factory<_i363.AuthBloc>(
       () => _i363.AuthBloc(validateSession: gh<_i52.ValidateSession>()),
     );
@@ -860,6 +957,13 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i658.GetPackagingTypesUseCase>(
       () => _i658.GetPackagingTypesUseCase(gh<_i72.PackagingTypeRepository>()),
+    );
+    gh.factory<_i544.RecepcionMultiusuarioPoolBloc>(
+      () => _i544.RecepcionMultiusuarioPoolBloc(
+        fetchRecepcionPoolUseCase: gh<_i102.FetchRecepcionPoolUseCase>(),
+        getRecepcionPoolFromDbUseCase:
+            gh<_i280.GetRecepcionPoolFromDbUseCase>(),
+      ),
     );
     gh.factory<_i475.PackagingTypeBloc>(
       () => _i475.PackagingTypeBloc(

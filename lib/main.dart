@@ -61,6 +61,10 @@ import 'package:wms_app/features/expedition/presentation/bloc/confirm/expedicion
 import 'package:wms_app/features/expedition/presentation/bloc/detail/expedicion_detail_bloc.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/list/expedition_list_bloc.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/scan/expedicion_scan_bloc.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_my_claims_bloc.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_pool_bloc.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/list/recepcion_multiusuario_list_bloc.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/scan/recepcion_multiusuario_scan_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -196,6 +200,10 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => getIt<ExpedicionDetailBloc>()),
         BlocProvider(create: (_) => getIt<ExpedicionScanBloc>()),
         BlocProvider(create: (_) => getIt<ExpedicionConfirmBloc>()),
+        BlocProvider(create: (_) => getIt<RecepcionMultiusuarioListBloc>()),
+        BlocProvider(create: (_) => getIt<RecepcionMultiusuarioPoolBloc>()),
+        BlocProvider(create: (_) => getIt<RecepcionMultiusuarioMyClaimsBloc>()),
+        BlocProvider(create: (_) => getIt<RecepcionMultiusuarioScanBloc>()),
       ],
       child: GetMaterialApp(
         navigatorKey: navigatorKey,

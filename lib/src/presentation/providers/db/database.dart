@@ -21,6 +21,10 @@ import 'package:wms_app/src/presentation/providers/db/expedition/tbl_expedicion_
 import 'package:wms_app/src/presentation/providers/db/expedition/tbl_expedicion_paquetes/expedicion_paquetes_table.dart';
 import 'package:wms_app/src/presentation/providers/db/expedition/tbl_expedicion_pedidos/expedicion_pedidos_repository.dart';
 import 'package:wms_app/src/presentation/providers/db/expedition/tbl_expedicion_pedidos/expedicion_pedidos_table.dart';
+import 'package:wms_app/src/presentation/providers/db/recepcion_multiusuario/tbl_recepcion_session_pool/recepcion_session_pool_repository.dart';
+import 'package:wms_app/src/presentation/providers/db/recepcion_multiusuario/tbl_recepcion_session_pool/recepcion_session_pool_table.dart';
+import 'package:wms_app/src/presentation/providers/db/recepcion_multiusuario/tbl_recepcion_sessions/recepcion_sessions_repository.dart';
+import 'package:wms_app/src/presentation/providers/db/recepcion_multiusuario/tbl_recepcion_sessions/recepcion_sessions_table.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_barcode/barcodes_inventario_repository.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_barcode/barcodes_inventario_table.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/product_inventario_repository.dart';
@@ -102,7 +106,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 60,
+      version: 62,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -203,6 +207,10 @@ class DataBaseSqlite {
     await db.execute(ExpedicionPaquetesTable.createTable());
     await db.execute(ExpedicionItemsTable.createTable());
     await db.execute(ExpedicionItemsSueltosTable.createTable());
+
+    //* tablas de recepción multiusuario (sesiones + pool de productos libres)
+    await db.execute(RecepcionSessionsTable.createTable());
+    await db.execute(RecepcionSessionPoolTable.createTable());
 
     // tabla de historial de conversación del asistente IA
     await db.execute('''
@@ -1054,6 +1062,26 @@ class DataBaseSqlite {
         }
       }
     }
+
+    if (oldVersion < 61) {
+      // Listado de sesiones de recepción multiusuario (GET /api/receipt/sessions).
+      try {
+        await db.execute(RecepcionSessionsTable.createTable());
+      } catch (e) {
+        debugPrint("Error actualizando a v61 (tbl_recepcion_sessions): $e");
+      }
+    }
+
+    if (oldVersion < 62) {
+      // Pool de productos libres por sesión de recepción multiusuario
+      // (POST /api/receipt/session/{id}/pool).
+      try {
+        await db.execute(RecepcionSessionPoolTable.createTable());
+      } catch (e) {
+        debugPrint(
+            "Error actualizando a v62 (tbl_recepcion_session_pool): $e");
+      }
+    }
   }
 
   //todo repositorios de las tablas
@@ -1164,6 +1192,13 @@ class DataBaseSqlite {
 
   ExpedicionItemsSueltosRepository get expedicionItemsSueltosRepository =>
       ExpedicionItemsSueltosRepository();
+
+  //repositorios del módulo de recepción multiusuario
+  RecepcionSessionsRepository get recepcionSessionsRepository =>
+      RecepcionSessionsRepository();
+
+  RecepcionSessionPoolRepository get recepcionSessionPoolRepository =>
+      RecepcionSessionPoolRepository();
 
   Future<Database> getDatabaseInstance() async {
     if (_database != null) {
@@ -1691,6 +1726,14 @@ class DataBaseSqlite {
     await expedicionItemsSueltosRepository.deleteAllItemsSueltos();
     await expedicionPaquetesRepository.deleteAllPaquetes();
     await expedicionPedidosRepository.deleteAllExpediciones();
+  }
+
+  Future<void> deleRecepcionSessions() async {
+    await recepcionSessionsRepository.deleteAllSessions();
+  }
+
+  Future<void> deleRecepcionSessionPool(int sessionId) async {
+    await recepcionSessionPoolRepository.deleteBySession(sessionId);
   }
 
   /// Como [deleExpedicion] pero conserva las expediciones cuyos ids están en
