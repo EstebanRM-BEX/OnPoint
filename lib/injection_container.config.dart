@@ -288,6 +288,10 @@ import 'features/recepcion_multiusuario/domain/repositories/recepcion_multiusuar
     as _i300;
 import 'features/recepcion_multiusuario/domain/usecases/claim_recepcion_product_usecase.dart'
     as _i985;
+import 'features/recepcion_multiusuario/domain/usecases/create_lote_usecase.dart'
+    as _i667;
+import 'features/recepcion_multiusuario/domain/usecases/fetch_lotes_producto_usecase.dart'
+    as _i384;
 import 'features/recepcion_multiusuario/domain/usecases/fetch_my_claims_usecase.dart'
     as _i546;
 import 'features/recepcion_multiusuario/domain/usecases/fetch_recepcion_pool_usecase.dart'
@@ -306,6 +310,10 @@ import 'features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multi
     as _i544;
 import 'features/recepcion_multiusuario/presentation/bloc/list/recepcion_multiusuario_list_bloc.dart'
     as _i101;
+import 'features/recepcion_multiusuario/presentation/bloc/location_dest/recepcion_multiusuario_location_dest_bloc.dart'
+    as _i195;
+import 'features/recepcion_multiusuario/presentation/bloc/lote/recepcion_multiusuario_lote_bloc.dart'
+    as _i994;
 import 'features/recepcion_multiusuario/presentation/bloc/scan/recepcion_multiusuario_scan_bloc.dart'
     as _i381;
 import 'features/user/data/datasources/user_local_data_source.dart' as _i232;
@@ -335,6 +343,9 @@ extension GetItInjectableX on _i174.GetIt {
   }) async {
     final gh = _i526.GetItHelper(this, environment, environmentFilter);
     final registerModule = _$RegisterModule();
+    gh.factory<_i195.RecepcionMultiusuarioLocationDestBloc>(
+      () => _i195.RecepcionMultiusuarioLocationDestBloc(),
+    );
     gh.lazySingleton<_i519.Client>(() => registerModule.httpClient);
     gh.lazySingleton<_i895.Connectivity>(() => registerModule.connectivity);
     gh.lazySingleton<_i552.DataBaseSqlite>(() => registerModule.database);
@@ -750,6 +761,15 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i300.RecepcionMultiusuarioRepository>(),
       ),
     );
+    gh.lazySingleton<_i667.CreateLoteUseCase>(
+      () =>
+          _i667.CreateLoteUseCase(gh<_i300.RecepcionMultiusuarioRepository>()),
+    );
+    gh.lazySingleton<_i384.FetchLotesProductoUseCase>(
+      () => _i384.FetchLotesProductoUseCase(
+        gh<_i300.RecepcionMultiusuarioRepository>(),
+      ),
+    );
     gh.lazySingleton<_i546.FetchMyClaimsUseCase>(
       () => _i546.FetchMyClaimsUseCase(
         gh<_i300.RecepcionMultiusuarioRepository>(),
@@ -804,6 +824,12 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i690.PackagingTypeRepositoryImpl(
         remoteDataSource: gh<_i846.PackagingTypeRemoteDataSource>(),
         localDataSource: gh<_i3.PackagingTypeLocalDataSource>(),
+      ),
+    );
+    gh.factory<_i994.RecepcionMultiusuarioLoteBloc>(
+      () => _i994.RecepcionMultiusuarioLoteBloc(
+        fetchLotesProductoUseCase: gh<_i384.FetchLotesProductoUseCase>(),
+        createLoteUseCase: gh<_i667.CreateLoteUseCase>(),
       ),
     );
     gh.factory<_i522.ExpedicionAssignmentBloc>(

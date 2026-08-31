@@ -1,5 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:wms_app/core/error/failures.dart';
+import 'package:wms_app/features/recepcion_multiusuario/domain/entities/lote_producto.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_claim.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_pool_item.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
@@ -43,4 +44,21 @@ abstract class RecepcionMultiusuarioRepository {
   /// Libera la asignación [claimId] (POST /api/receipt/claim/{claimId}/release):
   /// vuelve a quedar libre en el pool para cualquier operario.
   Future<Either<Failure, Unit>> releaseClaim({required int claimId});
+
+  /// Lotes existentes de [productId] (GET /api/lotes/{productId}).
+  Future<Either<Failure, List<LoteProducto>>> fetchLotesProduct({
+    required int productId,
+    required bool isLoadinDialog,
+  });
+
+  /// Crea un lote nuevo para [productId] (POST /api/create_lote). Un
+  /// rechazo con `code: 202` llega como [ConfirmationRequiredFailure] para
+  /// que la UI ofrezca reintentar forzando la fecha.
+  Future<Either<Failure, LoteProducto>> createLote({
+    required int productId,
+    required String nombreLote,
+    required String fechaVencimiento,
+    required bool priorityExpiration,
+    required bool isLoadinDialog,
+  });
 }

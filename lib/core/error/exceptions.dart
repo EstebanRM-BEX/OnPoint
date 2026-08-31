@@ -37,3 +37,14 @@ class AuthenticationException implements Exception {
   @override
   String toString() => 'AuthenticationException: $message';
 }
+
+/// El backend rechazó la operación pero ofrece reintentarla forzando una
+/// confirmación explícita del usuario (ej. code 202 de create_lote cuando la
+/// fecha de vencimiento es anterior a hoy y el permiso lo permite).
+class ConfirmationRequiredException implements Exception {
+  final String message;
+  const ConfirmationRequiredException(this.message);
+
+  @override
+  String toString() => 'ConfirmationRequiredException: $message';
+}

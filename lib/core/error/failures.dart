@@ -29,3 +29,9 @@ class SessionExpiredFailure extends Failure {
 class AuthenticationFailure extends Failure {
   const AuthenticationFailure(super.message);
 }
+
+/// El backend rechazó la operación pero ofrece reintentarla forzando una
+/// confirmación explícita del usuario (ver [ConfirmationRequiredException]).
+class ConfirmationRequiredFailure extends Failure {
+  const ConfirmationRequiredFailure(super.message);
+}

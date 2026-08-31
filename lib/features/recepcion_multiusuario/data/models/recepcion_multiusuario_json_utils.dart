@@ -16,3 +16,8 @@ double? dynamicToDouble(dynamic value) {
   if (value is num) return value.toDouble();
   return null;
 }
+
+bool? dynamicToBool(dynamic value) {
+  if (value is bool) return value;
+  return null;
+}

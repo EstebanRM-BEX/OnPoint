@@ -5,6 +5,7 @@ import 'package:wms_app/core/error/failures.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/features/recepcion_multiusuario/data/datasources/recepcion_multiusuario_local_data_source.dart';
 import 'package:wms_app/features/recepcion_multiusuario/data/datasources/recepcion_multiusuario_remote_data_source.dart';
+import 'package:wms_app/features/recepcion_multiusuario/domain/entities/lote_producto.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_claim.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_pool_item.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
@@ -170,6 +171,58 @@ class RecepcionMultiusuarioRepositoryImpl
       return Left(ServerFailure(e.message));
     } catch (e) {
       return Left(ServerFailure('Error al liberar la asignación: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<LoteProducto>>> fetchLotesProduct({
+    required int productId,
+    required bool isLoadinDialog,
+  }) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No hay conexión a Internet'));
+    }
+
+    try {
+      final lotes = await remoteDataSource.fetchLotesProduct(
+        productId: productId,
+        isLoadinDialog: isLoadinDialog,
+      );
+      return Right(lotes);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Error al obtener los lotes del producto: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, LoteProducto>> createLote({
+    required int productId,
+    required String nombreLote,
+    required String fechaVencimiento,
+    required bool priorityExpiration,
+    required bool isLoadinDialog,
+  }) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No hay conexión a Internet'));
+    }
+
+    try {
+      final lote = await remoteDataSource.createLote(
+        productId: productId,
+        nombreLote: nombreLote,
+        fechaVencimiento: fechaVencimiento,
+        priorityExpiration: priorityExpiration,
+        isLoadinDialog: isLoadinDialog,
+      );
+      return Right(lote);
+    } on ConfirmationRequiredException catch (e) {
+      return Left(ConfirmationRequiredFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Error al crear el lote: $e'));
     }
   }
 }

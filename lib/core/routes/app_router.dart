@@ -19,7 +19,9 @@ import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcio
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/list_recepcion_multiusuario_screen.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/recepcion_multiusuario_detail_screen.dart';
-import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/recepcion_multiusuario_scan_product_screen.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/location_dest_screen.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/new_lote_screen.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/scan_product_screen.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/conteo_screen.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/list_conteo_screen.dart';
@@ -45,7 +47,8 @@ import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/
 import 'package:wms_app/src/presentation/views/info_rapida/modules/transfer/screens/transfer_info_screen.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/modules/transfer/widget/locations_dest_widget.dart';
 import 'package:wms_app/features/inventario/domain/entities/producto_inventario.dart';
-import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart' show Product;
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart'
+    show Product;
 import 'package:wms_app/features/inventario/presentation/widgets/location_search_widget.dart';
 import 'package:wms_app/features/inventario/presentation/widgets/new_lote_widget.dart';
 import 'package:wms_app/features/inventario/presentation/widgets/product_search_widget.dart';
@@ -146,7 +149,8 @@ class AppRoutes {
 
   //todas las pantallas de packing consolidade
   static const String listPackingConsolidade = 'list-packing-consolidade';
-  static const String packingConsolidateList = 'pedido-packing-consolidate-list';
+  static const String packingConsolidateList =
+      'pedido-packing-consolidate-list';
   static const String packingConsolidateDetail = 'packing-consolidate-detail';
   static const String scanProductConsolidate = 'scan-product-consolidate';
 
@@ -172,8 +176,10 @@ class AppRoutes {
 
   //todas las pantallas de create transfer
   static const String createTransfer = 'create-transfer';
-  static const String searchLocationCreateTransfer = 'search-location-create-transfer';
-  static const String searchProductsCreateTransfer = 'search-product-create-transfer';
+  static const String searchLocationCreateTransfer =
+      'search-location-create-transfer';
+  static const String searchProductsCreateTransfer =
+      'search-product-create-transfer';
   static const String searchLoteCreateTransfer = 'search-lote-create-transfer';
   static const String detailCreateTransfer = 'detail-create-transfer';
 
@@ -195,8 +201,10 @@ class AppRoutes {
   //todas las pantallas de recepcion batch
   static const String listReceptionBatch = 'list-recepction-batch';
   static const String recepcionBatch = 'recepcion-batch';
-  static const String scanProductReceptionBatch = 'scan-product-reception-batch';
-  static const String locationDestReceptionBatchSearch = 'search-location-recep-batch';
+  static const String scanProductReceptionBatch =
+      'scan-product-reception-batch';
+  static const String locationDestReceptionBatchSearch =
+      'search-location-recep-batch';
   static const String newLoteRecepBatch = 'new-lote-recep-batch';
 
   //todas las pantallas de new lote
@@ -217,9 +225,11 @@ class AppRoutes {
   static const String transferInfo = 'transfer-info';
   static const String listLocation = 'list-location';
   static const String listProduct = 'list-product';
-  static const String searchLocationDestTransInfo = 'search-locations-dest-trans-info';
+  static const String searchLocationDestTransInfo =
+      'search-locations-dest-trans-info';
   static const String createMassTransfer = 'create-mass-transfer';
-  static const String searchLocationCreateMassTransfer = 'search-location-create-mass-transfer';
+  static const String searchLocationCreateMassTransfer =
+      'search-location-create-mass-transfer';
 
   //todas las pantallas de asistente ia
   static const String asistenteIa = 'asistente-ia';
@@ -234,21 +244,21 @@ class AppRoutes {
   static const String searchProductConteo = 'search-product-conteo';
   static const String searchLoteConteo = 'search-lote-conteo';
 
-
   //todas las pantallas de expedición
   static const String listExpedition = 'list-expedition';
   static const String scanProductExpedition = 'scan-product-expedition';
   static const String expeditionDetail = 'expedition-detail';
 
   //todas las pantallas de recepción multiusuario
-  static const String listRecepcionMultiusuario =
-      'list-recepcion-multiusuario';
+  static const String listRecepcionMultiusuario = 'list-recepcion-multiusuario';
   static const String recepcionMultiusuarioDetail =
       'recepcion-multiusuario-detail';
   static const String recepcionMultiusuarioScanProduct =
       'recepcion-multiusuario-scan-product';
-
-
+  static const String recepcionMultiusuarioNewLote =
+      'recepcion-multiusuario-new-lote';
+  static const String recepcionMultiusuarioLocationDest =
+      'recepcion-multiusuario-location-dest';
 
   // ─── Helpers de extracción segura de argumentos ───────────────────────────
 
@@ -285,7 +295,6 @@ class AppRoutes {
 
   static Map<String, Widget Function(BuildContext)> get routes {
     return {
-
       AppRoutes.checkout: (context) => const CheckAuthPage(),
       AppRoutes.updateRequired: (_) => const UpdateRequiredScreen(),
 
@@ -300,7 +309,9 @@ class AppRoutes {
         final paquete = _arg<PaqueteExpedicion>(args, 0);
         final itemSuelto = _arg<ItemSueltoExpedicion>(args, 1);
         return ScanProductExpeditionScreen(
-            paquete: paquete, itemSuelto: itemSuelto);
+          paquete: paquete,
+          itemSuelto: itemSuelto,
+        );
       },
       expeditionDetail: (context) {
         final args = _args(context);
@@ -309,8 +320,7 @@ class AppRoutes {
       },
 
       //todo recepción multiusuario
-      listRecepcionMultiusuario: (_) =>
-          const ListRecepcionMultiusuarioScreen(),
+      listRecepcionMultiusuario: (_) => const ListRecepcionMultiusuarioScreen(),
       recepcionMultiusuarioDetail: (context) {
         final args = _args(context);
         final session = _arg<RecepcionSession>(args, 0);
@@ -323,8 +333,22 @@ class AppRoutes {
         final claim = _arg<RecepcionClaim>(args, 1);
         if (session == null || claim == null) return _invalidArgs(context);
         return RecepcionMultiusuarioScanProductScreen(
-            session: session, claim: claim);
+          session: session,
+          claim: claim,
+        );
       },
+      recepcionMultiusuarioNewLote: (context) {
+        final args = _args(context);
+        final session = _arg<RecepcionSession>(args, 0);
+        final claim = _arg<RecepcionClaim>(args, 1);
+        if (session == null || claim == null) return _invalidArgs(context);
+        return RecepcionMultiusuarioNewLoteScreen(
+          session: session,
+          claim: claim,
+        );
+      },
+      recepcionMultiusuarioLocationDest: (_) =>
+          const RecepcionMultiusuarioLocationDestScreen(),
 
       //todo conteo
       conteo: (_) => const ListConteoScreen(),
@@ -333,7 +357,8 @@ class AppRoutes {
         final args = _args(context);
         final initialTabIndex = _arg<int>(args, 0);
         final ordenConteo = _arg<DatumConteo>(args, 1);
-        if (initialTabIndex == null || ordenConteo == null) return _invalidArgs(context);
+        if (initialTabIndex == null || ordenConteo == null)
+          return _invalidArgs(context);
         return ConteoScreen(
           initialTabIndex: initialTabIndex,
           ordenConteo: ordenConteo,
@@ -402,10 +427,7 @@ class AppRoutes {
         final lotes = _arg<List<LoteProducto>>(args, 0);
         final suggestedLoteId = _arg<int>(args, 1);
         if (lotes == null) return _invalidArgs(context);
-        return ViewLoteScreen(
-          lotes: lotes,
-          suggestedLoteId: suggestedLoteId,
-        );
+        return ViewLoteScreen(lotes: lotes, suggestedLoteId: suggestedLoteId);
       },
 
       // todo WMS Packing
@@ -628,17 +650,16 @@ class AppRoutes {
       searchLocationCreateMassTransfer: (context) {
         final args = _args(context);
         final isLocationDest = _arg<bool>(args, 0) ?? false;
-        return SearchLocationCreateMassTransfercreen(isLocationDest: isLocationDest);
+        return SearchLocationCreateMassTransfercreen(
+          isLocationDest: isLocationDest,
+        );
       },
 
       transferInfo: (context) {
         final args = _args(context);
         final info = _arg<InfoResult>(args, 0);
         final ubi = _arg<Ubicacion>(args, 1);
-        return TransferInfoScreen(
-          infoRapidaResult: info,
-          ubicacion: ubi,
-        );
+        return TransferInfoScreen(infoRapidaResult: info, ubicacion: ubi);
       },
 
       createTransfer: (_) => const CreateTransferScreen(),
@@ -646,7 +667,9 @@ class AppRoutes {
       searchLocationCreateTransfer: (context) {
         final args = _args(context);
         final isLocationDest = _arg<bool>(args, 0) ?? false;
-        return SearchLocationCreateTransfercreen(isLocationDest: isLocationDest);
+        return SearchLocationCreateTransfercreen(
+          isLocationDest: isLocationDest,
+        );
       },
 
       searchLoteCreateTransfer: (context) {

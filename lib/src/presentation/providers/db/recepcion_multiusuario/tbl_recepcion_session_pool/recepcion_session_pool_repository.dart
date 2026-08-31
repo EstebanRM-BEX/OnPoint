@@ -11,7 +11,9 @@ import 'package:wms_app/src/presentation/providers/db/recepcion_multiusuario/tbl
 /// desaparecer localmente (ver [deleteBySession] + [insertPool]).
 class RecepcionSessionPoolRepository {
   Future<void> insertPool(
-      int sessionId, List<RecepcionPoolItemModel> items) async {
+    int sessionId,
+    List<RecepcionPoolItemModel> items,
+  ) async {
     try {
       final Database db = await DataBaseSqlite().getDatabaseInstance();
 

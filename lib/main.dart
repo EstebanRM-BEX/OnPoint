@@ -64,6 +64,8 @@ import 'package:wms_app/features/expedition/presentation/bloc/scan/expedicion_sc
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_my_claims_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_pool_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/list/recepcion_multiusuario_list_bloc.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/location_dest/recepcion_multiusuario_location_dest_bloc.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/lote/recepcion_multiusuario_lote_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/scan/recepcion_multiusuario_scan_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -90,49 +92,55 @@ class MyHttpOverrides extends HttpOverrides {
 
 void main() {
   HttpOverrides.global = MyHttpOverrides();
-  runZonedGuarded<Future<void>>(() async {
-    WidgetsFlutterBinding.ensureInitialized();
-    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  runZonedGuarded<Future<void>>(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+      ]);
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
 
-    // Configuración de errores de Flutter hacia Crashlytics
-    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+      // Configuración de errores de Flutter hacia Crashlytics
+      FlutterError.onError =
+          FirebaseCrashlytics.instance.recordFlutterFatalError;
 
-    // Configuración de pantalla roja de error (Opcional)
-    ErrorWidget.builder = (FlutterErrorDetails details) => ErrorMessageWidget(
-          title: 'Algo salió mal',
-          message: 'No se pudo cargar la información...',
-          buttonText: 'Cerrar la app',
-          onPressed: () {
-            exit(0);
-          },
-        );
+      // Configuración de pantalla roja de error (Opcional)
+      ErrorWidget.builder = (FlutterErrorDetails details) => ErrorMessageWidget(
+        title: 'Algo salió mal',
+        message: 'No se pudo cargar la información...',
+        buttonText: 'Cerrar la app',
+        onPressed: () {
+          exit(0);
+        },
+      );
 
-    // Initialize Dependency Injection
-    await configureDependencies();
+      // Initialize Dependency Injection
+      await configureDependencies();
 
-    apiRequestService.initialize(
-      unencodePath: '/api',
-      httpHandler: HttpResponseHandler(),
-    );
+      apiRequestService.initialize(
+        unencodePath: '/api',
+        httpHandler: HttpResponseHandler(),
+      );
 
-    runApp(AppRestart(child: const MyApp()));
+      runApp(AppRestart(child: const MyApp()));
 
-    // WebSocket en background: no debe bloquear el primer frame.
-    // connect() ya retorna solo si no hay sesión activa.
-    unawaited(getIt<IWebSocketService>().connect());
+      // WebSocket en background: no debe bloquear el primer frame.
+      // connect() ya retorna solo si no hay sesión activa.
+      unawaited(getIt<IWebSocketService>().connect());
 
-    // Instancia el coordinator de expedición (empieza a escuchar la red) e
-    // intenta enviar validaciones offline pendientes al arrancar. Background.
-    getIt<ExpeditionSyncCoordinator>().requestSync();
-  }, (error, stack) {
-    // Zona de captura de errores globales
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-  });
+      // Instancia el coordinator de expedición (empieza a escuchar la red) e
+      // intenta enviar validaciones offline pendientes al arrancar. Background.
+      getIt<ExpeditionSyncCoordinator>().requestSync();
+    },
+    (error, stack) {
+      // Zona de captura de errores globales
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    },
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -159,8 +167,9 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => WmsPackingBloc()),
         BlocProvider(create: (_) => TransferInfoBloc()),
         BlocProvider(
-            create: (context) =>
-                InfoRapidaBloc(userBloc: context.read<UserBloc>())),
+          create: (context) =>
+              InfoRapidaBloc(userBloc: context.read<UserBloc>()),
+        ),
         BlocProvider(create: (_) => getIt<InventarioBloc>()),
         BlocProvider(create: (_) => PickingPickBloc()),
         BlocProvider(create: (_) => RecepcionBatchBloc()),
@@ -171,25 +180,34 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => PackingConsolidateBloc()),
         BlocProvider(create: (_) => getIt<EnterpriseBloc>()),
         BlocProvider(create: (_) => getIt<ClusterPickingBloc>()),
-        BlocProvider(create: (context) => PickingClusterListBloc(
-          clusterPickingBloc: context.read<ClusterPickingBloc>(),
-          getPickingClusterData: getIt<GetPickingClusterData>(),
-          getLocalPickingClusterData: getIt<GetLocalPickingClusterData>(),
-          startTimePickUseCase: getIt<StartTimePickUseCase>(),
-        )),
-        BlocProvider(create: (_) => DetailClusterBloc(
-          viewProductImageUseCase: getIt<ViewProductImageUseCase>(),
-        )),
-        BlocProvider(create: (context) => ValidateClusterBloc(
-          clusterPickingBloc: context.read<ClusterPickingBloc>(),
-          validatePedidoUseCase: getIt<ValidatePedidoUseCase>(),
-          setClusterBatchPedidoFieldUseCase: getIt<SetClusterBatchPedidoFieldUseCase>(),
-          getPendingSendProductsUseCase: getIt<GetPendingSendProductsUseCase>(),
-          sendProductOdooUseCase: getIt<SendProductOdooUseCase>(),
-          setClusterBatchProductFieldUseCase: getIt<SetClusterBatchProductFieldUseCase>(),
-          endTimePickUseCase: getIt<EndTimePickUseCase>(),
-          networkInfo: getIt<NetworkInfo>(),
-        )),
+        BlocProvider(
+          create: (context) => PickingClusterListBloc(
+            clusterPickingBloc: context.read<ClusterPickingBloc>(),
+            getPickingClusterData: getIt<GetPickingClusterData>(),
+            getLocalPickingClusterData: getIt<GetLocalPickingClusterData>(),
+            startTimePickUseCase: getIt<StartTimePickUseCase>(),
+          ),
+        ),
+        BlocProvider(
+          create: (_) => DetailClusterBloc(
+            viewProductImageUseCase: getIt<ViewProductImageUseCase>(),
+          ),
+        ),
+        BlocProvider(
+          create: (context) => ValidateClusterBloc(
+            clusterPickingBloc: context.read<ClusterPickingBloc>(),
+            validatePedidoUseCase: getIt<ValidatePedidoUseCase>(),
+            setClusterBatchPedidoFieldUseCase:
+                getIt<SetClusterBatchPedidoFieldUseCase>(),
+            getPendingSendProductsUseCase:
+                getIt<GetPendingSendProductsUseCase>(),
+            sendProductOdooUseCase: getIt<SendProductOdooUseCase>(),
+            setClusterBatchProductFieldUseCase:
+                getIt<SetClusterBatchProductFieldUseCase>(),
+            endTimePickUseCase: getIt<EndTimePickUseCase>(),
+            networkInfo: getIt<NetworkInfo>(),
+          ),
+        ),
         BlocProvider(create: (_) => getIt<LoteProductoBloc>()),
         BlocProvider(create: (_) => getIt<PackagingTypeBloc>()),
         BlocProvider(create: (_) => getIt<PrintingBloc>()),
@@ -201,6 +219,10 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => getIt<ExpedicionScanBloc>()),
         BlocProvider(create: (_) => getIt<ExpedicionConfirmBloc>()),
         BlocProvider(create: (_) => getIt<RecepcionMultiusuarioListBloc>()),
+        BlocProvider(create: (_) => getIt<RecepcionMultiusuarioLoteBloc>()),
+        BlocProvider(
+          create: (_) => getIt<RecepcionMultiusuarioLocationDestBloc>(),
+        ),
         BlocProvider(create: (_) => getIt<RecepcionMultiusuarioPoolBloc>()),
         BlocProvider(create: (_) => getIt<RecepcionMultiusuarioMyClaimsBloc>()),
         BlocProvider(create: (_) => getIt<RecepcionMultiusuarioScanBloc>()),

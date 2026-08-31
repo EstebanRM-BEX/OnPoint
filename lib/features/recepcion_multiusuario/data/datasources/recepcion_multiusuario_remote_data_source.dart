@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/error/exceptions.dart';
+import 'package:wms_app/features/recepcion_multiusuario/data/models/lote_producto_model.dart';
 import 'package:wms_app/features/recepcion_multiusuario/data/models/recepcion_claim_model.dart';
 import 'package:wms_app/features/recepcion_multiusuario/data/models/recepcion_pool_item_model.dart';
 import 'package:wms_app/features/recepcion_multiusuario/data/models/recepcion_session_model.dart';
@@ -41,6 +42,27 @@ abstract class RecepcionMultiusuarioRemoteDataSource {
   /// POST /api/receipt/claim/{claimId}/release: libera una asignación
   /// (deja de estar reclamada por el usuario actual, vuelve al pool).
   Future<void> releaseClaim({required int claimId});
+
+  /// GET /api/lotes/{productId}: lotes existentes de un producto. Mismo
+  /// endpoint que usa recepción individual — los lotes son un dato de
+  /// producto, no algo propio de multiusuario.
+  Future<List<LoteProductoModel>> fetchLotesProduct({
+    required int productId,
+    required bool isLoadinDialog,
+  });
+
+  /// POST /api/create_lote: crea un lote nuevo para un producto. Si el
+  /// backend responde `code: 202` (fecha de vencimiento anterior a hoy, pero
+  /// el usuario tiene permiso de forzarla) lanza
+  /// [ConfirmationRequiredException] para que la UI ofrezca reintentar con
+  /// `priorityExpiration: true`.
+  Future<LoteProductoModel> createLote({
+    required int productId,
+    required String nombreLote,
+    required String fechaVencimiento,
+    required bool priorityExpiration,
+    required bool isLoadinDialog,
+  });
 }
 
 @LazySingleton(as: RecepcionMultiusuarioRemoteDataSource)
@@ -201,5 +223,74 @@ class RecepcionMultiusuarioRemoteDataSourceImpl
         result?['message'] ?? 'No se pudo liberar la asignación',
       );
     }
+  }
+
+  @override
+  Future<List<LoteProductoModel>> fetchLotesProduct({
+    required int productId,
+    required bool isLoadinDialog,
+  }) async {
+    final response = await ApiRequestService().get(
+      endpoint: 'lotes/$productId',
+      isunecodePath: true,
+      isLoadinDialog: isLoadinDialog,
+    );
+
+    if (response.statusCode >= 400) {
+      throw ServerException('Error de conexión (${response.statusCode})');
+    }
+
+    final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+    final result = jsonResponse['result'] as Map<String, dynamic>?;
+    if (result == null) {
+      throw ServerException('Error al obtener los lotes del producto');
+    }
+
+    final data = result['result'] as List? ?? [];
+    return data
+        .map((json) => LoteProductoModel.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<LoteProductoModel> createLote({
+    required int productId,
+    required String nombreLote,
+    required String fechaVencimiento,
+    required bool priorityExpiration,
+    required bool isLoadinDialog,
+  }) async {
+    final response = await ApiRequestService().postPacking(
+      endpoint: 'create_lote',
+      isLoadinDialog: isLoadinDialog,
+      body: {
+        "params": {
+          "id_producto": productId,
+          "nombre_lote": nombreLote,
+          "fecha_vencimiento": fechaVencimiento,
+          "priority_expiration": priorityExpiration,
+        },
+      },
+    );
+
+    if (response.statusCode >= 400) {
+      throw ServerException('Error de conexión (${response.statusCode})');
+    }
+
+    final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+    final result = jsonResponse['result'] as Map<String, dynamic>?;
+    final code = result?['code'];
+
+    if (code == 200) {
+      return LoteProductoModel.fromJson(
+        result?['result'] as Map<String, dynamic>? ?? {},
+      );
+    }
+
+    final message = result?['msg']?.toString() ?? 'Error al crear el lote';
+    if (code == 202) {
+      throw ConfirmationRequiredException(message);
+    }
+    throw ServerException(message);
   }
 }

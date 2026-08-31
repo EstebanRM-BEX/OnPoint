@@ -100,13 +100,13 @@ class DataBaseSqlite {
     return _database;
   }
 
-// Método para inicializar la base de datos si no está inicializada
+  // Método para inicializar la base de datos si no está inicializada
   Future<Database> initDB() async {
     if (_database != null) return _database!;
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 62,
+      version: 63,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -412,7 +412,9 @@ class DataBaseSqlite {
           ADD COLUMN ${ConfigurationsTable.columnAllowPriorExpirationDate} INTEGER;
         ''');
       } catch (e) {
-        debugPrint("Error actualizando a v27 columnAllowPriorExpirationDate: $e");
+        debugPrint(
+          "Error actualizando a v27 columnAllowPriorExpirationDate: $e",
+        );
       }
       try {
         await db.execute('''
@@ -420,7 +422,9 @@ class DataBaseSqlite {
           ADD COLUMN ${ConfigurationsTable.columnManageExpirationDateWithoutLot} INTEGER;
         ''');
       } catch (e) {
-        debugPrint("Error actualizando a v27 columnManageExpirationDateWithoutLot: $e");
+        debugPrint(
+          "Error actualizando a v27 columnManageExpirationDateWithoutLot: $e",
+        );
       }
     }
 
@@ -506,7 +510,8 @@ class DataBaseSqlite {
 
         await db.execute('DROP TABLE tblbatch_products');
         await db.execute(
-            'ALTER TABLE tblbatch_products_new RENAME TO tblbatch_products');
+          'ALTER TABLE tblbatch_products_new RENAME TO tblbatch_products',
+        );
       } catch (e) {
         debugPrint("Error actualizando a v28 (tblbatch_products): $e");
       }
@@ -715,7 +720,8 @@ class DataBaseSqlite {
 
         await db.execute('DROP TABLE ${PickProductsTable.tableName}');
         await db.execute(
-            'ALTER TABLE tbl_pick_products_new RENAME TO ${PickProductsTable.tableName}');
+          'ALTER TABLE tbl_pick_products_new RENAME TO ${PickProductsTable.tableName}',
+        );
       } catch (e) {
         debugPrint("Error actualizando a v33 (tbl_pick_products): $e");
       }
@@ -729,8 +735,7 @@ class DataBaseSqlite {
       }
     }
 
-
-     if (oldVersion < 35) {
+    if (oldVersion < 35) {
       try {
         await db.execute('''
         ALTER TABLE tbl_entradas_recepcion_batch
@@ -741,10 +746,12 @@ class DataBaseSqlite {
         ADD COLUMN manejo_propietario INTEGER
       ''');
       } catch (e) {
-        debugPrint("Error actualizando a v35 (tbl_entradas_recepcion_batch): $e");
+        debugPrint(
+          "Error actualizando a v35 (tbl_entradas_recepcion_batch): $e",
+        );
       }
     }
-     if (oldVersion < 36) {
+    if (oldVersion < 36) {
       try {
         await db.execute('''
         ALTER TABLE tbl_transferencias
@@ -759,10 +766,8 @@ class DataBaseSqlite {
       }
     }
 
-
-     if (oldVersion < 37) {
+    if (oldVersion < 37) {
       try {
-      
         await db.execute('''
         ALTER TABLE tbl_entradas_recepcion
         ADD COLUMN manejo_propietario INTEGER
@@ -781,7 +786,8 @@ class DataBaseSqlite {
       ]) {
         try {
           await db.execute(
-              'ALTER TABLE ${ProductInventarioTable.tableName} ADD COLUMN $col');
+            'ALTER TABLE ${ProductInventarioTable.tableName} ADD COLUMN $col',
+          );
         } catch (_) {}
       }
     }
@@ -795,7 +801,8 @@ class DataBaseSqlite {
       ]) {
         try {
           await db.execute(
-              'ALTER TABLE ${ProductCreateTransferTable.tableName} ADD COLUMN $col');
+            'ALTER TABLE ${ProductCreateTransferTable.tableName} ADD COLUMN $col',
+          );
         } catch (_) {}
       }
     }
@@ -808,7 +815,8 @@ class DataBaseSqlite {
       ]) {
         try {
           await db.execute(
-              'ALTER TABLE ${PickingPickTable.tableName} ADD COLUMN $col');
+            'ALTER TABLE ${PickingPickTable.tableName} ADD COLUMN $col',
+          );
         } catch (_) {}
       }
     }
@@ -821,7 +829,8 @@ class DataBaseSqlite {
       ]) {
         try {
           await db.execute(
-              'ALTER TABLE ${BatchPickingTable.tableName} ADD COLUMN $col');
+            'ALTER TABLE ${BatchPickingTable.tableName} ADD COLUMN $col',
+          );
         } catch (_) {}
       }
     }
@@ -829,9 +838,21 @@ class DataBaseSqlite {
     if (oldVersion < 42) {
       // Columnas de propietario en tablas de packing
       for (final entry in [
-        (BatchPackingTable.tableName, BatchPackingTable.columnPropietario, BatchPackingTable.columnManejoPropietario),
-        (PedidoPackTable.tableName, PedidoPackTable.columnPropietario, PedidoPackTable.columnManejoPropietario),
-        (PedidosPackingConsolidateTable.tableName, PedidosPackingConsolidateTable.columnPropietario, PedidosPackingConsolidateTable.columnManejoPropietario),
+        (
+          BatchPackingTable.tableName,
+          BatchPackingTable.columnPropietario,
+          BatchPackingTable.columnManejoPropietario,
+        ),
+        (
+          PedidoPackTable.tableName,
+          PedidoPackTable.columnPropietario,
+          PedidoPackTable.columnManejoPropietario,
+        ),
+        (
+          PedidosPackingConsolidateTable.tableName,
+          PedidosPackingConsolidateTable.columnPropietario,
+          PedidosPackingConsolidateTable.columnManejoPropietario,
+        ),
       ]) {
         for (final col in [
           '${entry.$2} TEXT',
@@ -850,69 +871,147 @@ class DataBaseSqlite {
         '${BatchPackingConsolidateTable.columnManejoPropietario} INTEGER DEFAULT 0',
       ]) {
         try {
-          await db.execute('ALTER TABLE ${BatchPackingConsolidateTable.tableName} ADD COLUMN $col');
+          await db.execute(
+            'ALTER TABLE ${BatchPackingConsolidateTable.tableName} ADD COLUMN $col',
+          );
         } catch (_) {}
       }
     }
 
     if (oldVersion < 44) {
       for (final entry in [
-        (ProductRecepcionTable.tableName, ProductRecepcionTable.columnManejaSegundaUnidad, 'INTEGER DEFAULT 0'),
-        (ProductRecepcionTable.tableName, ProductRecepcionTable.columnUomSegundaUnidad, 'TEXT DEFAULT \'\''),
-        (ProductRecepcionTable.tableName, ProductRecepcionTable.columnQuantitySegundaUnidad, 'REAL DEFAULT 0.0'),
-        (ProductRecepcionBatchTable.tableName, ProductRecepcionBatchTable.columnManejaSegundaUnidad, 'INTEGER DEFAULT 0'),
-        (ProductRecepcionBatchTable.tableName, ProductRecepcionBatchTable.columnUomSegundaUnidad, 'TEXT DEFAULT \'\''),
-        (ProductRecepcionBatchTable.tableName, ProductRecepcionBatchTable.columnQuantitySegundaUnidad, 'REAL DEFAULT 0.0'),
+        (
+          ProductRecepcionTable.tableName,
+          ProductRecepcionTable.columnManejaSegundaUnidad,
+          'INTEGER DEFAULT 0',
+        ),
+        (
+          ProductRecepcionTable.tableName,
+          ProductRecepcionTable.columnUomSegundaUnidad,
+          'TEXT DEFAULT \'\'',
+        ),
+        (
+          ProductRecepcionTable.tableName,
+          ProductRecepcionTable.columnQuantitySegundaUnidad,
+          'REAL DEFAULT 0.0',
+        ),
+        (
+          ProductRecepcionBatchTable.tableName,
+          ProductRecepcionBatchTable.columnManejaSegundaUnidad,
+          'INTEGER DEFAULT 0',
+        ),
+        (
+          ProductRecepcionBatchTable.tableName,
+          ProductRecepcionBatchTable.columnUomSegundaUnidad,
+          'TEXT DEFAULT \'\'',
+        ),
+        (
+          ProductRecepcionBatchTable.tableName,
+          ProductRecepcionBatchTable.columnQuantitySegundaUnidad,
+          'REAL DEFAULT 0.0',
+        ),
       ]) {
         try {
-          await db.execute('ALTER TABLE ${entry.$1} ADD COLUMN ${entry.$2} ${entry.$3}');
+          await db.execute(
+            'ALTER TABLE ${entry.$1} ADD COLUMN ${entry.$2} ${entry.$3}',
+          );
         } catch (_) {}
       }
     }
     if (oldVersion < 45) {
       for (final entry in [
-        (ProductTransferenciaTable.tableName, ProductTransferenciaTable.columnManejaSegundaUnidad, 'INTEGER DEFAULT 0'),
-        (ProductTransferenciaTable.tableName, ProductTransferenciaTable.columnUomSegundaUnidad, 'TEXT DEFAULT \'\''),
-        (ProductTransferenciaTable.tableName, ProductTransferenciaTable.columnQuantitySegundaUnidad, 'REAL DEFAULT 0.0'),
+        (
+          ProductTransferenciaTable.tableName,
+          ProductTransferenciaTable.columnManejaSegundaUnidad,
+          'INTEGER DEFAULT 0',
+        ),
+        (
+          ProductTransferenciaTable.tableName,
+          ProductTransferenciaTable.columnUomSegundaUnidad,
+          'TEXT DEFAULT \'\'',
+        ),
+        (
+          ProductTransferenciaTable.tableName,
+          ProductTransferenciaTable.columnQuantitySegundaUnidad,
+          'REAL DEFAULT 0.0',
+        ),
       ]) {
         try {
-          await db.execute('ALTER TABLE ${entry.$1} ADD COLUMN ${entry.$2} ${entry.$3}');
+          await db.execute(
+            'ALTER TABLE ${entry.$1} ADD COLUMN ${entry.$2} ${entry.$3}',
+          );
         } catch (_) {}
       }
     }
     if (oldVersion < 46) {
       for (final entry in [
-        (ProductInventarioTable.tableName, ProductInventarioTable.columnManejaSegundaUnidad, 'INTEGER DEFAULT 0'),
-        (ProductInventarioTable.tableName, ProductInventarioTable.columnUomSegundaUnidad, 'TEXT DEFAULT \'\''),
+        (
+          ProductInventarioTable.tableName,
+          ProductInventarioTable.columnManejaSegundaUnidad,
+          'INTEGER DEFAULT 0',
+        ),
+        (
+          ProductInventarioTable.tableName,
+          ProductInventarioTable.columnUomSegundaUnidad,
+          'TEXT DEFAULT \'\'',
+        ),
       ]) {
         try {
-          await db.execute('ALTER TABLE ${entry.$1} ADD COLUMN ${entry.$2} ${entry.$3}');
+          await db.execute(
+            'ALTER TABLE ${entry.$1} ADD COLUMN ${entry.$2} ${entry.$3}',
+          );
         } catch (_) {}
       }
     }
     if (oldVersion < 47) {
       try {
-        await db.execute('ALTER TABLE ${ProductCreateTransferTable.tableName} ADD COLUMN ${ProductCreateTransferTable.columnQuantitySegundaUnidad} REAL DEFAULT 0');
+        await db.execute(
+          'ALTER TABLE ${ProductCreateTransferTable.tableName} ADD COLUMN ${ProductCreateTransferTable.columnQuantitySegundaUnidad} REAL DEFAULT 0',
+        );
       } catch (_) {}
     }
     if (oldVersion < 48) {
       for (final entry in [
-        (ProductCreateTransferTable.tableName, ProductCreateTransferTable.columnManejaSegundaUnidad, 'INTEGER DEFAULT 0'),
-        (ProductCreateTransferTable.tableName, ProductCreateTransferTable.columnUomSegundaUnidad, 'TEXT DEFAULT \'\''),
+        (
+          ProductCreateTransferTable.tableName,
+          ProductCreateTransferTable.columnManejaSegundaUnidad,
+          'INTEGER DEFAULT 0',
+        ),
+        (
+          ProductCreateTransferTable.tableName,
+          ProductCreateTransferTable.columnUomSegundaUnidad,
+          'TEXT DEFAULT \'\'',
+        ),
       ]) {
         try {
-          await db.execute('ALTER TABLE ${entry.$1} ADD COLUMN ${entry.$2} ${entry.$3}');
+          await db.execute(
+            'ALTER TABLE ${entry.$1} ADD COLUMN ${entry.$2} ${entry.$3}',
+          );
         } catch (_) {}
       }
     }
     if (oldVersion < 49) {
       for (final entry in [
-        (ProductDevolucionTable.tableName, ProductDevolucionTable.columnManejaSegundaUnidad, 'INTEGER DEFAULT 0'),
-        (ProductDevolucionTable.tableName, ProductDevolucionTable.columnUomSegundaUnidad, 'TEXT DEFAULT \'\''),
-        (ProductDevolucionTable.tableName, ProductDevolucionTable.columnQuantitySegundaUnidad, 'REAL DEFAULT 0'),
+        (
+          ProductDevolucionTable.tableName,
+          ProductDevolucionTable.columnManejaSegundaUnidad,
+          'INTEGER DEFAULT 0',
+        ),
+        (
+          ProductDevolucionTable.tableName,
+          ProductDevolucionTable.columnUomSegundaUnidad,
+          'TEXT DEFAULT \'\'',
+        ),
+        (
+          ProductDevolucionTable.tableName,
+          ProductDevolucionTable.columnQuantitySegundaUnidad,
+          'REAL DEFAULT 0',
+        ),
       ]) {
         try {
-          await db.execute('ALTER TABLE ${entry.$1} ADD COLUMN ${entry.$2} ${entry.$3}');
+          await db.execute(
+            'ALTER TABLE ${entry.$1} ADD COLUMN ${entry.$2} ${entry.$3}',
+          );
         } catch (_) {}
       }
     }
@@ -930,14 +1029,17 @@ class DataBaseSqlite {
         await db.execute(ExpedicionItemsSueltosTable.createTable());
       } catch (e) {
         debugPrint(
-            "Error actualizando a v51 (tbl_expedicion_items_sueltos): $e");
+          "Error actualizando a v51 (tbl_expedicion_items_sueltos): $e",
+        );
       }
     }
     if (oldVersion < 52) {
       // barcode pasa de INTEGER(bool) a TEXT y quantity de INTEGER a REAL.
       // La tabla se resincroniza completa en cada fetch, así que se recrea.
       try {
-        await db.execute('DROP TABLE IF EXISTS ${ExpedicionItemsTable.tableName}');
+        await db.execute(
+          'DROP TABLE IF EXISTS ${ExpedicionItemsTable.tableName}',
+        );
         await db.execute(ExpedicionItemsTable.createTable());
       } catch (e) {
         debugPrint("Error actualizando a v52 (tbl_expedicion_items): $e");
@@ -947,7 +1049,9 @@ class DataBaseSqlite {
       // packing_type pasa de INTEGER(bool) a TEXT (viene como string, ej.
       // "Paquete"). Tabla resincronizada completa en cada fetch, se recrea.
       try {
-        await db.execute('DROP TABLE IF EXISTS ${ExpedicionPaquetesTable.tableName}');
+        await db.execute(
+          'DROP TABLE IF EXISTS ${ExpedicionPaquetesTable.tableName}',
+        );
         await db.execute(ExpedicionPaquetesTable.createTable());
       } catch (e) {
         debugPrint("Error actualizando a v53 (tbl_expedicion_paquetes): $e");
@@ -1010,7 +1114,9 @@ class DataBaseSqlite {
         ADD COLUMN ${ExpedicionPedidosTable.columnBackorderId} INTEGER DEFAULT 0
       ''');
       } catch (e) {
-        debugPrint("Error actualizando a v58 (tbl_expedicion_pedidos.backorder_id): $e");
+        debugPrint(
+          "Error actualizando a v58 (tbl_expedicion_pedidos.backorder_id): $e",
+        );
       }
       try {
         await db.execute('''
@@ -1018,7 +1124,9 @@ class DataBaseSqlite {
         ADD COLUMN ${ExpedicionPedidosTable.columnBackorderName} TEXT
       ''');
       } catch (e) {
-        debugPrint("Error actualizando a v58 (tbl_expedicion_pedidos.backorder_name): $e");
+        debugPrint(
+          "Error actualizando a v58 (tbl_expedicion_pedidos.backorder_name): $e",
+        );
       }
     }
     if (oldVersion < 59) {
@@ -1039,9 +1147,12 @@ class DataBaseSqlite {
       ]) {
         try {
           await db.execute(
-              'ALTER TABLE ${EntradasRepeccionTable.tableName} ADD COLUMN $col');
+            'ALTER TABLE ${EntradasRepeccionTable.tableName} ADD COLUMN $col',
+          );
         } catch (e) {
-          debugPrint("Error actualizando a v59 (tbl_entradas_recepcion.$col): $e");
+          debugPrint(
+            "Error actualizando a v59 (tbl_entradas_recepcion.$col): $e",
+          );
         }
       }
     }
@@ -1056,7 +1167,8 @@ class DataBaseSqlite {
       ]) {
         try {
           await db.execute(
-              'ALTER TABLE $table ADD COLUMN sync_pending INTEGER DEFAULT 0');
+            'ALTER TABLE $table ADD COLUMN sync_pending INTEGER DEFAULT 0',
+          );
         } catch (e) {
           debugPrint("Error actualizando a v60 ($table.sync_pending): $e");
         }
@@ -1078,8 +1190,23 @@ class DataBaseSqlite {
       try {
         await db.execute(RecepcionSessionPoolTable.createTable());
       } catch (e) {
-        debugPrint(
-            "Error actualizando a v62 (tbl_recepcion_session_pool): $e");
+        debugPrint("Error actualizando a v62 (tbl_recepcion_session_pool): $e");
+      }
+    }
+
+    if (oldVersion < 63) {
+      // /api/receipt/sessions ahora manda mucha más info por sesión
+      // (proveedor, warehouse_name, numero_lineas, backorder, propietario,
+      // etc). Un ALTER por columna: si el dispositivo vino de <61 la tabla
+      // ya se creó completa arriba y estas fallan en silencio (columna ya
+      // existe), lo esperado.
+      for (final statement
+          in RecepcionSessionsTable.extraColumnsAlterStatements) {
+        try {
+          await db.execute(statement);
+        } catch (e) {
+          debugPrint("Error actualizando a v63 ($statement): $e");
+        }
       }
     }
   }
@@ -1145,7 +1272,7 @@ class DataBaseSqlite {
   ProductsEntradaBatchRepository get productsEntradaBatchRepository =>
       ProductsEntradaBatchRepository();
 
-//metodo para onteer una instancia del repositorio de packig por pedido
+  //metodo para onteer una instancia del repositorio de packig por pedido
   PedidoPackRepository get pedidoPackRepository =>
       PedidoPackRepository(_instance);
 
@@ -1226,7 +1353,8 @@ class DataBaseSqlite {
     ]) {
       try {
         await db.execute(
-            'ALTER TABLE $table ADD COLUMN sync_pending INTEGER DEFAULT 0');
+          'ALTER TABLE $table ADD COLUMN sync_pending INTEGER DEFAULT 0',
+        );
       } catch (_) {
         // La columna ya existe (caso normal): nada que hacer.
       }
@@ -1236,7 +1364,9 @@ class DataBaseSqlite {
   //Todo: Métodos para batchs_products
 
   Future<void> insertBatchProducts(
-      List<ProductsBatch> productsBatchList, String type) async {
+    List<ProductsBatch> productsBatchList,
+    String type,
+  ) async {
     try {
       final db = await getDatabaseInstance();
       if (db == null) return;
@@ -1259,8 +1389,9 @@ class DataBaseSqlite {
             "id_product": product.idProduct,
             "type": type,
             "batch_id": product.batchId,
-            "expire_date":
-                product.expireDate == false ? "" : product.expireDate,
+            "expire_date": product.expireDate == false
+                ? ""
+                : product.expireDate,
             "pedido": product.pedido,
             "pedido_id": product.pedidoId,
             "product_id": product.productId?[1],
@@ -1271,8 +1402,9 @@ class DataBaseSqlite {
             "barcode_location_dest": product.barcodeLocationDest == false
                 ? ""
                 : product.barcodeLocationDest,
-            "barcode_location":
-                product.barcodeLocation == false ? "" : product.barcodeLocation,
+            "barcode_location": product.barcodeLocation == false
+                ? ""
+                : product.barcodeLocation,
             "lote_id": product.loteId,
             "id_move": product.idMove,
             "location_dest_id": product.locationDestId?[1],
@@ -1288,8 +1420,9 @@ class DataBaseSqlite {
             "is_send_odoo": product.isSeparate == 0 ? null : product.isSeparate,
             "time_separate": _parseDurationToSeconds(product.timeSeparate),
 
-            "observation":
-                product.observation == false ? "" : product.observation,
+            "observation": product.observation == false
+                ? ""
+                : product.observation,
             "quantity_separate": product.quantitySeparate,
             'fecha_transaccion': product.fechaTransaccion == false
                 ? ""
@@ -1302,11 +1435,7 @@ class DataBaseSqlite {
               'tblbatch_products',
               data,
               where: 'id_product = ? AND batch_id = ? AND id_move = ?',
-              whereArgs: [
-                product.idProduct,
-                product.batchId,
-                product.idMove,
-              ],
+              whereArgs: [product.idProduct, product.batchId, product.idMove],
             );
           } else {
             // Insertar si no existe
@@ -1329,7 +1458,8 @@ class DataBaseSqlite {
     try {
       Database db = await DataBaseSqlite().getDatabaseInstance();
       final List<Map<String, dynamic>> result = await db.rawQuery(
-          'SELECT COUNT(*) as count FROM ${ProductInventarioTable.tableName}');
+        'SELECT COUNT(*) as count FROM ${ProductInventarioTable.tableName}',
+      );
       return result.isNotEmpty ? (result.first['count'] as int? ?? 0) : 0;
     } catch (e) {
       debugPrint("Error al contar productos de SQLite: $e");
@@ -1384,7 +1514,8 @@ class DataBaseSqlite {
     try {
       Database db = await DataBaseSqlite().getDatabaseInstance();
       final List<Map<String, dynamic>> result = await db.rawQuery(
-          'SELECT COUNT(*) as count FROM ${NovedadesTable.tableName}');
+        'SELECT COUNT(*) as count FROM ${NovedadesTable.tableName}',
+      );
       return result.isNotEmpty ? (result.first['count'] as int? ?? 0) : 0;
     } catch (e) {
       debugPrint("Error al contar novedades de SQLite: $e");
@@ -1395,8 +1526,9 @@ class DataBaseSqlite {
   Future<int> getWarehousesCount() async {
     try {
       Database db = await DataBaseSqlite().getDatabaseInstance();
-      final List<Map<String, dynamic>> result =
-          await db.rawQuery('SELECT COUNT(*) as count FROM tbl_warehouses');
+      final List<Map<String, dynamic>> result = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM tbl_warehouses',
+      );
       return result.isNotEmpty ? (result.first['count'] as int? ?? 0) : 0;
     } catch (e) {
       debugPrint("Error al contar almacenes de SQLite: $e");
@@ -1405,7 +1537,11 @@ class DataBaseSqlite {
   }
 
   Future<int?> setFieldTableBatchPedidoValidate(
-      int batchId, String namePedido, String field, dynamic setValue) async {
+    int batchId,
+    String namePedido,
+    String field,
+    dynamic setValue,
+  ) async {
     final db = await getDatabaseInstance();
 
     final resUpdate = await db.update(
@@ -1441,7 +1577,11 @@ class DataBaseSqlite {
 
   //metodo para traer un producto de un batch de la tabla tblbatch_products
   Future<ProductsBatch?> getProductBatch(
-      int batchId, int productId, int idMove, String type) async {
+    int batchId,
+    int productId,
+    int idMove,
+    String type,
+  ) async {
     final db = await getDatabaseInstance();
     final List<Map<String, dynamic>> maps = await db.query(
       'tblbatch_products',
@@ -1458,14 +1598,19 @@ class DataBaseSqlite {
   //* Obtener todos los productos de tblbatch_products
   Future<List<ProductsBatch>> getProducts(String type) async {
     final db = await getDatabaseInstance();
-    final List<Map<String, dynamic>> maps = await db
-        .query('tblbatch_products', where: 'type = ?', whereArgs: [type]);
+    final List<Map<String, dynamic>> maps = await db.query(
+      'tblbatch_products',
+      where: 'type = ?',
+      whereArgs: [type],
+    );
     return maps.map((map) => ProductsBatch.fromMap(map)).toList();
   }
 
   //* Obtener un batch con sus productos
   Future<BatchWithProducts?> getBatchWithProducts(
-      int batchId, String type) async {
+    int batchId,
+    String type,
+  ) async {
     try {
       final db = await getDatabaseInstance();
       final List<Map<String, dynamic>> batchMaps = await db.query(
@@ -1483,8 +1628,9 @@ class DataBaseSqlite {
         where: 'batch_id = ? AND type = ?',
         whereArgs: [batchId, type],
       );
-      final List<ProductsBatch> products =
-          productMaps.map((map) => ProductsBatch.fromMap(map)).toList();
+      final List<ProductsBatch> products = productMaps
+          .map((map) => ProductsBatch.fromMap(map))
+          .toList();
 
       return BatchWithProducts(batch: batch, products: products);
     } catch (e, s) {
@@ -1509,8 +1655,9 @@ class DataBaseSqlite {
   Future<int> getTercerosCount() async {
     try {
       Database db = await DataBaseSqlite().getDatabaseInstance();
-      final List<Map<String, dynamic>> result = await db
-          .rawQuery('SELECT COUNT(*) as count FROM ${TercerosTable.tableName}');
+      final List<Map<String, dynamic>> result = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM ${TercerosTable.tableName}',
+      );
       return result.isNotEmpty ? (result.first['count'] as int? ?? 0) : 0;
     } catch (e) {
       debugPrint("Error al contar terceros de SQLite: $e");
@@ -1540,8 +1687,11 @@ class DataBaseSqlite {
 
   Future<void> delePicking(String type) async {
     final db = await getDatabaseInstance();
-    await db.delete(BatchPickingTable.tableName,
-        where: '${BatchPickingTable.columnType} = ?', whereArgs: [type]);
+    await db.delete(
+      BatchPickingTable.tableName,
+      where: '${BatchPickingTable.columnType} = ?',
+      whereArgs: [type],
+    );
     await db.delete('tblbatch_products', where: 'type = ?', whereArgs: [type]);
     await db.delete('tblbatch_pedidos_validate');
     await deleBarcodes(type);
@@ -1551,10 +1701,16 @@ class DataBaseSqlite {
 
   Future<void> delePick(String typPick) async {
     final db = await getDatabaseInstance();
-    await db.delete(PickingPickTable.tableName,
-        where: '${PickingPickTable.columnTypePick} = ?', whereArgs: [typPick]);
-    await db.delete(PickProductsTable.tableName,
-        where: '${PickProductsTable.columnTypePick} = ?', whereArgs: [typPick]);
+    await db.delete(
+      PickingPickTable.tableName,
+      where: '${PickingPickTable.columnTypePick} = ?',
+      whereArgs: [typPick],
+    );
+    await db.delete(
+      PickProductsTable.tableName,
+      where: '${PickProductsTable.columnTypePick} = ?',
+      whereArgs: [typPick],
+    );
     await deleBarcodes(typPick);
   }
 
@@ -1567,7 +1723,8 @@ class DataBaseSqlite {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
       final List<Map<String, dynamic>> result = await db.rawQuery(
-          'SELECT COUNT(*) as count FROM ${UbicacionesTable.tableName}');
+        'SELECT COUNT(*) as count FROM ${UbicacionesTable.tableName}',
+      );
       return result.isNotEmpty ? (result.first['count'] as int? ?? 0) : 0;
     } catch (e) {
       debugPrint("Error al contar ubicaciones de SQLite: $e");
@@ -1604,12 +1761,21 @@ class DataBaseSqlite {
       await db.delete(PedidosPackingConsolidateTable.tableName);
     }
 
-    await db.delete(PedidosPackingTable.tableName,
-        where: '${PedidosPackingTable.columnType} = ?', whereArgs: [type]);
-    await db.delete(ProductosPedidosTable.tableName,
-        where: '${ProductosPedidosTable.columnType} = ?', whereArgs: [type]);
-    await db.delete(PackagesTable.tableName,
-        where: '${PackagesTable.columnType} = ?', whereArgs: [type]);
+    await db.delete(
+      PedidosPackingTable.tableName,
+      where: '${PedidosPackingTable.columnType} = ?',
+      whereArgs: [type],
+    );
+    await db.delete(
+      ProductosPedidosTable.tableName,
+      where: '${ProductosPedidosTable.columnType} = ?',
+      whereArgs: [type],
+    );
+    await db.delete(
+      PackagesTable.tableName,
+      where: '${PackagesTable.columnType} = ?',
+      whereArgs: [type],
+    );
     await deleBarcodes(type);
   }
 
@@ -1641,11 +1807,13 @@ class DataBaseSqlite {
   Future<void> deleInventario() async {
     final db = await getDatabaseInstance();
     await db.transaction((txn) async {
-      await txn
-          .execute('DROP TABLE IF EXISTS ${ProductInventarioTable.tableName}');
+      await txn.execute(
+        'DROP TABLE IF EXISTS ${ProductInventarioTable.tableName}',
+      );
       await txn.execute(ProductInventarioTable.createTable());
-      await txn
-          .execute('DROP TABLE IF EXISTS ${BarcodesInventarioTable.tableName}');
+      await txn.execute(
+        'DROP TABLE IF EXISTS ${BarcodesInventarioTable.tableName}',
+      );
       await txn.execute(BarcodesInventarioTable.createTable());
     });
   }
@@ -1669,12 +1837,8 @@ class DataBaseSqlite {
   Future<void> deleAllTrasnferencia() async {
     final db = await getDatabaseInstance();
     //transferencia
-    await db.delete(
-      TransferenciaTable.tableName,
-    );
-    await db.delete(
-      ProductTransferenciaTable.tableName,
-    );
+    await db.delete(TransferenciaTable.tableName);
+    await db.delete(ProductTransferenciaTable.tableName);
     await deleBarcodes("transfer");
   }
 
@@ -1689,17 +1853,21 @@ class DataBaseSqlite {
   Future<void> deleBarcodes(String barcodeType) async {
     final db = await getDatabaseInstance();
     //eliminamos los codigos de barras que tienen el mismo tipo
-    await db.delete(BarcodesPackagesTable.tableName,
-        where: '${BarcodesPackagesTable.columnBarcodeType} = ?',
-        whereArgs: [barcodeType]);
+    await db.delete(
+      BarcodesPackagesTable.tableName,
+      where: '${BarcodesPackagesTable.columnBarcodeType} = ?',
+      whereArgs: [barcodeType],
+    );
   }
 
   Future<void> deleOrigin(String originType) async {
     final db = await getDatabaseInstance();
     //eliminamos los codigos de barras que tienen el mismo tipo
-    await db.delete(DocOriginTable.tableName,
-        where: '${DocOriginTable.columnOriginType} = ?',
-        whereArgs: [originType]);
+    await db.delete(
+      DocOriginTable.tableName,
+      where: '${DocOriginTable.columnOriginType} = ?',
+      whereArgs: [originType],
+    );
   }
 
   Future<void> deleAllBarcodes() async {
@@ -1710,12 +1878,8 @@ class DataBaseSqlite {
 
   Future<void> deleAllRecepcion() async {
     final db = await getDatabaseInstance();
-    await db.delete(
-      ProductRecepcionTable.tableName,
-    );
-    await db.delete(
-      EntradasRepeccionTable.tableName,
-    );
+    await db.delete(ProductRecepcionTable.tableName);
+    await db.delete(EntradasRepeccionTable.tableName);
     await deleBarcodes("reception");
   }
 
@@ -1788,21 +1952,22 @@ class DataBaseSqlite {
   }
 
   //*metodo para actualizar la tabla de productos de un batch
-  Future<int?> setFieldTableBatchProducts(int batchId, int productId,
-      String field, dynamic setValue, int idMove, String type) async {
+  Future<int?> setFieldTableBatchProducts(
+    int batchId,
+    int productId,
+    String field,
+    dynamic setValue,
+    int idMove,
+    String type,
+  ) async {
     final db = await getDatabaseInstance();
 
     // ✅ SOLUCIÓN: Usamos '?' para los valores y pasamos una lista de argumentos.
     // Nota: $field se deja igual porque es el nombre de la columna, no un valor.
     final resUpdate = await db.rawUpdate(
-        'UPDATE tblbatch_products SET $field = ? WHERE batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
-        [
-          setValue,
-          batchId,
-          productId,
-          idMove,
-          type
-        ]); // <--- Aquí pasamos la lista
+      'UPDATE tblbatch_products SET $field = ? WHERE batch_id = ? AND id_product = ? AND id_move = ? AND type = ?',
+      [setValue, batchId, productId, idMove, type],
+    ); // <--- Aquí pasamos la lista
 
     debugPrint("update tblbatch_products ($field): $resUpdate");
 
@@ -1811,8 +1976,14 @@ class DataBaseSqlite {
 
   // ✅ 1. Método genérico para actualizar un campo string
   // Usamos db.update para manejar automáticamente los tipos de datos
-  Future<int?> setFieldStringTableBatchProducts(int batchId, int productId,
-      String field, dynamic setValue, int idMove, String type) async {
+  Future<int?> setFieldStringTableBatchProducts(
+    int batchId,
+    int productId,
+    String field,
+    dynamic setValue,
+    int idMove,
+    String type,
+  ) async {
     final db = await getDatabaseInstance();
 
     // db.update es mejor que rawUpdate porque maneja las comillas automáticamente
@@ -1826,7 +1997,12 @@ class DataBaseSqlite {
 
   // ✅ 2. Obtener un campo específico
   Future<String> getFieldTableProducts(
-      int batchId, int productId, int moveId, String field, String type) async {
+    int batchId,
+    int productId,
+    int moveId,
+    String field,
+    String type,
+  ) async {
     try {
       final db = await getDatabaseInstance();
 
@@ -1852,7 +2028,12 @@ class DataBaseSqlite {
 
   // ✅ 3. Iniciar cronómetro
   Future<int?> startStopwatch(
-      int batchId, int productId, int moveId, String date, String type) async {
+    int batchId,
+    int productId,
+    int moveId,
+    String date,
+    String type,
+  ) async {
     final db = await getDatabaseInstance();
 
     return await db.update(
@@ -1865,7 +2046,12 @@ class DataBaseSqlite {
 
   // ✅ 4. Guardar tiempo total
   Future<int?> totalStopwatchProduct(
-      int batchId, int productId, int moveId, double time, String type) async {
+    int batchId,
+    int productId,
+    int moveId,
+    double time,
+    String type,
+  ) async {
     final db = await getDatabaseInstance();
 
     return await db.update(
@@ -1878,7 +2064,12 @@ class DataBaseSqlite {
 
   // ✅ 5. Finalizar cronómetro
   Future<int?> endStopwatchProduct(
-      int batchId, String date, int productId, int moveId, String type) async {
+    int batchId,
+    String date,
+    int productId,
+    int moveId,
+    String type,
+  ) async {
     final db = await getDatabaseInstance();
 
     return await db.update(
@@ -1891,7 +2082,12 @@ class DataBaseSqlite {
 
   // ✅ 6. Actualizar fecha transacción
   Future<int?> dateTransaccionProduct(
-      int batchId, String date, int productId, int moveId, String type) async {
+    int batchId,
+    String date,
+    int productId,
+    int moveId,
+    String type,
+  ) async {
     final db = await getDatabaseInstance();
 
     return await db.update(
@@ -1943,7 +2139,7 @@ class DataBaseSqlite {
           {'product_separate_qty': newQty},
           where: 'id = ?',
           whereArgs: [
-            batchId
+            batchId,
           ], // Aquí type no es estrictamente necesario si ID es único, pero no hace daño
         );
       }
@@ -1952,8 +2148,13 @@ class DataBaseSqlite {
   }
 
   // ✅ 9. Incrementar cantidad separada en Producto
-  Future<int?> incremenQtytProductSeparate(int batchId, int productId,
-      int idMove, dynamic quantity, String type) async {
+  Future<int?> incremenQtytProductSeparate(
+    int batchId,
+    int productId,
+    int idMove,
+    dynamic quantity,
+    String type,
+  ) async {
     final db = await getDatabaseInstance();
 
     return await db.transaction((txn) async {
@@ -2007,10 +2208,7 @@ class DataBaseSqlite {
   }
 
   // ✅ 11. Get Batch
-  Future<List<Map<String, dynamic>>> getBacth(
-    int batchId,
-    String type,
-  ) async {
+  Future<List<Map<String, dynamic>>> getBacth(int batchId, String type) async {
     final db = await getDatabaseInstance();
 
     return await db.query(

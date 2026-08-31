@@ -8,7 +8,8 @@ import 'package:wms_app/src/presentation/providers/db/recepcion_multiusuario/tbl
 /// ExpedicionPedidosRepository.
 class RecepcionSessionsRepository {
   Future<void> insertOrUpdateSessions(
-      List<RecepcionSessionModel> sessions) async {
+    List<RecepcionSessionModel> sessions,
+  ) async {
     if (sessions.isEmpty) return;
     try {
       final Database db = await DataBaseSqlite().getDatabaseInstance();
