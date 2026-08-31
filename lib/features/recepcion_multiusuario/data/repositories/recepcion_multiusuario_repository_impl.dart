@@ -225,4 +225,56 @@ class RecepcionMultiusuarioRepositoryImpl
       return Left(ServerFailure('Error al crear el lote: $e'));
     }
   }
+
+  @override
+  Future<Either<Failure, RecepcionClaim>> finishClaim({
+    required int claimId,
+    required double qtyDone,
+    required int lotId,
+    required int ubicacionDestino,
+    required int timeLine,
+    required String observation,
+  }) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No hay conexión a Internet'));
+    }
+
+    try {
+      final claim = await remoteDataSource.finishClaim(
+        claimId: claimId,
+        qtyDone: qtyDone,
+        lotId: lotId,
+        ubicacionDestino: ubicacionDestino,
+        timeLine: timeLine,
+        observation: observation,
+      );
+      return Right(claim);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Error al confirmar la recepción: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> undoClaim({
+    required int claimId,
+    required String observacion,
+  }) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No hay conexión a Internet'));
+    }
+
+    try {
+      await remoteDataSource.undoClaim(
+        claimId: claimId,
+        observacion: observacion,
+      );
+      return const Right(unit);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Error al deshacer la recepción: $e'));
+    }
+  }
 }

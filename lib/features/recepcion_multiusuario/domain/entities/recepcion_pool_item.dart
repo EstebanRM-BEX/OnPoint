@@ -1,6 +1,12 @@
+import 'package:wms_app/features/recepcion_multiusuario/domain/entities/asignacion_observacion.dart';
+
 /// Un producto/tarea disponible ("libre") en el pool de una sesión de
 /// recepción multiusuario. Cuando otro operario lo toma, deja de aparecer en
 /// GET /api/receipt/session/{id}/pool — el fetch siguiente lo borra local.
+///
+/// [observaciones] es el historial de asignaciones de este producto (de
+/// cualquier operario, terminadas o no) — el tab "Terminados" lo usa
+/// filtrando por `state == 'done'`.
 class RecepcionPoolItem {
   final int? taskId;
   final int? sessionId;
@@ -16,6 +22,9 @@ class RecepcionPoolItem {
   final int? asignacionesActivas;
   final double? qtyClaimed;
   final double? qtyDone;
+  final String? taskState;
+  final bool? tieneObservaciones;
+  final List<AsignacionObservacion> observaciones;
 
   const RecepcionPoolItem({
     this.taskId,
@@ -32,5 +41,8 @@ class RecepcionPoolItem {
     this.asignacionesActivas,
     this.qtyClaimed,
     this.qtyDone,
+    this.taskState,
+    this.tieneObservaciones,
+    this.observaciones = const [],
   });
 }

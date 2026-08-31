@@ -63,6 +63,26 @@ abstract class RecepcionMultiusuarioRemoteDataSource {
     required bool priorityExpiration,
     required bool isLoadinDialog,
   });
+
+  /// POST /api/receipt/claim/{claimId}/done: confirma la recepción de
+  /// [qtyDone] para este claim. [timeLine] son los segundos transcurridos
+  /// desde que se validó el producto hasta que se envía. Devuelve el claim
+  /// actualizado (con `state: "done"` y `qty_recibida` al día) — se reusa
+  /// el mismo model que [claimProduct]/[fetchMyClaims] porque es la misma
+  /// forma de objeto.
+  Future<RecepcionClaimModel> finishClaim({
+    required int claimId,
+    required double qtyDone,
+    required int lotId,
+    required int ubicacionDestino,
+    required int timeLine,
+    required String observation,
+  });
+
+  /// POST /api/receipt/claim/{claimId}/undo: deshace una recepción ya
+  /// terminada (state "done"), liberando la cantidad para que vuelva a
+  /// quedar disponible. Requiere [observacion] con el motivo.
+  Future<void> undoClaim({required int claimId, required String observacion});
 }
 
 @LazySingleton(as: RecepcionMultiusuarioRemoteDataSource)
@@ -292,5 +312,81 @@ class RecepcionMultiusuarioRemoteDataSourceImpl
       throw ConfirmationRequiredException(message);
     }
     throw ServerException(message);
+  }
+
+  @override
+  Future<RecepcionClaimModel> finishClaim({
+    required int claimId,
+    required double qtyDone,
+    required int lotId,
+    required int ubicacionDestino,
+    required int timeLine,
+    required String observation,
+  }) async {
+    // A diferencia del resto de receipt/*, este endpoint espera el sobre
+    // jsonrpc completo (jsonrpc/method/params) en el body, no solo
+    // {"params": {...}} — confirmado con la respuesta real de Postman.
+    final response = await ApiRequestService().postPacking(
+      endpoint: 'receipt/claim/$claimId/done',
+      body: {
+        "jsonrpc": "2.0",
+        "method": "call",
+        "params": {
+          "qty_done": qtyDone,
+          "ubicacion_destino": ubicacionDestino,
+          "time_line": timeLine,
+          "observation": observation,
+          "lot_id": lotId,
+        },
+      },
+      isLoadinDialog: false,
+    );
+
+    if (response.statusCode >= 400) {
+      throw ServerException('Error de conexión (${response.statusCode})');
+    }
+
+    final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+    final result = jsonResponse['result'] as Map<String, dynamic>?;
+
+    if (result == null || result['status'] != 'success') {
+      throw ServerException(
+        result?['message'] ?? 'No se pudo confirmar la recepción',
+      );
+    }
+
+    return RecepcionClaimModel.fromJson(
+      result['data'] as Map<String, dynamic>? ?? {},
+    );
+  }
+
+  @override
+  Future<void> undoClaim({
+    required int claimId,
+    required String observacion,
+  }) async {
+    // Mismo sobre jsonrpc completo que /done — confirmado con Postman.
+    final response = await ApiRequestService().postPacking(
+      endpoint: 'receipt/claim/$claimId/undo',
+      body: {
+        "jsonrpc": "2.0",
+        "method": "call",
+        "params": {"observacion": observacion},
+      },
+      isLoadinDialog: false,
+    );
+
+    if (response.statusCode >= 400) {
+      throw ServerException('Error de conexión (${response.statusCode})');
+    }
+
+    final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+    final result = jsonResponse['result'] as Map<String, dynamic>?;
+
+    if (result == null || result['status'] != 'success') {
+      throw ServerException(
+        result?['message'] ?? 'No se pudo deshacer la recepción',
+      );
+    }
   }
 }

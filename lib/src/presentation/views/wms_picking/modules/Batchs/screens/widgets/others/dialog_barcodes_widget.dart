@@ -4,39 +4,35 @@ import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
 
 class DialogBarcodes extends StatelessWidget {
-  const DialogBarcodes({
-    super.key,
-    required this.listOfBarcodes,
-  });
+  const DialogBarcodes({super.key, required this.listOfBarcodes});
 
   final List<dynamic> listOfBarcodes;
 
   @override
   Widget build(BuildContext context) {
     return BackdropFilter(
-      filter: ImageFilter.blur(
-        sigmaX: 5,
-        sigmaY: 5,
-      ),
+      filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
       child: AlertDialog(
         actionsAlignment: MainAxisAlignment.center,
         title: Center(
           child: Text(
             'Codigo de barras por paquete',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: primaryColorApp,
-              fontSize: 16,
-            ),
+            style: TextStyle(color: primaryColorApp, fontSize: 16),
           ),
         ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Envolvemos el ListView.builder con un Container para darle un tamaño fijo
+              // Envolvemos el ListView.builder con un Container para darle un tamaño fijo.
+              // width: double.maxFinite es necesario porque AlertDialog envuelve
+              // su content en un IntrinsicWidth: sin un ancho explícito, intenta
+              // calcular el ancho intrínseco del ListView y explota con
+              // "RenderViewport does not support returning intrinsic dimensions".
               SizedBox(
                 height: 300, // Puedes ajustar la altura
+                width: double.maxFinite,
                 child: ListView.builder(
                   physics: const AlwaysScrollableScrollPhysics(),
                   itemCount: listOfBarcodes.length,
@@ -58,8 +54,10 @@ class DialogBarcodes extends StatelessWidget {
                         ),
                         title: Text(
                           listOfBarcodes[index].barcode,
-                          style:
-                              TextStyle(color: primaryColorApp, fontSize: 12),
+                          style: TextStyle(
+                            color: primaryColorApp,
+                            fontSize: 12,
+                          ),
                         ),
                         subtitle: Text(
                           'Cantidad: ${listOfBarcodes[index].cantidad}',
@@ -72,17 +70,17 @@ class DialogBarcodes extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColorApp,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10))),
-                  child: const Text(
-                    'Cerrar',
-                    style: TextStyle(color: white),
-                  ))
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColorApp,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text('Cerrar', style: TextStyle(color: white)),
+              ),
             ],
           ),
         ),

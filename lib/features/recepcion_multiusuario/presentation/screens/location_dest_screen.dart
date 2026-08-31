@@ -2,17 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/location_dest/recepcion_multiusuario_location_dest_bloc.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
+import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 
 /// Réplica de LocationDestRecepScreen (recepción individual) para
-/// multiusuario: buscar/seleccionar una ubicación destino. Las ubicaciones
-/// vienen de una tabla local genérica ya sincronizada (tbl_ubicaciones,
+/// multiusuario: buscar/seleccionar una ubicación destino, con el mismo
+/// filtro por almacén (menú "⋮" del appbar). Las ubicaciones vienen de una
+/// tabla local genérica ya sincronizada (tbl_ubicaciones,
 /// UbicacionesRepository), no hay endpoint nuevo.
 ///
 /// A diferencia del original, al seleccionar hace `Navigator.pop(context,
 /// ubicacion)` en vez de ida y vuelta por rutas — scan_product_screen.dart
-/// espera el resultado con `Navigator.push`. No incluye el filtro por
-/// almacén del original (cosmético, fuera del alcance de esta pantalla).
+/// espera el resultado con `Navigator.push`.
 class RecepcionMultiusuarioLocationDestScreen extends StatefulWidget {
   const RecepcionMultiusuarioLocationDestScreen({super.key});
 
@@ -45,21 +47,6 @@ class _RecepcionMultiusuarioLocationDestScreenState
     final size = MediaQuery.sizeOf(context);
     return Scaffold(
       backgroundColor: primaryColorApp,
-      appBar: AppBar(
-        backgroundColor: primaryColorApp,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'UBICACIONES',
-          style: TextStyle(color: Colors.white, fontSize: 16),
-        ),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-        ),
-      ),
       body: SafeArea(
         child: Container(
           color: white,
@@ -67,6 +54,28 @@ class _RecepcionMultiusuarioLocationDestScreenState
           height: size.height,
           child: Column(
             children: [
+              const _Header(),
+              const SizedBox(height: 5),
+              BlocBuilder<
+                RecepcionMultiusuarioLocationDestBloc,
+                RecepcionMultiusuarioLocationDestState
+              >(
+                builder: (context, state) {
+                  final almacen = context
+                      .read<RecepcionMultiusuarioLocationDestBloc>()
+                      .selectedAlmacen;
+                  return Text(
+                    almacen == null || almacen.isEmpty
+                        ? 'Ubicaciones de todos los almacenes'
+                        : 'Ubicaciones del almacén: $almacen',
+                    style: const TextStyle(
+                      color: black,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  );
+                },
+              ),
               const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -93,6 +102,10 @@ class _RecepcionMultiusuarioLocationDestScreenState
                         icon: const Icon(Icons.close, color: grey, size: 20),
                       ),
                       hintText: 'Buscar ubicación',
+                      hintStyle: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 14,
+                      ),
                       border: InputBorder.none,
                     ),
                     onChanged: (value) {
@@ -260,6 +273,100 @@ class _RecepcionMultiusuarioLocationDestScreenState
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Header con el mismo diseño que el resto de la app (contenedor redondeado
+/// abajo + WarningWidgetCubit, en vez del AppBar de Material) y el menú "⋮"
+/// para filtrar por almacén — réplica de _AppBarInfo en
+/// locations_dest_widget.dart (recepción individual).
+class _Header extends StatelessWidget {
+  const _Header();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.only(top: 20),
+      decoration: const BoxDecoration(
+        color: primaryColorApp,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        ),
+      ),
+      width: double.infinity,
+      child: Column(
+        children: [
+          const WarningWidgetCubit(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              const Text(
+                'UBICACIONES',
+                style: TextStyle(color: white, fontSize: 18),
+              ),
+              PopupMenuButton<String?>(
+                color: white,
+                icon: const Icon(Icons.more_vert, color: white, size: 20),
+                onSelected: (value) {
+                  context.read<RecepcionMultiusuarioLocationDestBloc>().add(
+                    FilterUbicacionesAlmacenEvent(value),
+                  );
+                },
+                itemBuilder: (context) {
+                  final almacenes = context.read<UserBloc>().almacenes;
+                  return [
+                    const PopupMenuItem<String?>(
+                      value: null,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.select_all,
+                            color: primaryColorApp,
+                            size: 20,
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            'Todos los almacenes',
+                            style: TextStyle(color: black, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ...almacenes.map(
+                      (almacen) => PopupMenuItem<String?>(
+                        value: almacen.name,
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.file_upload_outlined,
+                              color: primaryColorApp,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              almacen.name ?? '',
+                              style: const TextStyle(
+                                color: black,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ];
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

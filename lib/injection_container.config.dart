@@ -298,12 +298,16 @@ import 'features/recepcion_multiusuario/domain/usecases/fetch_recepcion_pool_use
     as _i102;
 import 'features/recepcion_multiusuario/domain/usecases/fetch_recepcion_sessions_usecase.dart'
     as _i874;
+import 'features/recepcion_multiusuario/domain/usecases/finish_claim_usecase.dart'
+    as _i338;
 import 'features/recepcion_multiusuario/domain/usecases/get_recepcion_pool_from_db_usecase.dart'
     as _i280;
 import 'features/recepcion_multiusuario/domain/usecases/get_recepcion_sessions_from_db_usecase.dart'
     as _i231;
 import 'features/recepcion_multiusuario/domain/usecases/release_claim_usecase.dart'
     as _i950;
+import 'features/recepcion_multiusuario/domain/usecases/undo_claim_usecase.dart'
+    as _i442;
 import 'features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_my_claims_bloc.dart'
     as _i91;
 import 'features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_pool_bloc.dart'
@@ -785,6 +789,10 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i300.RecepcionMultiusuarioRepository>(),
       ),
     );
+    gh.lazySingleton<_i338.FinishClaimUseCase>(
+      () =>
+          _i338.FinishClaimUseCase(gh<_i300.RecepcionMultiusuarioRepository>()),
+    );
     gh.lazySingleton<_i280.GetRecepcionPoolFromDbUseCase>(
       () => _i280.GetRecepcionPoolFromDbUseCase(
         gh<_i300.RecepcionMultiusuarioRepository>(),
@@ -799,6 +807,9 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i950.ReleaseClaimUseCase(
         gh<_i300.RecepcionMultiusuarioRepository>(),
       ),
+    );
+    gh.lazySingleton<_i442.UndoClaimUseCase>(
+      () => _i442.UndoClaimUseCase(gh<_i300.RecepcionMultiusuarioRepository>()),
     );
     gh.lazySingleton<_i601.FetchComponentsFromDbUseCase>(
       () => _i601.FetchComponentsFromDbUseCase(

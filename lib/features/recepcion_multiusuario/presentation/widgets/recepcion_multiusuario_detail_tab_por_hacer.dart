@@ -4,15 +4,18 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/routes/app_router.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_claim.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_pool_item.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_my_claims_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_pool_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/scan/recepcion_multiusuario_scan_bloc.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/dialog_confirmar_tomar_producto_widget.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/recepcion_pool_item_card_widget.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
@@ -50,6 +53,26 @@ class _RecepcionMultiusuarioDetailTabPorHacerState
   bool _isSearchVisible = false;
   String _searchQuery = '';
 
+  // null mientras carga: el permiso vive en tbl_configurations, no queremos
+  // mostrar cantidades como si estuviera activo por falta de datos.
+  bool? _hideExpectedQty;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarConfiguracion();
+  }
+
+  Future<void> _cargarConfiguracion() async {
+    final userId = await PrefUtils.getUserId();
+    final config = await DataBaseSqlite().configurationsRepository
+        .getConfiguration(userId);
+    if (!mounted) return;
+    setState(() {
+      _hideExpectedQty = config?.result?.result?.hideExpectedQty == true;
+    });
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -86,12 +109,25 @@ class _RecepcionMultiusuarioDetailTabPorHacerState
     );
   }
 
+  /// Pide confirmación antes de reclamar — un toque accidental en la lista
+  /// no debe dejar un producto asignado sin querer.
   void _handleClaimTap(BuildContext context, RecepcionPoolItem item) {
     final sessionId = widget.session.sessionId;
     final productId = item.productId;
     if (sessionId == null || productId == null) return;
-    context.read<RecepcionMultiusuarioScanBloc>().add(
-      ClaimProductEvent(sessionId: sessionId, productId: productId),
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => DialogConfirmarTomarProductoWidget(
+        productName: item.productName ?? 'este producto',
+        onCancel: () => Navigator.pop(dialogContext),
+        onAccepted: () {
+          Navigator.pop(dialogContext);
+          context.read<RecepcionMultiusuarioScanBloc>().add(
+            ClaimProductEvent(sessionId: sessionId, productId: productId),
+          );
+        },
+      ),
     );
   }
 
@@ -310,6 +346,7 @@ class _RecepcionMultiusuarioDetailTabPorHacerState
                           child: RecepcionPoolItemCardWidget(
                             item: item,
                             companyId: widget.session.warehouseId,
+                            mostrarCantidad: _hideExpectedQty == false,
                           ),
                         );
                       },

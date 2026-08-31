@@ -203,6 +203,12 @@ class _RecepcionMultiusuarioDetailTabMisAsignadosState
                   )
                 else
                   const Spacer(),
+                if (!_isSearchVisible)
+                  IconButton(
+                    icon: Icon(Icons.refresh, color: primaryColorApp),
+                    tooltip: 'Actualizar mis asignados',
+                    onPressed: () => _retry(context),
+                  ),
                 IconButton(
                   icon: Icon(
                     _isSearchVisible ? Icons.close : Icons.search,

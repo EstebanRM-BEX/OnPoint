@@ -106,7 +106,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 63,
+      version: 64,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -1206,6 +1206,21 @@ class DataBaseSqlite {
           await db.execute(statement);
         } catch (e) {
           debugPrint("Error actualizando a v63 ($statement): $e");
+        }
+      }
+    }
+
+    if (oldVersion < 64) {
+      // /api/receipt/session/{id}/pool ahora manda el historial de
+      // asignaciones por producto (observaciones[]) — se usa en el tab
+      // "Terminados". Mismo patrón que v63: ALTER por columna, falla en
+      // silencio si la tabla ya se creó completa arriba.
+      for (final statement
+          in RecepcionSessionPoolTable.extraColumnsAlterStatements) {
+        try {
+          await db.execute(statement);
+        } catch (e) {
+          debugPrint("Error actualizando a v64 ($statement): $e");
         }
       }
     }

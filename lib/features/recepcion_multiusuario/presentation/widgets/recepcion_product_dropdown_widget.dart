@@ -47,8 +47,12 @@ class RecepcionProductDropdownWidget extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
-                color: Colors.white,
+                // Siempre verde: a diferencia de recepción individual (donde
+                // resalta cuál de varios productos es el actual), acá el
+                // único ítem del dropdown SIEMPRE es el producto actual.
+                color: Colors.green[100],
               ),
+              width: MediaQuery.of(context).size.width * 0.9,
               child: Text(
                 productName,
                 maxLines: 2,

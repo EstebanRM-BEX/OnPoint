@@ -61,4 +61,25 @@ abstract class RecepcionMultiusuarioRepository {
     required bool priorityExpiration,
     required bool isLoadinDialog,
   });
+
+  /// Confirma la recepción de [qtyDone] para [claimId]
+  /// (POST /api/receipt/claim/{claimId}/done). [timeLine] son los segundos
+  /// transcurridos desde que se validó el producto hasta que se envía.
+  /// Devuelve el claim actualizado (`state: "done"`).
+  Future<Either<Failure, RecepcionClaim>> finishClaim({
+    required int claimId,
+    required double qtyDone,
+    required int lotId,
+    required int ubicacionDestino,
+    required int timeLine,
+    required String observation,
+  });
+
+  /// Deshace la recepción ya terminada de [claimId]
+  /// (POST /api/receipt/claim/{claimId}/undo). Requiere [observacion] con
+  /// el motivo.
+  Future<Either<Failure, Unit>> undoClaim({
+    required int claimId,
+    required String observacion,
+  });
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_pool_item.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_my_claims_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_pool_bloc.dart';
@@ -8,6 +9,7 @@ import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/rec
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/recepcion_multiusuario_detail_tab_mis_asignados.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/recepcion_multiusuario_detail_tab_por_hacer.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/recepcion_multiusuario_detail_tab_terminados.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 
 /// Detalle de una sesión de recepción multiusuario: 4 tabs — Detalle, Por
@@ -58,6 +60,13 @@ class _RecepcionMultiusuarioDetailScreenState
         FetchMyClaimsEvent(sessionId),
       );
     }
+
+    // Las novedades las necesita el selector de "cantidad menor a lo
+    // pendiente" y el de "deshacer" (scan_product_screen.dart / tab
+    // Terminados) — las precargamos acá para que ya estén listas cuando el
+    // operario llegue a esas pantallas. Los permisos (tbl_configurations)
+    // no hace falta recargarlos: UserBloc ya los carga en el login.
+    context.read<UserBloc>().add(LoadUserNoveltiesEvent());
   }
 
   @override
@@ -99,17 +108,75 @@ class _RecepcionMultiusuarioDetailScreenState
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-          tabs: const [
-            Tab(text: 'Detalle', icon: Icon(Icons.info_outline, size: 16)),
-            Tab(
-              text: 'Por hacer',
-              icon: Icon(Icons.pending_actions_outlined, size: 16),
+          tabs: [
+            const Tab(
+              text: 'Detalle',
+              icon: Icon(Icons.info_outline, size: 16),
             ),
-            Tab(
-              text: 'Asignados',
-              icon: Icon(Icons.assignment_ind_outlined, size: 16),
+            BlocBuilder<
+              RecepcionMultiusuarioPoolBloc,
+              RecepcionMultiusuarioPoolState
+            >(
+              builder: (context, poolState) {
+                final items = poolState is RecepcionPoolLoaded
+                    ? poolState.items
+                    : const <RecepcionPoolItem>[];
+                return _TabConBadge(
+                  tab: const Tab(
+                    text: 'Por hacer',
+                    icon: Icon(Icons.pending_actions_outlined, size: 16),
+                  ),
+                  count: items.length,
+                  color: red,
+                );
+              },
             ),
-            Tab(text: 'Terminados', icon: Icon(Icons.done_all, size: 16)),
+            BlocBuilder<
+              RecepcionMultiusuarioMyClaimsBloc,
+              RecepcionMultiusuarioMyClaimsState
+            >(
+              builder: (context, state) {
+                // Estados transitorios (release loading/success/error) no
+                // traen su propia lista: seguimos contando la última
+                // cargada, mismo criterio que el propio tab.
+                final claims = state is RecepcionMyClaimsLoaded
+                    ? state.claims
+                    : context
+                          .read<RecepcionMultiusuarioMyClaimsBloc>()
+                          .currentClaims;
+                return _TabConBadge(
+                  tab: const Tab(
+                    text: 'Asignados',
+                    icon: Icon(Icons.assignment_ind_outlined, size: 16),
+                  ),
+                  count: claims.length,
+                  color: Colors.orange,
+                );
+              },
+            ),
+            BlocBuilder<
+              RecepcionMultiusuarioPoolBloc,
+              RecepcionMultiusuarioPoolState
+            >(
+              builder: (context, poolState) {
+                final items = poolState is RecepcionPoolLoaded
+                    ? poolState.items
+                    : const <RecepcionPoolItem>[];
+                final terminadas = items.fold<int>(
+                  0,
+                  (total, item) =>
+                      total + item.observaciones.where((o) => o.isDone).length,
+                );
+                return _TabConBadge(
+                  tab: const Tab(
+                    text: 'Terminados',
+                    icon: Icon(Icons.done_all, size: 16),
+                  ),
+                  count: terminadas,
+                  color: green,
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -142,6 +209,43 @@ class _RecepcionMultiusuarioDetailScreenState
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Tab con contador (globito) arriba a la derecha — réplica del patrón de
+/// recepción individual (recepcion_screen.dart) para "Por hacer"/"Listo".
+/// No se muestra el globito si el contador es 0.
+class _TabConBadge extends StatelessWidget {
+  const _TabConBadge({
+    required this.tab,
+    required this.count,
+    required this.color,
+  });
+
+  final Tab tab;
+  final int count;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        tab,
+        if (count > 0)
+          Positioned(
+            right: 0,
+            child: CircleAvatar(
+              radius: 8,
+              backgroundColor: color,
+              child: Text(
+                count.toString(),
+                style: const TextStyle(color: Colors.white, fontSize: 9),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

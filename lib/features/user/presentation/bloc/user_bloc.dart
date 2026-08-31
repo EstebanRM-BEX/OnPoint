@@ -68,7 +68,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
   /// Descarga bajo demanda de ubicaciones (GET) con feedback propio.
   Future<void> _onDownloadLocations(
-      DownloadLocationsEvent event, Emitter<UserState> emit) async {
+    DownloadLocationsEvent event,
+    Emitter<UserState> emit,
+  ) async {
     emit(const DownloadUserDataLoading('Descargando ubicaciones...'));
     try {
       final result = await getUserLocations(NoParams());
@@ -82,8 +84,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         return;
       }
       locationsCount = await DataBaseSqlite().getUbicacionesCount();
-      emit(DownloadUserDataSuccess(
-          'Se descargaron $locationsCount ubicaciones'));
+      emit(
+        DownloadUserDataSuccess('Se descargaron $locationsCount ubicaciones'),
+      );
     } catch (e) {
       debugPrint("❌ Error en _onDownloadLocations: $e");
       emit(DownloadUserDataError(e.toString()));
@@ -92,7 +95,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
   /// Descarga bajo demanda de novedades (GET picking_novelties) con feedback.
   Future<void> _onDownloadNovelties(
-      DownloadNoveltiesEvent event, Emitter<UserState> emit) async {
+    DownloadNoveltiesEvent event,
+    Emitter<UserState> emit,
+  ) async {
     emit(const DownloadUserDataLoading('Descargando novedades...'));
     try {
       final result = await getUserNovelties(NoParams());
@@ -123,9 +128,11 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     AndroidDeviceInfo androidInfo = await deviceInfoPlugin.androidInfo;
     String modelo = androidInfo.model;
     String fabricante = androidInfo.manufacturer;
-    String mac = (await getIt<IDeviceInfoService>().getMacAddress()) ??
+    String mac =
+        (await getIt<IDeviceInfoService>().getMacAddress()) ??
         ''; // mac del dispositivo
-    String imei = (await getIt<IDeviceInfoService>().getImei()) ??
+    String imei =
+        (await getIt<IDeviceInfoService>().getImei()) ??
         ''; // imei del dispositivo
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
 
@@ -197,9 +204,10 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       try {
         final userId = config!.result?.result?.id;
         if (userId != null) {
-          await DataBaseSqlite()
-              .configurationsRepository
-              .insertConfiguration(config!, userId);
+          await DataBaseSqlite().configurationsRepository.insertConfiguration(
+            config!,
+            userId,
+          );
           debugPrint('✅ Configuraciones guardadas en BD local');
         }
       } catch (e) {
@@ -228,12 +236,14 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       userConfiguration = config;
       this.deviceInfo = deviceInfo;
 
-      emit(UserLoaded(
-        configuration: userConfiguration!,
-        deviceInfo: this.deviceInfo!,
-        locations: locations,
-        novelties: novelties,
-      ));
+      emit(
+        UserLoaded(
+          configuration: userConfiguration!,
+          deviceInfo: this.deviceInfo!,
+          locations: locations,
+          novelties: novelties,
+        ),
+      );
     }
   }
 
@@ -265,12 +275,14 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
     if (deviceId != null) {
       emit(DeviceRegistrationLoading());
-      final result = await registerDevice(RegisterDeviceParams(
-        deviceId: deviceId!,
-        deviceName: deviceName!,
-        deviceModel: deviceModel!,
-        versionApp: versionApp!,
-      ));
+      final result = await registerDevice(
+        RegisterDeviceParams(
+          deviceId: deviceId!,
+          deviceName: deviceName!,
+          deviceModel: deviceModel!,
+          versionApp: versionApp!,
+        ),
+      );
 
       await result.fold(
         (failure) async => emit(DeviceRegistrationFailure(failure.message)),
@@ -279,44 +291,51 @@ class UserBloc extends Bloc<UserEvent, UserState> {
             // Guardar sesión solo después de que el dispositivo esté autorizado
             if (event.user != null && event.password != null) {
               final saveResult = await saveUserSession(
-                SaveSessionParams(
-                  user: event.user!,
-                  password: event.password!,
-                ),
+                SaveSessionParams(user: event.user!, password: event.password!),
               );
               saveResult.fold(
-                (_) => debugPrint('⚠️ Session save failed after device authorization'),
-                (_) => debugPrint('💾 Session saved after device authorization'),
+                (_) => debugPrint(
+                  '⚠️ Session save failed after device authorization',
+                ),
+                (_) =>
+                    debugPrint('💾 Session saved after device authorization'),
               );
             }
             emit(DeviceRegistrationSuccess());
             add(LoadUserInfoEvent());
           } else {
-            emit(const DeviceRegistrationFailure(
-                'Su dispositivo no esta autorizado'));
+            emit(
+              const DeviceRegistrationFailure(
+                'Su dispositivo no esta autorizado',
+              ),
+            );
           }
         },
       );
     } else {
-      emit(const DeviceRegistrationFailure(
-          "Could not get device info for registration"));
+      emit(
+        const DeviceRegistrationFailure(
+          "Could not get device info for registration",
+        ),
+      );
     }
   }
 
   Future<void> _onLoadUserLocations(
-      LoadUserLocationsEvent event, Emitter<UserState> emit) async {
+    LoadUserLocationsEvent event,
+    Emitter<UserState> emit,
+  ) async {
     emit(UserLocationsLoading());
     final result = await getUserLocations(NoParams());
     bool success = false;
-    result.fold(
-      (failure) => emit(UserLocationsError(failure.message)),
-      (locations) {
-        this.locations = locations;
-        debugPrint('Locations loaded from API: ${locations.length}');
-        success = true;
-        emit(UserLocationsLoaded(locations: locations));
-      },
-    );
+    result.fold((failure) => emit(UserLocationsError(failure.message)), (
+      locations,
+    ) {
+      this.locations = locations;
+      debugPrint('Locations loaded from API: ${locations.length}');
+      success = true;
+      emit(UserLocationsLoaded(locations: locations));
+    });
     if (success) {
       try {
         locationsCount = await DataBaseSqlite().getUbicacionesCount();
@@ -328,20 +347,23 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   }
 
   Future<void> _onLoadUserNovelties(
-      LoadUserNoveltiesEvent event, Emitter<UserState> emit) async {
+    LoadUserNoveltiesEvent event,
+    Emitter<UserState> emit,
+  ) async {
     emit(UserNoveltiesLoading());
     final result = await getUserNovelties(NoParams());
-    result.fold(
-      (failure) => emit(UserNoveltiesError(failure.message)),
-      (novelties) {
-        this.novelties = novelties;
-        noveltiesCount = novelties.length;
-      },
-    );
+    result.fold((failure) => emit(UserNoveltiesError(failure.message)), (
+      novelties,
+    ) {
+      this.novelties = novelties;
+      noveltiesCount = novelties.length;
+    });
   }
 
   Future<void> _onLoadUserLocationsCount(
-      LoadUserLocationsCountEvent event, Emitter<UserState> emit) async {
+    LoadUserLocationsCountEvent event,
+    Emitter<UserState> emit,
+  ) async {
     try {
       locationsCount = await DataBaseSqlite().getUbicacionesCount();
       emit(LoadLocationsCountSuccess(locationsCount));
@@ -351,7 +373,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   }
 
   Future<void> _onLoadUserNoveltiesCount(
-      LoadUserNoveltiesCountEvent event, Emitter<UserState> emit) async {
+    LoadUserNoveltiesCountEvent event,
+    Emitter<UserState> emit,
+  ) async {
     try {
       noveltiesCount = await DataBaseSqlite().getNovedadesCount();
       emit(LoadNoveltiesCountSuccess(noveltiesCount));
@@ -361,7 +385,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   }
 
   Future<void> _onLoadWarehousesCount(
-      LoadWarehousesCountEvent event, Emitter<UserState> emit) async {
+    LoadWarehousesCountEvent event,
+    Emitter<UserState> emit,
+  ) async {
     try {
       warehousesCount = await DataBaseSqlite().getWarehousesCount();
       emit(LoadWarehousesCountSuccess(warehousesCount));
@@ -411,15 +437,13 @@ extension UserBlocHelpers on UserBloc {
     return [];
   }
 
-  List<Novedad> get novedades {
-    if (state is UserNoveltiesLoaded) {
-      return (state as UserNoveltiesLoaded).novelties;
-    }
-    if (state is UserLoaded) {
-      return (state as UserLoaded).novelties;
-    }
-    return [];
-  }
+  // Bug: ni _onLoadUserNovelties ni _onDownloadNovelties emiten
+  // UserNoveltiesLoaded (ese estado no se emite en ningún lado del bloc), y
+  // UserLoaded.novelties queda siempre vacío porque _onLoadUserInfo ya no
+  // pide novedades por red (ver comentario en _onLoadUserInfo). Los dos
+  // handlers de novedades sí actualizan el campo `novelties` del bloc, así
+  // que ese es el que hay que leer — no el state.
+  List<Novedad> get novedades => novelties;
 
   UserProfile? get configurations {
     if (state is UserLoaded) {
