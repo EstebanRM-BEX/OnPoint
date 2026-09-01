@@ -13,6 +13,7 @@ import 'package:wms_app/features/printing/presentation/widgets/modal_printers_li
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/lote_producto.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_claim.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
+import 'package:wms_app/features/recepcion_multiusuario/domain/usecases/fetch_lotes_producto_usecase.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/usecases/finish_claim_usecase.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/recepcion_product_dropdown_widget.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/select_novedad_dialog.dart';
@@ -81,9 +82,17 @@ class _RecepcionMultiusuarioScanProductScreenState
   // recepción individual).
   bool _productFieldOk = true;
   bool _loteIsOk = false;
+  // Flag de error visual (card roja) del gate de lote, mismo patrón que
+  // _productFieldOk.
+  bool _loteFieldOk = true;
   // Lote elegido/creado desde RecepcionMultiusuarioNewLoteScreen — cuando no
   // es null, reemplaza a claim.lotName como el lote "esperado" a confirmar.
   LoteProducto? _selectedLote;
+  // Lotes existentes del producto (GET /api/lotes/{productId}), cargados al
+  // entrar si el producto maneja lote — permiten validar el escaneo contra
+  // cualquier lote real del producto, no solo el que el claim trae
+  // preasignado (que puede venir vacío si todavía no se le asignó uno).
+  List<LoteProducto> _lotesDisponibles = [];
   // null mientras carga: el permiso vive en tbl_configurations, no queremos
   // leerlo como "false" (modo fijo, sin gate) por falta de datos.
   bool? _scanDestinationLocationReception;
@@ -155,12 +164,19 @@ class _RecepcionMultiusuarioScanProductScreenState
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _cargarConfiguracion();
+    _cargarLotesProducto();
     // No es parte de la cadena de foco secuencial (producto → lote →
     // destino → cantidad): el operario la llena cuando quiera, y al perder
     // foco solo se reevalúa a dónde sigue el flujo.
     _focusSegundaUnidad.addListener(() {
       if (!_focusSegundaUnidad.hasFocus && mounted) {
-        Future.microtask(_handleDependencies);
+        // addPostFrameCallback (no microtask): el campo que sigue en la cadena
+        // (producto → lote → destino → cantidad) recién queda "enabled" tras el
+        // rebuild de este setState — pedirle el foco antes de que ese rebuild
+        // ocurra no toma efecto y el escaneo siguiente se pierde.
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _handleDependencies(),
+        );
       }
     });
   }
@@ -178,7 +194,30 @@ class _RecepcionMultiusuarioScanProductScreenState
           config?.result?.result?.scanDestinationLocationReception == true;
       _hideExpectedQty = config?.result?.result?.hideExpectedQty == true;
     });
-    Future.microtask(_handleDependencies);
+    // addPostFrameCallback (no microtask): el campo que sigue en la cadena
+    // (producto → lote → destino → cantidad) recién queda "enabled" tras el
+    // rebuild de este setState — pedirle el foco antes de que ese rebuild
+    // ocurra no toma efecto y el escaneo siguiente se pierde.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _handleDependencies());
+  }
+
+  /// Trae los lotes existentes del producto (GET /api/lotes/{productId})
+  /// para poder validar el escaneo de lote contra cualquiera de ellos. Solo
+  /// aplica si el producto maneja lote; falla en silencio — si no llega a
+  /// cargar, el operario igual puede confirmar el lote preasignado del
+  /// claim o entrar a "buscar/crear lote" con la flecha.
+  Future<void> _cargarLotesProducto() async {
+    final productId = widget.claim.productId;
+    if (!_manejaLote || productId == null) return;
+
+    final result = await getIt<FetchLotesProductoUseCase>()(
+      FetchLotesProductoParams(productId: productId),
+    );
+    if (!mounted) return;
+    result.fold(
+      (failure) {},
+      (lotes) => setState(() => _lotesDisponibles = lotes),
+    );
   }
 
   @override
@@ -229,26 +268,50 @@ class _RecepcionMultiusuarioScanProductScreenState
   }
 
   void _showScanError(String message) {
-    _audioService.playErrorSound();
-    _vibrationService.vibrate();
+    _scanFeedback();
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// Solo sonido + vibración, sin SnackBar — para errores que ocurren
+  /// durante el escaneo continuo (código no listo aún / cantidad se pasa),
+  /// donde un mensaje en pantalla interrumpe más de lo que ayuda.
+  void _scanFeedback() {
+    _audioService.playErrorSound();
+    _vibrationService.vibrate();
+  }
+
+  /// Valida contra el código principal (claim.barcode) o cualquiera de los
+  /// códigos de paquete de `claim.productPacking` (`product_packing` de
+  /// POST /api/receipt/claim — ej. la caja de 5 del mismo producto): ambos
+  /// identifican al mismo producto, la cantidad que suma cada uno se decide
+  /// después en el paso de cantidad (_validateQuantityScan), no acá.
   void _validateProduct(String value) {
     final scan = value.trim().toLowerCase();
     _controllerProduct.clear();
-    if (scan.isNotEmpty && scan == widget.claim.barcode?.toLowerCase()) {
+    final coincideBarcodePrincipal =
+        scan == widget.claim.barcode?.toLowerCase();
+    final coincidePaquete = widget.claim.productPacking.any(
+      (p) => p.barcode?.toString().toLowerCase() == scan,
+    );
+
+    if (scan.isNotEmpty && (coincideBarcodePrincipal || coincidePaquete)) {
       setState(() {
         _productIsOk = true;
         _productFieldOk = true;
         _productValidatedAt = DateTime.now();
       });
-      Future.microtask(_handleDependencies);
+      // addPostFrameCallback (no microtask): el campo que sigue en la cadena
+      // (producto → lote → destino → cantidad) recién queda "enabled" tras el
+      // rebuild de este setState — pedirle el foco antes de que ese rebuild
+      // ocurra no toma efecto y el escaneo siguiente se pierde.
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _handleDependencies(),
+      );
     } else {
       setState(() => _productFieldOk = false);
-      _showScanError('El código no coincide con el producto');
+      _scanFeedback();
       Future.microtask(() => _focusProduct.requestFocus());
     }
   }
@@ -261,7 +324,11 @@ class _RecepcionMultiusuarioScanProductScreenState
       _productFieldOk = true;
       _productValidatedAt = DateTime.now();
     });
-    Future.microtask(_handleDependencies);
+    // addPostFrameCallback (no microtask): el campo que sigue en la cadena
+    // (producto → lote → destino → cantidad) recién queda "enabled" tras el
+    // rebuild de este setState — pedirle el foco antes de que ese rebuild
+    // ocurra no toma efecto y el escaneo siguiente se pierde.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _handleDependencies());
   }
 
   Future<void> _handleViewImage() async {
@@ -290,15 +357,55 @@ class _RecepcionMultiusuarioScanProductScreenState
     );
   }
 
+  /// Valida contra el lote preasignado del claim o, si no hay o no
+  /// coincide, contra cualquiera de [_lotesDisponibles] (los lotes reales
+  /// del producto) — necesario cuando el producto maneja lote pero el
+  /// claim todavía no trae uno asignado.
   void _validateLote(String value) {
     final scan = value.trim().toLowerCase();
     _controllerLote.clear();
+    if (scan.isEmpty) return;
+
     final loteName = _loteNombreEsperado?.toLowerCase() ?? '';
-    if (scan.isNotEmpty && loteName.isNotEmpty && scan == loteName) {
-      setState(() => _loteIsOk = true);
-      Future.microtask(_handleDependencies);
+    if (loteName.isNotEmpty && scan == loteName) {
+      setState(() {
+        _loteIsOk = true;
+        _loteFieldOk = true;
+      });
+      // addPostFrameCallback (no microtask): el campo que sigue en la cadena
+      // (producto → lote → destino → cantidad) recién queda "enabled" tras el
+      // rebuild de este setState — pedirle el foco antes de que ese rebuild
+      // ocurra no toma efecto y el escaneo siguiente se pierde.
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _handleDependencies(),
+      );
+      return;
+    }
+
+    LoteProducto? match;
+    for (final lote in _lotesDisponibles) {
+      if ((lote.name ?? '').toLowerCase() == scan) {
+        match = lote;
+        break;
+      }
+    }
+
+    if (match != null) {
+      setState(() {
+        _selectedLote = match;
+        _loteIsOk = true;
+        _loteFieldOk = true;
+      });
+      // addPostFrameCallback (no microtask): el campo que sigue en la cadena
+      // (producto → lote → destino → cantidad) recién queda "enabled" tras el
+      // rebuild de este setState — pedirle el foco antes de que ese rebuild
+      // ocurra no toma efecto y el escaneo siguiente se pierde.
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _handleDependencies(),
+      );
     } else {
-      _showScanError('El lote no coincide');
+      setState(() => _loteFieldOk = false);
+      _scanFeedback();
       Future.microtask(() => _focusLote.requestFocus());
     }
   }
@@ -317,7 +424,11 @@ class _RecepcionMultiusuarioScanProductScreenState
       _selectedLote = result;
       _loteIsOk = true;
     });
-    Future.microtask(_handleDependencies);
+    // addPostFrameCallback (no microtask): el campo que sigue en la cadena
+    // (producto → lote → destino → cantidad) recién queda "enabled" tras el
+    // rebuild de este setState — pedirle el foco antes de que ese rebuild
+    // ocurra no toma efecto y el escaneo siguiente se pierde.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _handleDependencies());
   }
 
   void _validateLocationDest(String value) {
@@ -332,10 +443,16 @@ class _RecepcionMultiusuarioScanProductScreenState
         _locationDestIsOk = true;
         _locationDestFieldOk = true;
       });
-      Future.microtask(_handleDependencies);
+      // addPostFrameCallback (no microtask): el campo que sigue en la cadena
+      // (producto → lote → destino → cantidad) recién queda "enabled" tras el
+      // rebuild de este setState — pedirle el foco antes de que ese rebuild
+      // ocurra no toma efecto y el escaneo siguiente se pierde.
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _handleDependencies(),
+      );
     } else {
       setState(() => _locationDestFieldOk = false);
-      _showScanError('La ubicación no coincide');
+      _scanFeedback();
       Future.microtask(() => _focusLocationDest.requestFocus());
     }
   }
@@ -347,7 +464,6 @@ class _RecepcionMultiusuarioScanProductScreenState
   /// foco: producto → lote → destino).
   Future<void> _openLocationDestScreen() async {
     if (!_productIsOk) {
-      // _showScanError('Primero debes validar el producto');
       return;
     }
 
@@ -361,7 +477,11 @@ class _RecepcionMultiusuarioScanProductScreenState
       _locationDestIsOk = true;
       _locationDestFieldOk = true;
     });
-    Future.microtask(_handleDependencies);
+    // addPostFrameCallback (no microtask): el campo que sigue en la cadena
+    // (producto → lote → destino → cantidad) recién queda "enabled" tras el
+    // rebuild de este setState — pedirle el foco antes de que ese rebuild
+    // ocurra no toma efecto y el escaneo siguiente se pierde.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _handleDependencies());
   }
 
   /// true si ya se puede escanear/escribir la cantidad: producto validado,
@@ -395,7 +515,7 @@ class _RecepcionMultiusuarioScanProductScreenState
   void _validateQuantityScan(String value) {
     _controllerQuantity.clear();
     if (!_puedeUsarCantidad) {
-      _showScanError(_cantidadBloqueadaMensaje);
+      _scanFeedback();
       return;
     }
 
@@ -422,17 +542,30 @@ class _RecepcionMultiusuarioScanProductScreenState
       return;
     }
 
-    _showScanError('El código no coincide con el producto ni un paquete');
+    _scanFeedback();
     Future.microtask(() => _focusQuantity.requestFocus());
   }
 
   void _addQuantity(double delta) {
     final nueva = _quantitySelected + delta;
     if (nueva > _pendiente) {
-      _showScanError('La cantidad supera lo pendiente de este producto');
-    } else {
-      setState(() => _quantitySelected = nueva);
+      _scanFeedback();
+      Future.microtask(() => _focusQuantity.requestFocus());
+      return;
     }
+
+    setState(() => _quantitySelected = nueva);
+
+    // Al completar exactamente lo pendiente (escaneando el código principal
+    // -suma 1- o uno de paquete -suma su cantidad-) se envía solo, sin
+    // esperar a que el operario toque "APLICAR CANTIDAD". Si falta algo más
+    // (ej. segunda unidad) _handleAplicarCantidad avisa y no envía; el
+    // operario completa eso y aplica manual.
+    if (nueva == _pendiente) {
+      _handleAplicarCantidad();
+      return;
+    }
+
     Future.microtask(() => _focusQuantity.requestFocus());
   }
 
@@ -532,7 +665,10 @@ class _RecepcionMultiusuarioScanProductScreenState
         lotId: lotId,
         ubicacionDestino: ubicacionDestino,
         timeLine: timeLine,
-        observation: novedad ?? '',
+        // null acá significa que se envió la cantidad completa (no pasó
+        // por el diálogo de novedad, que solo aparece si cantidad <
+        // pendiente) — igual se manda una observación fija en vez de vacía.
+        observation: novedad ?? 'Sin novedad',
       ),
     );
 
@@ -663,7 +799,9 @@ class _RecepcionMultiusuarioScanProductScreenState
                         locationDestIsOk: false,
                         currentProductId: claim.productName ?? '',
                         barcode: claim.barcode,
-                        lotId: claim.lotName,
+                        // El lote y su caducidad ya se muestran en su propia
+                        // card más abajo — repetirlos acá es redundante.
+                        lotId: '',
                         expireDate: claim.fechaVencimiento,
                         size: size,
                         onValidateProduct: _validateProduct,
@@ -676,9 +814,7 @@ class _RecepcionMultiusuarioScanProductScreenState
                           onSelected: _selectProductManually,
                         ),
                         origin: null,
-                        expiryWidget: ExpirationBadgeWidget(
-                          expirationDate: claim.fechaVencimiento,
-                        ),
+                        expiryWidget: const SizedBox.shrink(),
                         listOfBarcodes: [
                           ...claim.otherBarcodes,
                           ...claim.productPacking,
@@ -689,66 +825,110 @@ class _RecepcionMultiusuarioScanProductScreenState
                       // lote (solo si el producto maneja lote)
                       if (_manejaLote)
                         Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          child: Card(
-                            color: !_productIsOk
-                                ? Colors.grey[200]
-                                : _loteIsOk
-                                ? Colors.green[100]
-                                : Colors.grey[300],
-                            elevation: 5,
-                            child: Padding(
-                              padding: const EdgeInsets.all(10),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Row(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
+                                child: Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    color: _loteIsOk ? green : yellow,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                              Card(
+                                color: !_loteFieldOk
+                                    ? Colors.red[200]
+                                    : !_productIsOk
+                                    ? Colors.grey[200]
+                                    : _loteIsOk
+                                    ? Colors.green[100]
+                                    : Colors.grey[300],
+                                elevation: 5,
+                                child: Container(
+                                  width: size.width * 0.85,
+                                  padding: const EdgeInsets.only(
+                                    left: 10,
+                                    right: 10,
+                                    bottom: 5,
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text(
-                                        'Lote del producto',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: primaryColorApp,
-                                        ),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'Lote del producto',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: primaryColorApp,
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: SvgPicture.asset(
+                                              color: primaryColorApp,
+                                              "assets/icons/barcode.svg",
+                                              height: 20,
+                                              width: 20,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            onPressed: _openLoteScreen,
+                                            icon: Icon(
+                                              Icons.arrow_forward_ios,
+                                              color: primaryColorApp,
+                                              size: 20,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      const Spacer(),
-                                      SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: SvgPicture.asset(
-                                          color: primaryColorApp,
-                                          "assets/icons/barcode.svg",
-                                          height: 20,
-                                          width: 20,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        onPressed: _openLoteScreen,
-                                        icon: Icon(
-                                          Icons.arrow_forward_ios,
-                                          color: primaryColorApp,
-                                          size: 20,
-                                        ),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: [
+                                          LoteScannerWidget(
+                                            controller: _controllerLote,
+                                            focusNode: _focusLote,
+                                            enabled: _productIsOk && !_loteIsOk,
+                                            hintText:
+                                                _loteNombreEsperado
+                                                        ?.isNotEmpty ==
+                                                    true
+                                                ? _loteNombreEsperado!
+                                                : 'Esperando escaneo',
+                                            onValidateLote: _validateLote,
+                                          ),
+                                          // Solo se muestra la caducidad del
+                                          // lote ya confirmado — antes de
+                                          // eso no hay un lote real que
+                                          // fechar todavía.
+                                          ExpirationBadgeWidget(
+                                            expirationDate: _loteIsOk
+                                                ? (_selectedLote
+                                                          ?.expirationDate ??
+                                                      widget
+                                                          .claim
+                                                          .fechaVencimiento)
+                                                : null,
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
-                                  LoteScannerWidget(
-                                    controller: _controllerLote,
-                                    focusNode: _focusLote,
-                                    enabled: _productIsOk && !_loteIsOk,
-                                    hintText:
-                                        _loteNombreEsperado?.isNotEmpty == true
-                                        ? _loteNombreEsperado!
-                                        : 'Esperando escaneo',
-                                    onValidateLote: _validateLote,
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
 

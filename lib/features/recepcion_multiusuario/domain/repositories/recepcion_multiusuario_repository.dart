@@ -83,4 +83,12 @@ abstract class RecepcionMultiusuarioRepository {
     required int claimId,
     required String observacion,
   });
+
+  /// Estado actualizado de la sesión de [pickingId]
+  /// (POST /api/receipt/picking/{pickingId}) — refresca progress_percent,
+  /// pending_tasks, etc. en el tab "Detalle".
+  Future<Either<Failure, RecepcionSession>> fetchSessionDetail({
+    required int pickingId,
+    required bool isLoadinDialog,
+  });
 }

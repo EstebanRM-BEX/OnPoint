@@ -12,6 +12,7 @@ import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/dia
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/recepcion_claim_card_widget.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/shared/widgets/shimmer_list_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
@@ -236,7 +237,7 @@ class _RecepcionMultiusuarioDetailTabMisAsignadosState
                   builder: (context, state) {
                     if (state is RecepcionMultiusuarioMyClaimsLoading ||
                         state is RecepcionMultiusuarioMyClaimsInitial) {
-                      return const Center(child: CircularProgressIndicator());
+                      return const ShimmerListWidget();
                     }
 
                     if (state is RecepcionMultiusuarioMyClaimsError) {

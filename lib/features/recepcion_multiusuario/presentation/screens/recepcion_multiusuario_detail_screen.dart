@@ -35,6 +35,10 @@ class _RecepcionMultiusuarioDetailScreenState
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
+  // Evita refetchear de más mientras el TabController todavía está
+  // resolviendo a qué índice se asienta (ver _onTabChanged).
+  int? _lastFetchedTabIndex;
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +47,8 @@ class _RecepcionMultiusuarioDetailScreenState
       vsync: this,
       initialIndex: widget.initialTabIndex,
     );
+    _tabController.addListener(_onTabChanged);
+    _lastFetchedTabIndex = widget.initialTabIndex;
 
     final sessionId = widget.session.sessionId;
     if (sessionId != null) {
@@ -53,7 +59,10 @@ class _RecepcionMultiusuarioDetailScreenState
       // Dos fetches porque "Por hacer" y "Terminados" necesitan datos
       // DISTINTOS del mismo endpoint (verification: false vs true — ver
       // RecepcionMultiusuarioPoolBloc) y sus dos globitos de conteo están
-      // visibles a la vez en este AppBar.
+      // visibles a la vez en este AppBar (por eso se piden los 3 juntos acá,
+      // sin importar con qué tab se entra — _onTabChanged de abajo se
+      // encarga de refrescar cada uno de nuevo cuando el operario vuelve a
+      // entrar a su tab).
       context.read<RecepcionMultiusuarioPoolBloc>().add(
         FetchRecepcionPoolEvent(sessionId, verification: false),
       );
@@ -73,8 +82,44 @@ class _RecepcionMultiusuarioDetailScreenState
     context.read<UserBloc>().add(LoadUserNoveltiesEvent());
   }
 
+  /// Refresca la data del tab al que el operario acaba de entrar — "Por
+  /// hacer"/"Terminados"/"Mis asignados" son datos en vivo, pueden haber
+  /// cambiado desde la última vez (otro operario tomó/terminó un producto)
+  /// mientras se estaba en otro tab. "Detalle" (índice 0) ya se refresca
+  /// solo, ver RecepcionMultiusuarioDetailTabDetalle.
+  void _onTabChanged() {
+    // Se dispara varias veces durante la animación/el swipe — solo importa
+    // el índice en el que se asienta.
+    if (_tabController.indexIsChanging) return;
+    final index = _tabController.index;
+    if (index == _lastFetchedTabIndex) return;
+    _lastFetchedTabIndex = index;
+
+    final sessionId = widget.session.sessionId;
+    if (sessionId == null) return;
+
+    switch (index) {
+      case 1: // Por hacer
+        context.read<RecepcionMultiusuarioPoolBloc>().add(
+          FetchRecepcionPoolEvent(sessionId, verification: false),
+        );
+        break;
+      case 2: // Mis asignados
+        context.read<RecepcionMultiusuarioMyClaimsBloc>().add(
+          FetchMyClaimsEvent(sessionId),
+        );
+        break;
+      case 3: // Terminados
+        context.read<RecepcionMultiusuarioPoolBloc>().add(
+          FetchRecepcionPoolEvent(sessionId, verification: true),
+        );
+        break;
+    }
+  }
+
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
   }

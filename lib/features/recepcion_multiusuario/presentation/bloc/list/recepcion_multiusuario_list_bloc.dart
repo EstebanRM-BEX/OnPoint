@@ -86,8 +86,12 @@ class RecepcionMultiusuarioListBloc
       _sesionesFiltradas = _todasLasSesiones.where((session) {
         final name = _normalizeText(session.name ?? '');
         final pickingName = _normalizeText(session.pickingName ?? '');
+        final origin = _normalizeText(session.origin ?? '');
+        final proveedor = _normalizeText(session.proveedor ?? '');
         return name.contains(normalizedQuery) ||
-            pickingName.contains(normalizedQuery);
+            pickingName.contains(normalizedQuery) ||
+            origin.contains(normalizedQuery) ||
+            proveedor.contains(normalizedQuery);
       }).toList();
     }
 

@@ -15,6 +15,7 @@ import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/dia
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/recepcion_pool_item_card_widget.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/shared/widgets/shimmer_list_widget.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
@@ -157,6 +158,10 @@ class _RecepcionMultiusuarioDetailTabPorHacerState
     }
   }
 
+  /// A diferencia de la búsqueda manual (que solo filtra la lista), un
+  /// escaneo entra directo al primer producto del pool cuyo barcode o
+  /// código coincida — es el mismo gesto que tocar la card, con su diálogo
+  /// de confirmación antes de reclamar.
   void _handleScan(String value, BuildContext context) {
     final scan = value.trim().toLowerCase();
     _scanController.clear();
@@ -164,18 +169,17 @@ class _RecepcionMultiusuarioDetailTabPorHacerState
 
     final items = context.read<RecepcionMultiusuarioPoolBloc>().poolItems;
 
-    final match = items.any(
-      (i) =>
-          (i.barcode?.toLowerCase() ?? '') == scan ||
-          (i.defaultCode?.toLowerCase() ?? '') == scan,
-    );
+    RecepcionPoolItem? match;
+    for (final item in items) {
+      if ((item.barcode?.toLowerCase() ?? '') == scan ||
+          (item.defaultCode?.toLowerCase() ?? '') == scan) {
+        match = item;
+        break;
+      }
+    }
 
-    if (match) {
-      setState(() {
-        _searchQuery = value.trim();
-        _searchController.text = value.trim();
-      });
-      Future.microtask(() => _scanFocusNode.requestFocus());
+    if (match != null) {
+      _handleClaimTap(context, match);
     } else {
       _showScanError();
     }
@@ -186,7 +190,7 @@ class _RecepcionMultiusuarioDetailTabPorHacerState
     _vibrationService.vibrate();
     Future.microtask(() => _scanFocusNode.requestFocus());
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Producto no encontrado en el pool')),
+      const SnackBar(content: Text('Producto no encontrado o no disponible')),
     );
   }
 
@@ -276,7 +280,7 @@ class _RecepcionMultiusuarioDetailTabPorHacerState
                         state is RecepcionMultiusuarioPoolDbLoading ||
                         (state is RecepcionMultiusuarioPoolLoading &&
                             !state.verification)) {
-                      return const Center(child: CircularProgressIndicator());
+                      return const ShimmerListWidget();
                     }
 
                     if (state is RecepcionMultiusuarioPoolError &&

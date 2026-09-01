@@ -296,6 +296,8 @@ import 'features/recepcion_multiusuario/domain/usecases/fetch_my_claims_usecase.
     as _i546;
 import 'features/recepcion_multiusuario/domain/usecases/fetch_recepcion_pool_usecase.dart'
     as _i102;
+import 'features/recepcion_multiusuario/domain/usecases/fetch_recepcion_session_detail_usecase.dart'
+    as _i993;
 import 'features/recepcion_multiusuario/domain/usecases/fetch_recepcion_sessions_usecase.dart'
     as _i874;
 import 'features/recepcion_multiusuario/domain/usecases/finish_claim_usecase.dart'
@@ -781,6 +783,11 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i102.FetchRecepcionPoolUseCase>(
       () => _i102.FetchRecepcionPoolUseCase(
+        gh<_i300.RecepcionMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i993.FetchRecepcionSessionDetailUseCase>(
+      () => _i993.FetchRecepcionSessionDetailUseCase(
         gh<_i300.RecepcionMultiusuarioRepository>(),
       ),
     );

@@ -89,6 +89,9 @@ class RecepcionClaim {
     this.productPacking = const [],
   });
 
-  /// true si este producto maneja lote (lot_id llega en `false` cuando no).
-  bool get manejaLote => lotId != null;
+  /// true si este producto maneja lote. `lot_id` no sirve para esto: llega
+  /// null también cuando SÍ maneja lote pero todavía no se le asignó uno
+  /// (lote pendiente de escanear/crear) — lo que indica si maneja lote es
+  /// `product_tracking`: "lot" maneja, "none" no.
+  bool get manejaLote => productTracking == 'lot';
 }

@@ -275,4 +275,28 @@ class RecepcionMultiusuarioRepositoryImpl
       return Left(ServerFailure('Error al deshacer la recepción: $e'));
     }
   }
+
+  @override
+  Future<Either<Failure, RecepcionSession>> fetchSessionDetail({
+    required int pickingId,
+    required bool isLoadinDialog,
+  }) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No hay conexión a Internet'));
+    }
+
+    try {
+      final session = await remoteDataSource.fetchSessionDetail(
+        pickingId: pickingId,
+        isLoadinDialog: isLoadinDialog,
+      );
+      return Right(session);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(
+        ServerFailure('Error al obtener el detalle de la recepción: $e'),
+      );
+    }
+  }
 }

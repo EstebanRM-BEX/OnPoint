@@ -11,6 +11,7 @@ import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcio
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/lote/recepcion_multiusuario_lote_bloc.dart';
 import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
@@ -41,7 +42,7 @@ class RecepcionMultiusuarioNewLoteScreen extends StatefulWidget {
 
 class _RecepcionMultiusuarioNewLoteScreenState
     extends State<RecepcionMultiusuarioNewLoteScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, LoadingDialogMixin {
   bool _viewList = true;
   DateTime? _selectedDate;
   int? _selectedIndex;
@@ -215,6 +216,13 @@ class _RecepcionMultiusuarioNewLoteScreenState
       RecepcionMultiusuarioLoteState
     >(
       listener: (context, state) {
+        if (state is CreateLoteLoading) {
+          showLoadingDialog('Creando lote...');
+        } else if (state is RecepcionMultiusuarioLoteLoading) {
+          showLoadingDialog('Cargando lotes...');
+        } else {
+          hideLoadingDialog();
+        }
         if (state is CreateLoteSuccess) {
           Navigator.pop(context, state.lote);
         }
@@ -308,6 +316,7 @@ class _RecepcionMultiusuarioNewLoteScreenState
                             ),
                           ),
                           hintText: 'Buscar lote',
+                          hintStyle: TextStyle(color: grey, fontSize: 14),
                           border: InputBorder.none,
                         ),
                         onChanged: (value) =>
@@ -434,8 +443,10 @@ class _RecepcionMultiusuarioNewLoteScreenState
       RecepcionMultiusuarioLoteState
     >(
       builder: (context, state) {
-        if (state is RecepcionMultiusuarioLoteLoading ||
-            state is RecepcionMultiusuarioLoteInitial) {
+        // El loading de la carga (RecepcionMultiusuarioLoteLoading) ya lo
+        // cubre el diálogo del BlocListener — acá solo el flash inicial
+        // antes de que se procese el FetchLotesEvent.
+        if (state is RecepcionMultiusuarioLoteInitial) {
           return const Center(child: CircularProgressIndicator());
         }
         if (state is RecepcionMultiusuarioLoteError) {

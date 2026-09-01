@@ -90,6 +90,19 @@ abstract class RecepcionMultiusuarioRemoteDataSource {
   /// terminada (state "done"), liberando la cantidad para que vuelva a
   /// quedar disponible. Requiere [observacion] con el motivo.
   Future<void> undoClaim({required int claimId, required String observacion});
+
+  /// POST /api/receipt/picking/{pickingId}: estado actualizado de la
+  /// sesión (progress_percent, pending_tasks, etc.) — se llama al entrar
+  /// al tab "Detalle" para refrescar lo que ya venía de /receipt/sessions
+  /// (que puede estar desactualizado si otro operario avanzó la recepción
+  /// mientras tanto). El encabezado de `data` tiene exactamente las mismas
+  /// claves que un elemento de /receipt/sessions, así que se reusa
+  /// [RecepcionSessionModel] — se ignoran `tasks`/`my_claims`/`pool`, esos
+  /// arrays ya los cubren sus propios tabs con sus propios fetches.
+  Future<RecepcionSessionModel> fetchSessionDetail({
+    required int pickingId,
+    required bool isLoadinDialog,
+  });
 }
 
 @LazySingleton(as: RecepcionMultiusuarioRemoteDataSource)
@@ -398,5 +411,34 @@ class RecepcionMultiusuarioRemoteDataSourceImpl
         result?['message'] ?? 'No se pudo deshacer la recepción',
       );
     }
+  }
+
+  @override
+  Future<RecepcionSessionModel> fetchSessionDetail({
+    required int pickingId,
+    required bool isLoadinDialog,
+  }) async {
+    final response = await ApiRequestService().postPacking(
+      endpoint: 'receipt/picking/$pickingId',
+      body: const {"params": {}},
+      isLoadinDialog: isLoadinDialog,
+    );
+
+    if (response.statusCode >= 400) {
+      throw ServerException('Error de conexión (${response.statusCode})');
+    }
+
+    final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+    final result = jsonResponse['result'] as Map<String, dynamic>?;
+
+    if (result == null || result['status'] != 'success') {
+      throw ServerException(
+        result?['message'] ?? 'Error al obtener el detalle de la recepción',
+      );
+    }
+
+    return RecepcionSessionModel.fromJson(
+      result['data'] as Map<String, dynamic>? ?? {},
+    );
   }
 }

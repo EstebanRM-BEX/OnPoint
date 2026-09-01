@@ -6,6 +6,7 @@ import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcio
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_pool_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/recepcion_terminado_card_widget.dart';
+import 'package:wms_app/shared/widgets/shimmer_list_widget.dart';
 
 class _ProductoTerminado {
   const _ProductoTerminado(this.item, this.observaciones);
@@ -71,7 +72,7 @@ class RecepcionMultiusuarioDetailTabTerminados extends StatelessWidget {
                   if (state is RecepcionMultiusuarioPoolInitial ||
                       (state is RecepcionMultiusuarioPoolLoading &&
                           state.verification)) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const ShimmerListWidget();
                   }
 
                   if (state is RecepcionMultiusuarioPoolError &&

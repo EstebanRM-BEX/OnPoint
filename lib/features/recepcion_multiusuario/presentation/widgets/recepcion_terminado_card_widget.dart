@@ -146,7 +146,7 @@ class RecepcionTerminadoCardWidget extends StatelessWidget {
                 label: 'Por hacer:',
                 value: '${item.qtyAvailable ?? 0} ${item.uom ?? ''}',
               ),
-              _buildNovedadSummary(),
+              // _buildNovedadSummary(),
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(

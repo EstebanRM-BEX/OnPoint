@@ -4,6 +4,7 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/location_dest/recepcion_multiusuario_location_dest_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 
@@ -26,7 +27,7 @@ class RecepcionMultiusuarioLocationDestScreen extends StatefulWidget {
 
 class _RecepcionMultiusuarioLocationDestScreenState
     extends State<RecepcionMultiusuarioLocationDestScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, LoadingDialogMixin {
   int? _selectedIndex;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -62,233 +63,254 @@ class _RecepcionMultiusuarioLocationDestScreenState
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    return Scaffold(
-      backgroundColor: primaryColorApp,
-      body: SafeArea(
-        child: Container(
-          color: white,
-          width: size.width,
-          height: size.height,
-          child: Column(
-            children: [
-              const _Header(),
-              const SizedBox(height: 5),
-              BlocBuilder<
-                RecepcionMultiusuarioLocationDestBloc,
-                RecepcionMultiusuarioLocationDestState
-              >(
-                builder: (context, state) {
-                  final almacen = context
-                      .read<RecepcionMultiusuarioLocationDestBloc>()
-                      .selectedAlmacen;
-                  return Text(
-                    almacen == null || almacen.isEmpty
-                        ? 'Ubicaciones de todos los almacenes'
-                        : 'Ubicaciones del almacén: $almacen',
-                    style: const TextStyle(
-                      color: black,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Card(
-                  color: white,
-                  elevation: 3,
-                  child: TextFormField(
-                    controller: _searchController,
-                    focusNode: _searchFocusNode,
-                    style: const TextStyle(color: black, fontSize: 14),
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(
-                        Icons.search,
-                        color: grey,
-                        size: 20,
-                      ),
-                      suffixIcon: IconButton(
-                        onPressed: () {
-                          _searchController.clear();
-                          context
-                              .read<RecepcionMultiusuarioLocationDestBloc>()
-                              .add(const SearchUbicacionDestEvent(''));
-                          FocusScope.of(context).unfocus();
-                        },
-                        icon: const Icon(Icons.close, color: grey, size: 20),
-                      ),
-                      hintText: 'Buscar ubicación',
-                      hintStyle: const TextStyle(
-                        color: Colors.grey,
+    return BlocListener<
+      RecepcionMultiusuarioLocationDestBloc,
+      RecepcionMultiusuarioLocationDestState
+    >(
+      listener: (context, state) {
+        if (state is RecepcionMultiusuarioLocationDestLoading) {
+          showLoadingDialog('Cargando ubicaciones...');
+        } else {
+          hideLoadingDialog();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: primaryColorApp,
+        body: SafeArea(
+          child: Container(
+            color: white,
+            width: size.width,
+            height: size.height,
+            child: Column(
+              children: [
+                const _Header(),
+                const SizedBox(height: 5),
+                BlocBuilder<
+                  RecepcionMultiusuarioLocationDestBloc,
+                  RecepcionMultiusuarioLocationDestState
+                >(
+                  builder: (context, state) {
+                    final almacen = context
+                        .read<RecepcionMultiusuarioLocationDestBloc>()
+                        .selectedAlmacen;
+                    return Text(
+                      almacen == null || almacen.isEmpty
+                          ? 'Ubicaciones de todos los almacenes'
+                          : 'Ubicaciones del almacén: $almacen',
+                      style: const TextStyle(
+                        color: black,
                         fontSize: 14,
+                        fontWeight: FontWeight.w500,
                       ),
-                      border: InputBorder.none,
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Card(
+                    color: white,
+                    elevation: 3,
+                    child: TextFormField(
+                      controller: _searchController,
+                      focusNode: _searchFocusNode,
+                      style: const TextStyle(color: black, fontSize: 14),
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: grey,
+                          size: 20,
+                        ),
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            _searchController.clear();
+                            context
+                                .read<RecepcionMultiusuarioLocationDestBloc>()
+                                .add(const SearchUbicacionDestEvent(''));
+                            FocusScope.of(context).unfocus();
+                          },
+                          icon: const Icon(Icons.close, color: grey, size: 20),
+                        ),
+                        hintText: 'Buscar ubicación',
+                        hintStyle: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 14,
+                        ),
+                        border: InputBorder.none,
+                      ),
+                      onChanged: (value) {
+                        context
+                            .read<RecepcionMultiusuarioLocationDestBloc>()
+                            .add(SearchUbicacionDestEvent(value));
+                      },
                     ),
-                    onChanged: (value) {
-                      context.read<RecepcionMultiusuarioLocationDestBloc>().add(
-                        SearchUbicacionDestEvent(value),
-                      );
-                    },
                   ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Expanded(
-                child:
-                    BlocBuilder<
-                      RecepcionMultiusuarioLocationDestBloc,
-                      RecepcionMultiusuarioLocationDestState
-                    >(
-                      builder: (context, state) {
-                        if (state is RecepcionMultiusuarioLocationDestLoading ||
-                            state is RecepcionMultiusuarioLocationDestInitial) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-                        if (state is RecepcionMultiusuarioLocationDestError) {
-                          return Center(
-                            child: Text(
-                              state.message,
-                              style: const TextStyle(color: red, fontSize: 13),
-                            ),
-                          );
-                        }
-
-                        final ubicaciones =
-                            state is RecepcionMultiusuarioLocationDestLoaded
-                            ? state.ubicaciones
-                            : const <ResultUbicaciones>[];
-
-                        if (ubicaciones.isEmpty) {
-                          return const Center(
-                            child: Text(
-                              'No se encontraron ubicaciones',
-                              style: TextStyle(fontSize: 13, color: grey),
-                            ),
-                          );
-                        }
-
-                        return ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          itemCount: ubicaciones.length,
-                          itemBuilder: (context, index) {
-                            final isSelected = _selectedIndex == index;
-                            final ubicacion = ubicaciones[index];
-                            final sinBarcode =
-                                ubicacion.barcode == null ||
-                                ubicacion.barcode == '' ||
-                                ubicacion.barcode == 'false';
-
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: GestureDetector(
-                                onTap: () => setState(
-                                  () => _selectedIndex = isSelected
-                                      ? null
-                                      : index,
-                                ),
-                                child: Card(
-                                  elevation: 3,
-                                  color: isSelected ? Colors.green[100] : white,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 6,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            const Text(
-                                              'Nombre: ',
-                                              style: TextStyle(
-                                                color: black,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                            Text(
-                                              ubicacion.name ?? '',
-                                              style: TextStyle(
-                                                color: primaryColorApp,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Row(
-                                          children: [
-                                            const Text(
-                                              'Barcode: ',
-                                              style: TextStyle(
-                                                color: black,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 5),
-                                            Text(
-                                              sinBarcode
-                                                  ? 'Sin barcode'
-                                                  : ubicacion.barcode ?? '',
-                                              style: TextStyle(
-                                                color: sinBarcode
-                                                    ? red
-                                                    : primaryColorApp,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child:
+                      BlocBuilder<
+                        RecepcionMultiusuarioLocationDestBloc,
+                        RecepcionMultiusuarioLocationDestState
+                      >(
+                        builder: (context, state) {
+                          if (state
+                                  is RecepcionMultiusuarioLocationDestLoading ||
+                              state
+                                  is RecepcionMultiusuarioLocationDestInitial) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                          if (state is RecepcionMultiusuarioLocationDestError) {
+                            return Center(
+                              child: Text(
+                                state.message,
+                                style: const TextStyle(
+                                  color: red,
+                                  fontSize: 13,
                                 ),
                               ),
                             );
-                          },
+                          }
+
+                          final ubicaciones =
+                              state is RecepcionMultiusuarioLocationDestLoaded
+                              ? state.ubicaciones
+                              : const <ResultUbicaciones>[];
+
+                          if (ubicaciones.isEmpty) {
+                            return const Center(
+                              child: Text(
+                                'No se encontraron ubicaciones',
+                                style: TextStyle(fontSize: 13, color: grey),
+                              ),
+                            );
+                          }
+
+                          return ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            itemCount: ubicaciones.length,
+                            itemBuilder: (context, index) {
+                              final isSelected = _selectedIndex == index;
+                              final ubicacion = ubicaciones[index];
+                              final sinBarcode =
+                                  ubicacion.barcode == null ||
+                                  ubicacion.barcode == '' ||
+                                  ubicacion.barcode == 'false';
+
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 4,
+                                ),
+                                child: GestureDetector(
+                                  onTap: () => setState(
+                                    () => _selectedIndex = isSelected
+                                        ? null
+                                        : index,
+                                  ),
+                                  child: Card(
+                                    elevation: 3,
+                                    color: isSelected
+                                        ? Colors.green[100]
+                                        : white,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              const Text(
+                                                'Nombre: ',
+                                                style: TextStyle(
+                                                  color: black,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                              Text(
+                                                ubicacion.name ?? '',
+                                                style: TextStyle(
+                                                  color: primaryColorApp,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              const Text(
+                                                'Barcode: ',
+                                                style: TextStyle(
+                                                  color: black,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 5),
+                                              Text(
+                                                sinBarcode
+                                                    ? 'Sin barcode'
+                                                    : ubicacion.barcode ?? '',
+                                                style: TextStyle(
+                                                  color: sinBarcode
+                                                      ? red
+                                                      : primaryColorApp,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                ),
+                const SizedBox(height: 10),
+                if (_selectedIndex != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final state = context
+                            .read<RecepcionMultiusuarioLocationDestBloc>()
+                            .state;
+                        if (state is! RecepcionMultiusuarioLocationDestLoaded) {
+                          return;
+                        }
+                        if (_selectedIndex! >= state.ubicaciones.length) return;
+                        Navigator.pop(
+                          context,
+                          state.ubicaciones[_selectedIndex!],
                         );
                       },
-                    ),
-              ),
-              const SizedBox(height: 10),
-              if (_selectedIndex != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final state = context
-                          .read<RecepcionMultiusuarioLocationDestBloc>()
-                          .state;
-                      if (state is! RecepcionMultiusuarioLocationDestLoaded) {
-                        return;
-                      }
-                      if (_selectedIndex! >= state.ubicaciones.length) return;
-                      Navigator.pop(
-                        context,
-                        state.ubicaciones[_selectedIndex!],
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColorApp,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColorApp,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        minimumSize: const Size(double.infinity, 40),
                       ),
-                      minimumSize: const Size(double.infinity, 40),
-                    ),
-                    child: const Text(
-                      'Seleccionar',
-                      style: TextStyle(color: white),
+                      child: const Text(
+                        'Seleccionar',
+                        style: TextStyle(color: white),
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
