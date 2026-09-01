@@ -10,6 +10,7 @@ import 'package:wms_app/features/recepcion_multiusuario/domain/entities/lote_pro
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_claim.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/lote/recepcion_multiusuario_lote_bloc.dart';
+import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
@@ -39,7 +40,8 @@ class RecepcionMultiusuarioNewLoteScreen extends StatefulWidget {
 }
 
 class _RecepcionMultiusuarioNewLoteScreenState
-    extends State<RecepcionMultiusuarioNewLoteScreen> {
+    extends State<RecepcionMultiusuarioNewLoteScreen>
+    with WidgetsBindingObserver {
   bool _viewList = true;
   DateTime? _selectedDate;
   int? _selectedIndex;
@@ -48,6 +50,20 @@ class _RecepcionMultiusuarioNewLoteScreenState
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _nombreLoteController = TextEditingController();
   final TextEditingController _dateLoteController = TextEditingController();
+
+  final FocusNode _searchFocusNode = FocusNode();
+  final FocusNode _nombreLoteFocusNode = FocusNode();
+
+  // Watchdog: reabre el teclado si el IME del PDA (Zebra/Urovo/Chainway) lo
+  // cierra solo mientras alguno de estos campos conserva el foco.
+  late final KeyboardWatchdog _kbWatchdogSearch = KeyboardWatchdog(
+    state: this,
+    focusNode: _searchFocusNode,
+  );
+  late final KeyboardWatchdog _kbWatchdogNombreLote = KeyboardWatchdog(
+    state: this,
+    focusNode: _nombreLoteFocusNode,
+  );
 
   // null mientras carga: el permiso vive en tbl_configurations, no queremos
   // leerlo como "false" por falta de datos antes de que cargue.
@@ -60,6 +76,7 @@ class _RecepcionMultiusuarioNewLoteScreenState
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final productId = _productId;
     if (productId != null) {
       context.read<RecepcionMultiusuarioLoteBloc>().add(
@@ -67,6 +84,12 @@ class _RecepcionMultiusuarioNewLoteScreenState
       );
     }
     _cargarPermisos();
+  }
+
+  @override
+  void didChangeMetrics() {
+    _kbWatchdogSearch.onMetricsChanged();
+    _kbWatchdogNombreLote.onMetricsChanged();
   }
 
   Future<void> _cargarPermisos() async {
@@ -84,9 +107,14 @@ class _RecepcionMultiusuarioNewLoteScreenState
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _kbWatchdogSearch.dispose();
+    _kbWatchdogNombreLote.dispose();
     _searchController.dispose();
     _nombreLoteController.dispose();
     _dateLoteController.dispose();
+    _searchFocusNode.dispose();
+    _nombreLoteFocusNode.dispose();
     super.dispose();
   }
 
@@ -259,6 +287,7 @@ class _RecepcionMultiusuarioNewLoteScreenState
                       elevation: 3,
                       child: TextFormField(
                         controller: _searchController,
+                        focusNode: _searchFocusNode,
                         style: const TextStyle(color: black, fontSize: 14),
                         decoration: InputDecoration(
                           prefixIcon: const Icon(
@@ -485,6 +514,7 @@ class _RecepcionMultiusuarioNewLoteScreenState
               height: 40,
               child: TextFormField(
                 controller: _nombreLoteController,
+                focusNode: _nombreLoteFocusNode,
                 style: const TextStyle(color: black, fontSize: 14),
                 textCapitalization: TextCapitalization.characters,
                 inputFormatters: [

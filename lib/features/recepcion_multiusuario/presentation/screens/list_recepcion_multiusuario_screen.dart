@@ -83,6 +83,9 @@ class _ListRecepcionMultiusuarioScreenState
                   controller: _searchController,
                   focusNode: _searchFocusNode,
                   hintText: 'Buscar recepción',
+                  // watchdog: reabre el teclado si el IME del PDA
+                  // (Zebra/Urovo/Chainway) lo cierra solo.
+                  persistentKeyboard: true,
                   onSearchChanged: (value) => context
                       .read<RecepcionMultiusuarioListBloc>()
                       .add(SearchRecepcionSessionEvent(value)),

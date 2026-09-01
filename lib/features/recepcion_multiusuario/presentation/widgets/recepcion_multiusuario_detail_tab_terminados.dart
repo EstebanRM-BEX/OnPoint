@@ -7,20 +7,29 @@ import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcio
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_pool_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/recepcion_terminado_card_widget.dart';
 
-class _EntradaTerminada {
-  const _EntradaTerminada(this.item, this.asignacion);
+class _ProductoTerminado {
+  const _ProductoTerminado(this.item, this.observaciones);
 
   final RecepcionPoolItem item;
-  final AsignacionObservacion asignacion;
+
+  /// Asignaciones terminadas de este producto, ya deduplicadas.
+  final List<AsignacionObservacion> observaciones;
+
+  /// Más reciente primero al ordenar la lista de productos.
+  String get ultimaFecha => observaciones
+      .map((o) => o.fechaCompletado ?? '')
+      .fold('', (max, fecha) => fecha.compareTo(max) > 0 ? fecha : max);
 }
 
 /// Tab 3 — recepciones ya terminadas en esta sesión, por mí o por otros
 /// operarios. Reusa el mismo RecepcionMultiusuarioPoolBloc que "Por hacer"
-/// (ya cargado al entrar al detalle, ver recepcion_multiusuario_detail_screen.dart):
-/// POST /api/receipt/session/{id}/pool trae, por cada producto, el
-/// historial completo de asignaciones en `observaciones[]` — acá solo se
-/// filtran las que ya quedaron con `state == "done"`, no hace falta un
-/// fetch aparte.
+/// (ya cargado al entrar al detalle, ver recepcion_multiusuario_detail_screen.dart)
+/// pero con su propio fetch: POST /api/receipt/session/{id}/pool con
+/// verification: true, que es el único modo en el que el backend incluye
+/// tareas agotadas (qty_available: 0) junto con su historial de
+/// asignaciones en `observaciones[]` — sin el flag esas tareas no vienen
+/// en la respuesta. Acá se agrupa por producto (un card por task_id) y se
+/// filtran las asignaciones que ya quedaron con `state == "done"`.
 class RecepcionMultiusuarioDetailTabTerminados extends StatelessWidget {
   const RecepcionMultiusuarioDetailTabTerminados({
     super.key,
@@ -33,7 +42,7 @@ class RecepcionMultiusuarioDetailTabTerminados extends StatelessWidget {
     final sessionId = session.sessionId;
     if (sessionId == null) return;
     context.read<RecepcionMultiusuarioPoolBloc>().add(
-      FetchRecepcionPoolEvent(sessionId),
+      FetchRecepcionPoolEvent(sessionId, verification: true),
     );
   }
 
@@ -56,13 +65,17 @@ class RecepcionMultiusuarioDetailTabTerminados extends StatelessWidget {
                 RecepcionMultiusuarioPoolState
               >(
                 builder: (context, state) {
-                  if (state is RecepcionMultiusuarioPoolLoading ||
-                      state is RecepcionMultiusuarioPoolDbLoading ||
-                      state is RecepcionMultiusuarioPoolInitial) {
+                  // Solo reacciona a loading/error de SU propio fetch
+                  // (verification: true) — un refresco de "Por hacer"
+                  // (verification: false) no debe mostrar spinner acá.
+                  if (state is RecepcionMultiusuarioPoolInitial ||
+                      (state is RecepcionMultiusuarioPoolLoading &&
+                          state.verification)) {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  if (state is RecepcionMultiusuarioPoolError) {
+                  if (state is RecepcionMultiusuarioPoolError &&
+                      state.verification) {
                     return Center(
                       child: Padding(
                         padding: const EdgeInsets.all(24),
@@ -97,22 +110,36 @@ class RecepcionMultiusuarioDetailTabTerminados extends StatelessWidget {
                     );
                   }
 
-                  final items = state is RecepcionPoolLoaded
-                      ? state.items
-                      : const <RecepcionPoolItem>[];
+                  final items = context
+                      .read<RecepcionMultiusuarioPoolBloc>()
+                      .terminadosItems;
 
-                  final terminadas =
-                      <_EntradaTerminada>[
-                        for (final item in items)
-                          for (final asignacion in item.observaciones)
-                            if (asignacion.isDone)
-                              _EntradaTerminada(item, asignacion),
-                      ]..sort(
-                        (a, b) => (b.asignacion.fechaCompletado ?? '')
-                            .compareTo(a.asignacion.fechaCompletado ?? ''),
-                      );
+                  // POST /api/receipt/session/{id}/pool a veces repite la
+                  // misma asignación (mismo asignacion_id/claim_id) más de
+                  // una vez — en el mismo producto o incluso en dos task_id
+                  // distintos. Se descarta por id ya visto para no mostrar
+                  // la misma recepción terminada duplicada.
+                  final vistos = <int>{};
+                  final productos = <_ProductoTerminado>[];
+                  for (final item in items) {
+                    final done = item.observaciones
+                        .where(
+                          (o) =>
+                              o.isDone &&
+                              vistos.add(
+                                o.asignacionId ?? o.claimId ?? o.hashCode,
+                              ),
+                        )
+                        .toList();
+                    if (done.isNotEmpty) {
+                      productos.add(_ProductoTerminado(item, done));
+                    }
+                  }
+                  productos.sort(
+                    (a, b) => b.ultimaFecha.compareTo(a.ultimaFecha),
+                  );
 
-                  if (terminadas.isEmpty) {
+                  if (productos.isEmpty) {
                     return const Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -130,12 +157,12 @@ class RecepcionMultiusuarioDetailTabTerminados extends StatelessWidget {
 
                   return ListView.builder(
                     padding: const EdgeInsets.only(top: 4, bottom: 8),
-                    itemCount: terminadas.length,
+                    itemCount: productos.length,
                     itemBuilder: (context, index) {
-                      final entrada = terminadas[index];
+                      final producto = productos[index];
                       return RecepcionTerminadoCardWidget(
-                        item: entrada.item,
-                        asignacion: entrada.asignacion,
+                        item: producto.item,
+                        observaciones: producto.observaciones,
                       );
                     },
                   );

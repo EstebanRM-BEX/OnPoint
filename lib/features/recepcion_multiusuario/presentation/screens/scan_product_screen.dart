@@ -16,17 +16,18 @@ import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcio
 import 'package:wms_app/features/recepcion_multiusuario/domain/usecases/finish_claim_usecase.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/recepcion_product_dropdown_widget.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/select_novedad_dialog.dart';
-import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/shared/widgets/lote_scanner_widget.dart';
 import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
 import 'package:wms_app/shared/widgets/segunda_unidad_input_widget.dart';
+import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
+import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
 
@@ -68,7 +69,8 @@ class RecepcionMultiusuarioScanProductScreen extends StatefulWidget {
 }
 
 class _RecepcionMultiusuarioScanProductScreenState
-    extends State<RecepcionMultiusuarioScanProductScreen> {
+    extends State<RecepcionMultiusuarioScanProductScreen>
+    with WidgetsBindingObserver {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
 
@@ -110,6 +112,13 @@ class _RecepcionMultiusuarioScanProductScreenState
   final FocusNode _focusQuantity = FocusNode();
   final FocusNode _focusQuantityManual = FocusNode();
 
+  // Watchdog: reabre el teclado si el IME del PDA (Zebra/Urovo/Chainway) lo
+  // cierra solo mientras el campo de cantidad manual conserva el foco.
+  late final KeyboardWatchdog _kbWatchdogQuantityManual = KeyboardWatchdog(
+    state: this,
+    focusNode: _focusQuantityManual,
+  );
+
   final TextEditingController _controllerProduct = TextEditingController();
   final TextEditingController _controllerLote = TextEditingController();
   final TextEditingController _controllerLocationDest = TextEditingController();
@@ -144,6 +153,7 @@ class _RecepcionMultiusuarioScanProductScreenState
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _cargarConfiguracion();
     // No es parte de la cadena de foco secuencial (producto → lote →
     // destino → cantidad): el operario la llena cuando quiera, y al perder
@@ -154,6 +164,9 @@ class _RecepcionMultiusuarioScanProductScreenState
       }
     });
   }
+
+  @override
+  void didChangeMetrics() => _kbWatchdogQuantityManual.onMetricsChanged();
 
   Future<void> _cargarConfiguracion() async {
     final userId = await PrefUtils.getUserId();
@@ -198,6 +211,8 @@ class _RecepcionMultiusuarioScanProductScreenState
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _kbWatchdogQuantityManual.dispose();
     _focusProduct.dispose();
     _focusLote.dispose();
     _focusLocationDest.dispose();
@@ -478,11 +493,11 @@ class _RecepcionMultiusuarioScanProductScreenState
   }
 
   /// Cantidad menor a lo pendiente: no existe backorder/split en
-  /// multiusuario todavía, así que solo se pide una novedad que explique la
-  /// diferencia (reemplaza al diálogo Aceptar/Dividir de individual).
+  /// multiusuario todavía. "CONFIRMAR" pide elegir una novedad; "DIVIDIR"
+  /// se la salta y envía directo con observación fija "Sin novedad".
   Future<String?> _pedirNovedad(double cantidad) async {
     final novedades = context.read<UserBloc>().novedades;
-    final result = await showDialog<Novedad>(
+    return await showDialog<String>(
       context: context,
       barrierDismissible: false,
       builder: (_) => RecepcionSelectNovedadDialog(
@@ -492,11 +507,16 @@ class _RecepcionMultiusuarioScanProductScreenState
         mostrarCantidadPendiente: _hideExpectedQty == false,
       ),
     );
-    return result?.name;
   }
 
   Future<void> _enviarRecepcion(double cantidad, String? novedad) async {
     setState(() => _isSubmitting = true);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) =>
+          const DialogLoading(message: 'Enviando recepción...'),
+    );
 
     final lotId = _selectedLote?.id ?? widget.claim.lotId ?? 0;
     final ubicacionDestino =
@@ -517,6 +537,7 @@ class _RecepcionMultiusuarioScanProductScreenState
     );
 
     if (!mounted) return;
+    Navigator.pop(context); // cierra el diálogo de carga
     setState(() => _isSubmitting = false);
 
     result.fold(

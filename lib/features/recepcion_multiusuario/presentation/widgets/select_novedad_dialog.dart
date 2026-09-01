@@ -7,12 +7,13 @@ import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 /// scan_product_screen.dart cuando la cantidad ingresada es MENOR a lo
 /// pendiente del claim. A diferencia de recepción individual (que ofrece
 /// "Aceptar" o "Dividir" en backorder), acá no existe el concepto de
-/// backorder todavía: solo se pide seleccionar una novedad que explique la
-/// diferencia — la cantidad ya fue elegida en la pantalla anterior, este
-/// diálogo no la vuelve a pedir.
+/// backorder todavía: hay que elegir una novedad que explique la diferencia
+/// ("CONFIRMAR"), o saltarse ese paso con "DIVIDIR", que envía directo con
+/// la observación fija "Sin novedad" — la cantidad ya fue elegida en la
+/// pantalla anterior, este diálogo no la vuelve a pedir.
 ///
-/// Devuelve la [Novedad] elegida vía `Navigator.pop(context, novedad)`, o
-/// `null` si el operario cancela.
+/// Devuelve el texto de la observación a enviar vía
+/// `Navigator.pop(context, observacion)`, o `null` si el operario cancela.
 class RecepcionSelectNovedadDialog extends StatefulWidget {
   const RecepcionSelectNovedadDialog({
     super.key,
@@ -153,7 +154,21 @@ class _RecepcionSelectNovedadDialogState
                 ),
               ),
             ),
-            const SizedBox(height: 10),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context, 'Sin novedad'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: grey,
+                  minimumSize: const Size(double.infinity, 35),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text('DIVIDIR', style: TextStyle(fontSize: 14, color: white)),
+              ),
+            ),
             Row(
               children: [
                 Expanded(
@@ -177,7 +192,7 @@ class _RecepcionSelectNovedadDialogState
                   child: ElevatedButton(
                     onPressed: _selected == null
                         ? null
-                        : () => Navigator.pop(context, _selected),
+                        : () => Navigator.pop(context, _selected!.name),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColorApp,
                       minimumSize: const Size(double.infinity, 35),

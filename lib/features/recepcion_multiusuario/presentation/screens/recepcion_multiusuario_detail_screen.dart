@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_pool_item.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_my_claims_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_pool_bloc.dart';
@@ -47,14 +46,19 @@ class _RecepcionMultiusuarioDetailScreenState
 
     final sessionId = widget.session.sessionId;
     if (sessionId != null) {
-      // Offline-first: mostramos lo que ya haya en SQLite mientras llega la
-      // respuesta en vivo del backend (el pool cambia todo el tiempo — cada
-      // producto que otro operario toma desaparece de la próxima respuesta).
+      // El pool es en vivo y no se persiste local (ver
+      // RecepcionMultiusuarioRepositoryImpl.fetchPool) — siempre se muestra
+      // lo que devuelva esta petición, nada de una vez anterior.
+      //
+      // Dos fetches porque "Por hacer" y "Terminados" necesitan datos
+      // DISTINTOS del mismo endpoint (verification: false vs true — ver
+      // RecepcionMultiusuarioPoolBloc) y sus dos globitos de conteo están
+      // visibles a la vez en este AppBar.
       context.read<RecepcionMultiusuarioPoolBloc>().add(
-        FetchRecepcionPoolFromDbEvent(sessionId),
+        FetchRecepcionPoolEvent(sessionId, verification: false),
       );
       context.read<RecepcionMultiusuarioPoolBloc>().add(
-        FetchRecepcionPoolEvent(sessionId),
+        FetchRecepcionPoolEvent(sessionId, verification: true),
       );
       context.read<RecepcionMultiusuarioMyClaimsBloc>().add(
         FetchMyClaimsEvent(sessionId),
@@ -118,9 +122,9 @@ class _RecepcionMultiusuarioDetailScreenState
               RecepcionMultiusuarioPoolState
             >(
               builder: (context, poolState) {
-                final items = poolState is RecepcionPoolLoaded
-                    ? poolState.items
-                    : const <RecepcionPoolItem>[];
+                final items = context
+                    .read<RecepcionMultiusuarioPoolBloc>()
+                    .poolItems;
                 return _TabConBadge(
                   tab: const Tab(
                     text: 'Por hacer',
@@ -159,20 +163,31 @@ class _RecepcionMultiusuarioDetailScreenState
               RecepcionMultiusuarioPoolState
             >(
               builder: (context, poolState) {
-                final items = poolState is RecepcionPoolLoaded
-                    ? poolState.items
-                    : const <RecepcionPoolItem>[];
-                final terminadas = items.fold<int>(
-                  0,
-                  (total, item) =>
-                      total + item.observaciones.where((o) => o.isDone).length,
-                );
+                final items = context
+                    .read<RecepcionMultiusuarioPoolBloc>()
+                    .terminadosItems;
+                // Cuenta PRODUCTOS con al menos una asignación terminada,
+                // no observaciones sueltas — un producto con 2 entregas
+                // parciales cuenta 1, no 2 (mismo criterio que el tab
+                // Terminados, incluyendo el dedupe por asignacion_id/
+                // claim_id porque el pool a veces repite la misma
+                // asignación).
+                final vistos = <int>{};
+                var productosTerminados = 0;
+                for (final item in items) {
+                  final tieneTerminada = item.observaciones.any(
+                    (o) =>
+                        o.isDone &&
+                        vistos.add(o.asignacionId ?? o.claimId ?? o.hashCode),
+                  );
+                  if (tieneTerminada) productosTerminados++;
+                }
                 return _TabConBadge(
                   tab: const Tab(
                     text: 'Terminados',
                     icon: Icon(Icons.done_all, size: 16),
                   ),
-                  count: terminadas,
+                  count: productosTerminados,
                   color: green,
                 );
               },

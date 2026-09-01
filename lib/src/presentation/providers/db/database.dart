@@ -1915,6 +1915,15 @@ class DataBaseSqlite {
     await recepcionSessionPoolRepository.deleteBySession(sessionId);
   }
 
+  /// Limpia todo lo local de recepción multiusuario (sesiones + pool de
+  /// todas las sesiones) — se usa al cerrar sesión de la app, no al salir
+  /// de una sesión de recepción puntual. Los claims ("mis asignados") no
+  /// se persisten localmente, así que no hay nada que borrar ahí.
+  Future<void> deleRecepcionMultiusuario() async {
+    await deleRecepcionSessions();
+    await recepcionSessionPoolRepository.deleteAll();
+  }
+
   /// Como [deleExpedicion] pero conserva las expediciones cuyos ids están en
   /// [keepExpeditionIds] (y todos sus hijos). Se usa en el re-fetch para no
   /// borrar expediciones con paquetes/productos validados sin conexión que
@@ -1964,6 +1973,7 @@ class DataBaseSqlite {
     await deleAllBarcodes();
     await deleConteo();
     await deleExpedicion();
+    await deleRecepcionMultiusuario();
   }
 
   //*metodo para actualizar la tabla de productos de un batch

@@ -72,27 +72,25 @@ class RecepcionMultiusuarioRepositoryImpl
   Future<Either<Failure, List<RecepcionPoolItem>>> fetchPool({
     required int sessionId,
     required bool isLoadinDialog,
+    required bool verification,
   }) async {
     if (!await networkInfo.isConnected) {
       return const Left(NetworkFailure('No hay conexión a Internet'));
     }
 
     try {
+      // El pool es en vivo (cambia todo el tiempo — cada producto que otro
+      // operario toma desaparece de la próxima respuesta) y no se persiste
+      // localmente: la tab siempre muestra exactamente lo que devolvió esta
+      // petición, nada guardado de una vez anterior.
       final items = await remoteDataSource.fetchPool(
         sessionId: sessionId,
         isLoadinDialog: isLoadinDialog,
+        verification: verification,
       );
-
-      // savePool ya borra y reinserta el pool de la sesión en una sola
-      // transacción: lo que no vino en esta respuesta ya no está libre.
-      await localDataSource.savePool(sessionId, items);
-
-      final localItems = await localDataSource.getPoolFromDb(sessionId);
-      return Right(localItems);
+      return Right(items);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
-    } on CacheException catch (e) {
-      return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure('Error al obtener el pool de la sesión: $e'));
     }

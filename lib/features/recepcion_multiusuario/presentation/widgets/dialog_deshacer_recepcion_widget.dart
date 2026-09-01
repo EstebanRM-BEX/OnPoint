@@ -57,8 +57,13 @@ class _DialogDeshacerRecepcionWidgetState
       (_) {
         final sessionId = widget.sessionId;
         if (sessionId != null) {
+          // Deshacer afecta las dos vistas: el producto vuelve a estar
+          // disponible ("Por hacer") y desaparece de "Terminados".
           context.read<RecepcionMultiusuarioPoolBloc>().add(
-            FetchRecepcionPoolEvent(sessionId),
+            FetchRecepcionPoolEvent(sessionId, verification: false),
+          );
+          context.read<RecepcionMultiusuarioPoolBloc>().add(
+            FetchRecepcionPoolEvent(sessionId, verification: true),
           );
         }
         Navigator.pop(context, true);

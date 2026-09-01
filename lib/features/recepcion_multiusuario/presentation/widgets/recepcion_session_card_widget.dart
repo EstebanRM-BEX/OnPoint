@@ -7,10 +7,43 @@ class RecepcionSessionCardWidget extends StatelessWidget {
 
   final RecepcionSession session;
 
+  String _estadoLabel(String? state) {
+    switch (state) {
+      case 'open':
+        return 'Abierta';
+      case 'done':
+        return 'Terminada';
+      case 'cancel':
+        return 'Cancelada';
+      case 'draft':
+        return 'Borrador';
+      default:
+        return state ?? '';
+    }
+  }
+
+  Color _estadoColor(String? state) {
+    switch (state) {
+      case 'open':
+        return primaryColorApp;
+      case 'done':
+        return green;
+      case 'cancel':
+        return red;
+      case 'draft':
+        return grey;
+      default:
+        return grey;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final progress = (session.progressPercent ?? 0.0).clamp(0.0, 1.0);
-    final progressLabel = '${(progress * 100).toStringAsFixed(1)}%';
+    // progress_percent viene en escala 0-100 (ej. 41.93), no 0-1 — clampear
+    // a 0-1 acá lo dejaba pegado en 100% para cualquier valor > 1.
+    final progressPercent = (session.progressPercent ?? 0.0).clamp(0.0, 100.0);
+    final progress = progressPercent / 100;
+    final progressLabel = '${progressPercent.toStringAsFixed(1)}%';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -38,8 +71,31 @@ class RecepcionSessionCardWidget extends StatelessWidget {
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  if (session.state != null && session.state!.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _estadoColor(
+                          session.state,
+                        ).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        _estadoLabel(session.state),
+                        style: TextStyle(
+                          color: _estadoColor(session.state),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                 ],
               ),
               if (session.manejoPropietario == true)
@@ -160,7 +216,7 @@ class RecepcionSessionCardWidget extends StatelessWidget {
                   ),
                   const SizedBox(width: 5),
                   Text(
-                    'Items: ${session.numeroItems ?? 0}',
+                    'Cant. Total: ${session.numeroItems ?? 0}',
                     style: const TextStyle(fontSize: 12, color: black),
                   ),
                 ],

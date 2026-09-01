@@ -70,4 +70,15 @@ class RecepcionSessionPoolRepository {
       debugPrint("Error al eliminar tbl_recepcion_session_pool: $e\n$s");
     }
   }
+
+  /// Borra el pool completo de todas las sesiones — usado al cerrar sesión
+  /// de la app (no de una sesión de recepción puntual).
+  Future<void> deleteAll() async {
+    try {
+      final Database db = await DataBaseSqlite().getDatabaseInstance();
+      await db.delete(RecepcionSessionPoolTable.tableName);
+    } catch (e, s) {
+      debugPrint("Error al eliminar todo tbl_recepcion_session_pool: $e\n$s");
+    }
+  }
 }

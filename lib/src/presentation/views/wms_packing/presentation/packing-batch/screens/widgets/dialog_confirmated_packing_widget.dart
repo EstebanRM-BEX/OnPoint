@@ -9,6 +9,7 @@ import 'package:wms_app/features/packaging_types/domain/entities/packaging_type.
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_bloc.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_event.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_state.dart';
+import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 
 class DialogConfirmatedPacking extends StatefulWidget {
   const DialogConfirmatedPacking({
@@ -35,22 +36,38 @@ class DialogConfirmatedPacking extends StatefulWidget {
       _DialogConfirmatedPackingState();
 }
 
-class _DialogConfirmatedPackingState extends State<DialogConfirmatedPacking> {
+class _DialogConfirmatedPackingState extends State<DialogConfirmatedPacking>
+    with WidgetsBindingObserver {
   late bool localSticker; // Estado interno del checkbox
 
   final TextEditingController _weightController = TextEditingController();
+  final FocusNode _weightFocusNode = FocusNode();
   PackagingType? _selectedPackagingType;
 
-  @override
-  void dispose() {
-    _weightController.dispose();
-    super.dispose();
-  }
+  // Watchdog: reabre el teclado si el IME del PDA (Zebra/Urovo/Chainway) lo
+  // cierra solo mientras el campo de peso conserva el foco.
+  late final KeyboardWatchdog _kbWatchdog = KeyboardWatchdog(
+    state: this,
+    focusNode: _weightFocusNode,
+  );
 
   @override
   void initState() {
     super.initState();
     localSticker = widget.isSticker; // inicializamos con el valor que nos pasan
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeMetrics() => _kbWatchdog.onMetricsChanged();
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _kbWatchdog.dispose();
+    _weightController.dispose();
+    _weightFocusNode.dispose();
+    super.dispose();
   }
 
   @override
@@ -176,6 +193,7 @@ class _DialogConfirmatedPackingState extends State<DialogConfirmatedPacking> {
                 if (widget.manejaPeso)
                   TextFormField(
                     controller: _weightController,
+                    focusNode: _weightFocusNode,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),

@@ -16,9 +16,16 @@ abstract class RecepcionMultiusuarioRemoteDataSource {
   /// POST /api/receipt/session/{sessionId}/pool: productos/tareas libres de
   /// una sesión en este momento. Se va a llamar seguido (cada refresco de la
   /// pantalla de detalle), así que sin isLoadinDialog por defecto.
+  ///
+  /// [verification] cambia qué trae el backend: en false (tab "Por hacer")
+  /// solo lo realmente disponible para reclamar; en true (tab "Terminados")
+  /// incluye tareas con qty_available en 0 que ya tienen historial de
+  /// asignaciones — confirmado que con el flag activo aparecen productos
+  /// agotados que sin él no vienen en la respuesta.
   Future<List<RecepcionPoolItemModel>> fetchPool({
     required int sessionId,
     required bool isLoadinDialog,
+    required bool verification,
   });
 
   /// POST /api/receipt/claim: reclama ("toma") un producto libre del pool.
@@ -127,10 +134,13 @@ class RecepcionMultiusuarioRemoteDataSourceImpl
   Future<List<RecepcionPoolItemModel>> fetchPool({
     required int sessionId,
     required bool isLoadinDialog,
+    required bool verification,
   }) async {
     final response = await ApiRequestService().postPacking(
       endpoint: 'receipt/session/$sessionId/pool',
-      body: const {"params": {}},
+      body: {
+        "params": verification ? {"verification": true} : {},
+      },
       isLoadinDialog: isLoadinDialog,
     );
 

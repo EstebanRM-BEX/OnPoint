@@ -172,7 +172,7 @@ class _RecepcionMultiusuarioDetailTabMisAsignadosState
           final sessionId = widget.session.sessionId;
           if (sessionId != null) {
             context.read<RecepcionMultiusuarioPoolBloc>().add(
-              FetchRecepcionPoolEvent(sessionId),
+              FetchRecepcionPoolEvent(sessionId, verification: false),
             );
           }
         }
@@ -196,6 +196,9 @@ class _RecepcionMultiusuarioDetailTabMisAsignadosState
                     child: DynamicSearchBar(
                       controller: _searchController,
                       hintText: 'Buscar producto',
+                      // watchdog: reabre el teclado si el IME del PDA
+                      // (Zebra/Urovo/Chainway) lo cierra solo.
+                      persistentKeyboard: true,
                       onSearchChanged: (value) =>
                           setState(() => _searchQuery = value),
                       onSearchCleared: () => setState(() => _searchQuery = ''),

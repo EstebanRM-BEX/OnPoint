@@ -9,8 +9,14 @@ class FetchRecepcionPoolParams {
   final int sessionId;
   final bool isLoadinDialog;
 
+  /// false (tab "Por hacer"): solo lo realmente disponible para reclamar.
+  /// true (tab "Terminados"): incluye tareas agotadas (qty_available: 0)
+  /// que ya tienen historial de asignaciones.
+  final bool verification;
+
   const FetchRecepcionPoolParams({
     required this.sessionId,
+    required this.verification,
     this.isLoadinDialog = false,
   });
 }
@@ -29,6 +35,7 @@ class FetchRecepcionPoolUseCase
     return await repository.fetchPool(
       sessionId: params.sessionId,
       isLoadinDialog: params.isLoadinDialog,
+      verification: params.verification,
     );
   }
 }

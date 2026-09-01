@@ -16,11 +16,12 @@ abstract class RecepcionMultiusuarioRepository {
   Future<Either<Failure, List<RecepcionSession>>> getSessionsFromDb();
 
   /// Trae el pool de productos libres de [sessionId]
-  /// (POST /api/receipt/session/{sessionId}/pool) y reemplaza por completo
-  /// el pool local de esa sesión.
+  /// (POST /api/receipt/session/{sessionId}/pool). [verification] ver
+  /// [RecepcionMultiusuarioRemoteDataSource.fetchPool].
   Future<Either<Failure, List<RecepcionPoolItem>>> fetchPool({
     required int sessionId,
     required bool isLoadinDialog,
+    required bool verification,
   });
 
   /// Lee el pool local de [sessionId] (caché local, offline-first).

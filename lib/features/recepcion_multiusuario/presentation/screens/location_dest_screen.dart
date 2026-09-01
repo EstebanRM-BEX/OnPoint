@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/location_dest/recepcion_multiusuario_location_dest_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
+import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 
@@ -24,21 +25,37 @@ class RecepcionMultiusuarioLocationDestScreen extends StatefulWidget {
 }
 
 class _RecepcionMultiusuarioLocationDestScreenState
-    extends State<RecepcionMultiusuarioLocationDestScreen> {
+    extends State<RecepcionMultiusuarioLocationDestScreen>
+    with WidgetsBindingObserver {
   int? _selectedIndex;
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+
+  // Watchdog: reabre el teclado si el IME del PDA (Zebra/Urovo/Chainway) lo
+  // cierra solo mientras el buscador conserva el foco.
+  late final KeyboardWatchdog _kbWatchdogSearch = KeyboardWatchdog(
+    state: this,
+    focusNode: _searchFocusNode,
+  );
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     context.read<RecepcionMultiusuarioLocationDestBloc>().add(
       const FetchUbicacionesDestEvent(),
     );
   }
 
   @override
+  void didChangeMetrics() => _kbWatchdogSearch.onMetricsChanged();
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _kbWatchdogSearch.dispose();
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -84,6 +101,7 @@ class _RecepcionMultiusuarioLocationDestScreenState
                   elevation: 3,
                   child: TextFormField(
                     controller: _searchController,
+                    focusNode: _searchFocusNode,
                     style: const TextStyle(color: black, fontSize: 14),
                     decoration: InputDecoration(
                       prefixIcon: const Icon(

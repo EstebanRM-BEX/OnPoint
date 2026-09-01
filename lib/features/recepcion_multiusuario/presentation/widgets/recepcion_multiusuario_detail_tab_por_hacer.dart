@@ -105,7 +105,10 @@ class _RecepcionMultiusuarioDetailTabPorHacerState
     final sessionId = widget.session.sessionId;
     if (sessionId == null) return;
     context.read<RecepcionMultiusuarioPoolBloc>().add(
-      FetchRecepcionPoolEvent(sessionId),
+      // false: solo lo realmente disponible para reclamar — con
+      // verification: true el backend también trae tareas agotadas, que
+      // acá no tienen nada que hacer (ver RecepcionMultiusuarioPoolBloc).
+      FetchRecepcionPoolEvent(sessionId, verification: false),
     );
   }
 
@@ -159,10 +162,7 @@ class _RecepcionMultiusuarioDetailTabPorHacerState
     _scanController.clear();
     if (scan.isEmpty) return;
 
-    final state = context.read<RecepcionMultiusuarioPoolBloc>().state;
-    final items = state is RecepcionPoolLoaded
-        ? state.items
-        : const <RecepcionPoolItem>[];
+    final items = context.read<RecepcionMultiusuarioPoolBloc>().poolItems;
 
     final match = items.any(
       (i) =>
@@ -231,6 +231,9 @@ class _RecepcionMultiusuarioDetailTabPorHacerState
                     child: DynamicSearchBar(
                       controller: _searchController,
                       hintText: 'Buscar producto',
+                      // watchdog: reabre el teclado si el IME del PDA
+                      // (Zebra/Urovo/Chainway) lo cierra solo.
+                      persistentKeyboard: true,
                       onSearchChanged: (value) =>
                           setState(() => _searchQuery = value),
                       onSearchCleared: () => setState(() => _searchQuery = ''),
@@ -266,13 +269,18 @@ class _RecepcionMultiusuarioDetailTabPorHacerState
                   RecepcionMultiusuarioPoolState
                 >(
                   builder: (context, state) {
-                    if (state is RecepcionMultiusuarioPoolLoading ||
+                    // Solo reacciona a loading/error de SU propio fetch
+                    // (verification: false) — un refresco de "Terminados"
+                    // (verification: true) no debe mostrar spinner acá.
+                    if (state is RecepcionMultiusuarioPoolInitial ||
                         state is RecepcionMultiusuarioPoolDbLoading ||
-                        state is RecepcionMultiusuarioPoolInitial) {
+                        (state is RecepcionMultiusuarioPoolLoading &&
+                            !state.verification)) {
                       return const Center(child: CircularProgressIndicator());
                     }
 
-                    if (state is RecepcionMultiusuarioPoolError) {
+                    if (state is RecepcionMultiusuarioPoolError &&
+                        !state.verification) {
                       return Center(
                         child: Padding(
                           padding: const EdgeInsets.all(24),
@@ -310,9 +318,9 @@ class _RecepcionMultiusuarioDetailTabPorHacerState
                       );
                     }
 
-                    final items = state is RecepcionPoolLoaded
-                        ? state.items
-                        : const <RecepcionPoolItem>[];
+                    final items = context
+                        .read<RecepcionMultiusuarioPoolBloc>()
+                        .poolItems;
 
                     final filteredItems = query.isEmpty
                         ? items
