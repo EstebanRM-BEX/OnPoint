@@ -15,13 +15,19 @@ part 'expedition_list_state.dart';
 /// responsabilidad de blocs separados que se agregarán cuando se construya
 /// esa parte del módulo.
 @injectable
-class ExpedicionListBloc extends Bloc<ExpedicionListEvent, ExpedicionListState> {
+class ExpedicionListBloc
+    extends Bloc<ExpedicionListEvent, ExpedicionListState> {
   final FetchExpedicionesUseCase fetchExpedicionesUseCase;
   final GetExpedicionesFromDbUseCase getExpedicionesFromDbUseCase;
 
   List<ExpedicionPedido> _todasLasExpediciones = [];
   List<ExpedicionPedido> _expedicionesFiltradas = [];
   String currentFilterKey = 'fecha_desc';
+
+  /// Lista completa sin filtrar por búsqueda — usada por el escaneo de
+  /// ListExpeditionScreen para matchear aunque haya un texto de búsqueda
+  /// activo que no incluya el resultado.
+  List<ExpedicionPedido> get todasLasExpediciones => _todasLasExpediciones;
 
   ExpedicionListBloc({
     required this.fetchExpedicionesUseCase,
@@ -87,7 +93,9 @@ class ExpedicionListBloc extends Bloc<ExpedicionListEvent, ExpedicionListState> 
       _expedicionesFiltradas = _todasLasExpediciones.where((expedicion) {
         final nombre = _normalizeText(expedicion.nombre ?? '');
         final cliente = _normalizeText(expedicion.cliente ?? '');
-        final documentoOrigen = _normalizeText(expedicion.documentoOrigen ?? '');
+        final documentoOrigen = _normalizeText(
+          expedicion.documentoOrigen ?? '',
+        );
         return nombre.contains(normalizedQuery) ||
             cliente.contains(normalizedQuery) ||
             documentoOrigen.contains(normalizedQuery);
@@ -124,14 +132,16 @@ class ExpedicionListBloc extends Bloc<ExpedicionListEvent, ExpedicionListState> 
         case 'nombre':
           final nombreA = a.nombre ?? '';
           final nombreB = b.nombre ?? '';
-          final resultNombre =
-              nombreA.toLowerCase().compareTo(nombreB.toLowerCase());
+          final resultNombre = nombreA.toLowerCase().compareTo(
+            nombreB.toLowerCase(),
+          );
           return event.ascending ? resultNombre : -resultNombre;
         case 'cliente':
           final clienteA = a.cliente ?? '';
           final clienteB = b.cliente ?? '';
-          final resultCliente =
-              clienteA.toLowerCase().compareTo(clienteB.toLowerCase());
+          final resultCliente = clienteA.toLowerCase().compareTo(
+            clienteB.toLowerCase(),
+          );
           return event.ascending ? resultCliente : -resultCliente;
         default:
           return 0;

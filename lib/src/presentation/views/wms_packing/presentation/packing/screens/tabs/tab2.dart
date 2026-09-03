@@ -20,16 +20,13 @@ import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
 class Tab2PedidoScreen extends StatefulWidget {
-  const Tab2PedidoScreen({
-    super.key,
-  });
+  const Tab2PedidoScreen({super.key});
 
   @override
   State<Tab2PedidoScreen> createState() => _Tab2ScreenState();
 }
 
-class _Tab2ScreenState extends State<Tab2PedidoScreen>
-    with LoadingDialogMixin {
+class _Tab2ScreenState extends State<Tab2PedidoScreen> with LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   FocusNode focusNodeBuscar = FocusNode(); //cantidad textformfield
@@ -90,24 +87,30 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen>
 
       bloc
         ..add(FetchProductEvent(product))
-        ..add(ChangeLocationIsOkEvent(
-          product.idProduct!,
-          product.pedidoId!,
-          product.idMove!,
-        ))
-        ..add(ChangeProductIsOkEvent(
-          true,
-          product.idProduct!,
-          product.pedidoId!,
-          0,
-          product.idMove!,
-        ))
-        ..add(ChangeIsOkQuantity(
-          true,
-          product.idProduct!,
-          product.pedidoId!,
-          product.idMove!,
-        ));
+        ..add(
+          ChangeLocationIsOkEvent(
+            product.idProduct!,
+            product.pedidoId!,
+            product.idMove!,
+          ),
+        )
+        ..add(
+          ChangeProductIsOkEvent(
+            true,
+            product.idProduct!,
+            product.pedidoId!,
+            0,
+            product.idMove!,
+          ),
+        )
+        ..add(
+          ChangeIsOkQuantity(
+            true,
+            product.idProduct!,
+            product.pedidoId!,
+            product.idMove!,
+          ),
+        );
       Future.microtask(() {
         if (!mounted) return;
         focusNodeBuscar.requestFocus();
@@ -141,7 +144,8 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen>
 
     if (product?.idMove != null) {
       debugPrint(
-          '🔎 Producto encontrado por código principal: ${product!.idProduct}');
+        '🔎 Producto encontrado por código principal: ${product!.idProduct}',
+      );
       processProduct(product);
       return;
     }
@@ -159,7 +163,8 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen>
 
     if (barcode?.barcode != null && barcode?.idProduct != null) {
       debugPrint(
-          '🔎 Código de barras secundario encontrado. Buscando ID de producto: ${barcode!.idProduct}');
+        '🔎 Código de barras secundario encontrado. Buscando ID de producto: ${barcode!.idProduct}',
+      );
 
       ProductoPedido? productByBarcode;
       try {
@@ -173,7 +178,8 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen>
 
       if (productByBarcode?.idProduct != null) {
         debugPrint(
-            '🔎 Producto encontrado por código de barras secundario: ${productByBarcode!.idProduct}');
+          '🔎 Producto encontrado por código de barras secundario: ${productByBarcode!.idProduct}',
+        );
         processProduct(productByBarcode);
         return;
       }
@@ -206,7 +212,8 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen>
       builder: (context, state) {
         return Scaffold(
           backgroundColor: Colors.white,
-          floatingActionButton: context
+          floatingActionButton:
+              context
                           .read<PackingPedidoBloc>()
                           .configurations
                           .result
@@ -227,30 +234,33 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen>
                       right:
                           0.0, // Ajusta según sea necesario para colocar en la parte derecha
                       child: FloatingActionButton(
-                        onPressed: context
+                        onPressed:
+                            context
                                 .read<PackingPedidoBloc>()
                                 .listOfProductosProgress
                                 .isEmpty
                             ? null
                             : () {
-                                context
-                                    .read<PackingPedidoBloc>()
-                                    .add(ChangeStickerEvent(false));
+                                context.read<PackingPedidoBloc>().add(
+                                  ChangeStickerEvent(false),
+                                );
 
                                 FocusScope.of(context).unfocus();
 
                                 showDialog(
                                   context: context,
                                   builder: (_) {
-                                    final bloc =
-                                        context.read<PackingPedidoBloc>();
+                                    final bloc = context
+                                        .read<PackingPedidoBloc>();
                                     return DialogConfirmatedPacking(
-                                      manejaPeso: context
+                                      manejaPeso:
+                                          context
                                               .read<PackingPedidoBloc>()
                                               .currentPedidoPack
                                               .configPacking ==
                                           "cluster",
-                                      manejaTipoEmpaque: context
+                                      manejaTipoEmpaque:
+                                          context
                                               .read<PackingPedidoBloc>()
                                               .currentPedidoPack
                                               .configPacking ==
@@ -263,24 +273,29 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen>
                                       onToggleSticker: (value) {
                                         bloc.add(ChangeStickerEvent(value));
                                       },
-                                      onConfirm: (PackagingType? pedidoType,
-                                          String weight) {
-                                        bloc.add(SetPackingsEvent(
-                                          context
-                                              .read<PackingPedidoBloc>()
-                                              .listOfProductsForPacking,
-                                          bloc.isSticker,
-                                          context
-                                              .read<PackingPedidoBloc>()
-                                              .currentPedidoPack
-                                              .configPacking,
-                                          false,
-                                          weight == "" || weight == null
-                                              ? 0.0
-                                              : double.parse(weight),
-                                          pedidoType ?? PackagingType(),
-                                        ));
-                                      },
+                                      onConfirm:
+                                          (
+                                            PackagingType? pedidoType,
+                                            String weight,
+                                          ) {
+                                            bloc.add(
+                                              SetPackingsEvent(
+                                                context
+                                                    .read<PackingPedidoBloc>()
+                                                    .listOfProductsForPacking,
+                                                bloc.isSticker,
+                                                context
+                                                    .read<PackingPedidoBloc>()
+                                                    .currentPedidoPack
+                                                    .configPacking,
+                                                false,
+                                                weight == "" || weight == null
+                                                    ? 0.0
+                                                    : double.parse(weight),
+                                                pedidoType ?? PackagingType(),
+                                              ),
+                                            );
+                                          },
                                     );
                                   },
                                 );
@@ -303,13 +318,16 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen>
                     Positioned(
                       bottom: 40.0, // Posición hacia arriba
                       right: 0.0, // Posición hacia la derecha
-                      child: context
+                      child:
+                          context
                               .read<PackingPedidoBloc>()
                               .listOfProductsForPacking
                               .isNotEmpty
                           ? Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.red,
                                 borderRadius: BorderRadius.circular(12),
@@ -327,20 +345,22 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen>
                                 ),
                               ),
                             )
-                          : const SizedBox
-                              .shrink(), // No mostrar el número si no hay productos seleccionados
+                          : const SizedBox.shrink(), // No mostrar el número si no hay productos seleccionados
                     ),
                     // El total de unidades de los productos seleccionados, esquina inferior del FAB
                     Positioned(
                       bottom: -8.0, // Esquina inferior
                       right: -8.0, // Esquina derecha, igual estilo que el rojo
-                      child: context
+                      child:
+                          context
                               .read<PackingPedidoBloc>()
                               .listOfProductsForPacking
                               .isNotEmpty
                           ? Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.green,
                                 borderRadius: BorderRadius.circular(12),
@@ -354,10 +374,11 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen>
                                       (total, product) =>
                                           total +
                                           ((product.isProductSplit == 1 &&
-                                                      product.isSeparate == 1
-                                                  ? product.pendingQuantity
-                                                  : product.quantity ??
-                                                      0.0) as num)
+                                                          product.isSeparate ==
+                                                              1
+                                                      ? product.pendingQuantity
+                                                      : product.quantity ?? 0.0)
+                                                  as num)
                                               .toDouble(),
                                     )
                                     .toString(),
@@ -368,8 +389,7 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen>
                                 ),
                               ),
                             )
-                          : const SizedBox
-                              .shrink(), // No mostrar el total si no hay productos seleccionados
+                          : const SizedBox.shrink(), // No mostrar el total si no hay productos seleccionados
                     ),
                   ],
                 )
@@ -382,419 +402,440 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen>
                 bloc.listOfProductosProgress,
               );
 
-              // Ordenamos por ubicación
+              // Ordenamos por ubicación, salvo los productos que vienen de
+              // dividir uno (isProductSplit == 1: el remanente pendiente
+              // que vuelve a "Por hacer" al dividir en scan_screen.dart) —
+              // esos van siempre al principio de la lista, sin importar su
+              // ubicación, para que el operario los vea de inmediato.
               productosOrdenados.sort((a, b) {
+                final aSplit = a.isProductSplit == 1;
+                final bSplit = b.isProductSplit == 1;
+                if (aSplit != bSplit) return aSplit ? -1 : 1;
                 return compareUbicaciones(a.locationId, b.locationId);
               });
 
               return Container(
-                  margin: const EdgeInsets.only(top: 5),
-                  width: double.infinity,
-                  height: size.height * 0.8,
-                  child: Column(
-                    children: [
-                      // //*buscador de productos por barcode, codigo o nombre
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Row(
-                          children: [
-                            // Seleccionar/deseleccionar todos los productos.
-                            // Se oculta mientras el buscador está activo.
-                            if (!_isSearchVisible &&
-                                bloc.configurations.result?.result
-                                        ?.scanProduct ==
-                                    true)
-                              IconButton(
-                                icon: Icon(
-                                  productosOrdenados.isNotEmpty &&
-                                          bloc.listOfProductsForPacking
-                                                  .length ==
-                                              productosOrdenados.length
-                                      ? Icons.checklist_rtl
-                                      : Icons.checklist,
-                                  color: primaryColorApp,
-                                ),
-                                onPressed: () {
-                                  final allSelected =
-                                      productosOrdenados.isNotEmpty &&
-                                          bloc.listOfProductsForPacking
-                                                  .length ==
-                                              productosOrdenados.length;
-                                  if (allSelected) {
-                                    bloc.add(UnSelectAllProductsPackingEvent());
-                                  } else {
-                                    bloc.add(SelectAllProductsPackingEvent(
-                                        productosOrdenados));
-                                  }
-                                },
-                              ),
-                            if (_isSearchVisible)
-                              Expanded(
-                                child: DynamicSearchBar(
-                                  controller: bloc.searchControllerProduct,
-                                  hintText: 'Buscar producto',
-                                  onSearchChanged: (value) => bloc.add(
-                                      SearchProductPedidoPackingEvent(value)),
-                                  onSearchCleared: () => bloc.add(
-                                      SearchProductPedidoPackingEvent('')),
-                                ),
-                              )
-                            else
-                              const Spacer(),
+                margin: const EdgeInsets.only(top: 5),
+                width: double.infinity,
+                height: size.height * 0.8,
+                child: Column(
+                  children: [
+                    // //*buscador de productos por barcode, codigo o nombre
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Row(
+                        children: [
+                          // Seleccionar/deseleccionar todos los productos.
+                          // Se oculta mientras el buscador está activo.
+                          if (!_isSearchVisible &&
+                              bloc.configurations.result?.result?.scanProduct ==
+                                  true)
                             IconButton(
                               icon: Icon(
-                                _isSearchVisible
-                                    ? Icons.close
-                                    : Icons.search,
+                                productosOrdenados.isNotEmpty &&
+                                        bloc.listOfProductsForPacking.length ==
+                                            productosOrdenados.length
+                                    ? Icons.checklist_rtl
+                                    : Icons.checklist,
                                 color: primaryColorApp,
                               ),
-                              onPressed: () => _toggleSearch(bloc),
-                            ),
-                          ],
-                        ),
-                      ),
-                      //*espacio para escanear y buscar el producto
-                      BarcodeScannerField(
-                        controller: _controllerToDo,
-                        focusNode: focusNodeBuscar,
-                        onBarcodeScanned: (value, context) {
-                          return validateBarcode(value, context);
-                        },
-                      ),
-
-                      (context
-                              .read<PackingPedidoBloc>()
-                              .listOfProductosProgress
-                              .isEmpty)
-                          ? Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.max,
-                                children: [
-                                  const Text('No hay productos',
-                                      style:
-                                          TextStyle(fontSize: 14, color: grey)),
-                                  const Text('Intente buscar otro producto',
-                                      style:
-                                          TextStyle(fontSize: 12, color: grey)),
-                                  Visibility(
-                                    visible: context
-                                        .read<UserBloc>()
-                                        .fabricante
-                                        .contains("Zebra"),
-                                    child: Container(
-                                      height: 60,
+                              onPressed: () {
+                                final allSelected =
+                                    productosOrdenados.isNotEmpty &&
+                                    bloc.listOfProductsForPacking.length ==
+                                        productosOrdenados.length;
+                                if (allSelected) {
+                                  bloc.add(UnSelectAllProductsPackingEvent());
+                                } else {
+                                  bloc.add(
+                                    SelectAllProductsPackingEvent(
+                                      productosOrdenados,
                                     ),
-                                  ),
-                                ],
+                                  );
+                                }
+                              },
+                            ),
+                          if (_isSearchVisible)
+                            Expanded(
+                              child: DynamicSearchBar(
+                                controller: bloc.searchControllerProduct,
+                                hintText: 'Buscar producto',
+                                onSearchChanged: (value) => bloc.add(
+                                  SearchProductPedidoPackingEvent(value),
+                                ),
+                                onSearchCleared: () => bloc.add(
+                                  SearchProductPedidoPackingEvent(''),
+                                ),
                               ),
                             )
-                          : Expanded(
-                              child: ListView.builder(
-                                itemCount: productosOrdenados.length,
-                                itemBuilder: (context, index) {
-                                  final product = productosOrdenados[index];
+                          else
+                            const Spacer(),
+                          IconButton(
+                            icon: Icon(
+                              _isSearchVisible ? Icons.close : Icons.search,
+                              color: primaryColorApp,
+                            ),
+                            onPressed: () => _toggleSearch(bloc),
+                          ),
+                        ],
+                      ),
+                    ),
+                    //*espacio para escanear y buscar el producto
+                    BarcodeScannerField(
+                      controller: _controllerToDo,
+                      focusNode: focusNodeBuscar,
+                      onBarcodeScanned: (value, context) {
+                        return validateBarcode(value, context);
+                      },
+                    ),
 
-                                  //ordenar los productos por ubicación
+                    (context
+                            .read<PackingPedidoBloc>()
+                            .listOfProductosProgress
+                            .isEmpty)
+                        ? Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.max,
+                              children: [
+                                const Text(
+                                  'No hay productos',
+                                  style: TextStyle(fontSize: 14, color: grey),
+                                ),
+                                const Text(
+                                  'Intente buscar otro producto',
+                                  style: TextStyle(fontSize: 12, color: grey),
+                                ),
+                                Visibility(
+                                  visible: context
+                                      .read<UserBloc>()
+                                      .fabricante
+                                      .contains("Zebra"),
+                                  child: Container(height: 60),
+                                ),
+                              ],
+                            ),
+                          )
+                        : Expanded(
+                            child: ListView.builder(
+                              itemCount: productosOrdenados.length,
+                              itemBuilder: (context, index) {
+                                final product = productosOrdenados[index];
 
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8),
-                                    child: Card(
-                                      // Cambia el color de la tarjeta si el producto está seleccionado
-                                      color: context
-                                              .read<PackingPedidoBloc>()
-                                              .listOfProductsForPacking
-                                              .contains(product)
-                                          ? primaryColorAppLigth // Color amarillo si está seleccionado
-                                          : Colors
+                                //ordenar los productos por ubicación
+
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
+                                  child: Card(
+                                    // Cambia el color de la tarjeta si el producto está seleccionado
+                                    color:
+                                        context
+                                            .read<PackingPedidoBloc>()
+                                            .listOfProductsForPacking
+                                            .contains(product)
+                                        ? primaryColorAppLigth // Color amarillo si está seleccionado
+                                        : Colors
                                               .white, // Color blanco si no está seleccionado
-                                      elevation: 5,
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 10),
-                                        child: Row(
-                                          children: [
-                                            //* Checkbox para seleccionar o deseleccionar el producto
-                                            //* se activa segun el permiso
-                                            Visibility(
-                                              visible: context
-                                                      .read<PackingPedidoBloc>()
-                                                      .configurations
-                                                      .result
-                                                      ?.result
-                                                      ?.scanProduct ==
-                                                  true,
-                                              child: Checkbox(
-                                                value: context
+                                    elevation: 5,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 10,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          //* Checkbox para seleccionar o deseleccionar el producto
+                                          //* se activa segun el permiso
+                                          Visibility(
+                                            visible:
+                                                context
                                                     .read<PackingPedidoBloc>()
-                                                    .listOfProductsForPacking
-                                                    .contains(product),
-                                                onChanged: (bool? selected) {
-                                                  if (selected == true) {
-                                                    // Seleccionar producto
-                                                    context
-                                                        .read<
-                                                            PackingPedidoBloc>()
-                                                        .add(
-                                                            SelectProductPackingEvent(
-                                                                product));
-                                                  } else {
-                                                    // Deseleccionar producto
-                                                    context
-                                                        .read<
-                                                            PackingPedidoBloc>()
-                                                        .add(
-                                                            UnSelectProductPackingEvent(
-                                                                product));
-                                                  }
-                                                },
-                                              ),
-                                            ),
-                                            Expanded(
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  debugPrint(
-                                                      "Producto seleccionado: ${product.toMap()}");
-                                                  // validamos si este articulo se encuentra en la lista de productos preparados
-                                                  // Los duplicados (isProductSplit==1) comparten idMove con el original certificado,
-                                                  // por eso se excluyen del bloqueo — ellos aún están pendientes de separar.
-                                                  final bool esDuplicado =
-                                                      product.isProductSplit ==
-                                                          1;
-                                                  if (!esDuplicado &&
-                                                      context
-                                                          .read<
-                                                              PackingPedidoBloc>()
-                                                          .productsDone
-                                                          .any((doneProduct) =>
-                                                              doneProduct
-                                                                  .idMove ==
-                                                              product.idMove)) {
-                                                    // Mostramos el error
-                                                    ScaffoldMessenger.of(
-                                                            context)
-                                                        .showSnackBar(SnackBar(
-                                                      content: const Text(
-                                                          "Este producto se encuentra en estado preparado, por favor seleccione otro"),
-                                                      backgroundColor:
-                                                          Colors.red[200],
-                                                    ));
-                                                    return;
-                                                  }
-
+                                                    .configurations
+                                                    .result
+                                                    ?.result
+                                                    ?.scanProduct ==
+                                                true,
+                                            child: Checkbox(
+                                              value: context
+                                                  .read<PackingPedidoBloc>()
+                                                  .listOfProductsForPacking
+                                                  .contains(product),
+                                              onChanged: (bool? selected) {
+                                                if (selected == true) {
+                                                  // Seleccionar producto
                                                   context
                                                       .read<PackingPedidoBloc>()
-                                                      .add(FetchProductEvent(
-                                                          product));
+                                                      .add(
+                                                        SelectProductPackingEvent(
+                                                          product,
+                                                        ),
+                                                      );
+                                                } else {
+                                                  // Deseleccionar producto
+                                                  context
+                                                      .read<PackingPedidoBloc>()
+                                                      .add(
+                                                        UnSelectProductPackingEvent(
+                                                          product,
+                                                        ),
+                                                      );
+                                                }
+                                              },
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                debugPrint(
+                                                  "Producto seleccionado: ${product.toMap()}",
+                                                );
+                                                // validamos si este articulo se encuentra en la lista de productos preparados
+                                                // Los duplicados (isProductSplit==1) comparten idMove con el original certificado,
+                                                // por eso se excluyen del bloqueo — ellos aún están pendientes de separar.
+                                                final bool esDuplicado =
+                                                    product.isProductSplit == 1;
+                                                if (!esDuplicado &&
+                                                    context
+                                                        .read<
+                                                          PackingPedidoBloc
+                                                        >()
+                                                        .productsDone
+                                                        .any(
+                                                          (doneProduct) =>
+                                                              doneProduct
+                                                                  .idMove ==
+                                                              product.idMove,
+                                                        )) {
+                                                  // Mostramos el error
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: const Text(
+                                                        "Este producto se encuentra en estado preparado, por favor seleccione otro",
+                                                      ),
+                                                      backgroundColor:
+                                                          Colors.red[200],
+                                                    ),
+                                                  );
+                                                  return;
+                                                }
 
-                                                  // Loading idempotente y
-                                                  // blindado (LoadingDialogMixin).
-                                                  showLoadingDialog(
-                                                      'Cargando información del producto...');
+                                                context
+                                                    .read<PackingPedidoBloc>()
+                                                    .add(
+                                                      FetchProductEvent(
+                                                        product,
+                                                      ),
+                                                    );
 
-                                                  Future.delayed(
-                                                      const Duration(
-                                                          seconds: 1), () {
+                                                // Loading idempotente y
+                                                // blindado (LoadingDialogMixin).
+                                                showLoadingDialog(
+                                                  'Cargando información del producto...',
+                                                );
+
+                                                Future.delayed(
+                                                  const Duration(seconds: 1),
+                                                  () {
                                                     if (!mounted) return;
                                                     hideLoadingDialog();
                                                     // Ahora navegar a la vista "batch"
-                                                    Navigator
-                                                        .pushReplacementNamed(
+                                                    Navigator.pushReplacementNamed(
                                                       context,
                                                       'scan-pack',
                                                     );
-                                                  });
-                                                },
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Align(
-                                                      alignment:
-                                                          Alignment.centerLeft,
-                                                      child: Text(
-                                                        "${product.productId}",
-                                                        style: const TextStyle(
-                                                            fontSize: 12,
-                                                            color: black),
+                                                  },
+                                                );
+                                              },
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Align(
+                                                    alignment:
+                                                        Alignment.centerLeft,
+                                                    child: Text(
+                                                      "${product.productId}",
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                        color: black,
                                                       ),
                                                     ),
-                                                    Row(
-                                                      children: [
-                                                        Text(
-                                                          "Ubicación: ",
-                                                          style: TextStyle(
-                                                            fontSize: 12,
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      Text(
+                                                        "Ubicación: ",
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color:
+                                                              primaryColorApp,
+                                                        ),
+                                                      ),
+                                                      const Spacer(),
+                                                      Visibility(
+                                                        visible:
+                                                            product
+                                                                .manejaTemperatura ==
+                                                            1,
+                                                        child: Align(
+                                                          alignment: Alignment
+                                                              .centerRight,
+                                                          child: Icon(
+                                                            Icons
+                                                                .thermostat_outlined,
                                                             color:
                                                                 primaryColorApp,
+                                                            size: 16,
                                                           ),
                                                         ),
-                                                        const Spacer(),
-                                                        Visibility(
-                                                          visible: product
-                                                                  .manejaTemperatura ==
-                                                              1,
-                                                          child: Align(
-                                                            alignment: Alignment
-                                                                .centerRight,
-                                                            child: Icon(
-                                                              Icons
-                                                                  .thermostat_outlined,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      Text(
+                                                        "${product.locationId}",
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color: black,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      Text(
+                                                        "Pedido: ",
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color:
+                                                              primaryColorApp,
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        "${product.pedidoId}",
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: black,
+                                                        ),
+                                                      ),
+                                                      const Spacer(),
+                                                      GestureDetector(
+                                                        onTap: () {
+                                                          ModalPrintersList.show(
+                                                            context,
+                                                            resIds: [
+                                                              product.idMove,
+                                                            ],
+                                                            companyId: 1,
+                                                          );
+                                                        },
+                                                        child: Icon(
+                                                          Icons.print,
+                                                          color:
+                                                              primaryColorApp,
+                                                          size: 25,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 3),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      Text(
+                                                        "Cantidad: ",
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color:
+                                                              primaryColorApp,
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        (product.isProductSplit ==
+                                                                        1 &&
+                                                                    product.isSeparate ==
+                                                                        1
+                                                                ? product
+                                                                      .pendingQuantity
+                                                                : product.quantity ??
+                                                                      0.0)
+                                                            .toString(),
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: black,
+                                                        ),
+                                                      ),
+                                                      const Spacer(),
+                                                      Text(
+                                                        "Unidad de medida: ",
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color:
+                                                              primaryColorApp,
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        "${product.unidades}",
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: black,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  if (product.tracking == 'lot')
+                                                    Column(
+                                                      children: [
+                                                        Align(
+                                                          alignment: Alignment
+                                                              .centerLeft,
+                                                          child: Text(
+                                                            "Número de serie/lote: ",
+                                                            style: TextStyle(
+                                                              fontSize: 12,
                                                               color:
                                                                   primaryColorApp,
-                                                              size: 16,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        Align(
+                                                          alignment: Alignment
+                                                              .centerLeft,
+                                                          child: Text(
+                                                            product.lotId == ""
+                                                                ? "Sin lote"
+                                                                : "${product.lotId}",
+                                                            style: TextStyle(
+                                                              fontSize: 12,
+                                                              color:
+                                                                  product.lotId ==
+                                                                      ""
+                                                                  ? Colors.red
+                                                                  : black,
                                                             ),
                                                           ),
                                                         ),
                                                       ],
                                                     ),
-                                                    Row(
-                                                      children: [
-                                                        Text(
-                                                          "${product.locationId}",
-                                                          style: TextStyle(
-                                                            fontSize: 12,
-                                                            color: black,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    Row(
-                                                      children: [
-                                                        Text(
-                                                          "Pedido: ",
-                                                          style: TextStyle(
-                                                            fontSize: 12,
-                                                            color:
-                                                                primaryColorApp,
-                                                          ),
-                                                        ),
-                                                        Text(
-                                                            "${product.pedidoId}",
-                                                            style:
-                                                                const TextStyle(
-                                                                    fontSize:
-                                                                        12,
-                                                                    color:
-                                                                        black)),
-                                                        const Spacer(),
-                                                        GestureDetector(
-                                                          onTap: () {
-                                                            ModalPrintersList
-                                                                .show(context,
-                                                                    resIds: [
-                                                                      product
-                                                                          .idMove
-                                                                    ],
-                                                                    companyId:
-                                                                        1);
-                                                          },
-                                                          child: Icon(
-                                                            Icons.print,
-                                                            color:
-                                                                primaryColorApp,
-                                                            size: 25,
-                                                          ),
-                                                        ),
-                                                        const SizedBox(
-                                                            width: 3),
-                                                      ],
-                                                    ),
-                                                    Row(
-                                                      children: [
-                                                        Text(
-                                                          "Cantidad: ",
-                                                          style: TextStyle(
-                                                            fontSize: 12,
-                                                            color:
-                                                                primaryColorApp,
-                                                          ),
-                                                        ),
-                                                        Text(
-                                                          (product.isProductSplit == 1 &&
-                                                                      product.isSeparate ==
-                                                                          1
-                                                                  ? product
-                                                                      .pendingQuantity
-                                                                  : product
-                                                                          .quantity ??
-                                                                      0.0)
-                                                              .toString(),
-                                                          style:
-                                                              const TextStyle(
-                                                            fontSize: 12,
-                                                            color: black,
-                                                          ),
-                                                        ),
-                                                        const Spacer(),
-                                                        Text(
-                                                          "Unidad de medida: ",
-                                                          style: TextStyle(
-                                                            fontSize: 12,
-                                                            color:
-                                                                primaryColorApp,
-                                                          ),
-                                                        ),
-                                                        Text(
-                                                            "${product.unidades}",
-                                                            style:
-                                                                const TextStyle(
-                                                                    fontSize:
-                                                                        12,
-                                                                    color:
-                                                                        black)),
-                                                      ],
-                                                    ),
-                                                    if (product.tracking ==
-                                                        'lot')
-                                                      Column(
-                                                        children: [
-                                                          Align(
-                                                            alignment: Alignment
-                                                                .centerLeft,
-                                                            child: Text(
-                                                              "Número de serie/lote: ",
-                                                              style: TextStyle(
-                                                                fontSize: 12,
-                                                                color:
-                                                                    primaryColorApp,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          Align(
-                                                            alignment: Alignment
-                                                                .centerLeft,
-                                                            child: Text(
-                                                                product.lotId ==
-                                                                        ""
-                                                                    ? "Sin lote"
-                                                                    : "${product.lotId}",
-                                                                style: TextStyle(
-                                                                    fontSize:
-                                                                        12,
-                                                                    color: product.lotId ==
-                                                                            ""
-                                                                        ? Colors
-                                                                            .red
-                                                                        : black)),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                  ],
-                                                ),
+                                                ],
                                               ),
                                             ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  );
-                                },
-                              ),
+                                  ),
+                                );
+                              },
                             ),
-                    ],
-                  ));
+                          ),
+                  ],
+                ),
+              );
             },
           ),
         );

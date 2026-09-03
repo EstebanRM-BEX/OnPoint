@@ -8,11 +8,18 @@ import 'package:http/http.dart';
 import 'package:flutter/material.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/main.dart'; // IMPORTANTE: Importar para acceder a navigatorKey
+import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 
 class HttpResponseHandler {
   HttpResponseHandler();
 
   BuildContext? get context => navigatorKey.currentContext;
+
+  // Evita apilar varios diálogos si llegan varios 401 casi juntos (ej. la
+  // racha de llamadas seguidas al validar un cluster: reenviar pendientes →
+  // validar pedido → guardar campo → cerrar batch — si la sesión ya expiró,
+  // cada una devuelve 401).
+  bool _unauthorizedDialogVisible = false;
   Future handleHttpResponse(Future<Response> httpCall) async {
     var response = await httpCall;
     debugPrint('handleHttpResponse: ${response.statusCode}');
@@ -27,8 +34,8 @@ class HttpResponseHandler {
         _handle400(response);
         return response;
       case 401:
-        Navigator.of(context!).pushNamed('/enterprice');
-      // throw UnauthorizedException(response.body);
+        _handleUnauthorized(response);
+        return response;
 
       case 422:
         _handle422(response);
@@ -39,6 +46,34 @@ class HttpResponseHandler {
         var message = jsonDecode(response.body)["message"];
         _showErrorSnackBar([message]);
     }
+  }
+
+  /// 401: la cookie de sesión de Odoo ya no es válida (expiró o se
+  /// invalidó en el servidor). NO cerramos sesión ni navegamos solos —
+  /// el operario puede estar en medio de un proceso (ej. validando un
+  /// cluster) y sacarlo de la pantalla sin aviso es peor que dejarlo ver
+  /// el error. Solo se informa; si quiere volver a iniciar sesión lo hace
+  /// manualmente desde el menú de usuario.
+  void _handleUnauthorized(Response response) {
+    if (_unauthorizedDialogVisible) return;
+
+    String detalle = 'Tu sesión no es válida o expiró.';
+    try {
+      final body = jsonDecode(response.body);
+      final backendMessage = body is Map
+          ? (body['message'] ?? body['error'])
+          : null;
+      if (backendMessage != null && backendMessage.toString().isNotEmpty) {
+        detalle = '$detalle\n\n$backendMessage';
+      }
+    } catch (_) {
+      // Cuerpo no es JSON o no trae mensaje — nos quedamos con el genérico.
+    }
+
+    _unauthorizedDialogVisible = true;
+    showScrollableErrorDialog(
+      detalle,
+    ).whenComplete(() => _unauthorizedDialogVisible = false);
   }
 
   _handle422(Response response) {
