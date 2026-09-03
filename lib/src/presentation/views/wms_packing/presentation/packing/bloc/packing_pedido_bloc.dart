@@ -114,7 +114,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   //* IDs de paquetes seleccionados (sincronizado con la UI)
   Set<int> selectedPackageIds = {};
 
-//*base de datos
+  //*base de datos
   DataBaseSqlite db = DataBaseSqlite();
   //*repositorio
   WmsPackingRepository wmsPackingRepository = WmsPackingRepository();
@@ -170,10 +170,21 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     add(LoadAllNovedadesPackEvent());
 
     //*metodo para dividir el producto en varios paquetes
-    on<SetPickingSplitEvent>(_onSetPickingsSplitEvent);
+    // droppable: mismo motivo que SetPackingsEvent más abajo — "APLICAR
+    // CANTIDAD" en sacn_screen.dart no tiene guard de doble tap, así que sin
+    // esto un doble tap dispara dos SetPickingSplitEvent concurrentes: dos
+    // diálogos de carga apilados y, si el primero ya navegó a la pantalla
+    // siguiente, el segundo termina mostrando/cerrando su diálogo sobre un
+    // context que ya no es el de esta pantalla.
+    on<SetPickingSplitEvent>(
+      _onSetPickingsSplitEvent,
+      transformer: droppable(),
+    );
 
     //*Picking
-    on<SetPickingsEvent>(_onSetPickingsEvent);
+    // droppable: mismo motivo — "APLICAR CANTIDAD" dispara este evento sin
+    // ningún guard de doble tap.
+    on<SetPickingsEvent>(_onSetPickingsEvent, transformer: droppable());
 
     //*evento para ver la cantidad
     on<ShowQuantityPackEvent>(_onShowQuantityEvent);
@@ -214,7 +225,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
     //evento para eliminar un producto del paquete temporal
     on<DeleteProductFromTemporaryPackageEvent>(
-        _onDeleteProductFromTemporaryPackageEvent);
+      _onDeleteProductFromTemporaryPackageEvent,
+    );
     on<ViewProductImageEvent>(_onViewProductImageEvent);
 
     //evento para cargar todas las ubicaicones desde la bd
@@ -234,12 +246,14 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     on<SortPackingListEvent>((event, emit) {
       switch (event.field) {
         case 'priority':
-          currentFilterKey =
-              event.ascending ? 'priority_normal' : 'priority_high';
+          currentFilterKey = event.ascending
+              ? 'priority_normal'
+              : 'priority_high';
           break;
         case 'backorder':
-          currentFilterKey =
-              event.ascending ? 'backorder_asc' : 'backorder_desc';
+          currentFilterKey = event.ascending
+              ? 'backorder_asc'
+              : 'backorder_desc';
           break;
         case 'date':
           currentFilterKey = event.ascending ? 'date_asc' : 'date_desc';
@@ -249,8 +263,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           break;
       }
 
-      List<PedidoPackingResult> sortedList =
-          List.from(listOfPedidosFilters);
+      List<PedidoPackingResult> sortedList = List.from(listOfPedidosFilters);
       sortedList.sort((a, b) {
         switch (event.field) {
           case 'priority':
@@ -312,14 +325,18 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   }
 
   void _onSelectPackageEvent(
-      SelectPackageEvent event, Emitter<PackingPedidoState> emit) async {
+    SelectPackageEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       // Sincronizamos el set del bloc con el estado actual de la UI.
       // La UI siempre envía la lista completa actualizada,
       // por lo que reemplazar garantiza que las deselecciones
       // individuales también se reflejen aquí.
       selectedPackageIds = Set<int>.from(event.packageIds);
-      debugPrint('--------------------------->>>>>>> ${selectedPackageIds.length}');
+      debugPrint(
+        '--------------------------->>>>>>> ${selectedPackageIds.length}',
+      );
       emit(SelectPackageSuccess(List<int>.from(selectedPackageIds)));
     } catch (e, s) {
       debugPrint('Error en _onSelectPackageEvent: $e, $s');
@@ -328,7 +345,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   }
 
   void _onSearchLocationEvent(
-      SearchLocationEvent event, Emitter<PackingPedidoState> emit) async {
+    SearchLocationEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       emit(SearchLoading());
       ubicacionesFilters = [];
@@ -349,8 +368,10 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     }
   }
 
-  void _onAssignLocationToPackageEvent(AssignLocationToPackageEvent event,
-      Emitter<PackingPedidoState> emit) async {
+  void _onAssignLocationToPackageEvent(
+    AssignLocationToPackageEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       emit(AssignLocationLoading());
 
@@ -368,11 +389,13 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
         if (package.id == null) continue;
 
-        movimientos.add(MovimientoPack(
-          idTransferencia: currentPedidoPack.id ?? 0,
-          idPaquete: package.id!,
-          idUbicacionDestino: event.locationId,
-        ));
+        movimientos.add(
+          MovimientoPack(
+            idTransferencia: currentPedidoPack.id ?? 0,
+            idPaquete: package.id!,
+            idUbicacionDestino: event.locationId,
+          ),
+        );
         foundPackages.add(package);
       }
 
@@ -383,8 +406,10 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
       final request = AssignLocationPackRequest(movimientos: movimientos);
 
-      final response =
-          await wmsPackingRepository.assignLocationToPackage(request, true);
+      final response = await wmsPackingRepository.assignLocationToPackage(
+        request,
+        true,
+      );
 
       if (response.result?.code == 200) {
         // Actualizamos cada paquete localmente
@@ -403,11 +428,17 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         // Limpiamos la selección después de asignar la ubicación
         selectedPackageIds.clear();
 
-        emit(AssignLocationSuccess(
-            response.result?.msg ?? "Ubicación asignada correctamente"));
+        emit(
+          AssignLocationSuccess(
+            response.result?.msg ?? "Ubicación asignada correctamente",
+          ),
+        );
       } else {
-        emit(AssignLocationFailure(
-            response.result?.msg ?? "Error al asignar la ubicación"));
+        emit(
+          AssignLocationFailure(
+            response.result?.msg ?? "Error al asignar la ubicación",
+          ),
+        );
       }
     } catch (e, s) {
       debugPrint('Error en _onAssignLocationToPackageEvent: $e, $s');
@@ -417,7 +448,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
   //*metodo para filtrar las ubicaciones
   void _onFilterUbicacionesEvent(
-      FilterUbicacionesEvent event, Emitter<PackingPedidoState> emit) {
+    FilterUbicacionesEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) {
     try {
       debugPrint('Filtrando ubicaciones por almacen: ${event.almacen}');
       emit(FilterLocationsLoading());
@@ -441,7 +474,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
   //*metodo para seleccionar una ubicacion
   void _onSelectLocationEvent(
-      SelectLocationEvent event, Emitter<PackingPedidoState> emit) {
+    SelectLocationEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) {
     try {
       currentLocation = event.location;
       searchControllerLocationDest.clear();
@@ -455,11 +490,14 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   }
 
   void _onLoadAllLocationsEvent(
-      LoadAllLocationsEvent event, Emitter<PackingPedidoState> emit) async {
+    LoadAllLocationsEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       emit(LoadLocationsLoading());
-      final response = await db.ubicacionesRepository
-          .getAllUbicacionesByParams('is_a_dock_alter');
+      final response = await db.ubicacionesRepository.getAllUbicacionesByParams(
+        'is_a_dock_alter',
+      );
       ubicaciones.clear();
       if (response.isNotEmpty) {
         ubicaciones.addAll(response);
@@ -476,13 +514,16 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   }
 
   void _onViewProductImageEvent(
-      ViewProductImageEvent event, Emitter<PackingPedidoState> emit) async {
+    ViewProductImageEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       debugPrint('Obteniendo imagen del producto con ID: ${event.idProduct}');
       emit(ViewProductImageLoading());
 
       final result = await getIt<GetUrlImagenProducto>()(
-          GetUrlImagenProductoParams(productId: event.idProduct));
+        GetUrlImagenProductoParams(productId: event.idProduct),
+      );
 
       result.fold(
         (failure) => emit(ViewProductImageFailure('Imagen no disponible')),
@@ -495,8 +536,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   }
 
   void _onDeleteProductFromTemporaryPackageEvent(
-      DeleteProductFromTemporaryPackageEvent event,
-      Emitter<PackingPedidoState> emit) async {
+    DeleteProductFromTemporaryPackageEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       emit(DeleteProductFromTemporaryPackageLoading());
 
@@ -504,8 +546,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
       //validamos que el producto no este en la lista de producto de por hacer
 
-      if (listOfProductosProgress
-          .any((prod) => prod.idMove == event.product.idMove)) {
+      if (listOfProductosProgress.any(
+        (prod) => prod.idMove == event.product.idMove,
+      )) {
         ///buscamos
 
         await db.productosPedidosRepository.findAndAddQuantityAndDelete(
@@ -526,11 +569,12 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
       // is_separate
       await db.productosPedidosRepository.revertProductFields(
-          event.product.pedidoId ?? 0,
-          event.product.idProduct ?? 0,
-          event.product.idMove ?? 0,
-          'packing-pack',
-          id: event.product.id);
+        event.product.pedidoId ?? 0,
+        event.product.idProduct ?? 0,
+        event.product.idMove ?? 0,
+        'packing-pack',
+        id: event.product.id,
+      );
 
       //actualizamos todas las listas
       add(LoadPedidoAndProductsEvent(event.product.pedidoId ?? 0));
@@ -538,21 +582,28 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       emit(DeleteProductFromTemporaryPackageOkState());
     } catch (e, s) {
       debugPrint(
-          'Error en el  _onDeleteProductFromTemporaryPackageEvent: $e, $s');
+        'Error en el  _onDeleteProductFromTemporaryPackageEvent: $e, $s',
+      );
       emit(DeleteProductFromTemporaryPackageError(e.toString()));
     }
   }
 
   void _onValidateConfirmEvent(
-      ValidateConfirmEvent event, Emitter<PackingPedidoState> emit) async {
+    ValidateConfirmEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       emit(ValidateConfirmLoading());
       final response = await wmsPackingRepository.confirmationValidate(
-          event.idPedido, event.isBackOrder, event.isLoadinDialog);
+        event.idPedido,
+        event.isBackOrder,
+        event.isLoadinDialog,
+      );
 
       if (response.result?.code == 200) {
-        emit(ValidateConfirmSuccess(
-            event.isBackOrder, response.result?.msg ?? ""));
+        emit(
+          ValidateConfirmSuccess(event.isBackOrder, response.result?.msg ?? ""),
+        );
       } else {
         emit(ValidateConfirmFailure(response.result?.msg ?? ''));
       }
@@ -563,18 +614,20 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   }
 
   void _onCreateBackOrder(
-      CreateBackPackOrNot event, Emitter<PackingPedidoState> emit) async {
+    CreateBackPackOrNot event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       emit(CreateBackOrderOrNotLoading());
 
       final response = await wmsPackingRepository.validateTransfer(
-          event.idPick, event.isBackOrder, false);
+        event.idPick,
+        event.isBackOrder,
+        false,
+      );
 
       if (response.result?.code == 200) {
-        add(StartOrStopTimePack(
-          event.idPick,
-          'end_time_transfer',
-        ));
+        add(StartOrStopTimePack(event.idPick, 'end_time_transfer'));
 
         await db.pedidoPackRepository.updatePedidoPackField(
           event.idPick,
@@ -584,26 +637,36 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         //pedimos los nuevos picks
         add(LoadPackingPedidoFromDBEvent());
 
-        emit(CreateBackOrderOrNotSuccess(
-            event.isBackOrder, response.result?.msg ?? ""));
+        emit(
+          CreateBackOrderOrNotSuccess(
+            event.isBackOrder,
+            response.result?.msg ?? "",
+          ),
+        );
       } else {
-        emit(CreateBackOrderOrNotFailure(
-          response.result?.msg ??
-              'Error Desconocido contactar con Soporte Técnico',
-          event.isBackOrder,
-        ));
+        emit(
+          CreateBackOrderOrNotFailure(
+            response.result?.msg ??
+                'Error Desconocido contactar con Soporte Técnico',
+            event.isBackOrder,
+          ),
+        );
       }
     } catch (e, s) {
-      emit(CreateBackOrderOrNotFailure(
-        'Error al crear la backorder',
-        event.isBackOrder,
-      ));
+      emit(
+        CreateBackOrderOrNotFailure(
+          'Error al crear la backorder',
+          event.isBackOrder,
+        ),
+      );
       debugPrint('Error en el _onCreateBackOrder: $e, $s');
     }
   }
 
   void _onStartOrStopTimeOrder(
-      StartOrStopTimePack event, Emitter<PackingPedidoState> emit) async {
+    StartOrStopTimePack event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       final time = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
@@ -654,7 +717,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
   //metodo para desempacar productos
   void _onUnPackingEvent(
-      UnPackingEvent event, Emitter<PackingPedidoState> emit) async {
+    UnPackingEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       emit(UnPackingLoading());
 
@@ -680,14 +745,15 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
             final bool matches = event.rowId != null
                 ? p.id == event.rowId
                 : (p.idMove == product.idMove &&
-                    p.idPackage == event.request.idPaquete &&
-                    p.isPackage == 1);
+                      p.idPackage == event.request.idPaquete &&
+                      p.isPackage == 1);
             if (matches) {
               final double sep = (p.quantitySeparate is num)
                   ? (p.quantitySeparate as num).toDouble()
                   : 0.0;
-              final double qty =
-                  (p.quantity is num) ? (p.quantity as num).toDouble() : 0.0;
+              final double qty = (p.quantity is num)
+                  ? (p.quantity as num).toDouble()
+                  : 0.0;
               packedQty = sep > 0 ? sep : qty;
               packedRowId = p.id;
               break;
@@ -698,8 +764,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           // desempacar SUMA la cantidad empacada a ese remanente (ej: 4 + 6 = 10)
           // y borra la fila empacada. Mismo criterio que al quitar un producto
           // de un paquete temporal (findAndAddQuantityAndDelete).
-          final bool tieneRemanente = listOfProductosProgress
-              .any((p) => p.idMove == product.idMove);
+          final bool tieneRemanente = listOfProductosProgress.any(
+            (p) => p.idMove == product.idMove,
+          );
           if (tieneRemanente) {
             await db.productosPedidosRepository.findAndAddQuantityAndDelete(
               event.productId,
@@ -722,38 +789,41 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           if (packedQty > 0) {
             await db.productosPedidosRepository
                 .setFieldTableProductosPedidosUnPacking(
-                    event.pedidoId,
-                    event.productId,
-                    "quantity",
-                    packedQty,
-                    product.idMove,
-                    event.request.idPaquete,
-                    'packing-pack',
-                    rowId: event.rowId);
+                  event.pedidoId,
+                  event.productId,
+                  "quantity",
+                  packedQty,
+                  product.idMove,
+                  event.request.idPaquete,
+                  'packing-pack',
+                  rowId: event.rowId,
+                );
           }
 
           //actualizamos el estado del producto como no separado
           await db.productosPedidosRepository
               .setFieldTableProductosPedidosUnPacking(
-                  event.pedidoId,
-                  event.productId,
-                  "is_separate",
-                  null,
-                  product.idMove,
-                  event.request.idPaquete,
-                  'packing-pack',
-                  rowId: event.rowId);
+                event.pedidoId,
+                event.productId,
+                "is_separate",
+                null,
+                product.idMove,
+                event.request.idPaquete,
+                'packing-pack',
+                rowId: event.rowId,
+              );
           //actualizamso el estado del producto como no empaquetado
           await db.productosPedidosRepository
               .setFieldTableProductosPedidosUnPacking(
-                  event.pedidoId,
-                  event.productId,
-                  "is_package",
-                  null,
-                  product.idMove,
-                  event.request.idPaquete,
-                  'packing-pack',
-                  rowId: event.rowId);
+                event.pedidoId,
+                event.productId,
+                "is_package",
+                null,
+                product.idMove,
+                event.request.idPaquete,
+                'packing-pack',
+                rowId: event.rowId,
+              );
 
           // NO anulamos `is_product_split`: si este producto se dividió en
           // gemelas (ej. 6 y 4) empacadas juntas, al desempacar la primera
@@ -765,38 +835,41 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           //actualizamos el estado del producto como no certificado
           await db.productosPedidosRepository
               .setFieldTableProductosPedidosUnPacking(
-                  event.pedidoId,
-                  event.productId,
-                  "is_certificate",
-                  null,
-                  product.idMove,
-                  event.request.idPaquete,
-                  'packing-pack',
-                  rowId: event.rowId);
+                event.pedidoId,
+                event.productId,
+                "is_certificate",
+                null,
+                product.idMove,
+                event.request.idPaquete,
+                'packing-pack',
+                rowId: event.rowId,
+              );
 
           //actualizamos el valor de is_location
           await db.productosPedidosRepository
               .setFieldTableProductosPedidosUnPacking(
-                  event.pedidoId,
-                  event.productId,
-                  "is_location_is_ok",
-                  null,
-                  product.idMove,
-                  event.request.idPaquete,
-                  'packing-pack',
-                  rowId: event.rowId);
+                event.pedidoId,
+                event.productId,
+                "is_location_is_ok",
+                null,
+                product.idMove,
+                event.request.idPaquete,
+                'packing-pack',
+                rowId: event.rowId,
+              );
 
           //actualizamos el valor de quantity_separate
           await db.productosPedidosRepository
               .setFieldTableProductosPedidosUnPacking(
-                  event.pedidoId,
-                  event.productId,
-                  "quantity_separate",
-                  null,
-                  product.idMove,
-                  event.request.idPaquete,
-                  'packing-pack',
-                  rowId: event.rowId);
+                event.pedidoId,
+                event.productId,
+                "quantity_separate",
+                null,
+                product.idMove,
+                event.request.idPaquete,
+                'packing-pack',
+                rowId: event.rowId,
+              );
 
           //actualizamos el valor de is_selected
           // 0 (no null): así la fila revertida queda como un remanente de split
@@ -804,73 +877,79 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           // —que exige is_selected=0— puede sumarle una gemela desempacada luego.
           await db.productosPedidosRepository
               .setFieldTableProductosPedidosUnPacking(
-                  event.pedidoId,
-                  event.productId,
-                  "is_selected",
-                  0,
-                  product.idMove,
-                  event.request.idPaquete,
-                  'packing-pack',
-                  rowId: event.rowId);
+                event.pedidoId,
+                event.productId,
+                "is_selected",
+                0,
+                product.idMove,
+                event.request.idPaquete,
+                'packing-pack',
+                rowId: event.rowId,
+              );
 
           //actualizamos el valor de product_is_ok
           await db.productosPedidosRepository
               .setFieldTableProductosPedidosUnPacking(
-                  event.pedidoId,
-                  event.productId,
-                  "product_is_ok",
-                  null,
-                  product.idMove,
-                  event.request.idPaquete,
-                  'packing-pack',
-                  rowId: event.rowId);
+                event.pedidoId,
+                event.productId,
+                "product_is_ok",
+                null,
+                product.idMove,
+                event.request.idPaquete,
+                'packing-pack',
+                rowId: event.rowId,
+              );
 
           //actualzamos el valor de is_quantity_is_ok
           await db.productosPedidosRepository
               .setFieldTableProductosPedidosUnPacking(
-                  event.pedidoId,
-                  event.productId,
-                  "is_quantity_is_ok",
-                  null,
-                  product.idMove,
-                  event.request.idPaquete,
-                  'packing-pack',
-                  rowId: event.rowId);
+                event.pedidoId,
+                event.productId,
+                "is_quantity_is_ok",
+                null,
+                product.idMove,
+                event.request.idPaquete,
+                'packing-pack',
+                rowId: event.rowId,
+              );
 
           //actualizamos el valor de package_name
           await db.productosPedidosRepository
               .setFieldTableProductosPedidosUnPacking(
-                  event.pedidoId,
-                  event.productId,
-                  "package_name",
-                  null,
-                  product.idMove,
-                  event.request.idPaquete,
-                  'packing-pack',
-                  rowId: event.rowId);
+                event.pedidoId,
+                event.productId,
+                "package_name",
+                null,
+                product.idMove,
+                event.request.idPaquete,
+                'packing-pack',
+                rowId: event.rowId,
+              );
 
           //acrtualizamos el valor del id_paquete en el producto
           await db.productosPedidosRepository
               .setFieldTableProductosPedidosUnPacking(
-                  event.pedidoId,
-                  event.productId,
-                  "id_package",
-                  null,
-                  product.idMove,
-                  event.request.idPaquete,
-                  'packing-pack',
-                  rowId: event.rowId);
+                event.pedidoId,
+                event.productId,
+                "id_package",
+                null,
+                product.idMove,
+                event.request.idPaquete,
+                'packing-pack',
+                rowId: event.rowId,
+              );
 
           await db.productosPedidosRepository
               .setFieldTableProductosPedidosUnPacking(
-                  event.pedidoId,
-                  event.productId,
-                  "observation",
-                  null,
-                  product.idMove,
-                  event.request.idPaquete,
-                  'packing-pack',
-                  rowId: event.rowId);
+                event.pedidoId,
+                event.productId,
+                "observation",
+                null,
+                product.idMove,
+                event.request.idPaquete,
+                'packing-pack',
+                rowId: event.rowId,
+              );
         }
 
         //restamos la cantidad de productos desempacados a un paquete
@@ -880,8 +959,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         );
 
         //VERIFICAMOS CUANTOS PRODUCTOS TIENE EL PAQUETE
-        final response =
-            await db.packagesRepository.getPackageById(event.request.idPaquete);
+        final response = await db.packagesRepository.getPackageById(
+          event.request.idPaquete,
+        );
         if (response != null) {
           if (response.cantidadProductos == 0) {
             //si la cantidad de productos es 0 eliminamos el paquete
@@ -891,8 +971,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
               packages: packages,
             );
 
-            await db.packagesRepository
-                .deletePackageById(event.request.idPaquete);
+            await db.packagesRepository.deletePackageById(
+              event.request.idPaquete,
+            );
             //vamos actualizar los consecutivos
           }
         }
@@ -917,8 +998,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     if (refNum == null) return;
 
     for (final paquete in packages) {
-      final paqueteNum =
-          _extraerNumeroConsecutivo(paquete.consecutivo?.toString());
+      final paqueteNum = _extraerNumeroConsecutivo(
+        paquete.consecutivo?.toString(),
+      );
 
       if (paqueteNum != null && paqueteNum > refNum) {
         final nuevoConsecutivo = 'Caja${paqueteNum - 1}';
@@ -948,7 +1030,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
   //*metodo para seleccionar un producto sin certificar
   void _onSelectProductPackingEvent(
-      SelectProductPackingEvent event, Emitter<PackingPedidoState> emit) async {
+    SelectProductPackingEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       // Verificar si el producto ya está en la lista de productos seleccionados
       if (!listOfProductsForPacking.contains(event.producto)) {
@@ -964,8 +1048,10 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   }
 
   //*metodo para deseleccionar un producto sin certificar
-  void _onUnSelectProductPackingEvent(UnSelectProductPackingEvent event,
-      Emitter<PackingPedidoState> emit) async {
+  void _onUnSelectProductPackingEvent(
+    UnSelectProductPackingEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       // Verificar si el producto está en la lista antes de intentar eliminarlo
       if (listOfProductsForPacking.contains(event.producto)) {
@@ -981,8 +1067,10 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   }
 
   //*metodo para seleccionar todos los productos sin certificar
-  void _onSelectAllProductsPackingEvent(SelectAllProductsPackingEvent event,
-      Emitter<PackingPedidoState> emit) async {
+  void _onSelectAllProductsPackingEvent(
+    SelectAllProductsPackingEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       listOfProductsForPacking = List<ProductoPedido>.from(event.productos);
       emit(ListOfProductsForPackingState(listOfProductsForPacking));
@@ -993,8 +1081,10 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   }
 
   //*metodo para deseleccionar todos los productos sin certificar
-  void _onUnSelectAllProductsPackingEvent(UnSelectAllProductsPackingEvent event,
-      Emitter<PackingPedidoState> emit) async {
+  void _onUnSelectAllProductsPackingEvent(
+    UnSelectAllProductsPackingEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       listOfProductsForPacking = [];
       emit(ListOfProductsForPackingState(listOfProductsForPacking));
@@ -1005,15 +1095,18 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   }
 
   void _onSetPackingsEvent(
-      SetPackingsEvent event, Emitter<PackingPedidoState> emit) async {
+    SetPackingsEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       if (event.productos.isEmpty) return;
 
       // Verificar conectividad real antes de intentar la petición
       bool isConnected = false;
       try {
-        final result = await InternetAddress.lookup('google.com')
-            .timeout(const Duration(seconds: 3));
+        final result = await InternetAddress.lookup(
+          'google.com',
+        ).timeout(const Duration(seconds: 3));
         isConnected = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
       } catch (_) {
         isConnected = false;
@@ -1035,14 +1128,16 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           idMove: producto.idMove ?? 0,
           idProducto: producto.idProduct,
           idLote: int.parse(producto.loteId.toString()),
-          idUbicacionOrigen:
-              (producto.idLocation is int) ? producto.idLocation : 0,
-          idUbicacionDestino:
-              (producto.idLocation is int) ? producto.idLocationDest : 0,
+          idUbicacionOrigen: (producto.idLocation is int)
+              ? producto.idLocation
+              : 0,
+          idUbicacionDestino: (producto.idLocation is int)
+              ? producto.idLocationDest
+              : 0,
           cantidadEnviada: event.isCertificate
               ? (producto.quantitySeparate ?? 0) > (producto.quantity)
-                  ? producto.quantity
-                  : producto.quantitySeparate ?? 0
+                    ? producto.quantity
+                    : producto.quantitySeparate ?? 0
               : producto.quantity ?? 0,
           observacion: producto.observation ?? 'Sin novedad',
           timeLine: producto.timeSeparate == 0.0 ? 2 : producto.timeSeparate,
@@ -1143,7 +1238,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
             "id_package": idPaquete,
             "is_package": 1,
             "is_certificate": 0,
-            "time_separate": 2
+            "time_separate": 2,
           };
 
     await db.productosPedidosRepository.updateProductosBatch(
@@ -1155,14 +1250,18 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
   ///*metodo para cambiar el estado del sticker
   void _onChangeStickerEvent(
-      ChangeStickerEvent event, Emitter<PackingPedidoState> emit) {
+    ChangeStickerEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) {
     isSticker = event.isSticker;
     emit(ChangeStickerState(isSticker));
   }
 
   //*evento para ver la cantidad
   void _onShowQuantityEvent(
-      ShowQuantityPackEvent event, Emitter<PackingPedidoState> emit) {
+    ShowQuantityPackEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) {
     try {
       viewQuantity = !viewQuantity;
       emit(ShowQuantityPackState(viewQuantity));
@@ -1173,29 +1272,36 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
   //*metodo que se encarga de hacer el picking
   void _onSetPickingsEvent(
-      SetPickingsEvent event, Emitter<PackingPedidoState> emit) async {
+    SetPickingsEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       emit(SetPickingPackingLoadingState());
 
       final DateTime dateTimeNow = DateTime.now();
 
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "time_separate_end",
-          dateTimeNow.toString(),
-          event.idMove,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "time_separate_end",
+        dateTimeNow.toString(),
+        event.idMove,
+        'packing-pack',
+      );
 
       final productUpdate = await db.productosPedidosRepository
           .getProductoPedidoPendingById(
-              event.pedidoId, event.idMove, 'packing-pack');
+            event.pedidoId,
+            event.idMove,
+            'packing-pack',
+          );
 
       debugPrint('productUpdate :${productUpdate.toMap()}');
 
       // Calcular la diferencia del producto ya separado
-      Duration differenceProduct = dateTimeNow
-          .difference(DateTime.parse(productUpdate.timeSeparatStart));
+      Duration differenceProduct = dateTimeNow.difference(
+        DateTime.parse(productUpdate.timeSeparatStart),
+      );
 
       // Obtener la diferencia en segundos
       double secondsDifferenceProduct =
@@ -1204,37 +1310,41 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       debugPrint('secondsDifferenceProduct: $secondsDifferenceProduct');
       //actualizamos el dato de tiempoSeparado
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "time_separate",
-          secondsDifferenceProduct,
-          event.idMove,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "time_separate",
+        secondsDifferenceProduct,
+        event.idMove,
+        'packing-pack',
+      );
 
       //mandamos a traer el tiempo de inicio
 
       //actualizamos el estado del producto como separado
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "is_separate",
-          1,
-          event.idMove,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "is_separate",
+        1,
+        event.idMove,
+        'packing-pack',
+      );
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "is_package",
-          0,
-          event.idMove,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "is_package",
+        0,
+        event.idMove,
+        'packing-pack',
+      );
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "is_certificate",
-          1,
-          event.idMove,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "is_certificate",
+        1,
+        event.idMove,
+        'packing-pack',
+      );
 
       //actualizamos la cantidad se mparada
       quantitySelected = 0;
@@ -1249,36 +1359,44 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
   //*metdo para dividir el producto
   void _onSetPickingsSplitEvent(
-      SetPickingSplitEvent event, Emitter<PackingPedidoState> emit) async {
+    SetPickingSplitEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       emit(SetPickingPackingLoadingState());
 
       final DateTime dateTimeNow = DateTime.now();
 
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "time_separate_end",
-          dateTimeNow.toString(),
-          event.idMove,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "time_separate_end",
+        dateTimeNow.toString(),
+        event.idMove,
+        'packing-pack',
+      );
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "observation",
-          'Producto dividido',
-          event.idMove,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "observation",
+        'Producto dividido',
+        event.idMove,
+        'packing-pack',
+      );
 
       final productUpdate = await db.productosPedidosRepository
           .getProductoPedidoPendingById(
-              event.pedidoId, event.idMove, 'packing-pack');
+            event.pedidoId,
+            event.idMove,
+            'packing-pack',
+          );
 
       debugPrint('productUpdate :${productUpdate.toMap()}');
 
       // Calcular la diferencia del producto ya separado
-      Duration differenceProduct = dateTimeNow
-          .difference(DateTime.parse(productUpdate.timeSeparatStart));
+      Duration differenceProduct = dateTimeNow.difference(
+        DateTime.parse(productUpdate.timeSeparatStart),
+      );
 
       // Obtener la diferencia en segundos
       double secondsDifferenceProduct =
@@ -1287,52 +1405,60 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       debugPrint('secondsDifferenceProduct: $secondsDifferenceProduct');
       //actualizamos el dato de tiempoSeparado
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "time_separate",
-          secondsDifferenceProduct,
-          event.idMove,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "time_separate",
+        secondsDifferenceProduct,
+        event.idMove,
+        'packing-pack',
+      );
 
       //actualizamos el estado del producto como separado
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "is_separate",
-          1,
-          event.idMove,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "is_separate",
+        1,
+        event.idMove,
+        'packing-pack',
+      );
 
       //marcamos el producto como producto split
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "is_product_split",
-          1,
-          event.idMove,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "is_product_split",
+        1,
+        event.idMove,
+        'packing-pack',
+      );
 
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "is_package",
-          0,
-          event.idMove,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "is_package",
+        0,
+        event.idMove,
+        'packing-pack',
+      );
       // actualizamos el estado del producto como certificado
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "is_certificate",
-          1,
-          event.idMove,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "is_certificate",
+        1,
+        event.idMove,
+        'packing-pack',
+      );
 
-//calculamos la cantidad pendiente del producto
+      //calculamos la cantidad pendiente del producto
       var pendingQuantity = (event.producto.quantity - event.quantity);
       //creamos un nuevo producto (duplicado) con la cantidad separada
       await db.productosPedidosRepository.insertDuplicateProductoPedido(
-          event.producto, pendingQuantity, event.producto.type ?? "");
+        event.producto,
+        pendingQuantity,
+        event.producto.type ?? "",
+      );
 
       //actualizamos la cantidad separada
       quantitySelected = 0;
@@ -1348,7 +1474,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
   //*meotod para cargar todas las novedades
   void _onLoadAllNovedadesEvent(
-      LoadAllNovedadesPackEvent event, Emitter<PackingPedidoState> emit) async {
+    LoadAllNovedadesPackEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       emit(NovedadesPackingLoadingState());
       final response = await db.novedadesRepository.getAllNovedades();
@@ -1395,38 +1523,49 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         //actualizamos la temepratura por producto en la bd y la imagen
 
         await db.productosPedidosRepository.setFieldTableProductosPedidos2(
-            currentProduct.pedidoId ?? 0,
-            currentProduct.idProduct ?? 0,
-            'temperatura',
-            resultTemperature.temperature ?? 0.0,
-            event.moveLineId,
-            'packing-pack');
+          currentProduct.pedidoId ?? 0,
+          currentProduct.idProduct ?? 0,
+          'temperatura',
+          resultTemperature.temperature ?? 0.0,
+          event.moveLineId,
+          'packing-pack',
+        );
 
         //agregamos la imagen de temperatura del producto a la bd
         await db.productosPedidosRepository.setFieldTableProductosPedidos2(
-            currentProduct.pedidoId ?? 0,
-            currentProduct.idProduct ?? 0,
-            'image',
-            response.imageUrl ?? "",
-            event.moveLineId,
-            'packing-pack');
+          currentProduct.pedidoId ?? 0,
+          currentProduct.idProduct ?? 0,
+          'image',
+          response.imageUrl ?? "",
+          event.moveLineId,
+          'packing-pack',
+        );
 
         //limpiamos el dato de temperatura
         resultTemperature = TemperatureIa();
 
         add(LoadPedidoAndProductsEvent(currentProduct.pedidoId ?? 0));
 
-        emit(SendTemperatureSuccess(
-            response.result ?? 'Temperatura enviada correctamente'));
+        emit(
+          SendTemperatureSuccess(
+            response.result ?? 'Temperatura enviada correctamente',
+          ),
+        );
       } else {
-        emit(SendTemperatureFailure(
-            response.msg ?? 'Error al enviar la temperatura'));
+        emit(
+          SendTemperatureFailure(
+            response.msg ?? 'Error al enviar la temperatura',
+          ),
+        );
         return;
       }
     } catch (e, s) {
       debugPrint('Error en el _onSendTemperatureEvent: $e, $s');
-      emit(SendTemperatureFailure(
-          'Ocurrió un error al procesar la imagen y obtener la temperatura'));
+      emit(
+        SendTemperatureFailure(
+          'Ocurrió un error al procesar la imagen y obtener la temperatura',
+        ),
+      );
     }
   }
 
@@ -1452,29 +1591,39 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       if (response.code == 200) {
         //actualizamos la temepratura por producto en la bd y la imagen
         await db.productosPedidosRepository.setFieldTableProductosPedidos2(
-            currentProduct.pedidoId ?? 0,
-            currentProduct.idProduct ?? 0,
-            'temperatura',
-            temperatureController.text ?? 0.0,
-            event.moveLineId,
-            'packing-pack');
+          currentProduct.pedidoId ?? 0,
+          currentProduct.idProduct ?? 0,
+          'temperatura',
+          temperatureController.text ?? 0.0,
+          event.moveLineId,
+          'packing-pack',
+        );
 
         //limpiamos el dato de temperatura
         temperatureController.clear();
         resultTemperature = TemperatureIa();
 
         add(LoadPedidoAndProductsEvent(currentProduct.pedidoId ?? 0));
-        emit(SendTemperatureSuccess(
-            response.result ?? 'Temperatura enviada correctamente'));
+        emit(
+          SendTemperatureSuccess(
+            response.result ?? 'Temperatura enviada correctamente',
+          ),
+        );
       } else {
-        emit(SendTemperatureFailure(
-            response.msg ?? 'Error al enviar la temperatura'));
+        emit(
+          SendTemperatureFailure(
+            response.msg ?? 'Error al enviar la temperatura',
+          ),
+        );
         return;
       }
     } catch (e, s) {
       debugPrint('Error en el _onSendTemperatureEvent: $e, $s');
-      emit(SendTemperatureFailure(
-          'Ocurrió un error al procesar la imagen y obtener la temperatura'));
+      emit(
+        SendTemperatureFailure(
+          'Ocurrió un error al procesar la imagen y obtener la temperatura',
+        ),
+      );
     }
   }
 
@@ -1487,32 +1636,42 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     try {
       emit(GetTemperatureLoading());
       // 1. Llamar al método que analiza la imagen y devuelve la temperatura
-      final result =
-          await wmsPackingRepository.getTemperatureWithImage(event.file);
+      final result = await wmsPackingRepository.getTemperatureWithImage(
+        event.file,
+      );
 
       resultTemperature = TemperatureIa();
       if (result.temperature != null) {
         resultTemperature = result;
         emit(GetTemperatureSuccess(resultTemperature));
       } else {
-        emit(GetTemperatureFailure(
-            result.detail ?? 'Error al obtener la temperatura'));
+        emit(
+          GetTemperatureFailure(
+            result.detail ?? 'Error al obtener la temperatura',
+          ),
+        );
         return;
       }
     } catch (e, s) {
       debugPrint('Error en el _onGetTemperatureEvent: $e, $s');
-      emit(GetTemperatureFailure(
-          'Ocurrió un error al procesar la imagen y obtener la temperatura'));
+      emit(
+        GetTemperatureFailure(
+          'Ocurrió un error al procesar la imagen y obtener la temperatura',
+        ),
+      );
     }
   }
 
   //metodo para enviar una imagen de novedad
   void _onSendImageNovedad(
-      SendImageNovedad event, Emitter<PackingPedidoState> emit) async {
+    SendImageNovedad event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       debugPrint('------ Enviando imagen de novedad ---');
       debugPrint(
-          'pedidoId: ${event.pedidoId} moveLineId: ${event.moveLineId} productId: ${event.productId}');
+        'pedidoId: ${event.pedidoId} moveLineId: ${event.moveLineId} productId: ${event.productId}',
+      );
       emit(SendImageNovedadLoading());
       final response = await wmsPackingRepository.sendImageNoved(
         event.moveLineId,
@@ -1532,8 +1691,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         emit(SendImageNovedadSuccess(response, event.cantidad));
         //  add(GetPorductsToEntrada(event.idRecepcion));
       } else {
-        emit(SendImageNovedadFailure(
-            response.msg ?? 'Error al enviar la imagen'));
+        emit(
+          SendImageNovedadFailure(response.msg ?? 'Error al enviar la imagen'),
+        );
       }
     } catch (e, s) {
       debugPrint('Error en el _onSendImageNovedad: $e, $s');
@@ -1542,7 +1702,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   }
 
   void _onFetchProductEvent(
-      FetchProductEvent event, Emitter<PackingPedidoState> emit) async {
+    FetchProductEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       isLocationOk = true;
       isProductOk = true;
@@ -1554,10 +1716,11 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       currentProduct = ProductoPedido();
       currentProduct = event.pedido;
       listOfBarcodes = await db.barcodesPackagesRepository.getBarcodesProduct(
-          currentProduct.batchId ?? 0,
-          currentProduct.idProduct,
-          currentProduct.idMove ?? 0,
-          'packing-pack');
+        currentProduct.batchId ?? 0,
+        currentProduct.idProduct,
+        currentProduct.idMove ?? 0,
+        'packing-pack',
+      );
       locationIsOk = currentProduct.isLocationIsOk == 1 ? true : false;
       productIsOk = currentProduct.productIsOk == 1 ? true : false;
       locationDestIsOk = currentProduct.locationDestIsOk == 1 ? true : false;
@@ -1587,137 +1750,155 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         // Validamos si el productId ya existe en la lista 'positions'
         if (!listOfProductsName.contains(product.idMove)) {
           listOfProductsName.add(
-              product); // Agregamos el productId a la lista 'listOfProductsName'
+            product,
+          ); // Agregamos el productId a la lista 'listOfProductsName'
         }
       }
     }
   }
 
   void _onAddQuantitySeparateEvent(
-      AddQuantitySeparate event, Emitter<PackingPedidoState> emit) async {
+    AddQuantitySeparate event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     quantitySelected = quantitySelected + event.quantity;
 
     await db.productosPedidosRepository.incremenQtytProductSeparatePacking(
-        event.pedidoId,
-        event.productId,
-        event.idMove,
-        event.quantity,
-        'packing-pack');
+      event.pedidoId,
+      event.productId,
+      event.idMove,
+      event.quantity,
+      'packing-pack',
+    );
 
     emit(ChangeQuantitySeparateState(quantitySelected));
   }
 
   void _onChangeQuantityIsOkEvent(
-      ChangeIsOkQuantity event, Emitter<PackingPedidoState> emit) async {
+    ChangeIsOkQuantity event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     if (event.isOk) {
       //actualizamos la cantidad del producto a true (solo el row pendiente)
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "is_quantity_is_ok",
-          1,
-          event.idMove,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "is_quantity_is_ok",
+        1,
+        event.idMove,
+        'packing-pack',
+      );
     }
     quantityIsOk = event.isOk;
-    emit(ChangeIsOkState(
-      quantityIsOk,
-    ));
+    emit(ChangeIsOkState(quantityIsOk));
   }
 
   //*metodo para cambiar la cantidad seleccionada
   void _onChangeQuantitySelectedEvent(
-      ChangeQuantitySeparate event, Emitter<PackingPedidoState> emit) async {
+    ChangeQuantitySeparate event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     debugPrint('event.quantity: ${event.quantity}');
     if (event.quantity > 0) {
       quantitySelected = event.quantity;
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "quantity_separate",
-          event.quantity,
-          event.idMove,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "quantity_separate",
+        event.quantity,
+        event.idMove,
+        'packing-pack',
+      );
     }
     emit(ChangeQuantitySeparateState(quantitySelected));
   }
 
   void _onChangeProductIsOkEvent(
-      ChangeProductIsOkEvent event, Emitter<PackingPedidoState> emit) async {
+    ChangeProductIsOkEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     if (event.productIsOk) {
       //agregamos el tiempo de inicio (solo el row pendiente, no el original certificado)
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "time_separate_start",
-          DateTime.now().toString(),
-          event.idMove,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "time_separate_start",
+        DateTime.now().toString(),
+        event.idMove,
+        'packing-pack',
+      );
 
       //actualizamos el producto a true (solo el row pendiente)
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "product_is_ok",
-          1,
-          event.idMove,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "product_is_ok",
+        1,
+        event.idMove,
+        'packing-pack',
+      );
       //actualizamos la cantidad separada
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "quantity_separate",
-          event.quantity,
-          event.idMove,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "quantity_separate",
+        event.quantity,
+        event.idMove,
+        'packing-pack',
+      );
     }
     productIsOk = event.productIsOk;
-    emit(ChangeProductPackingIsOkState(
-      productIsOk,
-    ));
+    emit(ChangeProductPackingIsOkState(productIsOk));
   }
 
   void _onChangeLocationDestIsOkEvent(
-      ChangeLocationDestIsOkEvent event, Emitter<PackingPedidoState> emit) {
+    ChangeLocationDestIsOkEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) {
     locationDestIsOk = event.locationDestIsOk;
-    emit(ChangeIsOkState(
-      locationDestIsOk,
-    ));
+    emit(ChangeIsOkState(locationDestIsOk));
   }
 
   void _onChangeLocationIsOkEvent(
-      ChangeLocationIsOkEvent event, Emitter<PackingPedidoState> emit) async {
+    ChangeLocationIsOkEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     if (isLocationOk) {
       //*actualizamos la seleccion del pedido y producto
       //actualizamos el estado del pedido como seleccionado
-      await db.pedidoPackRepository
-          .updatePedidoPackField(event.pedidoId, "is_selected", 1);
+      await db.pedidoPackRepository.updatePedidoPackField(
+        event.pedidoId,
+        "is_selected",
+        1,
+      );
       // actualizamo el valor de que he seleccionado el producto (solo el row pendiente)
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "is_selected",
-          1,
-          currentProduct.idMove ?? 0,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "is_selected",
+        1,
+        currentProduct.idMove ?? 0,
+        'packing-pack',
+      );
       //*actualizamos la ubicacion del producto a true (solo el row pendiente)
       await db.productosPedidosRepository.setFieldTableProductosPedidos3(
-          event.pedidoId,
-          event.productId,
-          "is_location_is_ok",
-          1,
-          currentProduct.idMove ?? 0,
-          'packing-pack');
+        event.pedidoId,
+        event.productId,
+        "is_location_is_ok",
+        1,
+        currentProduct.idMove ?? 0,
+        'packing-pack',
+      );
 
       locationIsOk = true;
-      emit(ChangeLocationPackingIsOkState(
-        locationIsOk,
-      ));
+      emit(ChangeLocationPackingIsOkState(locationIsOk));
     }
   }
 
   void _onValidateFieldsPacking(
-      ValidateFieldsPackingEvent event, Emitter<PackingPedidoState> emit) {
+    ValidateFieldsPackingEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) {
     switch (event.field) {
       case 'location':
         isLocationOk = event.isOk;
@@ -1733,13 +1914,16 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         break;
     }
     debugPrint(
-        'Location: $isLocationOk, Product: $isProductOk, LocationDest: $isLocationDestOk, Quantity: $isQuantityOk');
+      'Location: $isLocationOk, Product: $isProductOk, LocationDest: $isLocationDestOk, Quantity: $isQuantityOk',
+    );
     emit(ValidateFieldsPackingState(event.isOk));
   }
 
   //*evento para ver el detalle
   void _onShowDetailEvent(
-      ShowDetailvent event, Emitter<PackingPedidoState> emit) {
+    ShowDetailvent event,
+    Emitter<PackingPedidoState> emit,
+  ) {
     try {
       viewDetail = !viewDetail;
       emit(ShowDetailPackState(viewDetail));
@@ -1749,8 +1933,10 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   }
 
   //*metodo para cargar el pedido actual y sus productos:
-  void _onLoadPedidoAndProductsEvent(LoadPedidoAndProductsEvent event,
-      Emitter<PackingPedidoState> emit) async {
+  void _onLoadPedidoAndProductsEvent(
+    LoadPedidoAndProductsEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       emit(LoadPedidoAndProductsLoading());
 
@@ -1759,14 +1945,18 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       listOfProductsForPacking = [];
 
       // Lanzar las 4 queries en paralelo (todas usan event.idPedido, son independientes)
-      final futurePedido =
-          db.pedidoPackRepository.getPedidoPackById(event.idPedido);
-      final futureProducts = db.productosPedidosRepository
-          .getProductosPedido(event.idPedido, 'packing-pack');
+      final futurePedido = db.pedidoPackRepository.getPedidoPackById(
+        event.idPedido,
+      );
+      final futureProducts = db.productosPedidosRepository.getProductosPedido(
+        event.idPedido,
+        'packing-pack',
+      );
       final futureBarcodes = db.barcodesPackagesRepository
           .getBarcodesByBatchIdAndType(event.idPedido, 'packing-pack');
-      final futurePackages =
-          db.packagesRepository.getPackagesPedido(event.idPedido);
+      final futurePackages = db.packagesRepository.getPackagesPedido(
+        event.idPedido,
+      );
 
       final response = await futurePedido;
       final responseProducts = await futureProducts;
@@ -1778,26 +1968,30 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
         if (responseProducts != null) {
           debugPrint(
-              'responseProducts lista de productos: ${responseProducts.length}');
+            'responseProducts lista de productos: ${responseProducts.length}',
+          );
           listOfProductos.clear();
           listOfProductos = responseProducts;
           productsDonePacking.clear();
 
           //filtramos y creamos la lista de productos listo a empacar
           productsDone = listOfProductos
-              .where((product) =>
-                  (product.isSeparate == true || product.isSeparate == 1) &&
-                  (product.isCertificate == true ||
-                      product.isCertificate == 1) &&
-                  (product.isPackage == false || product.isPackage == 0))
+              .where(
+                (product) =>
+                    (product.isSeparate == true || product.isSeparate == 1) &&
+                    (product.isCertificate == true ||
+                        product.isCertificate == 1) &&
+                    (product.isPackage == false || product.isPackage == 0),
+              )
               .toList();
 
           debugPrint('productsDone: ${productsDone.length}');
           debugPrint('listOfProductos: ${listOfProductos.length}');
 
           productsDonePacking = listOfProductos
-              .where((product) =>
-                  product.isSeparate == 1 && product.isPackage == 1)
+              .where(
+                (product) => product.isSeparate == 1 && product.isPackage == 1,
+              )
               .toList();
 
           debugPrint('productsDonePacking: ${productsDonePacking.length}');
@@ -1822,9 +2016,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           getPosicions();
         }
 
-        emit(LoadPedidoAndProductsLoaded(
-          currentPedidoPack,
-        ));
+        emit(LoadPedidoAndProductsLoaded(currentPedidoPack));
       } else {
         emit(LoadPedidoAndProductsError('No se encontró el pedido'));
       }
@@ -1841,8 +2033,10 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   }
 
   //*metodo para buscar productos del pedido por barcode, codigo o nombre
-  void _onSearchProductPedidoPackingEvent(SearchProductPedidoPackingEvent event,
-      Emitter<PackingPedidoState> emit) async {
+  void _onSearchProductPedidoPackingEvent(
+    SearchProductPedidoPackingEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     final query = event.query.toLowerCase().trim();
     final pendingProducts = listOfProductos.where((product) {
       return product.isSeparate == null || product.isSeparate == 0;
@@ -1870,8 +2064,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       if (product.locationId != null) {
         // Verifica si la posición ya existe en la lista
         if (!positions.contains(product.locationId!)) {
-          positions
-              .add(product.locationId!); // Solo agrega si no está en la lista
+          positions.add(
+            product.locationId!,
+          ); // Solo agrega si no está en la lista
         }
       }
     }
@@ -1880,12 +2075,15 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
   //* metodo para cargar la configuracion del usuario
   void _onLoadConfigurationsUserEvent(
-      LoadConfigurationsUser event, Emitter<PackingPedidoState> emit) async {
+    LoadConfigurationsUser event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       emit(ConfigurationLoading());
       int userId = await PrefUtils.getUserId();
-      final response =
-          await db.configurationsRepository.getConfiguration(userId);
+      final response = await db.configurationsRepository.getConfiguration(
+        userId,
+      );
 
       if (response != null) {
         emit(ConfigurationPickingLoaded(response));
@@ -1900,7 +2098,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
   //metodo para empezar o terminar el tiempo
   void _onStartOrStopTimePedido(
-      StartOrStopTimePedido event, Emitter<PackingPedidoState> emit) async {
+    StartOrStopTimePedido event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       final time = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
       debugPrint("time : $time");
@@ -1942,7 +2142,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
   //*metodo para obtener los permisos del usuario
   void _onAssignUserToPedido(
-      AssignUserToPedido event, Emitter<PackingPedidoState> emit) async {
+    AssignUserToPedido event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       int userId = await PrefUtils.getUserId();
       String nameUser = await PrefUtils.getUserName();
@@ -1973,18 +2175,15 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           1,
         );
 
-        add(StartOrStopTimePedido(
-          event.id,
-          "start_time_transfer",
-        ));
+        add(StartOrStopTimePedido(event.id, "start_time_transfer"));
 
-        emit(AssignUserToPedidoLoaded(
-          id: event.id,
-          pedido: event.pedido,
-        ));
+        emit(AssignUserToPedidoLoaded(id: event.id, pedido: event.pedido));
       } else {
-        emit(AssignUserToPedidoError(
-            "La recepción ya tiene un responsable asignado"));
+        emit(
+          AssignUserToPedidoError(
+            "La recepción ya tiene un responsable asignado",
+          ),
+        );
       }
     } catch (e, s) {
       emit(AssignUserToPedidoError('Error al asignar el usuario'));
@@ -1997,8 +2196,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     Emitter<PackingPedidoState> emit,
   ) async {
     try {
-      final query =
-          event.query.trim(); // Elimina espacios en blanco al inicio/final
+      final query = event.query
+          .trim(); // Elimina espacios en blanco al inicio/final
 
       if (query.isEmpty) {
         // Si la consulta está vacía, muestra la lista completa de la DB
@@ -2054,11 +2253,14 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   }
 
   void _onLoadAllPackingEvent(
-      LoadAllPackingPedidoEvent event, Emitter<PackingPedidoState> emit) async {
+    LoadAllPackingPedidoEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     emit(WmsPackingPedidoWMSLoading());
     try {
-      final response =
-          await wmsPackingRepository.resPackingPedido(event.isLoadinDialog);
+      final response = await wmsPackingRepository.resPackingPedido(
+        event.isLoadinDialog,
+      );
 
       if (response.result != null && response.result is List) {
         listOfPedidos.clear();
@@ -2074,14 +2276,15 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         }
 
         if (listOfPedidos.isNotEmpty) {
-          await DataBaseSqlite()
-              .pedidoPackRepository
-              .insertPedidosPack(listOfPedidos);
+          await DataBaseSqlite().pedidoPackRepository.insertPedidosPack(
+            listOfPedidos,
+          );
 
           //convertir el mapa en una lista de productos unicos del pedido para packing
           //convertir el mapa en una lista de productos unicos del pedido para packing
-          List<ProductoPedido> productsToInsert =
-              listOfPedidos.expand((pedido) => pedido.listaProductos!).toList();
+          List<ProductoPedido> productsToInsert = listOfPedidos
+              .expand((pedido) => pedido.listaProductos!)
+              .toList();
           //Convertir el mapa en una lista los barcodes unicos de cada producto
           List<Barcodes> barcodesToInsert = productsToInsert
               .expand((product) => product.productPacking!)
@@ -2098,33 +2301,34 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
               .expand((paquete) => paquete.listaProductosInPacking!)
               .toList();
           debugPrint(
-              'productsPackagesToInsert :${productsPackagesToInsert.length}');
+            'productsPackagesToInsert :${productsPackagesToInsert.length}',
+          );
 
           //covertir el mapa en una lista de los paquetes de un pedido
-          List<Paquete> packagesToInsert =
-              listOfPedidos.expand((pedido) => pedido.listaPaquetes!).toList();
+          List<Paquete> packagesToInsert = listOfPedidos
+              .expand((pedido) => pedido.listaPaquetes!)
+              .toList();
 
           // Enviar la lista agrupada de productos de un pedido para packing
-          await DataBaseSqlite()
-              .productosPedidosRepository
+          await DataBaseSqlite().productosPedidosRepository
               .insertProductosPedidos(productsToInsert, 'packing-pack');
           // Enviar la lista agrupada de barcodes de un producto para packing
-          await DataBaseSqlite()
-              .barcodesPackagesRepository
+          await DataBaseSqlite().barcodesPackagesRepository
               .insertOrUpdateBarcodes(barcodesToInsert, 'packing-pack');
           // Enviar la lista agrupada de otros barcodes de un producto para packing
-          await DataBaseSqlite()
-              .barcodesPackagesRepository
+          await DataBaseSqlite().barcodesPackagesRepository
               .insertOrUpdateBarcodes(otherBarcodesToInsert, 'packing-pack');
           //guardamos los productos de los paquetes que ya fueron empaquetados
-          await DataBaseSqlite()
-              .productosPedidosRepository
+          await DataBaseSqlite().productosPedidosRepository
               .insertProductosOnPackage(
-                  productsPackagesToInsert, 'packing-pack');
+                productsPackagesToInsert,
+                'packing-pack',
+              );
           //enviamos la lista agrupada de los paquetes de un pedido para packing
-          await DataBaseSqlite()
-              .packagesRepository
-              .insertPackages(packagesToInsert, 'packing-pack');
+          await DataBaseSqlite().packagesRepository.insertPackages(
+            packagesToInsert,
+            'packing-pack',
+          );
 
           //creamos las cajas que ya estan creadas
           debugPrint('productsToInsert pack : ${productsToInsert.length}');
@@ -2139,9 +2343,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           add(LoadPackingPedidoFromDBEvent());
         }
 
-        emit(WmsPackingPedidoWMSLoaded(
-          listOfPedidos: listOfPedidos,
-        ));
+        emit(WmsPackingPedidoWMSLoaded(listOfPedidos: listOfPedidos));
       } else {
         emit(PackingPedidoError(response.msg ?? 'Error desconocido'));
         debugPrint('Error resBatchs: response is null');
@@ -2166,12 +2368,18 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         debugPrint('🗑️ Eliminando pedido huérfano: $pedidoId');
 
         // Eliminar barcodes → productos → paquetes → pedido (en ese orden por FK)
-        await db.barcodesPackagesRepository
-            .deleteBarcodesByPedidoId(pedidoId, 'packing-pack');
-        await db.productosPedidosRepository
-            .deleteProductosByPedidoId(pedidoId, 'packing-pack');
-        await db.packagesRepository
-            .deletePackagesByPedidoId(pedidoId, 'packing-pack');
+        await db.barcodesPackagesRepository.deleteBarcodesByPedidoId(
+          pedidoId,
+          'packing-pack',
+        );
+        await db.productosPedidosRepository.deleteProductosByPedidoId(
+          pedidoId,
+          'packing-pack',
+        );
+        await db.packagesRepository.deletePackagesByPedidoId(
+          pedidoId,
+          'packing-pack',
+        );
         await db.pedidoPackRepository.deletePedidoPack(pedidoId);
       }
     } catch (e, s) {
@@ -2184,7 +2392,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   ///
   /// Fórmula: cantidad_pendiente = cantidad_api - SUM(quantity_separate de rows is_separate=1)
   Future<void> _reconcileProductQuantities(
-      List<PedidoPackingResult> apiPedidos) async {
+    List<PedidoPackingResult> apiPedidos,
+  ) async {
     try {
       for (final apiPedido in apiPedidos) {
         if (apiPedido.id == null || apiPedido.listaProductos == null) continue;
@@ -2196,7 +2405,10 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
           final totalSeparated = await db.productosPedidosRepository
               .getTotalSeparatedQtyByMove(
-                  apiPedido.id!, apiProduct.idMove!, 'packing-pack');
+                apiPedido.id!,
+                apiProduct.idMove!,
+                'packing-pack',
+              );
 
           if (totalSeparated <= 0) continue; // Nada separado, nada que ajustar
 
@@ -2205,12 +2417,15 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
           if (newPendingQty > 0) {
             await db.productosPedidosRepository.updatePendingProductQuantity(
-                apiPedido.id!,
-                apiProduct.idMove!,
-                newPendingQty,
-                'packing-pack');
-            debugPrint('✅ Reconciliado idMove=${apiProduct.idMove}: '
-                'api=$apiQty, separado=$totalSeparated, pendiente=$newPendingQty');
+              apiPedido.id!,
+              apiProduct.idMove!,
+              newPendingQty,
+              'packing-pack',
+            );
+            debugPrint(
+              '✅ Reconciliado idMove=${apiProduct.idMove}: '
+              'api=$apiQty, separado=$totalSeparated, pendiente=$newPendingQty',
+            );
           }
         }
       }
@@ -2219,8 +2434,10 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     }
   }
 
-  void _onLoadPackingPedidoFromDBEvent(LoadPackingPedidoFromDBEvent event,
-      Emitter<PackingPedidoState> emit) async {
+  void _onLoadPackingPedidoFromDBEvent(
+    LoadPackingPedidoFromDBEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
     try {
       emit(PackingPedidoLoadingState());
       final batchsFromDB = await db.pedidoPackRepository.getAllPedidosPack();
@@ -2248,7 +2465,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       int seconds = totalSeconds % 60;
 
       // Formatear en 00:00:00
-      String formattedTime = '${hours.toString().padLeft(2, '0')}:'
+      String formattedTime =
+          '${hours.toString().padLeft(2, '0')}:'
           '${minutes.toString().padLeft(2, '0')}:'
           '${seconds.toString().padLeft(2, '0')}';
 
