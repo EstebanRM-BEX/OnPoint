@@ -13,6 +13,7 @@ import 'package:wms_app/src/presentation/views/recepcion/modules/individual/scre
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
+import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
 class Tab2ScreenRecep extends StatefulWidget {
   const Tab2ScreenRecep({super.key, required this.ordenCompra});
@@ -30,17 +31,55 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
   FocusNode focusNodeBuscar = FocusNode(); //cantidad textformfield
 
   final TextEditingController _controllerToDo = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
+
+  bool _isSearchVisible = false;
+  String _searchQuery = '';
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // No robar foco si hay un diálogo o pantalla encima de este tab, ni
+    // mientras el buscador manual está visible (mismo guard que
+    // recepcion_multiusuario_detail_tab_por_hacer.dart).
+    final route = ModalRoute.of(context);
+    if (route == null || !route.isCurrent) return;
+    if (_isSearchVisible) return;
     FocusScope.of(context).requestFocus(focusNodeBuscar);
   }
 
   @override
   void dispose() {
     focusNodeBuscar.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  void _toggleSearch() {
+    setState(() => _isSearchVisible = !_isSearchVisible);
+    if (!_isSearchVisible) {
+      _searchController.clear();
+      setState(() => _searchQuery = '');
+      Future.microtask(() => focusNodeBuscar.requestFocus());
+    }
+  }
+
+  List<LineasTransferencia> _filteredProducts(RecepcionBloc bloc) {
+    final base = bloc.listProductsEntrada.where(
+      (p) =>
+          (p.isSeparate == 0 || p.isSeparate == null) &&
+          (p.isDoneItem == 0 || p.isDoneItem == null),
+    );
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return base.toList();
+    return base.where((p) {
+      final name = p.productName?.toLowerCase() ?? '';
+      final code = p.productCode?.toLowerCase() ?? '';
+      final barcode = p.productBarcode?.toLowerCase() ?? '';
+      return name.contains(query) ||
+          code.contains(query) ||
+          barcode.contains(query);
+    }).toList();
   }
 
   void validateBarcode(String value, BuildContext context) {
@@ -162,6 +201,34 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
               height: size.height * 0.8,
               child: Column(
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Row(
+                      children: [
+                        if (_isSearchVisible)
+                          Expanded(
+                            child: DynamicSearchBar(
+                              controller: _searchController,
+                              hintText: 'Buscar producto',
+                              persistentKeyboard: true,
+                              onSearchChanged: (value) =>
+                                  setState(() => _searchQuery = value),
+                              onSearchCleared: () =>
+                                  setState(() => _searchQuery = ''),
+                            ),
+                          )
+                        else
+                          const Spacer(),
+                        IconButton(
+                          icon: Icon(
+                            _isSearchVisible ? Icons.close : Icons.search,
+                            color: primaryColorApp,
+                          ),
+                          onPressed: _toggleSearch,
+                        ),
+                      ],
+                    ),
+                  ),
                   //*espacio para escanear y buscar el producto
                   BarcodeScannerField(
                     controller: _controllerToDo,
@@ -171,13 +238,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
                     },
                   ),
 
-                  (recepcionBloc.listProductsEntrada.where((element) {
-                            return (element.isSeparate == 0 ||
-                                    element.isSeparate == null) &&
-                                (element.isDoneItem == 0 ||
-                                    element.isDoneItem == null);
-                          }).length ==
-                          0)
+                  (_filteredProducts(recepcionBloc).isEmpty)
                       ? Expanded(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -204,27 +265,17 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
                       :
                         // :
                         Expanded(
-                          child: ListView.builder(
-                            itemCount: recepcionBloc.listProductsEntrada.where((
-                              element,
-                            ) {
-                              return (element.isSeparate == 0 ||
-                                      element.isSeparate == null) &&
-                                  (element.isDoneItem == 0 ||
-                                      element.isDoneItem == null);
-                            }).length,
-                            itemBuilder: (context, index) {
-                              final product = recepcionBloc
-                                  .listProductsEntrada //recepcionBloc.listProductsEntrada
-                                  .where((element) {
-                                    return (element.isSeparate == 0 ||
-                                            element.isSeparate == null) &&
-                                        (element.isDoneItem == 0 ||
-                                            element.isDoneItem == null);
-                                  })
-                                  .elementAt(index);
+                          child: Builder(
+                            builder: (context) {
+                              final filtered = _filteredProducts(
+                                recepcionBloc,
+                              );
+                              return ListView.builder(
+                                itemCount: filtered.length,
+                                itemBuilder: (context, index) {
+                                  final product = filtered[index];
 
-                              return Padding(
+                                  return Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
                                 ),
@@ -402,6 +453,8 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
                                     ),
                                   ),
                                 ),
+                              );
+                                },
                               );
                             },
                           ),

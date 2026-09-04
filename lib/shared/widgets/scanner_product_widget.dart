@@ -156,7 +156,7 @@ class _ProductScannerWidgetState extends State<ProductScannerWidget> {
                       ),
                     ),
                     hintText: widget.currentProductId,
-                    hintMaxLines: 2,
+                    hintMaxLines: 3,
                     hintStyle: const TextStyle(fontSize: 12, color: black),
                     disabledBorder: InputBorder.none,
                     border: InputBorder.none,
