@@ -56,6 +56,11 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
   //*lista de productos de un una entrada
   List<String> listOfProductsName = [];
 
+  // id_move que debe mostrarse primero en "por hacer" en el próximo
+  // GetPorductsToTransfer (fusión al deshacer, o remanente de un split).
+  // Se consume y limpia en _onGetProductsToTransfer.
+  int? priorityIdMoveTransfer;
+
   LineasTransferenciaTrans currentProduct = LineasTransferenciaTrans();
   ResultUbicaciones currentLocationDest = ResultUbicaciones();
 
@@ -236,104 +241,21 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
           event.idMove, false);
 
       if (response.result?.code == 200) {
-        //actualizamos de. estado el producto que fue eliminado
-        await db.productTransferenciaRepository
-            .setFieldTableProductTransferDone(
-          event.idTransfer,
-          event.idProduct,
-          'is_selected',
-          0,
-          event.idMove,
-        );
-        await db.productTransferenciaRepository
-            .setFieldTableProductTransferDone(
-          event.idTransfer,
-          event.idProduct,
-          'time',
-          0,
-          event.idMove,
-        );
-
-        await db.productTransferenciaRepository
-            .setFieldTableProductTransferDone(
-          event.idTransfer,
-          event.idProduct,
-          'location_dest_is_ok',
-          0,
-          event.idMove,
-        );
-        await db.productTransferenciaRepository
-            .setFieldTableProductTransferDone(
-          event.idTransfer,
-          event.idProduct,
-          'is_quantity_is_ok',
-          0,
-          event.idMove,
-        );
-        await db.productTransferenciaRepository
-            .setFieldTableProductTransferDone(
-          event.idTransfer,
-          event.idProduct,
-          'is_separate',
-          0,
-          event.idMove,
-        );
-        await db.productTransferenciaRepository
-            .setFieldTableProductTransferDone(
-          event.idTransfer,
-          event.idProduct,
-          'is_location_is_ok',
-          0,
-          event.idMove,
-        );
-        await db.productTransferenciaRepository
-            .setFieldTableProductTransferDone(
-          event.idTransfer,
-          event.idProduct,
-          'product_is_ok',
-          0,
-          event.idMove,
-        );
-        await db.productTransferenciaRepository
-            .setFieldTableProductTransferDone(
-          event.idTransfer,
-          event.idProduct,
-          'date_start',
-          "",
-          event.idMove,
-        );
-        await db.productTransferenciaRepository
-            .setFieldTableProductTransferDone(
-          event.idTransfer,
-          event.idProduct,
-          'date_end',
-          "",
-          event.idMove,
-        );
-        await db.productTransferenciaRepository
-            .setFieldTableProductTransferDone(
-          event.idTransfer,
-          event.idProduct,
-          'quantity_done',
-          0,
-          event.idMove,
-        );
-        await db.productTransferenciaRepository
-            .setFieldTableProductTransferDone(
-          event.idTransfer,
-          event.idProduct,
-          'is_done_item',
-          0,
-          event.idMove,
-        );
-        await db.productTransferenciaRepository
-            .setFieldTableProductTransferDone(
-          event.idTransfer,
-          event.idProduct,
-          'quantity_segunda_unidad',
-          0,
-          event.idMove,
-        );
+        // El backend ya devuelve la línea "por hacer" completa y final (si
+        // el producto coincidía en id_move+lote+ubicación origen/destino con
+        // una demanda pendiente existente, ya viene fusionada/sumada desde
+        // Odoo). No se resetea la fila en el sitio: se reemplaza por la
+        // que indica el backend (ver mergeLineAfterDelete).
+        final resultado = response.result?.result;
+        if (resultado != null) {
+          await db.productTransferenciaRepository.mergeLineAfterDelete(
+            event.idTransfer,
+            event.idMove,
+            event.idProduct,
+            resultado,
+          );
+          priorityIdMoveTransfer = resultado.idMove;
+        }
         add(GetPorductsToTransfer(event.idTransfer));
         emit(DeleteLineTransferSuccess());
       } else {
@@ -834,13 +756,18 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
               (currentProduct.cantidadFaltante - cantidadEnviar);
 
           //creamos un nuevo producto (duplicado) con la cantidad separada
+          final idMoveRemanente =
+              responseSend.result?.result?.first.idMove ?? 0;
           await db.productTransferenciaRepository.insertDuplicateProducto(
             currentProduct,
             pendingQuantity,
-            responseSend.result?.result?.first.idMove ?? 0,
+            idMoveRemanente,
             responseSend.result?.result?.first.idProduct ?? 0,
             currentProduct.type ?? "",
           );
+          // El remanente que queda "por hacer" debe verse de primero en la
+          // lista (mismo mecanismo usado al fusionar por deshacer).
+          priorityIdMoveTransfer = idMoveRemanente;
         }
 
         locationDestIsOk = false;
@@ -1409,6 +1336,19 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
 
       listProductsTransfer = [];
       listProductsTransfer = response;
+
+      // Deja primero la línea recién fusionada (deshacer) o el remanente
+      // recién creado (split), para que el usuario la vea de inmediato.
+      if (priorityIdMoveTransfer != null) {
+        final idx = listProductsTransfer
+            .indexWhere((p) => p.idMove == priorityIdMoveTransfer);
+        if (idx > 0) {
+          final item = listProductsTransfer.removeAt(idx);
+          listProductsTransfer.insert(0, item);
+        }
+        priorityIdMoveTransfer = null;
+      }
+
       debugPrint('listProductsTransfer: ${listProductsTransfer.length}');
 
       listAllOfBarcodes.clear();

@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/transferencia/tbl_product_transferencia/product_transferencia_table.dart';
 import 'package:wms_app/src/presentation/views/transferencias/models/response_transferencias.dart';
+import 'package:wms_app/src/presentation/views/transferencias/models/response_delete_line_model.dart';
 
 class ProductTransferenciaRepository {
   //metodo para insertar todos los productos de una transferencia
@@ -231,6 +232,111 @@ class ProductTransferenciaRepository {
       debugPrint("Producto duplicado insertado con éxito.");
     } catch (e, s) {
       debugPrint("Error al insertar producto duplicado: $e ==> $s");
+    }
+  }
+
+  // Fusiona la línea deshecha (tab3) con la línea "por hacer" resultante que
+  // ya devuelve el backend en delete_line: si esa línea coincidía con una
+  // demanda pendiente existente, el backend ya sumó las cantidades y puede
+  // devolver un id_move distinto al que se deshizo (el de la línea
+  // "principal" que ya estaba en por hacer). Como id_move es PRIMARY KEY,
+  // borrar la fila vieja + insertar (replace) la fila con los datos del
+  // backend cubre ambos casos (mismo id_move o id_move distinto) sin
+  // necesitar comparar producto/lote/ubicación en el cliente.
+  Future<void> mergeLineAfterDelete(
+    int idTransferOld,
+    int idMoveOld,
+    int productIdOld,
+    ResultResult data,
+  ) async {
+    try {
+      Database db = await DataBaseSqlite().getDatabaseInstance();
+
+      final oldRow = await getProductById(productIdOld, idMoveOld, idTransferOld);
+
+      await db.transaction((txn) async {
+        await txn.delete(
+          ProductTransferenciaTable.tableName,
+          where: '${ProductTransferenciaTable.columnIdMove} = ? AND '
+              '${ProductTransferenciaTable.columnIdTransferencia} = ?',
+          whereArgs: [idMoveOld, idTransferOld],
+        );
+
+        final merged = data.toLineasTransferencia(type: oldRow?.type ?? '');
+        final loteDate = (merged.lotName != "" && merged.lotName != null)
+            ? merged.fechaVencimiento
+            : "";
+
+        await txn.insert(
+          ProductTransferenciaTable.tableName,
+          {
+            ProductTransferenciaTable.columnIdMove: merged.idMove ?? 0,
+            ProductTransferenciaTable.columnProductId: merged.productId ?? 0,
+            ProductTransferenciaTable.columnIdTransferencia:
+                merged.idTransferencia ?? 0,
+            ProductTransferenciaTable.columnProductName:
+                merged.productName ?? '',
+            ProductTransferenciaTable.columnProductCode:
+                merged.productCode ?? '',
+            ProductTransferenciaTable.columnProductBarcode:
+                merged.productBarcode ?? '',
+            ProductTransferenciaTable.columnProductTracking:
+                merged.productTracking ?? '',
+            ProductTransferenciaTable.columnFechaVencimiento:
+                merged.fechaVencimiento ?? '',
+            ProductTransferenciaTable.columnDiasVencimiento:
+                merged.diasVencimiento ?? 0,
+            ProductTransferenciaTable.columnQuantityOrdered:
+                merged.quantityOrdered ?? 0,
+            ProductTransferenciaTable.columnQuantityDone: 0,
+            ProductTransferenciaTable.columnUom: merged.uom ?? '',
+            ProductTransferenciaTable.columnLocationDestId:
+                merged.locationDestId ?? 0,
+            ProductTransferenciaTable.columnLocationDestName:
+                merged.locationDestName ?? '',
+            ProductTransferenciaTable.columnLocationDestBarcode:
+                merged.locationDestBarcode ?? '',
+            ProductTransferenciaTable.columnLocationId:
+                merged.locationId ?? 0,
+            ProductTransferenciaTable.columnLocationBarcode:
+                merged.locationBarcode ?? '',
+            ProductTransferenciaTable.columnLocationName:
+                merged.locationName ?? '',
+            ProductTransferenciaTable.columnWeight: merged.weight ?? 0,
+            ProductTransferenciaTable.columnIsSeparate: 0,
+            ProductTransferenciaTable.columnIsSelected: 0,
+            ProductTransferenciaTable.columnIsProductSplit: 0,
+            ProductTransferenciaTable.columnObservation:
+                merged.observation ?? '',
+            ProductTransferenciaTable.columnLoteId: merged.lotId ?? 0,
+            ProductTransferenciaTable.columnLotName: merged.lotName ?? '',
+            ProductTransferenciaTable.columnLoteDate: loteDate ?? '',
+            ProductTransferenciaTable.columnIsLocationIsOk: 0,
+            ProductTransferenciaTable.columnProductIsOk: 0,
+            ProductTransferenciaTable.columnIsQuantityIsOk: 0,
+            ProductTransferenciaTable.columnLocationDestIsOk: 0,
+            ProductTransferenciaTable.columnDateStart: '',
+            ProductTransferenciaTable.columnDateEnd: '',
+            ProductTransferenciaTable.columnTime: 0,
+            ProductTransferenciaTable.columnIsDoneItem: 0,
+            ProductTransferenciaTable.columnDateTransaction: '',
+            ProductTransferenciaTable.columnCantidadFaltante:
+                merged.cantidadFaltante ?? 0,
+            ProductTransferenciaTable.columnType: merged.type ?? '',
+            ProductTransferenciaTable.columnManejaSegundaUnidad:
+                merged.manejaSegundaUnidad ?? 0,
+            ProductTransferenciaTable.columnUomSegundaUnidad:
+                merged.uomSegundaUnidad ?? '',
+            ProductTransferenciaTable.columnQuantitySegundaUnidad: 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      });
+
+      debugPrint(
+          'mergeLineAfterDelete: idMoveOld=$idMoveOld -> idMoveNuevo=${data.idMove}');
+    } catch (e, s) {
+      debugPrint('Error en mergeLineAfterDelete: $e, $s');
     }
   }
 

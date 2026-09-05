@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:wms_app/src/presentation/views/transferencias/models/response_transferencias.dart';
 
 class ResponseDeleteLine {
     final String? jsonrpc;
@@ -65,6 +66,9 @@ class ResultResult {
     final String? productCode;
     final dynamic productBarcode;
     final String? ordenName;
+    final String? productTracking;
+    final dynamic diasVencimiento;
+    final String? fechaVencimiento;
     final int? locationDestId;
     final String? locationDestName;
     final String? locationDestBarcode;
@@ -75,6 +79,14 @@ class ResultResult {
     final dynamic quantityToTransfer;
     final dynamic cantidadFaltante;
     final dynamic cantidadDemandada;
+    final String? uom;
+    final double? weight;
+    final dynamic lotId;
+    final String? lotName;
+    final dynamic observation;
+    final dynamic time;
+    final dynamic manejaSegundaUnidad;
+    final String? uomSegundaUnidad;
 
     ResultResult({
         this.id,
@@ -85,6 +97,9 @@ class ResultResult {
         this.productCode,
         this.productBarcode,
         this.ordenName,
+        this.productTracking,
+        this.diasVencimiento,
+        this.fechaVencimiento,
         this.locationDestId,
         this.locationDestName,
         this.locationDestBarcode,
@@ -95,6 +110,14 @@ class ResultResult {
         this.quantityToTransfer,
         this.cantidadFaltante,
         this.cantidadDemandada,
+        this.uom,
+        this.weight,
+        this.lotId,
+        this.lotName,
+        this.observation,
+        this.time,
+        this.manejaSegundaUnidad,
+        this.uomSegundaUnidad,
     });
 
     factory ResultResult.fromJson(String str) => ResultResult.fromMap(json.decode(str));
@@ -110,6 +133,9 @@ class ResultResult {
         productCode: json["product_code"],
         productBarcode: json["product_barcode"],
         ordenName: json["orden_name"],
+        productTracking: json["product_tracking"],
+        diasVencimiento: json["dias_vencimiento"],
+        fechaVencimiento: json["fecha_vencimiento"],
         locationDestId: json["location_dest_id"],
         locationDestName: json["location_dest_name"],
         locationDestBarcode: json["location_dest_barcode"],
@@ -120,6 +146,14 @@ class ResultResult {
         quantityToTransfer: json["quantity_to_transfer"],
         cantidadFaltante: json["cantidad_faltante"],
         cantidadDemandada: json["cantidad_demandada"],
+        uom: json["uom"],
+        weight: (json["weight"] as num?)?.toDouble(),
+        lotId: json["lot_id"],
+        lotName: json["lot_name"],
+        observation: json["observation"],
+        time: json["time"],
+        manejaSegundaUnidad: json["maneja_segunda_unidad"],
+        uomSegundaUnidad: json["uom_segunda_unidad"],
     );
 
     Map<String, dynamic> toMap() => {
@@ -131,6 +165,9 @@ class ResultResult {
         "product_code": productCode,
         "product_barcode": productBarcode,
         "orden_name": ordenName,
+        "product_tracking": productTracking,
+        "dias_vencimiento": diasVencimiento,
+        "fecha_vencimiento": fechaVencimiento,
         "location_dest_id": locationDestId,
         "location_dest_name": locationDestName,
         "location_dest_barcode": locationDestBarcode,
@@ -141,5 +178,62 @@ class ResultResult {
         "quantity_to_transfer": quantityToTransfer,
         "cantidad_faltante": cantidadFaltante,
         "cantidad_demandada": cantidadDemandada,
+        "uom": uom,
+        "weight": weight,
+        "lot_id": lotId,
+        "lot_name": lotName,
+        "observation": observation,
+        "time": time,
+        "maneja_segunda_unidad": manejaSegundaUnidad,
+        "uom_segunda_unidad": uomSegundaUnidad,
     };
+
+    // La línea "por hacer" ya viene completamente resuelta (y fusionada,
+    // si aplicaba) desde el backend. `type` no viaja en esta respuesta
+    // porque es un dato puramente local (origen del sync), así que se
+    // preserva de la fila que se está reemplazando.
+    LineasTransferenciaTrans toLineasTransferencia({required String type}) {
+        return LineasTransferenciaTrans(
+            idMove: idMove,
+            idTransferencia: idTransferencia,
+            productId: productId,
+            productName: productName,
+            productCode: productCode,
+            productBarcode: productBarcode,
+            productTracking: productTracking,
+            diasVencimiento: diasVencimiento,
+            quantityOrdered: quantityOrdered,
+            quantityToTransfer: quantityToTransfer,
+            quantityDone: 0,
+            uom: uom,
+            locationDestId: locationDestId,
+            locationDestName: locationDestName,
+            locationDestBarcode: locationDestBarcode,
+            locationId: locationId,
+            locationName: locationName,
+            locationBarcode: locationBarcode,
+            weight: weight,
+            lotId: lotId,
+            lotName: lotName,
+            fechaVencimiento: fechaVencimiento,
+            isLocationIsOk: false,
+            productIsOk: false,
+            locationDestIsOk: false,
+            isQuantityIsOk: false,
+            isProductSplit: 0,
+            isSeparate: 0,
+            isSelected: 0,
+            observation: observation ?? "",
+            time: 0,
+            isDoneItem: 0,
+            dateTransaction: "",
+            dateStart: "",
+            dateEnd: "",
+            cantidadFaltante: cantidadFaltante,
+            type: type,
+            manejaSegundaUnidad: manejaSegundaUnidad ?? 0,
+            uomSegundaUnidad: uomSegundaUnidad,
+            quantitySegundaUnidad: 0,
+        );
+    }
 }
