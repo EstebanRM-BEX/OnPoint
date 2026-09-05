@@ -403,8 +403,8 @@ class _ScanProductClusterState extends State<ScanProductCluster>
     Future.microtask(() => focusNode7.requestFocus());
   }
 
-  void validatePicking(ClusterPickingBloc batchBloc, BuildContext context,
-      BatchProduct currentProduct) {
+  Future<void> validatePicking(ClusterPickingBloc batchBloc,
+      BuildContext context, BatchProduct currentProduct) async {
     // -------------------------------------------------------------
     // ⚡️ CAMBIO PRINCIPAL AQUÍ
     // Usamos la función booleana que valida producto por producto
@@ -468,12 +468,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
         // batchBloc.add(PickingOkEvent(batchBloc.batchWithProducts.batch?.id ?? 0,
         //     currentProduct.idProduct ?? 0, batchBloc.typePicking));
 
-        batchBloc.index = 0;
-        batchBloc.isSearch = true;
-        Navigator.pushReplacementNamed(
-          context,
-          'validate-cluster',
-        );
+        await _refreshPedidosValidateAndGoToValidate(batchBloc, context);
         //navegamos a validar el pedido
       }
     } else {
@@ -501,6 +496,44 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                 });
           });
     }
+  }
+
+  // El snapshot de pedidosValidate tomado al entrar al batch
+  // (FetchBatchProductsEvent) puede haber quedado desactualizado si en ese
+  // momento el backend aún no había calculado los pedidos a validar de este
+  // batch. Lo refrescamos contra el backend antes de navegar a
+  // validar-cluster, para no mostrar "No hay pedidos para validar" cuando en
+  // realidad sí los hay.
+  Future<void> _refreshPedidosValidateAndGoToValidate(
+      ClusterPickingBloc batchBloc, BuildContext context) async {
+    showLoadingDialog('Actualizando pedidos a validar...');
+    batchBloc.add(RefreshPedidosValidateEvent(batchBloc.currentBatch?.id ?? 0));
+
+    final state = await batchBloc.stream.firstWhere(
+      (s) =>
+          s is RefreshPedidosValidateSuccess ||
+          s is RefreshPedidosValidateError,
+    );
+
+    hideLoadingDialog();
+    if (!mounted) return;
+
+    if (state is RefreshPedidosValidateError) {
+      Get.snackbar(
+        '360 Software Informa',
+        'No se pudo actualizar los pedidos a validar, se mostrará la última información disponible.',
+        backgroundColor: white,
+        colorText: primaryColorApp,
+        icon: const Icon(Icons.warning, color: Colors.orange),
+      );
+    }
+
+    batchBloc.index = 0;
+    batchBloc.isSearch = true;
+    Navigator.pushReplacementNamed(
+      context,
+      'validate-cluster',
+    );
   }
 
   void _validatebuttonquantity() {

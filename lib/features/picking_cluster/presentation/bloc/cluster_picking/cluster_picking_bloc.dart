@@ -201,6 +201,7 @@ class ClusterPickingBloc
     on<ValidatePedidoEvent>(_onValidatePedidoEvent);
     //evento para reenviar productos guardados sin conexion
     on<SyncPendingClusterProductsEvent>(_onSyncPendingClusterProducts);
+    on<RefreshPedidosValidateEvent>(_onRefreshPedidosValidate);
 
     //al recuperar conexion, reenviamos automaticamente los pendientes
     _networkSubscription = networkInfo.onStatusChanged.listen((status) {
@@ -1028,6 +1029,40 @@ class ClusterPickingBloc
       UpdatePedidosValidateEvent event, Emitter<ClusterPickingState> emit) {
     pedidosValidate = event.pedidosValidate;
     emit(PedidosValidateUpdatedState(pedidosValidate));
+  }
+
+  // El snapshot de pedidosValidate tomado al entrar al batch
+  // (_onFetchBatchProducts) puede haber quedado desactualizado si en ese
+  // momento el backend aún no había calculado los pedidos a validar de este
+  // batch. Antes de navegar a validar-cluster, volvemos a pedir la lista de
+  // batches (único endpoint disponible) y refrescamos solo este batch.
+  Future<void> _onRefreshPedidosValidate(
+      RefreshPedidosValidateEvent event, Emitter<ClusterPickingState> emit) async {
+    emit(RefreshPedidosValidateLoading());
+    try {
+      final result = await getPickingClusterData(NoParams());
+
+      result.fold(
+        (failure) => emit(RefreshPedidosValidateError(failure.message)),
+        (batches) {
+          final match = batches.where((b) => b.id == event.batchId);
+          if (match.isEmpty) {
+            emit(RefreshPedidosValidateError(
+                'No se encontró el batch al refrescar los pedidos a validar'));
+            return;
+          }
+          pedidosValidate = match.first.pedidosValidate;
+          if (currentBatch != null) {
+            currentBatch = currentBatch!.copyWith(pedidosValidate: pedidosValidate);
+          }
+          emit(RefreshPedidosValidateSuccess(pedidosValidate));
+        },
+      );
+    } catch (e, s) {
+      debugPrint('❌ Error en _onRefreshPedidosValidate: $e -> $s');
+      emit(const RefreshPedidosValidateError(
+          'Error al refrescar los pedidos a validar'));
+    }
   }
 
   void _onChangeProductIsOkEvent(

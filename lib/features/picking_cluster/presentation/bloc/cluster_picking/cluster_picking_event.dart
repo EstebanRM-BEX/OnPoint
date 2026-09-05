@@ -192,3 +192,15 @@ class ProductPendingEvent extends ClusterPickingEvent {
 class SyncPendingClusterProductsEvent extends ClusterPickingEvent {
   const SyncPendingClusterProductsEvent();
 }
+
+// Refresca pedidosValidate contra el backend justo antes de pasar a
+// validar-cluster: el snapshot tomado al entrar al batch puede estar
+// desactualizado si en ese momento el backend aún no había calculado
+// los pedidos a validar de este batch.
+class RefreshPedidosValidateEvent extends ClusterPickingEvent {
+  final int batchId;
+  const RefreshPedidosValidateEvent(this.batchId);
+
+  @override
+  List<Object> get props => [batchId];
+}

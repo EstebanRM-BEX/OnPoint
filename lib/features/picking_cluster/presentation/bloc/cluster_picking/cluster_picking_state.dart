@@ -244,3 +244,23 @@ class SyncPendingClusterSuccess extends ClusterPickingState {
   @override
   List<Object> get props => [enviados, total];
 }
+
+// Estados del refresco de pedidosValidate contra el backend antes de
+// navegar a validar-cluster (ver RefreshPedidosValidateEvent).
+class RefreshPedidosValidateLoading extends ClusterPickingState {}
+
+class RefreshPedidosValidateSuccess extends ClusterPickingState {
+  final List<PedidoValidate> pedidosValidate;
+  const RefreshPedidosValidateSuccess(this.pedidosValidate);
+
+  @override
+  List<Object> get props => [pedidosValidate];
+}
+
+class RefreshPedidosValidateError extends ClusterPickingState {
+  final String message;
+  const RefreshPedidosValidateError(this.message);
+
+  @override
+  List<Object> get props => [message];
+}
