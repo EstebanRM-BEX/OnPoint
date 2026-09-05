@@ -44,6 +44,11 @@ class _DialogConfirmatedPackingState extends State<DialogConfirmatedPacking>
   final FocusNode _weightFocusNode = FocusNode();
   PackagingType? _selectedPackagingType;
 
+  // Evita que un doble-toque (común en algunos dispositivos) dispare
+  // onConfirm más de una vez antes de que Navigator.pop cierre el diálogo,
+  // lo que duplicaba el paquete y el mensaje "Empaquetado exitoso".
+  bool _isConfirming = false;
+
   // Watchdog: reabre el teclado si el IME del PDA (Zebra/Urovo/Chainway) lo
   // cierra solo mientras el campo de peso conserva el foco.
   late final KeyboardWatchdog _kbWatchdog = KeyboardWatchdog(
@@ -234,6 +239,8 @@ class _DialogConfirmatedPackingState extends State<DialogConfirmatedPacking>
             ),
             ElevatedButton(
               onPressed: () {
+                if (_isConfirming) return;
+
                 //validamos que se haya seleccionado un tipo de empaque
                 if (_selectedPackagingType == null &&
                     widget.manejaTipoEmpaque) {
@@ -260,6 +267,7 @@ class _DialogConfirmatedPackingState extends State<DialogConfirmatedPacking>
                 }
 
                 //si todo esta bien, llamamos a la funcion onConfirm
+                _isConfirming = true;
                 widget.onConfirm(
                   _selectedPackagingType,
                   _weightController.text,

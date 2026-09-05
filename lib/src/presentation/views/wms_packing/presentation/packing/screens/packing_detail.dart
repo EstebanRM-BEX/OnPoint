@@ -59,9 +59,12 @@ class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
         }
         if (state is WmsPackingSuccessState) {
           hideLoadingDialog();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.msg)),
-          );
+          // hideCurrentSnackBar (no clearSnackBars) evita que, si por lo que
+          // sea llega más de un WmsPackingSuccessState, se acumulen en cola
+          // y se vean "repetidos" uno tras otro.
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(state.msg)));
         }
         if (state is WmsPackingErrorState) {
           hideLoadingDialog();
