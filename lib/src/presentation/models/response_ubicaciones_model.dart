@@ -4,6 +4,17 @@
 
 import 'dart:convert';
 
+// Odoo devuelve `false` para un barcode vacío y, cuando el barcode es
+// puramente numérico, a veces lo serializa como número en vez de string.
+// Asignar cualquiera de los dos directo a un campo String? o rompe el parseo
+// (false) o pierde el valor (num), dejando el barcode en null y sin poder
+// buscarlo/mostrarlo.
+String? _asBarcodeString(dynamic value) {
+  if (value is String) return value;
+  if (value is num) return value.toString();
+  return null;
+}
+
 ResponseUbicaciones responseUbicacionesFromMap(String str) =>
     ResponseUbicaciones.fromMap(json.decode(str));
 
@@ -88,7 +99,7 @@ class ResultUbicaciones {
       ResultUbicaciones(
         id: json["id"],
         name: json["name"],
-        barcode: json["barcode"],
+        barcode: _asBarcodeString(json["barcode"]),
         locationId: json["location_id"],
         locationName: json["location_name"],
         idWarehouse: json["id_warehouse"],
