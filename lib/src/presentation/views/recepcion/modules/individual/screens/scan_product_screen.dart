@@ -35,6 +35,17 @@ import 'package:wms_app/shared/widgets/segunda_unidad_input_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
 
+/// Compara cantidades con tolerancia para absorber el error de precisión de
+/// punto flotante que se acumula al sumar cantidades repetidas (varios
+/// escaneos de producto/paquete en una misma línea, típico con alto volumen
+/// transaccional): sin esto, una cantidad realmente completa podía llegar
+/// como 11.999999999998 en vez de 12.0 y compararse como "menor" a lo
+/// esperado, mostrando el diálogo de novedad sin motivo.
+bool _cantidadAlcanzada(num cantidad, num? cantidadFaltante) {
+  if (cantidadFaltante == null) return false;
+  return (cantidad - cantidadFaltante).abs() < 0.0001;
+}
+
 class ScanProductOrderScreen extends StatefulWidget {
   const ScanProductOrderScreen({
     super.key,
@@ -295,7 +306,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
       }
     }
 
-    if (bloc.quantitySelected == currentProduct.cantidadFaltante) {
+    if (_cantidadAlcanzada(bloc.quantitySelected, currentProduct.cantidadFaltante)) {
       return;
     }
     if (scan == currentProduct.productBarcode?.toLowerCase()) {
@@ -496,8 +507,8 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
 
                         if (state is ChangeQuantitySeparateState) {
                           // if (state.quantity != 0.0) {
-                          if (state.quantity ==
-                              recepcionBloc.currentProduct.cantidadFaltante) {
+                          if (_cantidadAlcanzada(state.quantity,
+                              recepcionBloc.currentProduct.cantidadFaltante)) {
                             //termianmso el proceso
                             _finishSeprateProductOrder(context, state.quantity);
                           }
@@ -1410,7 +1421,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
       return;
     }
 
-    if (cantidad == currentProduct.cantidadFaltante) {
+    if (_cantidadAlcanzada(cantidad, currentProduct.cantidadFaltante)) {
       batchBloc.add(ChangeQuantitySeparate(
           cantidad,
           int.parse(currentProduct.productId),
