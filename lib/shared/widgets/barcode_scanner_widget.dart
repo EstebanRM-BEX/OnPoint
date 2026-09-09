@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 
 /// Campo invisible de escaneo por keyboard-wedge para PDAs (cualquier marca).
 ///
@@ -86,6 +87,17 @@ class _BarcodeScannerFieldState extends State<BarcodeScannerField> {
     if (value.isEmpty) return;
     if (value == _lastProcessed) return; // este buffer ya se procesó
     _lastProcessed = value;
+
+    // El escáner físico (keyboard-wedge) entra por teclado, no por touch: el
+    // reloj de "última actividad" que decide si la sesión expiró (4h,
+    // Session.isExpired / SessionTimeoutManager) solo se refrescaba con
+    // toques en pantalla. Una jornada larga escaneando sin tocar la
+    // pantalla lo dejaba estancado, y al morir el proceso en background
+    // (Android libera memoria) y relanzarse, CheckAuthPage veía ese reloj
+    // viejo y deslogueaba sin aviso aunque el operario llevara horas
+    // trabajando activamente. Fire-and-forget: no debe añadir latencia al
+    // escaneo.
+    unawaited(PrefUtils.saveLastActiveTime());
 
     widget.onBarcodeScanned(value, context);
 

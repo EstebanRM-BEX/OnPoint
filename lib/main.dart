@@ -29,6 +29,7 @@ import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
 import 'package:wms_app/src/api/http_response_handler.dart';
 import 'package:wms_app/core/services/session_manager.dart';
+import 'package:wms_app/core/utils/performance/jank_monitor.dart';
 import 'package:wms_app/core/utils/widgets/app_restart_widget.dart';
 import 'package:wms_app/core/utils/widgets/error_widget.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
@@ -127,6 +128,12 @@ void main() {
       );
 
       runApp(AppRestart(child: const MyApp()));
+
+      // Reporta a Crashlytics los frames con jank (>100ms) y errores no
+      // fatales para jank crítico (>200ms), agrupados por pantalla vía
+      // JankRouteObserver (navigatorObservers de GetMaterialApp, abajo).
+      // Ya existía implementado pero nunca se activaba.
+      JankMonitor().start();
 
       // WebSocket en background: no debe bloquear el primer frame.
       // connect() ya retorna solo si no hay sesión activa.
@@ -232,6 +239,7 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         initialRoute: AppRoutes.checkout,
         routes: AppRoutes.routes,
+        navigatorObservers: [JankRouteObserver()],
         supportedLocales: const [Locale('es', 'ES')],
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
