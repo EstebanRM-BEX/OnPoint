@@ -38,11 +38,13 @@ import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
 /// lote si aplica, ubicación destino si aplica, cantidad) adaptado a los
 /// campos que trae el claim.
 ///
-/// La ubicación destino, a diferencia de recepción individual (donde el
-/// operario la busca libremente si el permiso `scan_destination_location_reception`
-/// es falso), acá siempre viene pre-asignada por el backend
-/// (`location_dest_*` del claim) — el permiso solo decide si además hay que
-/// escanearla para confirmarla o si basta con mostrarla.
+/// La ubicación destino viene pre-asignada por el backend
+/// (`location_dest_*` del claim); el permiso `scan_destination_location_reception`
+/// decide si además hay que escanearla o si basta con mostrarla. Cuando hay
+/// que escanearla, no se valida contra esa ubicación preasignada: se acepta
+/// cualquier código que matchee alguna ubicación del catálogo maestro
+/// (tbl_ubicaciones) y esa pasa a ser la ubicación destino real (mismo
+/// criterio que la búsqueda manual, ver _validateLocationDest).
 ///
 /// El claim no trae segunda unidad ni temperatura (esos campos no existen en
 /// la respuesta de POST /api/receipt/claim), así que esta pantalla no los
@@ -93,6 +95,12 @@ class _RecepcionMultiusuarioScanProductScreenState
   // cualquier lote real del producto, no solo el que el claim trae
   // preasignado (que puede venir vacío si todavía no se le asignó uno).
   List<LoteProducto> _lotesDisponibles = [];
+  // Catálogo maestro de ubicaciones (tbl_ubicaciones), cargado al entrar.
+  // Al escanear la ubicación destino no se valida contra una sola esperada:
+  // cualquier código que matchee alguna ubicación de esta lista es válido
+  // (mismo criterio que la búsqueda manual en
+  // RecepcionMultiusuarioLocationDestScreen).
+  List<ResultUbicaciones> _ubicacionesDisponibles = [];
   // null mientras carga: el permiso vive en tbl_configurations, no queremos
   // leerlo como "false" (modo fijo, sin gate) por falta de datos.
   bool? _scanDestinationLocationReception;
@@ -147,9 +155,6 @@ class _RecepcionMultiusuarioScanProductScreenState
   String? get _locationDestNombreEsperado =>
       _selectedUbicacionDest?.name ?? widget.claim.locationDestName;
 
-  String? get _locationDestBarcodeEsperado =>
-      _selectedUbicacionDest?.barcode ?? widget.claim.locationDestBarcode;
-
   /// true si hace falta escanear la ubicación destino para confirmarla
   /// (permiso activo y el claim trae una ubicación destino asignada).
   bool get _requiereEscanearUbicacionDestino =>
@@ -165,6 +170,7 @@ class _RecepcionMultiusuarioScanProductScreenState
     WidgetsBinding.instance.addObserver(this);
     _cargarConfiguracion();
     _cargarLotesProducto();
+    _cargarUbicaciones();
     // No es parte de la cadena de foco secuencial (producto → lote →
     // destino → cantidad): el operario la llena cuando quiera, y al perder
     // foco solo se reevalúa a dónde sigue el flujo.
@@ -218,6 +224,20 @@ class _RecepcionMultiusuarioScanProductScreenState
       (failure) {},
       (lotes) => setState(() => _lotesDisponibles = lotes),
     );
+  }
+
+  /// Catálogo maestro de ubicaciones (tbl_ubicaciones), ya sincronizado
+  /// localmente — mismo repositorio que usa la pantalla de búsqueda manual
+  /// (RecepcionMultiusuarioLocationDestBloc). Falla en silencio: si no
+  /// llega a cargar, el operario igual puede confirmar por
+  /// RecepcionMultiusuarioLocationDestScreen (búsqueda manual).
+  Future<void> _cargarUbicaciones() async {
+    try {
+      final ubicaciones = await DataBaseSqlite().ubicacionesRepository
+          .getAllUbicaciones();
+      if (!mounted) return;
+      setState(() => _ubicacionesDisponibles = ubicaciones);
+    } catch (_) {}
   }
 
   @override
@@ -431,15 +451,27 @@ class _RecepcionMultiusuarioScanProductScreenState
     WidgetsBinding.instance.addPostFrameCallback((_) => _handleDependencies());
   }
 
+  /// No valida contra una ubicación destino preasignada: acepta cualquier
+  /// código que matchee alguna ubicación del catálogo maestro
+  /// (_ubicacionesDisponibles), igual que la búsqueda manual — la
+  /// ubicación destino real del claim no restringe qué se puede escanear
+  /// acá, solo se usa como valor informativo hasta que se confirma una.
   void _validateLocationDest(String value) {
     final scan = value.trim().toLowerCase();
     _controllerLocationDest.clear();
-    final esperado =
-        (_locationDestBarcodeEsperado ?? _locationDestNombreEsperado)
-            ?.toLowerCase() ??
-        '';
-    if (scan.isNotEmpty && esperado.isNotEmpty && scan == esperado) {
+    if (scan.isEmpty) return;
+
+    ResultUbicaciones? match;
+    for (final ubicacion in _ubicacionesDisponibles) {
+      if ((ubicacion.barcode ?? '').toLowerCase() == scan) {
+        match = ubicacion;
+        break;
+      }
+    }
+
+    if (match != null) {
       setState(() {
+        _selectedUbicacionDest = match;
         _locationDestIsOk = true;
         _locationDestFieldOk = true;
       });
