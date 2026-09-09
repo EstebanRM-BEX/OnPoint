@@ -102,17 +102,20 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
 
     /// Función auxiliar para procesar un producto encontrado
     void processProduct(LineasTransferencia product) {
-      // Disparar eventos del BLoC (sin cambios)
+      // Marca el producto como confirmado (ya se leyó su barcode acá) para
+      // saltar el re-escaneo en scan_product_screen.dart. NO dispara
+      // ChangeQuantitySeparate(0, ...): su handler solo resetea
+      // quantitySelected cuando quantity > 0 (recepcion_bloc.dart:1506), así
+      // que con 0 no resetea nada pero SÍ emite ChangeQuantitySeparateState
+      // con el valor stale del producto anterior. Esa emisión podía llegar
+      // al listener de scan_product_screen.dart ya con currentProduct
+      // actualizado al nuevo producto (FetchPorductOrder es async) y, si
+      // coincidía con su cantidadFaltante, disparaba el auto-envío
+      // (_finishSeprateProductOrder) sin que el operario alcanzara a hacer
+      // nada — el envío "directo" reportado. FetchPorductOrder ya resetea
+      // quantitySelected = 0 correctamente (recepcion_bloc.dart:1711).
       bloc
         ..add(ValidateFieldsOrderEvent(field: "product", isOk: true))
-        ..add(
-          ChangeQuantitySeparate(
-            0,
-            int.parse(product.productId),
-            product.idRecepcion ?? 0,
-            product.idMove ?? 0,
-          ),
-        )
         ..add(
           ChangeProductIsOkEvent(
             product.idRecepcion ?? 0,
