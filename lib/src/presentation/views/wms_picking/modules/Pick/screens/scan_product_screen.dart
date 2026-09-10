@@ -981,7 +981,13 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                 locationDropdown: LocationDropdownWidget(
                                   isPDA: false,
                                   selectedLocation: selectedLocation,
-                                  positionsOrigen: batchBloc.positionsOrigen,
+                                  // Solo la ubicación del producto actual: la
+                                  // selección manual únicamente confirma esa,
+                                  // no debe listar todas las de origen del pick.
+                                  positionsOrigen: [
+                                    batchBloc.currentProduct.locationId
+                                        .toString()
+                                  ],
                                   currentLocationId: batchBloc
                                       .currentProduct
                                       .locationId
@@ -1014,8 +1020,13 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                 controller: _controllerProduct,
                                 productDropdown: ProductPickDropdownWidget(
                                   selectedProduct: selectedLocation,
-                                  listOfProductsName:
-                                      batchBloc.listOfProductsName,
+                                  // Solo el producto actual: la selección
+                                  // manual únicamente confirma el producto en
+                                  // curso, no debe listar todos los pendientes
+                                  // del pick.
+                                  listOfProductsName: [
+                                    batchBloc.currentProduct.productId.toString()
+                                  ],
                                   currentProductId: batchBloc
                                       .currentProduct
                                       .productId
