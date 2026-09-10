@@ -950,7 +950,12 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
   void _onChangeQuantitySelectedEvent(
       ChangeQuantitySeparate event, Emitter<BatchState> emit) async {
     try {
-      if (event.quantity > 0) {
+      // >= 0 (no > 0): con "cantidad 0 + novedad" el guard anterior nunca
+      // escribía quantity_separate=0 en SQLite. sendProuctOdoo relee ese
+      // campo fresco de la BD local (getProductBatch) antes de enviar, así
+      // que quedaba con el valor previo (la cantidad solicitada por
+      // defecto) y eso era lo que llegaba a Odoo, no el 0 reportado.
+      if (event.quantity >= 0) {
         quantitySelected = event.quantity;
         await db.setFieldTableBatchProducts(
             batchWithProducts.batch?.id ?? 0,

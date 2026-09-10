@@ -1733,7 +1733,12 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     Emitter<PickingPickState> emit,
   ) async {
     try {
-      if (event.quantity > 0) {
+      // >= 0 (no > 0): con "cantidad 0 + novedad" el guard anterior nunca
+      // escribía quantity_separate=0 en SQLite. sendProuctOdoo relee ese
+      // campo fresco de la BD local antes de enviar (getProductPick), así
+      // que quedaba con el valor previo (la cantidad solicitada por
+      // defecto) y eso era lo que llegaba a Odoo, no el 0 reportado.
+      if (event.quantity >= 0) {
         quantitySelected = event.quantity;
         await db.pickProductsRepository.setFieldTablePickProducts(
           pickWithProducts.pick?.id ?? 0,

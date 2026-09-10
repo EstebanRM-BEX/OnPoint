@@ -989,7 +989,12 @@ class ClusterPickingBloc
   void _onChangeQuantitySelectedEvent(
       ChangeQuantitySeparate event, Emitter<ClusterPickingState> emit) async {
     try {
-      if (event.quantity > 0) {
+      // >= 0 (no > 0): con "cantidad 0 + novedad" el guard anterior nunca
+      // escribía quantity_separate=0 en SQLite. sendProuctOdoo relee el
+      // producto fresco de la BD local antes de enviar, así que ese campo
+      // quedaba con el valor previo (la cantidad solicitada por defecto) y
+      // eso era lo que llegaba a Odoo, no el 0 que el operario reportó.
+      if (event.quantity >= 0) {
         quantitySelected = event.quantity;
 
         await setClusterBatchProductFieldUseCase
