@@ -88,37 +88,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-
-    if (state == AppLifecycleState.resumed) {
-      if (mounted) {
-        // 1. Mostrar el diálogo (Ya no guardamos el contexto en una variable 'dialogContext')
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) {
-            return const DialogLoading(
-              message: "Espere un momento...",
-            );
-          },
-        );
-
-        // 2. Disparar evento de carga
-        // context.read<UserBloc>().add(LoadInfoDeviceEventUser());
-
-        // 3. Cierre asíncrono seguro
-        Future.delayed(const Duration(seconds: 1), () {
-          // ✅ CORRECCIÓN: Verificar 'mounted' asegura que el widget (HomePage) sigue vivo
-          if (mounted) {
-            // Usamos 'context' (el propio de HomePage).
-            // 'rootNavigator: true' accede al navegador raíz donde se mostró el diálogo.
-            // .pop() cierra la última ruta apilada (que es tu diálogo).
-            Navigator.of(context, rootNavigator: true).pop();
-          }
-        });
-      }
-    }
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
