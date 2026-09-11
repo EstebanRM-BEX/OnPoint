@@ -8,6 +8,7 @@ import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_claim.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_pool_item.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_session.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/detail/transferencia_multiusuario_my_claims_bloc.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/detail/transferencia_multiusuario_pool_bloc.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/scan/transferencia_multiusuario_scan_bloc.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/widgets/dialog_confirmar_tomar_producto_widget.dart';
@@ -17,6 +18,7 @@ import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/shared/widgets/shimmer_list_widget.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
 /// Tab "Por hacer" — pool de productos libres/disponibles en vivo
@@ -119,6 +121,7 @@ class _TransferenciaMultiusuarioDetailTabPorHacerState
   void _handleClaimTap(BuildContext context, TransferenciaPoolItem item) {
     final sessionId = widget.session.sessionId;
     final productId = item.productId;
+
     if (sessionId == null || productId == null) return;
 
     showDialog(
@@ -179,12 +182,23 @@ class _TransferenciaMultiusuarioDetailTabPorHacerState
     // bloqueado); refrescamos para que desaparezca de "Por hacer".
     _retry(context);
     // Ya existe la pantalla de procesar el producto: navega directo, igual
-    // que RecepcionMultiusuarioDetailTabPorHacer.
-    Navigator.pushNamed(
+    // que RecepcionMultiusuarioDetailTabPorHacer — se espera el regreso
+    // para refrescar de nuevo (haya terminado o no la transferencia) y
+    // también "Asignados", donde el producto recién reclamado debe
+    // aparecer.
+    await Navigator.pushNamed(
       context,
       AppRoutes.transferenciaMultiusuarioScanProduct,
       arguments: [widget.session, claim],
     );
+    if (!context.mounted) return;
+    _retry(context);
+    final sessionId = widget.session.sessionId;
+    if (sessionId != null) {
+      context.read<TransferenciaMultiusuarioMyClaimsBloc>().add(
+        FetchMyClaimsEvent(sessionId),
+      );
+    }
   }
 
   @override
@@ -212,9 +226,11 @@ class _TransferenciaMultiusuarioDetailTabPorHacerState
           Navigator.pop(context); // cierra el diálogo de carga
           _audioService.playErrorSound();
           _vibrationService.vibrate();
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.message)));
+          // Si el rechazo fue porque otro operario ya lo tomó, el pool
+          // quedó desactualizado — se refresca al cerrar el diálogo.
+          showScrollableErrorDialog(state.message).then((_) {
+            if (context.mounted) _retry(context);
+          });
         }
       },
       child: Column(

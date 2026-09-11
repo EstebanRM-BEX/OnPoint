@@ -12,6 +12,7 @@ class FinishTransferenciaClaimParams {
   final int locationDestId;
   final int timeLine;
   final String observation;
+  final double quantitySegundaUnidad;
 
   const FinishTransferenciaClaimParams({
     required this.claimId,
@@ -20,6 +21,7 @@ class FinishTransferenciaClaimParams {
     this.locationDestId = 0,
     this.timeLine = 0,
     this.observation = '',
+    this.quantitySegundaUnidad = 0.0,
   });
 }
 
@@ -41,6 +43,7 @@ class FinishTransferenciaClaimUseCase
       locationDestId: params.locationDestId,
       timeLine: params.timeLine,
       observation: params.observation,
+      quantitySegundaUnidad: params.quantitySegundaUnidad,
     );
   }
 }

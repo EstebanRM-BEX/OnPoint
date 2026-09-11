@@ -85,13 +85,20 @@ class _TransferenciaMultiusuarioDetailTabMisAsignadosState
   }
 
   /// Abre la pantalla de procesar el producto — mismo gesto que
-  /// RecepcionMultiusuarioDetailTabMisAsignados._openScanProduct.
-  void _handleClaimTap(BuildContext context, TransferenciaClaim claim) {
-    Navigator.pushNamed(
+  /// RecepcionMultiusuarioDetailTabMisAsignados._openScanProduct. Se espera
+  /// el regreso para refrescar "Asignados" (haya terminado o no la
+  /// transferencia, el claim puede haber cambiado).
+  Future<void> _handleClaimTap(
+    BuildContext context,
+    TransferenciaClaim claim,
+  ) async {
+    await Navigator.pushNamed(
       context,
       AppRoutes.transferenciaMultiusuarioScanProduct,
       arguments: [widget.session, claim],
     );
+    if (!context.mounted) return;
+    _retry(context);
   }
 
   void _confirmRelease(BuildContext context, TransferenciaClaim claim) {

@@ -195,7 +195,7 @@ class _Header extends StatelessWidget {
                 child: const Row(
                   children: [
                     Text(
-                      'TRANSFERENCIA MULTIUSUARIO',
+                      'TRASLADO MULTIUSUARIO',
                       style: TextStyle(color: white, fontSize: 16),
                     ),
                     SizedBox(width: 5),

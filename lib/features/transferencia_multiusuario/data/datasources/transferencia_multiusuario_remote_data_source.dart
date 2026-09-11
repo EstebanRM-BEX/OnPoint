@@ -92,9 +92,10 @@ abstract class TransferenciaMultiusuarioRemoteDataSource {
   /// POST /api/transfer/claim/{claimId}/done: confirma [qtyDone] para este
   /// claim. Body confirmado por el doc/Postman real: `qty_done`,
   /// `location_dest_id`, `observation`, `time_line`, `lot_id` — nada de
-  /// ubicación origen (el backend ya la conoce por el claim). Devuelve el
-  /// claim actualizado (`state: "done"`), misma forma que
-  /// [claimProduct]/[fetchMyClaims].
+  /// ubicación origen (el backend ya la conoce por el claim). Se le suma
+  /// `quantity_segunda_unidad` (mismo nombre que usa `send_transfer` en el
+  /// módulo legacy de transferencia interna). Devuelve el claim actualizado
+  /// (`state: "done"`), misma forma que [claimProduct]/[fetchMyClaims].
   Future<TransferenciaClaimModel> finishClaim({
     required int claimId,
     required double qtyDone,
@@ -102,6 +103,7 @@ abstract class TransferenciaMultiusuarioRemoteDataSource {
     required int locationDestId,
     required int timeLine,
     required String observation,
+    double quantitySegundaUnidad = 0.0,
   });
 
   /// POST /api/transfer/claim/{claimId}/undo: deshace una transferencia ya
@@ -110,6 +112,16 @@ abstract class TransferenciaMultiusuarioRemoteDataSource {
   /// el claim actualizado (misma forma que finishClaim), pero se descarta —
   /// mismo criterio que recepción: el pool se refresca aparte.
   Future<void> undoClaim({required int claimId, required String observacion});
+
+  /// POST /api/transfer/claim/{claimId}/heartbeat: renueva el bloqueo
+  /// temporal del claim (`bloqueado_hasta`/`locked_until`, ver
+  /// claim_ttl_minutes de la sesión) mientras el operario sigue en
+  /// scan_product_screen.dart, para que no expire y vuelva solo al pool a
+  /// mitad del proceso. Sin params confirmados (se asume `{}` como
+  /// /release, que tampoco los necesita). Devuelve el claim actualizado,
+  /// misma forma que finishClaim/claimProduct — se descarta, el heartbeat
+  /// es solo un ping en background.
+  Future<void> heartbeat({required int claimId});
 }
 
 @LazySingleton(as: TransferenciaMultiusuarioRemoteDataSource)
@@ -426,11 +438,14 @@ class TransferenciaMultiusuarioRemoteDataSourceImpl
     required int locationDestId,
     required int timeLine,
     required String observation,
+    double quantitySegundaUnidad = 0.0,
   }) async {
     // Body confirmado con Postman real: qty_done, location_dest_id,
     // observation, time_line, lot_id — sin ubicación origen (el backend ya
-    // la conoce por el claim). Mismo sobre jsonrpc completo que el resto de
-    // /api/transfer/*.
+    // la conoce por el claim). quantity_segunda_unidad se suma con el
+    // mismo nombre que usa send_transfer en transferencia interna (legacy);
+    // sin confirmar todavía por Postman contra este endpoint. Mismo sobre
+    // jsonrpc completo que el resto de /api/transfer/*.
     final response = await ApiRequestService().postPacking(
       endpoint: 'transfer/claim/$claimId/done',
       body: {
@@ -442,6 +457,7 @@ class TransferenciaMultiusuarioRemoteDataSourceImpl
           "observation": observation,
           "time_line": timeLine,
           "lot_id": lotId,
+          "quantity_segunda_unidad": quantitySegundaUnidad,
         },
       },
       isLoadinDialog: false,
@@ -491,6 +507,28 @@ class TransferenciaMultiusuarioRemoteDataSourceImpl
     if (result == null || result['status'] != 'success') {
       throw ServerException(
         result?['message'] ?? 'No se pudo deshacer la transferencia',
+      );
+    }
+  }
+
+  @override
+  Future<void> heartbeat({required int claimId}) async {
+    final response = await ApiRequestService().postPacking(
+      endpoint: 'transfer/claim/$claimId/heartbeat',
+      body: const {"jsonrpc": "2.0", "method": "call", "params": {}},
+      isLoadinDialog: false,
+    );
+
+    if (response.statusCode >= 400) {
+      throw ServerException('Error de conexión (${response.statusCode})');
+    }
+
+    final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+    final result = jsonResponse['result'] as Map<String, dynamic>?;
+
+    if (result == null || result['status'] != 'success') {
+      throw ServerException(
+        result?['message'] ?? 'No se pudo renovar el bloqueo del claim',
       );
     }
   }

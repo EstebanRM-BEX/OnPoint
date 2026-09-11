@@ -6,14 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
+import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 
 class DialogTransferencia extends StatelessWidget {
-  const DialogTransferencia({
-    super.key,
-    required this.contextHome,
-  });
+  const DialogTransferencia({super.key, required this.contextHome});
 
   final BuildContext contextHome;
 
@@ -32,17 +30,13 @@ class DialogTransferencia extends StatelessWidget {
 
     showDialog(
       context: contextHome,
-      builder: (context) => const DialogLoading(
-        message: 'Cargando interfaz...',
-      ),
+      builder: (context) =>
+          const DialogLoading(message: 'Cargando interfaz...'),
     );
     await Future.delayed(const Duration(seconds: 1));
     if (!contextHome.mounted) return;
     Navigator.pop(contextHome);
-    Navigator.pushReplacementNamed(
-      contextHome,
-      'transferencias',
-    );
+    Navigator.pushReplacementNamed(contextHome, 'transferencias');
   }
 
   void _goToMultiusuario(BuildContext context) {
@@ -53,6 +47,19 @@ class DialogTransferencia extends StatelessWidget {
     );
   }
 
+  void _goToCrear(BuildContext context) {
+    // Misma operación que hace el FloatingActionButton de
+    // ListTransferenciasScreen para crear una transferencia nueva.
+    contextHome.read<CreateTransferBloc>()
+      ..add(GetLocationsEvent())
+      ..add(FetchAllBarcodesInventarioEvent())
+      ..add(GetProductsCreateTransferEvent())
+      ..add(GetProductsFromDBEvent());
+
+    Navigator.pop(context);
+    Navigator.pushReplacementNamed(contextHome, 'create-transfer');
+  }
+
   @override
   Widget build(BuildContext context) {
     return BackdropFilter(
@@ -61,28 +68,25 @@ class DialogTransferencia extends StatelessWidget {
         backgroundColor: Colors.white,
         actionsAlignment: MainAxisAlignment.center,
         title: Center(
-            child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('SELECCIÓN DE TRANSFERENCIA',
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'SELECCIÓN DE TRANSFERENCIA',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: primaryColorApp,
-                  fontSize: 16,
-                )),
-            const SizedBox(height: 10),
-            Center(
-              child: Text(
+                style: TextStyle(color: primaryColorApp, fontSize: 16),
+              ),
+              const SizedBox(height: 10),
+              Center(
+                child: Text(
                   'Seleccione una de las siguientes opciones para realizar el proceso de transferencia',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: black,
-                    fontSize: 12,
-                  )),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
+                  style: TextStyle(color: black, fontSize: 12),
+                ),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
                 onPressed: () => _goToInterna(context),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(200, 40),
@@ -91,12 +95,12 @@ class DialogTransferencia extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: Text('TRANSFERENCIA INTERNA',
-                    style: TextStyle(
-                      color: white,
-                      fontSize: 12,
-                    ))),
-            ElevatedButton(
+                child: Text(
+                  'TRASLADO INTERNO',
+                  style: TextStyle(color: white, fontSize: 12),
+                ),
+              ),
+              ElevatedButton(
                 onPressed: () => _goToMultiusuario(context),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(200, 40),
@@ -105,12 +109,26 @@ class DialogTransferencia extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: Text('TRANSFERENCIA MULTIUSUARIO',
-                    style: TextStyle(
-                      color: white,
-                      fontSize: 12,
-                    ))),
-            ElevatedButton(
+                child: Text(
+                  'TRASLADO MULTIUSUARIO',
+                  style: TextStyle(color: white, fontSize: 12),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => _goToCrear(context),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(200, 40),
+                  backgroundColor: primaryColorApp,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  'CREAR TRANSFERENCIA',
+                  style: TextStyle(color: white, fontSize: 12),
+                ),
+              ),
+              ElevatedButton(
                 onPressed: () {
                   //cerramos el dialogo
                   Navigator.pop(context);
@@ -122,13 +140,14 @@ class DialogTransferencia extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: Text('CANCELAR',
-                    style: TextStyle(
-                      color: white,
-                      fontSize: 12,
-                    ))),
-          ],
-        )),
+                child: Text(
+                  'CANCELAR',
+                  style: TextStyle(color: white, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

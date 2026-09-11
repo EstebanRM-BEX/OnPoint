@@ -9,6 +9,7 @@ import 'package:wms_app/features/transferencia_multiusuario/presentation/widgets
 import 'package:wms_app/features/transferencia_multiusuario/presentation/widgets/transferencia_multiusuario_detail_tab_mis_asignados.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/widgets/transferencia_multiusuario_detail_tab_por_hacer.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/widgets/transferencia_multiusuario_detail_tab_terminados.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 
@@ -37,6 +38,10 @@ class _TransferenciaMultiusuarioDetailScreenState
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
+  // Evita refetchear de más mientras el TabController todavía está
+  // resolviendo a qué índice se asienta (ver _onTabChanged).
+  int? _lastFetchedTabIndex;
+
   @override
   void initState() {
     super.initState();
@@ -45,8 +50,52 @@ class _TransferenciaMultiusuarioDetailScreenState
       vsync: this,
       initialIndex: widget.initialTabIndex,
     );
+    _tabController.addListener(_onTabChanged);
+    _lastFetchedTabIndex = widget.initialTabIndex;
 
     _cargarSnapshotInicial();
+
+    // Las novedades las necesita el selector de "cantidad menor a lo
+    // pendiente" y el de "deshacer" (scan_product_screen.dart / tab
+    // Terminados) — las precargamos acá para que ya estén listas cuando el
+    // operario llegue a esas pantallas. Los permisos (tbl_configurations)
+    // no hace falta recargarlos: UserBloc ya los carga en el login.
+    context.read<UserBloc>().add(LoadUserNoveltiesEvent());
+  }
+
+  /// Refresca la data del tab al que el operario acaba de entrar — "Por
+  /// hacer"/"Asignados"/"Terminados" son datos en vivo, pueden haber
+  /// cambiado desde la última vez (otro operario tomó/terminó un producto)
+  /// mientras se estaba en otro tab. "Detalle" (índice 0) ya se refresca
+  /// solo, ver TransferenciaMultiusuarioDetailTabDetalle.
+  void _onTabChanged() {
+    // Se dispara varias veces durante la animación/el swipe — solo importa
+    // el índice en el que se asienta.
+    if (_tabController.indexIsChanging) return;
+    final index = _tabController.index;
+    if (index == _lastFetchedTabIndex) return;
+    _lastFetchedTabIndex = index;
+
+    final sessionId = widget.session.sessionId;
+    if (sessionId == null) return;
+
+    switch (index) {
+      case 1: // Por hacer
+        context.read<TransferenciaMultiusuarioPoolBloc>().add(
+          FetchTransferenciaPoolEvent(sessionId, verification: false),
+        );
+        break;
+      case 2: // Asignados
+        context.read<TransferenciaMultiusuarioMyClaimsBloc>().add(
+          FetchMyClaimsEvent(sessionId),
+        );
+        break;
+      case 3: // Terminados
+        context.read<TransferenciaMultiusuarioPoolBloc>().add(
+          FetchTransferenciaPoolEvent(sessionId, verification: true),
+        );
+        break;
+    }
   }
 
   /// Carga inicial de la pantalla: una sola llamada a
@@ -89,6 +138,7 @@ class _TransferenciaMultiusuarioDetailScreenState
 
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
   }
@@ -169,7 +219,40 @@ class _TransferenciaMultiusuarioDetailScreenState
                 );
               },
             ),
-            const Tab(text: 'Terminados', icon: Icon(Icons.done_all, size: 16)),
+            BlocBuilder<
+              TransferenciaMultiusuarioPoolBloc,
+              TransferenciaMultiusuarioPoolState
+            >(
+              builder: (context, poolState) {
+                final items = context
+                    .read<TransferenciaMultiusuarioPoolBloc>()
+                    .terminadosItems;
+                // Cuenta PRODUCTOS con al menos una asignación terminada,
+                // no observaciones sueltas — un producto con 2 entregas
+                // parciales cuenta 1, no 2 (mismo criterio que el tab
+                // Terminados, incluyendo el dedupe por asignacion_id/
+                // claim_id porque el pool a veces repite la misma
+                // asignación).
+                final vistos = <int>{};
+                var productosTerminados = 0;
+                for (final item in items) {
+                  final tieneTerminada = item.observaciones.any(
+                    (o) =>
+                        o.isDone &&
+                        vistos.add(o.asignacionId ?? o.claimId ?? o.hashCode),
+                  );
+                  if (tieneTerminada) productosTerminados++;
+                }
+                return _TabConBadge(
+                  tab: const Tab(
+                    text: 'Terminados',
+                    icon: Icon(Icons.done_all, size: 16),
+                  ),
+                  count: productosTerminados,
+                  color: green,
+                );
+              },
+            ),
           ],
         ),
       ),

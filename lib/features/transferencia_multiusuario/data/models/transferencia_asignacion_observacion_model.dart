@@ -21,6 +21,7 @@ class TransferenciaAsignacionObservacionModel
     super.timeSeconds,
     super.tiempoHoras,
     super.claimId,
+    super.quantitySegundaUnidad,
   });
 
   factory TransferenciaAsignacionObservacionModel.fromJson(
@@ -44,6 +45,7 @@ class TransferenciaAsignacionObservacionModel
       timeSeconds: dynamicToDouble(json['time_seconds']),
       tiempoHoras: dynamicToDouble(json['tiempo_horas']),
       claimId: dynamicToInt(json['claim_id']),
+      quantitySegundaUnidad: dynamicToDouble(json['quantity_segunda_unidad']),
     );
   }
 }

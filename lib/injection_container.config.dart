@@ -350,6 +350,8 @@ import 'features/transferencia_multiusuario/domain/usecases/finish_transferencia
     as _i789;
 import 'features/transferencia_multiusuario/domain/usecases/get_transferencia_sessions_from_db_usecase.dart'
     as _i440;
+import 'features/transferencia_multiusuario/domain/usecases/heartbeat_transferencia_claim_usecase.dart'
+    as _i21;
 import 'features/transferencia_multiusuario/domain/usecases/release_transferencia_claim_usecase.dart'
     as _i1072;
 import 'features/transferencia_multiusuario/domain/usecases/undo_transferencia_claim_usecase.dart'
@@ -796,6 +798,11 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i440.GetTransferenciaSessionsFromDbUseCase>(
       () => _i440.GetTransferenciaSessionsFromDbUseCase(
+        gh<_i241.TransferenciaMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i21.HeartbeatTransferenciaClaimUseCase>(
+      () => _i21.HeartbeatTransferenciaClaimUseCase(
         gh<_i241.TransferenciaMultiusuarioRepository>(),
       ),
     );

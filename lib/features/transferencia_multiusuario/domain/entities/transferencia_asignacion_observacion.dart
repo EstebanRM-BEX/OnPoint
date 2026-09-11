@@ -20,6 +20,7 @@ class TransferenciaAsignacionObservacion {
   final double? timeSeconds;
   final double? tiempoHoras;
   final int? claimId;
+  final double? quantitySegundaUnidad;
 
   const TransferenciaAsignacionObservacion({
     this.asignacionId,
@@ -39,6 +40,7 @@ class TransferenciaAsignacionObservacion {
     this.timeSeconds,
     this.tiempoHoras,
     this.claimId,
+    this.quantitySegundaUnidad,
   });
 
   bool get isDone => state == 'done';

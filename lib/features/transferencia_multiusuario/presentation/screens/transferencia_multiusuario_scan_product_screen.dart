@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,6 +18,7 @@ import 'package:wms_app/features/transferencia_multiusuario/domain/entities/tran
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_session.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/usecases/fetch_transferencia_lotes_producto_usecase.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/usecases/finish_transferencia_claim_usecase.dart';
+import 'package:wms_app/features/transferencia_multiusuario/domain/usecases/heartbeat_transferencia_claim_usecase.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/widgets/transferencia_location_origen_dropdown_widget.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/widgets/transferencia_product_dropdown_widget.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/widgets/transferencia_select_novedad_dialog.dart';
@@ -111,6 +114,10 @@ class _TransferenciaMultiusuarioScanProductScreenState
   // Se marca al validar el origen — time_line del envío final es el tiempo
   // transcurrido desde acá hasta que se confirma la transferencia.
   DateTime? _origenValidadoAt;
+  // Renueva bloqueado_hasta del claim mientras el operario sigue en esta
+  // pantalla, para que no expire (claim_ttl_minutes de la sesión) a mitad
+  // del proceso. Sin loading/errores visibles: es un ping en background.
+  Timer? _heartbeatTimer;
 
   final FocusNode _focusOrigen = FocusNode();
   final FocusNode _focusProduct = FocusNode();
@@ -169,9 +176,10 @@ class _TransferenciaMultiusuarioScanProductScreenState
     _cargarConfiguracion();
     _cargarLotesProducto();
     _cargarUbicaciones();
-    // No es parte de la cadena de foco secuencial (origen → producto → lote
-    // → destino → cantidad): el operario la llena cuando quiera, y al
-    // perder foco solo se reevalúa a dónde sigue el flujo.
+    _iniciarHeartbeat();
+    // Es un paso más de la cadena de foco secuencial (origen → producto →
+    // lote → destino → segunda unidad → cantidad): al perder foco (el
+    // operario terminó de escribirla) se reevalúa a dónde sigue el flujo.
     _focusSegundaUnidad.addListener(() {
       if (!_focusSegundaUnidad.hasFocus && mounted) {
         // addPostFrameCallback (no microtask): el campo que sigue en la
@@ -187,6 +195,29 @@ class _TransferenciaMultiusuarioScanProductScreenState
 
   @override
   void didChangeMetrics() => _kbWatchdogQuantityManual.onMetricsChanged();
+
+  /// POST /api/transfer/claim/{claimId}/heartbeat cada cierto intervalo,
+  /// menor a claim_ttl_minutes de la sesión, para que bloqueado_hasta no
+  /// expire mientras el operario sigue trabajando el claim acá. Sin params
+  /// confirmados (se asume `{}`, igual que /release). Si falla, no se
+  /// interrumpe al operario — se reintenta solo en el próximo tick.
+  void _iniciarHeartbeat() {
+    final claimId = widget.claim.id;
+    if (claimId == null) return;
+
+    final ttlMinutes = widget.session.claimTtlMinutes;
+    // Sin TTL confirmado, 5 min es un intervalo conservador (menor al TTL
+    // típico de 15 min que se ha visto en los ejemplos reales).
+    final intervalMinutes = (ttlMinutes != null && ttlMinutes > 1)
+        ? (ttlMinutes / 2).floor().clamp(1, 30)
+        : 5;
+
+    _heartbeatTimer = Timer.periodic(Duration(minutes: intervalMinutes), (_) {
+      getIt<HeartbeatTransferenciaClaimUseCase>()(
+        HeartbeatTransferenciaClaimParams(claimId: claimId),
+      );
+    });
+  }
 
   Future<void> _cargarConfiguracion() async {
     final userId = await PrefUtils.getUserId();
@@ -259,6 +290,10 @@ class _TransferenciaMultiusuarioScanProductScreenState
       FocusScope.of(context).requestFocus(_focusLocationDest);
       return;
     }
+    if (_manejaSegundaUnidad && !_segundaUnidadIsOk) {
+      FocusScope.of(context).requestFocus(_focusSegundaUnidad);
+      return;
+    }
     if (!_viewQuantity) {
       FocusScope.of(context).requestFocus(_focusQuantity);
     }
@@ -267,6 +302,7 @@ class _TransferenciaMultiusuarioScanProductScreenState
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _heartbeatTimer?.cancel();
     _kbWatchdogQuantityManual.dispose();
     _focusOrigen.dispose();
     _focusProduct.dispose();
@@ -507,12 +543,19 @@ class _TransferenciaMultiusuarioScanProductScreenState
     WidgetsBinding.instance.addPostFrameCallback((_) => _handleDependencies());
   }
 
+  /// true si la segunda unidad ya está resuelta: no aplica, o el operario
+  /// ya la escribió. Paso 4 de la cadena (origen → producto → lote →
+  /// destino → segunda unidad → cantidad), antes de poder usar cantidad.
+  bool get _segundaUnidadIsOk =>
+      !_manejaSegundaUnidad || _controllerSegundaUnidad.text.trim().isNotEmpty;
+
   /// true si ya se puede escanear/escribir la cantidad.
   bool get _puedeUsarCantidad =>
       _origenIsOk &&
       _productIsOk &&
       (!_manejaLote || _loteIsOk) &&
-      (!_requiereEscanearUbicacionDestino || _locationDestIsOk);
+      (!_requiereEscanearUbicacionDestino || _locationDestIsOk) &&
+      _segundaUnidadIsOk;
 
   String get _cantidadBloqueadaMensaje {
     if (!_origenIsOk) return 'Primero debes validar la ubicación de origen';
@@ -521,13 +564,15 @@ class _TransferenciaMultiusuarioScanProductScreenState
     if (_requiereEscanearUbicacionDestino && !_locationDestIsOk) {
       return 'Primero debes validar la ubicación destino';
     }
+    if (!_segundaUnidadIsOk) {
+      return 'Primero debes ingresar la segunda unidad'
+          '${widget.claim.uomSegundaUnidad != null ? ' (${widget.claim.uomSegundaUnidad})' : ''}';
+    }
     return 'Completa los pasos anteriores primero';
   }
 
   bool get _puedeAplicarCantidad =>
       _puedeUsarCantidad &&
-      (!_manejaSegundaUnidad ||
-          _controllerSegundaUnidad.text.trim().isNotEmpty) &&
       (_quantitySelected > 0 ||
           _controllerQuantityManual.text.trim().isNotEmpty);
 
@@ -693,6 +738,11 @@ class _TransferenciaMultiusuarioScanProductScreenState
     final timeLine = _origenValidadoAt == null
         ? 0
         : DateTime.now().difference(_origenValidadoAt!).inSeconds;
+    final quantitySegundaUnidad =
+        double.tryParse(
+          _controllerSegundaUnidad.text.trim().replaceAll(',', '.'),
+        ) ??
+        0.0;
 
     final result = await getIt<FinishTransferenciaClaimUseCase>()(
       FinishTransferenciaClaimParams(
@@ -705,6 +755,7 @@ class _TransferenciaMultiusuarioScanProductScreenState
         // por el diálogo de novedad) — igual se manda una observación fija
         // en vez de vacía.
         observation: novedad ?? 'Sin novedad',
+        quantitySegundaUnidad: quantitySegundaUnidad,
       ),
     );
 

@@ -164,6 +164,9 @@ class _TransferenciaNovedadesDialogWidgetState
                             (o.notaCorreccion ?? '').isNotEmpty;
                         final tieneUbicacionDestino =
                             (o.locationDestName ?? '').isNotEmpty;
+                        final tieneLote = (o.lotName ?? '').isNotEmpty;
+                        final tieneSegundaUnidad =
+                            (o.quantitySegundaUnidad ?? 0) > 0;
                         final fecha =
                             o.fechaCompletado ?? o.fechaAsignacion ?? '';
 
@@ -216,7 +219,11 @@ class _TransferenciaNovedadesDialogWidgetState
                                         ),
                                       ),
                                     ),
-                                    if (o.isDone)
+                                    // Solo se puede deshacer lo que uno
+                                    // mismo envió — no las asignaciones
+                                    // terminadas de otros operarios.
+                                    if (o.isDone &&
+                                        o.operarioId == _currentUserId)
                                       IconButton(
                                         tooltip: 'Deshacer',
                                         visualDensity: VisualDensity.compact,
@@ -346,12 +353,54 @@ class _TransferenciaNovedadesDialogWidgetState
                                         const SizedBox(width: 6),
                                         Expanded(
                                           child: Text(
-                                            'Ubicación destino: '
+                                            'Ubicación destino:\n'
                                             '${o.locationDestName}',
                                             style: const TextStyle(
                                               fontSize: 12,
                                               color: black,
                                             ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                if (tieneLote)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.qr_code_2_outlined,
+                                          size: 14,
+                                          color: grey,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Lote: ${o.lotName}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: black,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                if (tieneSegundaUnidad)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.scale_outlined,
+                                          size: 14,
+                                          color: grey,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '2da unidad: ${o.quantitySegundaUnidad}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: black,
                                           ),
                                         ),
                                       ],

@@ -264,6 +264,7 @@ class TransferenciaMultiusuarioRepositoryImpl
     required int locationDestId,
     required int timeLine,
     required String observation,
+    double quantitySegundaUnidad = 0.0,
   }) async {
     if (!await networkInfo.isConnected) {
       return const Left(NetworkFailure('No hay conexión a Internet'));
@@ -277,6 +278,7 @@ class TransferenciaMultiusuarioRepositoryImpl
         locationDestId: locationDestId,
         timeLine: timeLine,
         observation: observation,
+        quantitySegundaUnidad: quantitySegundaUnidad,
       );
       return Right(claim);
     } on ServerException catch (e) {
@@ -305,6 +307,22 @@ class TransferenciaMultiusuarioRepositoryImpl
       return Left(ServerFailure(e.message));
     } catch (e) {
       return Left(ServerFailure('Error al deshacer la transferencia: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> heartbeat({required int claimId}) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No hay conexión a Internet'));
+    }
+
+    try {
+      await remoteDataSource.heartbeat(claimId: claimId);
+      return const Right(unit);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Error al renovar el bloqueo: $e'));
     }
   }
 }

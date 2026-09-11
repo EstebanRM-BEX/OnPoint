@@ -189,24 +189,26 @@ class _TransferenciaMultiusuarioNewLoteScreenState
     );
   }
 
-  void _handleCrearLoteTap() {
-    // Atajo: si el producto no maneja fecha de vencimiento y el permiso de
-    // lote sin nombre está activo, se crea directo con la fecha actual como
-    // nombre, sin mostrar el formulario.
-    if (!_useExpirationDate && _manageExpirationDateWithoutLot == true) {
-      _nombreLoteController.text = DateFormat(
-        'ddMMyyyyHHmmss',
-      ).format(DateTime.now());
-      context.read<TransferenciaMultiusuarioLoteBloc>().add(
-        CreateTransferenciaLoteEvent(
-          productId: _productId ?? 0,
-          nombreLote: _nombreLoteController.text,
-          fechaVencimiento: '',
-        ),
-      );
-    }
-    setState(() => _viewList = false);
-  }
+  // Deshabilitado junto con el botón "CREAR LOTE" (ver build()) — sin
+  // llamador queda como referencia para cuando se reactive esa opción.
+  // void _handleCrearLoteTap() {
+  //   // Atajo: si el producto no maneja fecha de vencimiento y el permiso de
+  //   // lote sin nombre está activo, se crea directo con la fecha actual como
+  //   // nombre, sin mostrar el formulario.
+  //   if (!_useExpirationDate && _manageExpirationDateWithoutLot == true) {
+  //     _nombreLoteController.text = DateFormat(
+  //       'ddMMyyyyHHmmss',
+  //     ).format(DateTime.now());
+  //     context.read<TransferenciaMultiusuarioLoteBloc>().add(
+  //       CreateTransferenciaLoteEvent(
+  //         productId: _productId ?? 0,
+  //         nombreLote: _nombreLoteController.text,
+  //         fechaVencimiento: '',
+  //       ),
+  //     );
+  //   }
+  //   setState(() => _viewList = false);
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -385,23 +387,28 @@ class _TransferenciaMultiusuarioNewLoteScreenState
                         ),
                       ),
                       const SizedBox(width: 10),
-                      if (_viewList)
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _handleCrearLoteTap,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColorApp,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: const Text(
-                              'CREAR LOTE',
-                              style: TextStyle(color: white),
-                            ),
-                          ),
-                        )
-                      else
+                      // Opción "crear lote" deshabilitada a pedido — por
+                      // ahora solo se puede seleccionar un lote ya
+                      // existente. Ver _handleCrearLoteTap/_buildCreateForm
+                      // para reactivarla.
+                      // if (_viewList)
+                      //   Expanded(
+                      //     child: ElevatedButton(
+                      //       onPressed: _handleCrearLoteTap,
+                      //       style: ElevatedButton.styleFrom(
+                      //         backgroundColor: primaryColorApp,
+                      //         shape: RoundedRectangleBorder(
+                      //           borderRadius: BorderRadius.circular(10),
+                      //         ),
+                      //       ),
+                      //       child: const Text(
+                      //         'CREAR LOTE',
+                      //         style: TextStyle(color: white),
+                      //       ),
+                      //     ),
+                      //   )
+                      // else
+                      if (!_viewList)
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () => _submitCreateLote(),

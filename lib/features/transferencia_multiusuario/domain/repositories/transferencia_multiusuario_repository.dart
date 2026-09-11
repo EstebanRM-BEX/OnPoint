@@ -82,6 +82,7 @@ abstract class TransferenciaMultiusuarioRepository {
     required int locationDestId,
     required int timeLine,
     required String observation,
+    double quantitySegundaUnidad = 0.0,
   });
 
   /// POST /api/transfer/claim/{claimId}/undo: deshace una transferencia ya
@@ -91,4 +92,9 @@ abstract class TransferenciaMultiusuarioRepository {
     required int claimId,
     required String observacion,
   });
+
+  /// POST /api/transfer/claim/{claimId}/heartbeat: renueva el bloqueo
+  /// temporal del claim mientras el operario sigue procesándolo en
+  /// scan_product_screen.dart.
+  Future<Either<Failure, Unit>> heartbeat({required int claimId});
 }
