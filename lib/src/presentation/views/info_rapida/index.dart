@@ -33,7 +33,6 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
   final FocusNode focusNode1 = FocusNode();
   Timer? _debounce;
 
-
   @override
   void dispose() {
     _debounce?.cancel();
@@ -65,7 +64,7 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
     final bloc = context.read<InfoRapidaBloc>();
 
     String scan = value.trim();
-
+    print('scan:::::: $scan');
     if (bloc.scannedValue1.trim().isNotEmpty) {
       scan = bloc.scannedValue1.trim();
     }
@@ -199,9 +198,7 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
             onPressed: () {
               showDialog(
                 context: context,
-                builder: (_) => DialogInfoQuick(
-                  contextScreen: context,
-                ),
+                builder: (_) => DialogInfoQuick(contextScreen: context),
               );
             },
             child: const Icon(Icons.search, color: white),

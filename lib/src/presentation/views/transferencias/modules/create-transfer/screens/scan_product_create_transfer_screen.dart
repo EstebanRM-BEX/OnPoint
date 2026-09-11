@@ -594,9 +594,9 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                                     color: white,
                                   ),
                                   onPressed: () {
-                                    Navigator.pushReplacementNamed(
+                                   Navigator.pushReplacementNamed(
                                       context,
-                                      'transferencias',
+                                      '/home',
                                     );
                                   },
                                 ),

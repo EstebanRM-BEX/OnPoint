@@ -171,11 +171,11 @@ class TransferenciasRepository {
                 .toList();
 
             return ResponseTransferenciasResult(
-                code: 200,
-                result: transferencias,
-                updateVersion:
-                    jsonResponse['result']['update_version'] ?? false,
-                msg: jsonResponse['result']['msg'] ?? 'Success');
+              code: 200,
+              result: transferencias,
+              updateVersion: jsonResponse['result']['update_version'] ?? false,
+              msg: jsonResponse['result']['msg'] ?? 'Success',
+            );
           } else if (jsonResponse['result']['code'] == 403) {
             return ResponseTransferenciasResult(
               code: 403,
@@ -261,8 +261,8 @@ class TransferenciasRepository {
           "params": {
             "transfer_id": idTransfer,
             "time": date,
-            "field_name": field
-          }
+            "field_name": field,
+          },
         },
         isLoadinDialog: false,
       );
@@ -336,14 +336,12 @@ class TransferenciasRepository {
 
     try {
       var response = await ApiRequestService().postPacking(
-          endpoint: 'transferencias/asignar',
-          isLoadinDialog: isLoadinDialog,
-          body: {
-            "params": {
-              "id_transferencia": idTransfer,
-              "id_responsable": idUser,
-            }
-          });
+        endpoint: 'transferencias/asignar',
+        isLoadinDialog: isLoadinDialog,
+        body: {
+          "params": {"id_transferencia": idTransfer, "id_responsable": idUser},
+        },
+      );
 
       if (response.statusCode < 400) {
         // Decodifica la respuesta JSON a un mapa
@@ -397,7 +395,7 @@ class TransferenciasRepository {
     return false;
   }
 
-//metodo para enviar los productos recepcionados de la orden de entrada
+  //metodo para enviar los productos recepcionados de la orden de entrada
   Future<ResponseSenTransfer> sendProductTransfer(
     TransferRequest transferRequest,
     bool isLoadingDialog,
@@ -419,8 +417,9 @@ class TransferenciasRepository {
         body: {
           "params": {
             "id_transferencia": transferRequest.idTransferencia,
-            "list_items":
-                transferRequest.listItems.map((item) => item.toMap()).toList(),
+            "list_items": transferRequest.listItems
+                .map((item) => item.toMap())
+                .toList(),
           },
         },
         isLoadinDialog: true,
@@ -440,8 +439,11 @@ class TransferenciasRepository {
                   code: resultData['code'],
                   msg: resultData['msg'],
                   result: resultData['result'] != null
-                      ? List<ResultElement>.from(resultData['result']
-                          .map((x) => ResultElement.fromMap(x)))
+                      ? List<ResultElement>.from(
+                          resultData['result'].map(
+                            (x) => ResultElement.fromMap(x),
+                          ),
+                        )
                       : [], // Si no hay elementos en 'result', se retorna una lista vacía
                 )
               : null, // Si 'result' no existe, asigna null a 'result'
@@ -479,8 +481,9 @@ class TransferenciasRepository {
         body: {
           "params": {
             "id_transferencia": transferRequest.idTransferencia,
-            "list_items":
-                transferRequest.listItems.map((item) => item.toMap()).toList(),
+            "list_items": transferRequest.listItems
+                .map((item) => item.toMap())
+                .toList(),
           },
         },
         isLoadinDialog: isLoadingDialog,
@@ -498,8 +501,11 @@ class TransferenciasRepository {
                   code: resultData['code'],
                   msg: resultData['msg'],
                   result: resultData['result'] != null
-                      ? List<ResultElement>.from(resultData['result']
-                          .map((x) => ResultElement.fromMap(x)))
+                      ? List<ResultElement>.from(
+                          resultData['result'].map(
+                            (x) => ResultElement.fromMap(x),
+                          ),
+                        )
                       : [], // Si no hay elementos en 'result', se retorna una lista vacía
                 )
               : null, // Si 'result' no existe, asigna null a 'result'
@@ -537,7 +543,7 @@ class TransferenciasRepository {
           "params": {
             "id_transferencia": idTransfer,
             "crear_backorder": isBackorder,
-          }
+          },
         },
         isLoadinDialog: isLoadingDialog,
       );
@@ -614,7 +620,7 @@ class TransferenciasRepository {
           "params": {
             "id_transferencia": idTransfer,
             "crear_backorder": isBackorder,
-          }
+          },
         },
         isLoadinDialog: isLoadingDialog,
       );
@@ -687,9 +693,7 @@ class TransferenciasRepository {
         endpoint:
             'comprobar_disponibilidad', // Cambiado para que sea el endpoint correspondiente
         body: {
-          "params": {
-            "id_transferencia": idTransfer,
-          }
+          "params": {"id_transferencia": idTransfer},
         },
         isLoadinDialog: isLoadingDialog,
       );
@@ -746,7 +750,7 @@ class TransferenciasRepository {
     return CheckAvailabilityResponseResult(); // Retornamos un objeto vacío en caso de error de red
   }
 
-//metodo para eliminar una linea de transferencia
+  //metodo para eliminar una linea de transferencia
   Future<ResponseDeleteLine> deleteLineTransfer(
     int idMove,
     bool isLoadingDialog,
@@ -760,13 +764,13 @@ class TransferenciasRepository {
     }
 
     try {
+      print('idMove: $idMove');
+
       var response = await ApiRequestService().postPacking(
         endpoint:
             'transferencias/delete_line', // Cambiado para que sea el endpoint correspondiente
         body: {
-          "params": {
-            "id_linea": idMove,
-          }
+          "params": {"id_linea": idMove},
         },
         isLoadinDialog: isLoadingDialog,
       );
@@ -778,10 +782,10 @@ class TransferenciasRepository {
           if (jsonResponse['result']['code'] == 200) {
             return ResponseDeleteLine(
               result: ResponseDeleteLineResult(
-                  code: jsonResponse['result']['code'],
-                  msg: jsonResponse['result']['msg'],
-                  result:
-                      ResultResult.fromMap(jsonResponse['result']['result'])),
+                code: jsonResponse['result']['code'],
+                msg: jsonResponse['result']['msg'],
+                result: ResultResult.fromMap(jsonResponse['result']['result']),
+              ),
             );
           } else {
             return ResponseDeleteLine(
@@ -833,7 +837,7 @@ class TransferenciasRepository {
     return ResponseDeleteLine(); // Retornamos un objeto vacío en caso de error de red
   }
 
-//endpoint para crear una transferencia
+  //endpoint para crear una transferencia
 
   Future<RespondeCreateTransfer> createTransfer(
     CreateTransferRequest request,
@@ -849,8 +853,7 @@ class TransferenciasRepository {
 
     try {
       var response = await ApiRequestService().postPacking(
-        endpoint:
-            'transferencias/create_trasferencia', 
+        endpoint: 'transferencias/create_trasferencia',
         body: {
           "params": {
             "date_start": request.dateStart,
@@ -860,9 +863,10 @@ class TransferenciasRepository {
             "id_ubicacion_destino": request.idUbicacionDestino,
             "id_operario": request.idOperario,
             "fecha_transaccion": request.fechaTransaccion,
-            "list_items":
-                request.listItems.map((item) => item.toMap()).toList(),
-          }
+            "list_items": request.listItems
+                .map((item) => item.toMap())
+                .toList(),
+          },
         },
         isLoadinDialog: isLoadingDialog,
       );
@@ -945,7 +949,7 @@ class TransferenciasRepository {
             "id_ubicacion": idUbicacion,
             "id_lote": idLote,
             "cantidad_requerida": cantidad,
-          }
+          },
         },
         isLoadinDialog: isLoadingDialog,
       );

@@ -219,10 +219,11 @@ class _Tab1PedidoScreenState extends State<Tab1PedidoScreen>
                                           pedidoCurrent.zonaEntrega ??
                                               'sin zona de  entrega',
                                           style: TextStyle(
-                                            fontSize: 12,
+                                            fontSize: 14,
                                             color: pedidoCurrent.priority == '0'
-                                                ? black
+                                                ? primaryColorApp
                                                 : red,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                       ],

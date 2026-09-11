@@ -394,6 +394,9 @@ class _ReportTile extends StatelessWidget {
                         debugPrint('reporte: ${report.id}');
                         debugPrint('reporte: ${report.reportType}');
                         debugPrint('reporte: ${report.model}');
+                        debugPrint('safeResIds: ${safeResIds.join(', ')}');
+                        debugPrint('safeCompanyId: $safeCompanyId');
+                        debugPrint('copies: $copies');
                       },
                     );
                   }

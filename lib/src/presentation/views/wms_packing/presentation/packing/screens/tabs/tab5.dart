@@ -555,7 +555,7 @@ class _Tab5ScreenState extends State<Tab5Screen> with LoadingDialogMixin {
                                               .configPacking ==
                                           'cluster')
                                         Text(
-                                          "Ubicación: ${package.locationDestName ?? 'Sin asignar'}",
+                                          "Ubicación destino:\n${package.locationDestName ?? 'Sin asignar'}",
                                           style: const TextStyle(
                                               fontSize: 12, color: black),
                                         ),
@@ -567,7 +567,7 @@ class _Tab5ScreenState extends State<Tab5Screen> with LoadingDialogMixin {
                                         Row(
                                           children: [
                                             Text(
-                                              "Tipo de empaque: ",
+                                              "Empaque: ",
                                               style: const TextStyle(
                                                   fontSize: 12,
                                                   color: primaryColorApp),

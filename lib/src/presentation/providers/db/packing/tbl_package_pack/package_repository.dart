@@ -7,6 +7,16 @@ import 'package:wms_app/src/presentation/providers/db/packing/tbl_package_pack/p
 import 'package:wms_app/src/presentation/views/wms_packing/models/packing_response_model.dart';
 
 class PackagesRepository {
+  // En los UPDATE omitimos el peso cuando llega null: la sincronización desde
+  // la API no siempre trae el campo y no debe borrar el peso que se capturó en
+  // el dispositivo al empacar (tab5 lo mostraba como 0.0).
+  static Map<String, dynamic> _keepPeso(Map<String, dynamic> values) {
+    if (values[PackagesTable.columnPeso] == null) {
+      values.remove(PackagesTable.columnPeso);
+    }
+    return values;
+  }
+
   // Método para insertar o actualizar un paquete
   Future<void> insertPackage(Paquete package, String type) async {
     try {
@@ -23,7 +33,7 @@ class PackagesRepository {
           // Actualizar el paquete si ya existe
           final response = await txn.update(
             PackagesTable.tableName,
-            {
+            _keepPeso({
               PackagesTable.columnId: package.id,
               PackagesTable.columnName: package.name,
               PackagesTable.columnBatchId: package.batchId,
@@ -39,7 +49,7 @@ class PackagesRepository {
               PackagesTable.columnLocationDestId: package.locationDestId,
               PackagesTable.columnLocationDestBarcode:
                   package.locationDestBarcode,
-            },
+            }),
             where: '${PackagesTable.columnId} = ?',
             whereArgs: [package.id],
           );
@@ -93,7 +103,7 @@ class PackagesRepository {
             // Si el paquete existe, agregar la operación de actualización al batch
             batch.update(
               PackagesTable.tableName,
-              {
+              _keepPeso({
                 PackagesTable.columnId: package.id,
                 PackagesTable.columnName: package.name,
                 PackagesTable.columnBatchId: package.batchId,
@@ -111,7 +121,7 @@ class PackagesRepository {
                 PackagesTable.columnLocationDestName: package.locationDestName,
                 PackagesTable.columnLocationDestBarcode:
                     package.locationDestBarcode,
-              },
+              }),
               where: '${PackagesTable.columnId} = ?',
               whereArgs: [package.id],
             );
@@ -268,7 +278,7 @@ class PackagesRepository {
     Database db = await DataBaseSqlite().getDatabaseInstance();
     await db.update(
       PackagesTable.tableName,
-      {
+      _keepPeso({
         PackagesTable.columnName: package.name,
         PackagesTable.columnBatchId: package.batchId,
         PackagesTable.columnPedidoId: package.pedidoId,
@@ -282,7 +292,7 @@ class PackagesRepository {
         PackagesTable.columnLocationDestId: package.locationDestId,
         PackagesTable.columnLocationDestName: package.locationDestName,
         PackagesTable.columnLocationDestBarcode: package.locationDestBarcode,
-      },
+      }),
       where: '${PackagesTable.columnId} = ?',
       whereArgs: [package.id],
     );

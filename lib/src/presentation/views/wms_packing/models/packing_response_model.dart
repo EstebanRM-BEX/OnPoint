@@ -397,7 +397,9 @@ class Paquete {
         type: json["type"],
         consecutivo: json["consecutivo"],
         typePaquete: json["type_paquete"],
-        peso: json["peso_caja"],
+        // El backend envía "peso" en lista_paquetes y en la respuesta de
+        // send_transfer/pack; "peso_caja" se conserva por compatibilidad.
+        peso: json["peso"] ?? json["peso_caja"],
       );
 
   Map<String, dynamic> toMap() => {
