@@ -22,6 +22,13 @@ import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/rec
 import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/location_dest_screen.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/new_lote_screen.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/scan_product_screen.dart';
+import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_claim.dart';
+import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_session.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/screens/list_transferencia_multiusuario_screen.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/screens/transferencia_multiusuario_detail_screen.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/screens/transferencia_multiusuario_location_dest_screen.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/screens/transferencia_multiusuario_new_lote_screen.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/screens/transferencia_multiusuario_scan_product_screen.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/conteo_screen.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/list_conteo_screen.dart';
@@ -260,6 +267,18 @@ class AppRoutes {
   static const String recepcionMultiusuarioLocationDest =
       'recepcion-multiusuario-location-dest';
 
+  //todas las pantallas de transferencia multiusuario
+  static const String listTransferenciaMultiusuario =
+      'list-transferencia-multiusuario';
+  static const String transferenciaMultiusuarioDetail =
+      'transferencia-multiusuario-detail';
+  static const String transferenciaMultiusuarioScanProduct =
+      'transferencia-multiusuario-scan-product';
+  static const String transferenciaMultiusuarioNewLote =
+      'transferencia-multiusuario-new-lote';
+  static const String transferenciaMultiusuarioLocationDest =
+      'transferencia-multiusuario-location-dest';
+
   // ─── Helpers de extracción segura de argumentos ───────────────────────────
 
   /// Extrae de forma segura la lista de argumentos de la ruta actual.
@@ -349,6 +368,38 @@ class AppRoutes {
       },
       recepcionMultiusuarioLocationDest: (_) =>
           const RecepcionMultiusuarioLocationDestScreen(),
+
+      //todo transferencia multiusuario
+      listTransferenciaMultiusuario: (_) =>
+          const ListTransferenciaMultiusuarioScreen(),
+      transferenciaMultiusuarioDetail: (context) {
+        final args = _args(context);
+        final session = _arg<TransferenciaSession>(args, 0);
+        if (session == null) return _invalidArgs(context);
+        return TransferenciaMultiusuarioDetailScreen(session: session);
+      },
+      transferenciaMultiusuarioScanProduct: (context) {
+        final args = _args(context);
+        final session = _arg<TransferenciaSession>(args, 0);
+        final claim = _arg<TransferenciaClaim>(args, 1);
+        if (session == null || claim == null) return _invalidArgs(context);
+        return TransferenciaMultiusuarioScanProductScreen(
+          session: session,
+          claim: claim,
+        );
+      },
+      transferenciaMultiusuarioNewLote: (context) {
+        final args = _args(context);
+        final session = _arg<TransferenciaSession>(args, 0);
+        final claim = _arg<TransferenciaClaim>(args, 1);
+        if (session == null || claim == null) return _invalidArgs(context);
+        return TransferenciaMultiusuarioNewLoteScreen(
+          session: session,
+          claim: claim,
+        );
+      },
+      transferenciaMultiusuarioLocationDest: (_) =>
+          const TransferenciaMultiusuarioLocationDestScreen(),
 
       //todo conteo
       conteo: (_) => const ListConteoScreen(),

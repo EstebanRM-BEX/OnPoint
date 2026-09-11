@@ -68,6 +68,12 @@ import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/list/r
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/location_dest/recepcion_multiusuario_location_dest_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/lote/recepcion_multiusuario_lote_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/scan/recepcion_multiusuario_scan_bloc.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/detail/transferencia_multiusuario_my_claims_bloc.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/detail/transferencia_multiusuario_pool_bloc.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/list/transferencia_multiusuario_list_bloc.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/location_dest/transferencia_multiusuario_location_dest_bloc.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/lote/transferencia_multiusuario_lote_bloc.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/scan/transferencia_multiusuario_scan_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -233,6 +239,16 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => getIt<RecepcionMultiusuarioPoolBloc>()),
         BlocProvider(create: (_) => getIt<RecepcionMultiusuarioMyClaimsBloc>()),
         BlocProvider(create: (_) => getIt<RecepcionMultiusuarioScanBloc>()),
+        BlocProvider(create: (_) => getIt<TransferenciaMultiusuarioListBloc>()),
+        BlocProvider(create: (_) => getIt<TransferenciaMultiusuarioPoolBloc>()),
+        BlocProvider(create: (_) => getIt<TransferenciaMultiusuarioScanBloc>()),
+        BlocProvider(
+          create: (_) => getIt<TransferenciaMultiusuarioMyClaimsBloc>(),
+        ),
+        BlocProvider(create: (_) => getIt<TransferenciaMultiusuarioLoteBloc>()),
+        BlocProvider(
+          create: (_) => getIt<TransferenciaMultiusuarioLocationDestBloc>(),
+        ),
       ],
       child: GetMaterialApp(
         navigatorKey: navigatorKey,

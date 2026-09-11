@@ -25,6 +25,8 @@ import 'package:wms_app/src/presentation/providers/db/recepcion_multiusuario/tbl
 import 'package:wms_app/src/presentation/providers/db/recepcion_multiusuario/tbl_recepcion_session_pool/recepcion_session_pool_table.dart';
 import 'package:wms_app/src/presentation/providers/db/recepcion_multiusuario/tbl_recepcion_sessions/recepcion_sessions_repository.dart';
 import 'package:wms_app/src/presentation/providers/db/recepcion_multiusuario/tbl_recepcion_sessions/recepcion_sessions_table.dart';
+import 'package:wms_app/src/presentation/providers/db/transferencia_multiusuario/tbl_transferencia_sessions/transferencia_sessions_repository.dart';
+import 'package:wms_app/src/presentation/providers/db/transferencia_multiusuario/tbl_transferencia_sessions/transferencia_sessions_table.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_barcode/barcodes_inventario_repository.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_barcode/barcodes_inventario_table.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/product_inventario_repository.dart';
@@ -106,7 +108,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 64,
+      version: 65,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -211,6 +213,9 @@ class DataBaseSqlite {
     //* tablas de recepción multiusuario (sesiones + pool de productos libres)
     await db.execute(RecepcionSessionsTable.createTable());
     await db.execute(RecepcionSessionPoolTable.createTable());
+
+    //* tabla de transferencia multiusuario (sesiones)
+    await db.execute(TransferenciaSessionsTable.createTable());
 
     // tabla de historial de conversación del asistente IA
     await db.execute('''
@@ -1224,6 +1229,16 @@ class DataBaseSqlite {
         }
       }
     }
+
+    if (oldVersion < 65) {
+      // Listado de sesiones de transferencia multiusuario
+      // (POST /api/transfer/sessions).
+      try {
+        await db.execute(TransferenciaSessionsTable.createTable());
+      } catch (e) {
+        debugPrint("Error actualizando a v65 (tbl_transferencia_sessions): $e");
+      }
+    }
   }
 
   //todo repositorios de las tablas
@@ -1341,6 +1356,10 @@ class DataBaseSqlite {
 
   RecepcionSessionPoolRepository get recepcionSessionPoolRepository =>
       RecepcionSessionPoolRepository();
+
+  //repositorios del módulo de transferencia multiusuario
+  TransferenciaSessionsRepository get transferenciaSessionsRepository =>
+      TransferenciaSessionsRepository();
 
   Future<Database> getDatabaseInstance() async {
     if (_database != null) {
@@ -1924,6 +1943,10 @@ class DataBaseSqlite {
     await recepcionSessionPoolRepository.deleteAll();
   }
 
+  Future<void> deleTransferenciaSessions() async {
+    await transferenciaSessionsRepository.deleteAllSessions();
+  }
+
   /// Como [deleExpedicion] pero conserva las expediciones cuyos ids están en
   /// [keepExpeditionIds] (y todos sus hijos). Se usa en el re-fetch para no
   /// borrar expediciones con paquetes/productos validados sin conexión que
@@ -1974,6 +1997,7 @@ class DataBaseSqlite {
     await deleConteo();
     await deleExpedicion();
     await deleRecepcionMultiusuario();
+    await deleTransferenciaSessions();
   }
 
   //*metodo para actualizar la tabla de productos de un batch

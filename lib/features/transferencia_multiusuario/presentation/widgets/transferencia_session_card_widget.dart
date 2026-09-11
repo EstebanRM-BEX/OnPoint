@@ -1,0 +1,339 @@
+import 'package:flutter/material.dart';
+import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_session.dart';
+
+class TransferenciaSessionCardWidget extends StatelessWidget {
+  const TransferenciaSessionCardWidget({super.key, required this.session});
+
+  final TransferenciaSession session;
+
+  String _estadoLabel(String? state) {
+    switch (state) {
+      case 'open':
+        return 'Abierta';
+      case 'done':
+        return 'Terminada';
+      case 'cancel':
+        return 'Cancelada';
+      case 'draft':
+        return 'Borrador';
+      default:
+        return state ?? '';
+    }
+  }
+
+  Color _estadoColor(String? state) {
+    switch (state) {
+      case 'open':
+        return primaryColorApp;
+      case 'done':
+        return green;
+      case 'cancel':
+        return red;
+      case 'draft':
+        return grey;
+      default:
+        return grey;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // progress_percent viene en escala 0-100 (ej. 41.93), no 0-1 — clampear
+    // a 0-1 acá lo dejaba pegado en 100% para cualquier valor > 1. Mismo
+    // criterio que RecepcionSessionCardWidget.
+    final progressPercent = (session.progressPercent ?? 0.0).clamp(0.0, 100.0);
+    final progress = progressPercent / 100;
+    final progressLabel = '${progressPercent.toStringAsFixed(1)}%';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      child: Card(
+        elevation: 3,
+        color: white,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.compare_arrows, color: primaryColorApp, size: 18),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      session.name ?? '',
+                      style: TextStyle(
+                        color: primaryColorApp,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (session.state != null && session.state!.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _estadoColor(
+                          session.state,
+                        ).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        _estadoLabel(session.state),
+                        style: TextStyle(
+                          color: _estadoColor(session.state),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              if (session.manejoPropietario == true)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    'Propietario: ${(session.propietario?.isNotEmpty ?? false) ? session.propietario : "Sin propietario"}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: primaryColorApp,
+                    ),
+                  ),
+                ),
+              if (session.pickingType != null &&
+                  session.pickingType!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    'Operación: ${session.pickingType}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: primaryColorApp,
+                    ),
+                  ),
+                ),
+              const Divider(),
+              // Origen → destino: lo más relevante de una transferencia
+              // (a diferencia de recepción, donde el origen es informativo,
+              // acá el operario tiene que moverse físicamente entre las dos).
+              Row(
+                children: [
+                  const Icon(
+                    Icons.trip_origin,
+                    size: 14,
+                    color: primaryColorApp,
+                  ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      session.locationOrigenName ?? '-',
+                      style: const TextStyle(fontSize: 12, color: black),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_forward,
+                    size: 12,
+                    color: primaryColorApp,
+                  ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      session.locationDestName ?? '-',
+                      style: const TextStyle(fontSize: 12, color: black),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.receipt_long,
+                    size: 14,
+                    color: primaryColorApp,
+                  ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      'Doc. origen: ${session.origin ?? '-'}',
+                      style: const TextStyle(fontSize: 12, color: black),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(
+                    Icons.shopping_cart_sharp,
+                    color: primaryColorApp,
+                    size: 14,
+                  ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      session.pickingName ?? '',
+                      style: const TextStyle(fontSize: 12, color: black),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(
+                    Icons.warehouse_outlined,
+                    color: primaryColorApp,
+                    size: 14,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    'Almacén: ${session.warehouseName ?? session.warehouseId ?? '-'}',
+                    style: const TextStyle(fontSize: 12, color: black),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.add_box_outlined,
+                    size: 14,
+                    color: primaryColorApp,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    'Líneas: ${session.numeroLineas ?? 0}',
+                    style: const TextStyle(fontSize: 12, color: black),
+                  ),
+                  const SizedBox(width: 12),
+                  const Icon(
+                    Icons.inventory_outlined,
+                    size: 14,
+                    color: primaryColorApp,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    'Cant. Total: ${session.numeroItems ?? 0}',
+                    style: const TextStyle(fontSize: 12, color: black),
+                  ),
+                ],
+              ),
+              if (session.pesoTotal != null && session.pesoTotal! > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.scale_outlined,
+                        size: 14,
+                        color: primaryColorApp,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Peso total: ${session.pesoTotal}',
+                        style: const TextStyle(fontSize: 12, color: black),
+                      ),
+                    ],
+                  ),
+                ),
+              if (session.manejaTemperatura == true)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.thermostat,
+                        size: 14,
+                        color: primaryColorApp,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Maneja temperatura: ${session.temperatura ?? 0}°',
+                        style: const TextStyle(fontSize: 12, color: black),
+                      ),
+                    ],
+                  ),
+                ),
+              if (session.backorderId != null && session.backorderId != 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.file_copy,
+                        size: 14,
+                        color: primaryColorApp,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        session.backorderName ?? '',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 6,
+                  backgroundColor: grey.withValues(alpha: 0.3),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    progress >= 1.0 ? green : primaryColorApp,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Progreso: $progressLabel',
+                    style: TextStyle(fontSize: 11, color: primaryColorApp),
+                  ),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.pending_actions,
+                        color: session.pendingTasks == 0 ? green : red,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Tareas pendientes: ${session.pendingTasks ?? 0}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: session.pendingTasks == 0 ? green : red,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -322,6 +322,50 @@ import 'features/recepcion_multiusuario/presentation/bloc/lote/recepcion_multius
     as _i994;
 import 'features/recepcion_multiusuario/presentation/bloc/scan/recepcion_multiusuario_scan_bloc.dart'
     as _i381;
+import 'features/transferencia_multiusuario/data/datasources/transferencia_multiusuario_local_data_source.dart'
+    as _i178;
+import 'features/transferencia_multiusuario/data/datasources/transferencia_multiusuario_remote_data_source.dart'
+    as _i386;
+import 'features/transferencia_multiusuario/data/repositories/transferencia_multiusuario_repository_impl.dart'
+    as _i312;
+import 'features/transferencia_multiusuario/domain/repositories/transferencia_multiusuario_repository.dart'
+    as _i241;
+import 'features/transferencia_multiusuario/domain/usecases/claim_transferencia_product_usecase.dart'
+    as _i719;
+import 'features/transferencia_multiusuario/domain/usecases/create_transferencia_lote_usecase.dart'
+    as _i833;
+import 'features/transferencia_multiusuario/domain/usecases/fetch_transferencia_lotes_producto_usecase.dart'
+    as _i744;
+import 'features/transferencia_multiusuario/domain/usecases/fetch_transferencia_my_claims_usecase.dart'
+    as _i301;
+import 'features/transferencia_multiusuario/domain/usecases/fetch_transferencia_pool_usecase.dart'
+    as _i373;
+import 'features/transferencia_multiusuario/domain/usecases/fetch_transferencia_session_detail_usecase.dart'
+    as _i578;
+import 'features/transferencia_multiusuario/domain/usecases/fetch_transferencia_sessions_usecase.dart'
+    as _i714;
+import 'features/transferencia_multiusuario/domain/usecases/fetch_transferencia_snapshot_usecase.dart'
+    as _i532;
+import 'features/transferencia_multiusuario/domain/usecases/finish_transferencia_claim_usecase.dart'
+    as _i789;
+import 'features/transferencia_multiusuario/domain/usecases/get_transferencia_sessions_from_db_usecase.dart'
+    as _i440;
+import 'features/transferencia_multiusuario/domain/usecases/release_transferencia_claim_usecase.dart'
+    as _i1072;
+import 'features/transferencia_multiusuario/domain/usecases/undo_transferencia_claim_usecase.dart'
+    as _i738;
+import 'features/transferencia_multiusuario/presentation/bloc/detail/transferencia_multiusuario_my_claims_bloc.dart'
+    as _i996;
+import 'features/transferencia_multiusuario/presentation/bloc/detail/transferencia_multiusuario_pool_bloc.dart'
+    as _i672;
+import 'features/transferencia_multiusuario/presentation/bloc/list/transferencia_multiusuario_list_bloc.dart'
+    as _i200;
+import 'features/transferencia_multiusuario/presentation/bloc/location_dest/transferencia_multiusuario_location_dest_bloc.dart'
+    as _i435;
+import 'features/transferencia_multiusuario/presentation/bloc/lote/transferencia_multiusuario_lote_bloc.dart'
+    as _i381;
+import 'features/transferencia_multiusuario/presentation/bloc/scan/transferencia_multiusuario_scan_bloc.dart'
+    as _i726;
 import 'features/user/data/datasources/user_local_data_source.dart' as _i232;
 import 'features/user/data/datasources/user_remote_data_source.dart' as _i1071;
 import 'features/user/data/repositories/user_repository_impl.dart' as _i39;
@@ -352,6 +396,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i195.RecepcionMultiusuarioLocationDestBloc>(
       () => _i195.RecepcionMultiusuarioLocationDestBloc(),
     );
+    gh.factory<_i435.TransferenciaMultiusuarioLocationDestBloc>(
+      () => _i435.TransferenciaMultiusuarioLocationDestBloc(),
+    );
     gh.lazySingleton<_i519.Client>(() => registerModule.httpClient);
     gh.lazySingleton<_i895.Connectivity>(() => registerModule.connectivity);
     gh.lazySingleton<_i552.DataBaseSqlite>(() => registerModule.database);
@@ -363,6 +410,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i380.PickScanLocalDataSource>(
       () => _i380.PickScanLocalDataSourceImpl(),
+    );
+    gh.lazySingleton<_i178.TransferenciaMultiusuarioLocalDataSource>(
+      () => _i178.TransferenciaMultiusuarioLocalDataSourceImpl(),
     );
     gh.lazySingleton<_i232.UserLocalDataSource>(
       () => _i232.UserLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()),
@@ -433,6 +483,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i682.PickingComponentsRemoteDataSource>(
       () => _i682.PickingComponentsRemoteDataSourceImpl(),
+    );
+    gh.lazySingleton<_i386.TransferenciaMultiusuarioRemoteDataSource>(
+      () => _i386.TransferenciaMultiusuarioRemoteDataSourceImpl(),
     );
     gh.lazySingleton<_i180.UserRepository>(
       () => _i39.UserRepositoryImpl(
@@ -672,6 +725,13 @@ extension GetItInjectableX on _i174.GetIt {
         networkInfo: gh<_i75.NetworkInfo>(),
       ),
     );
+    gh.lazySingleton<_i241.TransferenciaMultiusuarioRepository>(
+      () => _i312.TransferenciaMultiusuarioRepositoryImpl(
+        remoteDataSource: gh<_i386.TransferenciaMultiusuarioRemoteDataSource>(),
+        localDataSource: gh<_i178.TransferenciaMultiusuarioLocalDataSource>(),
+        networkInfo: gh<_i75.NetworkInfo>(),
+      ),
+    );
     gh.factory<_i1070.LoginBloc>(
       () => _i1070.LoginBloc(authenticateUser: gh<_i792.AuthenticateUser>()),
     );
@@ -687,6 +747,66 @@ extension GetItInjectableX on _i174.GetIt {
         remoteDataSource: gh<_i106.RecepcionMultiusuarioRemoteDataSource>(),
         localDataSource: gh<_i330.RecepcionMultiusuarioLocalDataSource>(),
         networkInfo: gh<_i75.NetworkInfo>(),
+      ),
+    );
+    gh.lazySingleton<_i719.ClaimTransferenciaProductUseCase>(
+      () => _i719.ClaimTransferenciaProductUseCase(
+        gh<_i241.TransferenciaMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i833.CreateTransferenciaLoteUseCase>(
+      () => _i833.CreateTransferenciaLoteUseCase(
+        gh<_i241.TransferenciaMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i744.FetchTransferenciaLotesProductoUseCase>(
+      () => _i744.FetchTransferenciaLotesProductoUseCase(
+        gh<_i241.TransferenciaMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i301.FetchTransferenciaMyClaimsUseCase>(
+      () => _i301.FetchTransferenciaMyClaimsUseCase(
+        gh<_i241.TransferenciaMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i373.FetchTransferenciaPoolUseCase>(
+      () => _i373.FetchTransferenciaPoolUseCase(
+        gh<_i241.TransferenciaMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i578.FetchTransferenciaSessionDetailUseCase>(
+      () => _i578.FetchTransferenciaSessionDetailUseCase(
+        gh<_i241.TransferenciaMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i714.FetchTransferenciaSessionsUseCase>(
+      () => _i714.FetchTransferenciaSessionsUseCase(
+        gh<_i241.TransferenciaMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i532.FetchTransferenciaSnapshotUseCase>(
+      () => _i532.FetchTransferenciaSnapshotUseCase(
+        gh<_i241.TransferenciaMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i789.FinishTransferenciaClaimUseCase>(
+      () => _i789.FinishTransferenciaClaimUseCase(
+        gh<_i241.TransferenciaMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i440.GetTransferenciaSessionsFromDbUseCase>(
+      () => _i440.GetTransferenciaSessionsFromDbUseCase(
+        gh<_i241.TransferenciaMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i1072.ReleaseTransferenciaClaimUseCase>(
+      () => _i1072.ReleaseTransferenciaClaimUseCase(
+        gh<_i241.TransferenciaMultiusuarioRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i738.UndoTransferenciaClaimUseCase>(
+      () => _i738.UndoTransferenciaClaimUseCase(
+        gh<_i241.TransferenciaMultiusuarioRepository>(),
       ),
     );
     gh.factory<_i1026.ChatBloc>(
@@ -760,6 +880,12 @@ extension GetItInjectableX on _i174.GetIt {
         getUserNovelties: gh<_i465.GetUserNovelties>(),
         registerDevice: gh<_i902.RegisterDevice>(),
         saveUserSession: gh<_i311.SaveUserSession>(),
+      ),
+    );
+    gh.factory<_i726.TransferenciaMultiusuarioScanBloc>(
+      () => _i726.TransferenciaMultiusuarioScanBloc(
+        claimTransferenciaProductUseCase:
+            gh<_i719.ClaimTransferenciaProductUseCase>(),
       ),
     );
     gh.lazySingleton<_i985.ClaimRecepcionProductUseCase>(
@@ -903,6 +1029,14 @@ extension GetItInjectableX on _i174.GetIt {
             gh<_i231.GetRecepcionSessionsFromDbUseCase>(),
       ),
     );
+    gh.factory<_i200.TransferenciaMultiusuarioListBloc>(
+      () => _i200.TransferenciaMultiusuarioListBloc(
+        fetchTransferenciaSessionsUseCase:
+            gh<_i714.FetchTransferenciaSessionsUseCase>(),
+        getTransferenciaSessionsFromDbUseCase:
+            gh<_i440.GetTransferenciaSessionsFromDbUseCase>(),
+      ),
+    );
     gh.factory<_i545.ClusterPickingBloc>(
       () => _i545.ClusterPickingBloc(
         getPickingClusterData: gh<_i524.GetPickingClusterData>(),
@@ -981,9 +1115,31 @@ extension GetItInjectableX on _i174.GetIt {
         printReport: gh<_i152.PrintReport>(),
       ),
     );
+    gh.factory<_i672.TransferenciaMultiusuarioPoolBloc>(
+      () => _i672.TransferenciaMultiusuarioPoolBloc(
+        fetchTransferenciaPoolUseCase:
+            gh<_i373.FetchTransferenciaPoolUseCase>(),
+      ),
+    );
+    gh.factory<_i381.TransferenciaMultiusuarioLoteBloc>(
+      () => _i381.TransferenciaMultiusuarioLoteBloc(
+        fetchTransferenciaLotesProductoUseCase:
+            gh<_i744.FetchTransferenciaLotesProductoUseCase>(),
+        createTransferenciaLoteUseCase:
+            gh<_i833.CreateTransferenciaLoteUseCase>(),
+      ),
+    );
     gh.factory<_i777.ExpedicionConfirmBloc>(
       () => _i777.ExpedicionConfirmBloc(
         confirmarPedidoUseCase: gh<_i868.ConfirmarPedidoUseCase>(),
+      ),
+    );
+    gh.factory<_i996.TransferenciaMultiusuarioMyClaimsBloc>(
+      () => _i996.TransferenciaMultiusuarioMyClaimsBloc(
+        fetchTransferenciaMyClaimsUseCase:
+            gh<_i301.FetchTransferenciaMyClaimsUseCase>(),
+        releaseTransferenciaClaimUseCase:
+            gh<_i1072.ReleaseTransferenciaClaimUseCase>(),
       ),
     );
     gh.factory<_i381.RecepcionMultiusuarioScanBloc>(

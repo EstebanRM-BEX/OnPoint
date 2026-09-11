@@ -16,9 +16,9 @@ import 'package:wms_app/features/home/presentation/widgets/dialog_inventario_wid
 import 'package:wms_app/features/home/presentation/widgets/dialog_picking_componentes_widget.dart';
 import 'package:wms_app/features/home/presentation/widgets/dialog_picking_widget.dart';
 import 'package:wms_app/features/home/presentation/widgets/dialog_recepcion_widget.dart';
+import 'package:wms_app/features/home/presentation/widgets/dialog_transferencia_widget.dart';
 import 'package:wms_app/features/home/presentation/widgets/widget.dart';
 import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
-import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/bloc/wms_packing_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/bloc/packing_consolidade_bloc.dart';
@@ -624,32 +624,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                   .userRol;
                                               if (rol == 'transfer' ||
                                                   rol == 'admin') {
-                                                if (context
-                                                    .read<UserBloc>()
-                                                    .ubicaciones
-                                                    .isEmpty) {
-                                                  context.read<UserBloc>().add(
-                                                      LoadUserLocationsEvent());
-                                                }
-                                                context
-                                                    .read<TransferenciaBloc>()
-                                                    .add(
-                                                        LoadAllNovedadesTransferEvent());
-                                                context
-                                                    .read<TransferenciaBloc>()
-                                                    .add(LoadLocations());
                                                 showDialog(
                                                     context: context,
-                                                    builder: (context) =>
-                                                        const DialogLoading(
-                                                            message:
-                                                                'Cargando interfaz...'));
-                                                await Future.delayed(
-                                                    const Duration(seconds: 1));
-                                                if (!mounted) return;
-                                                Navigator.pop(context);
-                                                Navigator.pushReplacementNamed(
-                                                    context, 'transferencias');
+                                                    builder: (dialogContext) =>
+                                                        DialogTransferencia(
+                                                            contextHome:
+                                                                context));
                                               } else {
                                                 ScaffoldMessenger.of(context)
                                                     .showSnackBar(const SnackBar(
