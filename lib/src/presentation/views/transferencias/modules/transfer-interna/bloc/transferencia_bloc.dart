@@ -7,6 +7,9 @@ import 'package:wms_app/features/user/data/models/user_configuration_model.dart'
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
+import 'package:wms_app/core/services/novedades_cache_service.dart';
+import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
@@ -572,13 +575,10 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       Emitter<TransferenciaState> emit) async {
     try {
       emit(NovedadesTransferLoadingState());
-      final response = await db.novedadesRepository.getAllNovedades();
-      if (response != null) {
-        novedades.clear();
-        novedades = response;
-        debugPrint("novedades: ${novedades.length}");
-        emit(NovedadesTransferLoadedState(listOfNovedades: novedades));
-      }
+      final response = await getIt<NovedadesCacheService>().getAll();
+      novedades = response;
+      debugPrint("novedades: ${novedades.length}");
+      emit(NovedadesTransferLoadedState(listOfNovedades: novedades));
     } catch (e, s) {
       debugPrint("Error en __onLoadAllNovedadesEvent: $e, $s");
       emit(NovedadesTransferErrorState(e.toString()));
@@ -589,12 +589,10 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       LoadLocations event, Emitter<TransferenciaState> emit) async {
     try {
       emit(LoadLocationsLoading());
-      final response = await db.ubicacionesRepository.getAllUbicaciones();
-      ubicaciones.clear();
-      ubicacionesFilters.clear();
+      final response = await getIt<UbicacionesCacheService>().getAll();
+      ubicaciones = response;
+      ubicacionesFilters = response;
       if (response.isNotEmpty) {
-        ubicaciones = response;
-        ubicacionesFilters = response;
         debugPrint('ubicaciones length: ${ubicaciones.length}');
         emit(LoadLocationsSuccess(ubicaciones));
       } else {
@@ -1374,7 +1372,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
     try {
       int userId = await PrefUtils.getUserId();
       final response =
-          await db.configurationsRepository.getConfiguration(userId);
+          await getIt<ConfiguracionCacheService>().getConfiguration(userId);
 
       if (response != null) {
         configurations = response;

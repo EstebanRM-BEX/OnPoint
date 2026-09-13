@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wms_app/core/interfaces/i_device_info_service.dart';
 import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/features/login/domain/usecases/save_user_session.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -208,6 +209,11 @@ class UserBloc extends Bloc<UserEvent, UserState> {
             config!,
             userId,
           );
+          // El insert recién escribió la config fresca en SQLite — invalida
+          // el cache compartido para que todos los lectores (screens/blocs
+          // que hoy consultan configurationsRepository.getConfiguration
+          // directo) tomen el dato nuevo en vez de una copia vieja.
+          getIt<ConfiguracionCacheService>().invalidate(userId);
           debugPrint('✅ Configuraciones guardadas en BD local');
         }
       } catch (e) {

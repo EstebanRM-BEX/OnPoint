@@ -5,6 +5,7 @@ import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/error/failures.dart';
+import 'package:wms_app/core/services/productos_cache_service.dart';
 import 'package:wms_app/core/usecases/usecase.dart';
 import 'package:wms_app/features/inventario/domain/entities/barcode_producto.dart';
 import 'package:wms_app/features/inventario/domain/entities/lote_producto_inventario.dart';
@@ -21,6 +22,7 @@ import 'package:wms_app/features/inventario/domain/usecases/get_productos_local.
 import 'package:wms_app/features/inventario/domain/usecases/get_ubicaciones_local.dart';
 import 'package:wms_app/features/inventario/domain/usecases/sync_productos_inventario.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
+import 'package:wms_app/injection_container.dart';
 
 part 'inventario_event.dart';
 part 'inventario_state.dart';
@@ -363,6 +365,13 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       emit(GetProductsFailureInventory(syncFailure.message));
       return;
     }
+
+    // El sync recién escribió productos frescos en SQLite — invalida el
+    // cache compartido (ProductosCacheService) para que esta lectura y
+    // cualquier otro consumidor (Conteo, Devoluciones, Info Rápida, Crear
+    // Transferencia) tomen el dato nuevo en vez de una copia vieja en
+    // memoria de antes del sync.
+    getIt<ProductosCacheService>().invalidate();
 
     final localResult = await getProductosLocal(NoParams());
     localResult.fold(

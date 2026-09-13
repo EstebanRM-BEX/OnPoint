@@ -1,7 +1,10 @@
 import 'package:injectable/injectable.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
+import 'package:wms_app/core/services/novedades_cache_service.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
+import 'package:wms_app/injection_container.dart';
 import '../../../../core/utils/prefs/pref_utils.dart';
 import '../../../../src/presentation/models/response_ubicaciones_model.dart';
 import '../../../../src/presentation/providers/db/database.dart';
@@ -31,6 +34,9 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
     final legacyConfig = _mapToLegacy(config);
 
     await db.configurationsRepository.insertConfiguration(legacyConfig, userId);
+    // El insert recién escribió la config fresca en SQLite — invalida el
+    // cache compartido para que cualquier lector tome el dato nuevo.
+    getIt<ConfiguracionCacheService>().invalidate(userId);
 
     // Also cache allowed warehouses
     if (legacyConfig.result?.result?.allowedWarehouses != null) {
@@ -45,7 +51,7 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
   Future<UserConfigurationModel?> getCachedUserConfiguration() async {
     final int userId = await PrefUtils.getUserId();
     final UserConfigurationModel? config =
-        await db.configurationsRepository.getConfiguration(userId);
+        await getIt<ConfiguracionCacheService>().getConfiguration(userId);
 
     if (config != null) {
       return _mapFromLegacy(config);
@@ -86,12 +92,17 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
       );
     }).toList();
     await db.novedadesRepository.syncNovedades(legacyNovelties);
+    // El sync recién escribió novedades frescas en SQLite — invalida el
+    // cache compartido para que esta lectura y cualquier otro consumidor
+    // (RecepcionBloc, TransferenciaBloc, WMSPickingBloc, etc.) tomen el
+    // dato nuevo en vez de una copia vieja en memoria.
+    getIt<NovedadesCacheService>().invalidate();
   }
 
   @override
   Future<List<UserNoveltyModel>?> getCachedUserNovelties() async {
-    final List<Novedad> legacyNovelties =
-        await db.novedadesRepository.getAllNovedades();
+    final List<Novedad> legacyNovelties = await getIt<NovedadesCacheService>()
+        .getAll();
 
     if (legacyNovelties.isNotEmpty) {
       return legacyNovelties.map((e) {

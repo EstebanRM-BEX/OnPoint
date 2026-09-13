@@ -1,8 +1,9 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
+import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
-import 'package:wms_app/src/presentation/providers/db/database.dart';
 
 part 'transferencia_multiusuario_location_dest_event.dart';
 part 'transferencia_multiusuario_location_dest_state.dart';
@@ -40,9 +41,12 @@ class TransferenciaMultiusuarioLocationDestBloc
     FetchTransferenciaUbicacionesDestEvent event,
     Emitter<TransferenciaMultiusuarioLocationDestState> emit,
   ) async {
-    // El bloc vive a nivel de app (BlocProvider raíz en main.dart), así que
-    // esta caché sobrevive a que se entre y salga de la pantalla — tbl_
-    // ubicaciones no cambia durante la sesión.
+    // UbicacionesCacheService ya memoiza esta lista a nivel de app — antes
+    // este bloc guardaba su propia copia además de las de otros ~10 blocs
+    // que leen el mismo catálogo, todas vivas para siempre en el
+    // MultiBlocProvider raíz. Leer del cache compartido evita esa
+    // duplicación: si ya lo cargó cualquier otro bloc, esto no vuelve a
+    // consultar SQLite.
     if (_todasLasUbicaciones.isNotEmpty) {
       emit(TransferenciaMultiusuarioLocationDestLoaded(_filtradas()));
       return;
@@ -50,8 +54,7 @@ class TransferenciaMultiusuarioLocationDestBloc
 
     emit(const TransferenciaMultiusuarioLocationDestLoading());
     try {
-      _todasLasUbicaciones = await DataBaseSqlite().ubicacionesRepository
-          .getAllUbicaciones();
+      _todasLasUbicaciones = await getIt<UbicacionesCacheService>().getAll();
       emit(TransferenciaMultiusuarioLocationDestLoaded(_filtradas()));
     } catch (_) {
       emit(

@@ -5,14 +5,15 @@ import 'package:flutter_holo_date_picker/date_picker.dart';
 import 'package:flutter_holo_date_picker/i18n/date_picker_i18n.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_claim.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_lote_producto.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_session.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/lote/transferencia_multiusuario_lote_bloc.dart';
 import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
-import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
 
@@ -94,7 +95,7 @@ class _TransferenciaMultiusuarioNewLoteScreenState
 
   Future<void> _cargarPermisos() async {
     final userId = await PrefUtils.getUserId();
-    final config = await DataBaseSqlite().configurationsRepository
+    final config = await getIt<ConfiguracionCacheService>()
         .getConfiguration(userId);
     if (!mounted) return;
     setState(() {

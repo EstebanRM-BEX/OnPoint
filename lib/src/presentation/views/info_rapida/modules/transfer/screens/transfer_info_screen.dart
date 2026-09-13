@@ -61,7 +61,10 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
           },
         );
         Future.delayed(const Duration(seconds: 1), () {
-          Navigator.pop(context);
+          // El widget puede haberse desmontado durante el segundo de espera
+          // (el operario navegó a otra pantalla) — un pop ciego contra un
+          // context ya inválido congelaba/cerraba la app.
+          if (mounted) Navigator.pop(context);
         });
       }
     }

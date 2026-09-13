@@ -4,7 +4,10 @@ import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart'
 import 'package:wms_app/features/print_labels/data/models/product_label.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
+import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/injection_container.dart';
 
 part 'print_labels_event.dart';
 part 'print_labels_state.dart';
@@ -81,18 +84,20 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
       GetListLocationsEvent event, Emitter<PrintLabelsState> emit) async {
     try {
       emit(LoadLocationsLoading());
-      final response = await db.ubicacionesRepository.getAllUbicaciones();
-      ubicaciones.clear();
-      ubicacionesFilters.clear();
+      final response = await getIt<UbicacionesCacheService>().getAll();
       if (response.isNotEmpty) {
         // Ordenar por nombre una sola vez aquí; el filtro de búsqueda preserva
         // el orden, evitando re-ordenar en cada build de la pantalla (P-04).
-        ubicaciones = response
+        // Ordena sobre una copia propia — response es la lista única
+        // compartida del cache, nunca se ordena/muta in-place.
+        ubicaciones = List.of(response)
           ..sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
-        ubicacionesFilters = List.from(ubicaciones);
+        ubicacionesFilters = List.of(ubicaciones);
         debugPrint('####################>>>>>ubicaciones ${ubicaciones.length}');
         emit(LoadLocationsSuccess(ubicaciones));
       } else {
+        ubicaciones = response;
+        ubicacionesFilters = response;
         emit(LoadLocationsFailure('No se encontraron ubicaciones'));
       }
     } catch (e, s) {
@@ -129,7 +134,7 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
     try {
       int userId = await PrefUtils.getUserId();
       final response =
-          await db.configurationsRepository.getConfiguration(userId);
+          await getIt<ConfiguracionCacheService>().getConfiguration(userId);
 
       if (response != null) {
         configurations = response;

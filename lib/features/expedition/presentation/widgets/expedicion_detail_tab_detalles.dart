@@ -10,7 +10,8 @@ import 'package:wms_app/features/expedition/presentation/bloc/confirm/expedicion
 import 'package:wms_app/features/expedition/presentation/bloc/list/expedition_list_bloc.dart';
 import 'package:wms_app/features/expedition/presentation/widgets/dialog_confirmar_pedido_widget.dart';
 import 'package:wms_app/features/expedition/presentation/widgets/dialog_vencidos_expedicion_widget.dart';
-import 'package:wms_app/src/presentation/providers/db/database.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 
 /// Tab "Detalles" de expedition_screen.dart: mismo resumen que
@@ -56,8 +57,8 @@ class _ExpedicionDetailTabDetallesState
 
   Future<void> _cargarPermiso() async {
     final userId = await PrefUtils.getUserId();
-    final config =
-        await DataBaseSqlite().configurationsRepository.getConfiguration(userId);
+    final config = await getIt<ConfiguracionCacheService>()
+        .getConfiguration(userId);
     if (!mounted) return;
     setState(() {
       _hideValidateExpedition =

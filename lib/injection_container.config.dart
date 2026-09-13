@@ -19,12 +19,17 @@ import 'core/interfaces/i_device_info_service.dart' as _i311;
 import 'core/interfaces/i_vibration_service.dart' as _i537;
 import 'core/network/network_info.dart' as _i75;
 import 'core/services/audio_service_impl.dart' as _i927;
+import 'core/services/barcodes_inventario_cache_service.dart' as _i514;
+import 'core/services/configuracion_cache_service.dart' as _i208;
 import 'core/services/device_info_service_impl.dart' as _i910;
 import 'core/services/interfaces/i_notification_service.dart' as _i615;
 import 'core/services/interfaces/i_storage_service.dart' as _i206;
 import 'core/services/interfaces/i_websocket_service.dart' as _i1062;
 import 'core/services/notification_service.dart' as _i1011;
+import 'core/services/novedades_cache_service.dart' as _i268;
+import 'core/services/productos_cache_service.dart' as _i450;
 import 'core/services/storage_service.dart' as _i243;
+import 'core/services/ubicaciones_cache_service.dart' as _i456;
 import 'core/services/vibration_service_impl.dart' as _i869;
 import 'core/services/websocket_service.dart' as _i1020;
 import 'features/auth/data/datasources/auth_local_data_source.dart' as _i791;
@@ -400,6 +405,21 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i435.TransferenciaMultiusuarioLocationDestBloc>(
       () => _i435.TransferenciaMultiusuarioLocationDestBloc(),
+    );
+    gh.lazySingleton<_i514.BarcodesInventarioCacheService>(
+      () => _i514.BarcodesInventarioCacheService(),
+    );
+    gh.lazySingleton<_i208.ConfiguracionCacheService>(
+      () => _i208.ConfiguracionCacheService(),
+    );
+    gh.lazySingleton<_i268.NovedadesCacheService>(
+      () => _i268.NovedadesCacheService(),
+    );
+    gh.lazySingleton<_i450.ProductosCacheService>(
+      () => _i450.ProductosCacheService(),
+    );
+    gh.lazySingleton<_i456.UbicacionesCacheService>(
+      () => _i456.UbicacionesCacheService(),
     );
     gh.lazySingleton<_i519.Client>(() => registerModule.httpClient);
     gh.lazySingleton<_i895.Connectivity>(() => registerModule.connectivity);

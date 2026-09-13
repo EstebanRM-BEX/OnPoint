@@ -15,8 +15,8 @@ import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/dia
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/recepcion_pool_item_card_widget.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/shared/widgets/shimmer_list_widget.dart';
-import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
@@ -66,7 +66,7 @@ class _RecepcionMultiusuarioDetailTabPorHacerState
 
   Future<void> _cargarConfiguracion() async {
     final userId = await PrefUtils.getUserId();
-    final config = await DataBaseSqlite().configurationsRepository
+    final config = await getIt<ConfiguracionCacheService>()
         .getConfiguration(userId);
     if (!mounted) return;
     setState(() {

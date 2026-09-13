@@ -2,6 +2,8 @@ import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/data/info_rapida_repository.dart';
@@ -225,12 +227,10 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
       LoadLocationsTransfer event, Emitter<TransferInfoState> emit) async {
     try {
       emit(LoadLocationsLoadingTransfer());
-      final response = await db.ubicacionesRepository.getAllUbicaciones();
-      ubicaciones.clear();
-      ubicacionesFilters.clear();
+      final response = await getIt<UbicacionesCacheService>().getAll();
+      ubicaciones = response;
+      ubicacionesFilters = response;
       if (response.isNotEmpty) {
-        ubicaciones = response;
-        ubicacionesFilters = response;
         debugPrint('ubicaciones length: ${ubicaciones.length}');
         emit(LoadLocationsSuccessTransfer(ubicaciones));
       } else {

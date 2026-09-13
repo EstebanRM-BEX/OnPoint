@@ -1,6 +1,8 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:injectable/injectable.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/PickhWithProducts_model.dart';
@@ -66,7 +68,7 @@ class PickingLocalDataSourceImpl implements PickingLocalDataSource {
 
   @override
   Future<UserConfigurationModel?> getConfigurations(int userId) async {
-    return await db.configurationsRepository.getConfiguration(userId);
+    return await getIt<ConfiguracionCacheService>().getConfiguration(userId);
   }
 
   @override

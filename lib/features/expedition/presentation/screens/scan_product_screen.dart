@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/expedition/domain/entities/item_suelto_expedicion.dart';
 import 'package:wms_app/features/expedition/domain/entities/paquete_expedicion.dart';
@@ -14,7 +15,6 @@ import 'package:wms_app/features/expedition/presentation/widgets/expedicion_scan
 import 'package:wms_app/features/expedition/presentation/widgets/expedicion_scan_paquete_card_widget.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
-import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 
 /// Screen de detalle de un paquete (items_pack_pendientes) o de un producto
@@ -62,8 +62,8 @@ class _ScanProductExpeditionScreenState
 
   Future<void> _cargarPermiso() async {
     final userId = await PrefUtils.getUserId();
-    final config =
-        await DataBaseSqlite().configurationsRepository.getConfiguration(userId);
+    final config = await getIt<ConfiguracionCacheService>()
+        .getConfiguration(userId);
     if (!mounted) return;
     setState(() {
       _puedeValidarConBoton =

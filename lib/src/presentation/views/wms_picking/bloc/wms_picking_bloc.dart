@@ -4,6 +4,7 @@
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
+import 'package:wms_app/core/services/novedades_cache_service.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/data/wms_picking_repository.dart';
@@ -94,15 +95,10 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
       LoadAllNovedades event, Emitter<PickingState> emit) async {
     try {
       emit(LoadLoadingNovedadesState());
-      final response = await _databas.novedadesRepository.getAllNovedades();
-      if (response != null) {
-        listOfNovedades.clear();
-        listOfNovedades = response;
-        debugPrint("novedades: ${listOfNovedades.length}");
-        emit(LoadSuccessNovedadesState(listOfNovedades: listOfNovedades));
-      } else {
-        emit(LoadFailureNovedadesState(message: 'No se encontraron novedades'));
-      }
+      final response = await getIt<NovedadesCacheService>().getAll();
+      listOfNovedades = response;
+      debugPrint("novedades: ${listOfNovedades.length}");
+      emit(LoadSuccessNovedadesState(listOfNovedades: listOfNovedades));
     } catch (e, s) {
       debugPrint("Error en __onLoadAllNovedadesEvent: $e, $s");
       emit(LoadFailureNovedadesState(message: 'Error al cargar novedades'));

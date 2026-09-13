@@ -10,6 +10,9 @@ import 'package:wms_app/features/user/data/models/user_configuration_model.dart'
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
+import 'package:wms_app/core/services/novedades_cache_service.dart';
+import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
@@ -799,12 +802,10 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   ) async {
     try {
       emit(LoadLocationsLoading());
-      final response = await db.ubicacionesRepository.getAllUbicaciones();
-      ubicaciones.clear();
-      ubicacionesFilters.clear();
+      final response = await getIt<UbicacionesCacheService>().getAll();
+      ubicaciones = response;
+      ubicacionesFilters = response;
       if (response.isNotEmpty) {
-        ubicaciones = response;
-        ubicacionesFilters = ubicaciones;
         debugPrint('ubicaciones length: ${ubicaciones.length}');
         emit(LoadLocationsSuccess(ubicaciones));
       } else {
@@ -1431,13 +1432,10 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   ) async {
     try {
       emit(NovedadesOrderLoadingState());
-      final response = await db.novedadesRepository.getAllNovedades();
-      if (response != null) {
-        novedades.clear();
-        novedades = response;
-        debugPrint("novedades: ${novedades.length}");
-        emit(NovedadesOrderLoadedState(listOfNovedades: novedades));
-      }
+      final response = await getIt<NovedadesCacheService>().getAll();
+      novedades = response;
+      debugPrint("novedades: ${novedades.length}");
+      emit(NovedadesOrderLoadedState(listOfNovedades: novedades));
     } catch (e, s) {
       debugPrint("Error en __onLoadAllNovedadesEvent: $e, $s");
       emit(NovedadesOrderErrorState(e.toString()));
@@ -2048,9 +2046,8 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   ) async {
     try {
       int userId = await PrefUtils.getUserId();
-      final response = await db.configurationsRepository.getConfiguration(
-        userId,
-      );
+      final response =
+          await getIt<ConfiguracionCacheService>().getConfiguration(userId);
 
       if (response != null) {
         configurations = response;

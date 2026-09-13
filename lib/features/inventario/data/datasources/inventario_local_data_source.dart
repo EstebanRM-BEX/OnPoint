@@ -2,7 +2,12 @@
 
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/error/exceptions.dart';
+import 'package:wms_app/core/services/barcodes_inventario_cache_service.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
+import 'package:wms_app/core/services/productos_cache_service.dart';
+import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/features/inventario/data/models/barcode_producto_model.dart';
 import 'package:wms_app/features/inventario/data/models/producto_inventario_model.dart';
 import 'package:wms_app/features/inventario/data/models/ubicacion_inventario_model.dart';
@@ -64,6 +69,10 @@ class InventarioLocalDataSourceImpl implements InventarioLocalDataSource {
           barcodes.map((b) => b.toLegacy()).toList(),
         ),
       ]);
+      // El sync recién escribió barcodes frescos en SQLite — invalida el
+      // cache compartido para que CreateTransferBloc/DevolucionesBloc/etc.
+      // tomen el dato nuevo en vez de una copia vieja en memoria.
+      getIt<BarcodesInventarioCacheService>().invalidate();
     } catch (e) {
       throw CacheException('Error al guardar productos en local: $e');
     }
@@ -72,8 +81,7 @@ class InventarioLocalDataSourceImpl implements InventarioLocalDataSource {
   @override
   Future<List<ProductoInventarioModel>> getProductos() async {
     try {
-      final legacyList =
-          await database.productoInventarioRepository.getAllProducts();
+      final legacyList = await getIt<ProductosCacheService>().getAll();
       return legacyList
           .map(ProductoInventarioModel.fromLegacy)
           .toList();
@@ -94,8 +102,7 @@ class InventarioLocalDataSourceImpl implements InventarioLocalDataSource {
   @override
   Future<List<UbicacionInventarioModel>> getUbicaciones() async {
     try {
-      final legacyList =
-          await database.ubicacionesRepository.getAllUbicaciones();
+      final legacyList = await getIt<UbicacionesCacheService>().getAll();
       return legacyList
           .map(UbicacionInventarioModel.fromLegacy)
           .toList();
@@ -121,8 +128,7 @@ class InventarioLocalDataSourceImpl implements InventarioLocalDataSource {
   @override
   Future<List<BarcodeProductoModel>> getAllBarcodes() async {
     try {
-      final legacyList =
-          await database.barcodesInventarioRepository.getAllBarcodes();
+      final legacyList = await getIt<BarcodesInventarioCacheService>().getAll();
       return legacyList
           .map(BarcodeProductoModel.fromLegacy)
           .toList();
@@ -136,7 +142,7 @@ class InventarioLocalDataSourceImpl implements InventarioLocalDataSource {
     try {
       final userId = await PrefUtils.getUserId();
       final config =
-          await database.configurationsRepository.getConfiguration(userId);
+          await getIt<ConfiguracionCacheService>().getConfiguration(userId);
       if (config == null) {
         throw const CacheException(
             'No se encontraron configuraciones del usuario');

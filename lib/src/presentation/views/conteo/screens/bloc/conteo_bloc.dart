@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
+import 'package:wms_app/core/services/productos_cache_service.dart';
+import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/conteo/data/conteo_repository.dart';
@@ -435,7 +438,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   ) async {
     try {
       emit(GetProductsLoadingBD());
-      final response = await db.productoInventarioRepository.getAllProducts();
+      final response = await getIt<ProductosCacheService>().getAll();
       productos.clear();
       if (response.isNotEmpty) {
         productos.addAll(response);
@@ -658,7 +661,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   ) async {
     try {
       emit(LoadLocationsLoading());
-      final response = await db.ubicacionesRepository.getAllUbicaciones();
+      final response = await getIt<UbicacionesCacheService>().getAll();
       ubicaciones.clear();
       if (response.isNotEmpty) {
         ubicaciones.addAll(response);
@@ -1446,9 +1449,8 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   ) async {
     try {
       int userId = await PrefUtils.getUserId();
-      final response = await db.configurationsRepository.getConfiguration(
-        userId,
-      );
+      final response =
+          await getIt<ConfiguracionCacheService>().getConfiguration(userId);
 
       if (response != null) {
         emit(ConfigurationPickingLoaded(response));

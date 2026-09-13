@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/services/barcodes_inventario_cache_service.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
+import 'package:wms_app/core/services/productos_cache_service.dart';
+import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
+import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/features/inventario/domain/entities/lote_producto_inventario.dart';
@@ -244,7 +249,7 @@ class CreateTransferBloc
       emit(GetProductsLoadingBD());
       final response = await db.productCreateTransferRepository
           .getAllProductsCreateTransfer();
-      productosCreateTransfer.clear();
+      productosCreateTransfer = [];
       if (response.isNotEmpty) {
         productosCreateTransfer = response;
         debugPrint(
@@ -363,10 +368,9 @@ class CreateTransferBloc
   void _onFetchAllBarcodesInventarioEvent(FetchAllBarcodesInventarioEvent event,
       Emitter<CreateTransferState> emit) async {
     try {
-      final response = await db.barcodesInventarioRepository.getAllBarcodes();
-      allBarcodeInventario.clear();
+      final response = await getIt<BarcodesInventarioCacheService>().getAll();
+      allBarcodeInventario = response;
       if (response.isNotEmpty) {
-        allBarcodeInventario = response;
         debugPrint(
             'Total de códigos de barras: ${allBarcodeInventario.length}');
         emit(FetchAllBarcodesSuccess(allBarcodeInventario));
@@ -761,9 +765,27 @@ class CreateTransferBloc
       GetProductsFromDBEvent event, Emitter<CreateTransferState> emit) async {
     try {
       emit(GetProductsLoadingBD());
-      final response = await db.productoInventarioRepository.getAllProducts();
-      productos.clear();
-      productosFilters.clear();
+      var response = await getIt<ProductosCacheService>().getAll();
+      if (response.isEmpty) {
+        // Puede ser que la sincronización de productos en background
+        // (post-login, fire-and-forget vía InventarioBloc.GetProductsEvent)
+        // todavía esté en curso — en vez de adivinar un tiempo fijo de
+        // espera, se consulta el estado real de esa sincronización y se
+        // espera solo mientras siga activa (con un tope de 15s por si algo
+        // se cuelga). Si no hay sync en curso y sigue vacío, sí es que
+        // realmente no hay productos en la BD.
+        final inventarioBloc = getIt<InventarioBloc>();
+        var esperas = 0;
+        while (inventarioBloc.isLoading && esperas < 30) {
+          await Future.delayed(const Duration(milliseconds: 500));
+          esperas++;
+        }
+        response = await getIt<ProductosCacheService>().getAll(
+          forceRefresh: true,
+        );
+      }
+      productos = [];
+      productosFilters = [];
       if (response.isNotEmpty) {
         productos = response;
         productosFilters = response;
@@ -782,13 +804,11 @@ class CreateTransferBloc
       GetLocationsEvent event, Emitter<CreateTransferState> emit) async {
     try {
       emit(LoadLocationsLoading());
-      final response = await db.ubicacionesRepository.getAllUbicaciones();
-      ubicaciones.clear();
-      ubicacionesFilters.clear();
+      final response = await getIt<UbicacionesCacheService>().getAll();
+      ubicaciones = response;
+      ubicacionesFilters = response;
       debugPrint('ubicaciones: ${response.length}');
       if (response.isNotEmpty) {
-        ubicaciones = response;
-        ubicacionesFilters = ubicaciones;
         emit(LoadLocationsSuccess(ubicaciones));
       } else {
         emit(LoadLocationsFailure('No se encontraron ubicaciones'));
@@ -834,7 +854,7 @@ class CreateTransferBloc
     try {
       int userId = await PrefUtils.getUserId();
       final response =
-          await db.configurationsRepository.getConfiguration(userId);
+          await getIt<ConfiguracionCacheService>().getConfiguration(userId);
 
       if (response != null) {
         emit(ConfigurationLoaded(response));

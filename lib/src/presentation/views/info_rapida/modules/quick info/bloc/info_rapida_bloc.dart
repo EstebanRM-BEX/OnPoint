@@ -7,6 +7,9 @@ import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
+import 'package:wms_app/core/services/productos_cache_service.dart';
+import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
@@ -504,7 +507,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     try {
       int userId = await PrefUtils.getUserId();
       final response =
-          await db.configurationsRepository.getConfiguration(userId);
+          await getIt<ConfiguracionCacheService>().getConfiguration(userId);
 
       if (response != null) {
         configurations = response;
@@ -585,8 +588,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
         emit(GetProductsLoading());
       }
 
-      final response =
-          await db.productoInventarioRepository.getAllUniqueProducts();
+      final response = await getIt<ProductosCacheService>().getAllUnique();
       debugPrint('productos: ${response.length}');
       if (response.isNotEmpty) {
         productos = response;
@@ -699,8 +701,8 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
         emit(LoadLocationsLoading());
       }
 
-      //CARGAMOS LAS UBICACIONES DESDE LA BASE DE DATOS LOCAL
-      final response = await db.ubicacionesRepository.getAllUbicaciones();
+      //CARGAMOS LAS UBICACIONES DESDE EL CACHE COMPARTIDO
+      final response = await getIt<UbicacionesCacheService>().getAll();
       debugPrint('📍 ubicaciones: ${response.length}');
       if (response.isNotEmpty) {
         ubicaciones = response;
@@ -823,8 +825,8 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
       emit(InitInfoRapidaLoading());
 
       // Lanzar las 3 queries en paralelo antes de hacer await a cualquiera
-      final locationsFuture = db.ubicacionesRepository.getAllUbicaciones();
-      final productsFuture = db.productoInventarioRepository.getAllUniqueProducts();
+      final locationsFuture = getIt<UbicacionesCacheService>().getAll();
+      final productsFuture = getIt<ProductosCacheService>().getAllUnique();
       final configFuture = _fetchConfig();
 
       final locs = await locationsFuture;
@@ -875,41 +877,23 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     } catch (_) {}
   }
 
-  // Actualiza el producto en las listas en memoria (O(n), sin tocar SQLite)
+  // Actualiza (o agrega, si es un producto nuevo) el producto en memoria
+  // (O(n), sin tocar SQLite). Delegado a ProductosCacheService: ahí se
+  // actualizan los DOS slots (getAll/getAllUnique) — no solo el que usa
+  // esta pantalla — para que Crear Transferencia, ConteoBloc, etc. (que
+  // leen getAll()) también vean el cambio, ya que productos/
+  // productosFilters son vistas (no copias) sobre la misma lista del
+  // cache: no hace falta reasignarlas, la lista ya mutó in place.
   void _onWsProductUpdate(
       _WsProductUpdateEvent event, Emitter<InfoRapidaState> emit) {
     final int? productId = event.wsData['product_id'] as int?;
     if (productId == null) return;
 
-    final int idx = productos.indexWhere((p) => p.productId == productId);
-    if (idx == -1) return;
-
-    final Product p = productos[idx];
-    final Map<String, dynamic> d = event.wsData;
-
-    if (d.containsKey('name')) p.name = d['name']?.toString();
-    if (d.containsKey('code')) p.code = d['code'];
-    if (d.containsKey('barcode')) p.barcode = d['barcode'];
-    if (d.containsKey('tracking')) p.tracking = d['tracking']?.toString();
-    if (d.containsKey('uom')) p.uom = d['uom'];
-    if (d.containsKey('weight')) p.weight = (d['weight'] as num?)?.toDouble();
-    if (d.containsKey('weight_uom_name')) p.weightUomName = d['weight_uom_name'];
-    if (d.containsKey('volume')) p.volume = (d['volume'] as num?)?.toDouble();
-    if (d.containsKey('volume_uom_name')) p.volumeUomName = d['volume_uom_name'];
-    if (d.containsKey('category')) p.category = d['category'];
-    if (d.containsKey('location_id')) p.locationId = d['location_id'] as int?;
-    if (d.containsKey('location_name')) p.locationName = d['location_name']?.toString();
-    if (d.containsKey('lot_id')) p.lotId = d['lot_id'];
-    if (d.containsKey('lot_name')) p.lotName = d['lot_name'];
-    if (d.containsKey('quantity')) p.quantity = d['quantity'];
-    if (d.containsKey('expiration_time')) p.expirationTime = d['expiration_time'];
-    if (d.containsKey('use_expiration_date')) {
-      p.useExpirationDate = d['use_expiration_date'] == true ? 1 : 0;
-    }
-
-    // Sincronizar productosFilters si contiene ese producto
-    final int fIdx = productosFilters.indexWhere((p) => p.productId == productId);
-    if (fIdx != -1) productosFilters[fIdx] = p;
+    final touched = getIt<ProductosCacheService>().applyWsProductUpsert(
+      productId,
+      event.wsData,
+    );
+    if (!touched) return;
 
     debugPrint('🔄 InfoRapidaBloc: producto id=$productId actualizado en memoria vía WS.');
     emit(WsProductSyncedState(productId));
@@ -918,7 +902,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   Future<UserConfigurationModel?> _fetchConfig() async {
     try {
       final userId = await PrefUtils.getUserId();
-      return await db.configurationsRepository.getConfiguration(userId);
+      return await getIt<ConfiguracionCacheService>().getConfiguration(userId);
     } catch (_) {
       return null;
     }

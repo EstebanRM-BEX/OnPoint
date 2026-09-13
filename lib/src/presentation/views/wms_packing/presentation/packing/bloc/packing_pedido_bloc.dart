@@ -12,6 +12,8 @@ import 'package:wms_app/features/user/data/models/user_configuration_model.dart'
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
+import 'package:wms_app/core/services/novedades_cache_service.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
@@ -1479,13 +1481,10 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   ) async {
     try {
       emit(NovedadesPackingLoadingState());
-      final response = await db.novedadesRepository.getAllNovedades();
-      if (response != null) {
-        novedades.clear();
-        novedades = response;
-        debugPrint("novedades: ${novedades.length}");
-        emit(NovedadesPackingLoadedState(listOfNovedades: novedades));
-      }
+      final response = await getIt<NovedadesCacheService>().getAll();
+      novedades = response;
+      debugPrint("novedades: ${novedades.length}");
+      emit(NovedadesPackingLoadedState(listOfNovedades: novedades));
     } catch (e, s) {
       debugPrint("Error en __onLoadAllNovedadesEvent: $e, $s");
       emit(NovedadesPackingErrorState(e.toString()));
@@ -2081,9 +2080,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     try {
       emit(ConfigurationLoading());
       int userId = await PrefUtils.getUserId();
-      final response = await db.configurationsRepository.getConfiguration(
-        userId,
-      );
+      final response =
+          await getIt<ConfiguracionCacheService>().getConfiguration(userId);
 
       if (response != null) {
         emit(ConfigurationPickingLoaded(response));

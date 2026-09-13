@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:wms_app/core/services/barcodes_inventario_cache_service.dart';
 import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_barcode/barcodes_inventario_repository.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/product_inventario_repository.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/product_inventario_table.dart';
@@ -231,8 +233,33 @@ class WebSocketService implements IWebSocketService {
     final Product? current = await productRepo.getProductById(productId);
 
     if (current == null) {
+      // Producto nuevo: el backend reusa el mismo evento "update" tanto
+      // para altas como para modificaciones — si no existe en SQLite,
+      // insertarlo completo en vez de ignorarlo.
+      final newProduct = Product.fromMap(wsData);
+      await productRepo.insertProductosInventario([newProduct]);
       debugPrint(
-          "⚠️ WS Update: producto_id=$productId no existe en BD local, ignorando.");
+          '🆕 WS: producto nuevo id=$productId ("${newProduct.name}") insertado en BD local.');
+
+      final List<dynamic> newBarcodes =
+          wsData['other_barcodes'] as List<dynamic>? ?? [];
+      final List<BarcodeInventario> toInsertNew = [];
+      for (final wb in newBarcodes) {
+        if (wb is! Map<String, dynamic>) continue;
+        final String wsBarcode = wb['barcode']?.toString() ?? '';
+        if (wsBarcode.isEmpty) continue;
+        toInsertNew.add(BarcodeInventario(
+            barcode: wsBarcode, idProduct: productId, cantidad: wb['cantidad']));
+      }
+      if (toInsertNew.isNotEmpty) {
+        await BarcodesInventarioRepository().insertOrUpdateBarcodes(toInsertNew);
+        // Recién se escribieron barcodes nuevos en SQLite — a diferencia de
+        // los productos (que ProductosCacheService mantiene en memoria en
+        // paralelo, vía InfoRapidaBloc), acá no hay ningún mecanismo que
+        // actualice el cache de barcodes en memoria, así que se invalida
+        // para que el próximo getAll() los traiga frescos.
+        getIt<BarcodesInventarioCacheService>().invalidate();
+      }
       return;
     }
 
@@ -315,6 +342,7 @@ class WebSocketService implements IWebSocketService {
     };
 
     final List<BarcodeInventario> toInsert = [];
+    bool barcodesChanged = false;
 
     for (final wb in wsBarcodes) {
       if (wb is! Map<String, dynamic>) continue;
@@ -329,6 +357,7 @@ class WebSocketService implements IWebSocketService {
             '🔄 Producto $label — nuevo barcode: "$wsBarcode" (cantidad: $wsCantidad)');
       } else if (storedMap[wsBarcode].toString() != wsCantidad.toString()) {
         await barcodesRepo.updateBarcodeCantidad(productId, wsBarcode, wsCantidad);
+        barcodesChanged = true;
         debugPrint(
             '🔄 Producto $label — barcode "$wsBarcode" cantidad: "${storedMap[wsBarcode]}" → "$wsCantidad"');
       }
@@ -336,6 +365,16 @@ class WebSocketService implements IWebSocketService {
 
     if (toInsert.isNotEmpty) {
       await barcodesRepo.insertOrUpdateBarcodes(toInsert);
+      barcodesChanged = true;
+    }
+
+    if (barcodesChanged) {
+      // Recién se escribieron barcodes en SQLite — a diferencia de los
+      // productos (que ProductosCacheService mantiene en memoria en
+      // paralelo, vía InfoRapidaBloc), acá no hay ningún mecanismo que
+      // actualice el cache de barcodes en memoria, así que se invalida
+      // para que el próximo getAll() los traiga frescos.
+      getIt<BarcodesInventarioCacheService>().invalidate();
     }
   }
 

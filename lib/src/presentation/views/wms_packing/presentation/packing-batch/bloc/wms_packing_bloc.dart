@@ -10,6 +10,8 @@ import 'package:wms_app/features/user/data/models/user_configuration_model.dart'
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
+import 'package:wms_app/core/services/novedades_cache_service.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
 import 'package:wms_app/injection_container.dart';
@@ -822,7 +824,7 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       emit(ConfigurationLoadingPack());
       int userId = await PrefUtils.getUserId();
       final response =
-          await db.configurationsRepository.getConfiguration(userId);
+          await getIt<ConfiguracionCacheService>().getConfiguration(userId);
 
       if (response != null) {
         configurations = response;
@@ -841,13 +843,10 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
       LoadAllNovedadesPackingEvent event, Emitter<WmsPackingState> emit) async {
     try {
       emit(NovedadesPackingLoadingState());
-      final response = await db.novedadesRepository.getAllNovedades();
-      if (response != null) {
-        novedades.clear();
-        novedades = response;
-        debugPrint("novedades: ${novedades.length}");
-        emit(NovedadesPackingLoadedState(listOfNovedades: novedades));
-      }
+      final response = await getIt<NovedadesCacheService>().getAll();
+      novedades = response;
+      debugPrint("novedades: ${novedades.length}");
+      emit(NovedadesPackingLoadedState(listOfNovedades: novedades));
     } catch (e, s) {
       debugPrint("Error en __onLoadAllNovedadesEvent: $e, $s");
       emit(NovedadesPackingErrorState(e.toString()));

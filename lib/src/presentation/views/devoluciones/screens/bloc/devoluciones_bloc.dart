@@ -7,6 +7,11 @@ import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/interable_extension_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/services/barcodes_inventario_cache_service.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
+import 'package:wms_app/core/services/productos_cache_service.dart';
+import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/data/devoluciones_repository.dart';
@@ -285,10 +290,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   void _onFetchAllBarcodesInventarioEvent(FetchAllBarcodesInventarioEvent event,
       Emitter<DevolucionesState> emit) async {
     try {
-      final response = await db.barcodesInventarioRepository.getAllBarcodes();
-      allBarcodeInventario.clear();
+      final response = await getIt<BarcodesInventarioCacheService>().getAll();
+      allBarcodeInventario = response;
       if (response.isNotEmpty) {
-        allBarcodeInventario = response;
         debugPrint(
             'Total de códigos de barras: ${allBarcodeInventario.length}');
         emit(FetchAllBarcodesSuccess(allBarcodeInventario));
@@ -307,7 +311,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     try {
       int userId = await PrefUtils.getUserId();
       final response =
-          await db.configurationsRepository.getConfiguration(userId);
+          await getIt<ConfiguracionCacheService>().getConfiguration(userId);
 
       if (response != null) {
         emit(ConfigurationDevLoaded(response));
@@ -624,12 +628,10 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       LoadLocationsEvent event, Emitter<DevolucionesState> emit) async {
     try {
       emit(LoadingLocationsState());
-      final response = await db.ubicacionesRepository.getAllUbicaciones();
-      ubicaciones.clear();
-      ubicacionesFilters.clear();
+      final response = await getIt<UbicacionesCacheService>().getAll();
+      ubicaciones = response;
+      ubicacionesFilters = response;
       if (response.isNotEmpty) {
-        ubicaciones = response;
-        ubicacionesFilters = response;
         debugPrint('ubicaciones length: ${ubicaciones.length}');
         emit(LoadLocationsSuccessState(ubicaciones));
       } else {
@@ -1064,14 +1066,11 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       GetProductsList event, Emitter<DevolucionesState> emit) async {
     try {
       emit(GetProductsLoading());
-      final response =
-          await db.productoInventarioRepository.getAllUniqueProducts();
-      productos.clear();
-      productosFilters.clear();
+      final response = await getIt<ProductosCacheService>().getAllUnique();
+      productos = response;
+      productosFilters = response;
       debugPrint('productos: ${response.length}');
       if (response.isNotEmpty) {
-        productos = response;
-        productosFilters = productos;
         //mandamos a traer los producto que tenemos listo para la devolucion guardados en la base de datos
         productosDevolucion =
             await db.devolucionRepository.getAllProductosDevoluciones();

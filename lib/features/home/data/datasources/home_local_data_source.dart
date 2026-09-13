@@ -1,6 +1,8 @@
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/error/exceptions.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/features/home/domain/entities/user_data.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
@@ -39,7 +41,7 @@ class HomeLocalDataSourceImpl implements HomeLocalDataSource {
   Future<UserConfiguration> getUserConfigurations(int userId) async {
     try {
       final config =
-          await database.configurationsRepository.getConfiguration(userId);
+          await getIt<ConfiguracionCacheService>().getConfiguration(userId);
 
       if (config == null) {
         throw const CacheException('No se encontraron configuraciones');

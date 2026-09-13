@@ -10,6 +10,8 @@ import 'package:wms_app/features/user/data/models/user_configuration_model.dart'
 import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
+import 'package:wms_app/core/services/novedades_cache_service.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/data/wms_picking_repository.dart';
@@ -530,13 +532,9 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
   void _onLoadAllNovedadesEvent(
       LoadAllNovedadesEvent event, Emitter<BatchState> emit) async {
     try {
-      final response = await db.novedadesRepository.getAllNovedades();
-      novedades.clear();
-      if (response != null) {
-        novedades = response;
-
-        debugPrint("novedades: ${novedades.length}");
-      }
+      final response = await getIt<NovedadesCacheService>().getAll();
+      novedades = response;
+      debugPrint("novedades: ${novedades.length}");
       emit(NovedadesLoadedState(listOfNovedades: novedades));
     } catch (e, s) {
       debugPrint("❌ Error en __onLoadAllNovedadesEvent: $e, $s");
@@ -564,7 +562,7 @@ class BatchBloc extends Bloc<BatchEvent, BatchState> {
     try {
       int userId = await PrefUtils.getUserId();
       final response =
-          await db.configurationsRepository.getConfiguration(userId);
+          await getIt<ConfiguracionCacheService>().getConfiguration(userId);
 
       if (response != null) {
         emit(ConfigurationPickingLoaded(response));

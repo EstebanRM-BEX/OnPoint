@@ -10,6 +10,8 @@ import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/core/usecases/usecase.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
+import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
@@ -33,7 +35,6 @@ import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
 import 'package:wms_app/shared/widgets/segunda_unidad_input_widget.dart';
 import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
-import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
@@ -221,7 +222,7 @@ class _TransferenciaMultiusuarioScanProductScreenState
 
   Future<void> _cargarConfiguracion() async {
     final userId = await PrefUtils.getUserId();
-    final config = await DataBaseSqlite().configurationsRepository
+    final config = await getIt<ConfiguracionCacheService>()
         .getConfiguration(userId);
     if (!mounted) return;
     setState(() {
@@ -256,8 +257,7 @@ class _TransferenciaMultiusuarioScanProductScreenState
   /// claim.locationBarcode, no contra este catálogo).
   Future<void> _cargarUbicaciones() async {
     try {
-      final ubicaciones = await DataBaseSqlite().ubicacionesRepository
-          .getAllUbicaciones();
+      final ubicaciones = await getIt<UbicacionesCacheService>().getAll();
       if (!mounted) return;
       setState(() => _ubicacionesDisponibles = ubicaciones);
     } catch (_) {}

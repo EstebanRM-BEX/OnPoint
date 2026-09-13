@@ -6,6 +6,7 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
+import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 
 class SearchProductCreateTransferScreen extends StatefulWidget {
   const SearchProductCreateTransferScreen({super.key});
@@ -19,6 +20,21 @@ class _SearchProductScreenState
     extends State<SearchProductCreateTransferScreen> {
   String? selectedProductKey;
   String? _selectedPropietario;
+
+  @override
+  void initState() {
+    super.initState();
+    // El FAB de "crear transferencia" ya dispara GetProductsFromDBEvent al
+    // entrar, pero es fire-and-forget: si el operario llega a esta pantalla
+    // antes de que termine, la lista se ve vacía sin ningún aviso — parece
+    // que "no cargan" hasta que se sale y se vuelve a entrar (para entonces
+    // el fetch original ya terminó). Si acá todavía no hay nada, se pide de
+    // nuevo en vez de depender de esa carrera.
+    final bloc = context.read<CreateTransferBloc>();
+    if (bloc.productos.isEmpty) {
+      bloc.add(GetProductsFromDBEvent());
+    }
+  }
 
   List<String> _getPropietarios(CreateTransferBloc bloc) {
     return bloc.productos
@@ -123,29 +139,43 @@ class _SearchProductScreenState
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
 
-    return BlocBuilder<CreateTransferBloc, CreateTransferState>(
-      builder: (context, state) {
-        final bloc = context.read<CreateTransferBloc>();
+    return BlocListener<CreateTransferBloc, CreateTransferState>(
+      listener: (context, state) {
+        if (state is GetProductsLoadingBD) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) =>
+                const DialogLoading(message: 'Cargando productos...'),
+          );
+        } else if (state is GetProductsSuccessBD ||
+            state is GetProductsFailure) {
+          if (Navigator.canPop(context)) Navigator.pop(context);
+        }
+      },
+      child: BlocBuilder<CreateTransferBloc, CreateTransferState>(
+        builder: (context, state) {
+          final bloc = context.read<CreateTransferBloc>();
 
-        return WillPopScope(
-          onWillPop: () async => false,
-          child: Scaffold(
-            backgroundColor: primaryColorApp,
-            body: SafeArea(
-              child: Container(
-                color: white,
-                child: Column(
-                  children: [
-                    _AppBarInfo(
-                      size: size,
-                      hasActiveFilter: _selectedPropietario != null,
-                      onFilterTap: () =>
-                          _showPropietarioFilter(context, bloc),
-                    ),
-                    _buildSearchBar(context, bloc, size),
-                    Expanded(child: _buildProductList(context, bloc)),
-                    const SizedBox(height: 20),
-                    _buildSelectButton(bloc, size),
+          return WillPopScope(
+            onWillPop: () async => false,
+            child: Scaffold(
+              backgroundColor: primaryColorApp,
+              body: SafeArea(
+                child: Container(
+                  color: white,
+                  child: Column(
+                    children: [
+                      _AppBarInfo(
+                        size: size,
+                        hasActiveFilter: _selectedPropietario != null,
+                        onFilterTap: () =>
+                            _showPropietarioFilter(context, bloc),
+                      ),
+                      _buildSearchBar(context, bloc, size),
+                      Expanded(child: _buildProductList(context, bloc, state)),
+                      const SizedBox(height: 20),
+                      _buildSelectButton(bloc, size),
                     const SizedBox(height: 10),
                   ],
                 ),
@@ -153,7 +183,8 @@ class _SearchProductScreenState
             ),
           ),
         );
-      },
+        },
+      ),
     );
   }
 
@@ -194,7 +225,18 @@ class _SearchProductScreenState
     );
   }
 
-  Widget _buildProductList(BuildContext context, CreateTransferBloc bloc) {
+  Widget _buildProductList(
+    BuildContext context,
+    CreateTransferBloc bloc,
+    CreateTransferState state,
+  ) {
+    // Mientras carga, el diálogo del BlocListener ya lo cubre — acá solo
+    // evita el flash de "No se encontraron productos" antes de que llegue
+    // el primer resultado.
+    if (state is GetProductsLoadingBD && bloc.productosFilters.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     var productos = bloc.productosFilters;
 
     if (_selectedPropietario != null) {

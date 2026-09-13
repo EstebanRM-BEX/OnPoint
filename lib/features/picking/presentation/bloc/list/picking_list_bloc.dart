@@ -4,8 +4,10 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/transferencias/data/transferencias_repository.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
@@ -316,7 +318,7 @@ class PickingListBloc extends Bloc<PickingListEvent, PickingListState> {
       emit(const PickConfigurationsLoading());
       final userId = await PrefUtils.getUserId();
       final response =
-          await _db.configurationsRepository.getConfiguration(userId);
+          await getIt<ConfiguracionCacheService>().getConfiguration(userId);
 
       if (response != null) {
         configurations = response;

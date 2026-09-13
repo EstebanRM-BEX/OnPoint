@@ -1,8 +1,9 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
+import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
-import 'package:wms_app/src/presentation/providers/db/database.dart';
 
 part 'recepcion_multiusuario_location_dest_event.dart';
 part 'recepcion_multiusuario_location_dest_state.dart';
@@ -40,11 +41,13 @@ class RecepcionMultiusuarioLocationDestBloc
     FetchUbicacionesDestEvent event,
     Emitter<RecepcionMultiusuarioLocationDestState> emit,
   ) async {
-    // El bloc vive a nivel de app (BlocProvider raíz en main.dart), así que
-    // esta caché sobrevive a que se entre y salga de la pantalla. tbl_
-    // ubicaciones no cambia durante la sesión (se sincroniza aparte), así
-    // que solo hace falta consultarla una vez — si no, cada reingreso
-    // repite la consulta completa y muestra el loading de nuevo sin razón.
+    // UbicacionesCacheService ya memoiza esta lista a nivel de app — antes
+    // este bloc guardaba su propia copia además de las de otros ~10 blocs
+    // que leen el mismo catálogo (RecepcionBloc, TransferenciaBloc,
+    // WMSPickingBloc, etc.), todas vivas para siempre en el
+    // MultiBlocProvider raíz. Leer del cache compartido evita esa
+    // duplicación: si ya lo cargó cualquier otro bloc, esto no vuelve a
+    // consultar SQLite.
     if (_todasLasUbicaciones.isNotEmpty) {
       emit(RecepcionMultiusuarioLocationDestLoaded(_filtradas()));
       return;
@@ -52,8 +55,7 @@ class RecepcionMultiusuarioLocationDestBloc
 
     emit(const RecepcionMultiusuarioLocationDestLoading());
     try {
-      _todasLasUbicaciones = await DataBaseSqlite().ubicacionesRepository
-          .getAllUbicaciones();
+      _todasLasUbicaciones = await getIt<UbicacionesCacheService>().getAll();
       emit(RecepcionMultiusuarioLocationDestLoaded(_filtradas()));
     } catch (_) {
       emit(
