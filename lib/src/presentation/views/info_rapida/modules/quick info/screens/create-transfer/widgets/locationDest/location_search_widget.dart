@@ -257,7 +257,7 @@ class _SearchLocationScreenState
 
                               Navigator.pushReplacementNamed(
                                   context, 'create-mass-transfer', arguments: [
-                                context.read<InfoRapidaBloc>().infoRapidaResult
+                                context.read<InfoRapidaBloc>()
                               ]);
                             }
                           },
@@ -321,7 +321,7 @@ class _AppBarInfo extends StatelessWidget {
                         onPressed: () {
                           Navigator.pushReplacementNamed(
                               context, 'create-mass-transfer', arguments: [
-                            context.read<InfoRapidaBloc>().infoRapidaResult
+                            context.read<InfoRapidaBloc>()
                           ]);
                         },
                       ),

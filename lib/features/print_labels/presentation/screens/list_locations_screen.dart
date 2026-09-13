@@ -284,11 +284,10 @@ class _AppBarInfo extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.arrow_back, color: white),
                       onPressed: () {
-                        context
-                            .read<PrintLabelsBloc>()
-                            .searchControllerLocation
-                            .clear();
-                        Navigator.pushReplacementNamed(context, 'print-labels');
+                        final bloc = context.read<PrintLabelsBloc>();
+                        bloc.searchControllerLocation.clear();
+                        Navigator.pushReplacementNamed(context, 'print-labels',
+                            arguments: [bloc]);
                       },
                     )
                   else

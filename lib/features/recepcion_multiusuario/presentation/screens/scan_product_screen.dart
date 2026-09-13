@@ -62,10 +62,26 @@ class RecepcionMultiusuarioScanProductScreen extends StatefulWidget {
     super.key,
     required this.session,
     required this.claim,
+    this.initialProductValidated = false,
+    this.initialProductValidatedAt,
+    this.initialLote,
+    this.initialUbicacionDest,
   });
 
   final RecepcionSession session;
   final RecepcionClaim claim;
+
+  // Estado a restaurar al volver de RecepcionMultiusuarioNewLoteScreen /
+  // RecepcionMultiusuarioLocationDestScreen — como esas pantallas ahora
+  // vuelven acá con pushReplacementNamed (en vez de Navigator.pop, que ya
+  // no aplica porque esta misma pantalla se reemplazó al abrir la otra),
+  // esta screen se reconstruye de cero y necesita que le pasen de vuelta lo
+  // que ya se había confirmado antes de salir, para no obligar a re-escanear
+  // el producto ni perder el lote/ubicación ya elegidos.
+  final bool initialProductValidated;
+  final DateTime? initialProductValidatedAt;
+  final LoteProducto? initialLote;
+  final ResultUbicaciones? initialUbicacionDest;
 
   @override
   State<RecepcionMultiusuarioScanProductScreen> createState() =>
@@ -169,6 +185,17 @@ class _RecepcionMultiusuarioScanProductScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _productIsOk = widget.initialProductValidated;
+    _productValidatedAt = widget.initialProductValidatedAt;
+    if (widget.initialLote != null) {
+      _selectedLote = widget.initialLote;
+      _loteIsOk = true;
+    }
+    if (widget.initialUbicacionDest != null) {
+      _selectedUbicacionDest = widget.initialUbicacionDest;
+      _locationDestIsOk = true;
+      _locationDestFieldOk = true;
+    }
     _cargarConfiguracion();
     _cargarLotesProducto();
     _cargarUbicaciones();
@@ -430,25 +457,21 @@ class _RecepcionMultiusuarioScanProductScreenState
     }
   }
 
-  /// Abre la pantalla de listar/crear lote; si el operario elige o crea uno,
-  /// lo da por confirmado directo (mismo efecto que SelectecLoteEvent en
-  /// recepción individual — no hace falta volver a escanearlo).
-  Future<void> _openLoteScreen() async {
-    final result = await Navigator.pushNamed(
+  /// Abre la pantalla de listar/crear lote — reemplaza esta pantalla (ya no
+  /// hay ida y vuelta con Navigator.push/pop): NewLoteScreen vuelve acá con
+  /// pushReplacementNamed pasando el lote elegido, o el mismo estado sin
+  /// cambios si el operario cancela.
+  void _openLoteScreen() {
+    Navigator.pushReplacementNamed(
       context,
       AppRoutes.recepcionMultiusuarioNewLote,
-      arguments: [widget.session, widget.claim],
+      arguments: [
+        widget.session,
+        widget.claim,
+        _productValidatedAt,
+        _selectedUbicacionDest,
+      ],
     );
-    if (!mounted || result is! LoteProducto) return;
-    setState(() {
-      _selectedLote = result;
-      _loteIsOk = true;
-    });
-    // addPostFrameCallback (no microtask): el campo que sigue en la cadena
-    // (producto → lote → destino → cantidad) recién queda "enabled" tras el
-    // rebuild de este setState — pedirle el foco antes de que ese rebuild
-    // ocurra no toma efecto y el escaneo siguiente se pierde.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _handleDependencies());
   }
 
   /// No valida contra una ubicación destino preasignada: acepta cualquier
@@ -489,31 +512,21 @@ class _RecepcionMultiusuarioScanProductScreenState
     }
   }
 
-  /// Abre la pantalla de buscar/seleccionar ubicación destino; si el
-  /// operario elige una, la da por confirmada directo (mismo efecto que
-  /// _openLoteScreen — no hace falta volver a escanearla). No deja entrar
-  /// si el producto todavía no fue validado (mismo orden que la cadena de
-  /// foco: producto → lote → destino).
-  Future<void> _openLocationDestScreen() async {
+  /// Abre la pantalla de buscar/seleccionar ubicación destino — reemplaza
+  /// esta pantalla; LocationDestScreen vuelve acá con pushReplacementNamed
+  /// pasando la ubicación elegida, o el mismo estado sin cambios si el
+  /// operario cancela. No deja entrar si el producto todavía no fue
+  /// validado (mismo orden que la cadena de foco: producto → lote → destino).
+  void _openLocationDestScreen() {
     if (!_productIsOk) {
       return;
     }
 
-    final result = await Navigator.pushNamed(
+    Navigator.pushReplacementNamed(
       context,
       AppRoutes.recepcionMultiusuarioLocationDest,
+      arguments: [widget.session, widget.claim, _productValidatedAt, _selectedLote],
     );
-    if (!mounted || result is! ResultUbicaciones) return;
-    setState(() {
-      _selectedUbicacionDest = result;
-      _locationDestIsOk = true;
-      _locationDestFieldOk = true;
-    });
-    // addPostFrameCallback (no microtask): el campo que sigue en la cadena
-    // (producto → lote → destino → cantidad) recién queda "enabled" tras el
-    // rebuild de este setState — pedirle el foco antes de que ese rebuild
-    // ocurra no toma efecto y el escaneo siguiente se pierde.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _handleDependencies());
   }
 
   /// true si ya se puede escanear/escribir la cantidad: producto validado,
@@ -710,7 +723,11 @@ class _RecepcionMultiusuarioScanProductScreenState
 
     result.fold(
       (failure) => showScrollableErrorDialog(failure.message),
-      (_) => Navigator.pop(context),
+      (_) => Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.recepcionMultiusuarioDetail,
+        arguments: [widget.session],
+      ),
     );
   }
 
@@ -729,7 +746,11 @@ class _RecepcionMultiusuarioScanProductScreenState
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pushReplacementNamed(
+              context,
+              AppRoutes.recepcionMultiusuarioDetail,
+              arguments: [widget.session],
+            ),
           ),
           title: Text(
             widget.session.name ?? 'RECEPCIÓN',

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/asignacion_observacion.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_pool_item.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_pool_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/recepcion_novedades_dialog_widget.dart';
 
 /// Card de un producto con recepciones terminadas (tab "Terminados").
@@ -150,15 +152,25 @@ class RecepcionTerminadoCardWidget extends StatelessWidget {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
-                  onPressed: () => showDialog(
-                    context: context,
-                    builder: (_) => RecepcionNovedadesDialogWidget(
-                      productName: item.productName ?? '',
-                      observaciones: item.observaciones,
-                      sessionId: item.sessionId,
-                      uom: item.uom,
-                    ),
-                  ),
+                  onPressed: () {
+                    // El diálogo es su propia ruta — no hereda el
+                    // BlocProvider<RecepcionMultiusuarioPoolBloc> de Detail
+                    // (esta card sí lo tiene, por eso se captura acá).
+                    final poolBloc =
+                        context.read<RecepcionMultiusuarioPoolBloc>();
+                    showDialog(
+                      context: context,
+                      builder: (_) => BlocProvider.value(
+                        value: poolBloc,
+                        child: RecepcionNovedadesDialogWidget(
+                          productName: item.productName ?? '',
+                          observaciones: item.observaciones,
+                          sessionId: item.sessionId,
+                          uom: item.uom,
+                        ),
+                      ),
+                    );
+                  },
                   icon: Icon(
                     Icons.report_gmailerrorred_outlined,
                     color: primaryColorApp,

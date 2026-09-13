@@ -150,6 +150,7 @@ class _LocationInfoScreenState extends State<LocationInfoScreen> {
             Navigator.pushReplacementNamed(
               context,
               'product-info',
+              arguments: [context.read<InfoRapidaBloc>()],
             );
           }
         } else if (state is InfoRapidaError) {
@@ -587,6 +588,7 @@ class _LocationInfoScreenState extends State<LocationInfoScreen> {
                             Navigator.pushReplacementNamed(
                               context,
                               'create-mass-transfer',
+                              arguments: [context.read<InfoRapidaBloc>()],
                             );
                           },
                           style: ElevatedButton.styleFrom(
@@ -654,20 +656,15 @@ class AppBar extends StatelessWidget {
                 children: [
                   GestureDetector(
                     onTap: () {
-                      context
-                          .read<InfoRapidaBloc>()
-                          .searchControllerProducts
-                          .clear();
-                      context.read<InfoRapidaBloc>().add(IsEditEvent(false));
-                      context
-                          .read<InfoRapidaBloc>()
-                          .add(ResetProductsFiltersMassTransferEvent());
-                      context
-                          .read<InfoRapidaBloc>()
-                          .add(GetListLocationsEvent());
+                      final bloc = context.read<InfoRapidaBloc>();
+                      bloc.searchControllerProducts.clear();
+                      bloc.add(IsEditEvent(false));
+                      bloc.add(ResetProductsFiltersMassTransferEvent());
+                      bloc.add(GetListLocationsEvent());
                       Navigator.pushReplacementNamed(
                         context,
                         'info-rapida',
+                        arguments: [bloc],
                       );
                     },
                     child: Icon(

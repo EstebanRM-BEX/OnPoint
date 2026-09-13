@@ -50,12 +50,11 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
 
       if (bloc.isInitialized) return;
 
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const DialogLoading(message: 'Cargando interfaz...'),
-      );
-
+      // El diálogo de "Cargando interfaz..." ya NO se abre con
+      // showDialog+Navigator.pop (dependía de que el listener siguiera
+      // vivo cuando terminara el fetch de ~7000 productos, y a veces se
+      // quedaba pegado) — ahora es el overlay declarativo que arma
+      // build(), basado en el estado actual del bloc.
       bloc.add(InitInfoRapidaEvent());
     });
   }
@@ -82,6 +81,45 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        _buildContent(context),
+        // Overlay declarativo de "Cargando interfaz..." — reemplaza al
+        // showDialog()+Navigator.pop() de antes, que dependía de que este
+        // widget siguiera vivo y suscripto cuando terminara el fetch
+        // (~7000 productos, 1-2s) para poder cerrarlo; a veces se quedaba
+        // pegado. Esto solo depende del estado actual del bloc, sin
+        // Navigator de por medio.
+        BlocBuilder<InfoRapidaBloc, InfoRapidaState>(
+          buildWhen: (previous, current) =>
+              current is InfoRapidaInitial ||
+              current is InitInfoRapidaLoading ||
+              current is InitInfoRapidaSuccess ||
+              current is InitInfoRapidaFailure,
+          builder: (context, state) {
+            // InfoRapidaInitial (el estado de arranque del bloc, antes de
+            // que initState() alcance a disparar InitInfoRapidaEvent en el
+            // siguiente frame) también cuenta como "todavía cargando" — si
+            // no, hay una ventana de 1 frame donde el FAB/botones ya son
+            // tocables pero productos/ubicaciones siguen vacíos, y navegar
+            // ahí mismo a una pantalla que lee esos campos los ve en [].
+            final stillLoading =
+                state is InfoRapidaInitial || state is InitInfoRapidaLoading;
+            if (!stillLoading) return const SizedBox.shrink();
+            // AbsorbPointer: bloquea toques al contenido de abajo mientras
+            // carga (lo que antes hacía la barrera modal de showDialog).
+            return const Positioned.fill(
+              child: AbsorbPointer(
+                child: DialogLoading(message: 'Cargando interfaz...'),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
     return BlocConsumer<InfoRapidaBloc, InfoRapidaState>(
       listenWhen: (previous, current) => current is! InfoRapidaInitial,
       buildWhen: (previous, current) =>
@@ -89,11 +127,10 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
       listener: (context, state) async {
         debugPrint('Estado actual: $state');
 
-        // Cerrar el loader inicial cuando la carga paralela termina
-        if (state is InitInfoRapidaSuccess) {
-          if (Navigator.canPop(context)) Navigator.pop(context);
-        } else if (state is InitInfoRapidaFailure) {
-          if (Navigator.canPop(context)) Navigator.pop(context);
+        // El overlay de "Cargando interfaz..." ya no depende de este
+        // listener (ver _InitLoadingOverlay en build()) — acá solo queda
+        // el aviso de error si la carga inicial falla.
+        if (state is InitInfoRapidaFailure) {
           Get.snackbar(
             '360 Software Informa',
             'Error al cargar la interfaz. Intenta de nuevo.',
@@ -171,19 +208,24 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
             final result = state.infoRapidaResult;
 
             // Navegación segura (asumiendo que result no es nulo gracias al chequeo anterior)
+            final bloc = context.read<InfoRapidaBloc>();
             if (result.type == 'product') {
-              Navigator.pushReplacementNamed(context, 'product-info');
+              Navigator.pushReplacementNamed(
+                context,
+                'product-info',
+                arguments: [bloc],
+              );
             } else if (result.type == 'ubicacion') {
               Navigator.pushReplacementNamed(
                 context,
                 'location-info',
-                arguments: [result],
+                arguments: [result, bloc],
               );
             } else if (result.type == 'paquete') {
               Navigator.pushReplacementNamed(
                 context,
                 'paquete-info',
-                arguments: [result],
+                arguments: [result, bloc],
               );
             }
           });

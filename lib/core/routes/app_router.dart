@@ -1,8 +1,15 @@
 // app_routes.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/features/expedition/domain/entities/item_suelto_expedicion.dart';
 import 'package:wms_app/features/expedition/domain/entities/paquete_expedicion.dart';
+import 'package:wms_app/features/expedition/presentation/bloc/assignment/expedicion_assignment_bloc.dart';
+import 'package:wms_app/features/expedition/presentation/bloc/confirm/expedicion_confirm_bloc.dart';
+import 'package:wms_app/features/expedition/presentation/bloc/detail/expedicion_detail_bloc.dart';
+import 'package:wms_app/features/expedition/presentation/bloc/list/expedition_list_bloc.dart';
+import 'package:wms_app/features/expedition/presentation/bloc/scan/expedicion_scan_bloc.dart';
 import 'package:wms_app/features/expedition/presentation/screens/expedition_screen.dart';
 import 'package:wms_app/features/expedition/presentation/screens/list_expedition_screen.dart';
 import 'package:wms_app/features/expedition/presentation/screens/scan_product_screen.dart';
@@ -12,23 +19,40 @@ import 'package:wms_app/features/picking_cluster/presentation/screens/scan_produ
 import 'package:wms_app/features/picking_cluster/presentation/screens/validate_screen.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/view_lote_widget.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/lote_producto.dart';
+import 'package:wms_app/features/print_labels/presentation/bloc/print_labels_bloc.dart';
 import 'package:wms_app/features/print_labels/presentation/index.dart';
 import 'package:wms_app/features/print_labels/presentation/screens/list_products_screen.dart';
 import 'package:wms_app/features/print_labels/presentation/screens/list_locations_screen.dart';
+import 'package:wms_app/features/recepcion_multiusuario/domain/entities/lote_producto.dart'
+    as recepcion_lote;
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_claim.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_my_claims_bloc.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_pool_bloc.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/list/recepcion_multiusuario_list_bloc.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/location_dest/recepcion_multiusuario_location_dest_bloc.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/lote/recepcion_multiusuario_lote_bloc.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/scan/recepcion_multiusuario_scan_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/list_recepcion_multiusuario_screen.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/recepcion_multiusuario_detail_screen.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/location_dest_screen.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/new_lote_screen.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/screens/scan_product_screen.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_claim.dart';
+import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_lote_producto.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_session.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/detail/transferencia_multiusuario_my_claims_bloc.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/detail/transferencia_multiusuario_pool_bloc.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/list/transferencia_multiusuario_list_bloc.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/location_dest/transferencia_multiusuario_location_dest_bloc.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/lote/transferencia_multiusuario_lote_bloc.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/scan/transferencia_multiusuario_scan_bloc.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/screens/list_transferencia_multiusuario_screen.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/screens/transferencia_multiusuario_detail_screen.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/screens/transferencia_multiusuario_location_dest_screen.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/screens/transferencia_multiusuario_new_lote_screen.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/screens/transferencia_multiusuario_scan_product_screen.dart';
+import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/conteo_screen.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/list_conteo_screen.dart';
@@ -43,8 +67,11 @@ import 'package:wms_app/src/presentation/views/devoluciones/screens/locations_de
 import 'package:wms_app/src/presentation/views/devoluciones/screens/terceros_screen.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/propietario_screen.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/almacenes_screen.dart';
+import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/models/info_rapida_model.dart';
+import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/screens/create-transfer/create_mass_trasnfer_screen.dart';
+import 'package:wms_app/src/presentation/views/info_rapida/modules/transfer/bloc/transfer_info_bloc.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/screens/create-transfer/widgets/locationDest/location_search_widget.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/screens/list_locations_screen.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/screens/list_products_screen.dart';
@@ -72,8 +99,11 @@ import 'package:wms_app/src/presentation/views/recepcion/modules/individual/scre
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/locations_dest/locations_dest_widget.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart';
 import 'package:wms_app/src/presentation/views/pages.dart';
+import 'package:wms_app/features/enterprise/presentation/bloc/enterprise_bloc.dart';
 import 'package:wms_app/features/enterprise/presentation/pages/enterprise_page.dart';
+import 'package:wms_app/features/login/presentation/bloc/login_bloc.dart';
 import 'package:wms_app/features/login/presentation/screens/update_required_screen.dart';
+import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/detail_create_tranfer_screen.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/scan_product_create_transfer_screen.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/location/location_search_widget.dart';
@@ -317,43 +347,115 @@ class AppRoutes {
       AppRoutes.checkout: (context) => const CheckAuthPage(),
       AppRoutes.updateRequired: (_) => const UpdateRequiredScreen(),
 
-      AppRoutes.printLabels: (_) => const PrintLabelsScreen(),
-      AppRoutes.printLabelsProducts: (_) => const PrintLabelsProductsScreen(),
-      AppRoutes.printLabelsLocations: (_) => const PrintLabelsLocationsScreen(),
+      AppRoutes.printLabels: (context) {
+        final args = _args(context);
+        final bloc = _arg<PrintLabelsBloc>(args, 0) ?? PrintLabelsBloc();
+        return BlocProvider<PrintLabelsBloc>.value(
+          value: bloc,
+          child: const PrintLabelsScreen(),
+        );
+      },
+      AppRoutes.printLabelsProducts: (context) {
+        final args = _args(context);
+        final bloc = _arg<PrintLabelsBloc>(args, 0) ?? PrintLabelsBloc();
+        return BlocProvider<PrintLabelsBloc>.value(
+          value: bloc,
+          child: const PrintLabelsProductsScreen(),
+        );
+      },
+      AppRoutes.printLabelsLocations: (context) {
+        final args = _args(context);
+        final bloc = _arg<PrintLabelsBloc>(args, 0) ?? PrintLabelsBloc();
+        return BlocProvider<PrintLabelsBloc>.value(
+          value: bloc,
+          child: const PrintLabelsLocationsScreen(),
+        );
+      },
 
       //todo expedición
-      listExpedition: (_) => const ListExpeditionScreen(),
+      // ExpedicionListBloc y ExpedicionScanBloc se comparten entre rutas
+      // (Detail necesita seguir usando el mismo ListBloc de List para
+      // refrescarlo al confirmar; Scan necesita el mismo ScanBloc que ya
+      // usan las pestañas de Detail) — por eso viajan como argumento extra
+      // de la ruta en vez de crearse de cero ahí.
+      listExpedition: (_) => MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => getIt<ExpedicionListBloc>()),
+          BlocProvider(create: (_) => getIt<ExpedicionAssignmentBloc>()),
+        ],
+        child: const ListExpeditionScreen(),
+      ),
       scanProductExpedition: (context) {
         final args = _args(context);
         final paquete = _arg<PaqueteExpedicion>(args, 0);
         final itemSuelto = _arg<ItemSueltoExpedicion>(args, 1);
-        return ScanProductExpeditionScreen(
-          paquete: paquete,
-          itemSuelto: itemSuelto,
+        final scanBloc =
+            _arg<ExpedicionScanBloc>(args, 2) ?? getIt<ExpedicionScanBloc>();
+        return BlocProvider.value(
+          value: scanBloc,
+          child: ScanProductExpeditionScreen(
+            paquete: paquete,
+            itemSuelto: itemSuelto,
+          ),
         );
       },
       expeditionDetail: (context) {
         final args = _args(context);
         final expeditionId = _arg<int>(args, 0) ?? 0;
-        return ExpedicionDetailScreen(expeditionId: expeditionId);
+        final listBloc =
+            _arg<ExpedicionListBloc>(args, 1) ?? getIt<ExpedicionListBloc>();
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: listBloc),
+            BlocProvider(create: (_) => getIt<ExpedicionDetailBloc>()),
+            BlocProvider(create: (_) => getIt<ExpedicionConfirmBloc>()),
+            BlocProvider(create: (_) => getIt<ExpedicionScanBloc>()),
+          ],
+          child: ExpedicionDetailScreen(expeditionId: expeditionId),
+        );
       },
 
       //todo recepción multiusuario
-      listRecepcionMultiusuario: (_) => const ListRecepcionMultiusuarioScreen(),
+      // Blocs de este módulo escopeados a su propia ruta (antes vivían en el
+      // MultiBlocProvider raíz de main.dart, para siempre) — @injectable ya
+      // crea una instancia nueva por cada getIt<>(), así que al entrar de
+      // nuevo a cualquiera de estas pantallas se arranca en limpio, y al
+      // salir (pop) el BlocProvider libera la instancia sola.
+      listRecepcionMultiusuario: (_) => BlocProvider(
+        create: (_) => getIt<RecepcionMultiusuarioListBloc>(),
+        child: const ListRecepcionMultiusuarioScreen(),
+      ),
       recepcionMultiusuarioDetail: (context) {
         final args = _args(context);
         final session = _arg<RecepcionSession>(args, 0);
         if (session == null) return _invalidArgs(context);
-        return RecepcionMultiusuarioDetailScreen(session: session);
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => getIt<RecepcionMultiusuarioPoolBloc>()),
+            BlocProvider(
+              create: (_) => getIt<RecepcionMultiusuarioMyClaimsBloc>(),
+            ),
+            BlocProvider(create: (_) => getIt<RecepcionMultiusuarioScanBloc>()),
+          ],
+          child: RecepcionMultiusuarioDetailScreen(session: session),
+        );
       },
       recepcionMultiusuarioScanProduct: (context) {
         final args = _args(context);
         final session = _arg<RecepcionSession>(args, 0);
         final claim = _arg<RecepcionClaim>(args, 1);
         if (session == null || claim == null) return _invalidArgs(context);
+        // Esta pantalla no usa un bloc propio del módulo (llama usecases
+        // directo) — solo lee UserBloc, que sigue global. Los argumentos
+        // 2-5 son el estado a restaurar al volver de Lote/Ubicación destino
+        // (ver comentario en RecepcionMultiusuarioScanProductScreen).
         return RecepcionMultiusuarioScanProductScreen(
           session: session,
           claim: claim,
+          initialProductValidated: _arg<bool>(args, 2) ?? false,
+          initialProductValidatedAt: _arg<DateTime>(args, 3),
+          initialLote: _arg<recepcion_lote.LoteProducto>(args, 4),
+          initialUbicacionDest: _arg<ResultUbicaciones>(args, 5),
         );
       },
       recepcionMultiusuarioNewLote: (context) {
@@ -361,31 +463,75 @@ class AppRoutes {
         final session = _arg<RecepcionSession>(args, 0);
         final claim = _arg<RecepcionClaim>(args, 1);
         if (session == null || claim == null) return _invalidArgs(context);
-        return RecepcionMultiusuarioNewLoteScreen(
-          session: session,
-          claim: claim,
+        return BlocProvider(
+          create: (_) => getIt<RecepcionMultiusuarioLoteBloc>(),
+          child: RecepcionMultiusuarioNewLoteScreen(
+            session: session,
+            claim: claim,
+            productValidatedAt: _arg<DateTime>(args, 2),
+            existingUbicacionDest: _arg<ResultUbicaciones>(args, 3),
+          ),
         );
       },
-      recepcionMultiusuarioLocationDest: (_) =>
-          const RecepcionMultiusuarioLocationDestScreen(),
+      recepcionMultiusuarioLocationDest: (context) {
+        final args = _args(context);
+        final session = _arg<RecepcionSession>(args, 0);
+        final claim = _arg<RecepcionClaim>(args, 1);
+        if (session == null || claim == null) return _invalidArgs(context);
+        return BlocProvider(
+          create: (_) => getIt<RecepcionMultiusuarioLocationDestBloc>(),
+          child: RecepcionMultiusuarioLocationDestScreen(
+            session: session,
+            claim: claim,
+            productValidatedAt: _arg<DateTime>(args, 2),
+            existingLote: _arg<recepcion_lote.LoteProducto>(args, 3),
+          ),
+        );
+      },
 
       //todo transferencia multiusuario
-      listTransferenciaMultiusuario: (_) =>
-          const ListTransferenciaMultiusuarioScreen(),
+      // Mismo criterio que recepción multiusuario: blocs escopeados a su
+      // propia ruta en vez de vivir en el MultiBlocProvider raíz.
+      listTransferenciaMultiusuario: (_) => BlocProvider(
+        create: (_) => getIt<TransferenciaMultiusuarioListBloc>(),
+        child: const ListTransferenciaMultiusuarioScreen(),
+      ),
       transferenciaMultiusuarioDetail: (context) {
         final args = _args(context);
         final session = _arg<TransferenciaSession>(args, 0);
         if (session == null) return _invalidArgs(context);
-        return TransferenciaMultiusuarioDetailScreen(session: session);
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (_) => getIt<TransferenciaMultiusuarioPoolBloc>(),
+            ),
+            BlocProvider(
+              create: (_) => getIt<TransferenciaMultiusuarioMyClaimsBloc>(),
+            ),
+            BlocProvider(
+              create: (_) => getIt<TransferenciaMultiusuarioScanBloc>(),
+            ),
+          ],
+          child: TransferenciaMultiusuarioDetailScreen(session: session),
+        );
       },
       transferenciaMultiusuarioScanProduct: (context) {
         final args = _args(context);
         final session = _arg<TransferenciaSession>(args, 0);
         final claim = _arg<TransferenciaClaim>(args, 1);
         if (session == null || claim == null) return _invalidArgs(context);
+        // Sin bloc propio del módulo (llama usecases directo) — solo lee
+        // UserBloc, que sigue global. Los argumentos 2-6 son el estado a
+        // restaurar al volver de Lote/Ubicación destino (ver comentario en
+        // TransferenciaMultiusuarioScanProductScreen).
         return TransferenciaMultiusuarioScanProductScreen(
           session: session,
           claim: claim,
+          initialOrigenValidated: _arg<bool>(args, 2) ?? false,
+          initialProductValidated: _arg<bool>(args, 3) ?? false,
+          initialOrigenValidadoAt: _arg<DateTime>(args, 4),
+          initialLote: _arg<TransferenciaLoteProducto>(args, 5),
+          initialUbicacionDest: _arg<ResultUbicaciones>(args, 6),
         );
       },
       transferenciaMultiusuarioNewLote: (context) {
@@ -393,13 +539,31 @@ class AppRoutes {
         final session = _arg<TransferenciaSession>(args, 0);
         final claim = _arg<TransferenciaClaim>(args, 1);
         if (session == null || claim == null) return _invalidArgs(context);
-        return TransferenciaMultiusuarioNewLoteScreen(
-          session: session,
-          claim: claim,
+        return BlocProvider(
+          create: (_) => getIt<TransferenciaMultiusuarioLoteBloc>(),
+          child: TransferenciaMultiusuarioNewLoteScreen(
+            session: session,
+            claim: claim,
+            origenValidadoAt: _arg<DateTime>(args, 2),
+            existingUbicacionDest: _arg<ResultUbicaciones>(args, 3),
+          ),
         );
       },
-      transferenciaMultiusuarioLocationDest: (_) =>
-          const TransferenciaMultiusuarioLocationDestScreen(),
+      transferenciaMultiusuarioLocationDest: (context) {
+        final args = _args(context);
+        final session = _arg<TransferenciaSession>(args, 0);
+        final claim = _arg<TransferenciaClaim>(args, 1);
+        if (session == null || claim == null) return _invalidArgs(context);
+        return BlocProvider(
+          create: (_) => getIt<TransferenciaMultiusuarioLocationDestBloc>(),
+          child: TransferenciaMultiusuarioLocationDestScreen(
+            session: session,
+            claim: claim,
+            origenValidadoAt: _arg<DateTime>(args, 2),
+            existingLote: _arg<TransferenciaLoteProducto>(args, 3),
+          ),
+        );
+      },
 
       //todo conteo
       conteo: (_) => const ListConteoScreen(),
@@ -435,8 +599,14 @@ class AppRoutes {
       },
 
       // todo Global
-      enterprice: (_) => const EnterprisePage(),
-      auth: (_) => const LoginPage(),
+      enterprice: (_) => BlocProvider(
+        create: (_) => getIt<EnterpriseBloc>(),
+        child: const EnterprisePage(),
+      ),
+      auth: (_) => BlocProvider(
+        create: (_) => getIt<LoginBloc>(),
+        child: const LoginPage(),
+      ),
 
       // todo WMS Picking
       wmsPicking: (context) => WMSPickingPage(),
@@ -681,28 +851,74 @@ class AppRoutes {
       },
 
       //todo info rapida
-      infoRapida: (_) => const InfoRapidaScreen(),
-      productInfo: (_) => ProductInfoScreen(),
+      // InfoRapidaBloc (y TransferInfoBloc en el sub-flujo de transferencia)
+      // ya no viven en el MultiBlocProvider raíz — se crean una sola vez al
+      // entrar al módulo (o al primer punto donde ya no llega uno por
+      // argumento) y viajan como argumento extra en cada pushReplacementNamed
+      // interno, envueltos con BlocProvider.value para no perder los datos
+      // ya cargados (ubicaciones/productos, resultado de la última
+      // búsqueda) en cada paso.
+      infoRapida: (context) {
+        final args = _args(context);
+        final bloc = _arg<InfoRapidaBloc>(args, 0) ??
+            InfoRapidaBloc(userBloc: context.read<UserBloc>());
+        return BlocProvider<InfoRapidaBloc>.value(
+          value: bloc,
+          child: const InfoRapidaScreen(),
+        );
+      },
+      productInfo: (context) {
+        final args = _args(context);
+        final bloc = _arg<InfoRapidaBloc>(args, 0) ??
+            InfoRapidaBloc(userBloc: context.read<UserBloc>());
+        return BlocProvider<InfoRapidaBloc>.value(
+          value: bloc,
+          child: ProductInfoScreen(),
+        );
+      },
 
       locationInfo: (context) {
         final args = _args(context);
         final info = _arg<InfoRapidaResult>(args, 0);
-        return LocationInfoScreen(infoRapidaResult: info);
+        final bloc = _arg<InfoRapidaBloc>(args, 1) ??
+            InfoRapidaBloc(userBloc: context.read<UserBloc>());
+        return BlocProvider<InfoRapidaBloc>.value(
+          value: bloc,
+          child: LocationInfoScreen(infoRapidaResult: info),
+        );
       },
 
       paqueteInfo: (context) {
         final args = _args(context);
         final info = _arg<InfoRapidaResult>(args, 0);
-        return PaqueteInfoScreen(infoRapidaResult: info);
+        final bloc = _arg<InfoRapidaBloc>(args, 1) ??
+            InfoRapidaBloc(userBloc: context.read<UserBloc>());
+        return BlocProvider<InfoRapidaBloc>.value(
+          value: bloc,
+          child: PaqueteInfoScreen(infoRapidaResult: info),
+        );
       },
 
-      createMassTransfer: (_) => const CreateMassTrasferScreen(),
+      createMassTransfer: (context) {
+        final args = _args(context);
+        final bloc = _arg<InfoRapidaBloc>(args, 0) ??
+            InfoRapidaBloc(userBloc: context.read<UserBloc>());
+        return BlocProvider<InfoRapidaBloc>.value(
+          value: bloc,
+          child: const CreateMassTrasferScreen(),
+        );
+      },
 
       searchLocationCreateMassTransfer: (context) {
         final args = _args(context);
         final isLocationDest = _arg<bool>(args, 0) ?? false;
-        return SearchLocationCreateMassTransfercreen(
-          isLocationDest: isLocationDest,
+        final bloc = _arg<InfoRapidaBloc>(args, 1) ??
+            InfoRapidaBloc(userBloc: context.read<UserBloc>());
+        return BlocProvider<InfoRapidaBloc>.value(
+          value: bloc,
+          child: SearchLocationCreateMassTransfercreen(
+            isLocationDest: isLocationDest,
+          ),
         );
       },
 
@@ -710,37 +926,108 @@ class AppRoutes {
         final args = _args(context);
         final info = _arg<InfoResult>(args, 0);
         final ubi = _arg<Ubicacion>(args, 1);
-        return TransferInfoScreen(infoRapidaResult: info, ubicacion: ubi);
+        final infoRapidaBloc = _arg<InfoRapidaBloc>(args, 2) ??
+            InfoRapidaBloc(userBloc: context.read<UserBloc>());
+        final transferInfoBloc = _arg<TransferInfoBloc>(args, 3) ??
+            TransferInfoBloc();
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider<InfoRapidaBloc>.value(value: infoRapidaBloc),
+            BlocProvider<TransferInfoBloc>.value(value: transferInfoBloc),
+          ],
+          child: TransferInfoScreen(infoRapidaResult: info, ubicacion: ubi),
+        );
       },
 
-      createTransfer: (_) => const CreateTransferScreen(),
+      createTransfer: (context) {
+        final args = _args(context);
+        final bloc = _arg<CreateTransferBloc>(args, 0) ??
+            CreateTransferBloc.resumeOrCreate();
+        return BlocProvider<CreateTransferBloc>.value(
+          value: bloc,
+          child: const CreateTransferScreen(),
+        );
+      },
 
       searchLocationCreateTransfer: (context) {
         final args = _args(context);
         final isLocationDest = _arg<bool>(args, 0) ?? false;
-        return SearchLocationCreateTransfercreen(
-          isLocationDest: isLocationDest,
+        final bloc = _arg<CreateTransferBloc>(args, 1) ??
+            CreateTransferBloc.resumeOrCreate();
+        return BlocProvider<CreateTransferBloc>.value(
+          value: bloc,
+          child: SearchLocationCreateTransfercreen(
+            isLocationDest: isLocationDest,
+          ),
         );
       },
 
       searchLoteCreateTransfer: (context) {
         final args = _args(context);
         final currentProduct = _arg<Product>(args, 0);
-        return SearchLoteCreateTransferScreen(currentProduct: currentProduct);
+        final bloc = _arg<CreateTransferBloc>(args, 1) ??
+            CreateTransferBloc.resumeOrCreate();
+        return BlocProvider<CreateTransferBloc>.value(
+          value: bloc,
+          child: SearchLoteCreateTransferScreen(currentProduct: currentProduct),
+        );
       },
 
-      detailCreateTransfer: (_) => DetailCreateTransferScreen(),
-      searchProductsCreateTransfer: (_) => SearchProductCreateTransferScreen(),
-      listLocation: (_) => ListLocationsScreen(),
-      listProduct: (_) => ListProductsScreen(),
+      detailCreateTransfer: (context) {
+        final args = _args(context);
+        final bloc = _arg<CreateTransferBloc>(args, 0) ??
+            CreateTransferBloc.resumeOrCreate();
+        return BlocProvider<CreateTransferBloc>.value(
+          value: bloc,
+          child: DetailCreateTransferScreen(),
+        );
+      },
+      searchProductsCreateTransfer: (context) {
+        final args = _args(context);
+        final bloc = _arg<CreateTransferBloc>(args, 0) ??
+            CreateTransferBloc.resumeOrCreate();
+        return BlocProvider<CreateTransferBloc>.value(
+          value: bloc,
+          child: SearchProductCreateTransferScreen(),
+        );
+      },
+
+      listLocation: (context) {
+        final args = _args(context);
+        final bloc = _arg<InfoRapidaBloc>(args, 0) ??
+            InfoRapidaBloc(userBloc: context.read<UserBloc>());
+        return BlocProvider<InfoRapidaBloc>.value(
+          value: bloc,
+          child: ListLocationsScreen(),
+        );
+      },
+      listProduct: (context) {
+        final args = _args(context);
+        final bloc = _arg<InfoRapidaBloc>(args, 0) ??
+            InfoRapidaBloc(userBloc: context.read<UserBloc>());
+        return BlocProvider<InfoRapidaBloc>.value(
+          value: bloc,
+          child: ListProductsScreen(),
+        );
+      },
 
       searchLocationDestTransInfo: (context) {
         final args = _args(context);
         final info = _arg<InfoResult>(args, 0);
         final ubi = _arg<Ubicacion>(args, 1);
-        return LocationDestTransfInfoScreen(
-          infoRapidaResult: info,
-          ubicacion: ubi,
+        final infoRapidaBloc = _arg<InfoRapidaBloc>(args, 2) ??
+            InfoRapidaBloc(userBloc: context.read<UserBloc>());
+        final transferInfoBloc = _arg<TransferInfoBloc>(args, 3) ??
+            TransferInfoBloc();
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider<InfoRapidaBloc>.value(value: infoRapidaBloc),
+            BlocProvider<TransferInfoBloc>.value(value: transferInfoBloc),
+          ],
+          child: LocationDestTransfInfoScreen(
+            infoRapidaResult: info,
+            ubicacion: ubi,
+          ),
         );
       },
 

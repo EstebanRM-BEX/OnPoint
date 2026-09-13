@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/routes/app_router.dart';
+import 'package:wms_app/features/recepcion_multiusuario/domain/entities/lote_producto.dart';
+import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_claim.dart';
+import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/location_dest/recepcion_multiusuario_location_dest_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
@@ -14,11 +18,24 @@ import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_
 /// tabla local genérica ya sincronizada (tbl_ubicaciones,
 /// UbicacionesRepository), no hay endpoint nuevo.
 ///
-/// A diferencia del original, al seleccionar hace `Navigator.pop(context,
-/// ubicacion)` en vez de ida y vuelta por rutas — scan_product_screen.dart
-/// espera el resultado con `Navigator.push`.
+/// Al seleccionar (o cancelar) vuelve a scan_product_screen.dart con
+/// `Navigator.pushReplacementNamed` (esta pantalla reemplazó a esa al
+/// abrirse, no hay ruta a la que hacer pop).
 class RecepcionMultiusuarioLocationDestScreen extends StatefulWidget {
-  const RecepcionMultiusuarioLocationDestScreen({super.key});
+  const RecepcionMultiusuarioLocationDestScreen({
+    super.key,
+    required this.session,
+    required this.claim,
+    this.productValidatedAt,
+    this.existingLote,
+  });
+
+  final RecepcionSession session;
+  final RecepcionClaim claim;
+  // Se relaya sin cambios de vuelta a scan_product_screen.dart al volver —
+  // esta pantalla no los usa, solo los transporta.
+  final DateTime? productValidatedAt;
+  final LoteProducto? existingLote;
 
   @override
   State<RecepcionMultiusuarioLocationDestScreen> createState() =>
@@ -45,6 +62,21 @@ class _RecepcionMultiusuarioLocationDestScreenState
     WidgetsBinding.instance.addObserver(this);
     context.read<RecepcionMultiusuarioLocationDestBloc>().add(
       const FetchUbicacionesDestEvent(),
+    );
+  }
+
+  void _returnToScan({ResultUbicaciones? ubicacion}) {
+    Navigator.pushReplacementNamed(
+      context,
+      AppRoutes.recepcionMultiusuarioScanProduct,
+      arguments: [
+        widget.session,
+        widget.claim,
+        true,
+        widget.productValidatedAt,
+        widget.existingLote,
+        ubicacion,
+      ],
     );
   }
 
@@ -83,7 +115,7 @@ class _RecepcionMultiusuarioLocationDestScreenState
             height: size.height,
             child: Column(
               children: [
-                const _Header(),
+                _Header(onBack: _returnToScan),
                 const SizedBox(height: 5),
                 BlocBuilder<
                   RecepcionMultiusuarioLocationDestBloc,
@@ -291,9 +323,8 @@ class _RecepcionMultiusuarioLocationDestScreenState
                           return;
                         }
                         if (_selectedIndex! >= state.ubicaciones.length) return;
-                        Navigator.pop(
-                          context,
-                          state.ubicaciones[_selectedIndex!],
+                        _returnToScan(
+                          ubicacion: state.ubicaciones[_selectedIndex!],
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -323,7 +354,9 @@ class _RecepcionMultiusuarioLocationDestScreenState
 /// para filtrar por almacén — réplica de _AppBarInfo en
 /// locations_dest_widget.dart (recepción individual).
 class _Header extends StatelessWidget {
-  const _Header();
+  const _Header({required this.onBack});
+
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -345,7 +378,7 @@ class _Header extends StatelessWidget {
             children: [
               IconButton(
                 icon: const Icon(Icons.arrow_back, color: white),
-                onPressed: () => Navigator.pop(context),
+                onPressed: onBack,
               ),
               const Text(
                 'UBICACIONES',

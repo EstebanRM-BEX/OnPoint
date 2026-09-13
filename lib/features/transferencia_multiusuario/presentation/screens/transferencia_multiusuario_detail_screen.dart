@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_session.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/usecases/fetch_transferencia_snapshot_usecase.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/detail/transferencia_multiusuario_my_claims_bloc.dart';
@@ -152,7 +153,10 @@ class _TransferenciaMultiusuarioDetailScreenState
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pushReplacementNamed(
+            context,
+            AppRoutes.listTransferenciaMultiusuario,
+          ),
         ),
         title: Text(
           widget.session.name ?? 'TRANSFERENCIA',

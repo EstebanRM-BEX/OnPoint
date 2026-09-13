@@ -429,13 +429,13 @@ class AppBar extends StatelessWidget {
                     // en algunos dispositivos.
                     behavior: HitTestBehavior.opaque,
                     onTap: () {
-                      context.read<InfoRapidaBloc>().add(IsEditEvent(false));
-                      context
-                          .read<InfoRapidaBloc>()
-                          .add(GetListLocationsEvent());
+                      final bloc = context.read<InfoRapidaBloc>();
+                      bloc.add(IsEditEvent(false));
+                      bloc.add(GetListLocationsEvent());
                       Navigator.pushReplacementNamed(
                         context,
                         'info-rapida',
+                        arguments: [bloc],
                       );
                     },
                     child: const Padding(

@@ -41,8 +41,16 @@ class DialogInfoQuick extends StatelessWidget {
             OptionCard(
               label: 'PRODUCTOS',
               onTap: () {
+                // contextScreen (no el context del diálogo) es el que
+                // desciende del BlocProvider<InfoRapidaBloc> de la ruta —
+                // el diálogo es una ruta propia, no hereda el de abajo.
+                final bloc = contextScreen.read<InfoRapidaBloc>();
                 Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, 'list-product');
+                Navigator.pushReplacementNamed(
+                  contextScreen,
+                  'list-product',
+                  arguments: [bloc],
+                );
               },
             ),
 
@@ -50,8 +58,13 @@ class DialogInfoQuick extends StatelessWidget {
             OptionCard(
               label: 'UBICACIONES',
               onTap: () {
+                final bloc = contextScreen.read<InfoRapidaBloc>();
                 Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, 'list-location');
+                Navigator.pushReplacementNamed(
+                  contextScreen,
+                  'list-location',
+                  arguments: [bloc],
+                );
               },
             ),
             OptionCard(
@@ -71,10 +84,17 @@ class DialogInfoQuick extends StatelessWidget {
 }
 
 void showPackageNameDialog(BuildContext context) {
+  // El diálogo es su propia ruta — no hereda el BlocProvider<InfoRapidaBloc>
+  // de la ruta de abajo (InfoRapidaScreen), así que se lo volvemos a proveer
+  // acá con el valor ya capturado del context original.
+  final bloc = context.read<InfoRapidaBloc>();
   showDialog(
     context: context,
     barrierDismissible: false,
-    builder: (_) => const SearchPackageDialog(),
+    builder: (_) => BlocProvider<InfoRapidaBloc>.value(
+      value: bloc,
+      child: const SearchPackageDialog(),
+    ),
   );
 }
 

@@ -18,12 +18,12 @@ class ProductDropdownCreateTransferWidget extends StatelessWidget {
                   !context.read<CreateTransferBloc>().productIsOk &&
                   !context.read<CreateTransferBloc>().quantityIsOk)
               ? () {
-                  context
-                      .read<CreateTransferBloc>()
-                      .add(GetProductsFromDBEvent());
+                  final bloc = context.read<CreateTransferBloc>();
+                  bloc.add(GetProductsFromDBEvent());
                   Navigator.pushReplacementNamed(
                     context,
                     'search-product-create-transfer',
+                    arguments: [bloc],
                   );
                 }
               : null,
@@ -105,12 +105,16 @@ class ProductDropdownCreateTransferWidget extends StatelessWidget {
               const Spacer(),
               GestureDetector(
                 onTap: () {
+                  // El bloc se captura ANTES de abrir el diálogo: el
+                  // builder de showDialog es una ruta hermana (sibling) y no
+                  // hereda el BlocProvider escopeado a esta ruta.
+                  final listOfBarcodes =
+                      context.read<CreateTransferBloc>().listOfBarcodes;
                   showDialog(
                     context: context,
                     builder: (context) {
                       return DialogBarcodes(
-                        listOfBarcodes:
-                            context.read<CreateTransferBloc>().listOfBarcodes,
+                        listOfBarcodes: listOfBarcodes,
                       );
                     },
                   );

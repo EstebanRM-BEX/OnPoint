@@ -225,6 +225,7 @@ class _SearchLocationScreenState
                               Navigator.pushReplacementNamed(
                                 context,
                                 'create-transfer',
+                                arguments: [bloc],
                               );
                             }
                           },
@@ -289,6 +290,7 @@ class _AppBarInfo extends StatelessWidget {
                           Navigator.pushReplacementNamed(
                             context,
                             'create-transfer',
+                            arguments: [context.read<CreateTransferBloc>()],
                           );
                         },
                       ),

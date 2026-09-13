@@ -2,7 +2,6 @@
 
 import 'dart:io';
 import 'dart:async';
-import 'package:wms_app/features/print_labels/presentation/bloc/print_labels_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_bloc.dart';
@@ -35,19 +34,14 @@ import 'package:wms_app/core/utils/widgets/error_widget.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
-import 'package:wms_app/features/login/presentation/bloc/login_bloc.dart';
-import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
-import 'package:wms_app/src/presentation/views/info_rapida/modules/transfer/bloc/transfer_info_bloc.dart';
 import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/batchs/bloc/recepcion_batch_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
-import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/bloc/wms_packing_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/bloc/packing_consolidade_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
-import 'package:wms_app/features/enterprise/presentation/bloc/enterprise_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
@@ -57,23 +51,6 @@ import 'package:wms_app/src/presentation/providers/network_overlay/network_overl
 import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
 import 'package:wms_app/features/expedition/data/services/expedition_sync_coordinator.dart';
 import 'package:wms_app/features/websocket/presentation/bloc/websocket_bloc.dart';
-import 'package:wms_app/features/expedition/presentation/bloc/assignment/expedicion_assignment_bloc.dart';
-import 'package:wms_app/features/expedition/presentation/bloc/confirm/expedicion_confirm_bloc.dart';
-import 'package:wms_app/features/expedition/presentation/bloc/detail/expedicion_detail_bloc.dart';
-import 'package:wms_app/features/expedition/presentation/bloc/list/expedition_list_bloc.dart';
-import 'package:wms_app/features/expedition/presentation/bloc/scan/expedicion_scan_bloc.dart';
-import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_my_claims_bloc.dart';
-import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_pool_bloc.dart';
-import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/list/recepcion_multiusuario_list_bloc.dart';
-import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/location_dest/recepcion_multiusuario_location_dest_bloc.dart';
-import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/lote/recepcion_multiusuario_lote_bloc.dart';
-import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/scan/recepcion_multiusuario_scan_bloc.dart';
-import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/detail/transferencia_multiusuario_my_claims_bloc.dart';
-import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/detail/transferencia_multiusuario_pool_bloc.dart';
-import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/list/transferencia_multiusuario_list_bloc.dart';
-import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/location_dest/transferencia_multiusuario_location_dest_bloc.dart';
-import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/lote/transferencia_multiusuario_lote_bloc.dart';
-import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/scan/transferencia_multiusuario_scan_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -174,24 +151,27 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => RecepcionBloc()),
         BlocProvider(create: (_) => TransferenciaBloc()),
         BlocProvider(create: (_) => getIt<HomeBloc>()),
-        BlocProvider(create: (_) => getIt<LoginBloc>()),
+        // LoginBloc ya NO se provee acá — vive escopeado a la ruta 'auth' en
+        // app_router.dart.
         BlocProvider(create: (_) => WMSPickingBloc()),
         BlocProvider(create: (_) => BatchBloc()),
         BlocProvider(create: (_) => WmsPackingBloc()),
-        BlocProvider(create: (_) => TransferInfoBloc()),
-        BlocProvider(
-          create: (context) =>
-              InfoRapidaBloc(userBloc: context.read<UserBloc>()),
-        ),
+        // InfoRapidaBloc/TransferInfoBloc ya NO se proveen acá — viven
+        // escopeados a sus propias rutas en app_router.dart (ver comentario
+        // en la sección "todo info rapida").
         BlocProvider(create: (_) => getIt<InventarioBloc>()),
         BlocProvider(create: (_) => PickingPickBloc()),
         BlocProvider(create: (_) => RecepcionBatchBloc()),
         BlocProvider(create: (_) => PackingPedidoBloc()),
         BlocProvider(create: (_) => DevolucionesBloc()),
         BlocProvider(create: (_) => ConteoBloc()),
-        BlocProvider(create: (_) => CreateTransferBloc()),
+        // CreateTransferBloc ya NO se provee acá — vive escopeado a las
+        // rutas 'create-transfer'/'detail-create-transfer'/
+        // 'search-product-create-transfer'/'search-location-create-transfer'/
+        // 'search-lote-create-transfer' en app_router.dart.
         BlocProvider(create: (_) => PackingConsolidateBloc()),
-        BlocProvider(create: (_) => getIt<EnterpriseBloc>()),
+        // EnterpriseBloc ya NO se provee acá — vive escopeado a la ruta
+        // 'enterprice' en app_router.dart.
         BlocProvider(create: (_) => getIt<ClusterPickingBloc>()),
         BlocProvider(
           create: (context) => PickingClusterListBloc(
@@ -224,31 +204,15 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => getIt<LoteProductoBloc>()),
         BlocProvider(create: (_) => getIt<PackagingTypeBloc>()),
         BlocProvider(create: (_) => getIt<PrintingBloc>()),
-        BlocProvider(create: (_) => PrintLabelsBloc()),
+        // PrintLabelsBloc ya NO se provee acá — vive escopeado a sus propias
+        // rutas en app_router.dart (print-labels/-products/-locations).
         BlocProvider(create: (_) => getIt<WebSocketBloc>()),
-        BlocProvider(create: (_) => getIt<ExpedicionListBloc>()),
-        BlocProvider(create: (_) => getIt<ExpedicionAssignmentBloc>()),
-        BlocProvider(create: (_) => getIt<ExpedicionDetailBloc>()),
-        BlocProvider(create: (_) => getIt<ExpedicionScanBloc>()),
-        BlocProvider(create: (_) => getIt<ExpedicionConfirmBloc>()),
-        BlocProvider(create: (_) => getIt<RecepcionMultiusuarioListBloc>()),
-        BlocProvider(create: (_) => getIt<RecepcionMultiusuarioLoteBloc>()),
-        BlocProvider(
-          create: (_) => getIt<RecepcionMultiusuarioLocationDestBloc>(),
-        ),
-        BlocProvider(create: (_) => getIt<RecepcionMultiusuarioPoolBloc>()),
-        BlocProvider(create: (_) => getIt<RecepcionMultiusuarioMyClaimsBloc>()),
-        BlocProvider(create: (_) => getIt<RecepcionMultiusuarioScanBloc>()),
-        BlocProvider(create: (_) => getIt<TransferenciaMultiusuarioListBloc>()),
-        BlocProvider(create: (_) => getIt<TransferenciaMultiusuarioPoolBloc>()),
-        BlocProvider(create: (_) => getIt<TransferenciaMultiusuarioScanBloc>()),
-        BlocProvider(
-          create: (_) => getIt<TransferenciaMultiusuarioMyClaimsBloc>(),
-        ),
-        BlocProvider(create: (_) => getIt<TransferenciaMultiusuarioLoteBloc>()),
-        BlocProvider(
-          create: (_) => getIt<TransferenciaMultiusuarioLocationDestBloc>(),
-        ),
+        // Los blocs de Expedición (List/Assignment/Detail/Scan/Confirm),
+        // Recepción Multiusuario y Transferencia Multiusuario
+        // (List/Lote/LocationDest/Pool/MyClaims/Scan de cada uno) ya NO se
+        // proveen acá — viven escopeados a sus propias rutas en
+        // app_router.dart, se crean al entrar al módulo y se liberan solos
+        // al salir (ver AppRoutes.routes).
       ],
       child: GetMaterialApp(
         navigatorKey: navigatorKey,

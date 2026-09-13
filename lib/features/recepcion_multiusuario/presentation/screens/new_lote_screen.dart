@@ -5,6 +5,7 @@ import 'package:flutter_holo_date_picker/date_picker.dart';
 import 'package:flutter_holo_date_picker/i18n/date_picker_i18n.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/injection_container.dart';
@@ -14,6 +15,7 @@ import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcio
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/lote/recepcion_multiusuario_lote_bloc.dart';
 import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
+import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
 
@@ -24,17 +26,24 @@ import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
 /// RecepcionMultiusuarioLoteBloc.
 ///
 /// A diferencia del original, al seleccionar/crear un lote esta pantalla
-/// hace `Navigator.pop(context, lote)` en vez de ida y vuelta por rutas —
-/// scan_product_screen.dart espera el resultado con `Navigator.push`.
+/// vuelve a scan_product_screen.dart con `Navigator.pushReplacementNamed`
+/// (esta pantalla reemplazó a esa al abrirse, no hay ruta a la que hacer
+/// pop) pasando el lote elegido, o sin cambios si el operario cancela.
 class RecepcionMultiusuarioNewLoteScreen extends StatefulWidget {
   const RecepcionMultiusuarioNewLoteScreen({
     super.key,
     required this.session,
     required this.claim,
+    this.productValidatedAt,
+    this.existingUbicacionDest,
   });
 
   final RecepcionSession session;
   final RecepcionClaim claim;
+  // Se relaya sin cambios de vuelta a scan_product_screen.dart al volver —
+  // esta pantalla no los usa, solo los transporta.
+  final DateTime? productValidatedAt;
+  final ResultUbicaciones? existingUbicacionDest;
 
   @override
   State<RecepcionMultiusuarioNewLoteScreen> createState() =>
@@ -74,6 +83,21 @@ class _RecepcionMultiusuarioNewLoteScreenState
 
   int? get _productId => widget.claim.productId;
   bool get _useExpirationDate => widget.claim.useExpirationDate == true;
+
+  void _returnToScan({LoteProducto? lote}) {
+    Navigator.pushReplacementNamed(
+      context,
+      AppRoutes.recepcionMultiusuarioScanProduct,
+      arguments: [
+        widget.session,
+        widget.claim,
+        true,
+        widget.productValidatedAt,
+        lote,
+        widget.existingUbicacionDest,
+      ],
+    );
+  }
 
   @override
   void initState() {
@@ -225,7 +249,7 @@ class _RecepcionMultiusuarioNewLoteScreenState
           hideLoadingDialog();
         }
         if (state is CreateLoteSuccess) {
-          Navigator.pop(context, state.lote);
+          _returnToScan(lote: state.lote);
         }
         if (state is CreateLoteNeedsConfirmation) {
           if (!_allowPriorExpirationDate) {
@@ -265,7 +289,7 @@ class _RecepcionMultiusuarioNewLoteScreenState
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => _returnToScan(),
           ),
           title: const Text(
             'CREAR LOTE',
@@ -343,7 +367,7 @@ class _RecepcionMultiusuarioNewLoteScreenState
                         if (state is! RecepcionLotesLoaded) return;
                         final lotes = _filteredLotes(state.lotes);
                         if (_selectedIndex! >= lotes.length) return;
-                        Navigator.pop(context, lotes[_selectedIndex!]);
+                        _returnToScan(lote: lotes[_selectedIndex!]);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColorApp,
@@ -369,7 +393,7 @@ class _RecepcionMultiusuarioNewLoteScreenState
                         child: ElevatedButton(
                           onPressed: () {
                             if (_viewList) {
-                              Navigator.pop(context);
+                              _returnToScan();
                             } else {
                               setState(() => _viewList = true);
                             }

@@ -84,6 +84,22 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
         Future.microtask(() => _handleDependencies());
       }
     });
+
+    // Antes este load lo disparaban los puntos de entrada (Home / lista de
+    // transferencia interna) leyendo el bloc global antes de navegar acá.
+    // Ahora que CreateTransferBloc vive escopeado a esta ruta, la propia
+    // pantalla se encarga de cargar sus datos de referencia la primera vez.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final bloc = context.read<CreateTransferBloc>();
+      if (bloc.ubicaciones.isEmpty) {
+        bloc
+          ..add(GetLocationsEvent())
+          ..add(FetchAllBarcodesInventarioEvent())
+          ..add(GetProductsCreateTransferEvent())
+          ..add(GetProductsFromDBEvent());
+      }
+    });
   }
 
   @override
@@ -756,6 +772,9 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
                                   "lot",
                               child: LoteScannerWidget(
                                 routeName: 'search-lote-create-transfer',
+                                extraArguments: [
+                                  context.read<CreateTransferBloc>()
+                                ],
                                 focusNode: focusNode5,
                                 controller: _controllerLote,
                                 isLoteOk: context

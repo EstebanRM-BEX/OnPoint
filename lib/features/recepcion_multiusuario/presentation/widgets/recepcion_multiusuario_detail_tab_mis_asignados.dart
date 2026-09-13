@@ -82,17 +82,15 @@ class _RecepcionMultiusuarioDetailTabMisAsignadosState
     );
   }
 
-  Future<void> _openScanProduct(
-    BuildContext context,
-    RecepcionClaim claim,
-  ) async {
-    await Navigator.pushNamed(
+  void _openScanProduct(BuildContext context, RecepcionClaim claim) {
+    // Ya no se espera un resultado al volver: Detail se reemplaza al
+    // entrar a Escanear y se reconstruye de cero al volver (MyClaims se
+    // recarga solo en su propio initState).
+    Navigator.pushReplacementNamed(
       context,
       AppRoutes.recepcionMultiusuarioScanProduct,
       arguments: [widget.session, claim],
     );
-    if (!context.mounted) return;
-    _retry(context);
   }
 
   void _confirmRelease(BuildContext context, RecepcionClaim claim) {

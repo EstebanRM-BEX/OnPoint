@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/asignacion_observacion.dart';
+import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_pool_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/dialog_deshacer_recepcion_widget.dart';
 
 /// Detalle de TODAS las asignaciones (`observaciones[]`) de un producto del
@@ -218,15 +220,26 @@ class _RecepcionNovedadesDialogWidgetState
                                         tooltip: 'Deshacer',
                                         visualDensity: VisualDensity.compact,
                                         onPressed: () async {
+                                          // Este diálogo ya es su propia
+                                          // ruta (abierto desde la card de
+                                          // Terminados con el pool bloc
+                                          // reinyectado) — el anidado
+                                          // necesita el mismo reinyectado.
+                                          final poolBloc = context
+                                              .read<
+                                                  RecepcionMultiusuarioPoolBloc>();
                                           final result = await showDialog<bool>(
                                             context: context,
-                                            builder: (_) =>
-                                                DialogDeshacerRecepcionWidget(
-                                                  productName:
-                                                      widget.productName,
-                                                  claimId: o.claimId,
-                                                  sessionId: widget.sessionId,
-                                                ),
+                                            builder: (_) => BlocProvider.value(
+                                              value: poolBloc,
+                                              child:
+                                                  DialogDeshacerRecepcionWidget(
+                                                productName:
+                                                    widget.productName,
+                                                claimId: o.claimId,
+                                                sessionId: widget.sessionId,
+                                              ),
+                                            ),
                                           );
                                           // La lista de observaciones que
                                           // tiene este diálogo quedó

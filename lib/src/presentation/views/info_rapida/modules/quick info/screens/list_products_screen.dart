@@ -30,6 +30,24 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
   Timer? _searchDebounce;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final bloc = context.read<InfoRapidaBloc>();
+      // Normalmente InfoRapidaScreen ya dejó esto inicializado antes de que
+      // se pudiera llegar acá (el FAB para buscar está bloqueado hasta que
+      // termine) — pero si por algún motivo se llega con el bloc todavía
+      // sin inicializar (ej. un hot reload a mitad de prueba, o cualquier
+      // otro camino de navegación), no hay que quedarse con la lista vacía
+      // para siempre: se dispara la carga acá también.
+      if (!bloc.isInitialized) {
+        bloc.add(InitInfoRapidaEvent());
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _searchDebounce?.cancel();
     super.dispose();
@@ -142,6 +160,34 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        _buildContent(context),
+        // Overlay defensivo: si se llega a esta pantalla con el bloc
+        // todavía sin inicializar (ver initState), esto lo muestra en vez
+        // de la lista vacía hasta que termine la carga que se disparó ahí.
+        BlocBuilder<InfoRapidaBloc, InfoRapidaState>(
+          buildWhen: (previous, current) =>
+              current is InfoRapidaInitial ||
+              current is InitInfoRapidaLoading ||
+              current is InitInfoRapidaSuccess ||
+              current is InitInfoRapidaFailure,
+          builder: (context, state) {
+            if (context.read<InfoRapidaBloc>().isInitialized) {
+              return const SizedBox.shrink();
+            }
+            return const Positioned.fill(
+              child: AbsorbPointer(
+                child: DialogLoading(message: 'Cargando interfaz...'),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
 
     return BlocConsumer<InfoRapidaBloc, InfoRapidaState>(
@@ -209,13 +255,14 @@ class _ListProductsScreenState extends State<ListProductsScreen> {
             final route = state.infoRapidaResult.type == 'product'
                 ? 'product-info'
                 : 'location-info';
+            final bloc = context.read<InfoRapidaBloc>();
 
             Navigator.pushReplacementNamed(
               context,
               route,
               arguments: route == 'location-info'
-                  ? [state.infoRapidaResult]
-                  : null,
+                  ? [state.infoRapidaResult, bloc]
+                  : [bloc],
             );
           } catch (e) {
             debugPrint("Error al procesar resultado: $e");
@@ -465,11 +512,13 @@ class _AppBarInfo extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.arrow_back, color: white),
                   onPressed: () {
-                    context
-                        .read<InfoRapidaBloc>()
-                        .searchControllerProducts
-                        .clear();
-                    Navigator.pushReplacementNamed(context, 'info-rapida');
+                    final bloc = context.read<InfoRapidaBloc>();
+                    bloc.searchControllerProducts.clear();
+                    Navigator.pushReplacementNamed(
+                      context,
+                      'info-rapida',
+                      arguments: [bloc],
+                    );
                   },
                 ),
                 Padding(

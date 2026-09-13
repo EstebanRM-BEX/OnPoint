@@ -117,6 +117,7 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen>
                               Navigator.pushReplacementNamed(
                                 context,
                                 'create-transfer',
+                                arguments: [context.read<CreateTransferBloc>()],
                               );
                             }
 
@@ -154,6 +155,9 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen>
                                           Navigator.pushReplacementNamed(
                                             context,
                                             'create-transfer',
+                                            arguments: [
+                                              context.read<CreateTransferBloc>()
+                                            ],
                                           );
                                         },
                                       ),
@@ -630,6 +634,7 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen>
                               Navigator.pushReplacementNamed(
                                 context,
                                 'create-transfer',
+                                arguments: [bloc],
                               );
                               Get.snackbar(
                                 'Lote Seleccionado',

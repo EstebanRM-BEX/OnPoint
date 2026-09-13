@@ -256,7 +256,7 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
         if (state is InfoRapidaLoaded) {
           Navigator.pop(context);
           Navigator.pushReplacementNamed(context, 'location-info',
-              arguments: [state.infoRapidaResult]);
+              arguments: [state.infoRapidaResult, context.read<InfoRapidaBloc>()]);
         }
 
         if (state is CreateTransferFailure) {
@@ -315,13 +315,13 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
                                   icon: const Icon(Icons.arrow_back,
                                       color: white),
                                   onPressed: () {
+                                    final bloc = context.read<InfoRapidaBloc>();
                                     Navigator.pushReplacementNamed(
                                       context,
                                       'location-info',
                                       arguments: [
-                                        context
-                                            .read<InfoRapidaBloc>()
-                                            .infoRapidaResult
+                                        bloc.infoRapidaResult,
+                                        bloc,
                                       ],
                                     );
                                   },
@@ -339,16 +339,16 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
                                   icon: const Icon(Icons.refresh, color: white),
                                   onPressed: () {
                                     //volvemos asignar los productos filtrados a la lista de productos
-                                    context.read<InfoRapidaBloc>().add(
+                                    final bloc = context.read<InfoRapidaBloc>();
+                                    bloc.add(
                                         ResetProductsFiltersMassTransferEvent());
 
                                     Navigator.pushReplacementNamed(
                                       context,
                                       'location-info',
                                       arguments: [
-                                        context
-                                            .read<InfoRapidaBloc>()
-                                            .infoRapidaResult
+                                        bloc.infoRapidaResult,
+                                        bloc,
                                       ],
                                     );
                                   },
@@ -532,10 +532,16 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
                                               GestureDetector(
                                                 onTap: () {
                                                   //dialogo de confirmcion de eliminar
+                                                  final infoRapidaBloc =
+                                                      context.read<
+                                                          InfoRapidaBloc>();
                                                   showDialog(
                                                     context: context,
                                                     builder: (context) {
-                                                      return AlertDialog(
+                                                      return BlocProvider<
+                                                          InfoRapidaBloc>.value(
+                                                        value: infoRapidaBloc,
+                                                        child: AlertDialog(
                                                         backgroundColor:
                                                             Colors.white,
                                                         title: Center(
@@ -613,6 +619,7 @@ class _CreateMassTrasferScreenState extends State<CreateMassTrasferScreen>
                                                             ),
                                                           )
                                                         ],
+                                                        ),
                                                       );
                                                     },
                                                   );

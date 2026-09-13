@@ -45,7 +45,7 @@ class _ListTransferenciaMultiusuarioScreenState
   }
 
   void _handleSessionTap(TransferenciaSession session) {
-    Navigator.pushNamed(
+    Navigator.pushReplacementNamed(
       context,
       AppRoutes.transferenciaMultiusuarioDetail,
       arguments: [session],

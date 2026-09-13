@@ -15,7 +15,6 @@ import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/src/presentation/views/transferencias/models/response_transferencias.dart';
-import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
@@ -186,12 +185,9 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
             floatingActionButton: FloatingActionButton(
               backgroundColor: primaryColorApp,
               onPressed: () async {
-                context.read<CreateTransferBloc>()
-                  ..add(GetLocationsEvent())
-                  ..add(FetchAllBarcodesInventarioEvent())
-                  ..add(GetProductsCreateTransferEvent())
-                  ..add(GetProductsFromDBEvent());
-
+                // CreateTransferBloc ahora vive escopeado a la ruta
+                // 'create-transfer' — la propia pantalla
+                // (CreateTransferScreen.initState) dispara la carga inicial.
                 Navigator.pushReplacementNamed(context, 'create-transfer');
               },
               child: const Icon(Icons.add),

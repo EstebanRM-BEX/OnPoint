@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/expedition/domain/entities/item_suelto_expedicion.dart';
@@ -58,6 +59,16 @@ class _ScanProductExpeditionScreenState
   void initState() {
     super.initState();
     _cargarPermiso();
+  }
+
+  void _returnToDetail(BuildContext context) {
+    final expeditionId =
+        widget.paquete?.expeditionId ?? widget.itemSuelto?.expeditionId ?? 0;
+    Navigator.pushReplacementNamed(
+      context,
+      AppRoutes.expeditionDetail,
+      arguments: [expeditionId],
+    );
   }
 
   Future<void> _cargarPermiso() async {
@@ -157,7 +168,7 @@ class _ScanProductExpeditionScreenState
         }
         if (state is ExpedicionScanValidated) {
           Navigator.pop(context); // cierra el diálogo de carga
-          Navigator.pop(context, true); // cierra la screen
+          _returnToDetail(context);
         }
         if (state is ExpedicionScanError) {
           Navigator.pop(context); // cierra el diálogo de carga
@@ -175,7 +186,7 @@ class _ScanProductExpeditionScreenState
         appBar: AppBar(
           backgroundColor: primaryColorApp,
           leading: IconButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => _returnToDetail(context),
             icon: const Icon(Icons.arrow_back, color: Colors.white),
           ),
           title: const Text('EXPEDICIÓN',

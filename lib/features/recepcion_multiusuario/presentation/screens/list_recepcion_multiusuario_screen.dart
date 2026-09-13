@@ -46,7 +46,7 @@ class _ListRecepcionMultiusuarioScreenState
   }
 
   void _handleSessionTap(RecepcionSession session) {
-    Navigator.pushNamed(
+    Navigator.pushReplacementNamed(
       context,
       AppRoutes.recepcionMultiusuarioDetail,
       arguments: [session],

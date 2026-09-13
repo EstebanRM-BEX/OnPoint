@@ -23,6 +23,7 @@ class PopupMenuCreateTransferWidget extends StatelessWidget {
               Navigator.pushReplacementNamed(
                 context,
                 'detail-create-transfer',
+                arguments: [context.read<CreateTransferBloc>()],
               );
 
               // Acción para opción 1

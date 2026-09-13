@@ -8,7 +8,6 @@ import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_claim.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_pool_item.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_session.dart';
-import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/detail/transferencia_multiusuario_my_claims_bloc.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/detail/transferencia_multiusuario_pool_bloc.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/scan/transferencia_multiusuario_scan_bloc.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/widgets/dialog_confirmar_tomar_producto_widget.dart';
@@ -174,31 +173,16 @@ class _TransferenciaMultiusuarioDetailTabPorHacerState
     );
   }
 
-  Future<void> _handleClaimSuccess(
-    BuildContext context,
-    TransferenciaClaim claim,
-  ) async {
-    // El claim ya cambió el pool en el backend (el producto quedó
-    // bloqueado); refrescamos para que desaparezca de "Por hacer".
-    _retry(context);
-    // Ya existe la pantalla de procesar el producto: navega directo, igual
-    // que RecepcionMultiusuarioDetailTabPorHacer — se espera el regreso
-    // para refrescar de nuevo (haya terminado o no la transferencia) y
-    // también "Asignados", donde el producto recién reclamado debe
-    // aparecer.
-    await Navigator.pushNamed(
+  void _handleClaimSuccess(BuildContext context, TransferenciaClaim claim) {
+    // Ya no se espera un resultado al volver: esta pantalla (y todo
+    // Detail) se reemplaza al entrar a Escanear. Al volver, Detail se
+    // reconstruye de cero — Pool/MyClaims se recargan solos en su propio
+    // initState, sin necesidad de refrescar manualmente acá.
+    Navigator.pushReplacementNamed(
       context,
       AppRoutes.transferenciaMultiusuarioScanProduct,
       arguments: [widget.session, claim],
     );
-    if (!context.mounted) return;
-    _retry(context);
-    final sessionId = widget.session.sessionId;
-    if (sessionId != null) {
-      context.read<TransferenciaMultiusuarioMyClaimsBloc>().add(
-        FetchMyClaimsEvent(sessionId),
-      );
-    }
   }
 
   @override

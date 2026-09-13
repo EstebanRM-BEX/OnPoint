@@ -51,7 +51,7 @@ class LocationCardButtonCreateTransfer extends StatelessWidget {
                 Navigator.pushReplacementNamed(
                   context,
                   routeName,
-                  arguments: [isLocationDest],
+                  arguments: [isLocationDest, bloc],
                 );
               }
             : null; // Si no puede navegar, el onTap es null

@@ -114,10 +114,10 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen>
         expedicion.responsableId == null || expedicion.responsableId == 0;
 
     if (!sinResponsable) {
-      Navigator.pushNamed(
+      Navigator.pushReplacementNamed(
         context,
         AppRoutes.expeditionDetail,
-        arguments: [expeditionId],
+        arguments: [expeditionId, context.read<ExpedicionListBloc>()],
       );
       return;
     }
@@ -153,10 +153,13 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen>
               context.read<ExpedicionListBloc>().add(
                 const FetchExpedicionesFromDbEvent(),
               );
-              Navigator.pushNamed(
+              Navigator.pushReplacementNamed(
                 context,
                 AppRoutes.expeditionDetail,
-                arguments: [state.pedido.expeditionId],
+                arguments: [
+                  state.pedido.expeditionId,
+                  context.read<ExpedicionListBloc>(),
+                ],
               );
             }
             if (state is ExpedicionAssignmentError) {

@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
-import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 
@@ -48,14 +47,9 @@ class DialogTransferencia extends StatelessWidget {
   }
 
   void _goToCrear(BuildContext context) {
-    // Misma operación que hace el FloatingActionButton de
-    // ListTransferenciasScreen para crear una transferencia nueva.
-    contextHome.read<CreateTransferBloc>()
-      ..add(GetLocationsEvent())
-      ..add(FetchAllBarcodesInventarioEvent())
-      ..add(GetProductsCreateTransferEvent())
-      ..add(GetProductsFromDBEvent());
-
+    // CreateTransferBloc ahora vive escopeado a la ruta 'create-transfer' y
+    // es la propia pantalla (CreateTransferScreen.initState) la que dispara
+    // la carga inicial — acá solo navegamos.
     Navigator.pop(context);
     Navigator.pushReplacementNamed(contextHome, 'create-transfer');
   }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/features/expedition/data/services/expedition_sync_coordinator.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/detail/expedicion_detail_bloc.dart';
 import 'package:wms_app/injection_container.dart';
@@ -69,7 +70,10 @@ class _ExpedicionDetailScreenState extends State<ExpedicionDetailScreen>
             appBar: AppBar(
               backgroundColor: primaryColorApp,
               leading: IconButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pushReplacementNamed(
+                  context,
+                  AppRoutes.listExpedition,
+                ),
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
               ),
               title: const Text('EXPEDICIÓN',

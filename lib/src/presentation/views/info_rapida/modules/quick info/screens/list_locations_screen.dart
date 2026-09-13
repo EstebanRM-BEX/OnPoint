@@ -24,7 +24,47 @@ class _ListLocationsScreenState extends State<ListLocationsScreen> {
   int? selectedIndex;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final bloc = context.read<InfoRapidaBloc>();
+      // Mismo resguardo que ListProductsScreen: si se llega acá con el
+      // bloc todavía sin inicializar, dispara la carga acá también en vez
+      // de quedarse con la lista vacía para siempre.
+      if (!bloc.isInitialized) {
+        bloc.add(InitInfoRapidaEvent());
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        _buildContent(context),
+        BlocBuilder<InfoRapidaBloc, InfoRapidaState>(
+          buildWhen: (previous, current) =>
+              current is InfoRapidaInitial ||
+              current is InitInfoRapidaLoading ||
+              current is InitInfoRapidaSuccess ||
+              current is InitInfoRapidaFailure,
+          builder: (context, state) {
+            if (context.read<InfoRapidaBloc>().isInitialized) {
+              return const SizedBox.shrink();
+            }
+            return const Positioned.fill(
+              child: AbsorbPointer(
+                child: DialogLoading(message: 'Cargando interfaz...'),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
     return BlocConsumer<InfoRapidaBloc, InfoRapidaState>(
       listener: (context, state) {
         if (state is DeviceNotAuthorized) {
@@ -72,14 +112,16 @@ class _ListLocationsScreenState extends State<ListLocationsScreen> {
             icon: Icon(Icons.error, color: Colors.green),
           );
 
+          final bloc = context.read<InfoRapidaBloc>();
           if (state.infoRapidaResult.type == 'product') {
             Navigator.pushReplacementNamed(
               context,
               'product-info',
+              arguments: [bloc],
             );
           } else if (state.infoRapidaResult.type == "ubicacion") {
             Navigator.pushReplacementNamed(context, 'location-info',
-                arguments: [state.infoRapidaResult]);
+                arguments: [state.infoRapidaResult, bloc]);
           }
         }
       },
@@ -346,14 +388,13 @@ class _AppBarInfo extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: white),
                     onPressed: () {
-                      context
-                          .read<InfoRapidaBloc>()
-                          .searchControllerLocation
-                          .clear();
+                      final bloc = context.read<InfoRapidaBloc>();
+                      bloc.searchControllerLocation.clear();
 
                       Navigator.pushReplacementNamed(
                         context,
                         'info-rapida',
+                        arguments: [bloc],
                       );
                     },
                   ),

@@ -88,17 +88,15 @@ class _TransferenciaMultiusuarioDetailTabMisAsignadosState
   /// RecepcionMultiusuarioDetailTabMisAsignados._openScanProduct. Se espera
   /// el regreso para refrescar "Asignados" (haya terminado o no la
   /// transferencia, el claim puede haber cambiado).
-  Future<void> _handleClaimTap(
-    BuildContext context,
-    TransferenciaClaim claim,
-  ) async {
-    await Navigator.pushNamed(
+  void _handleClaimTap(BuildContext context, TransferenciaClaim claim) {
+    // Ya no se espera un resultado al volver: Detail se reemplaza al
+    // entrar a Escanear y se reconstruye de cero al volver (MyClaims se
+    // recarga solo en su propio initState).
+    Navigator.pushReplacementNamed(
       context,
       AppRoutes.transferenciaMultiusuarioScanProduct,
       arguments: [widget.session, claim],
     );
-    if (!context.mounted) return;
-    _retry(context);
   }
 
   void _confirmRelease(BuildContext context, TransferenciaClaim claim) {

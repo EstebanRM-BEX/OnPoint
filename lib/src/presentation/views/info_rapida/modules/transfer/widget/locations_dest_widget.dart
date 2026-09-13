@@ -8,6 +8,8 @@ import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/models/info_rapida_model.dart';
+import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/bloc/info_rapida_bloc.dart'
+    show InfoRapidaBloc;
 import 'package:wms_app/src/presentation/views/info_rapida/modules/transfer/bloc/transfer_info_bloc.dart';
 import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 
@@ -101,6 +103,9 @@ class _LocationDestScreenState extends State<LocationDestTransfInfoScreen>
                                               arguments: [
                                                 widget.infoRapidaResult,
                                                 widget.ubicacion,
+                                                context.read<InfoRapidaBloc>(),
+                                                context
+                                                    .read<TransferInfoBloc>(),
                                               ],
                                             );
                                           },
@@ -399,7 +404,9 @@ class _LocationDestScreenState extends State<LocationDestTransfInfoScreen>
                               Navigator.pushReplacementNamed(
                                   context, 'transfer-info', arguments: [
                                 widget.infoRapidaResult,
-                                widget.ubicacion
+                                widget.ubicacion,
+                                context.read<InfoRapidaBloc>(),
+                                bloc,
                               ]);
                             }
                           },

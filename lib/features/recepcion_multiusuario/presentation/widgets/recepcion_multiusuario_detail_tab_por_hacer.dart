@@ -8,7 +8,6 @@ import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_claim.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_pool_item.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
-import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_my_claims_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_pool_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/scan/recepcion_multiusuario_scan_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/dialog_confirmar_tomar_producto_widget.dart';
@@ -135,27 +134,16 @@ class _RecepcionMultiusuarioDetailTabPorHacerState
     );
   }
 
-  Future<void> _openScanProduct(
-    BuildContext context,
-    RecepcionClaim claim,
-  ) async {
-    await Navigator.pushNamed(
+  void _openScanProduct(BuildContext context, RecepcionClaim claim) {
+    // Ya no se espera un resultado al volver: esta pantalla (y todo
+    // Detail) se reemplaza al entrar a Escanear. Al volver, Detail se
+    // reconstruye de cero — Pool/MyClaims se recargan solos en su propio
+    // initState, sin necesidad de refrescar manualmente acá.
+    Navigator.pushReplacementNamed(
       context,
       AppRoutes.recepcionMultiusuarioScanProduct,
       arguments: [widget.session, claim],
     );
-    if (!context.mounted) return;
-    // El claim ya cambió el pool en el backend (el producto quedó
-    // bloqueado); refrescamos al volver, haya terminado o no la recepción.
-    // También refrescamos "Mis asignados": el producto recién reclamado
-    // debe aparecer ahí.
-    _retry(context);
-    final sessionId = widget.session.sessionId;
-    if (sessionId != null) {
-      context.read<RecepcionMultiusuarioMyClaimsBloc>().add(
-        FetchMyClaimsEvent(sessionId),
-      );
-    }
   }
 
   /// A diferencia de la búsqueda manual (que solo filtra la lista), un

@@ -402,6 +402,7 @@ class _SearchProductScreenState
           Navigator.pushReplacementNamed(
             context,
             'create-transfer',
+            arguments: [bloc],
           );
 
           Get.snackbar(
@@ -462,6 +463,7 @@ class _AppBarInfo extends StatelessWidget {
                           Navigator.pushReplacementNamed(
                             context,
                             'create-transfer',
+                            arguments: [context.read<CreateTransferBloc>()],
                           );
                         },
                       ),

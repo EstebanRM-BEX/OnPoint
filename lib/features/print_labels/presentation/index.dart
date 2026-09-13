@@ -94,7 +94,8 @@ class _PrintLabelsScreenState extends State<PrintLabelsScreen> {
                             borderRadius: BorderRadius.circular(16),
                             onTap: () {
                               Navigator.pushReplacementNamed(
-                                  context, 'print-labels-products');
+                                  context, 'print-labels-products',
+                                  arguments: [context.read<PrintLabelsBloc>()]);
                             },
                             child: Padding(
                               padding:
@@ -138,7 +139,8 @@ class _PrintLabelsScreenState extends State<PrintLabelsScreen> {
                             borderRadius: BorderRadius.circular(16),
                             onTap: () {
                               Navigator.pushReplacementNamed(
-                                  context, 'print-labels-locations');
+                                  context, 'print-labels-locations',
+                                  arguments: [context.read<PrintLabelsBloc>()]);
                             },
                             child: Padding(
                               padding:

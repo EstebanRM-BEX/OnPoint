@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_asignacion_observacion.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_pool_item.dart';
+import 'package:wms_app/features/transferencia_multiusuario/presentation/bloc/detail/transferencia_multiusuario_pool_bloc.dart';
 import 'package:wms_app/features/transferencia_multiusuario/presentation/widgets/transferencia_novedades_dialog_widget.dart';
 
 /// Card de un producto con transferencias terminadas (tab "Terminados").
@@ -127,15 +129,22 @@ class TransferenciaTerminadoCardWidget extends StatelessWidget {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
-                  onPressed: () => showDialog(
-                    context: context,
-                    builder: (_) => TransferenciaNovedadesDialogWidget(
-                      productName: item.productName ?? '',
-                      observaciones: item.observaciones,
-                      sessionId: sessionId,
-                      uom: item.uom,
-                    ),
-                  ),
+                  onPressed: () {
+                    final poolBloc =
+                        context.read<TransferenciaMultiusuarioPoolBloc>();
+                    showDialog(
+                      context: context,
+                      builder: (_) => BlocProvider.value(
+                        value: poolBloc,
+                        child: TransferenciaNovedadesDialogWidget(
+                          productName: item.productName ?? '',
+                          observaciones: item.observaciones,
+                          sessionId: sessionId,
+                          uom: item.uom,
+                        ),
+                      ),
+                    );
+                  },
                   icon: Icon(
                     Icons.report_gmailerrorred_outlined,
                     color: primaryColorApp,

@@ -43,6 +43,12 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
     super.initState();
     // Añadimos el observer para escuchar el ciclo de vida de la app.
     WidgetsBinding.instance.addObserver(this);
+    // Antes esto se disparaba desde product_info_screen.dart justo antes de
+    // navegar acá (con un delay artificial de 1s + diálogo de carga) —
+    // TransferInfoBloc ya no vive en el root, así que ese prefetch entre
+    // rutas ya no es posible; se hace acá, al entrar, en su lugar.
+    context.read<TransferInfoBloc>().add(LoadLocationsTransfer());
+    context.read<TransferInfoBloc>().add(SetDateStartEventTransfer());
   }
 
   @override
@@ -388,6 +394,8 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                           if (!_isUpdatingDialogOpen) return;
                           _closeUpdatingDialog(listenerContext);
 
+                          final infoRapidaBloc =
+                              listenerContext.read<InfoRapidaBloc>();
                           if (state is InfoRapidaLoaded) {
                             // ✅ Paso 2: La carga fue exitosa. La navegación es segura.
                             debugPrint(
@@ -395,6 +403,7 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                             Navigator.pushReplacementNamed(
                               listenerContext,
                               'product-info',
+                              arguments: [infoRapidaBloc],
                             );
                           } else if (state is DeviceNotAuthorized) {
                             // La transferencia sí se aplicó, solo falló el
@@ -407,7 +416,8 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                               icon: Icon(Icons.warning, color: Colors.amber),
                             );
                             Navigator.pushReplacementNamed(
-                                listenerContext, 'product-info');
+                                listenerContext, 'product-info',
+                                arguments: [infoRapidaBloc]);
                           } else if (state is InfoRapidaError) {
                             // Manejo del error de carga de Info Rápida
                             Get.snackbar(
@@ -418,7 +428,8 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                               icon: Icon(Icons.warning, color: Colors.amber),
                             );
                             Navigator.pushReplacementNamed(
-                                listenerContext, 'product-info');
+                                listenerContext, 'product-info',
+                                arguments: [infoRapidaBloc]);
                           }
                         },
                         // 3. HIJO FINAL: TU UI VISUAL (El BlocBuilder original)
@@ -442,6 +453,9 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                                       Navigator.pushReplacementNamed(
                                         context,
                                         'product-info',
+                                        arguments: [
+                                          context.read<InfoRapidaBloc>(),
+                                        ],
                                       );
                                     },
                                   ),
@@ -732,7 +746,10 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                                                 'search-locations-dest-trans-info',
                                                 arguments: [
                                                   widget.infoRapidaResult,
-                                                  widget.ubicacion
+                                                  widget.ubicacion,
+                                                  context.read<InfoRapidaBloc>(),
+                                                  context
+                                                      .read<TransferInfoBloc>(),
                                                 ]);
                                           },
                                           child: Row(

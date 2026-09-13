@@ -20,6 +20,12 @@ class LoteScannerWidget extends StatefulWidget {
   final String routeName;
   final String lotId;
 
+  /// Argumentos adicionales a agregar después de [currentProduct] al navegar
+  /// a [routeName]. Conteo (bloc root-provided) no los necesita; Crear
+  /// Transferencia (bloc escopeado a su ruta) lo usa para pasar la misma
+  /// instancia de CreateTransferBloc y no perder el progreso ya escaneado.
+  final List<dynamic> extraArguments;
+
   const LoteScannerWidget({
     super.key,
     required this.isLoteOk,
@@ -35,6 +41,7 @@ class LoteScannerWidget extends StatefulWidget {
     required this.controller,
     required this.routeName,
     required this.lotId,
+    this.extraArguments = const [],
   });
 
   @override
@@ -173,7 +180,7 @@ class _LoteScannerWidgetState extends State<LoteScannerWidget> {
             Navigator.pushReplacementNamed(
               context,
               widget.routeName,
-              arguments: [widget.currentProduct],
+              arguments: [widget.currentProduct, ...widget.extraArguments],
             );
           },
           icon: Icon(

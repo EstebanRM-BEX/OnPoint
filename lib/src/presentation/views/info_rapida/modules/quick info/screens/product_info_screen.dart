@@ -10,7 +10,6 @@ import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_
 import 'package:wms_app/src/presentation/views/info_rapida/models/update_product_request.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/widgets/info_widget.dart';
-import 'package:wms_app/src/presentation/views/info_rapida/modules/transfer/bloc/transfer_info_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
@@ -56,7 +55,11 @@ class ProductInfoScreen extends StatelessWidget {
         if (product == null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) {
-              Navigator.pop(context);
+              Navigator.pushReplacementNamed(
+                context,
+                'info-rapida',
+                arguments: [bloc],
+              );
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('No se pudo cargar la información del producto'),
@@ -668,13 +671,13 @@ class ProductInfoScreen extends StatelessWidget {
                                       if (ubicacion?.packing == false)
                                         GestureDetector(
                                           onTap: () async {
-                                            context
-                                                .read<TransferInfoBloc>()
-                                                .add(LoadLocationsTransfer());
-
-                                            context.read<TransferInfoBloc>().add(
-                                                SetDateStartEventTransfer());
-
+                                            // TransferInfoBloc ya no vive acá
+                                            // (es de la ruta transfer-info) —
+                                            // la carga de ubicaciones/fecha
+                                            // que antes se disparaba antes de
+                                            // navegar ahora la hace
+                                            // TransferInfoScreen en su propio
+                                            // initState.
                                             showDialog(
                                               context: contextList,
                                               builder: (contextList) {
@@ -697,7 +700,8 @@ class ProductInfoScreen extends StatelessWidget {
                                                   context, 'transfer-info',
                                                   arguments: [
                                                     product,
-                                                    ubicacion
+                                                    ubicacion,
+                                                    bloc,
                                                   ]);
                                             }
                                           },
@@ -811,15 +815,14 @@ class AppBar extends StatelessWidget {
                 children: [
                   GestureDetector(
                     onTap: () {
-                      context
-                          .read<InfoRapidaBloc>()
-                          .searchControllerLocation
-                          .clear();
-                      context.read<InfoRapidaBloc>().add(IsEditEvent(false));
-                      context.read<InfoRapidaBloc>().add(GetProductsList());
+                      final bloc = context.read<InfoRapidaBloc>();
+                      bloc.searchControllerLocation.clear();
+                      bloc.add(IsEditEvent(false));
+                      bloc.add(GetProductsList());
                       Navigator.pushReplacementNamed(
                         context,
                         'info-rapida',
+                        arguments: [bloc],
                       );
                     },
                     child: Icon(

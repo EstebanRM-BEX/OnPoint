@@ -62,10 +62,27 @@ class TransferenciaMultiusuarioScanProductScreen extends StatefulWidget {
     super.key,
     required this.session,
     required this.claim,
+    this.initialOrigenValidated = false,
+    this.initialProductValidated = false,
+    this.initialOrigenValidadoAt,
+    this.initialLote,
+    this.initialUbicacionDest,
   });
 
   final TransferenciaSession session;
   final TransferenciaClaim claim;
+
+  // Estado a restaurar al volver de TransferenciaMultiusuarioNewLoteScreen /
+  // TransferenciaMultiusuarioLocationDestScreen — como esas pantallas
+  // vuelven acá con pushReplacementNamed (ya no Navigator.pop, esta misma
+  // pantalla se reemplazó al abrir la otra), se reconstruye de cero y
+  // necesita este estado de vuelta para no reobligar a re-escanear
+  // origen/producto ni perder el lote/ubicación ya elegidos.
+  final bool initialOrigenValidated;
+  final bool initialProductValidated;
+  final DateTime? initialOrigenValidadoAt;
+  final TransferenciaLoteProducto? initialLote;
+  final ResultUbicaciones? initialUbicacionDest;
 
   @override
   State<TransferenciaMultiusuarioScanProductScreen> createState() =>
@@ -173,6 +190,19 @@ class _TransferenciaMultiusuarioScanProductScreenState
     if ((widget.claim.locationBarcode ?? '').isEmpty) {
       _origenIsOk = true;
       _origenValidadoAt = DateTime.now();
+    } else if (widget.initialOrigenValidated) {
+      _origenIsOk = true;
+      _origenValidadoAt = widget.initialOrigenValidadoAt;
+    }
+    _productIsOk = widget.initialProductValidated;
+    if (widget.initialLote != null) {
+      _selectedLote = widget.initialLote;
+      _loteIsOk = true;
+    }
+    if (widget.initialUbicacionDest != null) {
+      _selectedUbicacionDest = widget.initialUbicacionDest;
+      _locationDestIsOk = true;
+      _locationDestFieldOk = true;
     }
     _cargarConfiguracion();
     _cargarLotesProducto();
@@ -476,20 +506,20 @@ class _TransferenciaMultiusuarioScanProductScreenState
     }
   }
 
-  /// Abre la pantalla de listar/crear lote; si el operario elige o crea uno,
-  /// lo da por confirmado directo.
-  Future<void> _openLoteScreen() async {
-    final result = await Navigator.pushNamed(
+  /// Abre la pantalla de listar/crear lote — reemplaza esta pantalla;
+  /// NewLoteScreen vuelve acá con pushReplacementNamed pasando el lote
+  /// elegido, o el mismo estado sin cambios si el operario cancela.
+  void _openLoteScreen() {
+    Navigator.pushReplacementNamed(
       context,
       AppRoutes.transferenciaMultiusuarioNewLote,
-      arguments: [widget.session, widget.claim],
+      arguments: [
+        widget.session,
+        widget.claim,
+        _origenValidadoAt,
+        _selectedUbicacionDest,
+      ],
     );
-    if (!mounted || result is! TransferenciaLoteProducto) return;
-    setState(() {
-      _selectedLote = result;
-      _loteIsOk = true;
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) => _handleDependencies());
   }
 
   /// No valida contra una ubicación destino preasignada: acepta cualquier
@@ -523,24 +553,26 @@ class _TransferenciaMultiusuarioScanProductScreenState
     }
   }
 
-  /// Abre la pantalla de buscar/seleccionar ubicación destino; no deja
-  /// entrar si el origen/producto todavía no fueron validados.
-  Future<void> _openLocationDestScreen() async {
+  /// Abre la pantalla de buscar/seleccionar ubicación destino — reemplaza
+  /// esta pantalla; LocationDestScreen vuelve acá con pushReplacementNamed
+  /// pasando la ubicación elegida, o el mismo estado sin cambios si el
+  /// operario cancela. No deja entrar si el origen/producto todavía no
+  /// fueron validados.
+  void _openLocationDestScreen() {
     if (!_origenIsOk || !_productIsOk) {
       return;
     }
 
-    final result = await Navigator.pushNamed(
+    Navigator.pushReplacementNamed(
       context,
       AppRoutes.transferenciaMultiusuarioLocationDest,
+      arguments: [
+        widget.session,
+        widget.claim,
+        _origenValidadoAt,
+        _selectedLote,
+      ],
     );
-    if (!mounted || result is! ResultUbicaciones) return;
-    setState(() {
-      _selectedUbicacionDest = result;
-      _locationDestIsOk = true;
-      _locationDestFieldOk = true;
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) => _handleDependencies());
   }
 
   /// true si la segunda unidad ya está resuelta: no aplica, o el operario
@@ -765,7 +797,11 @@ class _TransferenciaMultiusuarioScanProductScreenState
 
     result.fold(
       (failure) => showScrollableErrorDialog(failure.message),
-      (_) => Navigator.pop(context),
+      (_) => Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.transferenciaMultiusuarioDetail,
+        arguments: [widget.session],
+      ),
     );
   }
 
@@ -783,7 +819,11 @@ class _TransferenciaMultiusuarioScanProductScreenState
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pushReplacementNamed(
+              context,
+              AppRoutes.transferenciaMultiusuarioDetail,
+              arguments: [widget.session],
+            ),
           ),
           title: Text(
             widget.session.name ?? 'TRANSFERENCIA',

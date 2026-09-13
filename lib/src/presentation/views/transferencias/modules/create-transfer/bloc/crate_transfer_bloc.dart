@@ -26,6 +26,27 @@ part 'crate_transfer_state.dart';
 
 class CreateTransferBloc
     extends Bloc<CreateTransferEvent, CreateTransferState> {
+  // Este bloc vive escopeado a las rutas de "Crear transferencia" (no se
+  // provee en main.dart), así que Flutter lo descarta cada vez que el
+  // usuario sale del módulo (ej: flecha atrás a Home). Sin este holder, esa
+  // salida borraba la ubicación de origen/destino y cualquier producto ya
+  // escaneado (lo que ya estaba guardado en SQLite volvía a cargar, pero el
+  // resto del progreso en memoria se perdía). _draft retiene la instancia
+  // mientras haya una transferencia sin terminar, para que reingresar al
+  // módulo (desde Home o desde la lista de Transferencia Interna) continúe
+  // exactamente donde quedó.
+  static CreateTransferBloc? _draft;
+
+  /// Reutiliza la transferencia en curso si existe; si no, crea una nueva.
+  static CreateTransferBloc resumeOrCreate() =>
+      _draft ??= CreateTransferBloc();
+
+  /// Descarta el borrador en curso (llamar tras crear la transferencia con
+  /// éxito, o si el usuario cancela explícitamente).
+  static void clearDraft() {
+    _draft = null;
+  }
+
   // //*validaciones de campos del estado de la vista
   bool loteIsOk = false;
   bool isLocationOk = true;
@@ -234,6 +255,10 @@ class CreateTransferBloc
         emit(CreateTransferSuccess(response));
         add(ClearDataCreateTransferEvent(isClearProduct: false));
         dateTransferInicio = '';
+        // La transferencia ya se creó: el próximo ingreso "en frío" al
+        // módulo (desde Home o desde la lista) debe arrancar en blanco, no
+        // reutilizar esta instancia (ya vacía, pero conviene soltarla).
+        CreateTransferBloc.clearDraft();
       } else {
         emit(CreateTransferFailure(response.result?.msg ?? ""));
       }

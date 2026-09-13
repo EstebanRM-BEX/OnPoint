@@ -54,6 +54,9 @@ class DetailCreateTransferScreen extends StatelessWidget {
             ),
           );
         } else if (state is CreateTransferSuccess) {
+          // Capturado ANTES del showDialog: el builder es una ruta hermana
+          // (sibling) y no hereda el BlocProvider escopeado a esta ruta.
+          final bloc = context.read<CreateTransferBloc>();
           //mostramos un dialogo con la informacion de la transferencia creada
           showDialog(
             context: context,
@@ -114,7 +117,8 @@ class DetailCreateTransferScreen extends StatelessWidget {
                         onPressed: () {
                           Navigator.pop(context);
                           Navigator.pushReplacementNamed(
-                              context, 'create-transfer');
+                              context, 'create-transfer',
+                              arguments: [bloc]);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryColorApp,
@@ -172,7 +176,10 @@ class DetailCreateTransferScreen extends StatelessWidget {
                                     const Icon(Icons.arrow_back, color: white),
                                 onPressed: () {
                                   Navigator.pushReplacementNamed(
-                                      context, 'create-transfer');
+                                      context, 'create-transfer',
+                                      arguments: [
+                                        context.read<CreateTransferBloc>()
+                                      ]);
                                 },
                               ),
                               Padding(
@@ -349,6 +356,15 @@ class DetailCreateTransferScreen extends StatelessWidget {
                                                 const Spacer(),
                                                 GestureDetector(
                                                   onTap: () {
+                                                    // Capturado ANTES del
+                                                    // showDialog: su builder
+                                                    // es una ruta hermana y
+                                                    // no hereda el
+                                                    // BlocProvider de esta
+                                                    // ruta.
+                                                    final createTransferBloc =
+                                                        context.read<
+                                                            CreateTransferBloc>();
                                                     //dialogo de confirmcion de eliminar
                                                     showDialog(
                                                       context: context,
@@ -406,9 +422,7 @@ class DetailCreateTransferScreen extends StatelessWidget {
                                                             ),
                                                             ElevatedButton(
                                                               onPressed: () {
-                                                                context
-                                                                    .read<
-                                                                        CreateTransferBloc>()
+                                                                createTransferBloc
                                                                     .add(
                                                                       RemoveProductFromTransferEvent(
                                                                           product),

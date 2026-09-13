@@ -163,22 +163,20 @@ class _ExpedicionDetailTabPorHacerState
     }
   }
 
-  Future<void> _navigateToPaquete(
-      BuildContext context, PaqueteExpedicion paquete) async {
+  void _navigateToPaquete(BuildContext context, PaqueteExpedicion paquete) {
     _limpiarSeleccion();
-    final result = await Navigator.pushNamed(
+    // Ya no se espera un resultado al volver: Detail se reemplaza al
+    // entrar a Escanear y se reconstruye de cero al volver.
+    Navigator.pushReplacementNamed(
         context, AppRoutes.scanProductExpedition,
-        arguments: [paquete]);
-    if (result == true && context.mounted) _refreshDetail(context);
+        arguments: [paquete, null, context.read<ExpedicionScanBloc>()]);
   }
 
-  Future<void> _navigateToItemSuelto(
-      BuildContext context, ItemSueltoExpedicion item) async {
+  void _navigateToItemSuelto(BuildContext context, ItemSueltoExpedicion item) {
     _limpiarSeleccion();
-    final result = await Navigator.pushNamed(
+    Navigator.pushReplacementNamed(
         context, AppRoutes.scanProductExpedition,
-        arguments: [null, item]);
-    if (result == true && context.mounted) _refreshDetail(context);
+        arguments: [null, item, context.read<ExpedicionScanBloc>()]);
   }
 
   void _refreshDetail(BuildContext context) {
