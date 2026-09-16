@@ -4,6 +4,8 @@ import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 // ignore_for_file: use_build_context_synchronously, unrelated_type_equality_checks
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -87,19 +89,54 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
 
   String? selectedLocation;
 
-  // Controla el diálogo "Actualizando información..." para poder cerrarlo
-  // siempre y no reaccionar a estados de InfoRapidaBloc que no pedimos.
-  bool _isUpdatingDialogOpen = false;
+  // Controla el overlay "Actualizando información..." y evita reaccionar a
+  // estados de InfoRapidaBloc que no pedimos nosotros.
+  bool _isRefreshingInfo = false;
+  Timer? _refreshWatchdog;
+
+  /// La transferencia ya se aplicó en el backend cuando arranca el refresco,
+  /// así que pasado este plazo no tiene sentido seguir esperando: se avisa y
+  /// se vuelve a product-info igual.
+  static const Duration _refreshTimeout = Duration(seconds: 8);
 
   //controller
   final TextEditingController _controllerLocationDest = TextEditingController();
   final TextEditingController _cantidadController = TextEditingController();
 
-  void _closeUpdatingDialog(BuildContext context) {
-    if (!_isUpdatingDialogOpen) return;
-    _isUpdatingDialogOpen = false;
-    final navigator = Navigator.of(context, rootNavigator: true);
-    if (navigator.canPop()) navigator.pop();
+  void _startInfoRefresh() {
+    _refreshWatchdog?.cancel();
+    if (mounted) setState(() => _isRefreshingInfo = true);
+    _refreshWatchdog = Timer(_refreshTimeout, () {
+      if (!mounted || !_isRefreshingInfo) return;
+      Get.snackbar(
+        '360 Software Informa',
+        'Transferencia realizada. No se pudo actualizar la información a tiempo.',
+        backgroundColor: white,
+        colorText: primaryColorApp,
+        duration: const Duration(seconds: 4),
+        icon: const Icon(Icons.warning, color: Colors.amber),
+        snackPosition: SnackPosition.TOP,
+      );
+      _goToProductInfo(context);
+    });
+  }
+
+  void _stopInfoRefresh() {
+    _refreshWatchdog?.cancel();
+    _refreshWatchdog = null;
+    if (mounted && _isRefreshingInfo) {
+      setState(() => _isRefreshingInfo = false);
+    }
+  }
+
+  void _goToProductInfo(BuildContext context) {
+    _stopInfoRefresh();
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(
+      context,
+      'product-info',
+      arguments: [context.read<InfoRapidaBloc>()],
+    );
   }
 
   void _showTransferError(String message) {
@@ -314,6 +351,7 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
 
   @override
   void dispose() {
+    _refreshWatchdog?.cancel();
     _kbWatchdog.dispose();
     focusNode1.dispose(); //ubicaicon Dest
     focusNodeCantidad.dispose();
@@ -333,7 +371,8 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
           onWillPop: () async {
             return false;
           },
-          child: Scaffold(
+          child: Stack(children: [
+            Scaffold(
             backgroundColor: primaryColorApp,
             body: SafeArea(
               child: Container(
@@ -361,19 +400,30 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                         if (state is SendTransferInfoSuccess) {
                           _cantidadController.clear();
 
+                          // El éxito no se avisaba: se abría el diálogo de
+                          // "Actualizando información..." y se navegaba de
+                          // vuelta a product-info sin decir nada, así que el
+                          // operario no sabía si la transferencia se aplicó.
+                          // El snackbar es overlay: sobrevive a la navegación.
+                          Get.snackbar(
+                            '360 Software Informa',
+                            state.msg.isEmpty
+                                ? 'Transferencia realizada'
+                                : state.msg,
+                            backgroundColor: white,
+                            colorText: primaryColorApp,
+                            duration: const Duration(seconds: 3),
+                            icon: const Icon(Icons.check_circle,
+                                color: Colors.green),
+                            snackPosition: SnackPosition.TOP,
+                          );
+
                           // 💥 Paso 1: DISPARAR la carga de datos en el BLoC de destino
                           listenerContext.read<InfoRapidaBloc>().add(
                               GetInfoRapida(state.productId.toString(), true,
                                   true, false));
 
-                          // Opcional: Mostrar diálogo de carga AQUI
-                          _isUpdatingDialogOpen = true;
-                          showDialog(
-                            context: listenerContext,
-                            barrierDismissible: false,
-                            builder: (_) => const DialogLoading(
-                                message: "Actualizando información..."),
-                          );
+                          _startInfoRefresh();
                         } else if (state is SendTransferInfoFailureTransfer) {
                           // Antes este estado no se escuchaba: la pantalla
                           // quedaba muda y el usuario no sabía si había fallado.
@@ -389,22 +439,16 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                             current is InfoRapidaError ||
                             current is DeviceNotAuthorized,
                         listener: (listenerContext, state) {
-                          // Solo reaccionamos si el diálogo lo abrimos nosotros,
+                          // Solo reaccionamos al refresco que pedimos nosotros,
                           // para no cerrar la pantalla por emisiones ajenas.
-                          if (!_isUpdatingDialogOpen) return;
-                          _closeUpdatingDialog(listenerContext);
+                          if (!_isRefreshingInfo) return;
+                          _stopInfoRefresh();
 
-                          final infoRapidaBloc =
-                              listenerContext.read<InfoRapidaBloc>();
                           if (state is InfoRapidaLoaded) {
                             // ✅ Paso 2: La carga fue exitosa. La navegación es segura.
                             debugPrint(
                                 'Datos de Info Rápida cargados. Navegando...');
-                            Navigator.pushReplacementNamed(
-                              listenerContext,
-                              'product-info',
-                              arguments: [infoRapidaBloc],
-                            );
+                            _goToProductInfo(listenerContext);
                           } else if (state is DeviceNotAuthorized) {
                             // La transferencia sí se aplicó, solo falló el
                             // refresco: informamos y volvemos igualmente.
@@ -415,9 +459,7 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                               colorText: primaryColorApp,
                               icon: Icon(Icons.warning, color: Colors.amber),
                             );
-                            Navigator.pushReplacementNamed(
-                                listenerContext, 'product-info',
-                                arguments: [infoRapidaBloc]);
+                            _goToProductInfo(listenerContext);
                           } else if (state is InfoRapidaError) {
                             // Manejo del error de carga de Info Rápida
                             Get.snackbar(
@@ -427,9 +469,7 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
                               colorText: primaryColorApp,
                               icon: Icon(Icons.warning, color: Colors.amber),
                             );
-                            Navigator.pushReplacementNamed(
-                                listenerContext, 'product-info',
-                                arguments: [infoRapidaBloc]);
+                            _goToProductInfo(listenerContext);
                           }
                         },
                         // 3. HIJO FINAL: TU UI VISUAL (El BlocBuilder original)
@@ -963,6 +1003,19 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
               ),
             ),
           ),
+            // Overlay declarativo de "Actualizando información...": antes era
+            // showDialog + Navigator.pop desde el listener, y si el refresco
+            // no emitía su estado final se quedaba abierto para siempre, sin
+            // barrera dismissible y con PopScope(canPop: false). Al depender
+            // solo de esta bandera (+ watchdog) no puede sobrevivir a la
+            // pantalla ni cerrar la ruta equivocada.
+            if (_isRefreshingInfo)
+              const Positioned.fill(
+                child: AbsorbPointer(
+                  child: DialogLoading(message: 'Actualizando información...'),
+                ),
+              ),
+          ]),
         );
       },
     );

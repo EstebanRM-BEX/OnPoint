@@ -17,20 +17,36 @@ class ProductInfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-   return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title.isNotEmpty ? '$title ' : '', // Solo muestra espacio si hay título
-          style: TextStyle(fontSize: 12, color: primaryColorApp),
-        ),
-        Text(
+    // El valor va en Expanded para que un nombre largo parta en 2 líneas en
+    // vez de desbordar la fila: sin ancho acotado el Text nunca usaba su
+    // maxLines. Pero este widget también se usa dentro de otro Row (ej.
+    // paquete_info_screen), donde el ancho que llega es infinito y Expanded
+    // reventaría; por eso se decide según las constraints reales.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final valueText = Text(
           value,
           style: TextStyle(fontSize: 12, color: color),
-          maxLines: 2, 
-          overflow: TextOverflow.ellipsis, 
-        ),
-      ],
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        );
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title.isNotEmpty
+                  ? '$title '
+                  : '', // Solo muestra espacio si hay título
+              style: TextStyle(fontSize: 12, color: primaryColorApp),
+            ),
+            if (constraints.maxWidth.isFinite)
+              Expanded(child: valueText)
+            else
+              valueText,
+          ],
+        );
+      },
     );
   }
 }

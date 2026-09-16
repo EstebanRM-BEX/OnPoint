@@ -77,9 +77,11 @@ class PaqueteInfoScreen extends StatelessWidget {
                                         size: 16,
                                       ),
                                       const SizedBox(width: 5),
-                                      ProductInfoRow(
-                                        title: 'Código de barras: ',
-                                        value: '${paquete?.codigoBarras}',
+                                      Expanded(
+                                        child: ProductInfoRow(
+                                          title: 'Código de barras: ',
+                                          value: '${paquete?.codigoBarras}',
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -92,9 +94,11 @@ class PaqueteInfoScreen extends StatelessWidget {
                                         size: 16,
                                       ),
                                       const SizedBox(width: 5),
-                                      ProductInfoRow(
-                                        title: 'Total de productos: ',
-                                        value: '${paquete?.numeroProductos}',
+                                      Expanded(
+                                        child: ProductInfoRow(
+                                          title: 'Total de productos: ',
+                                          value: '${paquete?.numeroProductos}',
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -107,9 +111,11 @@ class PaqueteInfoScreen extends StatelessWidget {
                                         size: 16,
                                       ),
                                       const SizedBox(width: 5),
-                                      ProductInfoRow(
-                                        title: 'Total de unidades: ',
-                                        value: '${paquete?.totalProductos}',
+                                      Expanded(
+                                        child: ProductInfoRow(
+                                          title: 'Total de unidades: ',
+                                          value: '${paquete?.totalProductos}',
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -122,9 +128,11 @@ class PaqueteInfoScreen extends StatelessWidget {
                                         size: 16,
                                       ),
                                       const SizedBox(width: 5),
-                                      ProductInfoRow(
-                                        title: 'Paquete certificado: ',
-                                        value: '${paquete?.isCertificate}',
+                                      Expanded(
+                                        child: ProductInfoRow(
+                                          title: 'Paquete certificado: ',
+                                          value: '${paquete?.isCertificate}',
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -137,9 +145,11 @@ class PaqueteInfoScreen extends StatelessWidget {
                                         size: 16,
                                       ),
                                       const SizedBox(width: 5),
-                                      ProductInfoRow(
-                                        title: 'Almacen: ',
-                                        value: '${paquete?.nombreAlmacen}',
+                                      Expanded(
+                                        child: ProductInfoRow(
+                                          title: 'Almacen: ',
+                                          value: '${paquete?.nombreAlmacen}',
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -153,9 +163,11 @@ class PaqueteInfoScreen extends StatelessWidget {
                                       ),
                                       const SizedBox(width: 5),
 
-                                      ProductInfoRow(
-                                        title: 'Fecha de empaquetado: ',
-                                        value: '${paquete?.fechaEmpaquetado}',
+                                      Expanded(
+                                        child: ProductInfoRow(
+                                          title: 'Fecha de empaquetado: ',
+                                          value: '${paquete?.fechaEmpaquetado}',
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -209,9 +221,11 @@ class PaqueteInfoScreen extends StatelessWidget {
                                                 size: 16,
                                               ),
                                               const SizedBox(width: 5),
-                                              ProductInfoRow(
-                                                title: 'Cantidad: ',
-                                                value: '${producto?.cantidad}',
+                                              Expanded(
+                                                child: ProductInfoRow(
+                                                  title: 'Cantidad: ',
+                                                  value: '${producto?.cantidad}',
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -224,12 +238,14 @@ class PaqueteInfoScreen extends StatelessWidget {
                                                 size: 16,
                                               ),
                                               const SizedBox(width: 5),
-                                              ProductInfoRow(
-                                                title: 'Unidad medida: ',
-                                                value: producto?.unidadMedida ==
-                                                        false
-                                                    ? 'Sin unidad medida'
-                                                    : '${producto?.unidadMedida}',
+                                              Expanded(
+                                                child: ProductInfoRow(
+                                                  title: 'Unidad medida: ',
+                                                  value: producto?.unidadMedida ==
+                                                          false
+                                                      ? 'Sin unidad medida'
+                                                      : '${producto?.unidadMedida}',
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -242,12 +258,14 @@ class PaqueteInfoScreen extends StatelessWidget {
                                                 size: 16,
                                               ),
                                               const SizedBox(width: 5),
-                                              ProductInfoRow(
-                                                title: 'Barcode: ',
-                                                value: producto?.codigoBarras ==
-                                                        false
-                                                    ? 'Sin barcode'
-                                                    : '${producto?.codigoBarras}',
+                                              Expanded(
+                                                child: ProductInfoRow(
+                                                  title: 'Barcode: ',
+                                                  value: producto?.codigoBarras ==
+                                                          false
+                                                      ? 'Sin barcode'
+                                                      : '${producto?.codigoBarras}',
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -263,11 +281,13 @@ class PaqueteInfoScreen extends StatelessWidget {
                                                   size: 16,
                                                 ),
                                                 const SizedBox(width: 5),
-                                                ProductInfoRow(
-                                                  title: 'Lote: ',
-                                                  value: producto?.lote == false
-                                                      ? 'Sin lote'
-                                                      : '${producto?.lote}',
+                                                Expanded(
+                                                  child: ProductInfoRow(
+                                                    title: 'Lote: ',
+                                                    value: producto?.lote == false
+                                                        ? 'Sin lote'
+                                                        : '${producto?.lote}',
+                                                  ),
                                                 ),
                                               ],
                                             ),
@@ -310,11 +330,13 @@ class PaqueteInfoScreen extends StatelessWidget {
                                                 size: 16,
                                               ),
                                               const SizedBox(width: 5),
-                                              ProductInfoRow(
-                                                title: '',
-                                                value: producto?.pedido == false
-                                                    ? 'Sin pedido'
-                                                    : '${producto?.pedido}',
+                                              Expanded(
+                                                child: ProductInfoRow(
+                                                  title: '',
+                                                  value: producto?.pedido == false
+                                                      ? 'Sin pedido'
+                                                      : '${producto?.pedido}',
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -326,11 +348,13 @@ class PaqueteInfoScreen extends StatelessWidget {
                                                 size: 15,
                                               ),
                                               const SizedBox(width: 5),
-                                              ProductInfoRow(
-                                                title: 'Doc. origin: ',
-                                                value: producto?.origin == false
-                                                    ? 'Sin origen'
-                                                    : '${producto?.origin}',
+                                              Expanded(
+                                                child: ProductInfoRow(
+                                                  title: 'Doc. origin: ',
+                                                  value: producto?.origin == false
+                                                      ? 'Sin origen'
+                                                      : '${producto?.origin}',
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -342,12 +366,14 @@ class PaqueteInfoScreen extends StatelessWidget {
                                                 size: 16,
                                               ),
                                               const SizedBox(width: 5),
-                                              ProductInfoRow(
-                                                title: 'Numero de caja: ',
-                                                value: producto?.numeroCaja ==
-                                                        false
-                                                    ? 'Sin numero de caja'
-                                                    : '${producto?.numeroCaja}',
+                                              Expanded(
+                                                child: ProductInfoRow(
+                                                  title: 'Numero de caja: ',
+                                                  value: producto?.numeroCaja ==
+                                                          false
+                                                      ? 'Sin numero de caja'
+                                                      : '${producto?.numeroCaja}',
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -359,12 +385,14 @@ class PaqueteInfoScreen extends StatelessWidget {
                                                 size: 16,
                                               ),
                                               const SizedBox(width: 5),
-                                              ProductInfoRow(
-                                                title: 'Empaquetado por: ',
-                                                value: producto?.operador ==
-                                                        false
-                                                    ? 'Sin operador'
-                                                    : '${producto?.operador}',
+                                              Expanded(
+                                                child: ProductInfoRow(
+                                                  title: 'Empaquetado por: ',
+                                                  value: producto?.operador ==
+                                                          false
+                                                      ? 'Sin operador'
+                                                      : '${producto?.operador}',
+                                                ),
                                               ),
                                             ],
                                           ),

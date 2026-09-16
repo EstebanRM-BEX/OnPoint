@@ -95,8 +95,24 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
               current is InfoRapidaInitial ||
               current is InitInfoRapidaLoading ||
               current is InitInfoRapidaSuccess ||
-              current is InitInfoRapidaFailure,
+              current is InitInfoRapidaFailure ||
+              // El "Buscando información..." también es overlay: con
+              // showDialog+Navigator.pop se quedaba pegado para siempre si el
+              // estado final no llegaba a este listener (bloc recreado en un
+              // rebuild de la ruta), y no había forma de cerrarlo a mano
+              // (barrierDismissible: false + PopScope(canPop: false)).
+              current is InfoRapidaLoading ||
+              current is InfoRapidaLoaded ||
+              current is InfoRapidaError ||
+              current is DeviceNotAuthorized,
           builder: (context, state) {
+            if (state is InfoRapidaLoading) {
+              return const Positioned.fill(
+                child: AbsorbPointer(
+                  child: DialogLoading(message: 'Buscando información...'),
+                ),
+              );
+            }
             // InfoRapidaInitial (el estado de arranque del bloc, antes de
             // que initState() alcance a disparar InitInfoRapidaEvent en el
             // siguiente frame) también cuenta como "todavía cargando" — si
@@ -141,9 +157,6 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
         }
 
         if (state is DeviceNotAuthorized) {
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context); // Cierra el loader si hubo error
-          }
           showDialog(
             context: context,
             barrierDismissible: false,
@@ -160,9 +173,6 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
             duration: Duration(seconds: 5),
           );
         } else if (state is InfoRapidaError) {
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context); // Cierra el loader si hubo error
-          }
           Get.snackbar(
             '360 Software Informa',
             'Información no encontrada',
@@ -174,18 +184,7 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
           );
           _vibrationService.vibrate();
           _audioService.playErrorSound();
-        } else if (state is InfoRapidaLoading) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) =>
-                const DialogLoading(message: "Buscando información..."),
-          );
         } else if (state is InfoRapidaLoaded) {
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context); // Cierra el loader
-          }
-
           // ✅ CORRECCIÓN 2: Validación de Nulidad
           // Si el resultado es nulo, detenemos la ejecución para evitar el crash.
           if (state.infoRapidaResult == null) {

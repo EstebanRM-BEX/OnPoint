@@ -860,19 +860,17 @@ class AppRoutes {
       // búsqueda) en cada paso.
       infoRapida: (context) {
         final args = _args(context);
-        final bloc = _arg<InfoRapidaBloc>(args, 0) ??
-            InfoRapidaBloc(userBloc: context.read<UserBloc>());
-        return BlocProvider<InfoRapidaBloc>.value(
-          value: bloc,
+        final bloc = _arg<InfoRapidaBloc>(args, 0);
+        return InfoRapidaScope(
+          bloc: bloc,
           child: const InfoRapidaScreen(),
         );
       },
       productInfo: (context) {
         final args = _args(context);
-        final bloc = _arg<InfoRapidaBloc>(args, 0) ??
-            InfoRapidaBloc(userBloc: context.read<UserBloc>());
-        return BlocProvider<InfoRapidaBloc>.value(
-          value: bloc,
+        final bloc = _arg<InfoRapidaBloc>(args, 0);
+        return InfoRapidaScope(
+          bloc: bloc,
           child: ProductInfoScreen(),
         );
       },
@@ -880,10 +878,9 @@ class AppRoutes {
       locationInfo: (context) {
         final args = _args(context);
         final info = _arg<InfoRapidaResult>(args, 0);
-        final bloc = _arg<InfoRapidaBloc>(args, 1) ??
-            InfoRapidaBloc(userBloc: context.read<UserBloc>());
-        return BlocProvider<InfoRapidaBloc>.value(
-          value: bloc,
+        final bloc = _arg<InfoRapidaBloc>(args, 1);
+        return InfoRapidaScope(
+          bloc: bloc,
           child: LocationInfoScreen(infoRapidaResult: info),
         );
       },
@@ -891,20 +888,18 @@ class AppRoutes {
       paqueteInfo: (context) {
         final args = _args(context);
         final info = _arg<InfoRapidaResult>(args, 0);
-        final bloc = _arg<InfoRapidaBloc>(args, 1) ??
-            InfoRapidaBloc(userBloc: context.read<UserBloc>());
-        return BlocProvider<InfoRapidaBloc>.value(
-          value: bloc,
+        final bloc = _arg<InfoRapidaBloc>(args, 1);
+        return InfoRapidaScope(
+          bloc: bloc,
           child: PaqueteInfoScreen(infoRapidaResult: info),
         );
       },
 
       createMassTransfer: (context) {
         final args = _args(context);
-        final bloc = _arg<InfoRapidaBloc>(args, 0) ??
-            InfoRapidaBloc(userBloc: context.read<UserBloc>());
-        return BlocProvider<InfoRapidaBloc>.value(
-          value: bloc,
+        final bloc = _arg<InfoRapidaBloc>(args, 0);
+        return InfoRapidaScope(
+          bloc: bloc,
           child: const CreateMassTrasferScreen(),
         );
       },
@@ -912,10 +907,9 @@ class AppRoutes {
       searchLocationCreateMassTransfer: (context) {
         final args = _args(context);
         final isLocationDest = _arg<bool>(args, 0) ?? false;
-        final bloc = _arg<InfoRapidaBloc>(args, 1) ??
-            InfoRapidaBloc(userBloc: context.read<UserBloc>());
-        return BlocProvider<InfoRapidaBloc>.value(
-          value: bloc,
+        final bloc = _arg<InfoRapidaBloc>(args, 1);
+        return InfoRapidaScope(
+          bloc: bloc,
           child: SearchLocationCreateMassTransfercreen(
             isLocationDest: isLocationDest,
           ),
@@ -926,15 +920,11 @@ class AppRoutes {
         final args = _args(context);
         final info = _arg<InfoResult>(args, 0);
         final ubi = _arg<Ubicacion>(args, 1);
-        final infoRapidaBloc = _arg<InfoRapidaBloc>(args, 2) ??
-            InfoRapidaBloc(userBloc: context.read<UserBloc>());
-        final transferInfoBloc = _arg<TransferInfoBloc>(args, 3) ??
-            TransferInfoBloc();
-        return MultiBlocProvider(
-          providers: [
-            BlocProvider<InfoRapidaBloc>.value(value: infoRapidaBloc),
-            BlocProvider<TransferInfoBloc>.value(value: transferInfoBloc),
-          ],
+        final infoRapidaBloc = _arg<InfoRapidaBloc>(args, 2);
+        final transferInfoBloc = _arg<TransferInfoBloc>(args, 3);
+        return TransferInfoScope(
+          infoRapidaBloc: infoRapidaBloc,
+          transferInfoBloc: transferInfoBloc,
           child: TransferInfoScreen(infoRapidaResult: info, ubicacion: ubi),
         );
       },
@@ -994,19 +984,17 @@ class AppRoutes {
 
       listLocation: (context) {
         final args = _args(context);
-        final bloc = _arg<InfoRapidaBloc>(args, 0) ??
-            InfoRapidaBloc(userBloc: context.read<UserBloc>());
-        return BlocProvider<InfoRapidaBloc>.value(
-          value: bloc,
+        final bloc = _arg<InfoRapidaBloc>(args, 0);
+        return InfoRapidaScope(
+          bloc: bloc,
           child: ListLocationsScreen(),
         );
       },
       listProduct: (context) {
         final args = _args(context);
-        final bloc = _arg<InfoRapidaBloc>(args, 0) ??
-            InfoRapidaBloc(userBloc: context.read<UserBloc>());
-        return BlocProvider<InfoRapidaBloc>.value(
-          value: bloc,
+        final bloc = _arg<InfoRapidaBloc>(args, 0);
+        return InfoRapidaScope(
+          bloc: bloc,
           child: ListProductsScreen(),
         );
       },
@@ -1015,15 +1003,11 @@ class AppRoutes {
         final args = _args(context);
         final info = _arg<InfoResult>(args, 0);
         final ubi = _arg<Ubicacion>(args, 1);
-        final infoRapidaBloc = _arg<InfoRapidaBloc>(args, 2) ??
-            InfoRapidaBloc(userBloc: context.read<UserBloc>());
-        final transferInfoBloc = _arg<TransferInfoBloc>(args, 3) ??
-            TransferInfoBloc();
-        return MultiBlocProvider(
-          providers: [
-            BlocProvider<InfoRapidaBloc>.value(value: infoRapidaBloc),
-            BlocProvider<TransferInfoBloc>.value(value: transferInfoBloc),
-          ],
+        final infoRapidaBloc = _arg<InfoRapidaBloc>(args, 2);
+        final transferInfoBloc = _arg<TransferInfoBloc>(args, 3);
+        return TransferInfoScope(
+          infoRapidaBloc: infoRapidaBloc,
+          transferInfoBloc: transferInfoBloc,
           child: LocationDestTransfInfoScreen(
             infoRapidaResult: info,
             ubicacion: ubi,
@@ -1054,5 +1038,92 @@ class AppRoutes {
       almacenesDevoluciones: (_) => const AlmacenesDevolucionesScreen(),
       ubicacionesDevoluciones: (_) => LocationDestDevolucionesScreen(),
     };
+  }
+}
+
+/// Mantiene viva UNA sola instancia de [InfoRapidaBloc] por entrada al módulo.
+///
+/// El builder de una ruta puede volver a ejecutarse (rebuild de la página), y
+/// hacerlo con `BlocProvider.value(value: InfoRapidaBloc(...))` creaba un bloc
+/// NUEVO en cada pasada: la pantalla quedaba escuchando a un bloc distinto del
+/// que estaba resolviendo la búsqueda en curso, así que el estado final no
+/// llegaba nunca y el loader de "Buscando información..." se quedaba pegado.
+/// Al vivir en el State, la instancia sobrevive a esos rebuilds.
+///
+/// No se cierra al descartarse: la navegación interna del módulo es por
+/// `pushReplacementNamed` pasando el mismo bloc como argumento, así que la
+/// pantalla siguiente lo sigue usando (mismo ciclo de vida que antes).
+class InfoRapidaScope extends StatefulWidget {
+  const InfoRapidaScope({super.key, required this.bloc, required this.child});
+
+  /// Bloc que llegó por argumento de ruta; si es null se crea uno acá.
+  final InfoRapidaBloc? bloc;
+  final Widget child;
+
+  @override
+  State<InfoRapidaScope> createState() => _InfoRapidaScopeState();
+}
+
+class _InfoRapidaScopeState extends State<InfoRapidaScope> {
+  late final InfoRapidaBloc _bloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _bloc = widget.bloc ?? InfoRapidaBloc(userBloc: context.read<UserBloc>());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider<InfoRapidaBloc>.value(value: _bloc, child: widget.child);
+  }
+}
+
+/// Igual que [InfoRapidaScope], pero para las rutas del sub-flujo de
+/// transferencia, que necesitan el [InfoRapidaBloc] y el [TransferInfoBloc].
+///
+/// Importa sobre todo acá: a 'transfer-info' se entra desde product-info sin
+/// TransferInfoBloc en los argumentos, así que el bloc se crea en esta ruta.
+/// Creándolo dentro del builder, un rebuild de la página lo reemplazaba por
+/// otro y la pantalla dejaba de escuchar al que estaba enviando la
+/// transferencia: el diálogo de red (que es de GetX, no del bloc) aparecía y
+/// se cerraba igual, pero el resultado — éxito o error — no llegaba nunca.
+class TransferInfoScope extends StatefulWidget {
+  const TransferInfoScope({
+    super.key,
+    required this.infoRapidaBloc,
+    required this.transferInfoBloc,
+    required this.child,
+  });
+
+  final InfoRapidaBloc? infoRapidaBloc;
+  final TransferInfoBloc? transferInfoBloc;
+  final Widget child;
+
+  @override
+  State<TransferInfoScope> createState() => _TransferInfoScopeState();
+}
+
+class _TransferInfoScopeState extends State<TransferInfoScope> {
+  late final InfoRapidaBloc _infoRapidaBloc;
+  late final TransferInfoBloc _transferInfoBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _infoRapidaBloc =
+        widget.infoRapidaBloc ?? InfoRapidaBloc(userBloc: context.read<UserBloc>());
+    _transferInfoBloc = widget.transferInfoBloc ?? TransferInfoBloc();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<InfoRapidaBloc>.value(value: _infoRapidaBloc),
+        BlocProvider<TransferInfoBloc>.value(value: _transferInfoBloc),
+      ],
+      child: widget.child,
+    );
   }
 }
