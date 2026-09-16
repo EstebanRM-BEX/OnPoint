@@ -986,6 +986,120 @@ class ProductosPedidosRepository {
     }
   }
 
+  // Elimina los productos empacados (is_package=1) de un pedido cuyo paquete
+  // ya no viene en la API. Los separados sin empacar no se tocan.
+  Future<int> deletePackedProductsNotInPackages(
+    int pedidoId,
+    List<int> keepPackageIds,
+    String type,
+  ) async {
+    try {
+      Database db = await DataBaseSqlite().getDatabaseInstance();
+      final notIn = keepPackageIds.isEmpty
+          ? ''
+          : ' AND (${ProductosPedidosTable.columnIdPackage} IS NULL OR ${ProductosPedidosTable.columnIdPackage} NOT IN (${List.filled(keepPackageIds.length, '?').join(',')}))';
+      final int result = await db.delete(
+        ProductosPedidosTable.tableName,
+        where:
+            '${ProductosPedidosTable.columnPedidoId} = ? AND ${ProductosPedidosTable.columnType} = ? AND ${ProductosPedidosTable.columnIsPackage} = 1$notIn',
+        whereArgs: [pedidoId, type, ...keepPackageIds],
+      );
+      if (result > 0) {
+        debugPrint('🗑️ Productos empacados obsoletos eliminados del pedido $pedidoId: $result');
+      }
+      return result;
+    } catch (e, s) {
+      debugPrint('Error deletePackedProductsNotInPackages: $e ==> $s');
+      return 0;
+    }
+  }
+
+  /// Devuelve a "por hacer" la fila empacada `packedRowId` tras desempacarla
+  /// en el backend. Todo en una transacción.
+  ///
+  /// `unpackedQty` es la cantidad desempacada (`quantity` de la respuesta).
+  ///  - Si hay fila en "por hacer" del mismo move (ej. remanente de 3 tras
+  ///    empacar 7 de 10), se le suma (3 + 7 = 10) y se borra la empacada.
+  ///  - Si no, la fila empacada se revierte a "por hacer" con esa cantidad.
+  Future<void> restoreUnpackedProduct({
+    required int pedidoId,
+    required int idMove,
+    required int packedRowId,
+    required double unpackedQty,
+    required String type,
+  }) async {
+    const t = ProductosPedidosTable.tableName;
+    Database db = await DataBaseSqlite().getDatabaseInstance();
+
+    await db.transaction((txn) async {
+      final pendingRows = await txn.query(
+        t,
+        columns: [
+          ProductosPedidosTable.columnId,
+          ProductosPedidosTable.columnQuantity,
+        ],
+        where:
+            '${ProductosPedidosTable.columnPedidoId} = ? AND '
+            '${ProductosPedidosTable.columnIdMove} = ? AND '
+            '${ProductosPedidosTable.columnType} = ? AND '
+            '${ProductosPedidosTable.columnId} != ? AND '
+            '(${ProductosPedidosTable.columnIsSeparate} IS NULL OR ${ProductosPedidosTable.columnIsSeparate} = 0) AND '
+            '(${ProductosPedidosTable.columnIsPackage} IS NULL OR ${ProductosPedidosTable.columnIsPackage} = 0)',
+        whereArgs: [pedidoId, idMove, type, packedRowId],
+        orderBy: ProductosPedidosTable.columnId,
+        limit: 1,
+      );
+
+      debugPrint(
+        '↩️ restoreUnpackedProduct idMove=$idMove unpackedQty=$unpackedQty '
+        'remanente=${pendingRows.isNotEmpty}',
+      );
+
+      if (pendingRows.isNotEmpty) {
+        final pending = pendingRows.first;
+        final currentQty =
+            (pending[ProductosPedidosTable.columnQuantity] as num?)
+                ?.toDouble() ??
+            0.0;
+        await txn.update(
+          t,
+          {ProductosPedidosTable.columnQuantity: currentQty + unpackedQty},
+          where: '${ProductosPedidosTable.columnId} = ?',
+          whereArgs: [pending[ProductosPedidosTable.columnId]],
+        );
+        await txn.delete(
+          t,
+          where: '${ProductosPedidosTable.columnId} = ?',
+          whereArgs: [packedRowId],
+        );
+        return;
+      }
+
+      // Sin remanente: la fila empacada vuelve sola a "por hacer".
+      // is_product_split se conserva; is_selected en 0 igual que un remanente
+      // de split.
+      await txn.update(
+        t,
+        {
+          ProductosPedidosTable.columnQuantity: unpackedQty,
+          ProductosPedidosTable.columnIsSeparate: null,
+          ProductosPedidosTable.columnIsPackage: null,
+          ProductosPedidosTable.columnIsCertificate: null,
+          ProductosPedidosTable.columnIsLocationIsOk: null,
+          ProductosPedidosTable.columnQuantitySeparate: null,
+          ProductosPedidosTable.columnIsSelected: 0,
+          ProductosPedidosTable.columnProductIsOk: null,
+          ProductosPedidosTable.columnIsQuantityIsOk: null,
+          ProductosPedidosTable.columnPackageName: null,
+          ProductosPedidosTable.columnIdPackage: null,
+          ProductosPedidosTable.columnObservation: null,
+        },
+        where: '${ProductosPedidosTable.columnId} = ?',
+        whereArgs: [packedRowId],
+      );
+    });
+  }
+
   // Suma la cantidad separada de todos los rows ya procesados (is_separate=1) de un producto.
   // Se usa para reconciliar la cantidad pendiente cuando llegan datos frescos de la API.
   Future<double> getTotalSeparatedQtyByMove(

@@ -315,4 +315,32 @@ class PackagesRepository {
       return 0;
     }
   }
+
+  // Elimina los paquetes de un pedido cuyo id ya no viene en la API
+  // (p. ej. desempacados desde Odoo web u otro dispositivo).
+  Future<int> deletePackagesNotInList(
+    int pedidoId,
+    List<int> keepIds,
+    String type,
+  ) async {
+    try {
+      Database db = await DataBaseSqlite().getDatabaseInstance();
+      final notIn = keepIds.isEmpty
+          ? ''
+          : ' AND ${PackagesTable.columnId} NOT IN (${List.filled(keepIds.length, '?').join(',')})';
+      final int result = await db.delete(
+        PackagesTable.tableName,
+        where:
+            '${PackagesTable.columnPedidoId} = ? AND ${PackagesTable.columnType} = ?$notIn',
+        whereArgs: [pedidoId, type, ...keepIds],
+      );
+      if (result > 0) {
+        debugPrint('🗑️ Paquetes obsoletos eliminados del pedido $pedidoId: $result');
+      }
+      return result;
+    } catch (e, s) {
+      debugPrint('Error deletePackagesNotInList: $e ==> $s');
+      return 0;
+    }
+  }
 }

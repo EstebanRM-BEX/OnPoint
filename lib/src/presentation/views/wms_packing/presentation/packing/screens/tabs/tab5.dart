@@ -679,13 +679,14 @@ class _Tab5ScreenState extends State<Tab5Screen> with LoadingDialogMixin {
                                                                   color:
                                                                       black)),
                                                     ),
-                                                    if (product.barcode != null)
+                                                    // Se puede desempacar cualquier producto mientras el pedido
+                                                    // no esté terminado; el bloc deja en "por hacer" la
+                                                    // cantidad desempacada (quantity de la respuesta).
+                                                    if (bloc.currentPedidoPack
+                                                            .isTerminate !=
+                                                        1)
                                                       GestureDetector(
                                                         onTap: () {
-                                                          // Un producto dividido deja un remanente en "por hacer" con
-                                                          // el mismo idMove; antes eso bloqueaba el desempaque. Ahora se
-                                                          // permite: el bloc suma la cantidad empacada al remanente
-                                                          // (findAndAddQuantityAndDelete) en vez de dejar dos filas.
                                                           //mensaje de confirmacion de desempacar el
                                                           showDialog(
                                                             context: context,

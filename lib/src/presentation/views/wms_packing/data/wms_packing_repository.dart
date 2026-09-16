@@ -20,6 +20,7 @@ import 'package:wms_app/src/presentation/views/wms_packing/models/response_send_
 import 'package:wms_app/src/presentation/views/wms_packing/models/sen_pack_request.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/sen_packing_request.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/un_pack_request.dart';
+import 'package:wms_app/src/presentation/views/wms_packing/models/un_pack_response_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/un_packing_request.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/unpacking_response_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/assign_location_pack_request.dart';
@@ -914,19 +915,18 @@ class WmsPackingRepository {
     return UnPacking(); // Retornamos un objeto vacío en caso de error de red
   }
 
-  Future<UnPacking> unPack(UnPackRequest request) async {
+  Future<UnPackResponse> unPack(UnPackRequest request) async {
     // Verificar si el dispositivo tiene acceso a Internet
     var connectivityResult = await Connectivity().checkConnectivity();
 
     if (connectivityResult.isOffline) {
       debugPrint("Error: No hay conexión a Internet.");
-      return UnPacking(); // Si no hay conexión, terminamos la ejecución
+      return UnPackResponse(msg: 'No hay conexión a internet');
     }
 
     try {
       var response = await ApiRequestService().postPacking(
-        endpoint:
-            'transferencias/unpacking', // Cambiado para que sea el endpoint correspondiente
+        endpoint: 'transferencias/unpacking',
         body: {
           "params": {
             "id_transferencia": request.idTransferencia,
@@ -939,39 +939,16 @@ class WmsPackingRepository {
         isLoadinDialog: true,
       );
       if (response.statusCode < 400) {
-        // Decodifica la respuesta JSON a un mapa
-        Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-
-        // Verifica si la respuesta contiene la clave 'result' y convierte la lista correctamente
-        var resultData = jsonResponse['result'];
-
-        return UnPacking(
-          jsonrpc: jsonResponse['jsonrpc'],
-          id: jsonResponse['id'],
-          result: UnPackingResult(
-            code: resultData['code'],
-            result: resultData['result'] != null
-                ? List<UnPackingElement>.from(
-                    resultData['result'].map(
-                      (x) => UnPackingElement.fromMap(x),
-                    ),
-                  )
-                : [], // Si no hay elementos en 'result', se retorna una lista vacía
-          ),
-        );
-      } else {
-        // Manejo de error si la respuesta no es exitosa
-        // ...
+        return UnPackResponse.fromMap(jsonDecode(response.body));
       }
     } on SocketException catch (e) {
       debugPrint('Error de red: $e');
-      return UnPacking(); // Retornamos un objeto vacío en caso de error de red
+      return UnPackResponse(msg: 'Error de red');
     } catch (e, s) {
-      // Manejo de otros errores
       debugPrint('Error en unPacking: $e, $s');
-      return UnPacking(); // Retornamos un objeto vacío en caso de error de red
+      return UnPackResponse(msg: e.toString());
     }
-    return UnPacking(); // Retornamos un objeto vacío en caso de error de red
+    return UnPackResponse();
   }
 
   //endpoint para enviar los productos dentro del paquete anteriormente creado

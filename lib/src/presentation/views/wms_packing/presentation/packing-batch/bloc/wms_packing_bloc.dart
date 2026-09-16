@@ -1460,6 +1460,29 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
     }
   }
 
+  /// Para cada pedido de la API, elimina de la BD los paquetes (y sus productos
+  /// empacados) que ya no vienen en `lista_paquetes`. Sin esto la sincronización
+  /// solo hace upsert y siguen apareciendo paquetes desempacados en el backend.
+  Future<void> _cleanStalePackages(List<PedidoPacking> apiPedidos) async {
+    try {
+      for (final apiPedido in apiPedidos) {
+        if (apiPedido.id == null || apiPedido.listaPaquetes == null) continue;
+
+        final keepIds = apiPedido.listaPaquetes!
+            .map((p) => p.id)
+            .whereType<int>()
+            .toList();
+
+        await db.productosPedidosRepository.deletePackedProductsNotInPackages(
+            apiPedido.id!, keepIds, 'packing-batch');
+        await db.packagesRepository
+            .deletePackagesNotInList(apiPedido.id!, keepIds, 'packing-batch');
+      }
+    } catch (e, s) {
+      debugPrint('Error en _cleanStalePackages: $e, $s');
+    }
+  }
+
   void _onLoadAllPackingEvent(
       LoadAllPackingEvent event, Emitter<WmsPackingState> emit) async {
     emit(WmsPackingWMSLoading());
@@ -1523,6 +1546,11 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
               'otherBarcodes    Packing : ${otherBarcodesToInsert.length}');
           debugPrint('packagesToInsert Packing : ${packagesToInsert.length}');
           debugPrint('listOfBatchs origin : ${originsIterable.length}');
+
+          // Eliminar paquetes que ya no vienen en la API. Va ANTES de
+          // insertar: insertProductosPedidos hace match por idMove y no
+          // resetea is_package.
+          await _cleanStalePackages(pedidosToInsert);
 
           // Enviar la lista agrupada de productos de un batch para packing
           await DataBaseSqlite()

@@ -723,268 +723,104 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     Emitter<PackingPedidoState> emit,
   ) async {
     try {
+      // Un pedido terminado ya se validó en el backend: no se desempaca.
+      if (currentPedidoPack.isTerminate == 1) {
+        emit(
+          UnPackignError('El pedido ya está terminado, no se puede desempacar'),
+        );
+        return;
+      }
+
       emit(UnPackingLoading());
 
-      final responseUnPacking = await wmsPackingRepository.unPack(
-        event.request,
-      );
+      final response = await wmsPackingRepository.unPack(event.request);
 
-      if (responseUnPacking.result?.code == 200) {
-        //si es exitoso procedemos a desemapcar los productos
-        //recorremos todo los productos del request
-        for (var product in event.request.listItems) {
-          // ── Cantidad realmente empacada de esta fila ───────────────
-          // Localizamos la fila empacada exacta (mismo idMove + paquete). La
-          // cantidad empacada real vive en `quantity_separate`; pero algunos
-          // flujos (ej. empaque cluster por lote) NO lo setean y dejan la
-          // cantidad en `quantity`. Por eso usamos quantity_separate si es > 0
-          // y, si no, caemos a quantity. Nunca debe quedar en 0.
-          double packedQty = 0.0;
-          int? packedRowId;
-          for (final p in listOfProductos) {
-            // Si viene el PK exacto (fila gemela de un split), matcheamos por él;
-            // si no, por la clave compuesta (idMove + paquete + empacado).
-            final bool matches = event.rowId != null
-                ? p.id == event.rowId
-                : (p.idMove == product.idMove &&
-                      p.idPackage == event.request.idPaquete &&
-                      p.isPackage == 1);
-            if (matches) {
-              final double sep = (p.quantitySeparate is num)
-                  ? (p.quantitySeparate as num).toDouble()
-                  : 0.0;
-              final double qty = (p.quantity is num)
-                  ? (p.quantity as num).toDouble()
-                  : 0.0;
-              packedQty = sep > 0 ? sep : qty;
-              packedRowId = p.id;
-              break;
-            }
+      if (response.code != 200) {
+        emit(
+          UnPackignError(response.msg ?? 'Error al desempacar los productos'),
+        );
+        return;
+      }
+
+      // El backend ya desempacó: desde aquí solo sincronizamos SQLite.
+      bool localDesync = false;
+      for (final item in event.request.listItems) {
+        // Fila empacada exacta: por PK si viene (gemelas de un split), si no
+        // por clave compuesta (idMove + paquete + empacado).
+        ProductoPedido? packedRow;
+        for (final p in listOfProductos) {
+          final bool matches = event.rowId != null
+              ? p.id == event.rowId
+              : (p.idMove == item.idMove &&
+                    p.idPackage == event.request.idPaquete &&
+                    p.isPackage == 1);
+          if (matches) {
+            packedRow = p;
+            break;
           }
-
-          // CASO 1 — ya hay un remanente del mismo idMove en "por hacer":
-          // desempacar SUMA la cantidad empacada a ese remanente (ej: 4 + 6 = 10)
-          // y borra la fila empacada. Mismo criterio que al quitar un producto
-          // de un paquete temporal (findAndAddQuantityAndDelete).
-          final bool tieneRemanente = listOfProductosProgress.any(
-            (p) => p.idMove == product.idMove,
-          );
-          if (tieneRemanente) {
-            await db.productosPedidosRepository.findAndAddQuantityAndDelete(
-              event.productId,
-              product.idMove,
-              packedQty,
-              event.pedidoId,
-              'packing-pack',
-              certifiedRowId: event.rowId ?? packedRowId,
-            );
-            continue;
-          }
-
-          // CASO 2 — no hay remanente: esta fila vuelve sola a "por hacer".
-          // Igualamos `quantity` a la cantidad empacada para que aparezca solo
-          // lo que estaba en este paquete (ej. 13, o 6 si venía de un split que
-          // dejó quantity con el total viejo). Solo si packedQty > 0, para no
-          // pisar una cantidad válida con 0 cuando no se pudo determinar.
-          // Se hace ANTES de anular campos, mientras id_package aún apunta a
-          // este paquete (el WHERE filtra por id_package).
-          if (packedQty > 0) {
-            await db.productosPedidosRepository
-                .setFieldTableProductosPedidosUnPacking(
-                  event.pedidoId,
-                  event.productId,
-                  "quantity",
-                  packedQty,
-                  product.idMove,
-                  event.request.idPaquete,
-                  'packing-pack',
-                  rowId: event.rowId,
-                );
-          }
-
-          //actualizamos el estado del producto como no separado
-          await db.productosPedidosRepository
-              .setFieldTableProductosPedidosUnPacking(
-                event.pedidoId,
-                event.productId,
-                "is_separate",
-                null,
-                product.idMove,
-                event.request.idPaquete,
-                'packing-pack',
-                rowId: event.rowId,
-              );
-          //actualizamso el estado del producto como no empaquetado
-          await db.productosPedidosRepository
-              .setFieldTableProductosPedidosUnPacking(
-                event.pedidoId,
-                event.productId,
-                "is_package",
-                null,
-                product.idMove,
-                event.request.idPaquete,
-                'packing-pack',
-                rowId: event.rowId,
-              );
-
-          // NO anulamos `is_product_split`: si este producto se dividió en
-          // gemelas (ej. 6 y 4) empacadas juntas, al desempacar la primera
-          // debe quedar en "por hacer" conservando la marca de split, para que
-          // al desempacar la segunda gemela `findAndAddQuantityAndDelete`
-          // (que exige is_product_split=1) encuentre este remanente y sume.
-          // Para un producto no dividido ya venía en null, así que no cambia.
-
-          //actualizamos el estado del producto como no certificado
-          await db.productosPedidosRepository
-              .setFieldTableProductosPedidosUnPacking(
-                event.pedidoId,
-                event.productId,
-                "is_certificate",
-                null,
-                product.idMove,
-                event.request.idPaquete,
-                'packing-pack',
-                rowId: event.rowId,
-              );
-
-          //actualizamos el valor de is_location
-          await db.productosPedidosRepository
-              .setFieldTableProductosPedidosUnPacking(
-                event.pedidoId,
-                event.productId,
-                "is_location_is_ok",
-                null,
-                product.idMove,
-                event.request.idPaquete,
-                'packing-pack',
-                rowId: event.rowId,
-              );
-
-          //actualizamos el valor de quantity_separate
-          await db.productosPedidosRepository
-              .setFieldTableProductosPedidosUnPacking(
-                event.pedidoId,
-                event.productId,
-                "quantity_separate",
-                null,
-                product.idMove,
-                event.request.idPaquete,
-                'packing-pack',
-                rowId: event.rowId,
-              );
-
-          //actualizamos el valor de is_selected
-          // 0 (no null): así la fila revertida queda como un remanente de split
-          // genuino (igual que insertDuplicate) y `findAndAddQuantityAndDelete`
-          // —que exige is_selected=0— puede sumarle una gemela desempacada luego.
-          await db.productosPedidosRepository
-              .setFieldTableProductosPedidosUnPacking(
-                event.pedidoId,
-                event.productId,
-                "is_selected",
-                0,
-                product.idMove,
-                event.request.idPaquete,
-                'packing-pack',
-                rowId: event.rowId,
-              );
-
-          //actualizamos el valor de product_is_ok
-          await db.productosPedidosRepository
-              .setFieldTableProductosPedidosUnPacking(
-                event.pedidoId,
-                event.productId,
-                "product_is_ok",
-                null,
-                product.idMove,
-                event.request.idPaquete,
-                'packing-pack',
-                rowId: event.rowId,
-              );
-
-          //actualzamos el valor de is_quantity_is_ok
-          await db.productosPedidosRepository
-              .setFieldTableProductosPedidosUnPacking(
-                event.pedidoId,
-                event.productId,
-                "is_quantity_is_ok",
-                null,
-                product.idMove,
-                event.request.idPaquete,
-                'packing-pack',
-                rowId: event.rowId,
-              );
-
-          //actualizamos el valor de package_name
-          await db.productosPedidosRepository
-              .setFieldTableProductosPedidosUnPacking(
-                event.pedidoId,
-                event.productId,
-                "package_name",
-                null,
-                product.idMove,
-                event.request.idPaquete,
-                'packing-pack',
-                rowId: event.rowId,
-              );
-
-          //acrtualizamos el valor del id_paquete en el producto
-          await db.productosPedidosRepository
-              .setFieldTableProductosPedidosUnPacking(
-                event.pedidoId,
-                event.productId,
-                "id_package",
-                null,
-                product.idMove,
-                event.request.idPaquete,
-                'packing-pack',
-                rowId: event.rowId,
-              );
-
-          await db.productosPedidosRepository
-              .setFieldTableProductosPedidosUnPacking(
-                event.pedidoId,
-                event.productId,
-                "observation",
-                null,
-                product.idMove,
-                event.request.idPaquete,
-                'packing-pack',
-                rowId: event.rowId,
-              );
         }
 
+        if (packedRow?.id == null) {
+          localDesync = true;
+          continue;
+        }
+
+        // Cantidad desempacada: `quantity` de la respuesta. Fallback a la
+        // cantidad empacada local: quantity_separate si es > 0; algunos flujos
+        // (cluster por lote) no lo setean y la dejan en quantity.
+        double unpackedQty = response.moveFor(item.idMove)?.quantity ?? 0.0;
+        if (unpackedQty <= 0) {
+          final double sep = (packedRow!.quantitySeparate is num)
+              ? (packedRow.quantitySeparate as num).toDouble()
+              : 0.0;
+          final double qty = (packedRow.quantity is num)
+              ? (packedRow.quantity as num).toDouble()
+              : 0.0;
+          unpackedQty = sep > 0 ? sep : qty;
+        }
+
+        await db.productosPedidosRepository.restoreUnpackedProduct(
+          pedidoId: event.pedidoId,
+          idMove: item.idMove,
+          packedRowId: packedRow!.id!,
+          unpackedQty: unpackedQty,
+          type: 'packing-pack',
+        );
+      }
+
+      if (response.packageDeleted) {
+        // El backend eliminó el paquete (quedó vacío): lo borramos y
+        // corremos los consecutivos de los paquetes siguientes.
+        final paquete = await db.packagesRepository.getPackageById(
+          event.request.idPaquete,
+        );
+        await updateConsecutivePackages(
+          consecutivoReferencia:
+              (paquete?.consecutivo ?? event.consecutivoPackage ?? '')
+                  .toString(),
+          packages: packages,
+        );
+        await db.packagesRepository.deletePackageById(event.request.idPaquete);
+      } else {
         //restamos la cantidad de productos desempacados a un paquete
         await db.packagesRepository.updatePackageCantidad(
           event.request.idPaquete,
           event.request.listItems.length,
         );
+      }
 
-        //VERIFICAMOS CUANTOS PRODUCTOS TIENE EL PAQUETE
-        final response = await db.packagesRepository.getPackageById(
-          event.request.idPaquete,
+      //actualizamos la lista de productos
+      add(LoadPedidoAndProductsEvent(event.pedidoId));
+
+      if (localDesync) {
+        emit(
+          UnPackignError(
+            'El producto se desempacó en el servidor, pero no se encontró en '
+            'el dispositivo. Refresca la lista de pedidos.',
+          ),
         );
-        if (response != null) {
-          if (response.cantidadProductos == 0) {
-            //si la cantidad de productos es 0 eliminamos el paquete
-
-            await updateConsecutivePackages(
-              consecutivoReferencia: response.consecutivo ?? '',
-              packages: packages,
-            );
-
-            await db.packagesRepository.deletePackageById(
-              event.request.idPaquete,
-            );
-            //vamos actualizar los consecutivos
-          }
-        }
-
-        //actualizamos la lista de productos
-        add(LoadPedidoAndProductsEvent(event.pedidoId));
-        emit(UnPackignSuccess("Desempaquetado del producto exitoso"));
       } else {
-        emit(UnPackignError('Error al desempacar los productos'));
+        emit(UnPackignSuccess('Desempaquetado del producto exitoso'));
       }
     } catch (e, s) {
       debugPrint('Error en el  _onUnPackingEvent: $e, $s');
@@ -2269,6 +2105,12 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         // Paso 1: eliminar pedidos huérfanos (no presentes en la API)
         await _cleanOrphanPedidos(listOfPedidos);
 
+        // Paso 1b: eliminar paquetes que ya no vienen en la API. Va ANTES de
+        // insertar: insertProductosPedidos hace match por idMove y no resetea
+        // is_package, así que un producto desempacado en el backend quedaría
+        // marcado como empacado.
+        await _cleanStalePackages(listOfPedidos);
+
         if ((response.updateVersion ?? false) == true) {
           emit(NeedUpdateVersionState());
         }
@@ -2382,6 +2224,36 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       }
     } catch (e, s) {
       debugPrint('Error en _cleanOrphanPedidos: $e, $s');
+    }
+  }
+
+  /// Para cada pedido de la API, elimina de la BD los paquetes (y sus productos
+  /// empacados) que ya no vienen en `lista_paquetes`. Sin esto la sincronización
+  /// solo hace upsert y tab5 sigue mostrando paquetes desempacados en el backend.
+  Future<void> _cleanStalePackages(List<PedidoPackingResult> apiPedidos) async {
+    try {
+      for (final apiPedido in apiPedidos) {
+        // null = la API no mandó el campo; no asumimos que no hay paquetes.
+        if (apiPedido.id == null || apiPedido.listaPaquetes == null) continue;
+
+        final keepIds = apiPedido.listaPaquetes!
+            .map((p) => p.id)
+            .whereType<int>()
+            .toList();
+
+        await db.productosPedidosRepository.deletePackedProductsNotInPackages(
+          apiPedido.id!,
+          keepIds,
+          'packing-pack',
+        );
+        await db.packagesRepository.deletePackagesNotInList(
+          apiPedido.id!,
+          keepIds,
+          'packing-pack',
+        );
+      }
+    } catch (e, s) {
+      debugPrint('Error en _cleanStalePackages: $e, $s');
     }
   }
 
