@@ -22,6 +22,8 @@ import 'package:wms_app/src/presentation/views/recepcion/models/response_image_s
 import 'package:wms_app/src/presentation/views/recepcion/models/response_temp_ia_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/data/wms_packing_repository.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/lista_product_packing.dart';
+import 'package:wms_app/src/presentation/views/wms_packing/models/response_send_pack_model.dart';
+import 'package:wms_app/src/presentation/providers/db/packing/tbl_products_pedido/productos_pedido_pack_table.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/packing_response_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/response_packing_pedido_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/sen_pack_request.dart';
@@ -215,6 +217,8 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
 
     //*metodo para desempacar productos
     on<UnPackingEvent>(_onUnPackingEvent);
+
+    on<DeletePackageEvent>(_onDeletePackageEvent);
 
     //*metodo para empezar o terminar timepo
     on<StartOrStopTimePack>(_onStartOrStopTimeOrder);
@@ -717,6 +721,113 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
     }
   }
 
+
+  //metodo para eliminar un paquete completo
+  void _onDeletePackageEvent(
+    DeletePackageEvent event,
+    Emitter<PackingPedidoState> emit,
+  ) async {
+    try {
+      // Un pedido terminado ya se validó en el backend: no se toca.
+      if (currentPedidoPack.isTerminate == 1) {
+        emit(
+          DeletePackageError(
+            'El pedido ya está terminado, no se puede eliminar el paquete',
+          ),
+        );
+        return;
+      }
+
+      emit(DeletePackageLoading());
+
+      final response = await wmsPackingRepository.deletePack(
+        idTransferencia: event.idTransferencia,
+        idPaquete: event.idPaquete,
+      );
+
+      if (response.code != 200) {
+        emit(
+          DeletePackageError(response.msg ?? 'Error al eliminar el paquete'),
+        );
+        return;
+      }
+
+      // El backend ya borró el paquete: acá solo sincronizamos SQLite. Cada
+      // item vuelve a "por hacer" igual que al desempacar una línea suelta
+      // (la compatibilidad se busca por producto + lote + ubicación de origen,
+      // nunca por id_move).
+      // Filas ya usadas: dos items del mismo producto (distinto lote) no
+      // pueden resolver a la misma fila local.
+      final usadas = <int>{};
+
+      for (final item in response.items) {
+        final itemLote = '${item.raw['lote_id'] ?? 0}';
+        ProductoPedido? packedRow;
+        for (final p in listOfProductos) {
+          if (p.idPackage != event.idPaquete ||
+              p.isPackage != 1 ||
+              p.idProduct != item.idProduct ||
+              usadas.contains(p.id)) {
+            continue;
+          }
+          // Con lote, tiene que coincidir; sin lote, basta el producto.
+          if (itemLote != '0' && '${p.loteId ?? 0}' != itemLote) continue;
+          packedRow = p;
+          break;
+        }
+
+        if (packedRow?.id == null) {
+          debugPrint(
+            '⚠️ delete_pack: sin fila local para producto ${item.idProduct}',
+          );
+          continue;
+        }
+
+        usadas.add(packedRow!.id!);
+
+        final raw = item.raw;
+        await db.productosPedidosRepository.restoreUnpackedProduct(
+          pedidoId: event.pedidoId,
+          packedRowId: packedRow.id!,
+          idProduct: item.idProduct ?? packedRow.idProduct,
+          loteId: raw['lote_id'] ?? packedRow.loteId,
+          barcodeLocation:
+              (raw['barcode_location'] ?? packedRow.barcodeLocation)?.toString(),
+          apiQuantity: item.quantity ?? 0.0,
+          apiRow: _rowFromApiMove(raw),
+          type: 'packing-pack',
+        );
+      }
+
+      // Filas del paquete que la respuesta no mencionó: quedarían huérfanas.
+      await db.productosPedidosRepository.deleteProductsByPackageId(
+        event.idPaquete,
+        'packing-pack',
+      );
+
+      // Se corren los consecutivos de los paquetes siguientes y se borra.
+      final paquete = await db.packagesRepository.getPackageById(
+        event.idPaquete,
+      );
+      await updateConsecutivePackages(
+        consecutivoReferencia:
+            (paquete?.consecutivo ?? event.consecutivoPackage ?? '').toString(),
+        packages: packages,
+      );
+      await db.packagesRepository.deletePackageById(event.idPaquete);
+
+      add(LoadPedidoAndProductsEvent(event.pedidoId));
+      emit(
+        DeletePackageSuccess(
+          response.msg ?? 'Paquete eliminado correctamente',
+        ),
+      );
+    } catch (e, s) {
+      debugPrint('Error en el _onDeletePackageEvent: $e, $s');
+      emit(DeletePackageError(e.toString()));
+    }
+  }
+
   //metodo para desempacar productos
   void _onUnPackingEvent(
     UnPackingEvent event,
@@ -765,48 +876,98 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
           continue;
         }
 
-        // Cantidad desempacada: `quantity` de la respuesta. Fallback a la
-        // cantidad empacada local: quantity_separate si es > 0; algunos flujos
-        // (cluster por lote) no lo setean y la dejan en quantity.
-        double unpackedQty = response.moveFor(item.idMove)?.quantity ?? 0.0;
-        if (unpackedQty <= 0) {
-          final double sep = (packedRow!.quantitySeparate is num)
+        // `quantity` de la respuesta = total del move que queda por hacer.
+        // El move se busca por producto/lote/ubicación, NO por id_move: la
+        // fila empacada tiene el movimiento nuevo que creó Odoo al dividir y
+        // la respuesta trae el movimiento donde queda la cantidad pendiente.
+        // Si no viene, caemos a lo que había en local: la cantidad empacada
+        // (quantity_separate si es > 0; el empaque cluster por lote no lo
+        // setea y la deja en quantity) más lo que ya estuviera pendiente.
+        final move = response.moveForProduct(
+              idProduct: packedRow!.idProduct,
+              loteId: packedRow.loteId,
+              barcodeLocation: packedRow.barcodeLocation?.toString(),
+            ) ??
+            response.moveFor(item.idMove);
+        double apiQuantity = move?.quantity ?? 0.0;
+        if (apiQuantity <= 0) {
+          final double sep = (packedRow.quantitySeparate is num)
               ? (packedRow.quantitySeparate as num).toDouble()
               : 0.0;
           final double qty = (packedRow.quantity is num)
               ? (packedRow.quantity as num).toDouble()
               : 0.0;
-          unpackedQty = sep > 0 ? sep : qty;
+          final double pendienteLocal = listOfProductosProgress
+              .where((p) => p.idMove == item.idMove)
+              .fold<double>(
+                0.0,
+                (sum, p) => sum + ((p.quantity is num) ? p.quantity : 0.0),
+              );
+          apiQuantity = (sep > 0 ? sep : qty) + pendienteLocal;
         }
 
+        // La compatibilidad con "por hacer" se busca por producto + lote +
+        // ubicación de origen: al dividir, Odoo cambia el id_move, así que ese
+        // nunca coincide. Si no hay fila compatible, la de la respuesta entra
+        // como nueva.
+        final raw = move?.raw ?? const <String, dynamic>{};
         await db.productosPedidosRepository.restoreUnpackedProduct(
           pedidoId: event.pedidoId,
-          idMove: item.idMove,
-          packedRowId: packedRow!.id!,
-          unpackedQty: unpackedQty,
+          packedRowId: packedRow.id!,
+          idProduct: move?.idProduct ?? packedRow.idProduct,
+          loteId: raw['lote_id'] ?? packedRow.loteId,
+          barcodeLocation:
+              (raw['barcode_location'] ?? packedRow.barcodeLocation)?.toString(),
+          apiQuantity: apiQuantity,
+          apiRow: raw.isEmpty
+              ? _rowFromApiMove({
+                  'batch_id': packedRow.batchId,
+                  'pedido_id': packedRow.pedidoId,
+                  'id_move': packedRow.idMove,
+                  'id_product': packedRow.idProduct,
+                  'product_code': packedRow.productCode,
+                  'barcode': packedRow.barcode,
+                  'barcode_location': packedRow.barcodeLocation,
+                  'lote_id': packedRow.loteId,
+                  'tracking': packedRow.tracking,
+                  'unidades': packedRow.unidades,
+                })
+              : _rowFromApiMove(raw),
           type: 'packing-pack',
         );
       }
 
-      if (response.packageDeleted) {
-        // El backend eliminó el paquete (quedó vacío): lo borramos y
-        // corremos los consecutivos de los paquetes siguientes.
-        final paquete = await db.packagesRepository.getPackageById(
-          event.request.idPaquete,
-        );
+      //restamos la cantidad de productos desempacados a un paquete
+      await db.packagesRepository.updatePackageCantidad(
+        event.request.idPaquete,
+        event.request.listItems.length,
+      );
+
+      // El paquete se borra si el backend lo dice (item {code, msg} de la
+      // respuesta) o si ya no le queda ningún producto en el dispositivo.
+      final paquete = await db.packagesRepository.getPackageById(
+        event.request.idPaquete,
+      );
+      final bool sinProductos = (paquete?.cantidadProductos ?? 0) <= 0;
+      debugPrint(
+        '📦 unpacking paquete=${event.request.idPaquete} '
+        'backendEliminado=${response.packageDeleted} sinProductos=$sinProductos',
+      );
+
+      if (response.packageDeleted || sinProductos) {
         await updateConsecutivePackages(
           consecutivoReferencia:
               (paquete?.consecutivo ?? event.consecutivoPackage ?? '')
                   .toString(),
           packages: packages,
         );
-        await db.packagesRepository.deletePackageById(event.request.idPaquete);
-      } else {
-        //restamos la cantidad de productos desempacados a un paquete
-        await db.packagesRepository.updatePackageCantidad(
+        // Filas que todavía apuntaban al paquete: sin esto quedan huérfanas y
+        // tab5 las sigue listando bajo un paquete que ya no existe.
+        await db.productosPedidosRepository.deleteProductsByPackageId(
           event.request.idPaquete,
-          event.request.listItems.length,
+          'packing-pack',
         );
+        await db.packagesRepository.deletePackageById(event.request.idPaquete);
       }
 
       //actualizamos la lista de productos
@@ -994,6 +1155,15 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         listItems: listItems,
       );
 
+      // Contexto de la pantalla (tab3): `tipoEmpaque` es lo que decide si la
+      // petición va a send_cluster/pack o a send_transfer/pack.
+      debugPrint(
+        '📦➡️ tab3 crear paquete: tipoEmpaque=${event.tipoEmpaque} '
+        'packagingType=${event.packagingType.id} isSticker=${event.isSticker} '
+        'isCertificate=${event.isCertificate} peso=${event.peso} '
+        'productos=${event.productos.length}',
+      );
+
       // Antes estos dos argumentos posicionales estaban intercambiados en su
       // intención: `event.tipoEmpaque == 'cluster'` caía en isLoadingDialog
       // (ignorado, la API igual abría su propio diálogo) e isCluster quedaba
@@ -1036,12 +1206,38 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         1,
       );
 
-      await _actualizarProductoBatch(
-        db,
-        event.productos,
-        paquete,
-        event.isCertificate,
-      );
+      // Las filas del paquete son las que devuelve el backend: al dividir, la
+      // parte empacada viene con un id_move NUEVO (la copia que quedó en "por
+      // hacer" conserva el original). Por eso se borran las filas locales que
+      // se enviaron y se insertan las de la respuesta.
+      final itemsApi =
+          responsePacking.result?.result?[0].listItem ?? const <PackedMoveItem>[];
+      if (itemsApi.isNotEmpty) {
+        await db.productosPedidosRepository.replacePackedRowsFromApi(
+          localRowIds: event.productos
+              .map((p) => p.id)
+              .whereType<int>()
+              .toList(),
+          packedRows: itemsApi
+              .map(
+                (item) => _rowFromApiMove(
+                  item.raw,
+                  paquete: paquete,
+                  isCertificate: event.isCertificate,
+                ),
+              )
+              .toList(),
+          type: 'packing-pack',
+        );
+      } else {
+        // Respuesta sin list_item: se marca lo local como antes.
+        await _actualizarProductoBatch(
+          db,
+          event.productos,
+          paquete,
+          event.isCertificate,
+        );
+      }
 
       listOfProductsForPacking = [];
 
@@ -1052,6 +1248,72 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       debugPrint('Error en _onSetPackingsEvent: $e\n$s');
       emit(WmsPackingErrorState('Ocurrió un error inesperado'));
     }
+  }
+
+  /// Convierte un stock.move de la respuesta (empaque o desempaque) en las
+  /// columnas de tblproductos_pedidos.
+  ///
+  /// `paquete` viene solo para las filas que quedan dentro de una caja; sin él
+  /// la fila se arma como "por hacer".
+  Map<String, Object?> _rowFromApiMove(
+    Map<String, dynamic> raw, {
+    Paquete? paquete,
+    bool isCertificate = true,
+  }) {
+    int? refId(dynamic v) =>
+        (v is List && v.isNotEmpty && v.first is int) ? v.first as int : null;
+    String? refName(dynamic v) =>
+        (v is List && v.length > 1) ? '${v[1]}' : null;
+    double toDouble(dynamic v) =>
+        v is num ? v.toDouble() : double.tryParse('${v ?? ''}') ?? 0.0;
+
+    final quantity = toDouble(raw['quantity']);
+    final esEmpacada = paquete != null;
+
+    return {
+      ProductosPedidosTable.columnProductId: refName(raw['product_id']) ?? '',
+      ProductosPedidosTable.columnBatchId: raw['batch_id'],
+      ProductosPedidosTable.columnPedidoId: raw['pedido_id'],
+      ProductosPedidosTable.columnIdMove: raw['id_move'],
+      ProductosPedidosTable.columnIdProduct: raw['id_product'],
+      ProductosPedidosTable.columnProductCode: '${raw['product_code'] ?? ''}',
+      ProductosPedidosTable.columnBarcode: '${raw['barcode'] ?? ''}',
+      ProductosPedidosTable.columnLocationId: refName(raw['location_id']),
+      ProductosPedidosTable.columnIdLocation: refId(raw['location_id']),
+      ProductosPedidosTable.columnBarcodeLocation:
+          '${raw['barcode_location'] ?? ''}',
+      ProductosPedidosTable.columnLocationDestId:
+          refName(raw['location_dest_id']),
+      ProductosPedidosTable.columnIdLocationDest:
+          refId(raw['location_dest_id']),
+      ProductosPedidosTable.columnLoteId: raw['lote_id'],
+      ProductosPedidosTable.columnLotId: refName(raw['lot_id']) ?? '',
+      ProductosPedidosTable.columnExpireDate: '${raw['expire_date'] ?? ''}',
+      ProductosPedidosTable.columnTracking: '${raw['tracking'] ?? ''}',
+      ProductosPedidosTable.columnUnidades: '${raw['unidades'] ?? ''}',
+      ProductosPedidosTable.columnWeight: toDouble(raw['weight']),
+      ProductosPedidosTable.columnManejoTemperature:
+          raw['maneja_temperatura'] == true ? 1 : 0,
+      ProductosPedidosTable.columnTemperature: toDouble(raw['temperatura']),
+      ProductosPedidosTable.columnQuantity: quantity,
+      // Fila dentro de una caja vs fila de "por hacer".
+      ProductosPedidosTable.columnQuantitySeparate: esEmpacada ? quantity : null,
+      ProductosPedidosTable.columnIsSeparate: esEmpacada ? 1 : null,
+      ProductosPedidosTable.columnIsPackage: esEmpacada ? 1 : null,
+      ProductosPedidosTable.columnIsCertificate: esEmpacada
+          ? (isCertificate ? 1 : 0)
+          : null,
+      ProductosPedidosTable.columnIdPackage: paquete?.id,
+      ProductosPedidosTable.columnPackageName: paquete?.name,
+      ProductosPedidosTable.columnIsSelected: esEmpacada ? 1 : 0,
+      ProductosPedidosTable.columnIsQuantityIsOk: esEmpacada ? 1 : null,
+      ProductosPedidosTable.columnProductIsOk: esEmpacada ? 1 : null,
+      ProductosPedidosTable.columnIsLocationIsOk: esEmpacada ? 1 : null,
+      ProductosPedidosTable.columnObservation: esEmpacada
+          ? '${raw['observation'] ?? 'Sin novedad'}'
+          : null,
+      ProductosPedidosTable.columnTimeSeparate: raw['time'] ?? 0,
+    };
   }
 
   Future<void> _actualizarProductoBatch(
@@ -1862,8 +2124,17 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
   }
 
   void ordenarProducts() {
+    // location_id puede venir en null: las filas empacadas se guardan sin
+    // ubicación (insertProductosOnPackage) y al desempacarlas vuelven a "por
+    // hacer" así. Con el `!` eso reventaba todo _onLoadPedidoAndProductsEvent
+    // y la pantalla quedaba en error. Las sin ubicación van al final.
     listOfProductosProgress.sort((a, b) {
-      return a.locationId!.compareTo(b.locationId!);
+      final locA = a.locationId?.toString() ?? '';
+      final locB = b.locationId?.toString() ?? '';
+      if (locA.isEmpty && locB.isEmpty) return 0;
+      if (locA.isEmpty) return 1;
+      if (locB.isEmpty) return -1;
+      return locA.compareTo(locB);
     });
   }
 
@@ -2111,6 +2382,9 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
         // marcado como empacado.
         await _cleanStalePackages(listOfPedidos);
 
+        // Paso 1c: eliminar líneas cuyo movimiento ya no existe en la API.
+        await _cleanStaleProducts(listOfPedidos);
+
         if ((response.updateVersion ?? false) == true) {
           emit(NeedUpdateVersionState());
         }
@@ -2224,6 +2498,52 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       }
     } catch (e, s) {
       debugPrint('Error en _cleanOrphanPedidos: $e, $s');
+    }
+  }
+
+  /// Compara las líneas locales de cada pedido contra los movimientos que manda
+  /// la API y borra las que ya no existen (movimientos cancelados o
+  /// reemplazados en Odoo). La sincronización solo hace upsert, así que sin
+  /// esto el pedido muestra más líneas de las que el backend reporta.
+  ///
+  /// Un mismo `id_move` con varias filas NO se toca: es un producto dividido
+  /// por el operario. Se deja en el log para poder distinguir los dos casos.
+  Future<void> _cleanStaleProducts(List<PedidoPackingResult> apiPedidos) async {
+    try {
+      for (final apiPedido in apiPedidos) {
+        final productos = apiPedido.listaProductos;
+        if (apiPedido.id == null || productos == null || productos.isEmpty) {
+          continue;
+        }
+
+        final apiMoves = productos.map((p) => p.idMove).whereType<int>().toSet();
+        final localByMove = await db.productosPedidosRepository.countRowsByMove(
+          apiPedido.id!,
+          'packing-pack',
+        );
+
+        final localRows = localByMove.values.fold<int>(0, (a, b) => a + b);
+        final huerfanas = localByMove.keys.where((m) => !apiMoves.contains(m));
+        final divididas = localByMove.entries.where(
+          (e) => e.value > 1 && apiMoves.contains(e.key),
+        );
+
+        if (localRows != apiMoves.length) {
+          debugPrint(
+            '🔍 pedido ${apiPedido.id}: API=${apiMoves.length} moves, '
+            'local=$localRows filas | huérfanas=${huerfanas.toList()} '
+            '| divididas=${divididas.map((e) => '${e.key}x${e.value}').toList()}',
+          );
+        }
+
+        await db.productosPedidosRepository.deleteProductsNotInMoves(
+          apiPedido.id!,
+          apiMoves.toList(),
+          'packing-pack',
+        );
+      }
+    } catch (e, s) {
+      debugPrint('Error en _cleanStaleProducts: $e, $s');
     }
   }
 

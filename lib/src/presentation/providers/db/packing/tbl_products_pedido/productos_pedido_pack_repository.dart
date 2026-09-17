@@ -1014,89 +1014,237 @@ class ProductosPedidosRepository {
     }
   }
 
-  /// Devuelve a "por hacer" la fila empacada `packedRowId` tras desempacarla
-  /// en el backend. Todo en una transacción.
+  /// Filas locales de un pedido agrupadas por `id_move`, para comparar contra
+  /// lo que manda la API en el refresco.
+  Future<Map<int, int>> countRowsByMove(int pedidoId, String type) async {
+    try {
+      Database db = await DataBaseSqlite().getDatabaseInstance();
+      final rows = await db.rawQuery(
+        'SELECT ${ProductosPedidosTable.columnIdMove} as move, COUNT(*) as total '
+        'FROM ${ProductosPedidosTable.tableName} '
+        'WHERE ${ProductosPedidosTable.columnPedidoId} = ? '
+        'AND ${ProductosPedidosTable.columnType} = ? '
+        'GROUP BY ${ProductosPedidosTable.columnIdMove}',
+        [pedidoId, type],
+      );
+      return {
+        for (final r in rows)
+          if (r['move'] != null) (r['move'] as num).toInt(): (r['total'] as num).toInt(),
+      };
+    } catch (e, s) {
+      debugPrint('Error countRowsByMove: $e ==> $s');
+      return {};
+    }
+  }
+
+  /// Borra las filas de un pedido cuyo `id_move` ya no viene en la API
+  /// (movimientos cancelados o reemplazados en Odoo). Sin esto la sincronización
+  /// solo hace upsert y el pedido muestra más líneas de las que existen.
+  Future<int> deleteProductsNotInMoves(
+    int pedidoId,
+    List<int> keepMoves,
+    String type,
+  ) async {
+    if (keepMoves.isEmpty) return 0; // sin referencia: no borramos nada
+    try {
+      Database db = await DataBaseSqlite().getDatabaseInstance();
+      final placeholders = List.filled(keepMoves.length, '?').join(',');
+      final int result = await db.delete(
+        ProductosPedidosTable.tableName,
+        where:
+            '${ProductosPedidosTable.columnPedidoId} = ? AND '
+            '${ProductosPedidosTable.columnType} = ? AND '
+            '(${ProductosPedidosTable.columnIdMove} IS NULL OR '
+            '${ProductosPedidosTable.columnIdMove} NOT IN ($placeholders))',
+        whereArgs: [pedidoId, type, ...keepMoves],
+      );
+      if (result > 0) {
+        debugPrint('🗑️ Líneas huérfanas del pedido $pedidoId: $result');
+      }
+      return result;
+    } catch (e, s) {
+      debugPrint('Error deleteProductsNotInMoves: $e ==> $s');
+      return 0;
+    }
+  }
+
+  /// Borra las filas empacadas que quedaron apuntando a un paquete que ya no
+  /// existe. Se usa al eliminar el paquete tras desempacar: si no, quedan
+  /// huérfanas y tab5 las sigue listando bajo un paquete inexistente.
+  Future<int> deleteProductsByPackageId(int idPackage, String type) async {
+    try {
+      Database db = await DataBaseSqlite().getDatabaseInstance();
+      final int result = await db.delete(
+        ProductosPedidosTable.tableName,
+        where:
+            '${ProductosPedidosTable.columnIdPackage} = ? AND '
+            '${ProductosPedidosTable.columnType} = ?',
+        whereArgs: [idPackage, type],
+      );
+      if (result > 0) {
+        debugPrint('🗑️ Productos huérfanos del paquete $idPackage: $result');
+      }
+      return result;
+    } catch (e, s) {
+      debugPrint('Error deleteProductsByPackageId: $e ==> $s');
+      return 0;
+    }
+  }
+
+  /// Inserta en el paquete las filas que devuelve la respuesta de empaque y
+  /// borra las locales que se enviaron (`localRowIds`).
   ///
-  /// `unpackedQty` es la cantidad desempacada (`quantity` de la respuesta).
-  ///  - Si hay fila en "por hacer" del mismo move (ej. remanente de 3 tras
-  ///    empacar 7 de 10), se le suma (3 + 7 = 10) y se borra la empacada.
-  ///  - Si no, la fila empacada se revierte a "por hacer" con esa cantidad.
+  /// Al dividir, Odoo crea un movimiento nuevo para la parte empacada: la fila
+  /// del paquete queda con el `id_move` de la respuesta y la copia que quedó en
+  /// "por hacer" conserva el original, por eso no se toca acá.
+  Future<void> replacePackedRowsFromApi({
+    required List<int> localRowIds,
+    required List<Map<String, Object?>> packedRows,
+    required String type,
+  }) async {
+    if (packedRows.isEmpty) return;
+    const t = ProductosPedidosTable.tableName;
+    Database db = await DataBaseSqlite().getDatabaseInstance();
+
+    await db.transaction((txn) async {
+      if (localRowIds.isNotEmpty) {
+        final placeholders = List.filled(localRowIds.length, '?').join(',');
+        final deleted = await txn.delete(
+          t,
+          where: '${ProductosPedidosTable.columnId} IN ($placeholders)',
+          whereArgs: localRowIds,
+        );
+        debugPrint('📦 filas locales reemplazadas al empacar: $deleted');
+      }
+
+      for (final row in packedRows) {
+        await txn.insert(
+          t,
+          {...row, ProductosPedidosTable.columnType: type},
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+      debugPrint('📦 filas insertadas en el paquete: ${packedRows.length}');
+    });
+  }
+
+  /// Sincroniza SQLite con la respuesta de desempaque de UNA línea.
+  ///
+  /// Borra la fila empacada (`packedRowId`) y deja la cantidad en "por hacer".
+  /// La coincidencia NO se busca por `id_move` —Odoo crea uno nuevo en cada
+  /// división, así que nunca coincide— sino por producto + lote + ubicación de
+  /// origen. Si hay fila compatible se le recalcula la cantidad; si no, se
+  /// inserta la que manda la respuesta.
+  ///
+  /// `apiQuantity` es el total del move que queda por hacer según el backend;
+  /// lo que el operario ya tenga separado sin empacar en el dispositivo se
+  /// descuenta (20 con 7 en proceso deja 13 en "por hacer").
   Future<void> restoreUnpackedProduct({
     required int pedidoId,
-    required int idMove,
     required int packedRowId,
-    required double unpackedQty,
+    required int? idProduct,
+    required dynamic loteId,
+    required String? barcodeLocation,
+    required double apiQuantity,
+    required Map<String, Object?> apiRow,
     required String type,
   }) async {
     const t = ProductosPedidosTable.tableName;
     Database db = await DataBaseSqlite().getDatabaseInstance();
 
+    // Clave de compatibilidad: producto + lote + ubicación de origen.
+    final matchWhere =
+        '${ProductosPedidosTable.columnPedidoId} = ? AND '
+        '${ProductosPedidosTable.columnType} = ? AND '
+        '${ProductosPedidosTable.columnId} != ? AND '
+        '${ProductosPedidosTable.columnIdProduct} = ? AND '
+        'IFNULL(${ProductosPedidosTable.columnLoteId}, 0) = IFNULL(?, 0) AND '
+        'IFNULL(${ProductosPedidosTable.columnBarcodeLocation}, \'\') = IFNULL(?, \'\')';
+    final matchArgs = [
+      pedidoId,
+      type,
+      packedRowId,
+      idProduct,
+      loteId,
+      barcodeLocation,
+    ];
+
     await db.transaction((txn) async {
-      final pendingRows = await txn.query(
+      // La fila que estaba en "listo"/paquetes se elimina siempre.
+      await txn.delete(
         t,
-        columns: [
-          ProductosPedidosTable.columnId,
-          ProductosPedidosTable.columnQuantity,
-        ],
+        where: '${ProductosPedidosTable.columnId} = ?',
+        whereArgs: [packedRowId],
+      );
+
+      // Lo que el operario ya separó y todavía no empaca.
+      final enProcesoResult = await txn.rawQuery(
+        'SELECT SUM(CASE WHEN ${ProductosPedidosTable.columnQuantitySeparate} > 0 '
+        'THEN ${ProductosPedidosTable.columnQuantitySeparate} '
+        'ELSE ${ProductosPedidosTable.columnQuantity} END) as total '
+        'FROM $t WHERE $matchWhere '
+        'AND ${ProductosPedidosTable.columnIsSeparate} = 1 '
+        'AND (${ProductosPedidosTable.columnIsPackage} IS NULL OR ${ProductosPedidosTable.columnIsPackage} = 0)',
+        matchArgs,
+      );
+      final enProceso =
+          (enProcesoResult.first['total'] as num?)?.toDouble() ?? 0.0;
+      final pendingQty = apiQuantity - enProceso;
+
+      final pendientes = await txn.query(
+        t,
+        columns: [ProductosPedidosTable.columnId],
         where:
-            '${ProductosPedidosTable.columnPedidoId} = ? AND '
-            '${ProductosPedidosTable.columnIdMove} = ? AND '
-            '${ProductosPedidosTable.columnType} = ? AND '
-            '${ProductosPedidosTable.columnId} != ? AND '
+            '$matchWhere AND '
             '(${ProductosPedidosTable.columnIsSeparate} IS NULL OR ${ProductosPedidosTable.columnIsSeparate} = 0) AND '
             '(${ProductosPedidosTable.columnIsPackage} IS NULL OR ${ProductosPedidosTable.columnIsPackage} = 0)',
-        whereArgs: [pedidoId, idMove, type, packedRowId],
+        whereArgs: matchArgs,
         orderBy: ProductosPedidosTable.columnId,
-        limit: 1,
       );
 
       debugPrint(
-        '↩️ restoreUnpackedProduct idMove=$idMove unpackedQty=$unpackedQty '
-        'remanente=${pendingRows.isNotEmpty}',
+        '↩️ desempaque producto=$idProduct lote=$loteId ubicacion=$barcodeLocation '
+        'api=$apiQuantity enProceso=$enProceso → porHacer=$pendingQty '
+        '| compatibles=${pendientes.length}',
       );
 
-      if (pendingRows.isNotEmpty) {
-        final pending = pendingRows.first;
-        final currentQty =
-            (pending[ProductosPedidosTable.columnQuantity] as num?)
-                ?.toDouble() ??
-            0.0;
-        await txn.update(
+      if (pendingQty <= 0) return; // nada que devolver a "por hacer"
+
+      if (pendientes.isEmpty) {
+        // Sin fila compatible: entra como nueva con los datos de la respuesta.
+        await txn.insert(
           t,
-          {ProductosPedidosTable.columnQuantity: currentQty + unpackedQty},
-          where: '${ProductosPedidosTable.columnId} = ?',
-          whereArgs: [pending[ProductosPedidosTable.columnId]],
-        );
-        await txn.delete(
-          t,
-          where: '${ProductosPedidosTable.columnId} = ?',
-          whereArgs: [packedRowId],
+          {
+            ...apiRow,
+            ProductosPedidosTable.columnQuantity: pendingQty,
+            ProductosPedidosTable.columnType: type,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
         );
         return;
       }
 
-      // Sin remanente: la fila empacada vuelve sola a "por hacer".
-      // is_product_split se conserva; is_selected en 0 igual que un remanente
-      // de split.
+      // Hay compatible: se le recalcula la cantidad y las demás se descartan.
+      final keepId = pendientes.first[ProductosPedidosTable.columnId] as int;
       await txn.update(
         t,
-        {
-          ProductosPedidosTable.columnQuantity: unpackedQty,
-          ProductosPedidosTable.columnIsSeparate: null,
-          ProductosPedidosTable.columnIsPackage: null,
-          ProductosPedidosTable.columnIsCertificate: null,
-          ProductosPedidosTable.columnIsLocationIsOk: null,
-          ProductosPedidosTable.columnQuantitySeparate: null,
-          ProductosPedidosTable.columnIsSelected: 0,
-          ProductosPedidosTable.columnProductIsOk: null,
-          ProductosPedidosTable.columnIsQuantityIsOk: null,
-          ProductosPedidosTable.columnPackageName: null,
-          ProductosPedidosTable.columnIdPackage: null,
-          ProductosPedidosTable.columnObservation: null,
-        },
+        {ProductosPedidosTable.columnQuantity: pendingQty},
         where: '${ProductosPedidosTable.columnId} = ?',
-        whereArgs: [packedRowId],
+        whereArgs: [keepId],
       );
+
+      if (pendientes.length > 1) {
+        final extras = pendientes
+            .skip(1)
+            .map((r) => r[ProductosPedidosTable.columnId] as int)
+            .toList();
+        final placeholders = List.filled(extras.length, '?').join(',');
+        await txn.delete(
+          t,
+          where: '${ProductosPedidosTable.columnId} IN ($placeholders)',
+          whereArgs: extras,
+        );
+      }
     });
   }
 

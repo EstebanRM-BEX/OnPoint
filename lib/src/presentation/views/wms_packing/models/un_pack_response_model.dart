@@ -51,6 +51,35 @@ class UnPackResponse {
     }
     return null;
   }
+
+  /// Busca el move desempacado por producto, lote y ubicación de origen.
+  ///
+  /// NO sirve buscar por `id_move`: al dividir, Odoo le da un movimiento nuevo
+  /// a la parte empacada, mientras que esta respuesta trae el movimiento donde
+  /// queda la cantidad en "por hacer". Si solo viene un item, ese es.
+  UnPackedMove? moveForProduct({
+    int? idProduct,
+    dynamic loteId,
+    String? barcodeLocation,
+  }) {
+    if (moves.isEmpty) return null;
+    if (moves.length == 1) return moves.first;
+
+    final porProducto = moves
+        .where((m) => idProduct == null || m.idProduct == idProduct)
+        .toList();
+    if (porProducto.length == 1) return porProducto.first;
+    if (porProducto.isEmpty) return null;
+
+    for (final move in porProducto) {
+      final mismoLote =
+          loteId == null || '${move.raw['lote_id'] ?? 0}' == '${loteId ?? 0}';
+      final mismaUbicacion = barcodeLocation == null ||
+          '${move.raw['barcode_location'] ?? ''}' == barcodeLocation;
+      if (mismoLote && mismaUbicacion) return move;
+    }
+    return porProducto.first;
+  }
 }
 
 class UnPackedMove {
@@ -59,16 +88,20 @@ class UnPackedMove {
   final int? idProduct;
   final String? productName;
 
-  /// Cantidad desempacada de esta línea.
+  /// Total del move que queda POR HACER tras desempacar (no es lo desempacado):
+  /// incluye lo que el operario ya tenga separado sin empacar en el dispositivo.
   final double? quantity;
   final double? quantityOrdered;
   final double? quantityToTransfer;
-
-  /// Total pendiente (sin empacar) del move en el backend tras desempacar.
   final double? cantidadFaltante;
   final int? idPaquete;
   final String? namePaquete;
   final int? cantidadProductosEnElPaquete;
+
+  /// Mapa crudo del item, para refrescar en SQLite los campos que manda el
+  /// backend (ubicaciones, barcodes, lote, uom…) al devolver la fila a
+  /// "por hacer".
+  final Map<String, dynamic> raw;
 
   UnPackedMove({
     this.idMove,
@@ -82,10 +115,31 @@ class UnPackedMove {
     this.idPaquete,
     this.namePaquete,
     this.cantidadProductosEnElPaquete,
+    this.raw = const {},
   });
 
   static double? _toDouble(dynamic value) =>
       value is num ? value.toDouble() : double.tryParse('${value ?? ''}');
+
+  /// Primer elemento de un campo Odoo `[id, nombre]`.
+  static int? _refId(dynamic value) =>
+      (value is List && value.isNotEmpty && value.first is int)
+      ? value.first as int
+      : null;
+
+  /// Segundo elemento de un campo Odoo `[id, nombre]`.
+  static String? _refName(dynamic value) =>
+      (value is List && value.length > 1) ? '${value[1]}' : null;
+
+  int? get idLocation => _refId(raw['location_id']);
+  String? get locationName => _refName(raw['location_id']);
+  int? get idLocationDest => _refId(raw['location_dest_id']);
+  String? get locationDestName => _refName(raw['location_dest_id']);
+  String? get barcodeLocation => raw['barcode_location']?.toString();
+  String? get barcodeLocationDest => raw['barcode_location_dest']?.toString();
+  String? get tracking => raw['tracking']?.toString();
+  String? get unidades => raw['unidades']?.toString();
+  double? get weight => _toDouble(raw['weight']);
 
   factory UnPackedMove.fromMap(Map<String, dynamic> json) => UnPackedMove(
     idMove: json['id_move'],
@@ -99,5 +153,6 @@ class UnPackedMove {
     idPaquete: json['id_paquete'],
     namePaquete: json['name_paquete'],
     cantidadProductosEnElPaquete: json['cantidad_productos_en_el_paquete'],
+    raw: json,
   );
 }

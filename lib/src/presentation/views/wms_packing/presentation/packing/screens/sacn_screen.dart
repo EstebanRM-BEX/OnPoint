@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/injection_container.dart';
@@ -349,7 +350,7 @@ class _PackingScreenState extends State<ScanPackScreen>
                                     }
                                   }
 
-                                  Navigator.pushReplacementNamed(
+                                  goToScreen(
                                     context,
                                     'detail-packing-pedido',
                                     arguments: [1],
@@ -360,7 +361,7 @@ class _PackingScreenState extends State<ScanPackScreen>
                                   if (Navigator.canPop(context)) {
                                     Navigator.pop(context);
                                   }
-                                  Navigator.pushReplacementNamed(
+                                  goToScreen(
                                     context,
                                     'detail-packing-pedido',
                                     arguments: [1],
@@ -432,7 +433,7 @@ class _PackingScreenState extends State<ScanPackScreen>
                                                     packingBloc.currentProduct
                                                             .pedidoId ??
                                                         0));
-                                            Navigator.pushReplacementNamed(
+                                            goToScreen(
                                               context,
                                               'detail-packing-pedido',
                                               arguments: [1],

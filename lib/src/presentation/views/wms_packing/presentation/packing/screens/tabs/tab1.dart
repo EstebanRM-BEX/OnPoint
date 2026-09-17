@@ -1,6 +1,7 @@
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -55,7 +56,7 @@ class _Tab1PedidoScreenState extends State<Tab1PedidoScreen>
                       icon: Icon(Icons.error, color: Colors.green));
                 }
                 hideLoadingDialog();
-                Navigator.pushReplacementNamed(
+                goToScreen(
                   context,
                   'list-packing',
                 );
@@ -84,7 +85,7 @@ class _Tab1PedidoScreenState extends State<Tab1PedidoScreen>
                 }
 
                 hideLoadingDialog();
-                Navigator.pushReplacementNamed(
+                goToScreen(
                   context,
                   'list-packing',
                 );

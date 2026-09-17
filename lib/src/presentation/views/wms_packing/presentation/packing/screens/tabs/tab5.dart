@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -15,6 +16,7 @@ import 'package:wms_app/src/presentation/views/recepcion/modules/individual/scre
 import 'package:wms_app/src/presentation/views/wms_packing/models/un_pack_request.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/screens/widgets/dialog_unPacking.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
+import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/widgets/others/dialog_delete_package_widget.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/packing_response_model.dart';
 
@@ -244,6 +246,24 @@ class _Tab5ScreenState extends State<Tab5Screen> with LoadingDialogMixin {
           showScrollableErrorDialog(state.message);
         }
 
+        if (state is DeletePackageLoading) {
+          showLoadingDialog("Eliminando paquete...");
+        }
+
+        if (state is DeletePackageSuccess) {
+          hideLoadingDialog();
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            duration: const Duration(milliseconds: 1500),
+            content: Text(state.message),
+            backgroundColor: Colors.green[200],
+          ));
+        }
+
+        if (state is DeletePackageError) {
+          hideLoadingDialog();
+          showScrollableErrorDialog(state.message);
+        }
+
         if (state is AssignLocationSuccess) {
           setState(() {
             _selectedPackageIds.clear();
@@ -270,6 +290,7 @@ class _Tab5ScreenState extends State<Tab5Screen> with LoadingDialogMixin {
           // y manda todos los ids como lista [1,2,3] al modal de impresoras.
           floatingActionButton: _selectedPackageIds.length > 1
               ? FloatingActionButton.extended(
+                  heroTag: 'fab-packing-paquetes',
                   backgroundColor: primaryColorApp,
                   onPressed: () {
                     ModalPrintersList.show(
@@ -479,6 +500,54 @@ class _Tab5ScreenState extends State<Tab5Screen> with LoadingDialogMixin {
                                               size: 25,
                                             ),
                                           ),
+                                          const SizedBox(width: 12),
+                                          // Eliminar el paquete completo: se va
+                                          // el paquete y sus productos vuelven
+                                          // a "Por hacer".
+                                          if (bloc.currentPedidoPack
+                                                  .isTerminate !=
+                                              1)
+                                            GestureDetector(
+                                              onTap: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (_) =>
+                                                      DialogDeletePackage(
+                                                    package: package,
+                                                    onConfirm: () {
+                                                      context
+                                                          .read<
+                                                              PackingPedidoBloc>()
+                                                          .add(
+                                                            DeletePackageEvent(
+                                                              idTransferencia:
+                                                                  package.batchId ??
+                                                                      bloc.currentPedidoPack
+                                                                          .id ??
+                                                                      0,
+                                                              idPaquete:
+                                                                  package.id ??
+                                                                      0,
+                                                              pedidoId: package
+                                                                      .pedidoId ??
+                                                                  bloc.currentPedidoPack
+                                                                      .id ??
+                                                                  0,
+                                                              consecutivoPackage:
+                                                                  package
+                                                                      .consecutivo,
+                                                            ),
+                                                          );
+                                                    },
+                                                  ),
+                                                );
+                                              },
+                                              child: const Icon(
+                                                Icons.delete_forever,
+                                                color: Colors.red,
+                                                size: 25,
+                                              ),
+                                            ),
                                           const SizedBox(width: 8),
                                         ],
                                       ),
@@ -618,7 +687,7 @@ class _Tab5ScreenState extends State<Tab5Screen> with LoadingDialogMixin {
                                               'cluster')
                                             ElevatedButton(
                                               onPressed: () {
-                                                Navigator.pushReplacementNamed(
+                                                goToScreen(
                                                   context,
                                                   'locations-dest-packing',
                                                   arguments: [
@@ -1056,7 +1125,7 @@ class _Tab5ScreenState extends State<Tab5Screen> with LoadingDialogMixin {
                                 padding: const EdgeInsets.all(8.0),
                                 child: ElevatedButton(
                                   onPressed: () {
-                                    Navigator.pushReplacementNamed(
+                                    goToScreen(
                                       context,
                                       'locations-dest-packing',
                                       arguments: [

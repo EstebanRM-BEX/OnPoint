@@ -20,6 +20,7 @@ import 'package:wms_app/src/presentation/views/wms_packing/models/response_send_
 import 'package:wms_app/src/presentation/views/wms_packing/models/sen_pack_request.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/sen_packing_request.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/un_pack_request.dart';
+import 'package:wms_app/src/presentation/views/wms_packing/models/delete_pack_response_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/un_pack_response_model.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/un_packing_request.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/unpacking_response_model.dart';
@@ -951,6 +952,51 @@ class WmsPackingRepository {
     return UnPackResponse();
   }
 
+
+  /// Elimina un paquete completo. El backend devuelve el paquete borrado y los
+  /// stock.move que tenía dentro, con la misma forma que `unpacking`, para
+  /// poder devolverlos a "por hacer".
+  Future<DeletePackResponse> deletePack({
+    required int idTransferencia,
+    required int idPaquete,
+  }) async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+
+    if (connectivityResult.isOffline) {
+      debugPrint("Error: No hay conexión a Internet.");
+      return DeletePackResponse(msg: 'No hay conexión a internet');
+    }
+
+    try {
+      final body = {
+        "params": {
+          "id_transferencia": idTransferencia,
+          "id_paquete": idPaquete,
+        },
+      };
+      debugPrint('🗑️➡️ ELIMINAR PAQUETE POST /api/transferencias/delete_pack');
+      debugPrint('🗑️➡️ body: ${jsonEncode(body)}');
+
+      var response = await ApiRequestService().postPacking(
+        endpoint: 'transferencias/delete_pack',
+        body: body,
+        isLoadinDialog: true,
+      );
+      debugPrint('🗑️⬅️ respuesta ${response.statusCode}: ${response.body}');
+
+      if (response.statusCode < 400) {
+        return DeletePackResponse.fromMap(jsonDecode(response.body));
+      }
+    } on SocketException catch (e) {
+      debugPrint('Error de red: $e');
+      return DeletePackResponse(msg: 'Error de red');
+    } catch (e, s) {
+      debugPrint('Error en deletePack: $e, $s');
+      return DeletePackResponse(msg: e.toString());
+    }
+    return DeletePackResponse();
+  }
+
   //endpoint para enviar los productos dentro del paquete anteriormente creado
   Future<ResponseSendPacking> sendPackingRequest(
     PackingRequest packingRequest,
@@ -1104,24 +1150,32 @@ class WmsPackingRepository {
     }
 
     try {
-      var response = await ApiRequestService().postPacking(
-        endpoint: isCluster
-            ? 'send_cluster/pack'
-            : 'send_transfer/pack', // Cambiado para que sea el endpoint correspondiente
-        body: {
-          "params": {
-            "id_transferencia": packingRequest.idTransferencia,
-            "is_sticker": packingRequest.isSticker,
-            "is_certificate": packingRequest.isCertificate,
-            "tipo_paquete": packingRequest.tipoEmpaque,
-            "peso_caja": packingRequest.pesoCaja,
-            "peso_total_paquete": packingRequest.pesoTotalPaquete,
-            "list_items": packingRequest.listItems
-                .map((item) => item.toMap())
-                .toList(),
-          },
+      final endpoint = isCluster ? 'send_cluster/pack' : 'send_transfer/pack';
+      final body = {
+        "params": {
+          "id_transferencia": packingRequest.idTransferencia,
+          "is_sticker": packingRequest.isSticker,
+          "is_certificate": packingRequest.isCertificate,
+          "tipo_paquete": packingRequest.tipoEmpaque,
+          "peso_caja": packingRequest.pesoCaja,
+          "peso_total_paquete": packingRequest.pesoTotalPaquete,
+          "list_items": packingRequest.listItems
+              .map((item) => item.toMap())
+              .toList(),
         },
+      };
+
+      // Traza de creación de paquete: endpoint y body exactos que se envían.
+      debugPrint('📦➡️ CREAR PAQUETE POST /api/$endpoint');
+      debugPrint('📦➡️ body: ${jsonEncode(body)}');
+
+      var response = await ApiRequestService().postPacking(
+        endpoint: endpoint,
+        body: body,
         isLoadinDialog: isLoadingDialog,
+      );
+      debugPrint(
+        '📦⬅️ respuesta ${response.statusCode}: ${response.body}',
       );
       if (response.statusCode < 400) {
         // Decodifica la respuesta JSON a un mapa

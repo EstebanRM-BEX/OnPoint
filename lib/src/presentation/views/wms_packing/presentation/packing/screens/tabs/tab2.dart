@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/features/packaging_types/domain/entities/packaging_type.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
@@ -123,7 +124,7 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> with LoadingDialogMixin {
       Future.delayed(const Duration(seconds: 1), () {
         if (!mounted) return;
         hideLoadingDialog();
-        Navigator.pushReplacementNamed(context, 'scan-pack');
+        goToScreen(context, 'scan-pack');
       });
 
       debugPrint('✅ Producto procesado: ${product.toMap()}');
@@ -234,6 +235,10 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> with LoadingDialogMixin {
                       right:
                           0.0, // Ajusta según sea necesario para colocar en la parte derecha
                       child: FloatingActionButton(
+                        // Tag propio: las pestañas del detalle viven en la misma
+                        // ruta y al deslizar coexisten dos FABs; con el tag por
+                        // defecto Flutter lanza "multiple heroes share the same tag".
+                        heroTag: 'fab-packing-por-hacer',
                         onPressed:
                             context
                                 .read<PackingPedidoBloc>()
@@ -643,7 +648,7 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> with LoadingDialogMixin {
                                                     if (!mounted) return;
                                                     hideLoadingDialog();
                                                     // Ahora navegar a la vista "batch"
-                                                    Navigator.pushReplacementNamed(
+                                                    goToScreen(
                                                       context,
                                                       'scan-pack',
                                                     );

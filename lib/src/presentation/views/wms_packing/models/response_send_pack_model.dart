@@ -5,11 +5,7 @@ class ResponseSendPack {
   final dynamic id;
   final ResponseSendPackResult? result;
 
-  ResponseSendPack({
-    this.jsonrpc,
-    this.id,
-    this.result,
-  });
+  ResponseSendPack({this.jsonrpc, this.id, this.result});
 
   factory ResponseSendPack.fromJson(String str) =>
       ResponseSendPack.fromMap(json.decode(str));
@@ -26,21 +22,30 @@ class ResponseSendPack {
       );
 
   Map<String, dynamic> toMap() => {
-        "jsonrpc": jsonrpc,
-        "id": id,
-        "result": result?.toMap(),
-      };
+    "jsonrpc": jsonrpc,
+    "id": id,
+    "result": result?.toMap(),
+  };
 }
 
 class ResponseSendPackResult {
   final int? code;
   final List<ResultElementPack>? result;
+
+  /// El backend manda el texto en `mensaje` ("Paquete creado exitosamente");
+  /// `msg` se mantiene como alternativa por si alguna respuesta vieja la usa.
   final String? msg;
+
+  /// Ajustes que el backend aplicó por su cuenta al crear el paquete.
+  final List<dynamic> correccionesRealizadas;
+  final int? totalCorrecciones;
 
   ResponseSendPackResult({
     this.code,
     this.result,
     this.msg,
+    this.correccionesRealizadas = const [],
+    this.totalCorrecciones,
   });
 
   factory ResponseSendPackResult.fromJson(String str) =>
@@ -50,20 +55,28 @@ class ResponseSendPackResult {
 
   factory ResponseSendPackResult.fromMap(Map<String, dynamic> json) =>
       ResponseSendPackResult(
-          code: json["code"],
-          result: json["result"] == null
-              ? []
-              : List<ResultElementPack>.from(
-                  json["result"]!.map((x) => ResultElementPack.fromMap(x))),
-          msg: json["msg"]);
+        code: json["code"],
+        result: json["result"] == null
+            ? []
+            : List<ResultElementPack>.from(
+                json["result"]!.map((x) => ResultElementPack.fromMap(x)),
+              ),
+        msg: (json["mensaje"] ?? json["msg"])?.toString(),
+        correccionesRealizadas: json["correcciones_realizadas"] is List
+            ? List<dynamic>.from(json["correcciones_realizadas"])
+            : const [],
+        totalCorrecciones: json["total_correcciones"],
+      );
 
   Map<String, dynamic> toMap() => {
-        "code": code,
-        "result": result == null
-            ? []
-            : List<dynamic>.from(result!.map((x) => x.toMap())),
-        "msg": msg,
-      };
+    "code": code,
+    "result": result == null
+        ? []
+        : List<dynamic>.from(result!.map((x) => x.toMap())),
+    "mensaje": msg,
+    "correcciones_realizadas": correccionesRealizadas,
+    "total_correcciones": totalCorrecciones,
+  };
 }
 
 class ResultElementPack {
@@ -74,7 +87,7 @@ class ResultElementPack {
   final bool? isSticker;
   final bool? isCertificate;
   final dynamic peso;
-  final List<ListItem>? listItem;
+  final List<PackedMoveItem>? listItem;
   final dynamic consecutivo;
   final String? packingBarcode;
 
@@ -107,82 +120,146 @@ class ResultElementPack {
         peso: json["peso"],
         listItem: json["list_item"] == null
             ? []
-            : List<ListItem>.from(
-                json["list_item"]!.map((x) => ListItem.fromMap(x))),
+            : List<PackedMoveItem>.from(
+                json["list_item"]!.map((x) => PackedMoveItem.fromMap(x)),
+              ),
         consecutivo: json["consecutivo"],
         packingBarcode: json["packing_barcode"],
       );
 
   Map<String, dynamic> toMap() => {
-        "id_paquete": idPaquete,
-        "name_paquete": namePaquete,
-        "id_batch": idBatch,
-        "cantidad_productos_en_el_paquete": cantidadProductosEnElPaquete,
-        "is_sticker": isSticker,
-        "is_certificate": isCertificate,
-        "peso": peso,
-        "list_item": listItem == null
-            ? []
-            : List<dynamic>.from(listItem!.map((x) => x.toMap())),
-        "consecutivo": consecutivo,
-        "packing_barcode": packingBarcode,
-      };
+    "id_paquete": idPaquete,
+    "name_paquete": namePaquete,
+    "id_batch": idBatch,
+    "cantidad_productos_en_el_paquete": cantidadProductosEnElPaquete,
+    "is_sticker": isSticker,
+    "is_certificate": isCertificate,
+    "peso": peso,
+    "list_item": listItem == null
+        ? []
+        : List<dynamic>.from(listItem!.map((x) => x.toMap())),
+    "consecutivo": consecutivo,
+    "packing_barcode": packingBarcode,
+  };
 }
 
-class ListItem {
+/// Cada entrada de `list_item` es el stock.move que quedó dentro del paquete,
+/// con la misma forma que manda `transferencias/unpacking`.
+class PackedMoveItem {
+  final int? id;
   final int? idMove;
-  final int? idProducto;
-  final dynamic cantidadEnviada;
-  final int? idUbicacionOrigen;
-  final int? idUbicacionDestino;
-  final int? idLote;
-  final int? idOperario;
-  final DateTime? fechaTransaccion;
-  final dynamic timeLine;
-  final String? observacion;
+  final int? pedidoId;
+  final int? batchId;
+  final int? idProduct;
+  final String? productName;
+  final String? productCode;
+  final String? barcode;
 
-  ListItem({
+  /// Cantidad que quedó en el paquete para ese move.
+  final double? quantity;
+  final double? quantityOrdered;
+  final double? quantityToTransfer;
+  final double? cantidadFaltante;
+  final String? uom;
+  final String? unidades;
+  final String? tracking;
+  final int? loteId;
+  final String? expireDate;
+  final bool? isDoneItem;
+  final String? dateTransaction;
+  final String? observation;
+  final dynamic time;
+  final int? userOperatorId;
+  final int? idPaquete;
+  final String? namePaquete;
+  final dynamic consecutivo;
+
+  /// Mapa crudo, para los campos que no se modelan acá.
+  final Map<String, dynamic> raw;
+
+  PackedMoveItem({
+    this.id,
     this.idMove,
-    this.idProducto,
-    this.cantidadEnviada,
-    this.idUbicacionOrigen,
-    this.idUbicacionDestino,
-    this.idLote,
-    this.idOperario,
-    this.fechaTransaccion,
-    this.timeLine,
-    this.observacion,
+    this.pedidoId,
+    this.batchId,
+    this.idProduct,
+    this.productName,
+    this.productCode,
+    this.barcode,
+    this.quantity,
+    this.quantityOrdered,
+    this.quantityToTransfer,
+    this.cantidadFaltante,
+    this.uom,
+    this.unidades,
+    this.tracking,
+    this.loteId,
+    this.expireDate,
+    this.isDoneItem,
+    this.dateTransaction,
+    this.observation,
+    this.time,
+    this.userOperatorId,
+    this.idPaquete,
+    this.namePaquete,
+    this.consecutivo,
+    this.raw = const {},
   });
 
-  factory ListItem.fromJson(String str) => ListItem.fromMap(json.decode(str));
+  static double? _toDouble(dynamic value) =>
+      value is num ? value.toDouble() : double.tryParse('${value ?? ''}');
+
+  static int? _refId(dynamic value) =>
+      (value is List && value.isNotEmpty && value.first is int)
+      ? value.first as int
+      : null;
+
+  static String? _refName(dynamic value) =>
+      (value is List && value.length > 1) ? '${value[1]}' : null;
+
+  int? get idLocation => _refId(raw['location_id']);
+  String? get locationName => _refName(raw['location_id']);
+  int? get idLocationDest => _refId(raw['location_dest_id']);
+  String? get locationDestName => _refName(raw['location_dest_id']);
+  String? get barcodeLocation => raw['barcode_location']?.toString();
+  String? get barcodeLocationDest => raw['barcode_location_dest']?.toString();
+  double? get weight => _toDouble(raw['weight']);
+  bool get manejaTemperatura => raw['maneja_temperatura'] == true;
+  double? get temperatura => _toDouble(raw['temperatura']);
+
+  factory PackedMoveItem.fromJson(String str) =>
+      PackedMoveItem.fromMap(json.decode(str));
 
   String toJson() => json.encode(toMap());
 
-  factory ListItem.fromMap(Map<String, dynamic> json) => ListItem(
-        idMove: json["id_move"],
-        idProducto: json["id_producto"],
-        cantidadEnviada: json["cantidad_enviada"],
-        idUbicacionOrigen: json["id_ubicacion_origen"],
-        idUbicacionDestino: json["id_ubicacion_destino"],
-        idLote: json["id_lote"],
-        idOperario: json["id_operario"],
-        fechaTransaccion: json["fecha_transaccion"] == null
-            ? null
-            : DateTime.parse(json["fecha_transaccion"]),
-        timeLine: json["time_line"],
-        observacion: json["observacion"],
-      );
+  factory PackedMoveItem.fromMap(Map<String, dynamic> json) => PackedMoveItem(
+    id: json["id"],
+    idMove: json["id_move"],
+    pedidoId: json["pedido_id"],
+    batchId: json["batch_id"],
+    idProduct: json["id_product"],
+    productName: json["product_name"],
+    productCode: json["product_code"],
+    barcode: json["barcode"]?.toString(),
+    quantity: _toDouble(json["quantity"]),
+    quantityOrdered: _toDouble(json["quantity_ordered"]),
+    quantityToTransfer: _toDouble(json["quantity_to_transfer"]),
+    cantidadFaltante: _toDouble(json["cantidad_faltante"]),
+    uom: json["uom"]?.toString(),
+    unidades: json["unidades"]?.toString(),
+    tracking: json["tracking"]?.toString(),
+    loteId: json["lote_id"] is int ? json["lote_id"] : null,
+    expireDate: json["expire_date"]?.toString(),
+    isDoneItem: json["is_done_item"],
+    dateTransaction: json["date_transaction"]?.toString(),
+    observation: json["observation"]?.toString(),
+    time: json["time"],
+    userOperatorId: json["user_operator_id"],
+    idPaquete: json["id_paquete"],
+    namePaquete: json["name_paquete"],
+    consecutivo: json["consecutivo"],
+    raw: json,
+  );
 
-  Map<String, dynamic> toMap() => {
-        "id_move": idMove,
-        "id_producto": idProducto,
-        "cantidad_enviada": cantidadEnviada,
-        "id_ubicacion_origen": idUbicacionOrigen,
-        "id_ubicacion_destino": idUbicacionDestino,
-        "id_lote": idLote,
-        "id_operario": idOperario,
-        "fecha_transaccion": fechaTransaccion?.toIso8601String(),
-        "time_line": timeLine,
-        "observacion": observacion,
-      };
+  Map<String, dynamic> toMap() => Map<String, dynamic>.from(raw);
 }

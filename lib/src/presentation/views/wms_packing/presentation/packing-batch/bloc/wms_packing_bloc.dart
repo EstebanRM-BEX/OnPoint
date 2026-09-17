@@ -1460,6 +1460,45 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
     }
   }
 
+  /// Compara las líneas locales de cada pedido contra los movimientos que manda
+  /// la API y borra las que ya no existen (movimientos cancelados o
+  /// reemplazados en Odoo). La sincronización solo hace upsert, así que sin
+  /// esto el pedido muestra más líneas de las que el backend reporta.
+  ///
+  /// Un mismo `id_move` con varias filas NO se toca: es un producto dividido
+  /// por el operario. Se deja en el log para poder distinguir los dos casos.
+  Future<void> _cleanStaleProducts(List<PedidoPacking> apiPedidos) async {
+    try {
+      for (final apiPedido in apiPedidos) {
+        final productos = apiPedido.listaProductos;
+        if (apiPedido.id == null || productos == null || productos.isEmpty) {
+          continue;
+        }
+
+        final apiMoves = productos.map((p) => p.idMove).whereType<int>().toSet();
+        final localByMove = await db.productosPedidosRepository.countRowsByMove(
+            apiPedido.id!, 'packing-batch');
+
+        final localRows = localByMove.values.fold<int>(0, (a, b) => a + b);
+        final huerfanas = localByMove.keys.where((m) => !apiMoves.contains(m));
+        final divididas = localByMove.entries
+            .where((e) => e.value > 1 && apiMoves.contains(e.key));
+
+        if (localRows != apiMoves.length) {
+          debugPrint(
+              '🔍 pedido ${apiPedido.id}: API=${apiMoves.length} moves, '
+              'local=$localRows filas | huérfanas=${huerfanas.toList()} '
+              '| divididas=${divididas.map((e) => '${e.key}x${e.value}').toList()}');
+        }
+
+        await db.productosPedidosRepository.deleteProductsNotInMoves(
+            apiPedido.id!, apiMoves.toList(), 'packing-batch');
+      }
+    } catch (e, s) {
+      debugPrint('Error en _cleanStaleProducts: $e, $s');
+    }
+  }
+
   /// Para cada pedido de la API, elimina de la BD los paquetes (y sus productos
   /// empacados) que ya no vienen en `lista_paquetes`. Sin esto la sincronización
   /// solo hace upsert y siguen apareciendo paquetes desempacados en el backend.
@@ -1551,6 +1590,9 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
           // insertar: insertProductosPedidos hace match por idMove y no
           // resetea is_package.
           await _cleanStalePackages(pedidosToInsert);
+
+          // Líneas cuyo movimiento ya no existe en la API.
+          await _cleanStaleProducts(pedidosToInsert);
 
           // Enviar la lista agrupada de productos de un batch para packing
           await DataBaseSqlite()

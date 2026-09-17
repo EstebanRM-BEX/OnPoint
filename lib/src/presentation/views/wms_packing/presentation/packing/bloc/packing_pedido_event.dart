@@ -242,6 +242,22 @@ class UnPackingEvent extends PackingPedidoEvent {
       {this.rowId});
 }
 
+/// Elimina el paquete completo (transferencias/delete_pack). El backend
+/// devuelve los productos que tenía dentro para devolverlos a "por hacer".
+class DeletePackageEvent extends PackingPedidoEvent {
+  final int idTransferencia;
+  final int idPaquete;
+  final int pedidoId;
+  final dynamic consecutivoPackage;
+
+  DeletePackageEvent({
+    required this.idTransferencia,
+    required this.idPaquete,
+    required this.pedidoId,
+    this.consecutivoPackage,
+  });
+}
+
 class StartOrStopTimePack extends PackingPedidoEvent {
   final int idPedido;
   final String value;

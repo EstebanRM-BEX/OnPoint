@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
@@ -34,6 +35,7 @@ class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
   void initState() {
     super.initState();
     // Inicializar el TabController con la longitud de las pestañas
+    debugPrint('🗂️ packing detail: pestaña inicial = ${widget.initialTabIndex}');
     _tabController = TabController(
       length: 5,
       vsync: this,
@@ -86,7 +88,7 @@ class _PackingDetailScreenState extends State<PackingPedidoDetailScreen>
                   context.read<PackingPedidoBloc>().add(
                         LoadPackingPedidoFromDBEvent(),
                       );
-                  Navigator.pushReplacementNamed(
+                  goToScreen(
                     context,
                     'list-packing',
                   );

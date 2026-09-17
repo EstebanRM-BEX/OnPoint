@@ -1,6 +1,7 @@
 // ignore_for_file: unrelated_type_equality_checks
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
@@ -68,7 +69,7 @@ class _LocationDestScreenState extends State<LocationDestPackingScreen> {
                                           icon: const Icon(Icons.arrow_back,
                                               color: white),
                                           onPressed: () {
-                                            Navigator.pushReplacementNamed(
+                                            goToScreen(
                                                 context,
                                                 'detail-packing-pedido',
                                                 arguments: [4]);
@@ -370,7 +371,7 @@ class _LocationDestScreenState extends State<LocationDestPackingScreen> {
                                 selectedLocation.id ?? 0,
                               ));
 
-                              Navigator.pushReplacementNamed(
+                              goToScreen(
                                 context,
                                 'detail-packing-pedido',
                                 arguments: [4],

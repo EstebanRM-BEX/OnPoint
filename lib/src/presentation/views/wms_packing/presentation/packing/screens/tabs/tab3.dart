@@ -65,6 +65,7 @@ class _Tab3PedidoScreenState extends State<Tab3PedidoScreen>
                       right:
                           0.0, // Ajusta según sea necesario para colocar en la parte derecha
                       child: FloatingActionButton(
+                        heroTag: 'fab-packing-preparado',
                         onPressed:
                             context
                                 .read<PackingPedidoBloc>()

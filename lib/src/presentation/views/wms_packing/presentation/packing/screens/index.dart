@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously
@@ -30,6 +31,13 @@ class ListPackingScreen extends StatefulWidget {
 
 class _WmsPackingScreenState extends State<ListPackingScreen>
     with LoadingDialogMixin {
+  /// Solo esta pantalla debe navegar al detalle cuando llega
+  /// LoadPedidoAndProductsLoaded. Ese estado también lo emite el bloc desde el
+  /// escáner (al separar), y como el bloc es compartido, cualquier pantalla
+  /// suscrita reaccionaba: el detalle recién abierto en "Por hacer" se
+  /// reemplazaba por otro en la pestaña 0.
+  bool _abriendoPedido = false;
+
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   final FocusNode focusNodeBuscar = FocusNode();
@@ -200,9 +208,12 @@ class _WmsPackingScreenState extends State<ListPackingScreen>
       if (state is LoadPedidoAndProductsLoaded) {
         //cerramos el dialogo de cargando
         hideLoadingDialog();
-        //navegamos a la pantalla de detalle
-        Navigator.pushReplacementNamed(context, 'detail-packing-pedido',
-            arguments: [0]);
+        //navegamos a la pantalla de detalle solo si el pedido se abrió acá
+        if (_abriendoPedido) {
+          _abriendoPedido = false;
+          goToScreen(context, 'detail-packing-pedido',
+              arguments: [0]);
+        }
       }
 
       if (state is PackingPedidoError) {
@@ -238,11 +249,12 @@ class _WmsPackingScreenState extends State<ListPackingScreen>
 
         packingPedidoBloc.add(LoadConfigurationsUser());
         //traemos el pedido y los productos
+        _abriendoPedido = true;
         packingPedidoBloc.add(LoadPedidoAndProductsEvent(
               state.id,
             ));
 
-        // Navigator.pushReplacementNamed(context, 'detail-packing-pedido',
+        // goToScreen(context, 'detail-packing-pedido',
         //     arguments: [0]);
       }
     }, builder: (context, state) {
@@ -297,7 +309,7 @@ class _WmsPackingScreenState extends State<ListPackingScreen>
                                       icon: const Icon(Icons.arrow_back,
                                           color: white),
                                       onPressed: () {
-                                        Navigator.pushReplacementNamed(
+                                        goToScreen(
                                           context,
                                           '/home',
                                         );
@@ -1219,10 +1231,11 @@ class _WmsPackingScreenState extends State<ListPackingScreen>
             packingPedidoBloc.add(SearchPedidoEvent(''));
             packingPedidoBloc.add(
                 StartOrStopTimePack(pedido.id ?? 0, "start_time_transfer"));
+            _abriendoPedido = true;
             packingPedidoBloc.add(LoadPedidoAndProductsEvent(pedido.id ?? 0));
             Navigator.pop(dialogContext);
             // if (mounted) {
-            //   Navigator.pushReplacementNamed(context, 'detail-packing-pedido',
+            //   goToScreen(context, 'detail-packing-pedido',
             //       arguments: [0]);
             // }
           },
@@ -1232,6 +1245,7 @@ class _WmsPackingScreenState extends State<ListPackingScreen>
     } else {
       packingPedidoBloc.searchControllerPedido.clear();
       packingPedidoBloc.add(SearchPedidoEvent(''));
+      _abriendoPedido = true;
       packingPedidoBloc.add(
         LoadPedidoAndProductsEvent(pedido.id ?? 0),
       );

@@ -243,6 +243,19 @@ class UnPackignError extends PackingPedidoState {
 
 class UnPackingLoading extends PackingPedidoState {}
 
+class DeletePackageLoading extends PackingPedidoState {}
+
+class DeletePackageSuccess extends PackingPedidoState {
+  final String message;
+  DeletePackageSuccess(this.message);
+}
+
+class DeletePackageError extends PackingPedidoState {
+  final String message;
+  DeletePackageError(this.message);
+}
+
+
 class StartOrStopTimePackSuccess extends PackingPedidoState {
   final String isStarted;
   StartOrStopTimePackSuccess(this.isStarted);
