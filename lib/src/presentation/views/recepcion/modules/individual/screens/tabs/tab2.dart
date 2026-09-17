@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/injection_container.dart';
@@ -129,7 +130,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
 
       // Navegamos directo: la pantalla de scan se reconstruye via BlocBuilder
       // cuando FetchPorductOrder termina de cargar el producto.
-      Navigator.pushReplacementNamed(
+      goToScreen(
         context,
         'scan-product-order',
         arguments: [widget.ordenCompra, product],
@@ -301,7 +302,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecep> {
                                         // Navegamos directo: la pantalla de scan
                                         // se reconstruye via BlocBuilder cuando
                                         // FetchPorductOrder termina de cargar.
-                                        Navigator.pushReplacementNamed(
+                                        goToScreen(
                                           context,
                                           'scan-product-order',
                                           arguments: [

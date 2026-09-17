@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/core/utils/widgets/dialog_dispositivo_no_autorizado_widget.dart';
 import 'package:wms_app/injection_container.dart';
@@ -131,7 +132,7 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
           context
               .read<RecepcionBloc>()
               .add(CurrentOrdenesCompra(state.ordenCompra));
-          Navigator.pushReplacementNamed(
+          goToScreen(
             context,
             'recepcion',
             arguments: [state.ordenCompra, 0],
@@ -673,7 +674,7 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
             recepcionBloc.add(CurrentOrdenesCompra(ordenCompra));
             Navigator.pop(dialogContext);
             if (mounted) {
-              Navigator.pushReplacementNamed(
+              goToScreen(
                 context,
                 'recepcion',
                 arguments: [ordenCompra, 0],
@@ -701,7 +702,7 @@ class _ListOrdenesCompraScreenState extends State<ListOrdenesCompraScreen> {
       await Future.delayed(const Duration(seconds: 1));
       if (mounted) {
         Navigator.pop(context);
-        Navigator.pushReplacementNamed(
+        goToScreen(
           context,
           'recepcion',
           arguments: [ordenCompra, 0],
@@ -750,7 +751,7 @@ class AppBar extends StatelessWidget {
                           '',
                         ));
 
-                    Navigator.pushReplacementNamed(
+                    goToScreen(
                       context,
                       '/home',
                     );

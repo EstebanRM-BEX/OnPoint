@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously
@@ -260,7 +261,7 @@ class _PickingPageState extends State<WMSPickingPage> {
                                   .read<WMSPickingBloc>()
                                   .searchController
                                   .clear();
-                              Navigator.pushReplacementNamed(context, '/home');
+                              goToScreen(context, '/home');
                             },
                             popupMenu: PopupMenuButton<String>(
                               icon: const Icon(
@@ -503,7 +504,7 @@ class _PickingPageState extends State<WMSPickingPage> {
                                       );
 
                                   // Navegar a la pantalla de historial
-                                  Navigator.pushReplacementNamed(
+                                  goToScreen(
                                       context, 'history-list');
                                 }
                               } finally {
@@ -987,9 +988,9 @@ class _PickingPageState extends State<WMSPickingPage> {
     }
 
     if (batch.isSeparate != 1) {
-      Navigator.pushReplacementNamed(context, 'batch');
+      goToScreen(context, 'batch');
     } else {
-      Navigator.pushReplacementNamed(
+      goToScreen(
           context, 'batch-detail'); // Asumo que va aquí
     }
   }

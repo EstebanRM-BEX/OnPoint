@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
@@ -43,7 +44,7 @@ class LocationCardButtonConteo extends StatelessWidget {
                         !bloc.productIsOk &&
                         !bloc.quantityIsOk
                     ? () {
-                        Navigator.pushReplacementNamed(
+                        goToScreen(
                           context,
                           routeName,
                         );

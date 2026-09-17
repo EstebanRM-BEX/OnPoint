@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
@@ -48,7 +49,7 @@ class LocationCardButtonCreateTransfer extends StatelessWidget {
         // La función a ejecutar si la condición es TRUE
         final VoidCallback? onPressed = canNavigate
             ? () {
-                Navigator.pushReplacementNamed(
+                goToScreen(
                   context,
                   routeName,
                   arguments: [isLocationDest, bloc],

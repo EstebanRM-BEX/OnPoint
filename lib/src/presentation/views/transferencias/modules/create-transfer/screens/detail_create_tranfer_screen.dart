@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -116,7 +117,7 @@ class DetailCreateTransferScreen extends StatelessWidget {
                       ElevatedButton(
                         onPressed: () {
                           Navigator.pop(context);
-                          Navigator.pushReplacementNamed(
+                          goToScreen(
                               context, 'create-transfer',
                               arguments: [bloc]);
                         },
@@ -175,7 +176,7 @@ class DetailCreateTransferScreen extends StatelessWidget {
                                 icon:
                                     const Icon(Icons.arrow_back, color: white),
                                 onPressed: () {
-                                  Navigator.pushReplacementNamed(
+                                  goToScreen(
                                       context, 'create-transfer',
                                       arguments: [
                                         context.read<CreateTransferBloc>()

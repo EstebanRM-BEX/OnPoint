@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
@@ -20,7 +21,7 @@ class PopupMenuCreateTransferWidget extends StatelessWidget {
             // Manejar la selección de opciones aquí
             if (value == '1') {
               //verficamos si tenemos permisos
-              Navigator.pushReplacementNamed(
+              goToScreen(
                 context,
                 'detail-create-transfer',
                 arguments: [context.read<CreateTransferBloc>()],

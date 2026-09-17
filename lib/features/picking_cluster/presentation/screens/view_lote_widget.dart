@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/cluster_picking/cluster_picking_bloc.dart';
@@ -115,7 +116,7 @@ class _ViewLoteScreenState extends State<ViewLoteScreen>
                     children: [
                       IconButton(
                         onPressed: () {
-                          Navigator.pushReplacementNamed(
+                          goToScreen(
                               context, 'scan-product-cluster');
                         },
                         icon: const Icon(Icons.arrow_back, color: white),
@@ -394,7 +395,7 @@ class _ViewLoteScreenState extends State<ViewLoteScreen>
                           context
                               .read<ClusterPickingBloc>()
                               .add(SelectLoteEventCluster(selectedLote));
-                          Navigator.pushReplacementNamed(
+                          goToScreen(
                               context, 'scan-product-cluster');
                         } else {
                           showDialog(
@@ -407,7 +408,7 @@ class _ViewLoteScreenState extends State<ViewLoteScreen>
                                     .read<ClusterPickingBloc>()
                                     .add(SelectLoteEventCluster(lote));
 
-                                Navigator.pushReplacementNamed(
+                                goToScreen(
                                     context, 'scan-product-cluster');
                               },
                             ),

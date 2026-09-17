@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -20,7 +21,7 @@ class ProductDropdownCreateTransferWidget extends StatelessWidget {
               ? () {
                   final bloc = context.read<CreateTransferBloc>();
                   bloc.add(GetProductsFromDBEvent());
-                  Navigator.pushReplacementNamed(
+                  goToScreen(
                     context,
                     'search-product-create-transfer',
                     arguments: [bloc],

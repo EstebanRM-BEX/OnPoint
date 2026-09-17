@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -399,7 +400,7 @@ class _SearchProductScreenState
 
           setState(() => selectedProductKey = null);
 
-          Navigator.pushReplacementNamed(
+          goToScreen(
             context,
             'create-transfer',
             arguments: [bloc],
@@ -460,7 +461,7 @@ class _AppBarInfo extends StatelessWidget {
                       IconButton(
                         icon: const Icon(Icons.arrow_back, color: white),
                         onPressed: () {
-                          Navigator.pushReplacementNamed(
+                          goToScreen(
                             context,
                             'create-transfer',
                             arguments: [context.read<CreateTransferBloc>()],

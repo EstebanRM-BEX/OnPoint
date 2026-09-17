@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously, unrelated_type_equality_checks
@@ -461,7 +462,7 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
                                     onPressed: () {
                                       termiateProcess();
 
-                                      Navigator.pushReplacementNamed(
+                                      goToScreen(
                                           context, 'recepcion-batch',
                                           arguments: [widget.ordenCompra, 1]);
                                     },
@@ -664,8 +665,7 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
                                               ),
                                               IconButton(
                                                   onPressed: () {
-                                                    Navigator
-                                                        .pushReplacementNamed(
+                                                    goToScreen(
                                                       context,
                                                       'new-lote-recep-batch',
                                                       arguments: [
@@ -748,7 +748,7 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
                                     ),
                                     GestureDetector(
                                       onTap: () {
-                                        Navigator.pushReplacementNamed(context,
+                                        goToScreen(context,
                                             'search-location-recep-batch',
                                             arguments: [
                                               widget.ordenCompra,
@@ -857,8 +857,7 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
                                                           !recepcionBloc
                                                               .quantityIsOk
                                                       ? () {
-                                                          Navigator
-                                                              .pushReplacementNamed(
+                                                          goToScreen(
                                                                   context,
                                                                   'search-location-recep-batch',
                                                                   arguments: [
@@ -1320,7 +1319,7 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
                     _cantidadController.clear();
                     _finishSeprateProductOrder(context, cantidad);
 
-                    Navigator.pushReplacementNamed(context, 'recepcion-batch',
+                    goToScreen(context, 'recepcion-batch',
                         arguments: [widget.ordenCompra, 1]);
                   },
                   onSplit: () {
@@ -1330,7 +1329,7 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
                         currentProduct.idRecepcion ?? 0,
                         currentProduct.idMove ?? 0));
                     _cantidadController.clear();
-                    Navigator.pushReplacementNamed(context, 'recepcion-batch',
+                    goToScreen(context, 'recepcion-batch',
                         arguments: [widget.ordenCompra, 1]);
 
                     _finishSeprateProductOrderSplit(context, cantidad);
@@ -1406,7 +1405,7 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
     context.read<RecepcionBatchBloc>().add(SendProductToOrder(false, cantidad));
     termiateProcess();
 
-    Navigator.pushReplacementNamed(context, 'recepcion-batch',
+    goToScreen(context, 'recepcion-batch',
         arguments: [widget.ordenCompra, 1]);
   }
 

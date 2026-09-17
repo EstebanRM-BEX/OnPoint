@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
@@ -60,7 +61,7 @@ class _RecepcionScreenState extends State<RecepcionBatchScreen>
                 onPressed: () {
                   //volvemos a llamar las entradas que tenemos guardadas en la bd
                   // context.read<RecepcionBatchBloc>().add(FetchRecepcionBatchEventFromBD());
-                  Navigator.pushReplacementNamed(
+                  goToScreen(
                     context,
                     'list-recepction-batch',
                   );

@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -125,7 +126,7 @@ class _DetailClusterScreenState extends State<DetailClusterScreen>
                                 icon: const Icon(Icons.arrow_back,
                                     color: white),
                                 onPressed: () {
-                                  Navigator.pushReplacementNamed(
+                                  goToScreen(
                                       context, 'scan-product-cluster');
                                 },
                               ),
@@ -396,10 +397,9 @@ class _DetailClusterScreenState extends State<DetailClusterScreen>
                                                                       productsBatch,
                                                                       "cluster",
                                                                     ));
-                                                                Navigator
-                                                                    .pushReplacementNamed(
-                                                                        context,
-                                                                        'scan-product-cluster');
+                                                                goToScreen(
+                                                                    context,
+                                                                    'scan-product-cluster');
                                                               },
                                                             );
                                                           });

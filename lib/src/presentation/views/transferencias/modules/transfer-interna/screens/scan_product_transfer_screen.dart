@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously
@@ -538,7 +539,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
 
     if (cantidad == truncado) {
       _finishSeprateProductOrder(context, cantidad);
-      Navigator.pushReplacementNamed(context, 'transferencia-detail',
+      goToScreen(context, 'transferencia-detail',
           arguments: [batchBloc.currentTransferencia, 1]);
     } else {
       showDialog(
@@ -551,13 +552,13 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                 onAccepted: () async {
                   _finishSeprateProductOrder(context, cantidad);
 
-                  Navigator.pushReplacementNamed(
+                  goToScreen(
                       context, 'transferencia-detail',
                       arguments: [batchBloc.currentTransferencia, 1]);
                 },
                 onSplit: () {
                   _finishSeprateProductOrderSplit(context, cantidad);
-                  Navigator.pushReplacementNamed(
+                  goToScreen(
                       context, 'transferencia-detail',
                       arguments: [batchBloc.currentTransferencia, 1]);
                 });
@@ -669,7 +670,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                                           termiateProcess();
 
                                           bloc.add(CleanFieldsEvent());
-                                          Navigator.pushReplacementNamed(
+                                          goToScreen(
                                               context, 'transferencia-detail',
                                               arguments: [
                                                 bloc.currentTransferencia,
@@ -818,7 +819,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                                                     !bloc.quantityIsOk &&
                                                     !bloc.locationDestIsOk
                                                 ? () {
-                                                    Navigator.pushReplacementNamed(
+                                                    goToScreen(
                                                         context,
                                                         'seacrh-locationsDest-trans',
                                                         arguments: [

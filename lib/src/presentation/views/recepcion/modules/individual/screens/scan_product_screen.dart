@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/injection_container.dart';
@@ -429,14 +430,14 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
                         if (state is SendTemperatureSuccess) {
                           //cerramos el dialogo de envio de temperatura
                           hideLoadingDialog();
-                          Navigator.pushReplacementNamed(context, 'recepcion',
+                          goToScreen(context, 'recepcion',
                               arguments: [widget.ordenCompra, 1]);
                         }
 
                         if (state is SendProductToOrderSuccess) {
                           //cerramos el dialogo
                           hideLoadingDialog();
-                          Navigator.pushReplacementNamed(context, 'recepcion',
+                          goToScreen(context, 'recepcion',
                               arguments: [widget.ordenCompra, 1]);
                         }
 
@@ -534,7 +535,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
                                     onPressed: () {
                                       termiateProcess();
 
-                                      Navigator.pushReplacementNamed(
+                                      goToScreen(
                                           context, 'recepcion',
                                           arguments: [widget.ordenCompra, 1]);
                                     },
@@ -754,8 +755,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
                                               ),
                                               IconButton(
                                                   onPressed: () {
-                                                    Navigator
-                                                        .pushReplacementNamed(
+                                                    goToScreen(
                                                       context,
                                                       'new-lote',
                                                       arguments: [
@@ -838,7 +838,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
                                     ),
                                     GestureDetector(
                                       onTap: () {
-                                        Navigator.pushReplacementNamed(
+                                        goToScreen(
                                             context, 'search-location-recep',
                                             arguments: [
                                               widget.ordenCompra,
@@ -947,8 +947,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
                                                           !recepcionBloc
                                                               .quantityIsOk
                                                       ? () {
-                                                          Navigator
-                                                              .pushReplacementNamed(
+                                                          goToScreen(
                                                                   context,
                                                                   'search-location-recep',
                                                                   arguments: [

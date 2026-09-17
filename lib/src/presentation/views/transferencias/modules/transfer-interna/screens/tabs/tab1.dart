@@ -1,6 +1,7 @@
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously, prefer_is_empty
 
 import 'dart:ui';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -149,9 +150,9 @@ class _Tab1ScreenTransState extends State<Tab1ScreenTrans>
             hideLoadingDialog();
 
             if (widget.transFerencia?.type == "transfer") {
-              Navigator.pushReplacementNamed(context, 'transferencias');
+              goToScreen(context, 'transferencias');
             } else if (widget.transFerencia?.type == "entrega") {
-              Navigator.pushReplacementNamed(context, 'list-entrada-productos');
+              goToScreen(context, 'list-entrada-productos');
             }
           }
 
@@ -192,9 +193,9 @@ class _Tab1ScreenTransState extends State<Tab1ScreenTrans>
             hideLoadingDialog();
 
             if (widget.transFerencia?.type == "transfer") {
-              Navigator.pushReplacementNamed(context, 'transferencias');
+              goToScreen(context, 'transferencias');
             } else if (widget.transFerencia?.type == "entrega") {
-              Navigator.pushReplacementNamed(context, 'list-entrada-productos');
+              goToScreen(context, 'list-entrada-productos');
             }
           }
         },

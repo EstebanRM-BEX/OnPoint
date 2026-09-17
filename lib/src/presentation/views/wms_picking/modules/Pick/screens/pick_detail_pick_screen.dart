@@ -1,6 +1,7 @@
 // ignore_for_file: unrelated_type_equality_checks, avoid_print, use_build_context_synchronously
 
 import 'dart:ui';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -154,7 +155,7 @@ class _PickDetailScreenState extends State<PickDetailScreen>
                                           bloc.add(
                                             ClearSearchProudctsPickEvent(),
                                           );
-                                          Navigator.pushReplacementNamed(
+                                          goToScreen(
                                             context,
                                             'scan-product-pick',
                                           );
@@ -1336,7 +1337,7 @@ class DialogoConfirmateProductLoad extends StatelessWidget {
               context.read<PickingPickBloc>().add(
                 LoadSelectedProductEvent(productsBatch),
               );
-              Navigator.pushReplacementNamed(context, 'scan-product-pick');
+              goToScreen(context, 'scan-product-pick');
             },
             child: const Text("Aceptar", style: TextStyle(color: white)),
           ),

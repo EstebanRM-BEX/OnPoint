@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -38,7 +39,7 @@ class PopupMenuButtonWidget extends StatelessWidget {
                 //   batchBloc.typePicking,
                 // ));
 
-                Navigator.pushReplacementNamed(
+                goToScreen(
                   context,
                   'detail-cluster',
                   // 'validate-cluster',

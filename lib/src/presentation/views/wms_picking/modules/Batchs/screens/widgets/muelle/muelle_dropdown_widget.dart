@@ -1,6 +1,7 @@
 // ignore_for_file: unrelated_type_equality_checks
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -190,7 +191,7 @@ class _MuelleDropdownWidgetState extends State<MuelleDropdownWidget> {
                         batchBloc.isSearch = false;
                         batchBloc
                             .add(LoadProductEditEvent(batchBloc.typePicking));
-                        Navigator.pushReplacementNamed(
+                        goToScreen(
                           context,
                           'batch-detail',
                         );
@@ -239,17 +240,17 @@ class _MuelleDropdownWidgetState extends State<MuelleDropdownWidget> {
 
         //validamos que tipo de batch es
         if (batchBloc.typePicking == 'components') {
-          Navigator.pushReplacementNamed(
+          goToScreen(
             context,
             'picking-componentes-batch',
           );
         } else if (batchBloc.typePicking == 'batch') {
-          Navigator.pushReplacementNamed(
+          goToScreen(
             context,
             'wms-picking',
           );
         } else {
-          Navigator.pushReplacementNamed(context, '/home');
+          goToScreen(context, '/home');
         }
       }
     } else {
@@ -269,7 +270,7 @@ class _MuelleDropdownWidgetState extends State<MuelleDropdownWidget> {
                     batchBloc.isSearch = false;
                     batchBloc.add(LoadProductEditEvent(batchBloc.typePicking));
 
-                    Navigator.pushReplacementNamed(
+                    goToScreen(
                       context,
                       'batch-detail',
                     );

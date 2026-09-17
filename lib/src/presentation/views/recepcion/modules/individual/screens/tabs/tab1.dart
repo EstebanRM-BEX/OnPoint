@@ -1,6 +1,7 @@
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously
 
 import 'dart:ui';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -203,12 +204,12 @@ class _Tab1ScreenRecepState extends State<Tab1ScreenRecep>
             hideLoadingDialog();
 
             if (ordenCompra?.type == 'dev') {
-              Navigator.pushReplacementNamed(
+              goToScreen(
                 context,
                 'list-devoluciones',
               );
             } else {
-              Navigator.pushReplacementNamed(
+              goToScreen(
                 context,
                 'list-ordenes-compra',
               );
@@ -232,12 +233,12 @@ class _Tab1ScreenRecepState extends State<Tab1ScreenRecep>
             hideLoadingDialog();
 
             if (ordenCompra?.type == 'dev') {
-              Navigator.pushReplacementNamed(
+              goToScreen(
                 context,
                 'list-devoluciones',
               );
             } else {
-              Navigator.pushReplacementNamed(
+              goToScreen(
                 context,
                 'list-ordenes-compra',
               );

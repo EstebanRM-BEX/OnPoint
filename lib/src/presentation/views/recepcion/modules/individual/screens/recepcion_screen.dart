@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
@@ -69,7 +70,7 @@ class _RecepcionScreenState extends State<RecepcionScreen>
                       context
                           .read<RecepcionBloc>()
                           .add(FetchDevolucionesOfDB());
-                      Navigator.pushReplacementNamed(
+                      goToScreen(
                         context,
                         'list-devoluciones',
                       );
@@ -78,7 +79,7 @@ class _RecepcionScreenState extends State<RecepcionScreen>
                           .read<RecepcionBloc>()
                           .add(FetchOrdenesCompraOfBd());
 
-                      Navigator.pushReplacementNamed(
+                      goToScreen(
                         context,
                         'list-ordenes-compra',
                       );

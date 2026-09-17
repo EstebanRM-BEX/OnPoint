@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -59,7 +60,7 @@ class ListRecepctionBatchScreen extends StatelessWidget {
             context.read<RecepcionBatchBloc>().add(
               CurrentOrdenesCompraBatch(state.ordenCompra),
             );
-            Navigator.pushReplacementNamed(
+            goToScreen(
               context,
               'recepcion-batch',
               arguments: [state.ordenCompra, 0],
@@ -462,7 +463,7 @@ class ListRecepctionBatchScreen extends StatelessWidget {
                                             ),
                                           );
 
-                                          Navigator.pushReplacementNamed(
+                                          goToScreen(
                                             context,
                                             'recepcion-batch',
                                             arguments: [
@@ -526,7 +527,7 @@ class AppBar extends StatelessWidget {
                         SearchReceptionEvent(''),
                       );
 
-                      Navigator.pushReplacementNamed(context, '/home');
+                      goToScreen(context, '/home');
                     },
                   ),
                   Padding(

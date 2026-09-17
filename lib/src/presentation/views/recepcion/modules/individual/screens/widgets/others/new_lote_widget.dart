@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously, unrelated_type_equality_checks
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_holo_date_picker/date_picker.dart';
@@ -74,7 +75,7 @@ class _NewLoteScreenState extends State<NewLoteScreen> with LoadingDialogMixin {
 
                           if (state is CreateLoteProductSuccess) {
                             hideLoadingDialog();
-                            Navigator.pushReplacementNamed(
+                            goToScreen(
                                 context, 'scan-product-order', arguments: [
                               widget.ordenCompra,
                               widget.currentProduct
@@ -129,7 +130,7 @@ class _NewLoteScreenState extends State<NewLoteScreen> with LoadingDialogMixin {
                                     icon: const Icon(Icons.arrow_back,
                                         color: white),
                                     onPressed: () {
-                                      Navigator.pushReplacementNamed(
+                                      goToScreen(
                                           context, 'scan-product-order',
                                           arguments: [
                                             widget.ordenCompra,
@@ -667,7 +668,7 @@ class _NewLoteScreenState extends State<NewLoteScreen> with LoadingDialogMixin {
 
                           bloc.add(SelectecLoteEvent(selectedLote));
 
-                          Navigator.pushReplacementNamed(
+                          goToScreen(
                               context, 'scan-product-order', arguments: [
                             widget.ordenCompra,
                             widget.currentProduct

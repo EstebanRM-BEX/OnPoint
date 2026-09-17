@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/shared/widgets/disposable_controllers_mixin.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
@@ -443,7 +444,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                 ElevatedButton(
                     onPressed: () {
                       batchBloc.isSearch = false;
-                      Navigator.pushReplacementNamed(
+                      goToScreen(
                         context,
                         'detail-cluster',
                       );
@@ -489,7 +490,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
 
                   batchBloc.isSearch = false;
                   //   batchBloc.add(LoadProductEditEvent(batchBloc.typePicking));
-                  Navigator.pushReplacementNamed(
+                  goToScreen(
                     context,
                     'detail-cluster',
                   );
@@ -530,7 +531,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
 
     batchBloc.index = 0;
     batchBloc.isSearch = true;
-    Navigator.pushReplacementNamed(
+    goToScreen(
       context,
       'validate-cluster',
     );
@@ -710,7 +711,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
 
                 if (state is PickingClustersLoaded) {
                   hideLoadingDialog();
-                  Navigator.pushReplacementNamed(context, 'picking-cluster');
+                  goToScreen(context, 'picking-cluster');
                 }
 
                 if (state is PickingClustersError) {
@@ -724,7 +725,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                     showProgressIndicator: true,
                     duration: const Duration(seconds: 5),
                   );
-                  Navigator.pushReplacementNamed(context, 'picking-cluster');
+                  goToScreen(context, 'picking-cluster');
                 }
 
                 if (state is SendToOdooStateSuccess) {
@@ -1004,7 +1005,7 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                               child: GestureDetector(
                                 onTap: bloc.locationIsOk && bloc.productIsOk
                                     ? () {
-                                        Navigator.pushReplacementNamed(
+                                        goToScreen(
                                           context,
                                           AppRoutes.selectLoteCluster,
                                           arguments: [

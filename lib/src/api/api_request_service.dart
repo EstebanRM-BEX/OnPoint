@@ -12,6 +12,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:wms_app/src/api/http_response_handler.dart';
+import 'package:wms_app/main.dart' show navigatorKey;
 
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
@@ -20,6 +21,37 @@ import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/core/utils/widgets/dialog_loading_widget.dart';
 
 class ApiRequestService {
+  /// Abre el loader de red y devuelve la función que lo cierra POR SU PROPIA
+  /// RUTA.
+  ///
+  /// Antes se abría con `Get.dialog` y se cerraba con `Get.back()`, que cierra
+  /// "la ruta de arriba", sea cual sea: si mientras la petición estaba en vuelo
+  /// la pantalla navegó o se abrió otro diálogo, ese `Get.back()` terminaba
+  /// cerrando una pantalla. Y al revés: una navegación hecha con el loader
+  /// abierto reemplazaba el diálogo en vez de la pantalla, dejando rutas
+  /// acumuladas (visto en el árbol de widgets: List → Detail → Scan → Scan…).
+  ///
+  /// `removeRoute` quita exactamente esta ruta aunque ya no sea la superior, y
+  /// no hace nada si alguien más la sacó antes.
+  VoidCallback _openLoadingDialog(String endpoint) {
+    final navigator = navigatorKey.currentState;
+    if (navigator == null) return () {};
+
+    final route = DialogRoute<void>(
+      context: navigator.context,
+      barrierDismissible: false,
+      builder: (_) => DialogLoadingNetwork(titel: endpoint),
+    );
+    navigator.push(route);
+
+    bool cerrado = false;
+    return () {
+      if (cerrado) return;
+      cerrado = true;
+      if (route.isActive) navigator.removeRoute(route);
+    };
+  }
+
   static final ApiRequestService _instance = ApiRequestService._internal();
 
   factory ApiRequestService() => _instance;
@@ -125,18 +157,15 @@ class ApiRequestService {
     url = url + (isunecodePath ? '$unencodePath/$endpoint' : '/$endpoint');
     final headers = {'Content-Type': 'application/json'};
 
+    VoidCallback? closeLoading;
     try {
-      if (isLoadinDialog)
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
+      if (isLoadinDialog) closeLoading = _openLoadingDialog(endpoint);
 
       final response = await http
           .post(Uri.parse(url), body: jsonEncode(body), headers: headers)
           .timeout(const Duration(seconds: 100));
 
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
 
       if (response.headers.containsKey('set-cookie')) {
         await PrefUtils.setCookie(response.headers['set-cookie']!);
@@ -146,19 +175,19 @@ class ApiRequestService {
       return response;
     } on TimeoutException catch (e) {
       debugPrint('🔴 [POST] Timeout: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       return buildClientErrorResponse(
         408,
         'La solicitud superó el tiempo de espera',
       );
     } on SocketException catch (e) {
       debugPrint('🔴 [POST] SocketException: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       _showNetworkError();
       rethrow;
     } catch (e) {
       debugPrint('🔴 [POST] Error: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       rethrow;
     }
   }
@@ -215,12 +244,9 @@ class ApiRequestService {
     final ext = p.extension(imageFile.path).toLowerCase();
     final subtype = ext == '.png' ? 'png' : 'jpeg';
 
+    VoidCallback? closeLoading;
     try {
-      if (isLoadinDialog)
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
+      if (isLoadinDialog) closeLoading = _openLoadingDialog(endpoint);
 
       final request = http.MultipartRequest('POST', fullUrl);
       request.files.add(
@@ -236,18 +262,18 @@ class ApiRequestService {
         await request.send().timeout(const Duration(seconds: 100)),
       );
 
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       debugPrint('✅ MULTIPART $endpoint → ${response.statusCode}');
       return response;
     } on TimeoutException catch (e) {
       debugPrint('🔴 [postMultipartImage] Timeout: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       return buildClientErrorResponse(
         408,
         'La solicitud superó el tiempo de espera',
       );
     } catch (e, s) {
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       debugPrint('🔴 [postMultipartImage] Error: $e\n$s');
       return buildClientErrorResponse(500, 'Error en la solicitud: $e');
     }
@@ -272,12 +298,9 @@ class ApiRequestService {
     final ext = p.extension(imageFile.path).toLowerCase();
     final subtype = ext == '.png' ? 'png' : 'jpeg';
 
+    VoidCallback? closeLoading;
     try {
-      if (isLoadinDialog)
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
+      if (isLoadinDialog) closeLoading = _openLoadingDialog(endpoint);
 
       final request = http.MultipartRequest('POST', fullUrl);
       request.files.add(
@@ -295,18 +318,18 @@ class ApiRequestService {
         await request.send().timeout(const Duration(seconds: 100)),
       );
 
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       debugPrint('✅ MULTIPART $endpoint → ${response.statusCode}');
       return response;
     } on TimeoutException catch (e) {
       debugPrint('🔴 [postMultipart] Timeout: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       return buildClientErrorResponse(
         408,
         'La solicitud superó el tiempo de espera',
       );
     } catch (e, s) {
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       debugPrint('🔴 [postMultipart] Error: $e\n$s');
       return buildClientErrorResponse(500, 'Error en la solicitud: $e');
     }
@@ -328,12 +351,9 @@ class ApiRequestService {
     final cookie = await PrefUtils.getCookie();
     final fullUrl = Uri.parse('$urlBase/api/$endpoint');
 
+    VoidCallback? closeLoading;
     try {
-      if (isLoadinDialog)
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
+      if (isLoadinDialog) closeLoading = _openLoadingDialog(endpoint);
 
       final request = http.MultipartRequest('POST', fullUrl);
       request.fields['move_line_id'] = idMoveLine.toString();
@@ -344,18 +364,18 @@ class ApiRequestService {
         await request.send().timeout(const Duration(seconds: 100)),
       );
 
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       debugPrint('✅ MULTIPART MANUAL $endpoint → ${response.statusCode}');
       return response;
     } on TimeoutException catch (e) {
       debugPrint('🔴 [postMultipartManual] Timeout: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       return buildClientErrorResponse(
         408,
         'La solicitud superó el tiempo de espera',
       );
     } catch (e, s) {
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       debugPrint('🔴 [postMultipartManual] Error: $e\n$s');
       return buildClientErrorResponse(500, 'Error en la solicitud: $e');
     }
@@ -379,12 +399,9 @@ class ApiRequestService {
     final ext = p.extension(imageFile.path).toLowerCase();
     final subtype = ext == '.png' ? 'png' : 'jpeg';
 
+    VoidCallback? closeLoading;
     try {
-      if (isLoadingDialog)
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
+      if (isLoadingDialog) closeLoading = _openLoadingDialog(endpoint);
 
       final request = http.MultipartRequest('POST', fullUrl);
       request.files.add(
@@ -403,18 +420,18 @@ class ApiRequestService {
         await request.send().timeout(const Duration(seconds: 100)),
       );
 
-      if (isLoadingDialog) Get.back();
+      closeLoading?.call();
       debugPrint('✅ MULTIPART DYNAMIC $endpoint → ${response.statusCode}');
       return response;
     } on TimeoutException catch (e) {
       debugPrint('🔴 [postMultipartDynamic] Timeout: $e');
-      if (isLoadingDialog) Get.back();
+      closeLoading?.call();
       return buildClientErrorResponse(
         408,
         'La solicitud superó el tiempo de espera',
       );
     } catch (e, s) {
-      if (isLoadingDialog) Get.back();
+      closeLoading?.call();
       debugPrint('🔴 [postMultipartDynamic] Error: $e\n$s');
       return buildClientErrorResponse(500, 'Error en la solicitud: $e');
     }
@@ -439,12 +456,9 @@ class ApiRequestService {
 
     final headers = {'Content-Type': 'application/json', 'Cookie': sessionId};
 
+    VoidCallback? closeLoading;
     try {
-      if (isLoadinDialog)
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
+      if (isLoadinDialog) closeLoading = _openLoadingDialog(endpoint);
 
       final request = http.Request('POST', Uri.parse(url));
       request.body = json.encode(body);
@@ -455,24 +469,24 @@ class ApiRequestService {
       );
       final response = await http.Response.fromStream(streamed);
 
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       debugPrint('✅ POST PICKING $endpoint → ${response.statusCode}');
       return response;
     } on TimeoutException catch (e) {
       debugPrint('🔴 [postPicking] Timeout: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       return buildClientErrorResponse(
         408,
         'La solicitud superó el tiempo de espera',
       );
     } on SocketException catch (e) {
       debugPrint('🔴 [postPicking] SocketException: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       _showNetworkError();
       rethrow;
     } catch (e, s) {
       debugPrint('🔴 [postPicking] Error: $e\n$s');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       rethrow;
     }
   }
@@ -502,12 +516,10 @@ class ApiRequestService {
     final headers = {'Content-Type': 'application/json', 'Cookie': sessionId};
 
     bool loadingDialogOpened = false;
+    VoidCallback? closeLoading;
     try {
       if (isLoadinDialog) {
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
+        closeLoading = _openLoadingDialog(endpoint);
         loadingDialogOpened = true;
       }
 
@@ -523,7 +535,7 @@ class ApiRequestService {
       final response = await http.Response.fromStream(streamed);
 
       if (loadingDialogOpened) {
-        Get.back();
+        closeLoading?.call();
         loadingDialogOpened = false;
       }
 
@@ -531,19 +543,19 @@ class ApiRequestService {
       return response;
     } on TimeoutException catch (e) {
       debugPrint('🔴 [postPacking] Timeout: $e');
-      if (loadingDialogOpened) Get.back();
+      closeLoading?.call();
       return buildClientErrorResponse(
         408,
         'La solicitud superó el tiempo de espera',
       );
     } on SocketException catch (e) {
       debugPrint('🔴 [postPacking] SocketException: $e');
-      if (loadingDialogOpened) Get.back();
+      closeLoading?.call();
       if (showNetworkErrorSnackbar) _showNetworkError();
       return buildClientErrorResponse(404, 'Error de red');
     } catch (e) {
       debugPrint('🔴 [postPacking] Error: $e');
-      if (loadingDialogOpened) Get.back();
+      closeLoading?.call();
       rethrow;
     }
   }
@@ -567,12 +579,10 @@ class ApiRequestService {
     final headers = {'Content-Type': 'application/json', 'Cookie': sessionId};
 
     bool loadingDialogOpened = false;
+    VoidCallback? closeLoading;
     try {
       if (isLoadinDialog) {
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
+        closeLoading = _openLoadingDialog(endpoint);
         loadingDialogOpened = true;
       }
 
@@ -588,7 +598,7 @@ class ApiRequestService {
       final response = await http.Response.fromStream(streamed);
 
       if (loadingDialogOpened) {
-        Get.back();
+        closeLoading?.call();
         loadingDialogOpened = false;
       }
 
@@ -596,19 +606,19 @@ class ApiRequestService {
       return response;
     } on TimeoutException catch (e) {
       debugPrint('🔴 [postPrint] Timeout: $e');
-      if (loadingDialogOpened) Get.back();
+      closeLoading?.call();
       return buildClientErrorResponse(
         408,
         'La solicitud de impresión superó el tiempo de espera',
       );
     } on SocketException catch (e) {
       debugPrint('🔴 [postPrint] SocketException: $e');
-      if (loadingDialogOpened) Get.back();
+      closeLoading?.call();
       _showNetworkError();
       return buildClientErrorResponse(404, 'Error de red');
     } catch (e) {
       debugPrint('🔴 [postPrint] Error: $e');
-      if (loadingDialogOpened) Get.back();
+      closeLoading?.call();
       rethrow;
     }
   }
@@ -631,12 +641,9 @@ class ApiRequestService {
 
     final headers = {'Content-Type': 'application/json', 'Cookie': sessionId};
 
+    VoidCallback? closeLoading;
     try {
-      if (isLoadinDialog)
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
+      if (isLoadinDialog) closeLoading = _openLoadingDialog(endpoint);
 
       final request = http.Request('GET', Uri.parse(url));
       request.body = json.encode(body);
@@ -646,24 +653,24 @@ class ApiRequestService {
         await request.send().timeout(const Duration(seconds: 100)),
       );
 
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       debugPrint('✅ GET INFO $endpoint → ${response.statusCode}');
       return response;
     } on TimeoutException catch (e) {
       debugPrint('🔴 [getInfo] Timeout: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       return buildClientErrorResponse(
         408,
         'La solicitud superó el tiempo de espera',
       );
     } on SocketException catch (e) {
       debugPrint('🔴 [getInfo] SocketException: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       _showNetworkError();
       rethrow;
     } catch (e) {
       debugPrint('🔴 [getInfo] Error: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       rethrow;
     }
   }
@@ -692,12 +699,9 @@ class ApiRequestService {
 
     final headers = {'Content-Type': 'application/json', 'Cookie': sessionId};
 
+    VoidCallback? closeLoading;
     try {
-      if (isLoadinDialog)
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
+      if (isLoadinDialog) closeLoading = _openLoadingDialog(endpoint);
 
       final request = http.Request('GET', Uri.parse(url));
       request.body = json.encode({"params": {}});
@@ -707,24 +711,24 @@ class ApiRequestService {
         await request.send().timeout(const Duration(seconds: 100)),
       );
 
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       debugPrint('✅ GET $endpoint → ${response.statusCode}');
       return response;
     } on TimeoutException catch (e) {
       debugPrint('🔴 [GET] Timeout: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       return buildClientErrorResponse(
         408,
         'La solicitud superó el tiempo de espera',
       );
     } on SocketException catch (e) {
       debugPrint('🔴 [GET] SocketException: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       _showNetworkError();
       rethrow;
     } catch (e) {
       debugPrint('🔴 [GET] Error: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       rethrow;
     }
   }
@@ -758,12 +762,9 @@ class ApiRequestService {
 
     final headers = {'Content-Type': 'application/json', 'Cookie': sessionId};
 
+    VoidCallback? closeLoading;
     try {
-      if (isLoadinDialog)
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
+      if (isLoadinDialog) closeLoading = _openLoadingDialog(endpoint);
 
       final request = http.Request('GET', Uri.parse(url));
       request.body = json.encode({
@@ -778,24 +779,24 @@ class ApiRequestService {
         await request.send().timeout(const Duration(seconds: 100)),
       );
 
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       debugPrint('✅ GET VALIDATION $endpoint → ${response.statusCode}');
       return response;
     } on TimeoutException catch (e) {
       debugPrint('🔴 [getValidation] Timeout: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       return buildClientErrorResponse(
         408,
         'La solicitud superó el tiempo de espera',
       );
     } on SocketException catch (e) {
       debugPrint('🔴 [getValidation] SocketException: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       _showNetworkError();
       rethrow;
     } catch (e) {
       debugPrint('🔴 [getValidation] Error: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       rethrow;
     }
   }
@@ -825,12 +826,9 @@ class ApiRequestService {
       return null;
     }
 
+    VoidCallback? closeLoading;
     try {
-      if (isLoadinDialog)
-        Get.dialog(
-          DialogLoadingNetwork(titel: 'view_image'),
-          barrierDismissible: false,
-        );
+      if (isLoadinDialog) closeLoading = _openLoadingDialog('view_image');
 
       final request = http.Request('GET', Uri.parse(fullImageUrl));
       request.headers['Cookie'] = sessionId;
@@ -841,7 +839,7 @@ class ApiRequestService {
         const Duration(seconds: 100),
       );
 
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
 
       final contentType = streamed.headers['content-type'] ?? '';
 
@@ -872,7 +870,7 @@ class ApiRequestService {
         return null;
       }
     } on TimeoutException catch (e) {
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       debugPrint('🔴 [fetchImage] Timeout: $e');
       Get.snackbar(
         'Error',
@@ -884,7 +882,7 @@ class ApiRequestService {
       );
       return null;
     } catch (e) {
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       debugPrint('🔴 [fetchImage] Error: $e');
       Get.snackbar(
         'Error inesperado',
@@ -922,12 +920,9 @@ class ApiRequestService {
 
     final headers = {'Content-Type': 'application/json', 'Cookie': sessionId};
 
+    VoidCallback? closeLoading;
     try {
-      if (isLoadinDialog)
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
+      if (isLoadinDialog) closeLoading = _openLoadingDialog(endpoint);
 
       final request = http.Request('GET', Uri.parse(url));
       request.body = json.encode({"params": {}});
@@ -937,17 +932,17 @@ class ApiRequestService {
         await request.send().timeout(const Duration(seconds: 100)),
       );
 
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       debugPrint('✅ GET INVENTARIO $endpoint → ${response.statusCode}');
       return response;
     } on SocketException catch (e) {
       debugPrint('🔴 [getInventario] SocketException: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       _showNetworkError();
       rethrow;
     } catch (e) {
       debugPrint('🔴 [getInventario] Error: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       rethrow;
     }
   }
@@ -978,12 +973,9 @@ class ApiRequestService {
 
     final headers = {'Content-Type': 'application/json', 'Cookie': sessionId};
 
+    VoidCallback? closeLoading;
     try {
-      if (isLoadinDialog)
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
+      if (isLoadinDialog) closeLoading = _openLoadingDialog(endpoint);
 
       final request = http.Request('GET', Uri.parse(url));
       request.body = json.encode(body);
@@ -993,17 +985,17 @@ class ApiRequestService {
         await request.send().timeout(const Duration(seconds: 100)),
       );
 
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       debugPrint('✅ POST INVENTARIO $endpoint → ${response.statusCode}');
       return response;
     } on SocketException catch (e) {
       debugPrint('🔴 [postInventario] SocketException: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       _showNetworkError();
       rethrow;
     } catch (e) {
       debugPrint('🔴 [postInventario] Error: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       rethrow;
     }
   }
@@ -1035,12 +1027,9 @@ class ApiRequestService {
 
     final headers = {'Content-Type': 'application/json', 'Cookie': sessionId};
 
+    VoidCallback? closeLoading;
     try {
-      if (isLoadinDialog)
-        Get.dialog(
-          DialogLoadingNetwork(titel: endpoint),
-          barrierDismissible: false,
-        );
+      if (isLoadinDialog) closeLoading = _openLoadingDialog(endpoint);
 
       final request = http.Request('GET', Uri.parse(url));
       request.body = json.encode({
@@ -1052,24 +1041,24 @@ class ApiRequestService {
         await request.send().timeout(const Duration(seconds: 100)),
       );
 
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       debugPrint('✅ GET HISTORY $endpoint → ${response.statusCode}');
       return response;
     } on TimeoutException catch (e) {
       debugPrint('🔴 [getHistory] Timeout: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       return buildClientErrorResponse(
         408,
         'La solicitud superó el tiempo de espera',
       );
     } on SocketException catch (e) {
       debugPrint('🔴 [getHistory] SocketException: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       _showNetworkError();
       rethrow;
     } catch (e) {
       debugPrint('🔴 [getHistory] Error: $e');
-      if (isLoadinDialog) Get.back();
+      closeLoading?.call();
       rethrow;
     }
   }

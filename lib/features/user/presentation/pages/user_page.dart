@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/src/presentation/providers/network_overlay/network_overlay_cubit.dart';
@@ -281,7 +282,7 @@ class _UserPageState extends State<UserPage> {
               elevation: 2,
               child: IconButton(
                   onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/home');
+                    goToScreen(context, '/home');
                   },
                   icon:
                       Icon(Icons.arrow_back, color: primaryColorApp, size: 30)),
@@ -524,7 +525,7 @@ class _UserPageState extends State<UserPage> {
 
       // Navegar a home
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+        goToScreen(context, '/home');
       }
     } catch (e) {
       // Verificar mounted antes de mostrar error

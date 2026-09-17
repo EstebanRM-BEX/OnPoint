@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_build_context_synchronously, deprecated_member_use, avoid_print, unrelated_type_equality_checks, unnecessary_null_comparison, unused_element, sort_child_properties_last, no_leading_underscores_for_local_identifiers
@@ -482,18 +483,18 @@ class _BatchDetailScreenState extends State<BatchScreen>
                                       //validamos el type
                                       if (batchBloc.typePicking ==
                                           'components') {
-                                        Navigator.pushReplacementNamed(
+                                        goToScreen(
                                           context,
                                           'picking-componentes-batch',
                                         );
                                       } else if (batchBloc.typePicking ==
                                           'batch') {
-                                        Navigator.pushReplacementNamed(
+                                        goToScreen(
                                           context,
                                           'wms-picking',
                                         );
                                       } else {
-                                        Navigator.pushReplacementNamed(
+                                        goToScreen(
                                             context, '/home');
                                       }
                                     },
@@ -1212,7 +1213,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
                         batchBloc
                             .add(LoadProductEditEvent(batchBloc.typePicking));
                         // batchBloc.add(IsShouldRunDependencies(false));
-                        Navigator.pushReplacementNamed(
+                        goToScreen(
                           context,
                           'batch-detail',
                         );
@@ -1260,17 +1261,17 @@ class _BatchDetailScreenState extends State<BatchScreen>
         batchBloc.isSearch = true;
         //validamos el type
         if (batchBloc.typePicking == 'components') {
-          Navigator.pushReplacementNamed(
+          goToScreen(
             context,
             'picking-componentes-batch',
           );
         } else if (batchBloc.typePicking == 'batch') {
-          Navigator.pushReplacementNamed(
+          goToScreen(
             context,
             'wms-picking',
           );
         } else {
-          Navigator.pushReplacementNamed(context, '/home');
+          goToScreen(context, '/home');
         }
       }
     } else {
@@ -1290,7 +1291,7 @@ class _BatchDetailScreenState extends State<BatchScreen>
                     //cerramos el focus
                     batchBloc.isSearch = false;
                     batchBloc.add(LoadProductEditEvent(batchBloc.typePicking));
-                    Navigator.pushReplacementNamed(
+                    goToScreen(
                       context,
                       'batch-detail',
                     ).then((_) {});

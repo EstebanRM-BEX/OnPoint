@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/core/utils/widgets/dialog_dispositivo_no_autorizado_widget.dart';
 import 'package:wms_app/injection_container.dart';
@@ -171,7 +172,7 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
                 .read<TransferenciaBloc>()
                 .add(CurrentTransferencia(state.transfer));
 
-            Navigator.pushReplacementNamed(
+            goToScreen(
               context,
               'transferencia-detail',
               arguments: [state.transfer, 0],
@@ -188,7 +189,7 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
                 // CreateTransferBloc ahora vive escopeado a la ruta
                 // 'create-transfer' — la propia pantalla
                 // (CreateTransferScreen.initState) dispara la carga inicial.
-                Navigator.pushReplacementNamed(context, 'create-transfer');
+                goToScreen(context, 'create-transfer');
               },
               child: const Icon(Icons.add),
             ),
@@ -230,7 +231,7 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
                                     context.read<TransferenciaBloc>().add(
                                         SearchTransferEvent("", 'transfer'));
 
-                                    Navigator.pushReplacementNamed(
+                                    goToScreen(
                                       context,
                                       '/home',
                                     );
@@ -821,7 +822,7 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
             Navigator.pop(dialogContext);
             // Verificamos mounted antes de navegar por seguridad
             if (mounted) {
-              Navigator.pushReplacementNamed(
+              goToScreen(
                 context,
                 'transferencia-detail',
                 arguments: [transfer, 0],
@@ -850,7 +851,7 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
       await Future.delayed(const Duration(seconds: 1));
       if (mounted) {
         Navigator.pop(context);
-        Navigator.pushReplacementNamed(
+        goToScreen(
           context,
           'transferencia-detail',
           arguments: [transfer, 0],

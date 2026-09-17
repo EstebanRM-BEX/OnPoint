@@ -1,6 +1,7 @@
 // ignore_for_file: unrelated_type_equality_checks, avoid_print, use_build_context_synchronously
 
 import 'dart:ui';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
@@ -170,7 +171,7 @@ class _BatchDetailScreenState extends State<BatchDetailScreen>
                                                   context
                                                       .read<BatchBloc>()
                                                       .typePicking));
-                                          Navigator.pushReplacementNamed(
+                                          goToScreen(
                                             context,
                                             'wms-picking',
                                           );
@@ -181,7 +182,7 @@ class _BatchDetailScreenState extends State<BatchDetailScreen>
                                                       .read<BatchBloc>()
                                                       .typePicking));
 
-                                          Navigator.pushReplacementNamed(
+                                          goToScreen(
                                               context, 'batch');
                                         }
                                       },
@@ -561,7 +562,7 @@ class _BatchDetailScreenState extends State<BatchDetailScreen>
                                                                           context
                                                                               .read<BatchBloc>()
                                                                               .typePicking));
-                                                                      Navigator.pushReplacementNamed(
+                                                                      goToScreen(
                                                                           context,
                                                                           'batch');
                                                                     },

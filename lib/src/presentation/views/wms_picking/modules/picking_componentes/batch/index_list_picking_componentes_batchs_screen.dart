@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously
@@ -189,7 +190,7 @@ class _PickingCompoBatchScreenState extends State<PickingCompoBatchScreen> {
                                                     .read<WMSPickingBloc>()
                                                     .searchController
                                                     .clear();
-                                                Navigator.pushReplacementNamed(
+                                                goToScreen(
                                                     context, '/home');
                                               },
                                             ),
@@ -723,9 +724,9 @@ class _PickingCompoBatchScreenState extends State<PickingCompoBatchScreen> {
     // 4. Navegación (Lógica sin cambios)
     // Si batch.isSeparate es 1, entonces navegamos a "batch-detail"
     if (batch.isSeparate != 1) {
-      Navigator.pushReplacementNamed(context, 'batch');
+      goToScreen(context, 'batch');
     } else {
-      Navigator.pushReplacementNamed(
+      goToScreen(
           context, 'batch-detail'); // Asumo que va aquí
     }
   }

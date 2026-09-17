@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -168,7 +169,7 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
                 .read<TransferenciaBloc>()
                 .add(CurrentTransferencia(state.transfer));
 
-            Navigator.pushReplacementNamed(
+            goToScreen(
               context,
               'transferencia-detail',
               arguments: [state.transfer, 0],
@@ -221,7 +222,7 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
                                           "entrega",
                                         ));
 
-                                    Navigator.pushReplacementNamed(
+                                    goToScreen(
                                       context,
                                       '/home',
                                     );
@@ -738,7 +739,7 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
             transferenciaBloc.add(CurrentTransferencia(transfer));
             Navigator.pop(dialogContext);
             if (mounted) {
-              Navigator.pushReplacementNamed(
+              goToScreen(
                 context,
                 'transferencia-detail',
                 arguments: [transfer, 0],
@@ -754,7 +755,7 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
       transferenciaBloc.add(GetPorductsToTransfer(transfer.id ?? 0));
       transferenciaBloc.add(CurrentTransferencia(transfer));
       transferenciaBloc.add(LoadLocations());
-      Navigator.pushReplacementNamed(
+      goToScreen(
         context,
         'transferencia-detail',
         arguments: [transfer, 0],

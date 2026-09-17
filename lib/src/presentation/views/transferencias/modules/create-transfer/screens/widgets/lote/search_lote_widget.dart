@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously, unrelated_type_equality_checks
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_holo_date_picker/date_picker.dart';
@@ -114,7 +115,7 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen>
 
                             if (state is CreateLoteProductSuccess) {
                               hideLoadingDialog();
-                              Navigator.pushReplacementNamed(
+                              goToScreen(
                                 context,
                                 'create-transfer',
                                 arguments: [context.read<CreateTransferBloc>()],
@@ -152,7 +153,7 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen>
                                         icon: const Icon(Icons.arrow_back,
                                             color: white),
                                         onPressed: () {
-                                          Navigator.pushReplacementNamed(
+                                          goToScreen(
                                             context,
                                             'create-transfer',
                                             arguments: [
@@ -631,7 +632,7 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen>
 
                             void confirmSelection() {
                               bloc.add(SelectecLoteEvent(selectedLote));
-                              Navigator.pushReplacementNamed(
+                              goToScreen(
                                 context,
                                 'create-transfer',
                                 arguments: [bloc],

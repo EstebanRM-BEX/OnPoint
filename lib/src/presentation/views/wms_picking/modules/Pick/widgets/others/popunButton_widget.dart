@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -46,7 +47,7 @@ class PopupMenuButtonPickWidget extends StatelessWidget {
                   batchBloc.pickWithProducts.pick?.id ?? 0,
                 ));
 
-                Navigator.pushReplacementNamed(
+                goToScreen(
                   context,
                   'pick-detail',
                 );

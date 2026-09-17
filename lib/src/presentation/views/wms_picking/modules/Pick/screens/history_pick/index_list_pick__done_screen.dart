@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: no_leading_underscores_for_local_identifiers, use_build_context_synchronously, unused_local_variable
@@ -57,7 +58,7 @@ class _IndexListPickDoneScreenState extends State<IndexListPickDoneScreen>
               .read<PickingPickBloc>()
               .add(LoadHistoryPickIdEvent(true, batch.id ?? 0));
 
-          Navigator.pushReplacementNamed(context, 'detail-pick-done');
+          goToScreen(context, 'detail-pick-done');
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -134,15 +135,15 @@ class _IndexListPickDoneScreenState extends State<IndexListPickDoneScreen>
                                               color: white),
                                           onPressed: () {
                                             if (widget.isFromPick) {
-                                              Navigator.pushReplacementNamed(
+                                              goToScreen(
                                                   context, 'pick');
                                             }
                                             if (!widget.isFromPick) {
-                                              Navigator.pushReplacementNamed(
+                                              goToScreen(
                                                   context,
                                                   'picking-componentes');
                                             } else {
-                                              Navigator.pushReplacementNamed(
+                                              goToScreen(
                                                   context, '/home');
                                             }
                                           },
@@ -262,7 +263,7 @@ class _IndexListPickDoneScreenState extends State<IndexListPickDoneScreen>
                                             LoadHistoryPickIdEvent(
                                                 true, batch.id ?? 0));
 
-                                        Navigator.pushReplacementNamed(
+                                        goToScreen(
                                             context, 'detail-pick-done',
                                             arguments: [widget.isFromPick]);
                                       },
@@ -737,7 +738,7 @@ class _IndexListPickDoneScreenState extends State<IndexListPickDoneScreen>
     // Si batch.isSeparate es 1, entonces navegamos a "batch-detail"
     if (batch.isSeparate != 1) {
       batchBloc.searchPickController.clear();
-      Navigator.pushReplacementNamed(context, 'scan-product-pick');
+      goToScreen(context, 'scan-product-pick');
     }
   }
 }

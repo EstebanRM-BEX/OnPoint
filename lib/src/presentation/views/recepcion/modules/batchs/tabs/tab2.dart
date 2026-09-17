@@ -1,6 +1,7 @@
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously, prefer_is_empty
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
@@ -85,7 +86,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecepBatch> {
 
       Future.delayed(const Duration(milliseconds: 1000), () {
         Navigator.pop(context);
-        Navigator.pushReplacementNamed(
+        goToScreen(
           context,
           'scan-product-reception-batch',
           arguments: [widget.ordenCompra, product],
@@ -252,7 +253,7 @@ class _Tab2ScreenRecepState extends State<Tab2ScreenRecepBatch> {
                                             () {
                                           Navigator.pop(context);
 
-                                          Navigator.pushReplacementNamed(
+                                          goToScreen(
                                             context,
                                             'scan-product-reception-batch',
                                             arguments: [

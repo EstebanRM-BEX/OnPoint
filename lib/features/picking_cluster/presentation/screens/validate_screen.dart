@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -139,7 +140,7 @@ class _ValidateScreenState extends State<ValidateScreen> {
                     .read<PickingClusterListBloc>()
                     .add(const FetchClustersEvent());
                 Navigator.of(context).popUntil((route) => route.isFirst);
-                Navigator.pushReplacementNamed(context, 'picking-cluster');
+                goToScreen(context, 'picking-cluster');
               }
 
               if (state is BatchCloseErrorState) {
@@ -206,7 +207,7 @@ class _ValidateScreenState extends State<ValidateScreen> {
                               icon: const Icon(Icons.arrow_back, color: white),
                               onPressed: () {
                                 //scan-product-cluster
-                                Navigator.pushReplacementNamed(
+                                goToScreen(
                                   context,
                                   'scan-product-cluster',
                                 );
@@ -253,7 +254,7 @@ class _ValidateScreenState extends State<ValidateScreen> {
                                     context
                                         .read<ClusterPickingBloc>()
                                         .isSearch = false;
-                                    Navigator.pushReplacementNamed(
+                                    goToScreen(
                                       context,
                                       'detail-cluster',
                                     );
@@ -264,7 +265,7 @@ class _ValidateScreenState extends State<ValidateScreen> {
                                         .read<ClusterPickingBloc>()
                                         .add(FetchPickingClustersEvent());
 
-                                    Navigator.pushReplacementNamed(
+                                    goToScreen(
                                       context,
                                       'picking-cluster',
                                     );

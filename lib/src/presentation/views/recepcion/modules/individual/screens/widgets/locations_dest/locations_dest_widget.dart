@@ -1,6 +1,7 @@
 // ignore_for_file: unrelated_type_equality_checks
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
@@ -240,7 +241,7 @@ class _LocationDestScreenState extends State<LocationDestRecepScreen> {
                                 selectedIndex == null;
                               });
 
-                              Navigator.pushReplacementNamed(
+                              goToScreen(
                                   context, 'scan-product-order', arguments: [
                                 widget.ordenCompra,
                                 widget.currentProduct
@@ -310,7 +311,7 @@ class _AppBarInfo extends StatelessWidget {
                         IconButton(
                           icon: const Icon(Icons.arrow_back, color: white),
                           onPressed: () {
-                            Navigator.pushReplacementNamed(
+                            goToScreen(
                                 context, 'scan-product-order',
                                 arguments: [ordenCompra, currentProduct]);
                           },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
@@ -70,7 +71,7 @@ class _TransferenciaScreenState extends State<TransferenciaScreen>
                       context
                           .read<TransferenciaBloc>()
                           .add(FetchAllEntregaDB(false));
-                      Navigator.pushReplacementNamed(
+                      goToScreen(
                         context,
                         'list-entrada-productos',
                       );
@@ -79,7 +80,7 @@ class _TransferenciaScreenState extends State<TransferenciaScreen>
                           .read<TransferenciaBloc>()
                           .add(FetchAllTransferenciasDB(false));
 
-                      Navigator.pushReplacementNamed(
+                      goToScreen(
                         context,
                         'transferencias',
                       );

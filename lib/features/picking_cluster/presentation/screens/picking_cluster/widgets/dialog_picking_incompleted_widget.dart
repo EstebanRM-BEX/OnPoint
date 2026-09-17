@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:ui';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -109,7 +110,7 @@ class DialogPickingIncompleted extends StatelessWidget {
                     Navigator.pop(contextBuilder);
                   }
 
-                  Navigator.pushReplacementNamed(
+                  goToScreen(
                     context,
                     'validate-cluster',
                   );

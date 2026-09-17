@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
@@ -536,12 +537,12 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                 hideLoadingDialog();
                                 if (batchBloc.pickWithProducts.pick?.typePick ==
                                     'pick') {
-                                  Navigator.pushReplacementNamed(
+                                  goToScreen(
                                     context,
                                     'pick',
                                   );
                                 } else {
-                                  Navigator.pushReplacementNamed(
+                                  goToScreen(
                                     context,
                                     'picking-componentes',
                                   );
@@ -645,12 +646,12 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                 hideLoadingDialog();
                                 if (batchBloc.pickWithProducts.pick?.typePick ==
                                     'pick') {
-                                  Navigator.pushReplacementNamed(
+                                  goToScreen(
                                     context,
                                     'pick',
                                   );
                                 } else {
-                                  Navigator.pushReplacementNamed(
+                                  goToScreen(
                                     context,
                                     'picking-componentes',
                                   );
@@ -661,12 +662,12 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                 hideLoadingDialog();
                                 if (batchBloc.pickWithProducts.pick?.typePick ==
                                     'pick') {
-                                  Navigator.pushReplacementNamed(
+                                  goToScreen(
                                     context,
                                     'pick',
                                   );
                                 } else {
-                                  Navigator.pushReplacementNamed(
+                                  goToScreen(
                                     context,
                                     'picking-componentes',
                                   );
@@ -889,7 +890,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                                 false,
                                               ),
                                             );
-                                            Navigator.pushReplacementNamed(
+                                            goToScreen(
                                               context,
                                               'pick',
                                             );
@@ -899,7 +900,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                                 false,
                                               ),
                                             );
-                                            Navigator.pushReplacementNamed(
+                                            goToScreen(
                                               context,
                                               'picking-componentes',
                                             );
@@ -1731,7 +1732,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                       //cerramos el focus
                       batchBloc.isSearch = false;
                       batchBloc.add(LoadProductEditEvent());
-                      Navigator.pushReplacementNamed(context, 'pick-detail');
+                      goToScreen(context, 'pick-detail');
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -1794,7 +1795,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                 true) {
               batchBloc.isSearch = false;
               batchBloc.add(LoadProductEditEvent());
-              Navigator.pushReplacementNamed(context, 'pick-detail');
+              goToScreen(context, 'pick-detail');
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(

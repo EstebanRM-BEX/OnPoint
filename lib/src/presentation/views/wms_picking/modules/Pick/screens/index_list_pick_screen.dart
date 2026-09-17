@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: no_leading_underscores_for_local_identifiers, use_build_context_synchronously
@@ -257,7 +258,7 @@ class _IndexListPickScreenState extends State<IndexListPickScreen>
 
     if (batch.isSeparate != 1) {
       batchBloc.searchPickController.clear();
-      Navigator.pushReplacementNamed(
+      goToScreen(
         context,
         'scan-product-pick',
         arguments: [true],
@@ -326,7 +327,7 @@ class _IndexListPickScreenState extends State<IndexListPickScreen>
               FetchPickWithProductsEvent(state.id),
             );
             context.read<PickingPickBloc>().add(LoadConfigurationsUser());
-            Navigator.pushReplacementNamed(
+            goToScreen(
               context,
               'scan-product-pick',
               arguments: [true],
@@ -383,7 +384,7 @@ class _IndexListPickScreenState extends State<IndexListPickScreen>
                                             color: white,
                                           ),
                                           onPressed: () {
-                                            Navigator.pushReplacementNamed(
+                                            goToScreen(
                                               context,
                                               '/home',
                                             );
@@ -971,7 +972,7 @@ class _IndexListPickScreenState extends State<IndexListPickScreen>
                                 context.read<PickingPickBloc>().add(
                                   LoadHistoryPickEvent(true, formattedDate),
                                 );
-                                Navigator.pushReplacementNamed(
+                                goToScreen(
                                   context,
                                   'pick-done',
                                   arguments: [true],

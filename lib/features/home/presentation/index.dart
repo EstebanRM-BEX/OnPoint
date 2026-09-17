@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously, unnecessary_null_comparison
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -223,7 +224,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                               // // Cerrar diálogo y navegar a user reemplazando la vista
                                               if (contextHome.mounted) {
                                                 Get.back(); // Cierra el diálogo
-                                                Get.offNamed(AppRoutes.user);
+                                                // Get.offNamed reemplaza la ruta de arriba: si el
+                                                // diálogo seguía ahí, se lo comía y el Home (y lo
+                                                // que hubiera debajo) quedaba vivo en el stack.
+                                                goToScreen(contextHome, AppRoutes.user);
                                               }
                                             },
                                             child: Row(

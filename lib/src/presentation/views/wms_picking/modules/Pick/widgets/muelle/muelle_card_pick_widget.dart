@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously
@@ -258,7 +259,7 @@ class _MuelleDropdownWidgetState extends State<MuellePickDropdownWidget> {
                         //cerramos el focus
                         batchBloc.isSearch = false;
                         batchBloc.add(LoadProductEditEvent());
-                        Navigator.pushReplacementNamed(
+                        goToScreen(
                           context,
                           'pick-detail',
                         );
@@ -328,7 +329,7 @@ class _MuelleDropdownWidgetState extends State<MuellePickDropdownWidget> {
                   //cerramos el focus
                   batchBloc.isSearch = false;
                   batchBloc.add(LoadProductEditEvent());
-                  Navigator.pushReplacementNamed(
+                  goToScreen(
                     context,
                     'pick-detail',
                   ).then((_) {});

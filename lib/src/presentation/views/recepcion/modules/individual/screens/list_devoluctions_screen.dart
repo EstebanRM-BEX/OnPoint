@@ -1,6 +1,7 @@
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -66,7 +67,7 @@ class _ListDevolutionsScreenState extends State<ListDevolutionsScreen> {
           context.read<RecepcionBloc>().add(
             CurrentOrdenesCompra(state.ordenCompra),
           );
-          Navigator.pushReplacementNamed(
+          goToScreen(
             context,
             'recepcion',
             arguments: [state.ordenCompra, 0],
@@ -649,7 +650,7 @@ class _ListDevolutionsScreenState extends State<ListDevolutionsScreen> {
             recepcionBloc.add(CurrentOrdenesCompra(ordenCompra));
             Navigator.pop(dialogContext);
             if (mounted) {
-              Navigator.pushReplacementNamed(
+              goToScreen(
                 context,
                 'recepcion',
                 arguments: [ordenCompra, 0],
@@ -665,7 +666,7 @@ class _ListDevolutionsScreenState extends State<ListDevolutionsScreen> {
       recepcionBloc.add(GetPorductsToEntrada(ordenCompra.id ?? 0, 'dev'));
       //traemos la orden de entrada actual desde la bd actualizada
       recepcionBloc.add(CurrentOrdenesCompra(ordenCompra));
-      Navigator.pushReplacementNamed(
+      goToScreen(
         context,
         'recepcion',
         arguments: [ordenCompra, 0],
@@ -707,7 +708,7 @@ class AppBar extends StatelessWidget {
                         SearchDevolucionEvent(''),
                       );
 
-                      Navigator.pushReplacementNamed(context, '/home');
+                      goToScreen(context, '/home');
                     },
                   ),
                   Padding(

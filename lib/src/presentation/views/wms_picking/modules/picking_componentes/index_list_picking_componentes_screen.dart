@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: must_be_immutable, use_build_context_synchronously
@@ -132,7 +133,7 @@ class IndexListPickComponentsScreen extends StatelessWidget {
                 .add(FetchPickWithProductsEvent(state.id));
             context.read<PickingPickBloc>().add(LoadAllNovedadesPickEvent());
             context.read<PickingPickBloc>().add(LoadConfigurationsUser());
-            Navigator.pushReplacementNamed(context, 'scan-product-pick');
+            goToScreen(context, 'scan-product-pick');
           }
         },
         builder: (context, state) {
@@ -176,7 +177,7 @@ class IndexListPickComponentsScreen extends StatelessWidget {
                                                 .read<PickingPickBloc>()
                                                 .searchPickController
                                                 .clear();
-                                            Navigator.pushReplacementNamed(
+                                            goToScreen(
                                                 context, '/home');
                                           },
                                         ),
@@ -300,7 +301,7 @@ class IndexListPickComponentsScreen extends StatelessWidget {
                                     );
 
                                 // Navegar a la pantalla de historial
-                                Navigator.pushReplacementNamed(
+                                goToScreen(
                                     context, 'pick-done',
                                     arguments: [false]);
                               }
@@ -862,7 +863,7 @@ class IndexListPickComponentsScreen extends StatelessWidget {
             bloc.add(LoadAllNovedadesPickEvent());
             bloc.add(LoadConfigurationsUser());
             Navigator.pop(dialogContext); // Cierra el diálogo de inicio
-            Navigator.pushReplacementNamed(context, 'scan-product-pick');
+            goToScreen(context, 'scan-product-pick');
           },
         ),
       );
@@ -899,7 +900,7 @@ class IndexListPickComponentsScreen extends StatelessWidget {
     // Si batch.isSeparate es 1, entonces navegamos a "batch-detail"
     if (batch.isSeparate != 1) {
       batchBloc.searchPickController.clear();
-      Navigator.pushReplacementNamed(context, 'scan-product-pick');
+      goToScreen(context, 'scan-product-pick');
     } else {}
   }
 }

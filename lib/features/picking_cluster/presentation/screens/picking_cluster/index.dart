@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:get/get.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/picking_batch.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/picking_cluster_list/picking_cluster_list_bloc.dart';
 import 'package:flutter/material.dart';
@@ -215,7 +216,7 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                       .add(LoadCurrentProductEvent(state.products.last));
                 }
 
-                Navigator.pushReplacementNamed(
+                goToScreen(
                   context,
                   'scan-product-cluster',
                   arguments: state.batch,
@@ -249,7 +250,7 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                       CustomHeaderWidget(
                         title: 'PICK CLUSTER',
                         onBack: () {
-                          Navigator.pushReplacementNamed(context, '/home');
+                          goToScreen(context, '/home');
                         },
                         onRefresh: () async {
                           final listBloc =

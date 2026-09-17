@@ -1,4 +1,5 @@
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously, prefer_is_empty
@@ -157,7 +158,7 @@ class _Tab2ScreenTransState extends State<Tab2ScreenTrans> {
 
       Future.delayed(const Duration(milliseconds: 1000), () {
         Navigator.pop(context);
-        Navigator.pushReplacementNamed(
+        goToScreen(
           context,
           'scan-product-transfer',
           arguments: [product],
@@ -378,7 +379,7 @@ class _Tab2ScreenTransState extends State<Tab2ScreenTrans> {
                                         const Duration(milliseconds: 300), () {
                                       Navigator.pop(context);
 
-                                      Navigator.pushReplacementNamed(
+                                      goToScreen(
                                         context,
                                         'scan-product-transfer',
                                         arguments: [product],
