@@ -1,5 +1,6 @@
 // ignore_for_file: collection_methods_unrelated_type
 
+
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
@@ -30,6 +31,7 @@ import 'package:wms_app/src/presentation/views/wms_packing/models/sen_pack_reque
 import 'package:wms_app/src/presentation/views/wms_packing/models/un_pack_request.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/models/assign_location_pack_request.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
+import 'package:wms_app/core/network/network_guard.dart';
 
 part 'packing_pedido_event.dart';
 part 'packing_pedido_state.dart';
@@ -1101,15 +1103,7 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       if (event.productos.isEmpty) return;
 
       // Verificar conectividad real antes de intentar la petición
-      bool isConnected = false;
-      try {
-        final result = await InternetAddress.lookup(
-          'google.com',
-        ).timeout(const Duration(seconds: 3));
-        isConnected = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-      } catch (_) {
-        isConnected = false;
-      }
+      final isConnected = await hasNetwork();
 
       if (!isConnected) {
         emit(WmsPackingErrorState('No hay conexión a internet'));

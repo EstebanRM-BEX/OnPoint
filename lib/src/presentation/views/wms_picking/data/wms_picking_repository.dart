@@ -14,13 +14,12 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/history/model
 import 'package:wms_app/src/presentation/views/wms_picking/models/item_picking_request.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:wms_app/core/network/connectivity_extensions.dart';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:wms_app/src/presentation/views/wms_picking/models/response_send_picking.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/submeuelle_model.dart';
+import 'package:wms_app/core/network/network_guard.dart';
 
 class WmsPickingRepository {
   //metodo para pedir los batchs
@@ -28,9 +27,7 @@ class WmsPickingRepository {
     bool isLoadinDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return DataBatch(
           code: 500,
@@ -147,9 +144,7 @@ class WmsPickingRepository {
     bool isLoadinDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return DataBatch(
           code: 500,
@@ -266,9 +261,7 @@ class WmsPickingRepository {
     String date,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return []; // Si no hay conexión, retornar una lista vacía
     }
@@ -342,9 +335,7 @@ class WmsPickingRepository {
   //metodo para pedir los batchs por id
   Future<HistoryBatchId> getBatchById(bool isLoadinDialog, int batchId) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return HistoryBatchId(); // Si no hay conexión, retornar una lista vacía
     }
@@ -412,9 +403,7 @@ class WmsPickingRepository {
     bool isLoadinDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return []; // Si no hay conexión, retornar una lista vacía
     }
@@ -523,9 +512,7 @@ class WmsPickingRepository {
   Future<bool> timePickingUser(int batchId, String time, String endpoint,
       String type, int userId) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return false; // Si no hay conexión, retornar una lista vacía
     }
@@ -598,9 +585,7 @@ class WmsPickingRepository {
   Future<bool> timePickingBatch(int batchId, String time, String endpoint,
       String field, String type) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return false; // Si no hay conexión, retornar una lista vacía
     }

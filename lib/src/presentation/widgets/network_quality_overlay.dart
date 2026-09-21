@@ -5,6 +5,9 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
+import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/injection_container.dart' show getIt;
 import 'package:wms_app/src/presentation/providers/network_overlay/network_overlay_cubit.dart';
 
 enum _NetQuality { excellent, good, poor, offline }
@@ -25,7 +28,8 @@ class NetworkQualityOverlay extends StatefulWidget {
 }
 
 class _NetworkQualityOverlayState extends State<NetworkQualityOverlay> {
-  static const _pingHost = 'google.com';
+  // Fallback cuando aún no hay URL de empresa (pre-login).
+  static const _fallbackPingHost = 'www.gstatic.com';
   static const _pingInterval = Duration(seconds: 5);
   static const _speedTestUrl =
       'https://speed.cloudflare.com/__down?bytes=512000';
@@ -43,17 +47,26 @@ class _NetworkQualityOverlayState extends State<NetworkQualityOverlay> {
 
   Timer? _pingTimer;
   StreamSubscription? _connectivitySub;
+  StreamSubscription? _statusSub;
+  StreamSubscription? _overlaySub;
 
   @override
   void initState() {
     super.initState();
-    _startMonitoring();
+    if (NetworkQualityOverlay.disableNetworkCallsForTesting) return;
+    // El monitoreo solo corre mientras el overlay es visible: oculto no debe
+    // gastar red ni batería.
+    final overlay = context.read<NetworkOverlayCubit>();
+    _overlaySub = overlay.stream.listen(
+      (visible) => visible ? _startMonitoring() : _stopMonitoring(),
+    );
+    if (overlay.state) _startMonitoring();
   }
 
   @override
   void dispose() {
-    _pingTimer?.cancel();
-    _connectivitySub?.cancel();
+    _overlaySub?.cancel();
+    _stopMonitoring();
     super.dispose();
   }
 
@@ -79,14 +92,36 @@ class _NetworkQualityOverlayState extends State<NetworkQualityOverlay> {
   }
 
   void _startMonitoring() {
-    if (NetworkQualityOverlay.disableNetworkCallsForTesting) return;
+    if (_pingTimer != null) return;
     _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
       final result =
           results.isNotEmpty ? results.first : ConnectivityResult.none;
       _updateConnectionType(result);
     });
+    // El estado offline lo decide NetworkInfo (una sola fuente de verdad);
+    // este overlay solo mide la latencia cuando hay conexión.
+    _statusSub = getIt<NetworkInfo>().onStatusChanged.listen((status) {
+      if (!mounted) return;
+      if (status == ConnectionStatus.offline) {
+        setState(() {
+          _quality = _NetQuality.offline;
+          _pingMs = 0;
+        });
+      } else {
+        _measurePing();
+      }
+    });
     _pingTimer = Timer.periodic(_pingInterval, (_) => _measurePing());
     _measurePing();
+  }
+
+  void _stopMonitoring() {
+    _pingTimer?.cancel();
+    _pingTimer = null;
+    _connectivitySub?.cancel();
+    _connectivitySub = null;
+    _statusSub?.cancel();
+    _statusSub = null;
   }
 
   void _updateConnectionType(ConnectivityResult result) {
@@ -108,11 +143,21 @@ class _NetworkQualityOverlayState extends State<NetworkQualityOverlay> {
     });
   }
 
+  /// Host y puerto del ping: el servidor Odoo activo (lo que importa a la app).
+  Future<(String, int)> _pingTarget() async {
+    final url = await PrefUtils.getEnterprise();
+    final uri = Uri.tryParse(url.trim());
+    if (uri == null || uri.host.isEmpty) return (_fallbackPingHost, 443);
+    return (uri.host, uri.hasPort ? uri.port : (uri.scheme == 'http' ? 80 : 443));
+  }
+
   Future<void> _measurePing() async {
     if (!mounted) return;
+    if (getIt<NetworkInfo>().current == ConnectionStatus.offline) return;
     try {
+      final (host, port) = await _pingTarget();
       final sw = Stopwatch()..start();
-      final socket = await Socket.connect(_pingHost, 80,
+      final socket = await Socket.connect(host, port,
           timeout: const Duration(seconds: 4));
       sw.stop();
       socket.destroy();

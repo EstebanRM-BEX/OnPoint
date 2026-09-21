@@ -3,8 +3,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:wms_app/core/network/connectivity_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
@@ -20,6 +18,7 @@ import 'package:wms_app/src/presentation/views/recepcion/models/response_sen_tem
 import 'package:wms_app/src/presentation/views/recepcion/models/response_send_recepcion_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_temp_ia_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_validate_model.dart';
+import 'package:wms_app/core/network/network_guard.dart';
 
 class RecepcionRepository {
 //metodo para obtener todas las ordenes de compra
@@ -28,8 +27,7 @@ class RecepcionRepository {
     final stopwatch = Stopwatch()..start(); // ⏱ Iniciar conteo
 
     try {
-      final connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult.isOffline) {
+      if (!await hasNetwork()) {
         debugPrint("❌ Sin conexión a Internet.");
         return Recepcionresponse(
             result: RecepcionresponseResult(
@@ -139,8 +137,7 @@ class RecepcionRepository {
     final stopwatch = Stopwatch()..start(); // ⏱ Iniciar conteo
 
     try {
-      final connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult.isOffline) {
+      if (!await hasNetwork()) {
         debugPrint("❌ Sin conexión a Internet.");
         return Recepcionresponse(
             result: RecepcionresponseResult(
@@ -252,9 +249,7 @@ class RecepcionRepository {
     bool isLoadinDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseReceptionBatchs(
         jsonrpc: '2.0',
@@ -390,9 +385,7 @@ class RecepcionRepository {
   Future<List<LotesProduct>> fetchAllLotesProduct(
       bool isLoadinDialog, int productId) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return []; // Si no hay conexión, retornar una lista vacía
     }
@@ -464,9 +457,7 @@ class RecepcionRepository {
     int idRecepcion,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return false; // Si no hay conexión, retornar una lista vacía
     }
@@ -540,9 +531,7 @@ class RecepcionRepository {
     int idRecepcion,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return false; // Si no hay conexión, retornar una lista vacía
     }
@@ -614,9 +603,7 @@ class RecepcionRepository {
   Future<ResponseNewLote> createLote(bool isLoadinDialog, int idProduct,
       String nameLote, String dateLote, bool priorityExpiration) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseNewLote(); // Si no hay conexión, retornar una lista vacía
     }
@@ -703,9 +690,7 @@ class RecepcionRepository {
     bool isLoadingDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("❌ Error: No hay conexión a Internet.");
       return ResponSendRecepcion(
         result: ResponSendRecepcionResult(
@@ -786,9 +771,7 @@ class RecepcionRepository {
     bool isLoadingDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return DeletedProduct(); // Si no hay conexión, terminamos la ejecución
     }
@@ -853,9 +836,7 @@ class RecepcionRepository {
     bool isLoadingDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponSendRecepcion(); // Si no hay conexión, terminamos la ejecución
     }
@@ -916,9 +897,7 @@ class RecepcionRepository {
     bool isLoadingDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return true; // Si no hay conexión, terminamos la ejecución
     }
@@ -998,9 +977,7 @@ class RecepcionRepository {
     bool forzarLoteVencido = false,
   }) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseValidate(); // Si no hay conexión, terminamos la ejecución
     }
@@ -1074,8 +1051,7 @@ class RecepcionRepository {
     int idRecepcion,
     bool isBackorder,
   ) async {
-    var connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       return ResponseValidate();
     }
     try {
@@ -1118,9 +1094,7 @@ class RecepcionRepository {
     bool isLoadingDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return TemperatureSend(); // Si no hay conexión, terminamos la ejecución
     }
@@ -1175,9 +1149,7 @@ class RecepcionRepository {
     bool isLoadingDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return TemperatureSend(); // Si no hay conexión, terminamos la ejecución
     }
@@ -1231,9 +1203,7 @@ class RecepcionRepository {
     bool isLoadingDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return ImageSendNovedad(); // Si no hay conexión, terminamos la ejecución
     }
@@ -1286,8 +1256,7 @@ class RecepcionRepository {
   }
 
   Future<TemperatureIa> getTemperatureWithImage(File imageFile) async {
-    var connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return TemperatureIa();
     }

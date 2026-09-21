@@ -4,8 +4,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:wms_app/core/network/connectivity_extensions.dart';
+import 'package:wms_app/core/network/network_guard.dart';
+import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/injection_container.dart' show getIt;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -61,9 +62,6 @@ class ApiRequestService {
   late String unencodePath;
   late HttpResponseHandler httpHandler;
 
-  // Instancia reutilizada — evita crear un nuevo objeto en cada llamada
-  final Connectivity _connectivity = Connectivity();
-
   void initialize({
     required String unencodePath,
     required HttpResponseHandler httpHandler,
@@ -85,12 +83,8 @@ class ApiRequestService {
     return '';
   }
 
-  /// Verifica conectividad local (WiFi / Mobile). No hace DNS lookup externo
-  /// para no añadir latencia innecesaria a cada petición.
-  Future<bool> _isConnected() async {
-    final result = await _connectivity.checkConnectivity();
-    return result.isOnline;
-  }
+  /// Ver [hasNetwork]: sin latencia extra en el camino feliz.
+  Future<bool> _isConnected() => hasNetwork();
 
   /// Construye una respuesta sintética (no vino del servidor) con un cuerpo
   /// JSON-RPC válido.
@@ -125,6 +119,9 @@ class ApiRequestService {
   }
 
   void _showNetworkError() {
+    // Un fallo real de red es la señal más barata: reverifica ya, sin esperar
+    // al backoff.
+    getIt<NetworkInfo>().reportNetworkError();
     // Evita el spam: varias peticiones fallando en ráfaga sin conexión
     // mostraban un snackbar de 5s por cada una.
     if (Get.isSnackbarOpen) return;

@@ -1,23 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:wms_app/core/network/connectivity_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/response_pick_done_id_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/response_pick_model.dart';
+import 'package:wms_app/core/network/network_guard.dart';
 
 class PickingPickRepository {
   Future<ResponsePickResult> resPicks(
     bool isLoadinDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponsePickResult(
         code: 500,
@@ -142,9 +139,7 @@ class PickingPickRepository {
     String date,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return []; // Si no hay conexión, retornar una lista vacía
     }
@@ -250,9 +245,7 @@ class PickingPickRepository {
     String date,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return []; // Si no hay conexión, retornar una lista vacía
     }
@@ -357,9 +350,7 @@ class PickingPickRepository {
     bool isLoadinDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponsePickResult(
         code: 500,
@@ -497,9 +488,7 @@ class PickingPickRepository {
     int idPicking,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return RespondePickDoneId(); // Si no hay conexión, retornar una lista vacía
     }

@@ -18,6 +18,7 @@ import 'core/interfaces/i_audio_service.dart' as _i688;
 import 'core/interfaces/i_device_info_service.dart' as _i311;
 import 'core/interfaces/i_vibration_service.dart' as _i537;
 import 'core/network/network_info.dart' as _i75;
+import 'core/network/reachability_probe.dart' as _i692;
 import 'core/services/audio_service_impl.dart' as _i927;
 import 'core/services/barcodes_inventario_cache_service.dart' as _i514;
 import 'core/services/configuracion_cache_service.dart' as _i208;
@@ -455,18 +456,14 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i311.IDeviceInfoService>(
       () => _i910.DeviceInfoServiceImpl(),
     );
-    gh.lazySingleton<_i75.NetworkInfo>(
-      () => _i75.NetworkInfoImpl(gh<_i895.Connectivity>()),
-      dispose: (i) => i.dispose(),
-    );
     gh.lazySingleton<_i791.AuthLocalDataSource>(
       () => _i791.AuthLocalDataSourceImpl(),
     );
+    gh.lazySingleton<_i692.ReachabilityProbe>(
+      () => _i692.HttpReachabilityProbe(),
+    );
     gh.lazySingleton<_i544.LoginLocalDataSource>(
       () => _i544.LoginLocalDataSourceImpl(),
-    );
-    gh.factory<_i146.ConnectionStatusCubit>(
-      () => _i146.ConnectionStatusCubit(networkInfo: gh<_i75.NetworkInfo>()),
     );
     gh.lazySingleton<_i94.PickingRemoteDataSource>(
       () => _i94.PickingRemoteDataSourceImpl(),
@@ -509,12 +506,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i386.TransferenciaMultiusuarioRemoteDataSource>(
       () => _i386.TransferenciaMultiusuarioRemoteDataSourceImpl(),
     );
-    gh.lazySingleton<_i180.UserRepository>(
-      () => _i39.UserRepositoryImpl(
-        remoteDataSource: gh<_i1071.UserRemoteDataSource>(),
-        localDataSource: gh<_i232.UserLocalDataSource>(),
-      ),
-    );
     gh.lazySingleton<_i592.InventarioRemoteDataSource>(
       () => _i592.InventarioRemoteDataSourceImpl(gh<_i319.ApiRequestService>()),
     );
@@ -555,62 +546,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i422.SendMessage>(
       () => _i422.SendMessage(gh<_i453.ChatRepository>()),
     );
-    gh.lazySingleton<_i777.ExpeditionRepository>(
-      () => _i838.ExpeditionRepositoryImpl(
-        remoteDataSource: gh<_i260.ExpeditionRemoteDataSource>(),
-        localDataSource: gh<_i486.ExpeditionLocalDataSource>(),
-        networkInfo: gh<_i75.NetworkInfo>(),
-        transferRepository: gh<_i895.TransferenciasRepository>(),
-      ),
-    );
-    gh.lazySingleton<_i932.GetDeviceInfo>(
-      () => _i932.GetDeviceInfo(gh<_i180.UserRepository>()),
-    );
-    gh.lazySingleton<_i280.GetUserConfiguration>(
-      () => _i280.GetUserConfiguration(gh<_i180.UserRepository>()),
-    );
-    gh.lazySingleton<_i247.GetUserLocations>(
-      () => _i247.GetUserLocations(gh<_i180.UserRepository>()),
-    );
-    gh.lazySingleton<_i465.GetUserNovelties>(
-      () => _i465.GetUserNovelties(gh<_i180.UserRepository>()),
-    );
-    gh.lazySingleton<_i902.RegisterDevice>(
-      () => _i902.RegisterDevice(gh<_i180.UserRepository>()),
-    );
-    gh.lazySingleton<_i889.LoginRepository>(
-      () => _i1059.LoginRepositoryImpl(
-        remoteDataSource: gh<_i18.LoginRemoteDataSource>(),
-        localDataSource: gh<_i544.LoginLocalDataSource>(),
-        networkInfo: gh<_i75.NetworkInfo>(),
-      ),
-    );
-    gh.lazySingleton<_i661.PickingRepository>(
-      () => _i8.PickingRepositoryImpl(
-        remoteDataSource: gh<_i94.PickingRemoteDataSource>(),
-        localDataSource: gh<_i860.PickingLocalDataSource>(),
-        networkInfo: gh<_i75.NetworkInfo>(),
-        transferRepository: gh<_i895.TransferenciasRepository>(),
-      ),
-    );
-    gh.lazySingleton<_i958.AssignUserToPickUseCase>(
-      () => _i958.AssignUserToPickUseCase(gh<_i661.PickingRepository>()),
-    );
-    gh.lazySingleton<_i924.FetchPicksHistoryUseCase>(
-      () => _i924.FetchPicksHistoryUseCase(gh<_i661.PickingRepository>()),
-    );
-    gh.lazySingleton<_i240.FetchPicksUseCase>(
-      () => _i240.FetchPicksUseCase(gh<_i661.PickingRepository>()),
-    );
-    gh.lazySingleton<_i232.GetPickConfigurationsUseCase>(
-      () => _i232.GetPickConfigurationsUseCase(gh<_i661.PickingRepository>()),
-    );
-    gh.lazySingleton<_i266.GetPickWithProductsUseCase>(
-      () => _i266.GetPickWithProductsUseCase(gh<_i661.PickingRepository>()),
-    );
-    gh.lazySingleton<_i95.StartStopTimePickUseCase>(
-      () => _i95.StartStopTimePickUseCase(gh<_i661.PickingRepository>()),
-    );
     gh.lazySingleton<_i932.IPickingClusterRepository>(
       () => _i110.PickingClusterRepositoryImpl(
         gh<_i681.PickingClusterRemoteDataSource>(),
@@ -619,14 +554,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i205.HomeLocalDataSource>(
       () => _i205.HomeLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()),
-    );
-    gh.lazySingleton<_i169.ExpeditionSyncCoordinator>(
-      () => _i169.ExpeditionSyncCoordinator(
-        networkInfo: gh<_i75.NetworkInfo>(),
-        remoteDataSource: gh<_i260.ExpeditionRemoteDataSource>(),
-        localDataSource: gh<_i486.ExpeditionLocalDataSource>(),
-      ),
-      dispose: (i) => i.dispose(),
     );
     gh.lazySingleton<_i3.PackagingTypeLocalDataSource>(
       () => _i3.PackagingTypeLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()),
@@ -643,23 +570,10 @@ extension GetItInjectableX on _i174.GetIt {
       () =>
           _i676.WebSocketBloc(webSocketService: gh<_i1062.IWebSocketService>()),
     );
-    gh.lazySingleton<_i309.EnterpriseRepository>(
-      () => _i331.EnterpriseRepositoryImpl(
-        remoteDataSource: gh<_i918.EnterpriseRemoteDataSource>(),
-        localDataSource: gh<_i854.EnterpriseLocalDataSource>(),
-        networkInfo: gh<_i75.NetworkInfo>(),
-      ),
-    );
     gh.lazySingleton<_i1015.AuthRepository>(
       () => _i111.AuthRepositoryImpl(
         localDataSource: gh<_i791.AuthLocalDataSource>(),
       ),
-    );
-    gh.lazySingleton<_i792.AuthenticateUser>(
-      () => _i792.AuthenticateUser(gh<_i889.LoginRepository>()),
-    );
-    gh.lazySingleton<_i311.SaveUserSession>(
-      () => _i311.SaveUserSession(gh<_i889.LoginRepository>()),
     );
     gh.lazySingleton<_i975.CrearLoteProductoUseCase>(
       () =>
@@ -740,6 +654,13 @@ extension GetItInjectableX on _i174.GetIt {
       () =>
           _i149.ViewProductImageUseCase(gh<_i932.IPickingClusterRepository>()),
     );
+    gh.lazySingleton<_i75.NetworkInfo>(
+      () => _i75.NetworkInfoImpl(
+        gh<_i895.Connectivity>(),
+        gh<_i692.ReachabilityProbe>(),
+      ),
+      dispose: (i) => i.dispose(),
+    );
     gh.lazySingleton<_i268.PickingComponentsRepository>(
       () => _i355.PickingComponentsRepositoryImpl(
         remoteDataSource: gh<_i682.PickingComponentsRemoteDataSource>(),
@@ -754,8 +675,8 @@ extension GetItInjectableX on _i174.GetIt {
         networkInfo: gh<_i75.NetworkInfo>(),
       ),
     );
-    gh.factory<_i1070.LoginBloc>(
-      () => _i1070.LoginBloc(authenticateUser: gh<_i792.AuthenticateUser>()),
+    gh.factory<_i146.ConnectionStatusCubit>(
+      () => _i146.ConnectionStatusCubit(networkInfo: gh<_i75.NetworkInfo>()),
     );
     gh.lazySingleton<_i925.InventarioRepository>(
       () => _i426.InventarioRepositoryImpl(
@@ -853,37 +774,6 @@ extension GetItInjectableX on _i174.GetIt {
         networkInfo: gh<_i75.NetworkInfo>(),
       ),
     );
-    gh.lazySingleton<_i598.AsignarResponsableUseCase>(
-      () => _i598.AsignarResponsableUseCase(gh<_i777.ExpeditionRepository>()),
-    );
-    gh.lazySingleton<_i868.ConfirmarPedidoUseCase>(
-      () => _i868.ConfirmarPedidoUseCase(gh<_i777.ExpeditionRepository>()),
-    );
-    gh.lazySingleton<_i888.DeshacerItemSueltoUseCase>(
-      () => _i888.DeshacerItemSueltoUseCase(gh<_i777.ExpeditionRepository>()),
-    );
-    gh.lazySingleton<_i502.DeshacerPaqueteUseCase>(
-      () => _i502.DeshacerPaqueteUseCase(gh<_i777.ExpeditionRepository>()),
-    );
-    gh.lazySingleton<_i913.FetchExpedicionesUseCase>(
-      () => _i913.FetchExpedicionesUseCase(gh<_i777.ExpeditionRepository>()),
-    );
-    gh.lazySingleton<_i324.GetExpedicionDetailUseCase>(
-      () => _i324.GetExpedicionDetailUseCase(gh<_i777.ExpeditionRepository>()),
-    );
-    gh.lazySingleton<_i683.GetExpedicionesFromDbUseCase>(
-      () =>
-          _i683.GetExpedicionesFromDbUseCase(gh<_i777.ExpeditionRepository>()),
-    );
-    gh.lazySingleton<_i944.ValidarItemSueltoUseCase>(
-      () => _i944.ValidarItemSueltoUseCase(gh<_i777.ExpeditionRepository>()),
-    );
-    gh.lazySingleton<_i955.ValidarMultipleUseCase>(
-      () => _i955.ValidarMultipleUseCase(gh<_i777.ExpeditionRepository>()),
-    );
-    gh.lazySingleton<_i749.ValidarPaqueteUseCase>(
-      () => _i749.ValidarPaqueteUseCase(gh<_i777.ExpeditionRepository>()),
-    );
     gh.factory<_i573.LoteProductoBloc>(
       () => _i573.LoteProductoBloc(
         getLotesProductoUseCase: gh<_i799.GetLotesProductoUseCase>(),
@@ -898,16 +788,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i485.GetUserData>(
       () => _i485.GetUserData(gh<_i649.HomeRepository>()),
-    );
-    gh.factory<_i565.UserBloc>(
-      () => _i565.UserBloc(
-        getUserConfiguration: gh<_i280.GetUserConfiguration>(),
-        getDeviceInfo: gh<_i932.GetDeviceInfo>(),
-        getUserLocations: gh<_i247.GetUserLocations>(),
-        getUserNovelties: gh<_i465.GetUserNovelties>(),
-        registerDevice: gh<_i902.RegisterDevice>(),
-        saveUserSession: gh<_i311.SaveUserSession>(),
-      ),
     );
     gh.factory<_i726.TransferenciaMultiusuarioScanBloc>(
       () => _i726.TransferenciaMultiusuarioScanBloc(
@@ -971,6 +851,14 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i442.UndoClaimUseCase>(
       () => _i442.UndoClaimUseCase(gh<_i300.RecepcionMultiusuarioRepository>()),
     );
+    gh.lazySingleton<_i777.ExpeditionRepository>(
+      () => _i838.ExpeditionRepositoryImpl(
+        remoteDataSource: gh<_i260.ExpeditionRemoteDataSource>(),
+        localDataSource: gh<_i486.ExpeditionLocalDataSource>(),
+        networkInfo: gh<_i75.NetworkInfo>(),
+        transferRepository: gh<_i895.TransferenciasRepository>(),
+      ),
+    );
     gh.lazySingleton<_i601.FetchComponentsFromDbUseCase>(
       () => _i601.FetchComponentsFromDbUseCase(
         gh<_i268.PickingComponentsRepository>(),
@@ -985,6 +873,13 @@ extension GetItInjectableX on _i174.GetIt {
       () =>
           _i192.FetchComponentsUseCase(gh<_i268.PickingComponentsRepository>()),
     );
+    gh.lazySingleton<_i889.LoginRepository>(
+      () => _i1059.LoginRepositoryImpl(
+        remoteDataSource: gh<_i18.LoginRemoteDataSource>(),
+        localDataSource: gh<_i544.LoginLocalDataSource>(),
+        networkInfo: gh<_i75.NetworkInfo>(),
+      ),
+    );
     gh.factory<_i91.RecepcionMultiusuarioMyClaimsBloc>(
       () => _i91.RecepcionMultiusuarioMyClaimsBloc(
         fetchMyClaimsUseCase: gh<_i546.FetchMyClaimsUseCase>(),
@@ -997,15 +892,43 @@ extension GetItInjectableX on _i174.GetIt {
         localDataSource: gh<_i3.PackagingTypeLocalDataSource>(),
       ),
     );
+    gh.lazySingleton<_i661.PickingRepository>(
+      () => _i8.PickingRepositoryImpl(
+        remoteDataSource: gh<_i94.PickingRemoteDataSource>(),
+        localDataSource: gh<_i860.PickingLocalDataSource>(),
+        networkInfo: gh<_i75.NetworkInfo>(),
+        transferRepository: gh<_i895.TransferenciasRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i958.AssignUserToPickUseCase>(
+      () => _i958.AssignUserToPickUseCase(gh<_i661.PickingRepository>()),
+    );
+    gh.lazySingleton<_i924.FetchPicksHistoryUseCase>(
+      () => _i924.FetchPicksHistoryUseCase(gh<_i661.PickingRepository>()),
+    );
+    gh.lazySingleton<_i240.FetchPicksUseCase>(
+      () => _i240.FetchPicksUseCase(gh<_i661.PickingRepository>()),
+    );
+    gh.lazySingleton<_i232.GetPickConfigurationsUseCase>(
+      () => _i232.GetPickConfigurationsUseCase(gh<_i661.PickingRepository>()),
+    );
+    gh.lazySingleton<_i266.GetPickWithProductsUseCase>(
+      () => _i266.GetPickWithProductsUseCase(gh<_i661.PickingRepository>()),
+    );
+    gh.lazySingleton<_i95.StartStopTimePickUseCase>(
+      () => _i95.StartStopTimePickUseCase(gh<_i661.PickingRepository>()),
+    );
     gh.factory<_i994.RecepcionMultiusuarioLoteBloc>(
       () => _i994.RecepcionMultiusuarioLoteBloc(
         fetchLotesProductoUseCase: gh<_i384.FetchLotesProductoUseCase>(),
         createLoteUseCase: gh<_i667.CreateLoteUseCase>(),
       ),
     );
-    gh.factory<_i522.ExpedicionAssignmentBloc>(
-      () => _i522.ExpedicionAssignmentBloc(
-        asignarResponsableUseCase: gh<_i598.AsignarResponsableUseCase>(),
+    gh.lazySingleton<_i180.UserRepository>(
+      () => _i39.UserRepositoryImpl(
+        remoteDataSource: gh<_i1071.UserRemoteDataSource>(),
+        localDataSource: gh<_i232.UserLocalDataSource>(),
+        networkInfo: gh<_i75.NetworkInfo>(),
       ),
     );
     gh.lazySingleton<_i277.GetPrinters>(
@@ -1014,39 +937,16 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i152.PrintReport>(
       () => _i152.PrintReport(gh<_i681.PrintingRepository>()),
     );
-    gh.lazySingleton<_i552.DeleteRecentUrl>(
-      () => _i552.DeleteRecentUrl(gh<_i309.EnterpriseRepository>()),
-    );
-    gh.lazySingleton<_i91.GetRecentUrls>(
-      () => _i91.GetRecentUrls(gh<_i309.EnterpriseRepository>()),
-    );
-    gh.lazySingleton<_i138.SearchEnterprise>(
-      () => _i138.SearchEnterprise(gh<_i309.EnterpriseRepository>()),
-    );
-    gh.factory<_i45.ExpedicionDetailBloc>(
-      () => _i45.ExpedicionDetailBloc(
-        getExpedicionDetailUseCase: gh<_i324.GetExpedicionDetailUseCase>(),
+    gh.lazySingleton<_i169.ExpeditionSyncCoordinator>(
+      () => _i169.ExpeditionSyncCoordinator(
+        networkInfo: gh<_i75.NetworkInfo>(),
+        remoteDataSource: gh<_i260.ExpeditionRemoteDataSource>(),
+        localDataSource: gh<_i486.ExpeditionLocalDataSource>(),
       ),
+      dispose: (i) => i.dispose(),
     );
     gh.lazySingleton<_i52.ValidateSession>(
       () => _i52.ValidateSession(gh<_i1015.AuthRepository>()),
-    );
-    gh.factory<_i20.EnterpriseBloc>(
-      () => _i20.EnterpriseBloc(
-        searchEnterpriseUseCase: gh<_i138.SearchEnterprise>(),
-        getRecentUrlsUseCase: gh<_i91.GetRecentUrls>(),
-        deleteRecentUrlUseCase: gh<_i552.DeleteRecentUrl>(),
-      ),
-    );
-    gh.factory<_i770.ExpedicionScanBloc>(
-      () => _i770.ExpedicionScanBloc(
-        validarPaqueteUseCase: gh<_i749.ValidarPaqueteUseCase>(),
-        validarItemSueltoUseCase: gh<_i944.ValidarItemSueltoUseCase>(),
-        validarMultipleUseCase: gh<_i955.ValidarMultipleUseCase>(),
-        deshacerPaqueteUseCase: gh<_i502.DeshacerPaqueteUseCase>(),
-        deshacerItemSueltoUseCase: gh<_i888.DeshacerItemSueltoUseCase>(),
-        syncCoordinator: gh<_i169.ExpeditionSyncCoordinator>(),
-      ),
     );
     gh.factory<_i101.RecepcionMultiusuarioListBloc>(
       () => _i101.RecepcionMultiusuarioListBloc(
@@ -1054,6 +954,13 @@ extension GetItInjectableX on _i174.GetIt {
             gh<_i874.FetchRecepcionSessionsUseCase>(),
         getRecepcionSessionsFromDbUseCase:
             gh<_i231.GetRecepcionSessionsFromDbUseCase>(),
+      ),
+    );
+    gh.lazySingleton<_i309.EnterpriseRepository>(
+      () => _i331.EnterpriseRepositoryImpl(
+        remoteDataSource: gh<_i918.EnterpriseRemoteDataSource>(),
+        localDataSource: gh<_i854.EnterpriseLocalDataSource>(),
+        networkInfo: gh<_i75.NetworkInfo>(),
       ),
     );
     gh.factory<_i200.TransferenciaMultiusuarioListBloc>(
@@ -1064,35 +971,11 @@ extension GetItInjectableX on _i174.GetIt {
             gh<_i440.GetTransferenciaSessionsFromDbUseCase>(),
       ),
     );
-    gh.factory<_i545.ClusterPickingBloc>(
-      () => _i545.ClusterPickingBloc(
-        getPickingClusterData: gh<_i524.GetPickingClusterData>(),
-        getLocalPickingClusterData: gh<_i295.GetLocalPickingClusterData>(),
-        getLocalBatchProductsData: gh<_i61.GetLocalBatchProductsData>(),
-        getLotesProductoUseCase: gh<_i799.GetLotesProductoUseCase>(),
-        getUserConfiguration: gh<_i280.GetUserConfiguration>(),
-        setClusterBatchFieldUseCase: gh<_i956.SetClusterBatchFieldUseCase>(),
-        setClusterBatchProductFieldUseCase:
-            gh<_i915.SetClusterBatchProductFieldUseCase>(),
-        getBarcodesProductUseCase: gh<_i309.GetBarcodesProductUseCase>(),
-        incrementQuantitySeparateUseCase:
-            gh<_i85.IncrementQuantitySeparateUseCase>(),
-        incrementProductSeparateQtyUseCase:
-            gh<_i360.IncrementProductSeparateQtyUseCase>(),
-        getFieldTableProductsUseCase: gh<_i235.GetFieldTableProductsUseCase>(),
-        getProductBatchUseCase: gh<_i410.GetProductBatchUseCase>(),
-        sendProductOdooUseCase: gh<_i984.SendProductOdooUseCase>(),
-        getUserNovelties: gh<_i465.GetUserNovelties>(),
-        getPendingSendProductsUseCase:
-            gh<_i542.GetPendingSendProductsUseCase>(),
-        networkInfo: gh<_i75.NetworkInfo>(),
-      ),
+    gh.lazySingleton<_i792.AuthenticateUser>(
+      () => _i792.AuthenticateUser(gh<_i889.LoginRepository>()),
     );
-    gh.factory<_i239.ExpedicionListBloc>(
-      () => _i239.ExpedicionListBloc(
-        fetchExpedicionesUseCase: gh<_i913.FetchExpedicionesUseCase>(),
-        getExpedicionesFromDbUseCase: gh<_i683.GetExpedicionesFromDbUseCase>(),
-      ),
+    gh.lazySingleton<_i311.SaveUserSession>(
+      () => _i311.SaveUserSession(gh<_i889.LoginRepository>()),
     );
     gh.lazySingleton<_i589.CrearLoteInventario>(
       () => _i589.CrearLoteInventario(gh<_i925.InventarioRepository>()),
@@ -1148,17 +1031,15 @@ extension GetItInjectableX on _i174.GetIt {
             gh<_i373.FetchTransferenciaPoolUseCase>(),
       ),
     );
+    gh.factory<_i1070.LoginBloc>(
+      () => _i1070.LoginBloc(authenticateUser: gh<_i792.AuthenticateUser>()),
+    );
     gh.factory<_i381.TransferenciaMultiusuarioLoteBloc>(
       () => _i381.TransferenciaMultiusuarioLoteBloc(
         fetchTransferenciaLotesProductoUseCase:
             gh<_i744.FetchTransferenciaLotesProductoUseCase>(),
         createTransferenciaLoteUseCase:
             gh<_i833.CreateTransferenciaLoteUseCase>(),
-      ),
-    );
-    gh.factory<_i777.ExpedicionConfirmBloc>(
-      () => _i777.ExpedicionConfirmBloc(
-        confirmarPedidoUseCase: gh<_i868.ConfirmarPedidoUseCase>(),
       ),
     );
     gh.factory<_i996.TransferenciaMultiusuarioMyClaimsBloc>(
@@ -1168,6 +1049,37 @@ extension GetItInjectableX on _i174.GetIt {
         releaseTransferenciaClaimUseCase:
             gh<_i1072.ReleaseTransferenciaClaimUseCase>(),
       ),
+    );
+    gh.lazySingleton<_i598.AsignarResponsableUseCase>(
+      () => _i598.AsignarResponsableUseCase(gh<_i777.ExpeditionRepository>()),
+    );
+    gh.lazySingleton<_i868.ConfirmarPedidoUseCase>(
+      () => _i868.ConfirmarPedidoUseCase(gh<_i777.ExpeditionRepository>()),
+    );
+    gh.lazySingleton<_i888.DeshacerItemSueltoUseCase>(
+      () => _i888.DeshacerItemSueltoUseCase(gh<_i777.ExpeditionRepository>()),
+    );
+    gh.lazySingleton<_i502.DeshacerPaqueteUseCase>(
+      () => _i502.DeshacerPaqueteUseCase(gh<_i777.ExpeditionRepository>()),
+    );
+    gh.lazySingleton<_i913.FetchExpedicionesUseCase>(
+      () => _i913.FetchExpedicionesUseCase(gh<_i777.ExpeditionRepository>()),
+    );
+    gh.lazySingleton<_i324.GetExpedicionDetailUseCase>(
+      () => _i324.GetExpedicionDetailUseCase(gh<_i777.ExpeditionRepository>()),
+    );
+    gh.lazySingleton<_i683.GetExpedicionesFromDbUseCase>(
+      () =>
+          _i683.GetExpedicionesFromDbUseCase(gh<_i777.ExpeditionRepository>()),
+    );
+    gh.lazySingleton<_i944.ValidarItemSueltoUseCase>(
+      () => _i944.ValidarItemSueltoUseCase(gh<_i777.ExpeditionRepository>()),
+    );
+    gh.lazySingleton<_i955.ValidarMultipleUseCase>(
+      () => _i955.ValidarMultipleUseCase(gh<_i777.ExpeditionRepository>()),
+    );
+    gh.lazySingleton<_i749.ValidarPaqueteUseCase>(
+      () => _i749.ValidarPaqueteUseCase(gh<_i777.ExpeditionRepository>()),
     );
     gh.factory<_i381.RecepcionMultiusuarioScanBloc>(
       () => _i381.RecepcionMultiusuarioScanBloc(
@@ -1192,11 +1104,86 @@ extension GetItInjectableX on _i174.GetIt {
             gh<_i280.GetRecepcionPoolFromDbUseCase>(),
       ),
     );
+    gh.lazySingleton<_i932.GetDeviceInfo>(
+      () => _i932.GetDeviceInfo(gh<_i180.UserRepository>()),
+    );
+    gh.lazySingleton<_i280.GetUserConfiguration>(
+      () => _i280.GetUserConfiguration(gh<_i180.UserRepository>()),
+    );
+    gh.lazySingleton<_i247.GetUserLocations>(
+      () => _i247.GetUserLocations(gh<_i180.UserRepository>()),
+    );
+    gh.lazySingleton<_i465.GetUserNovelties>(
+      () => _i465.GetUserNovelties(gh<_i180.UserRepository>()),
+    );
+    gh.lazySingleton<_i902.RegisterDevice>(
+      () => _i902.RegisterDevice(gh<_i180.UserRepository>()),
+    );
+    gh.factory<_i522.ExpedicionAssignmentBloc>(
+      () => _i522.ExpedicionAssignmentBloc(
+        asignarResponsableUseCase: gh<_i598.AsignarResponsableUseCase>(),
+      ),
+    );
+    gh.lazySingleton<_i552.DeleteRecentUrl>(
+      () => _i552.DeleteRecentUrl(gh<_i309.EnterpriseRepository>()),
+    );
+    gh.lazySingleton<_i91.GetRecentUrls>(
+      () => _i91.GetRecentUrls(gh<_i309.EnterpriseRepository>()),
+    );
+    gh.lazySingleton<_i138.SearchEnterprise>(
+      () => _i138.SearchEnterprise(gh<_i309.EnterpriseRepository>()),
+    );
+    gh.factory<_i45.ExpedicionDetailBloc>(
+      () => _i45.ExpedicionDetailBloc(
+        getExpedicionDetailUseCase: gh<_i324.GetExpedicionDetailUseCase>(),
+      ),
+    );
+    gh.factory<_i20.EnterpriseBloc>(
+      () => _i20.EnterpriseBloc(
+        searchEnterpriseUseCase: gh<_i138.SearchEnterprise>(),
+        getRecentUrlsUseCase: gh<_i91.GetRecentUrls>(),
+        deleteRecentUrlUseCase: gh<_i552.DeleteRecentUrl>(),
+      ),
+    );
+    gh.factory<_i770.ExpedicionScanBloc>(
+      () => _i770.ExpedicionScanBloc(
+        validarPaqueteUseCase: gh<_i749.ValidarPaqueteUseCase>(),
+        validarItemSueltoUseCase: gh<_i944.ValidarItemSueltoUseCase>(),
+        validarMultipleUseCase: gh<_i955.ValidarMultipleUseCase>(),
+        deshacerPaqueteUseCase: gh<_i502.DeshacerPaqueteUseCase>(),
+        deshacerItemSueltoUseCase: gh<_i888.DeshacerItemSueltoUseCase>(),
+        syncCoordinator: gh<_i169.ExpeditionSyncCoordinator>(),
+      ),
+    );
     gh.factory<_i475.PackagingTypeBloc>(
       () => _i475.PackagingTypeBloc(
         getPackagingTypesUseCase: gh<_i658.GetPackagingTypesUseCase>(),
         getLocalPackagingTypesUseCase:
             gh<_i762.GetLocalPackagingTypesUseCase>(),
+      ),
+    );
+    gh.factory<_i545.ClusterPickingBloc>(
+      () => _i545.ClusterPickingBloc(
+        getPickingClusterData: gh<_i524.GetPickingClusterData>(),
+        getLocalPickingClusterData: gh<_i295.GetLocalPickingClusterData>(),
+        getLocalBatchProductsData: gh<_i61.GetLocalBatchProductsData>(),
+        getLotesProductoUseCase: gh<_i799.GetLotesProductoUseCase>(),
+        getUserConfiguration: gh<_i280.GetUserConfiguration>(),
+        setClusterBatchFieldUseCase: gh<_i956.SetClusterBatchFieldUseCase>(),
+        setClusterBatchProductFieldUseCase:
+            gh<_i915.SetClusterBatchProductFieldUseCase>(),
+        getBarcodesProductUseCase: gh<_i309.GetBarcodesProductUseCase>(),
+        incrementQuantitySeparateUseCase:
+            gh<_i85.IncrementQuantitySeparateUseCase>(),
+        incrementProductSeparateQtyUseCase:
+            gh<_i360.IncrementProductSeparateQtyUseCase>(),
+        getFieldTableProductsUseCase: gh<_i235.GetFieldTableProductsUseCase>(),
+        getProductBatchUseCase: gh<_i410.GetProductBatchUseCase>(),
+        sendProductOdooUseCase: gh<_i984.SendProductOdooUseCase>(),
+        getUserNovelties: gh<_i465.GetUserNovelties>(),
+        getPendingSendProductsUseCase:
+            gh<_i542.GetPendingSendProductsUseCase>(),
+        networkInfo: gh<_i75.NetworkInfo>(),
       ),
     );
     gh.factory<_i731.InventarioBloc>(
@@ -1214,15 +1201,36 @@ extension GetItInjectableX on _i174.GetIt {
             gh<_i476.GetConfiguracionUsuarioInventario>(),
       ),
     );
+    gh.factory<_i239.ExpedicionListBloc>(
+      () => _i239.ExpedicionListBloc(
+        fetchExpedicionesUseCase: gh<_i913.FetchExpedicionesUseCase>(),
+        getExpedicionesFromDbUseCase: gh<_i683.GetExpedicionesFromDbUseCase>(),
+      ),
+    );
     gh.lazySingleton<_i335.PickScanRemoteDataSource>(
       () =>
           _i335.PickScanRemoteDataSourceImpl(gh<_i616.GetUrlImagenProducto>()),
+    );
+    gh.factory<_i777.ExpedicionConfirmBloc>(
+      () => _i777.ExpedicionConfirmBloc(
+        confirmarPedidoUseCase: gh<_i868.ConfirmarPedidoUseCase>(),
+      ),
     );
     gh.lazySingleton<_i1048.PickScanRepository>(
       () => _i334.PickScanRepositoryImpl(
         remoteDataSource: gh<_i335.PickScanRemoteDataSource>(),
         localDataSource: gh<_i380.PickScanLocalDataSource>(),
         networkInfo: gh<_i75.NetworkInfo>(),
+      ),
+    );
+    gh.factory<_i565.UserBloc>(
+      () => _i565.UserBloc(
+        getUserConfiguration: gh<_i280.GetUserConfiguration>(),
+        getDeviceInfo: gh<_i932.GetDeviceInfo>(),
+        getUserLocations: gh<_i247.GetUserLocations>(),
+        getUserNovelties: gh<_i465.GetUserNovelties>(),
+        registerDevice: gh<_i902.RegisterDevice>(),
+        saveUserSession: gh<_i311.SaveUserSession>(),
       ),
     );
     gh.lazySingleton<_i360.AssignMuelleUseCase>(

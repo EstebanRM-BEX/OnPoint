@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:wms_app/core/network/connectivity_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -13,13 +11,12 @@ import 'package:wms_app/src/presentation/views/info_rapida/models/info_rapida_mo
 import 'package:wms_app/src/presentation/views/info_rapida/models/response_sen_transfer_info_model.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/models/transfer_info_request.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/models/update_product_request.dart';
+import 'package:wms_app/core/network/network_guard.dart';
 
 class InfoRapidaRepository {
   Future<InfoRapida> getInfoQuick(bool isLoadinDialog, String barcode) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return InfoRapida(); // Si no hay conexión, retornar una lista vacía
     }
@@ -150,9 +147,7 @@ class InfoRapidaRepository {
   Future<InfoRapida> getInfoQuickManual(
       bool isLoadinDialog, String id, bool isProduct) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return InfoRapida(); // Si no hay conexión, retornar una lista vacía
     }
@@ -265,9 +260,7 @@ class InfoRapidaRepository {
     bool isLoadingDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       // Nunca devolvemos una respuesta muda: el bloc necesita un msg para
       // poder informar al usuario que la transferencia NO se aplicó.
@@ -362,9 +355,7 @@ class InfoRapidaRepository {
     bool isLoadingDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return InfoRapida(); // Si no hay conexión, terminamos la ejecución
     }
@@ -442,9 +433,7 @@ class InfoRapidaRepository {
     bool isLoadingDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return InfoRapida(); // Si no hay conexión, terminamos la ejecución
     }

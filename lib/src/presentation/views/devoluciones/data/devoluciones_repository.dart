@@ -5,8 +5,6 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:wms_app/core/network/connectivity_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
@@ -17,14 +15,14 @@ import 'package:wms_app/src/presentation/views/devoluciones/models/response_devo
 import 'package:wms_app/src/presentation/views/devoluciones/models/response_terceros_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_new_lote_model.dart';
+import 'package:wms_app/core/network/network_guard.dart';
 
 class DevolucionesRepository {
   Future<List<Terceros>> fetAllTerceros(
     bool isLoadinDialog,
   ) async {
     // 1. Verificación básica de red
-    final connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult.isOffline) return [];
+    if (!await hasNetwork()) return [];
 
     try {
       final response = await ApiRequestService().get(
@@ -61,9 +59,7 @@ class DevolucionesRepository {
   Future<List<LotesProduct>> fetchAllLotesProduct(
       bool isLoadinDialog, int productId) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return []; // Si no hay conexión, retornar una lista vacía
     }
@@ -136,9 +132,7 @@ class DevolucionesRepository {
     bool priorityExpiration,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseNewLote(); // Si no hay conexión, retornar una lista vacía
     }
@@ -226,9 +220,7 @@ class DevolucionesRepository {
     bool isLoadingDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseDevolucion(); // Si no hay conexión, terminamos la ejecución
     }

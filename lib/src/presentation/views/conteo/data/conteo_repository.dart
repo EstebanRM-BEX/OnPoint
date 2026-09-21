@@ -3,8 +3,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:wms_app/core/network/connectivity_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
@@ -13,6 +11,7 @@ import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_mod
 import 'package:wms_app/src/presentation/views/conteo/models/request_send_product_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/response_delete_product_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/response_send_product_model.dart';
+import 'package:wms_app/core/network/network_guard.dart';
 
 class ConteoRepository {
 //metodo para traer todos los conteos
@@ -20,9 +19,7 @@ class ConteoRepository {
     bool isLoadinDialog,
   ) async {
     // Verificar si el dispositivo tiene acceso a Internet
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResultConteo(
         code: 0,
@@ -100,9 +97,7 @@ class ConteoRepository {
   //metodo para enviar los productos del conteo al wms
   Future<ResponseSendProductConteo> sendProductConteo(
       bool isLoadinDialog, ConteoItem product) async {
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseSendProductConteo(); // Si no hay conexión, retornar un ResultConteo vacío
     }
@@ -203,9 +198,7 @@ class ConteoRepository {
 
   Future<ResponseDeleteProduct> deleteInfoProductConteo(
       bool isLoadinDialog, int idMove) async {
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseDeleteProduct(); // Si no hay conexión, retornar un ResultConteo vacío
     }
@@ -275,9 +268,7 @@ class ConteoRepository {
 
   Future<ResponseDeleteProduct> deleteProductConteo(
       bool isLoadinDialog, int idMove) async {
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult.isOffline) {
+    if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
       return ResponseDeleteProduct(); // Si no hay conexión, retornar un ResultConteo vacío
     }

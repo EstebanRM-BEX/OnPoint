@@ -10,19 +10,8 @@ class ConnectionStatusCubit extends Cubit<ConnectionStatus> {
   late final StreamSubscription _subscription;
 
   ConnectionStatusCubit({required this.networkInfo})
-      : super(ConnectionStatus.online) {
+      : super(networkInfo.current) {
     _subscription = networkInfo.onStatusChanged.listen(emit);
-    // Initialize with current status if possible or just wait for stream
-    _checkInitialStatus();
-  }
-
-  Future<void> _checkInitialStatus() async {
-    final isConnected = await networkInfo.isConnected;
-    if (isConnected) {
-      emit(ConnectionStatus.online);
-    } else {
-      emit(ConnectionStatus.offline);
-    }
   }
 
   @override

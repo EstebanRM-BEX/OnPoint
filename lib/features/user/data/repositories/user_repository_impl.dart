@@ -1,11 +1,9 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:injectable/injectable.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:wms_app/core/network/connectivity_extensions.dart';
+import 'package:wms_app/core/network/network_info.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/device_info.dart';
@@ -22,10 +20,12 @@ import '../models/device_info_model.dart';
 class UserRepositoryImpl implements UserRepository {
   final UserRemoteDataSource remoteDataSource;
   final UserLocalDataSource localDataSource;
+  final NetworkInfo networkInfo;
 
   UserRepositoryImpl({
     required this.remoteDataSource,
     required this.localDataSource,
+    required this.networkInfo,
   });
 
   @override
@@ -126,22 +126,5 @@ class UserRepositoryImpl implements UserRepository {
     }
   }
 
-  // connectivity_plus solo reporta si hay una interfaz de red activa (WiFi/
-  // datos), no si esa red llega realmente a internet. Con WiFi sin salida a
-  // internet o servidor inalcanzable, checkConnectivity() daba falso positivo
-  // y la petición remota terminaba lanzando una excepción cruda al usuario.
-  // Verificamos con una resolución DNS real, igual que NetworkInfoImpl.
-  Future<bool> _isConnected() async {
-    final connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult.isOffline) return false;
-    try {
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 3));
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } on SocketException catch (_) {
-      return false;
-    } on TimeoutException catch (_) {
-      return false;
-    }
-  }
+  Future<bool> _isConnected() => networkInfo.isConnected;
 }
