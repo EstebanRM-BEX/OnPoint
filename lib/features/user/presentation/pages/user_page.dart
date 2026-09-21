@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
-import 'package:wms_app/src/presentation/providers/network_overlay/network_overlay_cubit.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_bloc.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_event.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_state.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/features/home/presentation/widgets/background.dart';
 import 'package:wms_app/features/home/presentation/widgets/update_app_dialog_widget.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
@@ -17,7 +15,12 @@ import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.da
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import '../bloc/user_bloc.dart';
+import 'package:wms_app/shared/widgets/confirm_delete_dialog.dart';
+import '../widgets/config_header.dart';
+import '../widgets/danger_zone_button.dart';
 import '../widgets/device_info_card.dart';
+import '../widgets/network_indicator_card.dart';
+import '../widgets/sync_actions_card.dart';
 import '../widgets/permissions_widget.dart';
 import '../widgets/user_info_card.dart';
 import '../widgets/warehouses_dialog.dart';
@@ -33,17 +36,17 @@ class UserPage extends StatefulWidget {
 class _UserPageState extends State<UserPage> {
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-
     return Scaffold(
-      backgroundColor: white,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: MultiBlocListener(
         listeners: [
           BlocListener<HomeBloc, HomeState>(
             listener: (context, state) {
               if (state is AppVersionUpdateState) {
                 showDialog(
-                    context: context, builder: (context) => UpdateAppDialog());
+                  context: context,
+                  builder: (context) => UpdateAppDialog(),
+                );
               }
               if (state is AppVersionLoadedState) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -60,9 +63,10 @@ class _UserPageState extends State<UserPage> {
               debugPrint('state inventario : $state');
               if (state is GetProductsLoadingInventory) {
                 showDialog(
-                    context: context,
-                    builder: (context) => const DialogLoading(
-                        message: 'Descargando productos...'));
+                  context: context,
+                  builder: (context) =>
+                      const DialogLoading(message: 'Descargando productos...'),
+                );
               }
               if (state is GetProductsSuccess) {
                 if (Navigator.canPop(context)) Navigator.pop(context);
@@ -92,9 +96,11 @@ class _UserPageState extends State<UserPage> {
               debugPrint('state packaging type : $state');
               if (state is PackagingTypesLoadInProgress) {
                 showDialog(
-                    context: context,
-                    builder: (context) => const DialogLoading(
-                        message: 'Descargando tipos de empaque...'));
+                  context: context,
+                  builder: (context) => const DialogLoading(
+                    message: 'Descargando tipos de empaque...',
+                  ),
+                );
               }
               if (state is PackagingTypesLoadSuccess) {
                 if (Navigator.canPop(context)) Navigator.pop(context);
@@ -123,9 +129,10 @@ class _UserPageState extends State<UserPage> {
               debugPrint('state devoluciones: $state');
               if (state is DownloadAllTercerosLoading) {
                 showDialog(
-                    context: context,
-                    builder: (context) => const DialogLoading(
-                        message: 'Descargando terceros...'));
+                  context: context,
+                  builder: (context) =>
+                      const DialogLoading(message: 'Descargando terceros...'),
+                );
               }
               if (state is DownloadAllTercerosSuccess) {
                 if (Navigator.canPop(context)) Navigator.pop(context);
@@ -150,316 +157,168 @@ class _UserPageState extends State<UserPage> {
             },
           ),
         ],
-        child: Container(
-          width: size.width,
-          height: size.height,
-          color: primaryColorApp,
-          child: Stack(
-            children: [
-              const Background(),
-              BlocConsumer<UserBloc, UserState>(
-                listener: (context, state) {
-                  if (state is UserError) {
-                    showScrollableErrorDialog(state.message);
-                  }
-                  if (state is UserOfflineWarning) {
-                    Get.snackbar(
-                      '360 Software Informa',
-                      'Sin conexión: mostrando los datos guardados localmente.',
-                      backgroundColor: white,
-                      colorText: primaryColorApp,
-                      icon: const Icon(Icons.cloud_off, color: Colors.orange),
-                      duration: const Duration(seconds: 3),
-                    );
-                  }
-                  if (state is DownloadUserDataLoading) {
-                    showDialog(
-                        context: context,
-                        builder: (context) =>
-                            DialogLoading(message: state.message));
-                  }
-                  if (state is DownloadUserDataSuccess) {
-                    if (Navigator.canPop(context)) Navigator.pop(context);
-                    Get.snackbar(
-                      '360 Software Informa',
-                      state.message,
-                      backgroundColor: white,
-                      colorText: primaryColorApp,
-                      icon:
-                          const Icon(Icons.check_circle, color: Colors.green),
-                    );
-                  }
-                  if (state is DownloadUserDataError) {
-                    if (Navigator.canPop(context)) Navigator.pop(context);
-                    Get.snackbar(
-                      '360 Software Informa',
-                      state.message,
-                      backgroundColor: white,
-                      colorText: primaryColorApp,
-                      icon: const Icon(Icons.error, color: Colors.red),
-                    );
-                  }
-                  if (state is DeviceRegistrationSuccess) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content:
-                              Text("Dispositivo registrado correctamente")),
-                    );
-                  }
-                  if (state is DeviceRegistrationFailure) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text("Error registro: ${state.message}")),
-                    );
-                  }
-                },
-                builder: (context, state) {
-                  final bloc = context.read<UserBloc>();
-                  debugPrint('state user page: $state');
-
-                  if (state is UserLoading ||
-                      (state is UserOfflineWarning &&
-                          bloc.userConfiguration == null)) {
-                    return const DialogLoading(message: 'Cargando...');
-                  } else if (bloc.userConfiguration != null &&
-                      bloc.deviceInfo != null) {
-                    return SizedBox(
-                      width: size.width,
-                      height: size.height,
-                      child: Container(
-                        padding:
-                            const EdgeInsets.only(left: 10, top: 35, right: 10),
-                        width: size.width,
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children: [
-                              _buildBackButton(context),
-                              _buildUpdateCheckButton(context),
-                              UserInfoCard(
-                                profile:
-                                    bloc.userConfiguration?.result?.result ??
-                                        const UserProfile(),
-                                versionApp: bloc.deviceInfo?.appVersion ?? '',
-                              ),
-                              DeviceInfoCard(deviceInfo: bloc.deviceInfo!),
-                              _buildActionButtons(context, bloc),
-                              const SizedBox(height: 20),
-                              PermissionsWidget(
-                                  profile:
-                                      bloc.userConfiguration?.result?.result ??
-                                          const UserProfile()),
-                              const SizedBox(height: 20),
-                              _buildNetworkOverlayToggle(context),
-                              const SizedBox(height: 20),
-                              _buildDeleteDatabaseButton(context),
-                              const SizedBox(height: 20),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBackButton(BuildContext context) {
-    return Card(
-      color: white,
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Row(
-          children: [
-            Card(
-              color: white,
-              elevation: 2,
-              child: IconButton(
-                  onPressed: () {
-                    goToScreen(context, '/home');
-                  },
-                  icon:
-                      Icon(Icons.arrow_back, color: primaryColorApp, size: 30)),
-            ),
-            const SizedBox(width: 10),
-            Text("Bienvenido a,  ",
-                style: TextStyle(fontSize: 14, color: primaryColorApp)),
-            const Text('OnPoint', style: TextStyle(fontSize: 14, color: black))
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUpdateCheckButton(BuildContext context) {
-    return Card(
-      color: white,
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        child: ElevatedButton(
-          onPressed: () {
-            context.read<HomeBloc>().add(AppVersionEvent());
+        child: BlocConsumer<UserBloc, UserState>(
+          listener: (context, state) {
+            if (state is UserError) {
+              showScrollableErrorDialog(state.message);
+            }
+            if (state is UserOfflineWarning) {
+              Get.snackbar(
+                '360 Software Informa',
+                'Sin conexión: mostrando los datos guardados localmente.',
+                backgroundColor: white,
+                colorText: primaryColorApp,
+                icon: const Icon(Icons.cloud_off, color: Colors.orange),
+                duration: const Duration(seconds: 3),
+              );
+            }
+            if (state is DownloadUserDataLoading) {
+              showDialog(
+                context: context,
+                builder: (context) => DialogLoading(message: state.message),
+              );
+            }
+            if (state is DownloadUserDataSuccess) {
+              if (Navigator.canPop(context)) Navigator.pop(context);
+              Get.snackbar(
+                '360 Software Informa',
+                state.message,
+                backgroundColor: white,
+                colorText: primaryColorApp,
+                icon: const Icon(Icons.check_circle, color: Colors.green),
+              );
+            }
+            if (state is DownloadUserDataError) {
+              if (Navigator.canPop(context)) Navigator.pop(context);
+              Get.snackbar(
+                '360 Software Informa',
+                state.message,
+                backgroundColor: white,
+                colorText: primaryColorApp,
+                icon: const Icon(Icons.error, color: Colors.red),
+              );
+            }
+            if (state is DeviceRegistrationSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Dispositivo registrado correctamente"),
+                ),
+              );
+            }
+            if (state is DeviceRegistrationFailure) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Error registro: ${state.message}")),
+              );
+            }
           },
-          style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 30),
-              backgroundColor: grey),
-          child: const Text(
-            "Comprobar actualizaciones",
-            style: TextStyle(color: white),
-          ),
+          builder: (context, state) {
+            final bloc = context.read<UserBloc>();
+            final loading =
+                state is UserLoading ||
+                (state is UserOfflineWarning && bloc.userConfiguration == null);
+            final ready =
+                bloc.userConfiguration != null && bloc.deviceInfo != null;
+
+            return Column(
+              children: [
+                ConfigHeader(onBack: () => goToScreen(context, '/home')),
+                Expanded(
+                  child: loading
+                      ? const DialogLoading(message: 'Cargando...')
+                      : ready
+                      ? _buildContent(context, bloc)
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, UserBloc bloc) {
-    return Card(
-      color: white,
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ElevatedButton.icon(
-              onPressed: () async {
-                final warehouses =
-                    await WarehouseRepository().getAllowedWarehouse();
-                if (!context.mounted) return;
-                showDialog(
-                  context: context,
-                  builder: (_) => WarehousesDialog(warehouses: warehouses),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 30),
-                  backgroundColor: primaryColorApp),
-              icon: const Icon(Icons.warehouse, color: white, size: 16),
-              label: const Text(
-                "Ver Almacenes",
-                style: TextStyle(color: white),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                context.read<InventarioBloc>().add(GetProductsEvent());
-              },
-              style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 30),
-                  backgroundColor: grey),
-              child: const Text(
-                "Descargar productos",
-                style: TextStyle(color: white),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                context.read<UserBloc>().add(DownloadLocationsEvent());
-              },
-              style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 30),
-                  backgroundColor: grey),
-              child: const Text(
-                "Descargar ubicaciones",
-                style: TextStyle(color: white),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                context.read<UserBloc>().add(DownloadNoveltiesEvent());
-              },
-              style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 30),
-                  backgroundColor: grey),
-              child: const Text(
-                "Descargar novedades",
-                style: TextStyle(color: white),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                context
-                    .read<DevolucionesBloc>()
-                    .add(DownloadAllTercerosEvent());
-              },
-              style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 30),
-                  backgroundColor: grey),
-              child: const Text(
-                "Descargar terceros",
-                style: TextStyle(color: white),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                context
-                    .read<PackagingTypeBloc>()
-                    .add(SyncPackagingTypesEvent());
-              },
-              style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 30),
-                  backgroundColor: grey),
-              child: const Text(
-                "Descargar tipos de empaque",
-                style: TextStyle(color: white),
-              ),
-            ),
-          ],
+  Widget _buildContent(BuildContext context, UserBloc bloc) {
+    final profile =
+        bloc.userConfiguration?.result?.result ?? const UserProfile();
+
+    // La primera tarjeta sube 20px para solapar la cabecera (diseño).
+    return Transform.translate(
+      offset: const Offset(0, -20),
+      child: ListView(
+        padding: EdgeInsets.fromLTRB(
+          14,
+          0,
+          14,
+          24 + MediaQuery.paddingOf(context).bottom,
         ),
+        children: [
+          UserInfoCard(
+            profile: profile,
+            versionApp: bloc.deviceInfo?.appVersion ?? '',
+            onCheckUpdates: () =>
+                context.read<HomeBloc>().add(AppVersionEvent()),
+          ),
+          const SizedBox(height: 14),
+          DeviceInfoCard(deviceInfo: bloc.deviceInfo!),
+          const SizedBox(height: 14),
+          _buildSyncActions(context),
+          const SizedBox(height: 14),
+          PermissionsWidget(profile: profile),
+          const SizedBox(height: 14),
+          const NetworkIndicatorCard(),
+          const SizedBox(height: 24),
+          DangerZoneButton(onPressed: _showDeleteDatabaseConfirmation),
+        ],
       ),
     );
   }
 
-  /// Botón para eliminar la base de datos local
-  ///
-  /// Muestra un diálogo de confirmación antes de proceder con la eliminación.
-  /// Sigue las mejores prácticas de Flutter:
-  /// - Extrae la lógica del UI a métodos separados
-  /// - Maneja el contexto correctamente en operaciones asíncronas
-  /// - Proporciona feedback visual al usuario
-  Widget _buildNetworkOverlayToggle(BuildContext context) {
-    return BlocBuilder<NetworkOverlayCubit, bool>(
-      builder: (context, visible) => Card(
-        color: white,
-        elevation: 2,
-        child: SwitchListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          secondary: Icon(Icons.network_check, color: primaryColorApp),
-          title: Text(
-            'Indicador de red',
-            style: TextStyle(fontSize: 13, color: primaryColorApp),
-          ),
-          subtitle: Text(
-            visible ? 'Visible en todas las pantallas' : 'Oculto',
-            style: const TextStyle(fontSize: 11, color: Colors.grey),
-          ),
-          value: visible,
-          activeColor: primaryColorApp,
-          onChanged: (value) =>
-              context.read<NetworkOverlayCubit>().setVisible(value),
+  Widget _buildSyncActions(BuildContext context) {
+    return SyncActionsCard(
+      primary: SyncAction(
+        label: 'Ver Almacenes',
+        icon: Icons.warehouse_outlined,
+        onPressed: () async {
+          final warehouses = await WarehouseRepository().getAllowedWarehouse();
+          if (!context.mounted) return;
+          showDialog(
+            context: context,
+            builder: (_) => WarehousesDialog(warehouses: warehouses),
+          );
+        },
+      ),
+      actions: [
+        SyncAction(
+          label: 'Descargar productos',
+          icon: Icons.inventory_2_outlined,
+          onPressed: () =>
+              context.read<InventarioBloc>().add(GetProductsEvent()),
         ),
-      ),
-    );
-  }
-
-  Widget _buildDeleteDatabaseButton(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () => _showDeleteDatabaseConfirmation(context),
-      style: ElevatedButton.styleFrom(backgroundColor: grey),
-      child: const Text(
-        "Eliminar Base de Datos",
-        style: TextStyle(color: white),
-      ),
+        SyncAction(
+          label: 'Descargar ubicaciones',
+          icon: Icons.place_outlined,
+          onPressed: () =>
+              context.read<UserBloc>().add(DownloadLocationsEvent()),
+        ),
+        SyncAction(
+          label: 'Descargar novedades',
+          icon: Icons.campaign_outlined,
+          onPressed: () =>
+              context.read<UserBloc>().add(DownloadNoveltiesEvent()),
+        ),
+        SyncAction(
+          label: 'Descargar terceros',
+          icon: Icons.people_outline,
+          onPressed: () =>
+              context.read<DevolucionesBloc>().add(DownloadAllTercerosEvent()),
+        ),
+        SyncAction(
+          label: 'Descargar tipos de empaque',
+          icon: Icons.all_inbox_outlined,
+          onPressed: () =>
+              context.read<PackagingTypeBloc>().add(SyncPackagingTypesEvent()),
+        ),
+      ],
     );
   }
 
@@ -470,71 +329,33 @@ class _UserPageState extends State<UserPage> {
   /// - Verifica mounted antes de usar context después de async
   /// - Maneja errores con try-catch
   /// - Proporciona feedback claro al usuario
-  Future<void> _showDeleteDatabaseConfirmation(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        actionsAlignment: MainAxisAlignment.center,
-        title: Center(
-          child: Text(
-            "Eliminar Base de Datos",
-            style: TextStyle(color: primaryColorApp, fontSize: 14),
-          ),
-        ),
-        content: const Text(
-          "¿Estás seguro de eliminar la base de datos?\n\n"
-          "Esta acción no se puede deshacer y perderás todo el progreso "
-          "que llevas realizado y está guardado en la base de datos.",
-          style: TextStyle(fontSize: 12, color: black),
-        ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: grey),
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text("Cancelar", style: TextStyle(color: white)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text("Aceptar"),
-          ),
-        ],
-      ),
+  /// Confirma y elimina la base de datos local. Usa el `context` del State
+  /// (protegido por `mounted`) tras cada `await`.
+  Future<void> _showDeleteDatabaseConfirmation() async {
+    final confirmed = await showConfirmDeleteDialog(
+      context,
+      title: 'Eliminar Base de Datos',
+      message:
+          'Esta acción no se puede deshacer y perderás todo el progreso '
+          'que llevas realizado y está guardado en la base de datos.',
     );
-
-    // Si el usuario canceló o el diálogo se cerró sin confirmación
-    if (confirmed != true) return;
-
-    // Verificar que el widget aún está montado antes de continuar
-    if (!mounted) return;
+    if (!confirmed || !mounted) return;
 
     try {
-      // Importar DataBaseSqlite
       await DataBaseSqlite().deleteBDCloseSession();
-
-      // Verificar mounted nuevamente después de la operación asíncrona
       if (!mounted) return;
-
-      // Mostrar mensaje de éxito
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Base de datos eliminada correctamente"),
+          content: Text('Base de datos eliminada correctamente'),
           backgroundColor: Colors.green,
         ),
       );
-
-      // Navegar a home
-      if (mounted) {
-        goToScreen(context, '/home');
-      }
+      goToScreen(context, '/home');
     } catch (e) {
-      // Verificar mounted antes de mostrar error
       if (!mounted) return;
-
-      // Mostrar mensaje de error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Error al eliminar la base de datos: $e"),
+          content: Text('Error al eliminar la base de datos: $e'),
           backgroundColor: Colors.red,
         ),
       );

@@ -80,7 +80,7 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
     return super.close();
   }
 
-  void _onLoadLocations(
+  Future<void> _onLoadLocations(
       GetListLocationsEvent event, Emitter<PrintLabelsState> emit) async {
     try {
       emit(LoadLocationsLoading());
@@ -106,7 +106,7 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
     }
   }
 
-  void _onGetProductsBD(
+  Future<void> _onGetProductsBD(
       GetProductsList event, Emitter<PrintLabelsState> emit) async {
     try {
       emit(GetProductsLoading());
@@ -129,7 +129,7 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
     }
   }
 
-  void _onLoadConfigurationsUserEvent(
+  Future<void> _onLoadConfigurationsUserEvent(
       LoadConfigurationsUserInfo event, Emitter<PrintLabelsState> emit) async {
     try {
       int userId = await PrefUtils.getUserId();

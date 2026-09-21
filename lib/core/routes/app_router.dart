@@ -349,25 +349,22 @@ class AppRoutes {
 
       AppRoutes.printLabels: (context) {
         final args = _args(context);
-        final bloc = _arg<PrintLabelsBloc>(args, 0) ?? PrintLabelsBloc();
-        return BlocProvider<PrintLabelsBloc>.value(
-          value: bloc,
+        return PrintLabelsScope(
+          bloc: _arg<PrintLabelsBloc>(args, 0),
           child: const PrintLabelsScreen(),
         );
       },
       AppRoutes.printLabelsProducts: (context) {
         final args = _args(context);
-        final bloc = _arg<PrintLabelsBloc>(args, 0) ?? PrintLabelsBloc();
-        return BlocProvider<PrintLabelsBloc>.value(
-          value: bloc,
+        return PrintLabelsScope(
+          bloc: _arg<PrintLabelsBloc>(args, 0),
           child: const PrintLabelsProductsScreen(),
         );
       },
       AppRoutes.printLabelsLocations: (context) {
         final args = _args(context);
-        final bloc = _arg<PrintLabelsBloc>(args, 0) ?? PrintLabelsBloc();
-        return BlocProvider<PrintLabelsBloc>.value(
-          value: bloc,
+        return PrintLabelsScope(
+          bloc: _arg<PrintLabelsBloc>(args, 0),
           child: const PrintLabelsLocationsScreen(),
         );
       },
@@ -1076,6 +1073,37 @@ class _InfoRapidaScopeState extends State<InfoRapidaScope> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<InfoRapidaBloc>.value(value: _bloc, child: widget.child);
+  }
+}
+
+/// Igual que [InfoRapidaScope] para las rutas de impresión de etiquetas.
+///
+/// El builder de la ruta lee `ModalRoute.of(context)` (en `_args`), así que
+/// se re-ejecuta cuando cambia el estado de la ruta — por ejemplo al abrirse
+/// el diálogo "Cargando interfaz...". Con `?? PrintLabelsBloc()` dentro del
+/// builder eso creaba un bloc nuevo: la pantalla pasaba a escucharlo mientras
+/// las cargas iniciales seguían en el anterior, y el diálogo no se cerraba
+/// nunca. Aquí la instancia vive en el State y sobrevive a esos rebuilds.
+class PrintLabelsScope extends StatefulWidget {
+  const PrintLabelsScope({super.key, required this.bloc, required this.child});
+
+  /// Bloc que llegó por argumento de ruta; si es null se crea uno acá.
+  final PrintLabelsBloc? bloc;
+  final Widget child;
+
+  @override
+  State<PrintLabelsScope> createState() => _PrintLabelsScopeState();
+}
+
+class _PrintLabelsScopeState extends State<PrintLabelsScope> {
+  late final PrintLabelsBloc _bloc = widget.bloc ?? PrintLabelsBloc();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider<PrintLabelsBloc>.value(
+      value: _bloc,
+      child: widget.child,
+    );
   }
 }
 

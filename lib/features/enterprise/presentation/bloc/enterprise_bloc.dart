@@ -21,6 +21,7 @@ class EnterpriseBloc extends Bloc<EnterpriseEvent, EnterpriseState> {
     on<SearchEnterpriseEvent>(_onSearchEnterprise);
     on<GetRecentUrlsEvent>(_onGetRecentUrls);
     on<DeleteRecentUrlEvent>(_onDeleteRecentUrl);
+    on<ClearRecentUrlsEvent>(_onClearRecentUrls);
     on<SelectDatabaseEvent>(_onSelectDatabase);
   }
 
@@ -29,20 +30,25 @@ class EnterpriseBloc extends Bloc<EnterpriseEvent, EnterpriseState> {
     Emitter<EnterpriseState> emit,
   ) async {
     emit(state.copyWith(status: EnterpriseStatus.searching));
-    final result =
-        await searchEnterpriseUseCase(SearchEnterpriseParams(url: event.url));
+    final result = await searchEnterpriseUseCase(
+      SearchEnterpriseParams(url: event.url),
+    );
 
     result.fold(
-      (failure) => emit(state.copyWith(
-        status: EnterpriseStatus.failure,
-        errorMessage: failure.message,
-      )),
+      (failure) => emit(
+        state.copyWith(
+          status: EnterpriseStatus.failure,
+          errorMessage: failure.message,
+        ),
+      ),
       (enterpriseInfo) {
-        emit(state.copyWith(
-          status: EnterpriseStatus.success,
-          enterpriseInfo: enterpriseInfo,
-          url: event.url,
-        ));
+        emit(
+          state.copyWith(
+            status: EnterpriseStatus.success,
+            enterpriseInfo: enterpriseInfo,
+            url: event.url,
+          ),
+        );
         // La búsqueda exitosa agrega la URL al historial (lo hace el
         // repositorio); refrescamos la lista visible.
         add(const GetRecentUrlsEvent());
@@ -57,10 +63,12 @@ class EnterpriseBloc extends Bloc<EnterpriseEvent, EnterpriseState> {
     final result = await getRecentUrlsUseCase(NoParams());
 
     result.fold(
-      (failure) => emit(state.copyWith(
-        status: EnterpriseStatus.failure,
-        errorMessage: failure.message,
-      )),
+      (failure) => emit(
+        state.copyWith(
+          status: EnterpriseStatus.failure,
+          errorMessage: failure.message,
+        ),
+      ),
       (recentUrls) => emit(state.copyWith(recentUrls: recentUrls)),
     );
   }
@@ -73,14 +81,26 @@ class EnterpriseBloc extends Bloc<EnterpriseEvent, EnterpriseState> {
     add(const GetRecentUrlsEvent());
   }
 
+  Future<void> _onClearRecentUrls(
+    ClearRecentUrlsEvent event,
+    Emitter<EnterpriseState> emit,
+  ) async {
+    for (final item in state.recentUrls) {
+      await deleteRecentUrlUseCase(DeleteRecentUrlParams(url: item.url));
+    }
+    add(const GetRecentUrlsEvent());
+  }
+
   void _onSelectDatabase(
     SelectDatabaseEvent event,
     Emitter<EnterpriseState> emit,
   ) {
-    emit(state.copyWith(
-      status: EnterpriseStatus.databaseSelected,
-      selectedDatabase: event.database,
-      url: event.url,
-    ));
+    emit(
+      state.copyWith(
+        status: EnterpriseStatus.databaseSelected,
+        selectedDatabase: event.database,
+        url: event.url,
+      ),
+    );
   }
 }

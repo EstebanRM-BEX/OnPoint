@@ -29,6 +29,11 @@ class DeleteRecentUrlEvent extends EnterpriseEvent {
   List<Object?> get props => [url];
 }
 
+/// Borra todo el historial de URLs recientes.
+class ClearRecentUrlsEvent extends EnterpriseEvent {
+  const ClearRecentUrlsEvent();
+}
+
 class SelectDatabaseEvent extends EnterpriseEvent {
   final String database;
   final String url;

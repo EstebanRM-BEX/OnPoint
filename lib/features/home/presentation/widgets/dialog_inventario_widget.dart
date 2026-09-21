@@ -1,150 +1,72 @@
-// ignore_for_file: file_names, use_build_context_synchronously
-
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
 import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
+import 'package:wms_app/shared/widgets/selection_dialog.dart';
+import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
 
 class DialogInventario extends StatelessWidget {
-  const DialogInventario({
-    super.key,
-    required this.contextHome,
-  });
+  const DialogInventario({super.key, required this.contextHome});
 
   final BuildContext contextHome;
 
+  void _goToInventarioRapido(BuildContext context) {
+    final bloc = context.read<InventarioBloc>();
+    bloc.add(GetLocationsEvent()); // ubicaciones
+    bloc.add(GetProductsForDB()); // productos
+    bloc.add(FetchAllBarcodesInventarioEvent()); // demás códigos de barras
+    bloc.add(LoadConfigurationsUserInventory()); // configuración
+
+    Navigator.pop(context);
+    // Se valida con productosCount (ya cargado desde BD en el initState del
+    // home) y no con la lista en memoria, que GetProductsForDB aún no pobló.
+    if (bloc.productosCount == 0) {
+      Get.snackbar(
+        '360 Software Informa',
+        'No hay productos cargados, por favor descargue los productos desde '
+            'la configuración',
+        backgroundColor: white,
+        colorText: primaryColorApp,
+        icon: const Icon(Icons.error, color: Colors.red),
+      );
+      return;
+    }
+    Navigator.pushReplacementNamed(context, 'inventario');
+  }
+
+  void _goToConteo(BuildContext context) {
+    final bloc = context.read<ConteoBloc>();
+    bloc.add(GetLocationsConteoEvent()); // ubicaciones
+    bloc.add(GetProductsFromDBEvent()); // productos
+    bloc.add(GetConteosFromDBEvent()); // conteos
+    bloc.add(LoadConfigurationsUserConteo()); // configuración
+    Navigator.pop(context);
+    Navigator.pushReplacementNamed(context, 'conteo');
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-      child: AlertDialog(
-        backgroundColor: Colors.white,
-        actionsAlignment: MainAxisAlignment.center,
-        title: Center(
-            child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('SELECCION DE INVENTARIO',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: primaryColorApp,
-                  fontSize: 20,
-                )),
-            const SizedBox(height: 10),
-            Center(
-              child: Text(
-                  'Seleccione una de las siguientes opciones para realizar el proceso de inventario',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: black,
-                    fontSize: 12,
-                  )),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-                onPressed: () async {
-                  //obtenemos las ubicaciones
-                  context.read<InventarioBloc>().add(GetLocationsEvent());
-                  //obtenemos los productos
-                  context.read<InventarioBloc>().add(GetProductsForDB());
-                  //obtenemos todos los demas codigos de barras
-                  context
-                      .read<InventarioBloc>()
-                      .add(FetchAllBarcodesInventarioEvent());
-                  //cargamos la configuracion
-                  context
-                      .read<InventarioBloc>()
-                      .add(LoadConfigurationsUserInventory());
-
-                  // validamos si tenemos productos cargados usando productosCount
-                  // (ya cargado desde BD en initState del home) en vez de la lista
-                  // en memoria, que aún no se ha poblado por GetProductsForDB().
-                  if (context.read<InventarioBloc>().productosCount == 0) {
-                    Navigator.pop(context);
-                    Get.snackbar(
-                      '360 Software Informa',
-                      "No hay productos cargados, por favor descargue los productos desde la configuración",
-                      backgroundColor: white,
-                      colorText: primaryColorApp,
-                      icon: Icon(Icons.error, color: Colors.red),
-                    );
-                    return;
-                  }
-
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(
-                    context,
-                    'inventario',
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(200, 40),
-                  backgroundColor: primaryColorApp,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text('INVENTARIO RAPIDO',
-                    style: TextStyle(
-                      color: white,
-                      fontSize: 14,
-                    ))),
-            ElevatedButton(
-                onPressed: () {
-                  //obtenemos las ubicaciones
-                  context.read<ConteoBloc>().add(GetLocationsConteoEvent());
-                  //obtenemos los productos
-                  context.read<ConteoBloc>().add(GetProductsFromDBEvent());
-                  //obtenemos los conteos
-                  context.read<ConteoBloc>().add(GetConteosFromDBEvent());
-                  //cargamos la configuracion
-                  context
-                      .read<ConteoBloc>()
-                      .add(LoadConfigurationsUserConteo());
-
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(
-                    context,
-                    'conteo',
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(200, 40),
-                  backgroundColor: primaryColorApp,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text('CONTEO FISICO',
-                    style: TextStyle(
-                      color: white,
-                      fontSize: 14,
-                    ))),
-            ElevatedButton(
-                onPressed: () {
-                  //cerramos el dialogo
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: grey,
-                  minimumSize: const Size(200, 40),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text('CANCELAR',
-                    style: TextStyle(
-                      color: white,
-                      fontSize: 14,
-                    ))),
-          ],
-        )),
-      ),
+    return SelectionDialog(
+      icon: Icons.shelves,
+      title: 'Selección de Inventario',
+      message:
+          'Seleccione una de las siguientes opciones para realizar el '
+          'proceso de inventario',
+      options: [
+        SelectionOption(
+          title: 'Inventario Rápido',
+          description: 'Ajuste inmediato por ubicación',
+          icon: Icons.bolt_outlined,
+          onTap: () => _goToInventarioRapido(context),
+        ),
+        SelectionOption(
+          title: 'Conteo Físico',
+          description: 'Conteos planificados asignados',
+          icon: Icons.fact_check_outlined,
+          onTap: () => _goToConteo(context),
+        ),
+      ],
     );
   }
 }

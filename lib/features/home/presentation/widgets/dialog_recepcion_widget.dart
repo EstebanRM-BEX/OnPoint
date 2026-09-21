@@ -1,18 +1,11 @@
-// ignore_for_file: file_names
-
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
+import 'package:wms_app/shared/widgets/selection_dialog.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 
 class DialogRecepcion extends StatelessWidget {
-  const DialogRecepcion({
-    super.key,
-    required this.contextHome,
-  });
+  const DialogRecepcion({super.key, required this.contextHome});
 
   final BuildContext contextHome;
 
@@ -28,104 +21,42 @@ class DialogRecepcion extends StatelessWidget {
 
     showDialog(
       context: contextHome,
-      builder: (context) => const DialogLoading(
-        message: 'Cargando recepciones...',
-      ),
+      builder: (context) =>
+          const DialogLoading(message: 'Cargando recepciones...'),
     );
     await Future.delayed(const Duration(seconds: 1));
     if (!contextHome.mounted) return;
     Navigator.pop(contextHome);
-    Navigator.pushReplacementNamed(
-      contextHome,
-      'list-ordenes-compra',
-    );
+    Navigator.pushReplacementNamed(contextHome, 'list-ordenes-compra');
   }
 
   void _goToMultiusuario(BuildContext context) {
     Navigator.pop(context);
-    Navigator.pushReplacementNamed(
-      contextHome,
-      'list-recepcion-multiusuario',
-    );
+    Navigator.pushReplacementNamed(contextHome, 'list-recepcion-multiusuario');
   }
 
   @override
   Widget build(BuildContext context) {
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-      child: AlertDialog(
-        backgroundColor: Colors.white,
-        actionsAlignment: MainAxisAlignment.center,
-        title: Center(
-            child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('SELECCION DE RECEPCION',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: primaryColorApp,
-                  fontSize: 16,
-                )),
-            const SizedBox(height: 10),
-            Center(
-              child: Text(
-                  'Seleccione una de las siguientes opciones para realizar el proceso de recepción',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: black,
-                    fontSize: 12,
-                  )),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-                onPressed: () => _goToIndividual(context),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(200, 40),
-                  backgroundColor: primaryColorApp,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text('RECEPCIÓN INDIVIDUAL',
-                    style: TextStyle(
-                      color: white,
-                      fontSize: 12,
-                    ))),
-            ElevatedButton(
-                onPressed: () => _goToMultiusuario(context),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(200, 40),
-                  backgroundColor: primaryColorApp,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text('RECEPCIÓN MULTIUSUARIO',
-                    style: TextStyle(
-                      color: white,
-                      fontSize: 12,
-                    ))),
-            ElevatedButton(
-                onPressed: () {
-                  //cerramos el dialogo
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: grey,
-                  minimumSize: const Size(200, 40),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text('CANCELAR',
-                    style: TextStyle(
-                      color: white,
-                      fontSize: 12,
-                    ))),
-          ],
-        )),
-      ),
+    return SelectionDialog(
+      icon: Icons.input,
+      title: 'Selección de Recepción',
+      message:
+          'Seleccione una de las siguientes opciones para realizar el '
+          'proceso de recepción',
+      options: [
+        SelectionOption(
+          title: 'Recepción Individual',
+          description: 'Órdenes de compra, un operario',
+          icon: Icons.person_outline,
+          onTap: () => _goToIndividual(context),
+        ),
+        SelectionOption(
+          title: 'Recepción Multiusuario',
+          description: 'Varios operarios en una misma recepción',
+          icon: Icons.groups_outlined,
+          onTap: () => _goToMultiusuario(context),
+        ),
+      ],
     );
   }
 }

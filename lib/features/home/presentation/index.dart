@@ -1,8 +1,5 @@
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously, unnecessary_null_comparison
-
 import 'package:flutter/material.dart';
 import 'package:wms_app/shared/utils/app_navigation.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
@@ -10,7 +7,10 @@ import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
-import 'package:wms_app/features/home/presentation/widgets/background.dart';
+import 'package:wms_app/features/home/presentation/widgets/home_header.dart';
+import 'package:wms_app/features/home/presentation/widgets/home_module_grid.dart';
+import 'package:wms_app/features/home/presentation/widgets/operational_summary_card.dart';
+import 'package:wms_app/shared/widgets/auth/auth_brand_gradient.dart';
 import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/features/home/presentation/widgets/dialog_devoluciones_widget.dart';
 import 'package:wms_app/features/home/presentation/widgets/dialog_inventario_widget.dart';
@@ -40,8 +40,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _isExpanded = true;
-  final PageController _modulePageController = PageController();
-  int _currentModulePage = 0;
   @override
   void initState() {
     super.initState();
@@ -50,9 +48,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     // Disparamos los eventos para obtener los conteos de la bd local
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context
-          .read<dev_bloc.DevolucionesBloc>()
-          .add(dev_bloc.LoadTercerosCountEvent());
+      context.read<dev_bloc.DevolucionesBloc>().add(
+        dev_bloc.LoadTercerosCountEvent(),
+      );
       context.read<InventarioBloc>().add(LoadProductosCountEvent());
       context.read<UserBloc>().add(LoadUserLocationsCountEvent());
       context.read<UserBloc>().add(LoadUserNoveltiesCountEvent());
@@ -61,47 +59,216 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // 1. Precarga de SVGs (Mantenemos esto aquí)
-    final List<String> iconsToCache = [
-      'picking.svg',
-      'packing.svg',
-      'devoluciones.svg',
-      'recepcion.svg',
-      'transferencia.svg',
-      'inventario.svg',
-      'pc.svg',
-      'entrega.svg',
-      'info.svg',
-    ];
-
-    for (final iconName in iconsToCache) {
-      try {
-        final loader = SvgAssetLoader('assets/icons/$iconName');
-        svg.cache
-            .putIfAbsent(loader.cacheKey(null), () => loader.loadBytes(null));
-      } catch (e) {
-        // Ignorar errores de precarga
-      }
-    }
-
-  }
-
-  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
+  // ── Acceso a módulos ─────────────────────────────────────────────────────
+
+  void _snack(String message, {int seconds = 4}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: seconds),
+      ),
+    );
+  }
+
+  void _denyAccess({int seconds = 4}) => _snack(
+    'Su usuario no tiene permisos para acceder a este módulo',
+    seconds: seconds,
+  );
+
+  bool _homeRolIs(String rol) {
+    final current = context.read<HomeBloc>().userRol;
+    return current == rol || current == 'admin';
+  }
+
+  Future<void> _openPicking() async {
+    final String rol = await PrefUtils.getUserRol();
+    if (!mounted) return;
+    if (rol == 'picking' || rol == 'admin') {
+      context.read<BatchBloc>().add(LoadAllNovedadesEvent());
+      showDialog(
+        context: context,
+        builder: (dialogContext) => DialogPicking(contextHome: dialogContext),
+      );
+    } else if (rol.isEmpty) {
+      _snack('Cargue la configuración de su usuario');
+    } else {
+      _denyAccess();
+    }
+  }
+
+  Future<void> _openPacking() async {
+    final String rol = await PrefUtils.getUserRol();
+    if (!mounted) return;
+    if (rol == 'packing' || rol == 'admin') {
+      context.read<WmsPackingBloc>().add(LoadAllNovedadesPackingEvent());
+      context.read<PackingPedidoBloc>().add(LoadAllNovedadesPackEvent());
+      context.read<PackingConsolidateBloc>().add(
+        LoadAllNovedadesPackingConsolidateEvent(),
+      );
+      showDialog(
+        context: context,
+        builder: (dialogContext) => DialogPacking(contextHome: dialogContext),
+      );
+    } else {
+      _denyAccess();
+    }
+  }
+
+  /// [builder] recibe el contexto del diálogo; cada módulo decide qué
+  /// contexto pasar como `contextHome` (se respeta el de la versión previa).
+  void _openRoleDialog(String rol, WidgetBuilder builder, {int seconds = 4}) {
+    if (_homeRolIs(rol)) {
+      showDialog(context: context, builder: builder);
+    } else {
+      _denyAccess(seconds: seconds);
+    }
+  }
+
+  Future<void> _openEntradaProductos() async {
+    final homeConfig = context.read<HomeBloc>().configurations.result?.result;
+    final userConfig = context.read<UserBloc>().configurations;
+    final hasAccess =
+        homeConfig?.accessProductionModule ??
+        userConfig?.accessProductionModule ??
+        false;
+    if (!hasAccess) return _denyAccess();
+
+    showDialog(
+      context: context,
+      builder: (_) =>
+          const DialogLoading(message: 'Cargando entrega de productos...'),
+    );
+    await Future.delayed(const Duration(seconds: 1));
+    if (!mounted) return;
+    Navigator.pop(context);
+    Navigator.pushReplacementNamed(context, 'list-entrada-productos');
+  }
+
+  Future<void> _openUserProfile() async {
+    context.read<UserBloc>().add(LoadUserInfoEvent());
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) =>
+          const DialogLoading(message: 'Cargando información del usuario...'),
+    );
+    await Future.delayed(const Duration(seconds: 1));
+    if (!mounted) return;
+    Get.back(); // Cierra el diálogo
+    // Get.offNamed reemplaza la ruta de arriba: si el diálogo seguía ahí,
+    // se lo comía y el Home (y lo que hubiera debajo) quedaba vivo en el
+    // stack.
+    goToScreen(context, AppRoutes.user);
+  }
+
+  List<List<HomeModule>> _modulePages() => [
+    [
+      HomeModule(
+        title: 'Picking',
+        subtitle: 'Preparación',
+        icon: Icons.assignment_turned_in_outlined,
+        onTap: _openPicking,
+      ),
+      HomeModule(
+        title: 'Packing',
+        subtitle: 'Empaque',
+        icon: Icons.inventory_2_outlined,
+        onTap: _openPacking,
+      ),
+      HomeModule(
+        title: 'Devolución',
+        subtitle: 'Retorno',
+        icon: Icons.keyboard_return,
+        onTap: () => _openRoleDialog(
+          'reception',
+          (dialogContext) => DialogDevoluciones(contextHome: dialogContext),
+          seconds: 2,
+        ),
+      ),
+      HomeModule(
+        title: 'Recepción',
+        subtitle: 'Ingreso mercancía',
+        icon: Icons.input,
+        onTap: () => _openRoleDialog(
+          'reception',
+          (_) => DialogRecepcion(contextHome: context),
+          seconds: 2,
+        ),
+      ),
+      HomeModule(
+        title: 'Transferencia',
+        subtitle: 'Entre ubicaciones',
+        icon: Icons.sync_alt,
+        onTap: () => _openRoleDialog(
+          'transfer',
+          (_) => DialogTransferencia(contextHome: context),
+        ),
+      ),
+      HomeModule(
+        title: 'Inventario',
+        subtitle: 'Conteo físico',
+        icon: Icons.shelves,
+        onTap: () => _openRoleDialog(
+          'inventory',
+          (dialogContext) => DialogInventario(contextHome: dialogContext),
+        ),
+      ),
+      HomeModule(
+        title: 'Componentes',
+        subtitle: 'Picking componentes',
+        icon: Icons.settings_suggest_outlined,
+        // Sin validación de permisos (estaba comentada en la versión
+        // anterior): se mantiene el mismo comportamiento.
+        onTap: () => showDialog(
+          context: context,
+          builder: (dialogContext) =>
+              DialogPickingComponentes(contextHome: dialogContext),
+        ),
+      ),
+      HomeModule(
+        title: 'Entrada Prod.',
+        subtitle: 'Entrega productos',
+        icon: Icons.move_to_inbox_outlined,
+        onTap: _openEntradaProductos,
+      ),
+      HomeModule(
+        title: 'Info Rápida',
+        subtitle: 'Consulta directa',
+        icon: Icons.qr_code_scanner,
+        onTap: () => Navigator.pushReplacementNamed(context, 'info-rapida'),
+      ),
+    ],
+    [
+      HomeModule(
+        title: 'Etiquetas',
+        subtitle: 'Impresión',
+        icon: Icons.print_outlined,
+        onTap: () =>
+            Navigator.pushReplacementNamed(context, AppRoutes.printLabels),
+      ),
+      HomeModule(
+        title: 'Expedición',
+        subtitle: 'Despachos',
+        icon: Icons.local_shipping_outlined,
+        onTap: () =>
+            Navigator.pushReplacementNamed(context, AppRoutes.listExpedition),
+      ),
+    ],
+  ];
+
+  // ── UI ──────────────────────────────────────────────────────────────────
+
+  static const double _bandHeight = 256;
+
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-
-    return WillPopScope(
-      onWillPop: () async {
-        return false;
-      },
+    return PopScope(
+      canPop: false,
       child: BlocListener<HomeBloc, HomeState>(
         listener: (context, state) {
           if (state is HomeLoadErrorState) {
@@ -110,825 +277,128 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               'Error al cargar los datos del usuario',
               backgroundColor: white,
               colorText: primaryColorApp,
-              icon: Icon(Icons.error, color: Colors.red),
+              icon: const Icon(Icons.error, color: Colors.red),
             );
           }
-
           if (state is AppVersionUpdateState) {
             showDialog(
-                context: context,
-                builder: (context) {
-                  return UpdateAppDialog();
-                });
+              context: context,
+              builder: (context) => const UpdateAppDialog(),
+            );
           }
         },
-        // 3. Child Visual: RefreshIndicator y Scaffold
         child: Scaffold(
-          backgroundColor: white,
-          body: Container(
-            color: primaryColorApp,
-            width: size.width,
-            height: size.height,
-            child: Stack(
-              children: [
-                // Background
-                RepaintBoundary(
-                  child: const Background(),
-                ),
-
-                SizedBox(
-                  width: size.width,
-                  height: size.height,
-                  child: SingleChildScrollView(
-                    physics:
-                        const AlwaysScrollableScrollPhysics(), // Asegura que funcione el pull-to-refresh
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const WarningWidgetCubit(),
-                        Padding(
-                          padding: const EdgeInsets.only(
-                              left: 10, right: 10, top: 25),
-                          child: BlocBuilder<HomeBloc, HomeState>(
-                              buildWhen: (previous, current) {
-                            // Solo reconstruimos la tarjeta si el Home terminó de cargar
-                            // o si se cargó la configuración.
-                            return current is HomeLoadedState ||
-                                current is ConfigurationLoadedHomeState;
-                          }, builder: (contextHome, state) {
-                            final homeBloc = contextHome.read<HomeBloc>();
-
-                            return Card(
-                              color: const Color.fromARGB(236, 255, 255, 255),
-                              elevation: 2,
-                              child: Container(
-                                  padding:
-                                      const EdgeInsets.only(left: 10, top: 5),
-                                  width: size.width,
-                                  height: 120,
-                                  child: Row(
-                                    children: [
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Text("Bienvenido a, ",
-                                                  style: TextStyle(
-                                                      fontSize: 14,
-                                                      color: primaryColorApp)),
-                                              // Text('WMS',
-                                              Text('OnPoint',
-                                                  style: TextStyle(
-                                                      fontSize: 14,
-                                                      color: primaryColorApp,
-                                                      fontWeight:
-                                                          FontWeight.bold)),
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    left: 10),
-                                                child: Text(
-                                                    context
-                                                        .read<UserBloc>()
-                                                        .versionApp,
-                                                    style: TextStyle(
-                                                        fontSize: 10,
-                                                        color: black,
-                                                        fontWeight:
-                                                            FontWeight.bold)),
-                                              ),
-                                            ],
-                                          ),
-                                          GestureDetector(
-                                            onTap: () async {
-                                              // Cargar información del usuario
-                                              contextHome
-                                                  .read<UserBloc>()
-                                                  .add(LoadUserInfoEvent());
-
-                                              showDialog(
-                                                  context: contextHome,
-                                                  barrierDismissible: false,
-                                                  builder: (dialogContex) {
-                                                    return const DialogLoading(
-                                                      message:
-                                                          'Cargando información del usuario...',
-                                                    );
-                                                  });
-
-                                              // // Esperar a que se carguen los datos
-                                              await Future.delayed(
-                                                  const Duration(seconds: 1));
-
-                                              // // Cerrar diálogo y navegar a user reemplazando la vista
-                                              if (contextHome.mounted) {
-                                                Get.back(); // Cierra el diálogo
-                                                // Get.offNamed reemplaza la ruta de arriba: si el
-                                                // diálogo seguía ahí, se lo comía y el Home (y lo
-                                                // que hubiera debajo) quedaba vivo en el stack.
-                                                goToScreen(contextHome, AppRoutes.user);
-                                              }
-                                            },
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.person,
-                                                    color: primaryColorApp,
-                                                    size: 20),
-                                                Text("Hola, ",
-                                                    style: TextStyle(
-                                                        fontSize: 12  ,
-                                                        color: black)),
-                                                SizedBox(
-                                                  width: size.width * 0.5,
-                                                  child: Text(
-                                                    homeBloc.userName,
-                                                    style: TextStyle(
-                                                      color: primaryColorApp,
-                                                      fontSize: 12,
-                                                    ),
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                )
-                                              ],
-                                            ),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Row(
-                                            children: [
-                                              Icon(Icons.email,
-                                                  color: primaryColorApp,
-                                                  size: 18),
-                                              const SizedBox(width: 5),
-                                              SizedBox(
-                                                width: size.width * 0.6,
-                                                child: Text(
-                                                  homeBloc.userEmail,
-                                                  style: const TextStyle(
-                                                      color: black,
-                                                      fontSize: 10,
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              )
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              Icon(Icons.storage,
-                                                  color: primaryColorApp,
-                                                  size: 18),
-                                              const SizedBox(width: 5),
-                                              SizedBox(
-                                                width: size.width * 0.6,
-                                                child: Text(
-                                                  getIt<IStorageService>()
-                                                      .nameDatabase
-                                                      .toString(),
-                                                  style: const TextStyle(
-                                                      color: black,
-                                                      fontSize: 10,
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              )
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              Icon(Icons.security,
-                                                  color: primaryColorApp,
-                                                  size: 18),
-                                              const SizedBox(width: 5),
-                                              SizedBox(
-                                                width: size.width * 0.4,
-                                                child: Text(
-                                                  homeBloc.userRol,
-                                                  style: const TextStyle(
-                                                      color: black,
-                                                      fontSize: 10,
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                              //icono de verson
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                      //ICONO DE CERRAR SESION
-                                      const Spacer(),
-                                      GestureDetector(
-                                        onTap: () {
-                                          showDialog(
-                                              context: context,
-                                              builder: (context) {
-                                                return const CloseSession();
-                                              });
-                                        },
-                                        child: Container(
-                                          margin:
-                                              const EdgeInsets.only(right: 20),
-                                          width: 40,
-                                          height: 40,
-                                          decoration: BoxDecoration(
-                                              color: white,
-                                              borderRadius:
-                                                  BorderRadius.circular(10)),
-                                          child: Icon(Icons.logout,
-                                              color: primaryColorApp),
-                                        ),
-                                      )
-                                    ],
-                                  )),
-                            );
-                          }),
-                        ),
-                        // const SizedBox(height: 20),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                          ),
-                          width: size.width,
-                          // height: size.height * 0.5,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              //resumen de datos
-                              Card(
-                                elevation: 3,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15)),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(5.0),
-                                  child: Column(
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Icon(Icons.storage,
-                                                  color: primaryColorApp,
-                                                  size: 12),
-                                              const SizedBox(width: 8),
-                                              Text('Resumen de Datos',
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 12,
-                                                      color: primaryColorApp)),
-                                            ],
-                                          ),
-                                          GestureDetector(
-                                            onTap: () {
-                                              setState(() {
-                                                _isExpanded = !_isExpanded;
-                                              });
-                                            },
-                                            child: Icon(
-                                              _isExpanded
-                                                  ? Icons.expand_less
-                                                  : Icons.expand_more,
-                                              color: primaryColorApp,
-                                              size: 18,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      if (_isExpanded) ...[
-                                        const Divider(),
-                                        BlocBuilder<dev_bloc.DevolucionesBloc,
-                                            dev_bloc.DevolucionesState>(
-                                          builder: (context, state) {
-                                            final bloc = context.read<
-                                                dev_bloc.DevolucionesBloc>();
-                                            return _buildInfoItem(
-                                              icon: Icons.people,
-                                              label: 'Terceros',
-                                              count: bloc.tercerosCount,
-                                              isLoading: state is dev_bloc
-                                                      .DownloadAllTercerosLoading ||
-                                                  state is dev_bloc
-                                                      .LoadTercerosFromDBLoading,
-                                            );
-                                          },
-                                        ),
-                                        BlocBuilder<InventarioBloc,
-                                            InventarioState>(
-                                          builder: (context, state) {
-                                            final bloc =
-                                                context.read<InventarioBloc>();
-                                            return _buildInfoItem(
-                                              icon: Icons.inventory_2,
-                                              label: 'Productos',
-                                              count: bloc.productosCount,
-                                              // PROTECCIÓN CONTRA RACE CONDITIONS:
-                                              // Usamos la propiedad persistente en vez del estado transitorio
-                                              isLoading: bloc.isLoading ||
-                                                  state
-                                                      is GetProductsLoadingInventory ||
-                                                  state is GetProductsLoadingBD,
-                                            );
-                                          },
-                                        ),
-                                        BlocBuilder<UserBloc, UserState>(
-                                          builder: (context, state) {
-                                            final bloc =
-                                                context.read<UserBloc>();
-                                            return Column(
-                                              children: [
-                                                _buildInfoItem(
-                                                  icon: Icons.location_on,
-                                                  label: 'Ubicaciones',
-                                                  count: bloc.locationsCount,
-                                                  isLoading: state
-                                                      is UserLocationsLoading,
-                                                ),
-                                                _buildInfoItem(
-                                                  icon: Icons.new_releases,
-                                                  label: 'Novedades',
-                                                  count: bloc.noveltiesCount,
-                                                  isLoading: state
-                                                      is UserNoveltiesLoading,
-                                                ),
-                                                _buildInfoItem(
-                                                  icon: Icons.warehouse,
-                                                  label: 'Almacenes',
-                                                  count: bloc.warehousesCount,
-                                                  isLoading: false,
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              // ── Módulos deslizables (estilo home de celular) ──
-                              SizedBox(
-                                height: 340,
-                                child: PageView(
-                                  controller: _modulePageController,
-                                  onPageChanged: (index) {
-                                    setState(
-                                        () => _currentModulePage = index);
-                                  },
-                                  children: [
-                                    // ── Página 1: Los 9 módulos con scroll ──
-                                    SingleChildScrollView(
-                                      child: Wrap(
-                                        alignment: WrapAlignment.center,
-                                        children: [
-                                          GestureDetector(
-                                            onTap: () async {
-                                              final String rol =
-                                                  await PrefUtils.getUserRol();
-                                              if (rol == 'picking' ||
-                                                  rol == 'admin') {
-                                                context
-                                                    .read<BatchBloc>()
-                                                    .add(
-                                                        LoadAllNovedadesEvent());
-                                                showDialog(
-                                                    context: context,
-                                                    builder: (context) =>
-                                                        DialogPicking(
-                                                            contextHome:
-                                                                context));
-                                              } else if (rol == '' ||
-                                                  rol == null) {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(const SnackBar(
-                                                        content: Text(
-                                                            'Cargue la configuración de su usuario'),
-                                                        duration: Duration(
-                                                            seconds: 4)));
-                                              } else {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(const SnackBar(
-                                                        content: Text(
-                                                            'Su usuario no tiene permisos para acceder a este módulo'),
-                                                        duration: Duration(
-                                                            seconds: 4)));
-                                              }
-                                            },
-                                            child: ImteModule(
-                                                urlImg: 'picking.svg',
-                                                title: 'Picking'),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () async {
-                                              final String rol =
-                                                  await PrefUtils.getUserRol();
-                                              if (rol == 'packing' ||
-                                                  rol == 'admin') {
-                                                context
-                                                    .read<WmsPackingBloc>()
-                                                    .add(
-                                                        LoadAllNovedadesPackingEvent());
-                                                context
-                                                    .read<PackingPedidoBloc>()
-                                                    .add(
-                                                        LoadAllNovedadesPackEvent());
-                                                context
-                                                    .read<
-                                                        PackingConsolidateBloc>()
-                                                    .add(
-                                                        LoadAllNovedadesPackingConsolidateEvent());
-                                                showDialog(
-                                                    context: context,
-                                                    builder: (context) =>
-                                                        DialogPacking(
-                                                            contextHome:
-                                                                context));
-                                              } else {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(const SnackBar(
-                                                        content: Text(
-                                                            'Su usuario no tiene permisos para acceder a este módulo'),
-                                                        duration: Duration(
-                                                            seconds: 4)));
-                                              }
-                                            },
-                                            child: ImteModule(
-                                                urlImg: 'packing.svg',
-                                                title: 'Packing'),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () async {
-                                              final rol = context
-                                                  .read<HomeBloc>()
-                                                  .userRol;
-                                              if (rol == 'reception' ||
-                                                  rol == 'admin') {
-                                                showDialog(
-                                                    context: context,
-                                                    builder: (context) =>
-                                                        DialogDevoluciones(
-                                                            contextHome:
-                                                                context));
-                                              } else {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(const SnackBar(
-                                                        content: Text(
-                                                            'Su usuario no tiene permisos para acceder a este módulo'),
-                                                        duration: Duration(
-                                                            seconds: 2)));
-                                              }
-                                            },
-                                            child: ImteModule(
-                                                urlImg: 'devoluciones.svg',
-                                                title: 'Devoluciones'),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () async {
-                                              final rol = context
-                                                  .read<HomeBloc>()
-                                                  .userRol;
-                                              if (rol == 'reception' ||
-                                                  rol == 'admin') {
-                                                showDialog(
-                                                    context: context,
-                                                    builder: (dialogContext) =>
-                                                        DialogRecepcion(
-                                                            contextHome:
-                                                                context));
-                                              } else {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(const SnackBar(
-                                                        content: Text(
-                                                            'Su usuario no tiene permisos para acceder a este módulo'),
-                                                        duration: Duration(
-                                                            seconds: 2)));
-                                              }
-                                            },
-                                            child: ImteModule(
-                                                urlImg: 'recepcion.svg',
-                                                title: 'Recepción'),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () async {
-                                              final rol = context
-                                                  .read<HomeBloc>()
-                                                  .userRol;
-                                              if (rol == 'transfer' ||
-                                                  rol == 'admin') {
-                                                showDialog(
-                                                    context: context,
-                                                    builder: (dialogContext) =>
-                                                        DialogTransferencia(
-                                                            contextHome:
-                                                                context));
-                                              } else {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(const SnackBar(
-                                                        content: Text(
-                                                            'Su usuario no tiene permisos para acceder a este módulo'),
-                                                        duration: Duration(
-                                                            seconds: 4)));
-                                              }
-                                            },
-                                            child: ImteModule(
-                                                urlImg: 'transferencia.svg',
-                                                title: 'Transferencia'),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () async {
-                                              final rol = context
-                                                  .read<HomeBloc>()
-                                                  .userRol;
-                                              if (rol == 'inventory' ||
-                                                  rol == 'admin') {
-                                                showDialog(
-                                                    context: context,
-                                                    builder: (context) =>
-                                                        DialogInventario(
-                                                            contextHome:
-                                                                context));
-                                              } else {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(const SnackBar(
-                                                        content: Text(
-                                                            'Su usuario no tiene permisos para acceder a este módulo'),
-                                                        duration: Duration(
-                                                            seconds: 4)));
-                                              }
-                                            },
-                                            child: ImteModule(
-                                                urlImg: 'inventario.svg',
-                                                title: 'Inventario'),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () async {
-                                              // final homeConfig = context
-                                              //     .read<HomeBloc>()
-                                              //     .configurations
-                                              //     .result
-                                              //     ?.result;
-                                              // final userConfig = context
-                                              //     .read<UserBloc>()
-                                              //     .configurations;
-                                              // final hasAccess = homeConfig
-                                              //         ?.accessProductionModule ??
-                                              //     userConfig
-                                              //         ?.accessProductionModule ??
-                                              //     false;
-                                              // if (hasAccess) {
-                                                showDialog(
-                                                    context: context,
-                                                    builder: (context) =>
-                                                        DialogPickingComponentes(
-                                                            contextHome:
-                                                                context));
-                                              // } else {
-                                              //   ScaffoldMessenger.of(context)
-                                              //       .showSnackBar(const SnackBar(
-                                              //           content: Text(
-                                              //               'Su usuario no tiene permisos para acceder a este módulo'),
-                                              //           duration: Duration(
-                                              //               seconds: 4)));
-                                              // }
-                                            },
-                                            child: ImteModule(
-                                                urlImg: 'pc.svg',
-                                                title: 'Picking\nComponentes'),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () async {
-                                              final homeConfig = context
-                                                  .read<HomeBloc>()
-                                                  .configurations
-                                                  .result
-                                                  ?.result;
-                                              final userConfig = context
-                                                  .read<UserBloc>()
-                                                  .configurations;
-                                              final hasAccess = homeConfig
-                                                      ?.accessProductionModule ??
-                                                  userConfig
-                                                      ?.accessProductionModule ??
-                                                  false;
-                                              if (hasAccess) {
-                                                showDialog(
-                                                    context: context,
-                                                    builder: (context) =>
-                                                        const DialogLoading(
-                                                            message:
-                                                                'Cargando entrega de productos...'));
-                                                await Future.delayed(
-                                                    const Duration(seconds: 1));
-                                                if (!mounted) return;
-                                                Navigator.pop(context);
-                                                Navigator.pushReplacementNamed(
-                                                    context,
-                                                    'list-entrada-productos');
-                                              } else {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(const SnackBar(
-                                                        content: Text(
-                                                            'Su usuario no tiene permisos para acceder a este módulo'),
-                                                        duration: Duration(
-                                                            seconds: 4)));
-                                              }
-                                            },
-                                            child: ImteModule(
-                                                urlImg: 'entrega.svg',
-                                                title: 'Entrada\nProductos'),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () async {
-                                              Navigator.pushReplacementNamed(
-                                                  context, 'info-rapida');
-                                            },
-                                            child: const ImteModule(
-                                                urlImg: 'info.svg',
-                                                title: 'Info Rapida'),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    // ── Página 2: Imprimir Etiquetas ──
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        GestureDetector(
-                                          onTap: () {
-                                            Navigator.pushReplacementNamed(
-                                                context,
-                                                AppRoutes.printLabels);
-                                          },
-                                          child: Card(
-                                            color: const Color.fromARGB(
-                                                215, 255, 255, 255),
-                                            elevation: 5,
-                                            child: SizedBox(
-                                              height: 100,
-                                              width: 100,
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  SizedBox(
-                                                    height: 40,
-                                                    width: 40,
-                                                    child: Image.asset(
-                                                      "assets/icons/labels.png",
-                                                      color: Colors.black,
-                                                      width: 50,
-                                                      height: 50,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 6),
-                                                  const Text(
-                                                    'Impresion de\nEtiquetas',
-                                                    textAlign: TextAlign.center,
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      color: primaryColorApp,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        GestureDetector(
-                                          onTap: () {
-                                            Navigator.pushReplacementNamed(
-                                                context,
-                                                AppRoutes.listExpedition);
-                                          },
-                                          child: Card(
-                                            color: const Color.fromARGB(
-                                                215, 255, 255, 255),
-                                            elevation: 5,
-                                            child: SizedBox(
-                                              height: 100,
-                                              width: 100,
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  SizedBox(
-                                                    height: 60,
-                                                    width: 60,
-                                                    child: Image.asset(
-                                                      "assets/icons/expedition.png",
-                                                      // color: Colors.black,
-                                                      width: 60,
-                                                      height: 60,
-                                                    ),
-                                                  ),
-                                                  const Text(
-                                                    'Expedición',
-                                                    textAlign: TextAlign.center,
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      color: primaryColorApp,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              // ── Indicadores de página (dots) ──
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: List.generate(
-                                  2,
-                                  (i) => AnimatedContainer(
-                                    duration:
-                                        const Duration(milliseconds: 250),
-                                    margin: const EdgeInsets.symmetric(
-                                        horizontal: 4),
-                                    width: _currentModulePage == i ? 16 : 7,
-                                    height: 7,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(4),
-                                      color: _currentModulePage == i
-                                          ? Theme.of(context).primaryColor
-                                          : Colors.grey.shade400,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+          backgroundColor: const Color(0xFFF8FAFC),
+          // floatingActionButton: const CrashlyticsTestFab(),
+          body: Stack(
+            children: [
+              // Banda de marca con base curva detrás de la cabecera.
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: _bandHeight,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: authBrandGradient,
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(40),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              SafeArea(
+                bottom: false,
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    8,
+                    16,
+                    24 + MediaQuery.paddingOf(context).bottom,
+                  ),
+                  children: [
+                    const WarningWidgetCubit(),
+                    _buildHeader(),
+                    _buildSummary(),
+                    const SizedBox(height: 18),
+                    HomeModuleGrid(pages: _modulePages()),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildInfoItem({
-    required IconData icon,
-    required String label,
-    required int count,
-    required bool isLoading,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-      child: Row(
-        children: [
-          Icon(icon, size: 12, color: primaryColorApp),
-          const SizedBox(width: 10),
-          Text(label, style: const TextStyle(fontSize: 10)),
-          const Spacer(),
-          isLoading
-              ? Text(
-                  'cargando…',
-                  style: TextStyle(
-                      fontSize: 10,
-                      fontStyle: FontStyle.italic,
-                      color: Colors.grey.shade600),
-                )
-              : Text(
-                  '$count',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10,
-                      color: Color.fromARGB(255, 44, 130, 53)),
-                ),
-        ],
-      ),
+  Widget _buildHeader() {
+    return BlocBuilder<HomeBloc, HomeState>(
+      // Solo se reconstruye cuando el Home terminó de cargar o se cargó la
+      // configuración.
+      buildWhen: (previous, current) =>
+          current is HomeLoadedState || current is ConfigurationLoadedHomeState,
+      builder: (context, state) {
+        final homeBloc = context.read<HomeBloc>();
+        return HomeHeader(
+          name: homeBloc.userName,
+          email: homeBloc.userEmail,
+          rol: homeBloc.userRol,
+          database: getIt<IStorageService>().nameDatabase,
+          version: context.read<UserBloc>().versionApp,
+          onProfileTap: _openUserProfile,
+          onLogout: () => showDialog(
+            context: context,
+            builder: (_) => const CloseSession(),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSummary() {
+    return BlocBuilder<dev_bloc.DevolucionesBloc, dev_bloc.DevolucionesState>(
+      builder: (context, devState) {
+        final devBloc = context.read<dev_bloc.DevolucionesBloc>();
+        return BlocBuilder<InventarioBloc, InventarioState>(
+          builder: (context, invState) {
+            final invBloc = context.read<InventarioBloc>();
+            return BlocBuilder<UserBloc, UserState>(
+              builder: (context, userState) {
+                final userBloc = context.read<UserBloc>();
+                return OperationalSummaryCard(
+                  expanded: _isExpanded,
+                  onToggle: () => setState(() => _isExpanded = !_isExpanded),
+                  terceros: SummaryMetric(
+                    count: devBloc.tercerosCount,
+                    loading:
+                        devState is dev_bloc.DownloadAllTercerosLoading ||
+                        devState is dev_bloc.LoadTercerosFromDBLoading,
+                  ),
+                  productos: SummaryMetric(
+                    count: invBloc.productosCount,
+                    // Propiedad persistente del bloc (no solo el estado
+                    // transitorio) para evitar carreras.
+                    loading:
+                        invBloc.isLoading ||
+                        invState is GetProductsLoadingInventory ||
+                        invState is GetProductsLoadingBD,
+                  ),
+                  ubicaciones: SummaryMetric(
+                    count: userBloc.locationsCount,
+                    loading: userState is UserLocationsLoading,
+                  ),
+                  novedades: SummaryMetric(
+                    count: userBloc.noveltiesCount,
+                    loading: userState is UserNoveltiesLoading,
+                  ),
+                  almacenes: SummaryMetric(count: userBloc.warehousesCount),
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 }
