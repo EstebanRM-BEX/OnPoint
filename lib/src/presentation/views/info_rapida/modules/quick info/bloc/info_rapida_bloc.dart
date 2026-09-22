@@ -39,6 +39,10 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   //controller
   TextEditingController searchControllerLocation = TextEditingController();
   TextEditingController searchControllerProducts = TextEditingController();
+  // Foco del buscador de ubicaciones en el detalle de producto. Vive en
+  // el bloc (no en la screen, que es StatelessWidget y se reconstruye en
+  // cada BlocConsumer.builder) para que el foco sobreviva esos rebuilds.
+  final FocusNode searchLocationFocusNode = FocusNode();
 
   //*lista de ubicaciones
   List<ResultUbicaciones> ubicaciones = [];
@@ -852,6 +856,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   @override
   Future<void> close() {
     _wsSubscription?.cancel();
+    searchLocationFocusNode.dispose();
     return super.close();
   }
 
