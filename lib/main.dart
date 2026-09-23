@@ -58,6 +58,8 @@ import 'package:get/get.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_performance/firebase_performance.dart';
+import 'package:flutter/foundation.dart';
 import 'package:wms_app/injection_container.dart';
 // Chat global desactivado en desarrollo.
 // import 'package:wms_app/features/chat/presentation/widgets/global_chat_overlay.dart';
@@ -92,6 +94,11 @@ void main() {
       FlutterError.onError =
           FirebaseCrashlytics.instance.recordFlutterFatalError;
 
+      // En debug los tiempos no son representativos (JIT): no ensuciar la
+      // consola de Performance.
+      await FirebasePerformance.instance
+          .setPerformanceCollectionEnabled(!kDebugMode);
+
       // Configuración de pantalla roja de error (Opcional)
       ErrorWidget.builder = (FlutterErrorDetails details) => ErrorMessageWidget(
         title: 'Algo salió mal',
@@ -112,10 +119,9 @@ void main() {
 
       runApp(AppRestart(child: const MyApp()));
 
-      // Reporta a Crashlytics los frames con jank (>100ms) y errores no
-      // fatales para jank crítico (>200ms), agrupados por pantalla vía
-      // JankRouteObserver (navigatorObservers de GetMaterialApp, abajo).
-      // Ya existía implementado pero nunca se activaba.
+      // Traza de fluidez por pantalla en Firebase Performance (frames lentos
+      // y congelados), con la pantalla actual vía JankRouteObserver
+      // (navigatorObservers de GetMaterialApp, abajo). No corre en debug.
       JankMonitor().start();
 
       // WebSocket en background: no debe bloquear el primer frame.

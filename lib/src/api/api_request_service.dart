@@ -20,6 +20,7 @@ import 'package:path/path.dart' as p;
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/core/utils/widgets/dialog_loading_widget.dart';
+import 'package:wms_app/core/utils/performance/performance_http_client.dart';
 
 class ApiRequestService {
   /// Abre el loader de red y devuelve la función que lo cierra POR SU PROPIA
@@ -58,6 +59,9 @@ class ApiRequestService {
   factory ApiRequestService() => _instance;
 
   ApiRequestService._internal();
+
+  /// Todas las peticiones pasan por acá para medirlas en Firebase Performance.
+  final http.Client _client = PerformanceHttpClient();
 
   late String unencodePath;
   late HttpResponseHandler httpHandler;
@@ -158,7 +162,7 @@ class ApiRequestService {
     try {
       if (isLoadinDialog) closeLoading = _openLoadingDialog(endpoint);
 
-      final response = await http
+      final response = await _client
           .post(Uri.parse(url), body: jsonEncode(body), headers: headers)
           .timeout(const Duration(seconds: 100));
 
@@ -199,7 +203,7 @@ class ApiRequestService {
     }
 
     try {
-      final response = await http
+      final response = await _client
           .post(
             Uri.parse(url),
             headers: {'Content-Type': 'application/json'},
@@ -256,7 +260,7 @@ class ApiRequestService {
       request.headers.addAll({'Accept': 'application/json'});
 
       final response = await http.Response.fromStream(
-        await request.send().timeout(const Duration(seconds: 100)),
+        await _client.send(request).timeout(const Duration(seconds: 100)),
       );
 
       closeLoading?.call();
@@ -312,7 +316,7 @@ class ApiRequestService {
       request.headers['Cookie'] = cookie;
 
       final response = await http.Response.fromStream(
-        await request.send().timeout(const Duration(seconds: 100)),
+        await _client.send(request).timeout(const Duration(seconds: 100)),
       );
 
       closeLoading?.call();
@@ -358,7 +362,7 @@ class ApiRequestService {
       request.headers['Cookie'] = cookie;
 
       final response = await http.Response.fromStream(
-        await request.send().timeout(const Duration(seconds: 100)),
+        await _client.send(request).timeout(const Duration(seconds: 100)),
       );
 
       closeLoading?.call();
@@ -414,7 +418,7 @@ class ApiRequestService {
       request.headers['Cookie'] = cookie;
 
       final response = await http.Response.fromStream(
-        await request.send().timeout(const Duration(seconds: 100)),
+        await _client.send(request).timeout(const Duration(seconds: 100)),
       );
 
       closeLoading?.call();
@@ -461,7 +465,7 @@ class ApiRequestService {
       request.body = json.encode(body);
       request.headers.addAll(headers);
 
-      final streamed = await request.send().timeout(
+      final streamed = await _client.send(request).timeout(
         const Duration(seconds: 100),
       );
       final response = await http.Response.fromStream(streamed);
@@ -526,7 +530,7 @@ class ApiRequestService {
 
       // Sin timeout el diálogo de carga se quedaba abierto para siempre si el
       // servidor no respondía. Mismo límite que postPicking.
-      final streamed = await request.send().timeout(
+      final streamed = await _client.send(request).timeout(
         const Duration(seconds: 100),
       );
       final response = await http.Response.fromStream(streamed);
@@ -589,7 +593,7 @@ class ApiRequestService {
 
       // Sin timeout el diálogo de carga se quedaba abierto para siempre si el
       // servidor de impresión no respondía. Mismo límite que postPacking.
-      final streamed = await request.send().timeout(
+      final streamed = await _client.send(request).timeout(
         const Duration(seconds: 100),
       );
       final response = await http.Response.fromStream(streamed);
@@ -647,7 +651,7 @@ class ApiRequestService {
       request.headers.addAll(headers);
 
       final response = await http.Response.fromStream(
-        await request.send().timeout(const Duration(seconds: 100)),
+        await _client.send(request).timeout(const Duration(seconds: 100)),
       );
 
       closeLoading?.call();
@@ -705,7 +709,7 @@ class ApiRequestService {
       request.headers.addAll(headers);
 
       final response = await http.Response.fromStream(
-        await request.send().timeout(const Duration(seconds: 100)),
+        await _client.send(request).timeout(const Duration(seconds: 100)),
       );
 
       closeLoading?.call();
@@ -773,7 +777,7 @@ class ApiRequestService {
       request.headers.addAll(headers);
 
       final response = await http.Response.fromStream(
-        await request.send().timeout(const Duration(seconds: 100)),
+        await _client.send(request).timeout(const Duration(seconds: 100)),
       );
 
       closeLoading?.call();
@@ -832,7 +836,7 @@ class ApiRequestService {
       // Forzar PNG/JPEG para garantizar compatibilidad con Android ImageDecoder
       request.headers['Accept'] = 'image/png, image/jpeg, image/*;q=0.8';
 
-      final streamed = await request.send().timeout(
+      final streamed = await _client.send(request).timeout(
         const Duration(seconds: 100),
       );
 
@@ -926,7 +930,7 @@ class ApiRequestService {
       request.headers.addAll(headers);
 
       final response = await http.Response.fromStream(
-        await request.send().timeout(const Duration(seconds: 100)),
+        await _client.send(request).timeout(const Duration(seconds: 100)),
       );
 
       closeLoading?.call();
@@ -979,7 +983,7 @@ class ApiRequestService {
       request.headers.addAll(headers);
 
       final response = await http.Response.fromStream(
-        await request.send().timeout(const Duration(seconds: 100)),
+        await _client.send(request).timeout(const Duration(seconds: 100)),
       );
 
       closeLoading?.call();
@@ -1035,7 +1039,7 @@ class ApiRequestService {
       request.headers.addAll(headers);
 
       final response = await http.Response.fromStream(
-        await request.send().timeout(const Duration(seconds: 100)),
+        await _client.send(request).timeout(const Duration(seconds: 100)),
       );
 
       closeLoading?.call();
