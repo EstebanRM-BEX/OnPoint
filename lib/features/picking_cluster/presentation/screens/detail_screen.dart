@@ -3,20 +3,21 @@ import 'package:wms_app/shared/utils/app_navigation.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/get_colors_utils.dart';
+import 'package:wms_app/features/picking_cluster/domain/entities/batch_product.dart';
+import 'package:wms_app/features/picking_cluster/domain/entities/pedido_validate.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/cluster_picking/cluster_picking_bloc.dart';
+import 'package:wms_app/features/picking_cluster/presentation/utils/pedidos_ready_to_validate.dart';
+import 'package:wms_app/features/picking_cluster/presentation/widgets/cluster_action_footer.dart';
+import 'package:wms_app/features/picking_cluster/presentation/widgets/cluster_palette.dart';
+import 'package:wms_app/features/picking_cluster/presentation/widgets/detail/detail_batch_header.dart';
+import 'package:wms_app/features/picking_cluster/presentation/widgets/detail/detail_product_card.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/detail_cluster/detail_cluster_bloc.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
-import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
-import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
-import 'package:wms_app/src/presentation/widgets/expiredate_widget.dart';
 import 'package:wms_app/shared/widgets/dialog_confirm_product_load_widget.dart';
 import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 
@@ -33,7 +34,6 @@ class _DetailClusterScreenState extends State<DetailClusterScreen>
     with LoadingDialogMixin {
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
     return MultiBlocListener(
       listeners: [
         // Listener propio de esta pantalla: imagen del producto
@@ -93,939 +93,194 @@ class _DetailClusterScreenState extends State<DetailClusterScreen>
       ],
       child: BlocBuilder<ClusterPickingBloc, ClusterPickingState>(
         builder: (context, state) {
+          final bloc = context.read<ClusterPickingBloc>();
+          final products = bloc.filteredProducts;
+          final showOrigin =
+              bloc.configurations.result?.result?.showNextLocationsInDetails ==
+              true;
+          final pedidosById = {
+            for (final p in bloc.pedidosValidate)
+              if (p.idPedido != null) p.idPedido!: p,
+          };
           return WillPopScope(
-          onWillPop: () async {
-            return false;
-          },
-          child: Scaffold(
-            backgroundColor: Colors.white,
-            body: SizedBox(
-              width: size.width,
-              height: size.height * 1,
-              child: Column(
+            onWillPop: () async => false,
+            child: Scaffold(
+              backgroundColor: ClusterPalette.slate50,
+              body: Column(
                 children: [
-                  //*appbar
-                  Container(
-                    decoration: BoxDecoration(
-                      color: primaryColorApp,
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(20),
-                        bottomRight: Radius.circular(20),
-                      ),
+                  DetailBatchHeader(
+                    batchName: bloc.currentBatch?.name ?? '',
+                    progress: bloc.calcularProgresoReal(),
+                    onBack: () => goToScreen(context, 'scan-product-cluster'),
+                    onPrint: () => ModalPrintersList.show(
+                      context,
+                      resIds: [bloc.currentBatch?.id],
+                      companyId: 1,
                     ),
-                    width: double.infinity,
-                    child: BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
-                        builder: (context, status) {
-                      return Column(
-                        children: [
-                          const WarningWidgetCubit(),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.arrow_back,
-                                    color: white),
-                                onPressed: () {
-                                  goToScreen(
-                                      context, 'scan-product-cluster');
-                                },
-                              ),
-                              Padding(
-                                padding:
-                                    EdgeInsets.only(left: size.width * 0.25),
-                                child: Text(
-                                    "${context.read<ClusterPickingBloc>().currentBatch?.name}",
-                                    style: const TextStyle(
-                                        color: white, fontSize: 12)),
-                              ),
-                              const Spacer(),
-                              GestureDetector(
-                                onTap: () {
-                                  ModalPrintersList.show(context,
-                                      resIds: [
-                                        context
-                                            .read<ClusterPickingBloc>()
-                                            .currentBatch
-                                            ?.id
-                                      ],
-                                      companyId: 1);
-                                },
-                                child: Icon(
-                                  Icons.print,
-                                  color: white,
-                                  size: 25,
-                                ),
-                              ),
-                              const SizedBox(width: 15),
-                            ],
-                          ),
-                        ],
-                      );
-                    }),
+                    onProgressInfo: _showProgressInfo,
                   ),
-
-                  Card(
-                    color: white,
-                    elevation: 2,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: size.width * 0.6,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 5),
-                          child: Center(
-                            child: Row(
-                              children: [
-                                Text(
-                                  "Unidades separadas: ${(context.read<ClusterPickingBloc>().calcularProgresoReal())}%",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: getColorForPercentage(
-                                        double.tryParse(context
-                                                .read<ClusterPickingBloc>()
-                                                .calcularProgresoReal()) ??
-                                            0.0), // Convertir a double
-                                  ),
-                                ),
-                                const Spacer(),
-                                //icono de ayuda
-                                GestureDetector(
-                                    onTap: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) {
-                                          return BackdropFilter(
-                                            filter: ImageFilter.blur(
-                                                sigmaX: 5, sigmaY: 5),
-                                            child: AlertDialog(
-                                              actionsAlignment:
-                                                  MainAxisAlignment.center,
-                                              title: Center(
-                                                child: Text("Información",
-                                                    style: TextStyle(
-                                                        color: primaryColorApp,
-                                                        fontSize: 20)),
-                                              ),
-                                              content: const Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Text(
-                                                      "El porcentaje de unidades separadas se calcula de la siguiente manera:"),
-                                                  SizedBox(height: 5),
-                                                  Text(
-                                                      "Porcentaje de unidades separadas = (Unidades separadas / Unidades totales) * 100"),
-                                                ],
-                                              ),
-                                              actions: [
-                                                ElevatedButton(
-                                                    style: ElevatedButton
-                                                        .styleFrom(
-                                                      backgroundColor: grey,
-                                                      shape:
-                                                          RoundedRectangleBorder(
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          10)),
-                                                    ),
-                                                    onPressed: () {
-                                                      Navigator.of(context)
-                                                          .pop();
-                                                    },
-                                                    child: const Text("Cerrar",
-                                                        style: TextStyle(
-                                                            color: white))),
-                                              ],
-                                            ),
-                                          );
-                                        },
-                                      );
-                                    },
-                                    child: Icon(Icons.help,
-                                        color: primaryColorApp, size: 15)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  //lista de productos
-
                   Expanded(
-                    child: context
-                            .read<ClusterPickingBloc>()
-                            .filteredProducts
-                            .isNotEmpty
-                        ? ListView.builder(
-                            itemCount: context
-                                .read<ClusterPickingBloc>()
-                                .filteredProducts
-                                .length,
-                            itemBuilder: (context, index) {
-                              final productsBatch = context
-                                  .read<ClusterPickingBloc>()
-                                  .filteredProducts[index];
-                              return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 5),
-                                  child: Card(
-                                    elevation: 4,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(10),
-                                        color: productsBatch.quantity ==
-                                                productsBatch.quantitySeparate
-                                            ? Colors.green[100]
-                                            : productsBatch.isSelected == 1
-                                                ? primaryColorApp
-                                                    .withOpacity(0.3)
-                                                : productsBatch.isSeparate == 1
-                                                    ? Colors.green[100]
-                                                    : Colors.white,
-                                      ),
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Column(
-                                        children: [
-                                          Center(
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Expanded(
-                                                  child: Text(
-                                                    productsBatch.productId ??
-                                                        '',
-                                                    style: const TextStyle(
-                                                        fontSize: 12,
-                                                        color: black,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                ),
-                                                if (!context
-                                                        .read<
-                                                            ClusterPickingBloc>()
-                                                        .isSearch &&
-                                                    (productsBatch
-                                                            .quantitySeparate <
-                                                        productsBatch.quantity))
-                                                  SizedBox(
-                                                    width: 50,
-                                                    height: 50,
-                                                    child: Card(
-                                                      elevation: 2,
-                                                      color: white,
-                                                      child: IconButton(
-                                                          onPressed: () {
-                                                            showDialog(
-                                                                context:
-                                                                    context,
-                                                                builder:
-                                                                    (context) {
-                                                                  context
-                                                                      .read<
-                                                                          ClusterPickingBloc>()
-                                                                      .editProductController
-                                                                      .text = '';
-                                                                  return DialogEditProductWidget(
-                                                                    productsBatch:
-                                                                        productsBatch,
-                                                                  );
-                                                                });
-                                                          },
-                                                          icon: Icon(Icons.edit,
-                                                              size: 20,
-                                                              color:
-                                                                  primaryColorApp)),
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8, vertical: 5),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.start,
-                                              children: [
-                                                SizedBox(
-                                                  height: 20,
-                                                  width: 20,
-                                                  child: SvgPicture.asset(
-                                                    color: primaryColorApp,
-                                                    "assets/icons/barcode.svg",
-                                                    height: 20,
-                                                    width: 20,
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 5),
-                                                Text(productsBatch.barcode,
-                                                    style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: black,
-                                                    )),
-                                                if (productsBatch.isSendOdoo !=
-                                                        1 &&
-                                                    productsBatch.isSeparate !=
-                                                        1) ...[
-                                                  //icono de play
-                                                  const Spacer(),
-                                                  GestureDetector(
-                                                    onTap: () {
-                                                      showDialog(
-                                                          context: context,
-                                                          builder: (context) {
-                                                            return DialogConfirmProductLoadWidget(
-                                                              productsBatch:
-                                                                  productsBatch,
-                                                              onAccept: () {
-                                                                context
-                                                                    .read<
-                                                                        ClusterPickingBloc>()
-                                                                    .add(
-                                                                        LoadSelectedProductEvent(
-                                                                      productsBatch,
-                                                                      "cluster",
-                                                                    ));
-                                                                goToScreen(
-                                                                    context,
-                                                                    'scan-product-cluster');
-                                                              },
-                                                            );
-                                                          });
-                                                    },
-                                                    child: Icon(
-                                                      Icons.play_circle,
-                                                      color: green,
-                                                      size: 20,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ],
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8, vertical: 5),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.start,
-                                              children: [
-                                                //icono de imagen
-                                                Icon(
-                                                  Icons.image,
-                                                  color: primaryColorApp,
-                                                  size: 15,
-                                                ),
-
-                                                const SizedBox(width: 5),
-                                                Text('Imagen del producto: ',
-                                                    style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: black,
-                                                    )),
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    context
-                                                        .read<DetailClusterBloc>()
-                                                        .add(ViewProductImageDetailEvent(
-                                                            productsBatch.idProduct ?? 0));
-                                                  },
-                                                  child: Card(
-                                                    //borde
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              5),
-                                                    ),
-                                                    elevation: 2,
-                                                    color: white,
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              2.0),
-                                                      child: Icon(
-                                                        Icons.image,
-                                                        color: primaryColorApp,
-                                                        size: 15,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Visibility(
-                                            visible: context
-                                                    .read<ClusterPickingBloc>()
-                                                    .configurations
-                                                    .result
-                                                    ?.result
-                                                    ?.showNextLocationsInDetails ==
-                                                true,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 8),
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.location_on,
-                                                    color: primaryColorApp,
-                                                    size: 15,
-                                                  ),
-                                                  const SizedBox(width: 5),
-                                                  const Text("Desde: ",
-                                                      style: TextStyle(
-                                                          fontSize: 12,
-                                                          color: black)),
-                                                  SizedBox(
-                                                    width: size.width * 0.57,
-                                                    child: Text(
-                                                        productsBatch.locationId
-                                                                ?.toString() ??
-                                                            '',
-                                                        style: TextStyle(
-                                                            fontSize: 12,
-                                                            color:
-                                                                primaryColorApp)),
-                                                  ),
-                                                  if (productsBatch.isPending ==
-                                                      1)
-                                                    Container(
-                                                      width: 30,
-                                                      height: 30,
-                                                      decoration: BoxDecoration(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(5),
-                                                        color:
-                                                            Colors.amber[100],
-                                                      ),
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              3),
-                                                      child: GestureDetector(
-                                                        onTap: () {
-                                                          showDialog(
-                                                              context: context,
-                                                              builder:
-                                                                  (context) {
-                                                                return const DialogInfo(
-                                                                  title:
-                                                                      "Producto pendiente",
-                                                                  body:
-                                                                      "Este producto fue enviado al final de la lista de picking. ",
-                                                                );
-                                                              });
-                                                        },
-                                                        child: SizedBox(
-                                                          height: 20,
-                                                          width: 20,
-                                                          child:
-                                                              SvgPicture.asset(
-                                                            color:
-                                                                primaryColorApp,
-                                                            "assets/icons/list_final.svg",
-                                                            height: 20,
-                                                            width: 20,
-                                                            fit: BoxFit.cover,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8),
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.arrow_forward,
-                                                  color: primaryColorApp,
-                                                  size: 15,
-                                                ),
-                                                const SizedBox(width: 5),
-                                                const Text("A:",
-                                                    style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: black)),
-                                                const SizedBox(width: 5),
-                                                SizedBox(
-                                                  width: size.width * 0.6,
-                                                  child: Text(
-                                                      productsBatch
-                                                          .locationDestId
-                                                          .toString(),
-                                                      style: TextStyle(
-                                                          fontSize: 12,
-                                                          color:
-                                                              primaryColorApp)),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Visibility(
-                                            visible: productsBatch.origin !=
-                                                    "" &&
-                                                productsBatch.origin != null,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 8),
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.file_open_sharp,
-                                                    color: primaryColorApp,
-                                                    size: 15,
-                                                  ),
-                                                  const SizedBox(width: 5),
-                                                  Align(
-                                                    alignment:
-                                                        Alignment.centerLeft,
-                                                    child: Text("Doc. origen: ",
-                                                        style: TextStyle(
-                                                            fontSize: 12,
-                                                            color: grey)),
-                                                  ),
-                                                  Align(
-                                                    alignment:
-                                                        Alignment.centerLeft,
-                                                    child: Text(
-                                                        productsBatch.origin ??
-                                                            "",
-                                                        style: TextStyle(
-                                                            fontSize: 12,
-                                                            color:
-                                                                primaryColorApp)),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8),
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.priority_high,
-                                                  color: primaryColorApp,
-                                                  size: 15,
-                                                ),
-                                                const SizedBox(width: 5),
-                                                const Text("Priority:",
-                                                    style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: black)),
-                                                const SizedBox(width: 5),
-                                                SizedBox(
-                                                  width: size.width * 0.5,
-                                                  child: Text(
-                                                      productsBatch
-                                                          .rimovalPriority
-                                                          .toString(),
-                                                      style: TextStyle(
-                                                          fontSize: 12,
-                                                          color:
-                                                              primaryColorApp)),
-                                                ),
-                                                const Spacer(),
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    ModalPrintersList.show(
-                                                        context,
-                                                        resIds: [
-                                                          productsBatch.idMove
-                                                        ],
-                                                        companyId: 1);
-                                                  },
-                                                  child: Icon(
-                                                    Icons.print,
-                                                    color: primaryColorApp,
-                                                    size: 25,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          ExpiryDateWidget(
-                                              // tryParse: en BD puede haber
-                                              // "null"/"false" (lotes sin
-                                              // fecha); parse crashea la vista
-                                              expireDate: DateTime.tryParse(
-                                                      productsBatch.expireDate
-                                                              ?.toString() ??
-                                                          '') ??
-                                                  DateTime.now(),
-                                              size: size,
-                                              isDetaild: true,
-                                              isNoExpireDate: DateTime.tryParse(
-                                                      productsBatch.expireDate
-                                                              ?.toString() ??
-                                                          '') ==
-                                                  null),
-                                          if (productsBatch.lotId != null &&
-                                              productsBatch.lotId != "")
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 8),
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.bookmarks_sharp,
-                                                    color: primaryColorApp,
-                                                    size: 15,
-                                                  ),
-                                                  const SizedBox(width: 5),
-                                                  const Text("Lote:",
-                                                      style: TextStyle(
-                                                          fontSize: 12,
-                                                          color: black)),
-                                                  const SizedBox(width: 5),
-                                                  SizedBox(
-                                                    width: size.width * 0.55,
-                                                    child: Text(
-                                                        productsBatch.lotId
-                                                            .toString(),
-                                                        style: TextStyle(
-                                                            fontSize: 12,
-                                                            color:
-                                                                primaryColorApp)),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          Card(
-                                            elevation: 0,
-                                            color: white,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 3),
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons
-                                                        .send_to_mobile_outlined,
-                                                    color: primaryColorApp,
-                                                    size: 15,
-                                                  ),
-                                                  const SizedBox(width: 5),
-                                                  const Text("Subido a WMS:",
-                                                      style: TextStyle(
-                                                          fontSize: 12,
-                                                          color: black)),
-                                                  const SizedBox(width: 5),
-                                                  if (productsBatch
-                                                          .isSendOdoo ==
-                                                      0)
-                                                    Container(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                          horizontal: 6,
-                                                          vertical: 2),
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            Colors.orange[50],
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(4),
-                                                        border: Border.all(
-                                                            color: Colors
-                                                                .orange
-                                                                .shade300),
-                                                      ),
-                                                      child: Row(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        children: [
-                                                          Icon(Icons.wifi_off,
-                                                              color: Colors
-                                                                  .orange[800],
-                                                              size: 12),
-                                                          const SizedBox(
-                                                              width: 4),
-                                                          Text(
-                                                              'Pendiente de envío',
-                                                              style: TextStyle(
-                                                                  fontSize: 10,
-                                                                  color: Colors
-                                                                          .orange[
-                                                                      900],
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w600)),
-                                                        ],
-                                                      ),
-                                                    )
-                                                  else
-                                                    SizedBox(
-                                                      width: size.width * 0.25,
-                                                      child: Text(
-                                                          productsBatch
-                                                                      .isSendOdoo ==
-                                                                  null
-                                                              ? 'Sin enviar'
-                                                              : 'Enviado',
-                                                          style: TextStyle(
-                                                              fontSize: 12,
-                                                              color: productsBatch
-                                                                          .isSendOdoo ==
-                                                                      null
-                                                                  ? primaryColorApp
-                                                                  : green)),
-                                                    ),
-                                                  if (productsBatch
-                                                          .isSendOdoo ==
-                                                      0) ...[
-                                                    const Spacer(),
-                                                    ElevatedButton(
-                                                        onPressed: () async {
-                                                          context
-                                                              .read<
-                                                                  ClusterPickingBloc>()
-                                                              .add(
-                                                                  const SyncPendingClusterProductsEvent());
-                                                        },
-                                                        style: ElevatedButton
-                                                            .styleFrom(
-                                                          backgroundColor:
-                                                              primaryColorApp,
-                                                          maximumSize:
-                                                              const Size(
-                                                                  80, 20),
-                                                          minimumSize:
-                                                              const Size(
-                                                                  80, 20),
-                                                          shape:
-                                                              RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        10),
-                                                          ),
-                                                          elevation: 3,
-                                                        ),
-                                                        child: const Text(
-                                                          'Enviar',
-                                                          style: TextStyle(
-                                                              color: white,
-                                                              fontSize: 10),
-                                                        )),
-                                                  ],
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                          if (productsBatch.isSeparate == 1)
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 8),
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.timer,
-                                                      color: primaryColorApp,
-                                                      size: 15),
-                                                  const SizedBox(width: 5),
-                                                  RichText(
-                                                    text: TextSpan(
-                                                      children: [
-                                                        const TextSpan(
-                                                          text:
-                                                              "Tiempo total: ",
-                                                          style: TextStyle(
-                                                            fontSize: 12,
-                                                            color:
-                                                                black, // color del texto antes de tiempoTotal
-                                                          ),
-                                                        ),
-                                                        TextSpan(
-                                                          text: context
-                                                              .read<
-                                                                  ClusterPickingBloc>()
-                                                              .formatSecondsToHHMMSS(
-                                                                  (productsBatch.timeSeparate ??
-                                                                              0)
-                                                                          .toDouble() ??
-                                                                      0.0),
-                                                          style: TextStyle(
-                                                            fontSize: 12,
-                                                            color:
-                                                                primaryColorApp, // color rojo para tiempoTotal
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  )
-                                                ],
-                                              ),
-                                            ),
-                                          const SizedBox(height: 5),
-                                          Card(
-                                            color: productsBatch.quantity ==
-                                                    productsBatch
-                                                        .quantitySeparate
-                                                ? Colors.green[100]
-                                                : productsBatch
-                                                            .quantitySeparate ==
-                                                        null
-                                                    ? Colors.red[100]
-                                                    : Colors.amber[100],
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 8,
-                                                      vertical: 2),
-                                              child: Column(
-                                                children: [
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.add,
-                                                        color: primaryColorApp,
-                                                        size: 15,
-                                                      ),
-                                                      const SizedBox(width: 5),
-                                                      const Text("Unidades:",
-                                                          style: TextStyle(
-                                                              fontSize: 12,
-                                                              color: black)),
-                                                      const SizedBox(width: 5),
-                                                      Text(
-                                                          double.parse((productsBatch
-                                                                          .quantity ??
-                                                                      0.0)
-                                                                  .toStringAsFixed(
-                                                                      4))
-                                                              .toString(),
-                                                          style: TextStyle(
-                                                              fontSize: 12,
-                                                              color:
-                                                                  primaryColorApp)),
-                                                      const Spacer(),
-                                                      Icon(
-                                                        Icons.check,
-                                                        color: primaryColorApp,
-                                                        size: 15,
-                                                      ),
-                                                      const SizedBox(width: 5),
-                                                      const Text("Separadas:",
-                                                          style: TextStyle(
-                                                              fontSize: 12,
-                                                              color: black)),
-                                                      const SizedBox(width: 5),
-                                                      Text(
-                                                          productsBatch
-                                                                      .quantitySeparate ==
-                                                                  null
-                                                              ? "0"
-                                                              : double.parse((productsBatch
-                                                                              .quantitySeparate ??
-                                                                          0.0)
-                                                                      .toStringAsFixed(
-                                                                          4))
-                                                                  .toString(),
-                                                          style: TextStyle(
-                                                              fontSize: 12,
-                                                              color:
-                                                                  primaryColorApp)),
-                                                    ],
-                                                  ),
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons
-                                                            .assessment_outlined,
-                                                        color: primaryColorApp,
-                                                        size: 15,
-                                                      ),
-                                                      const SizedBox(width: 5),
-                                                      Text(
-                                                          "Unidad de medida: ${productsBatch.unidades ?? ''}",
-                                                          style:
-                                                              const TextStyle(
-                                                                  fontSize: 12,
-                                                                  color:
-                                                                      black)),
-                                                    ],
-                                                  ),
-                                                  if (productsBatch.quantity !=
-                                                      productsBatch
-                                                          .quantitySeparate)
-                                                    Align(
-                                                      alignment:
-                                                          Alignment.centerLeft,
-                                                      child: Row(
-                                                        children: [
-                                                          Icon(
-                                                            Icons
-                                                                .assignment_late,
-                                                            color:
-                                                                primaryColorApp,
-                                                            size: 15,
-                                                          ),
-                                                          const SizedBox(
-                                                              width: 5),
-                                                          Text(
-                                                              "Novedad: ${productsBatch.observation ?? ''}",
-                                                              style:
-                                                                  const TextStyle(
-                                                                      fontSize:
-                                                                          12,
-                                                                      color:
-                                                                          black)),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  const SizedBox(height: 5),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ));
-                            },
-                          )
-                        : Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text('No hay productos en la lista',
-                                    style: TextStyle(
-                                        fontSize: 12, color: primaryColorApp)),
-                                Text('Intenta con otra búsqueda',
-                                    style: const TextStyle(
-                                        fontSize: 12, color: grey)),
-                              ],
+                    child: products.isEmpty
+                        ? const _EmptyProducts()
+                        : ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(14, 16, 14, 24),
+                            itemCount: products.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 14),
+                            itemBuilder: (context, index) => _buildProductCard(
+                              bloc,
+                              products[index],
+                              showOrigin,
+                              pedidosById[products[index].pedidoId],
                             ),
                           ),
+                  ),
+                  ClusterActionFooter(
+                    label: 'Validar pedidos',
+                    icon: Icons.fact_check_outlined,
+                    badgeCount: pedidosReadyToValidate(
+                      bloc.pedidosValidate,
+                      products,
+                    ).length,
+                    onPressed: () => goToScreen(context, 'validate-cluster'),
                   ),
                 ],
               ),
             ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildProductCard(
+    ClusterPickingBloc bloc,
+    BatchProduct product,
+    bool showOrigin,
+    PedidoValidate? pedido,
+  ) {
+    final qty = DetailProductCard.toNum(product.quantity);
+    final separated = DetailProductCard.toNum(product.quantitySeparate);
+    final canEdit = !bloc.isSearch && separated < qty;
+    final canStart = product.isSendOdoo != 1 && product.isSeparate != 1;
+
+    return DetailProductCard(
+      product: product,
+      showOriginLocation: showOrigin,
+      pedidoName:
+          pedido?.namePedido ??
+          (product.pedido == null ? null : '${product.pedido}'),
+      pedidoMuelle: pedido?.muelle,
+      pedidoValidated: pedido?.isValidated == true,
+      separationTime: product.isSeparate == 1
+          ? bloc.formatSecondsToHHMMSS(
+              DetailProductCard.toNum(product.timeSeparate).toDouble(),
+            )
+          : null,
+      onViewImage: () => context.read<DetailClusterBloc>().add(
+        ViewProductImageDetailEvent(product.idProduct ?? 0),
+      ),
+      onPrint: () => ModalPrintersList.show(
+        context,
+        resIds: [product.idMove],
+        companyId: 1,
+      ),
+      onPendingInfo: () => showDialog(
+        context: context,
+        builder: (_) => const DialogInfo(
+          title: 'Producto pendiente',
+          body: 'Este producto fue enviado al final de la lista de picking. ',
+        ),
+      ),
+      onEdit: canEdit
+          ? () => showDialog(
+              context: context,
+              builder: (_) {
+                bloc.editProductController.text = '';
+                return DialogEditProductWidget(productsBatch: product);
+              },
+            )
+          : null,
+      onStart: canStart
+          ? () => showDialog(
+              context: context,
+              builder: (_) => DialogConfirmProductLoadWidget(
+                productsBatch: product,
+                onAccept: () {
+                  bloc.add(LoadSelectedProductEvent(product, 'cluster'));
+                  goToScreen(context, 'scan-product-cluster');
+                },
+              ),
+            )
+          : null,
+      onSync: product.isSendOdoo == 0
+          ? () => bloc.add(const SyncPendingClusterProductsEvent())
+          : null,
+    );
+  }
+
+  void _showProgressInfo() {
+    showDialog(
+      context: context,
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: AlertDialog(
+          actionsAlignment: MainAxisAlignment.center,
+          title: Center(
+            child: Text(
+              'Información',
+              style: TextStyle(color: primaryColorApp, fontSize: 20),
+            ),
           ),
-        );
-      },
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'El porcentaje de unidades separadas se calcula de la siguiente manera:',
+              ),
+              SizedBox(height: 5),
+              Text(
+                'Porcentaje de unidades separadas = (Unidades separadas / Unidades totales) * 100',
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: grey,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cerrar', style: TextStyle(color: white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyProducts extends StatelessWidget {
+  const _EmptyProducts();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'No hay productos en la lista',
+            style: TextStyle(fontSize: 13, color: ClusterPalette.brand600),
+          ),
+          SizedBox(height: 2),
+          Text(
+            'Intenta con otra búsqueda',
+            style: TextStyle(fontSize: 12, color: ClusterPalette.slate400),
+          ),
+        ],
       ),
     );
   }

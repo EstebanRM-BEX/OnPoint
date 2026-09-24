@@ -101,32 +101,63 @@ class ValidateClusterBloc
           )
           .idPedido;
 
-      final pendingResult =
-          await getPendingSendProductsUseCase(NoParams());
+      final pendingResult = await getPendingSendProductsUseCase(NoParams());
       final pendientesPedido = pendingResult.fold(
         (failure) => <BatchProduct>[],
         (pendientes) => pendientes
-            .where((p) =>
-                p.batchId == batchId && p.pedidoId == idPedidoValidar)
+            .where((p) => p.batchId == batchId && p.pedidoId == idPedidoValidar)
             .toList(),
       );
 
+      final resentMoves = <int?>{};
       if (pendientesPedido.isNotEmpty) {
         int enviados = 0;
         if (await networkInfo.isConnected) {
           for (final pendiente in pendientesPedido) {
-            if (await _resendPendingProduct(pendiente)) enviados++;
+            if (await _resendPendingProduct(pendiente)) {
+              enviados++;
+              resentMoves.add(pendiente.idMove);
+            }
           }
         }
         final restantes = pendientesPedido.length - enviados;
         if (restantes > 0) {
-          emit(ValidatePedidoErrorState(
-              'No se puede validar: $restantes producto(s) pendiente(s) de envío. Conéctate a internet para sincronizar'));
+          emit(
+            ValidatePedidoErrorState(
+              'No se puede validar: $restantes producto(s) pendiente(s) de envío. Conéctate a internet para sincronizar',
+            ),
+          );
           return;
         }
       }
 
-      // 2. Validar contra el backend
+      // 2. Solo se valida un pedido con todos sus productos enviados al WMS
+      //    (is_send_odoo == 1, o reenviado recién en el paso 1). Los que aún
+      //    no se separan (null) también bloquean.
+      final pedidoProducts = clusterPickingBloc.filteredProducts
+          .where((p) => p.pedidoId == idPedidoValidar)
+          .toList();
+      if (pedidoProducts.isEmpty) {
+        emit(
+          ValidatePedidoErrorState(
+            'No se puede validar: el pedido no tiene productos en este batch',
+          ),
+        );
+        return;
+      }
+      final faltantes = pedidoProducts
+          .where((p) => p.isSendOdoo != 1 && !resentMoves.contains(p.idMove))
+          .length;
+      if (faltantes > 0) {
+        emit(
+          ValidatePedidoErrorState(
+            'No se puede validar: faltan $faltantes producto(s) por enviar al WMS',
+          ),
+        );
+        return;
+      }
+
+      // 3. Validar contra el backend
       final pedidoToValidate = clusterPickingBloc.pedidosValidate.firstWhere(
         (p) => p.namePedido == namePedido,
         orElse: () => const PedidoValidate(),
@@ -142,20 +173,17 @@ class ValidateClusterBloc
 
       bool validateSuccess = false;
       String errorMessage = '';
-      validateResult.fold(
-        (failure) {
-          validateSuccess = false;
-          errorMessage = failure.message;
-        },
-        (success) => validateSuccess = success,
-      );
+      validateResult.fold((failure) {
+        validateSuccess = false;
+        errorMessage = failure.message;
+      }, (success) => validateSuccess = success);
 
       if (!validateSuccess) {
         emit(ValidatePedidoErrorState(errorMessage));
         return;
       }
 
-      // 3. Guardar en DB local
+      // 4. Guardar en DB local
       await setClusterBatchPedidoFieldUseCase.call(
         SetClusterBatchPedidoFieldParams(
           batchId: batchId,
@@ -165,7 +193,7 @@ class ValidateClusterBloc
         ),
       );
 
-      // 4. Actualizar lista compartida y notificar al BLoC de sesión
+      // 5. Actualizar lista compartida y notificar al BLoC de sesión
       final updatedList = clusterPickingBloc.pedidosValidate.map((p) {
         if (p.namePedido == namePedido) {
           return PedidoValidate(
@@ -194,12 +222,14 @@ class ValidateClusterBloc
     CloseBatchEvent event,
     Emitter<ValidateClusterState> emit,
   ) async {
-    final allValidated = clusterPickingBloc.pedidosValidate
-        .every((p) => p.isValidated == true);
+    final allValidated = clusterPickingBloc.pedidosValidate.every(
+      (p) => p.isValidated == true,
+    );
 
     if (!allValidated) {
-      emit(const BatchNotAllValidatedState(
-          'No todos los pedidos están validados'));
+      emit(
+        const BatchNotAllValidatedState('No todos los pedidos están validados'),
+      );
       return;
     }
 
@@ -217,14 +247,13 @@ class ValidateClusterBloc
         ),
       );
 
-      result.fold(
-        (failure) => emit(BatchCloseErrorState(failure.message)),
-        (_) {
-          // Limpiamos el estado compartido y navegamos
-          clusterPickingBloc.add(ClearFieldsEvent());
-          emit(BatchClosedSuccessState());
-        },
-      );
+      result.fold((failure) => emit(BatchCloseErrorState(failure.message)), (
+        _,
+      ) {
+        // Limpiamos el estado compartido y navegamos
+        clusterPickingBloc.add(ClearFieldsEvent());
+        emit(BatchClosedSuccessState());
+      });
     } catch (e, s) {
       debugPrint('❌ Error en _onCloseBatch: $e -> $s');
       emit(BatchCloseErrorState('Error al cerrar el batch'));
@@ -247,34 +276,31 @@ class ValidateClusterBloc
         ),
       );
 
-      return await response.fold(
-        (failure) async => false,
-        (success) async {
+      return await response.fold((failure) async => false, (success) async {
+        await setClusterBatchProductFieldUseCase.call(
+          SetClusterBatchProductFieldParams(
+            batchId: pendiente.batchId ?? 0,
+            productId: pendiente.idProduct ?? 0,
+            field: 'is_send_odoo',
+            value: 1,
+            idMove: pendiente.idMove ?? 0,
+            type: 'cluster',
+          ),
+        );
+        if (pendiente.productTracking == 'lot') {
           await setClusterBatchProductFieldUseCase.call(
             SetClusterBatchProductFieldParams(
               batchId: pendiente.batchId ?? 0,
               productId: pendiente.idProduct ?? 0,
-              field: 'is_send_odoo',
-              value: 1,
+              field: 'lote_id',
+              value: pendiente.lotId ?? '',
               idMove: pendiente.idMove ?? 0,
               type: 'cluster',
             ),
           );
-          if (pendiente.productTracking == 'lot') {
-            await setClusterBatchProductFieldUseCase.call(
-              SetClusterBatchProductFieldParams(
-                batchId: pendiente.batchId ?? 0,
-                productId: pendiente.idProduct ?? 0,
-                field: 'lote_id',
-                value: pendiente.lotId ?? '',
-                idMove: pendiente.idMove ?? 0,
-                type: 'cluster',
-              ),
-            );
-          }
-          return true;
-        },
-      );
+        }
+        return true;
+      });
     } catch (e, s) {
       debugPrint('❌ Error en _resendPendingProduct: $e -> $s');
       return false;

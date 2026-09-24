@@ -35,7 +35,7 @@ class ValidatePedidoErrorState extends ValidateClusterState {
   final String msg;
   final int timestamp;
   ValidatePedidoErrorState(this.msg)
-      : timestamp = DateTime.now().millisecondsSinceEpoch;
+    : timestamp = DateTime.now().millisecondsSinceEpoch;
 
   @override
   List<Object?> get props => [msg, timestamp];

@@ -105,6 +105,11 @@ class ClusterPickingBloc
   //lista de pedidos para validar
   List<PedidoValidate> pedidosValidate = [];
 
+  /// Pedidos ya ofrecidos en el diálogo "listos para validar" en este batch.
+  /// Si el operario pospone, solo se vuelve a preguntar cuando se completa
+  /// un pedido nuevo.
+  final Set<int> offeredPedidosToValidate = {};
+
   //lista de lotes de un producto
   List<LoteProducto> listLotesProduct = [];
   List<LoteProducto> listLotesProductFilters = [];
@@ -1307,6 +1312,9 @@ class ClusterPickingBloc
     emit(BatchProductsLoading());
 
     try {
+      if (currentBatch?.id != event.batch.id) {
+        offeredPedidosToValidate.clear();
+      }
       currentBatch = event.batch;
       pedidosValidate = event.batch.pedidosValidate;
 

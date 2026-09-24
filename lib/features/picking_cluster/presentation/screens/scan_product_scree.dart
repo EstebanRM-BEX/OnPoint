@@ -30,6 +30,8 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/features/picking_cluster/presentation/widgets/dropdowbutton_widget.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/lote_producto/lote_producto_bloc.dart';
+import 'package:wms_app/features/picking_cluster/presentation/utils/pedidos_ready_to_validate.dart';
+import 'package:wms_app/features/picking_cluster/presentation/widgets/validate/pedidos_ready_dialog.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/progressIndicatos_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/quantity/scanner_quantity_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
@@ -609,6 +611,36 @@ class _ScanProductClusterState extends State<ScanProductCluster>
     );
   }
 
+  /// Tras pasar al siguiente producto, ofrece validar los pedidos cuyos
+  /// productos ya se enviaron todos. Solo se muestra si hay alguno que no se
+  /// haya ofrecido antes; el diálogo lista también los pospuestos.
+  void _offerReadyPedidos() {
+    final bloc = context.read<ClusterPickingBloc>();
+    final ready =
+        pedidosReadyToValidate(bloc.pedidosValidate, bloc.filteredProducts);
+    final hasNew =
+        ready.any((p) => !bloc.offeredPedidosToValidate.contains(p.idPedido));
+    if (!hasNew) return;
+    bloc.offeredPedidosToValidate.addAll(ready.map((p) => p.idPedido!));
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => PedidosReadyDialog(
+          pedidos: ready,
+          products: bloc.filteredProducts,
+          allowTapValidate: bloc.configurations.result?.result
+                  ?.showButtonValidateClusterPicking ==
+              true,
+        ),
+      );
+      // Devolvemos el foco al paso de escaneo en curso.
+      if (mounted) _handleDependencies();
+    });
+  }
+
   void _showBusinessError(String message) {
     _audioService.playErrorSound();
     _vibrationService.vibrate();
@@ -737,6 +769,10 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                   //mostramos dialogo para
                   validatePicking(context.read<ClusterPickingBloc>(), context,
                       context.read<ClusterPickingBloc>().currentProduct!);
+                }
+
+                if (state is CurrentProductChangedState) {
+                  _offerReadyPedidos();
                 }
 
                 if (state is CurrentProductChangedStateLoading) {
