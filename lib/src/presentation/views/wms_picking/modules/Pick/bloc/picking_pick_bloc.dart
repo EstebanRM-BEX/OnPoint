@@ -65,6 +65,48 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   StreamSubscription<ConnectionStatus>? _networkSubscription;
   bool _isSyncingPending = false;
 
+  //*envíos a Odoo en vuelo (producto, edición, reenvío de pendientes).
+  //Validar el pick mientras uno de estos sigue escribiendo sobre el mismo
+  //picking hace que Odoo bloquee la validación hasta que el otro termine
+  //(el diálogo "Validando informacion..." quedaba abierto casi 2 minutos).
+  final Set<Future<void>> _odooWrites = {};
+
+  Future<void> _trackOdooWrite(Future<void> write) {
+    _odooWrites.add(write);
+    return write.whenComplete(() => _odooWrites.remove(write));
+  }
+
+  /// Espera a que terminen los envíos en vuelo antes de validar. Con tope:
+  /// cada envío ya tiene su propio timeout de red.
+  Future<void> _waitOdooWrites() async {
+    if (_odooWrites.isEmpty) return;
+    debugPrint('⏳ Esperando ${_odooWrites.length} envío(s) a Odoo en vuelo');
+    await Future.wait(_odooWrites.toList())
+        .timeout(const Duration(seconds: 30), onTimeout: () => []);
+  }
+
+  /// Productos del pick guardados sin enviar a Odoo (is_send_odoo = 0).
+  Future<int> _pendingSendCount(int idPick) async {
+    final productos = await db.pickProductsRepository.getBatchProducts(idPick);
+    return productos.where((p) => p.isSendOdoo == 0).length;
+  }
+
+  /// Antes de validar: espera los envíos en vuelo y bloquea si quedan
+  /// productos sin enviar (validar así cerraría el pick sin esas cantidades
+  /// o generaría backorders de más). Devuelve true si puede continuar.
+  Future<bool> _readyToValidate(
+    int idPick,
+    Emitter<PickingPickState> emit,
+  ) async {
+    await _waitOdooWrites();
+    final pendientes = await _pendingSendCount(idPick);
+    if (pendientes == 0) return true;
+    emit(PickingOkBlockedPendingSendPick(pendientes));
+    //intentamos sincronizar de una vez por si ya hay conexion
+    add(SyncPendingProductsPickEvent());
+    return false;
+  }
+
   PickWithProducts pickWithProducts = PickWithProducts();
   //*producto en posicion actual
   ProductsBatch currentProduct = ProductsBatch();
@@ -179,9 +221,13 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     on<ClearSearchProudctsPickEvent>(_onClearSearchEvent);
 
     //*evento para enviar un producto a odoo
-    on<SendProductOdooPickEvent>(_onSendProductOdooEvent);
+    on<SendProductOdooPickEvent>(
+      (e, emit) => _trackOdooWrite(_onSendProductOdooEvent(e, emit)),
+    );
     //*evento para enviar un producto a odoo editado
-    on<SendProductEditOdooEvent>(_onSendProductEditOdooEvent);
+    on<SendProductEditOdooEvent>(
+      (e, emit) => _trackOdooWrite(_onSendProductEditOdooEvent(e, emit)),
+    );
     //*evento para finalizar la separacion
     on<PickingOkEvent>(_onPickingOkEvent);
     //*evento para editar un producto
@@ -289,7 +335,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     });
 
     //*evento para reenviar productos guardados sin conexion
-    on<SyncPendingProductsPickEvent>(_onSyncPendingProductsEvent);
+    on<SyncPendingProductsPickEvent>(
+      (e, emit) => _trackOdooWrite(_onSyncPendingProductsEvent(e, emit)),
+    );
 
     //*al recuperar conexion, reenviamos automaticamente los pendientes
     _networkSubscription = _networkInfo.onStatusChanged.listen((status) {
@@ -468,6 +516,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   ) async {
     try {
       emit(ValidateConfirmLoading());
+      if (!await _readyToValidate(event.idPick, emit)) return;
       final response = await repository.confirmationValidate(
         event.idPick,
         event.isBackOrder,
@@ -602,6 +651,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   ) async {
     try {
       emit(CreateBackOrderOrNotLoading());
+      if (!await _readyToValidate(event.idPick, emit)) return;
 
       debugPrint('Crear backorder: ${event.isBackOrder}');
       debugPrint('idPick: ${event.idPick}');
@@ -673,16 +723,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
       //bloqueamos el cierre del pick si hay productos pendientes de envio
       //(guardados sin conexion con is_send_odoo = 0). No cerramos ni navegamos.
-      final productosPick =
-          await db.pickProductsRepository.getBatchProducts(event.idPick);
-      final pendientes =
-          productosPick.where((p) => p.isSendOdoo == 0).length;
-      if (pendientes > 0) {
-        emit(PickingOkBlockedPendingSendPick(pendientes));
-        //intentamos sincronizar de una vez por si ya hay conexion
-        add(SyncPendingProductsPickEvent());
-        return;
-      }
+      if (!await _readyToValidate(event.idPick, emit)) return;
 
       add(StartOrStopTimeTransfer(event.idPick, 'end_time_transfer'));
 
@@ -933,7 +974,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   }
 
   //*evento para reenviar los productos guardados sin conexion (is_send_odoo = 0)
-  void _onSyncPendingProductsEvent(
+  Future<void> _onSyncPendingProductsEvent(
     SyncPendingProductsPickEvent event,
     Emitter<PickingPickState> emit,
   ) async {
@@ -1022,7 +1063,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   }
 
   //*evento para enviar un producto a odoo editado
-  void _onSendProductEditOdooEvent(
+  Future<void> _onSendProductEditOdooEvent(
     SendProductEditOdooEvent event,
     Emitter<PickingPickState> emit,
   ) async {
@@ -1220,7 +1261,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   //   }
   // }
 
-  void _onSendProductOdooEvent(
+  Future<void> _onSendProductOdooEvent(
     SendProductOdooPickEvent event,
     Emitter<PickingPickState> emit,
   ) async {

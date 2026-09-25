@@ -52,8 +52,11 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive) {
+    // Solo `paused` cuenta como segundo plano. `inactive` en los PDA (Zebra,
+    // Urovo) salta a cada rato —diálogos del sistema, DataWedge, la barra en
+    // modo inmersivo— y cada inactive→resumed tapaba la app con el overlay
+    // "Validando inactividad..." (el parpadeo que veían los operarios).
+    if (state == AppLifecycleState.paused) {
       // Solo guardamos la hora de pausa si NO la hemos guardado ya
       if (_lastTimePaused == null) {
         _lastTimePaused = DateTime.now();
@@ -66,6 +69,9 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager>
 
   /// Maneja el regreso de la app a primer plano
   Future<void> _handleResume() async {
+    // Volvió de un `inactive` sin pasar a segundo plano: nada que validar.
+    if (_lastTimePaused == null) return;
+
     // 1. Si no está logueado, no hacemos nada
     bool isLoggedIn = await PrefUtils.getIsLoggedIn();
     if (!isLoggedIn) {

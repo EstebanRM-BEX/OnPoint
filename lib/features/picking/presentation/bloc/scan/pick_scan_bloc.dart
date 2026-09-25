@@ -167,7 +167,10 @@ class PickScanBloc extends Bloc<PickScanEvent, PickScanState> {
     on<CreateBackOrderOrNot>(_onCreateBackOrder, transformer: droppable());
 
     // ── Mixto ──────────────────────────────────────────────────────────────
-    on<ChangeCurrentProduct>(_onChangeCurrentProduct, transformer: droppable());
+    on<ChangeCurrentProduct>(
+      (e, emit) => _trackOdooWrite(_onChangeCurrentProduct(e, emit)),
+      transformer: droppable(),
+    );
     on<AssignSubmuelleEvent>(_onAssignSubmuelleEvent);
     on<StartOrStopTimeTransfer>(_onStartOrStopTimeTransfer);
     on<PickOkEvent>(_onPickOkEvent);
@@ -545,10 +548,31 @@ class PickScanBloc extends Bloc<PickScanEvent, PickScanState> {
     }
   }
 
+  //*envíos a Odoo en vuelo (el producto se envía dentro de ChangeCurrentProduct).
+  //Validar el pick mientras ese envío sigue escribiendo sobre el mismo picking
+  //hace que Odoo bloquee la validación hasta que el otro termine (el diálogo
+  //"Validando informacion..." quedaba abierto casi 2 minutos).
+  final Set<Future<void>> _odooWrites = {};
+
+  Future<void> _trackOdooWrite(Future<void> write) {
+    _odooWrites.add(write);
+    return write.whenComplete(() => _odooWrites.remove(write));
+  }
+
+  /// Espera a que terminen los envíos en vuelo antes de validar. Con tope:
+  /// cada envío ya tiene su propio timeout de red.
+  Future<void> _waitOdooWrites() async {
+    if (_odooWrites.isEmpty) return;
+    debugPrint('⏳ Esperando ${_odooWrites.length} envío(s) a Odoo en vuelo');
+    await Future.wait(_odooWrites.toList())
+        .timeout(const Duration(seconds: 30), onTimeout: () => []);
+  }
+
   void _onValidateConfirmEvent(
       ValidateConfirmEvent event, Emitter<PickScanState> emit) async {
     try {
       emit(ValidateConfirmLoading());
+      await _waitOdooWrites();
       final result = await validateConfirmPickUseCase(ValidateConfirmPickParams(
           pickId: event.idPick, isBackOrder: event.isBackOrder));
 
@@ -570,6 +594,7 @@ class PickScanBloc extends Bloc<PickScanEvent, PickScanState> {
       CreateBackOrderOrNot event, Emitter<PickScanState> emit) async {
     try {
       emit(CreateBackOrderOrNotLoading());
+      await _waitOdooWrites();
 
       final result = await validateTransferUseCase(ValidateTransferParams(
           pickId: event.idPick, isBackOrder: event.isBackOrder));
@@ -609,7 +634,7 @@ class PickScanBloc extends Bloc<PickScanEvent, PickScanState> {
 
   // ── Mixto ─────────────────────────────────────────────────────────────────
 
-  void _onChangeCurrentProduct(
+  Future<void> _onChangeCurrentProduct(
       ChangeCurrentProduct event, Emitter<PickScanState> emit) async {
     try {
       viewQuantity = false;

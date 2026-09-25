@@ -64,7 +64,13 @@ class DeviceRegistrationSuccess extends UserState {}
 
 class DeviceRegistrationFailure extends UserState {
   final String message;
-  const DeviceRegistrationFailure(this.message);
+
+  /// true cuando la petición de registro no llegó a responder (red, timeout,
+  /// error del servidor). No significa que el dispositivo no esté autorizado:
+  /// el servidor nunca dijo que no.
+  final bool isTransient;
+
+  const DeviceRegistrationFailure(this.message, {this.isTransient = false});
 }
 
 class DeviceRegistrationLoading extends UserState {}

@@ -185,7 +185,9 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
       focusNode4.unfocus();
       focusNode6.unfocus();
     }
-    setState(() {});
+    // Sin setState: el foco no es estado de este widget, y reconstruir toda
+    // la pantalla en cada didChangeDependencies (teclado, MediaQuery, volver
+    // del background) la hacía parpadear.
   }
 
   @override

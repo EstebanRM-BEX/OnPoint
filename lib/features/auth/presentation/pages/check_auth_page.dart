@@ -40,6 +40,20 @@ class _CheckAuthPageState extends State<CheckAuthPage> {
         child: BlocListener<UserBloc, UserState>(
           listener: (context, state) {
             if (_yaNavego) return;
+            // El registro no respondió (red lenta, timeout, servidor caído):
+            // la sesión guardada sigue siendo válida. Antes esto mandaba a
+            // 'enterprice' y, tras un cierre de la app, el operario "perdía la
+            // sesión" solo porque Odoo tardó en contestar al relanzar.
+            if (state is DeviceRegistrationFailure && state.isTransient) {
+              context.read<UserBloc>().add(LoadUserInfoEvent());
+              return;
+            }
+            if (state is UserError) {
+              _yaNavego = true;
+              showScrollableErrorDialog(state.message);
+              Navigator.pushReplacementNamed(context, 'enterprice');
+              return;
+            }
             if (state is DeviceRegistrationFailure) {
               _yaNavego = true;
               showScrollableErrorDialog(state.message);

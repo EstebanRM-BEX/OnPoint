@@ -42,6 +42,14 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   int noveltiesCount = 0;
   int warehousesCount = 0;
 
+  // Propiedad persistente (no solo el estado transitorio) para que el
+  // resumen operativo del Home no dependa de en qué momento exacto se
+  // suscribe su BlocBuilder — mismo patrón que InventarioBloc.isLoading.
+  // `DownloadLocationsEvent` (la descarga real post-login) emite
+  // `DownloadUserDataLoading`, no `UserLocationsLoading`; este flag cubre
+  // ambos caminos sin depender del tipo de estado emitido.
+  bool isLoadingLocations = false;
+
   UserConfiguration? userConfiguration;
   DeviceInfo? deviceInfo;
 
@@ -72,6 +80,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     DownloadLocationsEvent event,
     Emitter<UserState> emit,
   ) async {
+    isLoadingLocations = true;
     emit(const DownloadUserDataLoading('Descargando ubicaciones...'));
     try {
       final result = await getUserLocations(NoParams());
@@ -91,6 +100,8 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     } catch (e) {
       debugPrint("❌ Error en _onDownloadLocations: $e");
       emit(DownloadUserDataError(e.toString()));
+    } finally {
+      isLoadingLocations = false;
     }
   }
 
@@ -291,7 +302,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       );
 
       await result.fold(
-        (failure) async => emit(DeviceRegistrationFailure(failure.message)),
+        (failure) async => emit(
+          DeviceRegistrationFailure(failure.message, isTransient: true),
+        ),
         (registration) async {
           if (registration.isAuthorized == 'yes') {
             // Guardar sesión solo después de que el dispositivo esté autorizado
@@ -331,24 +344,29 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     LoadUserLocationsEvent event,
     Emitter<UserState> emit,
   ) async {
-    emit(UserLocationsLoading());
-    final result = await getUserLocations(NoParams());
-    bool success = false;
-    result.fold((failure) => emit(UserLocationsError(failure.message)), (
-      locations,
-    ) {
-      this.locations = locations;
-      debugPrint('Locations loaded from API: ${locations.length}');
-      success = true;
-      emit(UserLocationsLoaded(locations: locations));
-    });
-    if (success) {
-      try {
-        locationsCount = await DataBaseSqlite().getUbicacionesCount();
-        debugPrint('Locations saved in DB: $locationsCount');
-      } catch (e) {
-        debugPrint("❌ Error getting locations count from DB: $e");
+    isLoadingLocations = true;
+    try {
+      emit(UserLocationsLoading());
+      final result = await getUserLocations(NoParams());
+      bool success = false;
+      result.fold((failure) => emit(UserLocationsError(failure.message)), (
+        locations,
+      ) {
+        this.locations = locations;
+        debugPrint('Locations loaded from API: ${locations.length}');
+        success = true;
+        emit(UserLocationsLoaded(locations: locations));
+      });
+      if (success) {
+        try {
+          locationsCount = await DataBaseSqlite().getUbicacionesCount();
+          debugPrint('Locations saved in DB: $locationsCount');
+        } catch (e) {
+          debugPrint("❌ Error getting locations count from DB: $e");
+        }
       }
+    } finally {
+      isLoadingLocations = false;
     }
   }
 

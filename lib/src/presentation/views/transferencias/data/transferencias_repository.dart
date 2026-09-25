@@ -509,96 +509,56 @@ class TransferenciasRepository {
     return ResponseSenTransfer(); // Retornamos un objeto vacío en caso de error de red
   }
 
+  /// Límite para validar una transferencia. Odoo puede tardar en pickings
+  /// grandes, pero 100s con el diálogo "Validando informacion..." abierto
+  /// dejaba al operario bloqueado casi 2 minutos sin saber qué pasó.
+  static const _validateTimeout = Duration(seconds: 45);
+
   Future<ResponseValidate> validateTransfer(
     int idTransfer,
     bool isBackorder,
     bool isLoadingDialog,
-  ) async {
-    // Verificar si el dispositivo tiene acceso a Internet
-    if (!await hasNetwork()) {
-      debugPrint("Error: No hay conexión a Internet.");
-      return ResponseValidate(); // Si no hay conexión, terminamos la ejecución
-    }
-
-    try {
-      var response = await ApiRequestService().postPacking(
-        endpoint:
-            'complete_transfer', // Cambiado para que sea el endpoint correspondiente
-        body: {
-          "params": {
-            "id_transferencia": idTransfer,
-            "crear_backorder": isBackorder,
-          },
-        },
-        isLoadinDialog: isLoadingDialog,
+  ) =>
+      _postValidate(
+        'complete_transfer',
+        idTransfer,
+        isBackorder,
+        isLoadingDialog,
       );
-      if (response.statusCode <= 500) {
-        // Decodifica la respuesta JSON a un mapa
-        Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-
-        if (jsonResponse.containsKey('result')) {
-          return ResponseValidate(
-            jsonrpc: jsonResponse['jsonrpc'],
-            result: jsonResponse['result'] != null
-                ? ResultValidate.fromMap(jsonResponse['result'])
-                : null,
-          );
-        } else if (jsonResponse.containsKey('error')) {
-          if (jsonResponse['error']['code'] == 100) {
-            //mostramos una alerta de get
-            Get.defaultDialog(
-              title: 'Alerta',
-              titleStyle: TextStyle(color: Colors.red, fontSize: 18),
-              middleText: 'Sesion expirada, por favor inicie sesión nuevamente',
-              middleTextStyle: TextStyle(color: black, fontSize: 14),
-              backgroundColor: Colors.white,
-              radius: 10,
-              actions: [
-                ElevatedButton(
-                  onPressed: () {
-                    Get.back();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColorApp,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: Text('Aceptar', style: TextStyle(color: white)),
-                ),
-              ],
-            );
-
-            return ResponseValidate();
-          }
-        }
-      }
-    } on SocketException catch (e) {
-      debugPrint('Error de red: $e');
-      return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
-    } catch (e, s) {
-      // Manejo de otros errores
-      debugPrint('Error en validateTransfer: $e, $s');
-      return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
-    }
-    return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
-  }
 
   Future<ResponseValidate> confirmationValidate(
     int idTransfer,
     bool isBackorder,
     bool isLoadingDialog,
+  ) =>
+      _postValidate(
+        'complete_transfer/expire',
+        idTransfer,
+        isBackorder,
+        isLoadingDialog,
+      );
+
+  /// Siempre devuelve un `result` con `msg`: antes los errores de red,
+  /// timeout o JSON-RPC volvían como `ResponseValidate()` vacío y la pantalla
+  /// mostraba un diálogo de error en blanco.
+  Future<ResponseValidate> _postValidate(
+    String endpoint,
+    int idTransfer,
+    bool isBackorder,
+    bool isLoadingDialog,
   ) async {
+    ResponseValidate fail(String msg) =>
+        ResponseValidate(result: ResultValidate(code: 0, msg: msg));
+
     // Verificar si el dispositivo tiene acceso a Internet
     if (!await hasNetwork()) {
       debugPrint("Error: No hay conexión a Internet.");
-      return ResponseValidate(); // Si no hay conexión, terminamos la ejecución
+      return fail('No hay conexión a internet. Intenta de nuevo.');
     }
 
     try {
       var response = await ApiRequestService().postPacking(
-        endpoint:
-            'complete_transfer/expire', // Cambiado para que sea el endpoint correspondiente
+        endpoint: endpoint,
         body: {
           "params": {
             "id_transferencia": idTransfer,
@@ -606,7 +566,16 @@ class TransferenciasRepository {
           },
         },
         isLoadinDialog: isLoadingDialog,
+        timeout: _validateTimeout,
       );
+      if (response.statusCode == 408) {
+        // complete_transfer no es idempotente: Odoo pudo haber validado
+        // aunque no alcanzó a responder.
+        return fail(
+          'Odoo no respondió a tiempo. Verifica el estado de la transferencia '
+          'antes de volver a validarla.',
+        );
+      }
       if (response.statusCode <= 500) {
         // Decodifica la respuesta JSON a un mapa
         Map<String, dynamic> jsonResponse = jsonDecode(response.body);
@@ -619,7 +588,8 @@ class TransferenciasRepository {
                 : null,
           );
         } else if (jsonResponse.containsKey('error')) {
-          if (jsonResponse['error']['code'] == 100) {
+          final error = jsonResponse['error'];
+          if (error['code'] == 100) {
             //mostramos una alerta de get
             Get.defaultDialog(
               title: 'Alerta',
@@ -644,19 +614,26 @@ class TransferenciasRepository {
               ],
             );
 
-            return ResponseValidate();
+            return fail('Sesión expirada, inicia sesión nuevamente.');
           }
+          final data = error['data'];
+          final msg = (data is Map ? data['message'] : null) ??
+              error['message'] ??
+              error['msg'];
+          return fail(msg?.toString() ?? 'Error al validar la transferencia');
         }
       }
+      return fail(
+        'Error del servidor (${response.statusCode}) al validar la transferencia',
+      );
     } on SocketException catch (e) {
       debugPrint('Error de red: $e');
-      return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
+      return fail('Error de red al validar la transferencia');
     } catch (e, s) {
       // Manejo de otros errores
-      debugPrint('Error en validateTransfer: $e, $s');
-      return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
+      debugPrint('Error en $endpoint: $e, $s');
+      return fail('Error al validar la transferencia');
     }
-    return ResponseValidate(); // Retornamos un objeto vacío en caso de error de red
   }
 
   Future<CheckAvailabilityResponseResult> checkAvailability(

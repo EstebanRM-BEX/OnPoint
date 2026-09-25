@@ -502,6 +502,7 @@ class ApiRequestService {
     required Map<String, dynamic>? body,
     required bool isLoadinDialog,
     bool showNetworkErrorSnackbar = true,
+    Duration timeout = const Duration(seconds: 100),
   }) async {
     if (!await _isConnected()) {
       debugPrint('🔴 [postPacking] Sin conexión');
@@ -528,12 +529,13 @@ class ApiRequestService {
       request.body = json.encode(body);
       request.headers.addAll(headers);
 
-      // Sin timeout el diálogo de carga se quedaba abierto para siempre si el
-      // servidor no respondía. Mismo límite que postPicking.
-      final streamed = await _client.send(request).timeout(
-        const Duration(seconds: 100),
-      );
-      final response = await http.Response.fromStream(streamed);
+      // El límite cubre la petición COMPLETA (headers + cuerpo): antes solo
+      // envolvía el `send`, y si el cuerpo se quedaba colgado después de los
+      // headers el diálogo de carga no se cerraba nunca.
+      final response = await _client
+          .send(request)
+          .then(http.Response.fromStream)
+          .timeout(timeout);
 
       if (loadingDialogOpened) {
         closeLoading?.call();
