@@ -21,7 +21,7 @@ class NetworkOverlayCubit extends Cubit<bool> {
     emit(visible);
   }
 
-  // Llamado en logout — restablece a true sin guardar en prefs
-  // (clearPrefs ya removió la key, al next init leerá el default true)
+  // Llamado en logout — oculta el overlay sin guardar en prefs
+  // (clearPrefs ya removió la key, al próximo init leerá el default false)
   void reset() => emit(false);
 }

@@ -119,13 +119,14 @@ void main() {
       }
     });
 
-    testWidgets('muestra "0ms" como ping inicial (antes de cualquier medición)',
+    testWidgets('muestra "—" como ping inicial (antes de cualquier medición)',
         (tester) async {
       await tester.pumpWidget(_buildWidget());
       await tester.pump();
 
-      // Sin red en tests → el estado inicial es "excellent" con pingMs=0
-      expect(find.text('0ms'), findsOneWidget);
+      // Sin red en tests → el estado inicial es "measuring", sin ping inventado
+      expect(find.text('—'), findsOneWidget);
+      expect(find.text('0ms'), findsNothing);
     });
   });
 
@@ -152,11 +153,7 @@ void main() {
       expect(find.byIcon(Icons.close), findsOneWidget);
 
       // Segundo tap: colapsar.
-      // El overlay expandido se inicia cerca del borde derecho (screen.width - 90),
-      // por lo que su centro puede quedar fuera de la pantalla de test (800 px).
-      // Se toca el borde izquierdo del widget, que siempre permanece visible.
-      final rect = tester.getRect(find.byType(AnimatedContainer));
-      await tester.tapAt(Offset(rect.left + 5, rect.center.dy));
+      await tester.tap(find.byType(AnimatedContainer));
       await tester.pump();
       expect(find.byIcon(Icons.close), findsNothing);
     });
@@ -171,7 +168,13 @@ void main() {
       await g.up();
       await tester.pump();
 
-      final qualityLabels = ['Excelente', 'Regular', 'Débil', 'Sin señal'];
+      final qualityLabels = [
+        'Midiendo…',
+        'Excelente',
+        'Regular',
+        'Débil',
+        'Sin señal',
+      ];
       final labelFound = qualityLabels.any((l) => tester.any(find.text(l)));
       expect(labelFound, isTrue,
           reason: 'Debe mostrar una etiqueta de calidad al expandir');
@@ -207,6 +210,38 @@ void main() {
 
       // Tanto en colapsado como en expandido debe haber drag_indicator
       expect(find.byIcon(Icons.drag_indicator), findsWidgets);
+    });
+  });
+
+  // ── Grupo 3b: Siempre dentro de pantalla ─────────────────────────────────
+  group('Límites de pantalla', () {
+    testWidgets('expandido en la posición por defecto no se sale por la derecha',
+        (tester) async {
+      await tester.pumpWidget(_buildWidget());
+      await tester.pump();
+
+      await tester.tap(find.byType(AnimatedContainer));
+      await tester.pumpAndSettle();
+
+      final rect = tester.getRect(find.byType(AnimatedContainer));
+      final screenWidth =
+          tester.view.physicalSize.width / tester.view.devicePixelRatio;
+      expect(rect.right, lessThanOrEqualTo(screenWidth));
+    });
+
+    testWidgets('al achicar la pantalla la píldora se reubica dentro',
+        (tester) async {
+      await tester.pumpWidget(_buildWidget());
+      await tester.pump();
+
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pump();
+
+      final rect = tester.getRect(find.byType(AnimatedContainer));
+      expect(rect.right, lessThanOrEqualTo(360));
+      expect(rect.bottom, lessThanOrEqualTo(640));
     });
   });
 
@@ -247,11 +282,11 @@ void main() {
           find.byType(AnimatedContainer), const Offset(2000, 0));
       await tester.pump();
 
-      final pos = tester.getTopLeft(find.byType(AnimatedContainer));
+      final rect = tester.getRect(find.byType(AnimatedContainer));
       final screenWidth =
           tester.view.physicalSize.width / tester.view.devicePixelRatio;
 
-      expect(pos.dx, lessThan(screenWidth));
+      expect(rect.right, lessThanOrEqualTo(screenWidth));
     });
 
     testWidgets('el overlay no sale por el borde izquierdo', (tester) async {
