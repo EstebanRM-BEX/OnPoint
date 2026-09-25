@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "107187715333",
-    "project_id": "onpoint-78bd3",
-    "storage_bucket": "onpoint-78bd3.firebasestorage.app"
+    "project_number": "298297329868",
+    "project_id": "onpoint-c71de",
+    "storage_bucket": "onpoint-c71de.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:107187715333:android:3252e9a5d7e61cd9278b6c",
+        "mobilesdk_app_id": "1:298297329868:android:73caed751bf65e36a95a69",
         "android_client_info": {
           "package_name": "com.onpoint.wms"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCSNryCqi49CrbT2p_RviTkQaZAwNC2dM0"
+          "current_key": "AIzaSyBHIZMKGboLz05OgtPGlnketshlkFDmGQk"
         }
       ],
       "services": {

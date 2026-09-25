@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/batch_pedidos_dialog.dart';
 import 'package:wms_app/features/picking_cluster/presentation/widgets/cluster_palette.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
 import '../../../../domain/entities/picking_batch.dart';
@@ -61,7 +62,7 @@ class PickingBatchCard extends StatelessWidget {
                   color: ClusterPalette.slate100,
                 ),
                 const SizedBox(height: 10),
-                _buildMetrics(),
+                _buildMetrics(context),
               ],
             ),
           ),
@@ -228,14 +229,22 @@ class PickingBatchCard extends StatelessWidget {
     );
   }
 
-  Widget _buildMetrics() {
+  Widget _buildMetrics(BuildContext context) {
+    final pedidos = batch.pedidosValidate;
     return Row(
       children: [
         Expanded(
           child: _MetricTile(
             icon: Icons.receipt_long_outlined,
             label: 'Pedidos',
-            value: _formatQty(batch.pedidosValidate.length),
+            value: _formatQty(pedidos.length),
+            onTap: pedidos.isEmpty
+                ? null
+                : () => BatchPedidosDialog.show(
+                    context,
+                    batchName: batch.name ?? '',
+                    pedidos: pedidos,
+                  ),
           ),
         ),
         const SizedBox(width: 8),
@@ -299,11 +308,16 @@ class _MetricTile extends StatelessWidget {
   final String value;
   final bool highlighted;
 
+  /// Con [onTap] el recuadro es tocable (no abre el batch) y muestra un
+  /// chevron junto a la etiqueta.
+  final VoidCallback? onTap;
+
   const _MetricTile({
     required this.icon,
     required this.label,
     required this.value,
     this.highlighted = false,
+    this.onTap,
   });
 
   @override
@@ -311,7 +325,7 @@ class _MetricTile extends StatelessWidget {
     final labelColor = highlighted
         ? ClusterPalette.brand800
         : ClusterPalette.slate500;
-    return Container(
+    final tile = Ink(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
       decoration: BoxDecoration(
         color: highlighted ? ClusterPalette.brand50 : ClusterPalette.slate50,
@@ -347,6 +361,8 @@ class _MetricTile extends StatelessWidget {
                   ),
                 ),
               ),
+              if (onTap != null)
+                Icon(Icons.chevron_right, size: 14, color: labelColor),
             ],
           ),
           const SizedBox(height: 2),
@@ -365,6 +381,15 @@ class _MetricTile extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+    if (onTap == null) return tile;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: tile,
       ),
     );
   }

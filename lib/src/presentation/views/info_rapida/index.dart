@@ -7,16 +7,16 @@ import 'package:wms_app/injection_container.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/widgets/dialog_info_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
-import '../../providers/network/cubit/warning_widget_cubit.dart';
+import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/widgets/info_rapida_header.dart';
+import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/widgets/recent_queries_card.dart';
+import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/widgets/scan_hero_card.dart';
+import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/widgets/scanner_status_pill.dart';
 
 class InfoRapidaScreen extends StatefulWidget {
   const InfoRapidaScreen({super.key});
@@ -231,102 +231,66 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
         }
       },
       builder: (context, state) {
-        final size = MediaQuery.sizeOf(context);
         return Scaffold(
-          backgroundColor: primaryColorApp,
-          floatingActionButton: FloatingActionButton(
+          backgroundColor: const Color(0xFFF8FAFC),
+          floatingActionButton: FloatingActionButton.extended(
             backgroundColor: primaryColorApp,
+            foregroundColor: white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             onPressed: () {
               showDialog(
                 context: context,
                 builder: (_) => DialogInfoQuick(contextScreen: context),
               );
             },
-            child: const Icon(Icons.search, color: white),
-          ),
-          body: SafeArea(
-            child: Container(
-              color: Colors.white,
-              child: Column(
-                children: [
-                  const CustomAppBar(),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        SizedBox(height: size.height * 0.13),
-                        SizedBox(
-                          height: 150,
-                          width: 150,
-                          child: SvgPicture.asset(
-                            color: black,
-                            "assets/icons/barcode.svg",
-                            height: 150,
-                            width: 150,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: Text(
-                            "Este es el módulo de información rápida de 360 software para OnPoint. Escanee un código de barras de PRODUCTO, PAQUETE, LOTE/SERIE o una UBICACIÓN para obtener toda su información.",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 14, color: black),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        BarcodeScannerField(
-                          controller: _controllerSearch,
-                          focusNode: focusNode1,
-                          onBarcodeScanned: (value, context) {
-                            return validateBarcode(value);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            icon: const Icon(Icons.search),
+            label: const Text(
+              'Buscar',
+              style: TextStyle(fontWeight: FontWeight.w700),
             ),
           ),
-        );
-      },
-    );
-  }
-}
-
-class CustomAppBar extends StatelessWidget {
-  const CustomAppBar({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<ConnectionStatusCubit, ConnectionStatus>(
-      builder: (context, status) {
-        return Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: primaryColorApp,
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(20),
-              bottomRight: Radius.circular(20),
-            ),
-          ),
-          child: Column(
+          body: Column(
             children: [
-              const WarningWidgetCubit(),
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: white),
-                    onPressed: () =>
-                        Navigator.pushReplacementNamed(context, '/home'),
+              InfoRapidaHeader(
+                onBack: () => Navigator.pushReplacementNamed(context, '/home'),
+              ),
+              Expanded(
+                // SingleChildScrollView (no ListView): el campo invisible del
+                // escáner debe seguir montado aunque quede fuera de pantalla,
+                // o perdería el foco y el lector dejaría de responder.
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 96),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ScannerStatusPill(
+                        focusNode: focusNode1,
+                        onActivate: focusNode1.requestFocus,
+                      ),
+                      const SizedBox(height: 16),
+                      const ScanHeroCard(),
+                      RecentQueriesCard(
+                        onSelect: (q) => context.read<InfoRapidaBloc>().add(
+                          GetInfoRapida(
+                            q.query,
+                            q.isManual,
+                            q.isProduct,
+                            false,
+                          ),
+                        ),
+                      ),
+                      BarcodeScannerField(
+                        controller: _controllerSearch,
+                        focusNode: focusNode1,
+                        onBarcodeScanned: (value, context) {
+                          return validateBarcode(value);
+                        },
+                      ),
+                    ],
                   ),
-                  const Spacer(),
-                  const Text(
-                    "INFORMACIÓN RÁPIDA",
-                    style: TextStyle(color: white, fontSize: 18),
-                  ),
-                  const Spacer(),
-                ],
+                ),
               ),
             ],
           ),

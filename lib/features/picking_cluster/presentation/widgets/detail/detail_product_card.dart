@@ -6,7 +6,7 @@ import 'package:wms_app/features/picking_cluster/presentation/widgets/cluster_pa
 enum _ItemStatus { complete, inProgress, separated, pending }
 
 /// Ítem del detalle de batch. Los callbacks nulos ocultan su acción:
-/// [onEdit] (ajustar cantidad), [onStart] (ir a separar este producto),
+/// [onEdit] (ajustar cantidad), [onStart] (ir a preparar este producto),
 /// [onSync] (reenviar pendientes al WMS).
 class DetailProductCard extends StatelessWidget {
   final BatchProduct product;
@@ -193,7 +193,7 @@ class DetailProductCard extends StatelessWidget {
             TextButton.icon(
               onPressed: onStart,
               icon: const Icon(Icons.play_circle_fill, size: 18),
-              label: const Text('Separar'),
+              label: const Text('Preparar'),
               style: TextButton.styleFrom(
                 foregroundColor: const Color(0xFF059669),
                 visualDensity: VisualDensity.compact,
@@ -211,6 +211,10 @@ class DetailProductCard extends StatelessWidget {
   Widget _buildDetails(_StatusStyle style) {
     final origin = '${product.origin ?? ''}';
     final lot = product.lotId;
+    // Odoo puede mandar false/null como texto cuando no hay prioridad.
+    final priority = '${product.rimovalPriority ?? ''}'.trim();
+    final hasPriority =
+        priority.isNotEmpty && priority != 'false' && priority != 'null';
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -280,12 +284,13 @@ class DetailProductCard extends StatelessWidget {
               value: origin,
               monospace: true,
             ),
-          _DetailRow(
-            icon: Icons.warning_amber_rounded,
-            iconColor: const Color(0xFFF59E0B),
-            label: 'Prioridad:',
-            value: '${product.rimovalPriority ?? ''}',
-          ),
+          if (hasPriority)
+            _DetailRow(
+              icon: Icons.warning_amber_rounded,
+              iconColor: const Color(0xFFF59E0B),
+              label: 'Prioridad:',
+              value: priority,
+            ),
           _buildExpiry(),
           if (lot != null && lot != '' && lot != false)
             _DetailRow(

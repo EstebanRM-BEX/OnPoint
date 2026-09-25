@@ -14,6 +14,7 @@ import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/data/info_rapida_repository.dart';
+import 'package:wms_app/src/presentation/views/info_rapida/data/recent_queries_store.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/models/info_rapida_model.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/models/update_product_request.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
@@ -754,7 +755,7 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
     }
   }
 
-  void _onGetInfoRapida(
+  Future<void> _onGetInfoRapida(
       GetInfoRapida event, Emitter<InfoRapidaState> emit) async {
     emit(InfoRapidaLoading());
 
@@ -803,6 +804,22 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
         infoRapidaResult = infoRapida.result!;
         productosUbicacion = infoRapidaResult.result?.productos;
         ubicacionesProducto = infoRapidaResult.result?.ubicaciones;
+
+        // Historial de "Últimas consultas" (no las que vienen del flujo de
+        // transferencia, que no son consultas del usuario). Un fallo al
+        // guardar nunca debe bloquear la navegación.
+        if (!event.isTransfer) {
+          try {
+            await RecentQueriesStore.instance.add(RecentQuery.fromResult(
+              query: event.barcode.trim(),
+              isManual: event.isManual,
+              isProduct: event.isProduct,
+              result: infoRapidaResult,
+            ));
+          } catch (e) {
+            debugPrint('No se pudo guardar la consulta reciente: $e');
+          }
+        }
 
         emit(InfoRapidaLoaded(infoRapidaResult, infoRapida.result!.type!));
       } else {

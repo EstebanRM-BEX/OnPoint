@@ -50,11 +50,11 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCSNryCqi49CrbT2p_RviTkQaZAwNC2dM0',
-    appId: '1:107187715333:android:3252e9a5d7e61cd9278b6c',
-    messagingSenderId: '107187715333',
-    projectId: 'onpoint-78bd3',
-    storageBucket: 'onpoint-78bd3.firebasestorage.app',
+    apiKey: 'AIzaSyBHIZMKGboLz05OgtPGlnketshlkFDmGQk',
+    appId: '1:298297329868:android:73caed751bf65e36a95a69',
+    messagingSenderId: '298297329868',
+    projectId: 'onpoint-c71de',
+    storageBucket: 'onpoint-c71de.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(

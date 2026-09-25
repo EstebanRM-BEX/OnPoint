@@ -21,6 +21,7 @@ class WebSocketService implements IWebSocketService {
   // --- VARIABLES DE ESTADO ---
   WebSocketChannel? _channel;
   bool _isConnected = false;
+  bool _isConnecting = false;
   bool _isSubscribed = false;
   bool _manuallyDisconnected = false;
 
@@ -50,10 +51,11 @@ class WebSocketService implements IWebSocketService {
     final bool isLoggedIn = await PrefUtils.getIsLoggedIn();
     if (!isLoggedIn) return;
 
-    // Si ya estamos conectados, no hacemos nada
-    if (_isConnected) return;
+    // Si ya estamos conectados (o conectando), no hacemos nada
+    if (_isConnected || _isConnecting) return;
 
     _manuallyDisconnected = false;
+    _isConnecting = true;
 
     try {
       // 2. Obtener credenciales y URL base
@@ -112,6 +114,18 @@ class WebSocketService implements IWebSocketService {
             const Duration(seconds: 10), // Ping para mantener viva la conexión
       );
 
+      // connect() no espera el handshake: si el servidor lo rechaza (ej. 400),
+      // el error queda sin capturar y llega a Crashlytics como fatal. Se espera
+      // aquí para que caiga en el catch y siga el backoff normal.
+      await _channel!.ready;
+
+      // Se desconectó manualmente mientras se esperaba el handshake.
+      if (_manuallyDisconnected) {
+        _channel?.sink.close();
+        _channel = null;
+        return;
+      }
+
       _isConnected = true;
       // Conexión exitosa: resetear contador de reintentos
       _reconnectAttempts = 0;
@@ -149,8 +163,11 @@ class WebSocketService implements IWebSocketService {
       _subscribeToChannel();
     } catch (e) {
       _resetConnectionState();
-      debugPrint("❌ WebSocket Excepción Crítica: $e");
+      _channel = null;
+      debugPrint("❌ WebSocket: no se pudo conectar: $e");
       _scheduleReconnect();
+    } finally {
+      _isConnecting = false;
     }
   }
 

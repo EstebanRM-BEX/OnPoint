@@ -93,6 +93,10 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   List<BarcodeInventario> allBarcodeInventario = [];
 
   int tercerosCount = 0;
+  // Propiedad persistente (no solo el estado transitorio) para que el
+  // resumen operativo del Home no dependa de en qué momento exacto se
+  // suscribe su BlocBuilder — mismo patrón que InventarioBloc.isLoading.
+  bool isLoadingTerceros = false;
 
   DevolucionesRepository devolucionesRepository = DevolucionesRepository();
 
@@ -177,7 +181,10 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onLoadTercerosFromDBEvent(
-      LoadTercerosFromDBEvent event, Emitter<DevolucionesState> emit) async {
+    LoadTercerosFromDBEvent event,
+    Emitter<DevolucionesState> emit,
+  ) async {
+    isLoadingTerceros = true;
     try {
       emit(LoadTercerosFromDBLoading());
 
@@ -185,8 +192,11 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       final dbTerceros = await db.tercerosRepository.getAllTerceros();
 
       if (dbTerceros.isEmpty) {
-        emit(LoadTercerosFromDBFailure(
-            'No se encontraron terceros en la base de datos'));
+        emit(
+          LoadTercerosFromDBFailure(
+            'No se encontraron terceros en la base de datos',
+          ),
+        );
       } else {
         // 2. Actualización en memoria
         terceros.clear();
@@ -196,19 +206,28 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
         tercerosCount = dbTerceros.length;
 
         debugPrint(
-            '📦 TERCEROS - Datos cargados desde BD: ${dbTerceros.length}');
+          '📦 TERCEROS - Datos cargados desde BD: ${dbTerceros.length}',
+        );
 
         emit(LoadTercerosFromDBSuccess(dbTerceros));
       }
     } catch (e, s) {
       debugPrint("❌ Error en _onLoadTercerosFromDBEvent: $e, $s");
-      emit(LoadTercerosFromDBFailure(
-          'Error al cargar terceros desde la base de datos: $e'));
+      emit(
+        LoadTercerosFromDBFailure(
+          'Error al cargar terceros desde la base de datos: $e',
+        ),
+      );
+    } finally {
+      isLoadingTerceros = false;
     }
   }
 
   void _onDownloadAllTercerosEvent(
-      DownloadAllTercerosEvent event, Emitter<DevolucionesState> emit) async {
+    DownloadAllTercerosEvent event,
+    Emitter<DevolucionesState> emit,
+  ) async {
+    isLoadingTerceros = true;
     final stopwatchAPI = Stopwatch()..start();
     try {
       emit(DownloadAllTercerosLoading());
@@ -218,8 +237,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       stopwatchAPI.stop();
 
       if (apiTerceros.isEmpty) {
-        emit(DownloadAllTercerosFailure(
-            'No se encontraron terceros en la nube'));
+        emit(
+          DownloadAllTercerosFailure('No se encontraron terceros en la nube'),
+        );
       } else {
         final stopwatchDB = Stopwatch()..start();
 
@@ -239,9 +259,11 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
         // Registro de tiempos y cantidad de datos
         debugPrint(
-            '⏱️ TERCEROS - Tiempo API: ${stopwatchAPI.elapsedMilliseconds} ms (${(stopwatchAPI.elapsedMilliseconds / 1000).toStringAsFixed(2)} s)');
+          '⏱️ TERCEROS - Tiempo API: ${stopwatchAPI.elapsedMilliseconds} ms (${(stopwatchAPI.elapsedMilliseconds / 1000).toStringAsFixed(2)} s)',
+        );
         debugPrint(
-            '⏱️ TERCEROS - Tiempo DB: ${stopwatchDB.elapsedMilliseconds} ms (${(stopwatchDB.elapsedMilliseconds / 1000).toStringAsFixed(2)} s)');
+          '⏱️ TERCEROS - Tiempo DB: ${stopwatchDB.elapsedMilliseconds} ms (${(stopwatchDB.elapsedMilliseconds / 1000).toStringAsFixed(2)} s)',
+        );
         debugPrint('📦 TERCEROS - Datos guardados: ${apiTerceros.length}');
 
         emit(DownloadAllTercerosSuccess(apiTerceros));
@@ -249,11 +271,15 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     } catch (e, s) {
       debugPrint("❌ Error en _onDownloadAllTercerosEvent: $e, $s");
       emit(DownloadAllTercerosFailure('Error al descargar terceros: $e'));
+    } finally {
+      isLoadingTerceros = false;
     }
   }
 
   void _onLoadTercerosCountEvent(
-      LoadTercerosCountEvent event, Emitter<DevolucionesState> emit) async {
+    LoadTercerosCountEvent event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     try {
       tercerosCount = await db.getTercerosCount();
       emit(LoadTercerosCountSuccess(tercerosCount));
@@ -263,7 +289,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onInitializeDevolucionesData(
-      InitializeDevolucionesData event, Emitter<DevolucionesState> emit) async {
+    InitializeDevolucionesData event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     try {
       // 1. Cargamos configuración
       add(LoadConfigurationsUser());
@@ -287,14 +315,17 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     }
   }
 
-  void _onFetchAllBarcodesInventarioEvent(FetchAllBarcodesInventarioEvent event,
-      Emitter<DevolucionesState> emit) async {
+  void _onFetchAllBarcodesInventarioEvent(
+    FetchAllBarcodesInventarioEvent event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     try {
       final response = await getIt<BarcodesInventarioCacheService>().getAll();
       allBarcodeInventario = response;
       if (response.isNotEmpty) {
         debugPrint(
-            'Total de códigos de barras: ${allBarcodeInventario.length}');
+          'Total de códigos de barras: ${allBarcodeInventario.length}',
+        );
         emit(FetchAllBarcodesSuccess(allBarcodeInventario));
       } else {
         emit(FetchAllBarcodesFailure('No se encontraron códigos de barras'));
@@ -307,11 +338,13 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
   //* evento para cargar la configuracion del usuario
   void _onLoadConfigurationsUserEvent(
-      LoadConfigurationsUser event, Emitter<DevolucionesState> emit) async {
+    LoadConfigurationsUser event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     try {
       int userId = await PrefUtils.getUserId();
-      final response =
-          await getIt<ConfiguracionCacheService>().getConfiguration(userId);
+      final response = await getIt<ConfiguracionCacheService>()
+          .getConfiguration(userId);
 
       if (response != null) {
         emit(ConfigurationDevLoaded(response));
@@ -325,13 +358,17 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onChangeStateIsDialogVisibleEvent(
-      ChangeStateIsDialogVisibleEvent event, Emitter<DevolucionesState> emit) {
+    ChangeStateIsDialogVisibleEvent event,
+    Emitter<DevolucionesState> emit,
+  ) {
     isDialogVisible = event.isVisible;
     emit(ChangeStateIsDialogVisibleState(isDialogVisible));
   }
 
   void _onSendDevolucionEvent(
-      SendDevolucionEvent event, Emitter<DevolucionesState> emit) async {
+    SendDevolucionEvent event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     try {
       emit(SendDevolucionLoading());
 
@@ -347,7 +384,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
         idResponsable: userid,
         fechaInicio: fechaFormateada,
         fechaFin: fechaFormateada,
-        idPropietario: currentPropietario.id ??0,
+        idPropietario: currentPropietario.id ?? 0,
         listItems: productosDevolucion.map((product) {
           return ProductRequest(
             idProducto: product.productId ?? 0,
@@ -384,8 +421,11 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
           return;
         }
 
-        emit(SendDevolucionFailure(response.result?.msg ??
-            'Error desconocido al enviar la devolución'));
+        emit(
+          SendDevolucionFailure(
+            response.result?.msg ?? 'Error desconocido al enviar la devolución',
+          ),
+        );
       }
     } catch (e, s) {
       debugPrint("❌ Error en _onSendDevolucionEvent: $e, $s");
@@ -394,7 +434,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onSearchProductEvent(
-      SearchProductEvent event, Emitter<DevolucionesState> emit) async {
+    SearchProductEvent event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     try {
       emit(SearchLoading());
       productosFilters = [];
@@ -417,7 +459,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
   //*metodo para limpiar los campos de busqueda
   void _onClearValueEvent(
-      ClearValueEvent event, Emitter<DevolucionesState> emit) async {
+    ClearValueEvent event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     try {
       searchControllerLocation.clear();
       searchControllerProducts.clear();
@@ -460,11 +504,15 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
   //*metodo para obtener todos los lotes de un producto
   void _onGetLotesProduct(
-      GetLotesProduct event, Emitter<DevolucionesState> emit) async {
+    GetLotesProduct event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     try {
       emit(GetLotesProductLoading());
       final response = await devolucionesRepository.fetchAllLotesProduct(
-          false, currentProduct.productId ?? 0);
+        false,
+        currentProduct.productId ?? 0,
+      );
 
       if (response != null && response is List) {
         listLotesProduct = response;
@@ -481,7 +529,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
   //metodo pea crar un lote a un producto
   void _onCreateLoteProduct(
-      CreateLoteProduct event, Emitter<DevolucionesState> emit) async {
+    CreateLoteProduct event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     try {
       emit(CreateLoteProductLoading());
 
@@ -517,9 +567,12 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
           emit(CreateLoteProductSuccess(lotesProductCurrent));
         } else {
-          emit(CreateLoteProductFailure(
+          emit(
+            CreateLoteProductFailure(
               response.result?.msg ?? 'Error al crear el lote',
-              response.result?.code ?? 0));
+              response.result?.code ?? 0,
+            ),
+          );
         }
       } else {
         emit(CreateLoteProductFailure('Error al crear el lote', 400));
@@ -531,7 +584,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onSearchLoteEvent(
-      SearchLotevent event, Emitter<DevolucionesState> emit) async {
+    SearchLotevent event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     try {
       emit(SearchLoading());
       listLotesProductFilters = [];
@@ -552,7 +607,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onChangeLoteIsOkEvent(
-      SelectecLoteEvent event, Emitter<DevolucionesState> emit) async {
+    SelectecLoteEvent event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     //agregamos el lote al producto
     lotesProductCurrent = event.lote;
     dateLoteController.clear();
@@ -565,7 +622,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
   //*metodo para seleccionar una ubicacion
   void _onSelectLocationEvent(
-      SelectLocationEvent event, Emitter<DevolucionesState> emit) {
+    SelectLocationEvent event,
+    Emitter<DevolucionesState> emit,
+  ) {
     try {
       currentLocation = event.location;
       searchControllerLocationDest.clear();
@@ -580,7 +639,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
   //*metodo para filtrar las ubicaciones
   void _onFilterUbicacionesEvent(
-      FilterUbicacionesEvent event, Emitter<DevolucionesState> emit) {
+    FilterUbicacionesEvent event,
+    Emitter<DevolucionesState> emit,
+  ) {
     try {
       debugPrint('Filtrando ubicaciones por almacen: ${event.almacen}');
       emit(FilterLocationsLoading());
@@ -603,7 +664,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onSearchLocationEvent(
-      SearchLocationEvent event, Emitter<DevolucionesState> emit) async {
+    SearchLocationEvent event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     try {
       emit(SearchLoading());
       ubicacionesFilters = [];
@@ -625,7 +688,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onLoadLocations(
-      LoadLocationsEvent event, Emitter<DevolucionesState> emit) async {
+    LoadLocationsEvent event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     try {
       emit(LoadingLocationsState());
       final response = await getIt<UbicacionesCacheService>().getAll();
@@ -645,7 +710,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
   //*metodo para buscar un tercero
   void _onSearchTerceroEvent(
-      SearchTerceroEvent event, Emitter<DevolucionesState> emit) {
+    SearchTerceroEvent event,
+    Emitter<DevolucionesState> emit,
+  ) {
     try {
       emit(SearchLoading());
       tercerosFilters = [];
@@ -669,7 +736,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
   //*metodo para seleccionar un tercero
   void _onSelectTerceroEvent(
-      SelectTerceroEvent event, Emitter<DevolucionesState> emit) {
+    SelectTerceroEvent event,
+    Emitter<DevolucionesState> emit,
+  ) {
     try {
       currentTercero = event.tercero;
       contactoIsOk = true;
@@ -682,7 +751,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onSelectPropietarioEvent(
-      SelectPropietarioEvent event, Emitter<DevolucionesState> emit) {
+    SelectPropietarioEvent event,
+    Emitter<DevolucionesState> emit,
+  ) {
     try {
       currentPropietario = event.propietario;
       propietarioIsOk = true;
@@ -695,7 +766,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onLoadAllowedWarehousesEvent(
-      LoadAllowedWarehousesEvent event, Emitter<DevolucionesState> emit) async {
+    LoadAllowedWarehousesEvent event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     try {
       emit(LoadAllowedWarehousesLoading());
       final response = await db.warehouseRepository.getAllowedWarehouse();
@@ -713,13 +786,17 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onSelectWarehouseEvent(
-      SelectWarehouseEvent event, Emitter<DevolucionesState> emit) {
+    SelectWarehouseEvent event,
+    Emitter<DevolucionesState> emit,
+  ) {
     try {
       currentWarehouse = event.warehouse;
       almacenIsOk = true;
       searchControllerAlmacen.clear();
       allowedWarehousesFilters = List.from(allowedWarehouses);
-      debugPrint('Almacén seleccionado: ${currentWarehouse.id} - ${currentWarehouse.name}');
+      debugPrint(
+        'Almacén seleccionado: ${currentWarehouse.id} - ${currentWarehouse.name}',
+      );
       emit(SelectWarehouseState(currentWarehouse));
     } catch (e, s) {
       debugPrint("❌ Error en _onSelectWarehouseEvent: $e, $s");
@@ -727,7 +804,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onResetPropietarioEvent(
-      ResetPropietarioEvent event, Emitter<DevolucionesState> emit) {
+    ResetPropietarioEvent event,
+    Emitter<DevolucionesState> emit,
+  ) {
     try {
       currentPropietario = Terceros();
       propietarioIsOk = false;
@@ -740,7 +819,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onLoadTercerosEvent(
-      LoadTercerosEvent event, Emitter<DevolucionesState> emit) async {
+    LoadTercerosEvent event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     final stopwatch = Stopwatch()..start();
     try {
       emit(LoadingLocationsState()); // O una estado de carga genérico
@@ -765,7 +846,8 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
         stopwatch.stop();
         debugPrint(
-            '✅ ⏱️ TERCEROS - TIEMPO TOTAL OPTIMIZADO: ${stopwatch.elapsedMilliseconds} ms (${(stopwatch.elapsedMilliseconds / 1000).toStringAsFixed(2)} s)');
+          '✅ ⏱️ TERCEROS - TIEMPO TOTAL OPTIMIZADO: ${stopwatch.elapsedMilliseconds} ms (${(stopwatch.elapsedMilliseconds / 1000).toStringAsFixed(2)} s)',
+        );
       } else {
         emit(LoadTercerosFailure('No se encontraron terceros'));
       }
@@ -776,9 +858,12 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onUpdateProductInfoEvent(
-      UpdateProductInfoEvent event, Emitter<DevolucionesState> emit) async {
+    UpdateProductInfoEvent event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     try {
-      final qSegunda = double.tryParse(segundaUnidadController.text.trim()) ?? 0.0;
+      final qSegunda =
+          double.tryParse(segundaUnidadController.text.trim()) ?? 0.0;
       //actualizamso el producto actual en la bd
       await db.devolucionRepository.updateProductoDevolucion(
         ProductDevolucion(
@@ -810,8 +895,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
         ),
       );
       //acutalizamos el producto actual en la lista de devoluciones
-      final index = productosDevolucion
-          .indexWhere((p) => p.productId == currentProduct.productId);
+      final index = productosDevolucion.indexWhere(
+        (p) => p.productId == currentProduct.productId,
+      );
       if (index != -1) {
         productosDevolucion[index] = ProductDevolucion(
           productId: currentProduct.productId,
@@ -850,7 +936,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onLoaadCurrentProductEvent(
-      LoadCurrentProductEvent event, Emitter<DevolucionesState> emit) {
+    LoadCurrentProductEvent event,
+    Emitter<DevolucionesState> emit,
+  ) {
     try {
       currentProduct = event.product;
       quantitySelected = event.product.quantity ?? 0;
@@ -872,7 +960,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
 
   //*evento para ver la cantidad
   void _onShowQuantityEvent(
-      ShowQuantityEvent event, Emitter<DevolucionesState> emit) {
+    ShowQuantityEvent event,
+    Emitter<DevolucionesState> emit,
+  ) {
     try {
       viewQuantity = !viewQuantity;
       emit(ShowQuantityState(viewQuantity));
@@ -882,7 +972,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onSetQuantityEvent(
-      SetQuantityEvent event, Emitter<DevolucionesState> emit) {
+    SetQuantityEvent event,
+    Emitter<DevolucionesState> emit,
+  ) {
     quantitySelected += 1;
     debugPrint('Cantidad seleccionada: $quantitySelected');
     emit(SetQuantityState());
@@ -891,15 +983,22 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   void _onSetLoteEvent(SetLoteEvent event, Emitter<DevolucionesState> emit) {}
 
   void _onAddProductEvent(
-      Addproduct event, Emitter<DevolucionesState> emit) async {
-//validamos que este producto no este ya en la lista de devoluciones
+    Addproduct event,
+    Emitter<DevolucionesState> emit,
+  ) async {
+    //validamos que este producto no este ya en la lista de devoluciones
 
-    if (productosDevolucion.any((p) =>
-        p.productId == event.product.productId &&
-        p.lotId == event.product.lotId)) {
+    if (productosDevolucion.any(
+      (p) =>
+          p.productId == event.product.productId &&
+          p.lotId == event.product.lotId,
+    )) {
       debugPrint('❌ El producto ya está en la lista de devoluciones');
-      emit(AddProductFailure(
-          'El producto ${event.product.name} ${event.product.tracking == 'lot' ? ' con lote ${event.product.lotName}' : ''} ya está en la lista de devoluciones. Para agregar el mismo producto con el mismo lote  debe realizarlo desde la opción de editar'));
+      emit(
+        AddProductFailure(
+          'El producto ${event.product.name} ${event.product.tracking == 'lot' ? ' con lote ${event.product.lotName}' : ''} ya está en la lista de devoluciones. Para agregar el mismo producto con el mismo lote  debe realizarlo desde la opción de editar',
+        ),
+      );
       return;
     } else {
       //insertamos el producto en la base de datos
@@ -912,13 +1011,19 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onRemoveProductEvent(
-      RemoveProduct event, Emitter<DevolucionesState> emit) async {
+    RemoveProduct event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     try {
       await db.devolucionRepository.deleteProductoDevolucion(
-          event.product.productId ?? 0, event.product.lotId ?? 0);
-      productosDevolucion.removeWhere((p) =>
-          p.productId == event.product.productId &&
-          p.lotId == event.product.lotId);
+        event.product.productId ?? 0,
+        event.product.lotId ?? 0,
+      );
+      productosDevolucion.removeWhere(
+        (p) =>
+            p.productId == event.product.productId &&
+            p.lotId == event.product.lotId,
+      );
       //eliminamos el producto de la base de datos
       debugPrint('Producto eliminado: ${event.product.toMap()}');
       emit(RemoveProductSuccess());
@@ -928,7 +1033,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onGetProductEvent(
-      GetProductEvent event, Emitter<DevolucionesState> emit) {
+    GetProductEvent event,
+    Emitter<DevolucionesState> emit,
+  ) {
     if (isDialogVisible) {
       debugPrint('Dialogo ya visible, no se puede buscar otro producto');
       return;
@@ -939,8 +1046,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     lotesProductCurrent = LotesProduct();
     if (event.isManual) {
       // Buscar el producto por código de barras
-      final product =
-          productos.firstWhereOrNull((p) => p.productId == event.idProduct);
+      final product = productos.firstWhereOrNull(
+        (p) => p.productId == event.idProduct,
+      );
 
       if (product == null) {
         emit(GetProductFailure('Producto no encontrado'));
@@ -955,10 +1063,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
           .where((p) => p.productId == product.productId)
           .toList();
       if (productosRelacionados.isNotEmpty) {
-        emit(GetProductExists(
-          productosRelacionados.first,
-          productosRelacionados,
-        ));
+        emit(
+          GetProductExists(productosRelacionados.first, productosRelacionados),
+        );
         return;
       }
 
@@ -971,7 +1078,8 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       currentProduct = product;
       viewQuantity = false;
       quantitySelected = 0;
-    } else {//1349
+    } else {
+      //1349
       // Buscar coincidencia directa por barcode o code
       print("escaneo....");
       final scannedCode = event.barcode.toLowerCase();
@@ -998,7 +1106,8 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
           return;
         }
         debugPrint(
-            '✅ Producto encontrado en barcodes: ${matchedBarcode.toMap()}');
+          '✅ Producto encontrado en barcodes: ${matchedBarcode.toMap()}',
+        );
         //se encontro un producto con los demas barcodes
         // Buscar producto por id relacionado al barcode encontrado
         final matchedById = productos.firstWhere(
@@ -1014,10 +1123,12 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
               .toList();
 
           if (productosRelacionados.isNotEmpty) {
-            emit(GetProductExists(
-              productosRelacionados.first,
-              productosRelacionados,
-            ));
+            emit(
+              GetProductExists(
+                productosRelacionados.first,
+                productosRelacionados,
+              ),
+            );
             return;
           }
           if (matchedById.tracking == 'lot') {
@@ -1044,10 +1155,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
           .toList();
 
       if (productosRelacionados.isNotEmpty) {
-        emit(GetProductExists(
-          productosRelacionados.first,
-          productosRelacionados,
-        ));
+        emit(
+          GetProductExists(productosRelacionados.first, productosRelacionados),
+        );
         return;
       }
       if (matchedProduct.tracking == 'lot') {
@@ -1063,7 +1173,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   }
 
   void _onGetProductsBD(
-      GetProductsList event, Emitter<DevolucionesState> emit) async {
+    GetProductsList event,
+    Emitter<DevolucionesState> emit,
+  ) async {
     try {
       emit(GetProductsLoading());
       final response = await getIt<ProductosCacheService>().getAllUnique();
@@ -1072,8 +1184,8 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
       debugPrint('productos: ${response.length}');
       if (response.isNotEmpty) {
         //mandamos a traer los producto que tenemos listo para la devolucion guardados en la base de datos
-        productosDevolucion =
-            await db.devolucionRepository.getAllProductosDevoluciones();
+        productosDevolucion = await db.devolucionRepository
+            .getAllProductosDevoluciones();
 
         debugPrint('productosDevolucion: ${productosDevolucion.length}');
 

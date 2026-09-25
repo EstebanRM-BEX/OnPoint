@@ -186,3 +186,74 @@ Nuevos por encima de 1.300 que conviene vigilar: `database.dart` (1.672),
 - [ ] Ningún archivo nuevo > 1.000 líneas; God Objects en descenso.
 
 *Generado el 23/06/2026. Reemplaza operativamente al plan del 23/05; conservar aquel como histórico.*
+
+
+
+
+
+clister
+Analicé el módulo picking_cluster. Funciona con caché local primero: descarga los batches del servidor a SQLite, se trabaja sobre esa copia local y cada
+  producto separado se envía a Odoo, con reenvío automático si no había conexión. El flujo está bien armado, pero hay un riesgo serio de pérdida de datos en
+  cómo se refresca la caché.
+
+  Flujo
+
+  1. Lista (PickingClusterListBloc): descarga los batches (GET api/cluster/picking_batchs), los guarda en SQLite y la pantalla lee de ahí. Al abrir un batch
+     sin iniciar registra la hora de inicio y le pide los productos a ClusterPickingBloc.
+  2. Escaneo (ClusterPickingBloc, 1.754 líneas): el operario confirma ubicación → producto → lote → cantidad → pedido. Al terminar un producto:
+     - lo marca como separado, calcula el tiempo, lo envía (POST cluster/send_picking) y pasa al siguiente pendiente;
+     - si el envío falla, deja la cantidad separada de ese producto en 0 y hay que volver a contarlo;
+     - sin conexión lo guarda como pendiente (is_send_odoo = 0, incluido el lote) y lo reenvía solo cuando vuelve la conexión.
+     - "Dejar pendiente" manda el producto al final de la lista.
+  3. Detalle: muestra los mismos productos que tiene el BLoC en memoria. Permite editar cantidad, reenviar pendientes, ver la foto e imprimir.
+  4. Validación (ValidateClusterBloc): se valida cada pedido escaneando el barcode del muelle o tocando "Validar" (POST cluster/validate_pedido/id). Antes
+     intenta reenviar los pendientes de ese pedido y bloquea la validación si alguno sigue sin enviarse. "Cerrar batch" exige todos los pedidos validados y
+     registra la hora de fin.
+
+  Problemas encontrados
+
+  🔴 Crítico: refrescar desde el servidor borra la copia local sin revisar si hay pendientes
+  - cachePickingBatches ejecuta delePicking('cluster') antes de insertar. Eso borra todos los productos del cluster en SQLite, incluidos los que se separaron
+    sin conexión y todavía no se enviaron.
+  - Tres acciones disparan ese refresco:
+    - el botón de refrescar de la lista;
+    - "Salir al listado" en la validación;
+    - RefreshPedidosValidateEvent, que se ejecuta antes de entrar a validar.
+  - Ese último solo revisa los pendientes del batch actual. Si otro batch tiene productos sin enviar, se pierden.
+  - Si el borrado se completa pero la inserción falla, el error solo se registra en el log y la lista queda vacía.
+
+  🟠 Picking legacy y cluster se borran tablas entre sí
+  - delePicking borra tblbatch_pedidos_validate y la tabla de submuelles sin filtrar por tipo.
+  - Por eso, refrescar el picking por batch legacy (delePicking('batch')) borra los pedidos a validar del cluster. Después de eso:
+    - la tarjeta muestra 0 pedidos (el conteo que agregamos antes);
+    - al entrar al batch se ve "No hay pedidos para validar" hasta que se vuelva a consultar el servidor.
+  - Y al revés: refrescar el cluster borra los submuelles del picking legacy.
+
+  🟡 Menores
+  - sendPickingProduct convierte cualquier error en 'Connection rejected', así que el operario no ve el motivo real.
+  - En SendProductOdooUseCase, el tiempo total se calcula como now - now (siempre 0). Es código muerto: ese valor no se envía.
+  - Al enviar con éxito, expire_date se guarda sin validar y puede quedar como "null" o "false". El camino sin conexión sí lo valida.
+    - RefreshPedidosValidateEvent, que se ejecuta antes de entrar a validar.
+  - Ese último solo revisa los pendientes del batch actual. Si otro batch tiene productos sin enviar, se pierden.
+  - Si el borrado se completa pero la inserción falla, el error solo se registra en el log y la lista queda vacía.
+
+  🟠 Picking legacy y cluster se borran tablas entre sí
+  - delePicking borra tblbatch_pedidos_validate y la tabla de submuelles sin filtrar por tipo.
+  - Por eso, refrescar el picking por batch legacy (delePicking('batch')) borra los pedidos a validar del cluster. Después de eso:
+    - la tarjeta muestra 0 pedidos (el conteo que agregamos antes);
+    - al entrar al batch se ve "No hay pedidos para validar" hasta que se vuelva a consultar el servidor.
+  - Y al revés: refrescar el cluster borra los submuelles del picking legacy.
+
+  🟡 Menores
+  - sendPickingProduct convierte cualquier error en 'Connection rejected', así que el operario no ve el motivo real.
+  - En SendProductOdooUseCase, el tiempo total se calcula como now - now (siempre 0). Es código muerto: ese valor no se envía.
+  - Al enviar con éxito, expire_date se guarda sin validar y puede quedar como "null" o "false". El camino sin conexión sí lo valida.
+  - _resendPendingProduct está duplicado en los dos BLoCs.
+  - ClusterPickingBloc tiene unos 30 campos públicos que cambian desde la interfaz (por ejemplo bloc.isSearch = false) en vez de pasar por estados. La
+    pantalla de escaneo tiene 1.517 líneas.
+
+  Recomendación
+
+  Corregir primero el crítico. Antes de delePicking('cluster'):
+  - reenviar los pendientes, o no borrar si queda alguno (is_send_odoo = 0);
+  - y dejar de borrar tablas compartidas sin filtrar por tipo.

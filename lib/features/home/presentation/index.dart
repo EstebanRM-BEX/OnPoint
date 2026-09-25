@@ -289,6 +289,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         },
         child: Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
+          // floatingActionButton: const UpdateRequiredTestFab(),
           // floatingActionButton: const CrashlyticsTestFab(),
           body: Stack(
             children: [
@@ -371,7 +372,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   onToggle: () => setState(() => _isExpanded = !_isExpanded),
                   terceros: SummaryMetric(
                     count: devBloc.tercerosCount,
+                    // Propiedad persistente del bloc (no solo el estado
+                    // transitorio) para evitar carreras.
                     loading:
+                        devBloc.isLoadingTerceros ||
                         devState is dev_bloc.DownloadAllTercerosLoading ||
                         devState is dev_bloc.LoadTercerosFromDBLoading,
                   ),
@@ -386,7 +390,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   ),
                   ubicaciones: SummaryMetric(
                     count: userBloc.locationsCount,
-                    loading: userState is UserLocationsLoading,
+                    // Propiedad persistente: DownloadLocationsEvent (la
+                    // descarga real post-login) emite DownloadUserDataLoading,
+                    // no UserLocationsLoading, así que ese chequeo solo nunca
+                    // detectaba la carga real.
+                    loading:
+                        userBloc.isLoadingLocations ||
+                        userState is UserLocationsLoading,
                   ),
                   novedades: SummaryMetric(
                     count: userBloc.noveltiesCount,

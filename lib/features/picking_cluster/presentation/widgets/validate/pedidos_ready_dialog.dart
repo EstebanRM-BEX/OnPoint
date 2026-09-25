@@ -243,8 +243,8 @@ class _PedidosReadyDialogState extends State<PedidosReadyDialog> {
             children: [
               Text(
                 count == 1
-                    ? 'Pedido listo para validar'
-                    : 'Pedidos listos para validar',
+                    ? 'Pedido completado'
+                    : 'Pedidos completados',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
