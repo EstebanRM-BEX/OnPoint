@@ -128,6 +128,9 @@ class _TransferenciaMultiusuarioScanProductScreenState
   double _quantitySelected = 0;
   bool _viewQuantity = false;
   bool? _hideExpectedQty;
+  // access_stock_info_transfer: ícono de ubicaciones (stock_info). false
+  // mientras carga — el ícono aparece solo cuando se confirma el permiso.
+  bool _accessStockInfo = false;
   bool _isSubmitting = false;
   // Se marca al validar el origen — time_line del envío final es el tiempo
   // transcurrido desde acá hasta que se confirma la transferencia.
@@ -261,6 +264,8 @@ class _TransferenciaMultiusuarioScanProductScreenState
       _hideExpectedQty = config?.result?.result?.hideExpectedQty == true;
       _manualSourceLocationTransfer =
           config?.result?.result?.manualSourceLocationTransfer == true;
+      _accessStockInfo =
+          config?.result?.result?.accessStockInfoTransfer == true;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => _handleDependencies());
   }
@@ -898,6 +903,8 @@ class _TransferenciaMultiusuarioScanProductScreenState
                         size: size,
                         onValidateProduct: _validateProduct,
                         onViewImgProduct: _handleViewImage,
+                        stockProductId:
+                            _accessStockInfo ? claim.productId : null,
                         focusNode: _focusProduct,
                         controller: _controllerProduct,
                         productDropdown: TransferenciaProductDropdownWidget(

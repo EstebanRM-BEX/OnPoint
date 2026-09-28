@@ -133,6 +133,9 @@ class _RecepcionMultiusuarioScanProductScreenState
   bool _viewQuantity = false;
   // null mientras carga (mismo motivo que _scanDestinationLocationReception).
   bool? _hideExpectedQty;
+  // access_stock_info_reception: ícono de ubicaciones (stock_info). false
+  // mientras carga — el ícono aparece solo cuando se confirma el permiso.
+  bool _accessStockInfo = false;
   bool _isSubmitting = false;
   // Se marca al validar el producto — time_line del envío final es el
   // tiempo transcurrido desde acá hasta que se confirma la recepción
@@ -227,6 +230,8 @@ class _RecepcionMultiusuarioScanProductScreenState
       _scanDestinationLocationReception =
           config?.result?.result?.scanDestinationLocationReception == true;
       _hideExpectedQty = config?.result?.result?.hideExpectedQty == true;
+      _accessStockInfo =
+          config?.result?.result?.accessStockInfoReception == true;
     });
     // addPostFrameCallback (no microtask): el campo que sigue en la cadena
     // (producto → lote → destino → cantidad) recién queda "enabled" tras el
@@ -859,6 +864,8 @@ class _RecepcionMultiusuarioScanProductScreenState
                         size: size,
                         onValidateProduct: _validateProduct,
                         onViewImgProduct: _handleViewImage,
+                        stockProductId:
+                            _accessStockInfo ? claim.productId : null,
                         focusNode: _focusProduct,
                         controller: _controllerProduct,
                         productDropdown: RecepcionProductDropdownWidget(

@@ -695,6 +695,12 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
                               recepcionBloc.add(ViewProductImageEvent(int.parse(
                                   recepcionBloc.currentProduct.productId)));
                             },
+                            stockProductId: recepcionBloc.configurations
+                                        .result?.result?.accessStockInfoReception ==
+                                    true
+                                ? int.tryParse(
+                                    '${recepcionBloc.currentProduct.productId}')
+                                : null,
                           ),
 
                           //todo: lotes

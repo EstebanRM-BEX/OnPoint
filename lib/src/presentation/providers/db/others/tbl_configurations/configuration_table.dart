@@ -83,6 +83,26 @@ class ConfigurationsTable {
   static const String columnHideValidateItemExpedition =
       'hide_validate_item_expedition';
 
+  // access_stock_info_* (v66)
+  static const String columnAccessStockInfoPicking = 'access_stock_info_picking';
+  static const String columnAccessStockInfoPacking = 'access_stock_info_packing';
+  static const String columnAccessStockInfoReception = 'access_stock_info_reception';
+  static const String columnAccessStockInfoTransfer = 'access_stock_info_transfer';
+  static const String columnAccessStockInfoInventory = 'access_stock_info_inventory';
+  static const String columnAccessStockInfoProduction = 'access_stock_info_production';
+  static const String columnAccessStockInfoExpedition = 'access_stock_info_expedition';
+
+  /// Columnas agregadas en v66; se usan en la migración.
+  static const List<String> stockInfoColumns = [
+    columnAccessStockInfoPicking,
+    columnAccessStockInfoPacking,
+    columnAccessStockInfoReception,
+    columnAccessStockInfoTransfer,
+    columnAccessStockInfoInventory,
+    columnAccessStockInfoProduction,
+    columnAccessStockInfoExpedition,
+  ];
+
   static String createTable() {
     return '''
       CREATE TABLE $tableName (
@@ -135,6 +155,13 @@ class ConfigurationsTable {
         $columnShowButtonValidateClusterPicking INTEGER,
         $columnAllowValidateMultiple INTEGER,
         $columnHideValidateItemExpedition INTEGER,
+        $columnAccessStockInfoPicking INTEGER,
+        $columnAccessStockInfoPacking INTEGER,
+        $columnAccessStockInfoReception INTEGER,
+        $columnAccessStockInfoTransfer INTEGER,
+        $columnAccessStockInfoInventory INTEGER,
+        $columnAccessStockInfoProduction INTEGER,
+        $columnAccessStockInfoExpedition INTEGER,
         $columnIsSynced INTEGER DEFAULT 0
       )
     ''';

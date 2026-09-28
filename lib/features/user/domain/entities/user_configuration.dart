@@ -75,6 +75,15 @@ class UserProfile {
   // hide_validate_item_expedition: oculta la acción de validar un paquete o
   // producto suelto individual dentro de la expedición.
   final bool? hideValidateItemExpedition;
+  // access_stock_info_*: muestra el ícono de ubicaciones (POST
+  // /api/product/stock_info) en el scan de producto de cada módulo.
+  final bool? accessStockInfoPicking;
+  final bool? accessStockInfoPacking;
+  final bool? accessStockInfoReception;
+  final bool? accessStockInfoTransfer;
+  final bool? accessStockInfoInventory;
+  final bool? accessStockInfoProduction;
+  final bool? accessStockInfoExpedition;
 
   const UserProfile({
     this.id,
@@ -126,6 +135,13 @@ class UserProfile {
     this.showButtonValidateClusterPicking,
     this.allowValidateMultiple,
     this.hideValidateItemExpedition,
+    this.accessStockInfoPicking,
+    this.accessStockInfoPacking,
+    this.accessStockInfoReception,
+    this.accessStockInfoTransfer,
+    this.accessStockInfoInventory,
+    this.accessStockInfoProduction,
+    this.accessStockInfoExpedition,
   });
 
   @override
@@ -176,6 +192,13 @@ class UserProfile {
         showButtonValidateClusterPicking,
         allowValidateMultiple,
         hideValidateItemExpedition,
+        accessStockInfoPicking,
+        accessStockInfoPacking,
+        accessStockInfoReception,
+        accessStockInfoTransfer,
+        accessStockInfoInventory,
+        accessStockInfoProduction,
+        accessStockInfoExpedition,
       ];
 }
 

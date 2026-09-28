@@ -780,6 +780,12 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                                 bloc.add(ViewProductImageEvent(int.parse(
                                     bloc.currentProduct.productId ?? "")));
                               },
+                              stockProductId: bloc.configurations.result
+                                          ?.result?.accessStockInfoTransfer ==
+                                      true
+                                  ? int.tryParse(
+                                      '${bloc.currentProduct.productId}')
+                                  : null,
                             ),
 
                             //todo: ubicacion de destino

@@ -284,6 +284,14 @@ import 'features/printing/domain/repositories/printing_repository.dart'
 import 'features/printing/domain/usecases/get_printers.dart' as _i277;
 import 'features/printing/domain/usecases/print_report.dart' as _i152;
 import 'features/printing/presentation/bloc/printing_bloc.dart' as _i335;
+import 'features/product_stock/data/datasources/product_stock_remote_data_source.dart'
+    as _i610;
+import 'features/product_stock/data/repositories/product_stock_repository_impl.dart'
+    as _i374;
+import 'features/product_stock/domain/repositories/product_stock_repository.dart'
+    as _i875;
+import 'features/product_stock/domain/usecases/get_product_stock_info.dart'
+    as _i360;
 import 'features/recepcion_multiusuario/data/datasources/recepcion_multiusuario_local_data_source.dart'
     as _i330;
 import 'features/recepcion_multiusuario/data/datasources/recepcion_multiusuario_remote_data_source.dart'
@@ -431,6 +439,10 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i895.TransferenciasRepository>(
       () => _i895.TransferenciasRepository(),
     );
+    gh.lazySingleton<_i610.ProductStockRemoteDataSource>(
+      () =>
+          _i610.ProductStockRemoteDataSourceImpl(gh<_i319.ApiRequestService>()),
+    );
     gh.lazySingleton<_i380.PickScanLocalDataSource>(
       () => _i380.PickScanLocalDataSourceImpl(),
     );
@@ -545,6 +557,11 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i422.SendMessage>(
       () => _i422.SendMessage(gh<_i453.ChatRepository>()),
+    );
+    gh.lazySingleton<_i875.ProductStockRepository>(
+      () => _i374.ProductStockRepositoryImpl(
+        gh<_i610.ProductStockRemoteDataSource>(),
+      ),
     );
     gh.lazySingleton<_i932.IPickingClusterRepository>(
       () => _i110.PickingClusterRepositoryImpl(
@@ -667,6 +684,9 @@ extension GetItInjectableX on _i174.GetIt {
         localDataSource: gh<_i161.PickingComponentsLocalDataSource>(),
         networkInfo: gh<_i75.NetworkInfo>(),
       ),
+    );
+    gh.lazySingleton<_i360.GetProductStockInfo>(
+      () => _i360.GetProductStockInfo(gh<_i875.ProductStockRepository>()),
     );
     gh.lazySingleton<_i241.TransferenciaMultiusuarioRepository>(
       () => _i312.TransferenciaMultiusuarioRepositoryImpl(

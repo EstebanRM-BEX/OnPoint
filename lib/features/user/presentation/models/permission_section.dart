@@ -46,6 +46,13 @@ class PermissionSection {
       accent: const Color(0xFF0769A6),
       items: [
         PermissionItem(
+          label: 'Consultar ubicaciones del producto',
+          value: p.accessStockInfoProduction ?? false,
+          infoTitle: 'Consultar ubicaciones del producto',
+          infoBody:
+              'Muestra el ícono de ubicación en producción para consultar dónde está el producto y su disponibilidad',
+        ),
+        PermissionItem(
           label: 'Acceso al modulo de produccion',
           value: p.accessProductionModule ?? false,
           infoTitle: 'Acceso al modulo de produccion',
@@ -79,6 +86,13 @@ class PermissionSection {
       accent: const Color(0xFFF59E0B),
       roles: const {'picking'},
       items: [
+        PermissionItem(
+          label: 'Consultar ubicaciones del producto',
+          value: p.accessStockInfoPicking ?? false,
+          infoTitle: 'Consultar ubicaciones del producto',
+          infoBody:
+              'Muestra el ícono de ubicación en picking para consultar dónde está el producto y su disponibilidad',
+        ),
         PermissionItem(
           label: 'Boton validar Picking cluster',
           value: p.showButtonValidateClusterPicking ?? false,
@@ -143,6 +157,13 @@ class PermissionSection {
       roles: const {'packing'},
       items: [
         PermissionItem(
+          label: 'Consultar ubicaciones del producto',
+          value: p.accessStockInfoPacking ?? false,
+          infoTitle: 'Consultar ubicaciones del producto',
+          infoBody:
+              'Muestra el ícono de ubicación en packing para consultar dónde está el producto y su disponibilidad',
+        ),
+        PermissionItem(
           label: 'Ocultar accion de validar packing por pedido',
           value: p.hideValidatePacking ?? false,
           infoTitle: 'Ocultar accion de validar packing',
@@ -192,6 +213,13 @@ class PermissionSection {
       roles: const {'reception'},
       items: [
         PermissionItem(
+          label: 'Consultar ubicaciones del producto',
+          value: p.accessStockInfoReception ?? false,
+          infoTitle: 'Consultar ubicaciones del producto',
+          infoBody:
+              'Muestra el ícono de ubicación en recepción para consultar dónde está el producto y su disponibilidad',
+        ),
+        PermissionItem(
           label: 'Mover mas de lo planteado',
           value: p.allowMoveExcess ?? false,
           infoTitle: 'Mover mas de lo planteado',
@@ -240,6 +268,13 @@ class PermissionSection {
       roles: const {'transfer'},
       items: [
         PermissionItem(
+          label: 'Consultar ubicaciones del producto',
+          value: p.accessStockInfoTransfer ?? false,
+          infoTitle: 'Consultar ubicaciones del producto',
+          infoBody:
+              'Muestra el ícono de ubicación en transferencias para consultar dónde está el producto y su disponibilidad',
+        ),
+        PermissionItem(
           label: 'Ubicación de origen manual',
           value: p.manualSourceLocationTransfer ?? false,
           infoTitle: 'Ubicación de origen manual',
@@ -281,6 +316,13 @@ class PermissionSection {
       accent: const Color(0xFF14B8A6),
       roles: const {'inventory'},
       items: [
+        PermissionItem(
+          label: 'Consultar ubicaciones del producto',
+          value: p.accessStockInfoInventory ?? false,
+          infoTitle: 'Consultar ubicaciones del producto',
+          infoBody:
+              'Muestra el ícono de ubicación en inventario para consultar dónde está el producto y su disponibilidad',
+        ),
         PermissionItem(
           label: 'Ver cantidad a contar',
           value: p.countQuantityInventory ?? false,
@@ -353,6 +395,13 @@ class PermissionSection {
       tag: 'Despachos',
       accent: const Color(0xFF06B6D4),
       items: [
+        PermissionItem(
+          label: 'Consultar ubicaciones del producto',
+          value: p.accessStockInfoExpedition ?? false,
+          infoTitle: 'Consultar ubicaciones del producto',
+          infoBody:
+              'Muestra el ícono de ubicación en expedición para consultar dónde está el producto y su disponibilidad',
+        ),
         PermissionItem(
           label: 'Mostrar accion de confirmar pedido de expedicion',
           value: p.hideValidateExpedition ?? false,

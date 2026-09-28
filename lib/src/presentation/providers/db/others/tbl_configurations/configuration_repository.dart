@@ -216,6 +216,20 @@ class ConfigurationsRepository {
           _boolToInt(res?.allowValidateMultiple),
       ConfigurationsTable.columnHideValidateItemExpedition:
           _boolToInt(res?.hideValidateItemExpedition),
+      ConfigurationsTable.columnAccessStockInfoPicking:
+          _boolToInt(res?.accessStockInfoPicking),
+      ConfigurationsTable.columnAccessStockInfoPacking:
+          _boolToInt(res?.accessStockInfoPacking),
+      ConfigurationsTable.columnAccessStockInfoReception:
+          _boolToInt(res?.accessStockInfoReception),
+      ConfigurationsTable.columnAccessStockInfoTransfer:
+          _boolToInt(res?.accessStockInfoTransfer),
+      ConfigurationsTable.columnAccessStockInfoInventory:
+          _boolToInt(res?.accessStockInfoInventory),
+      ConfigurationsTable.columnAccessStockInfoProduction:
+          _boolToInt(res?.accessStockInfoProduction),
+      ConfigurationsTable.columnAccessStockInfoExpedition:
+          _boolToInt(res?.accessStockInfoExpedition),
       // ✅ Mark as synced
       ConfigurationsTable.columnIsSynced: 1,
     };
@@ -318,6 +332,20 @@ class ConfigurationsRepository {
               map[ConfigurationsTable.columnAllowValidateMultiple]),
           hideValidateItemExpedition: _intToBool(
               map[ConfigurationsTable.columnHideValidateItemExpedition]),
+          accessStockInfoPicking: _intToBool(
+              map[ConfigurationsTable.columnAccessStockInfoPicking]),
+          accessStockInfoPacking: _intToBool(
+              map[ConfigurationsTable.columnAccessStockInfoPacking]),
+          accessStockInfoReception: _intToBool(
+              map[ConfigurationsTable.columnAccessStockInfoReception]),
+          accessStockInfoTransfer: _intToBool(
+              map[ConfigurationsTable.columnAccessStockInfoTransfer]),
+          accessStockInfoInventory: _intToBool(
+              map[ConfigurationsTable.columnAccessStockInfoInventory]),
+          accessStockInfoProduction: _intToBool(
+              map[ConfigurationsTable.columnAccessStockInfoProduction]),
+          accessStockInfoExpedition: _intToBool(
+              map[ConfigurationsTable.columnAccessStockInfoExpedition]),
         ),
       ),
     );

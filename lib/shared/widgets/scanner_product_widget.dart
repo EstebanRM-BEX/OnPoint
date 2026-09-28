@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/features/product_stock/presentation/widgets/show_product_stock_info.dart';
 
 class ProductScannerWidget extends StatefulWidget {
   final bool isProductOk;
@@ -28,6 +29,10 @@ class ProductScannerWidget extends StatefulWidget {
   final String category;
   final bool isViewLote;
 
+  /// Id del producto en Odoo. Si se pasa (> 0) se muestra el ícono de
+  /// ubicaciones que consulta /product/stock_info.
+  final int? stockProductId;
+
   const ProductScannerWidget({
     super.key,
     required this.isProductOk,
@@ -52,6 +57,7 @@ class ProductScannerWidget extends StatefulWidget {
     required this.onBarcodesDialogTap,
     this.category = "",
     this.isViewLote = true,
+    this.stockProductId,
   });
 
   @override
@@ -110,59 +116,60 @@ class _ProductScannerWidgetState extends State<ProductScannerWidget> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 widget.productDropdown,
-                TextFormField(
-                  showCursor: false,
-                  enabled: widget.locationIsOk &&
-                      !widget.productIsOk &&
-                      !widget.quantityIsOk &&
-                      !widget.locationDestIsOk,
-                  controller: widget.controller,
-                  focusNode: widget.focusNode,
-                  keyboardType: TextInputType.none,
-                  enableInteractiveSelection: false,
-                  textInputAction: TextInputAction.done,
-                  style: const TextStyle(color: Colors.transparent),
-                  onChanged: (value) {
-                    // Usa el debounce para evitar múltiples disparos por carácter
-                    _onZebraChanged(value, context);
-                  },
-                  onFieldSubmitted: (value) {
-                    // Disparo inmediato en Enter: cancela el debounce pendiente
-                    _debounce?.cancel();
-                    if (value.trim().isNotEmpty) {
-                      widget.onValidateProduct(value);
-                    }
-                    // Limpiar el controller después del submit
-                    widget.controller.clear();
-                  },
-                  decoration: InputDecoration(
-                    suffixIcon: GestureDetector(
-                      onTap: () {
-                        if (widget.onViewImgProduct != null) {
-                          widget.onViewImgProduct!();
-                        }
-                      },
-                      child: Card(
-                        elevation: 2,
-                        color: white,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Icon(
-                            Icons.image,
-                            color: primaryColorApp,
-                            size: 20,
-                          ),
+                // Los íconos van fuera del TextFormField: si fueran su
+                // suffixIcon, al validar el producto (campo disabled) dejarían
+                // de recibir toques.
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        showCursor: false,
+                        enabled: widget.locationIsOk &&
+                            !widget.productIsOk &&
+                            !widget.quantityIsOk &&
+                            !widget.locationDestIsOk,
+                        controller: widget.controller,
+                        focusNode: widget.focusNode,
+                        keyboardType: TextInputType.none,
+                        enableInteractiveSelection: false,
+                        textInputAction: TextInputAction.done,
+                        style: const TextStyle(color: Colors.transparent),
+                        onChanged: (value) {
+                          // Usa el debounce para evitar múltiples disparos por carácter
+                          _onZebraChanged(value, context);
+                        },
+                        onFieldSubmitted: (value) {
+                          // Disparo inmediato en Enter: cancela el debounce pendiente
+                          _debounce?.cancel();
+                          if (value.trim().isNotEmpty) {
+                            widget.onValidateProduct(value);
+                          }
+                          // Limpiar el controller después del submit
+                          widget.controller.clear();
+                        },
+                        decoration: InputDecoration(
+                          hintText: widget.currentProductId,
+                          hintMaxLines: 3,
+                          hintStyle:
+                              const TextStyle(fontSize: 12, color: black),
+                          disabledBorder: InputBorder.none,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
                         ),
                       ),
                     ),
-                    hintText: widget.currentProductId,
-                    hintMaxLines: 3,
-                    hintStyle: const TextStyle(fontSize: 12, color: black),
-                    disabledBorder: InputBorder.none,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                  ),
+                    if ((widget.stockProductId ?? 0) > 0)
+                      _ActionIconCard(
+                        icon: Icons.location_on,
+                        onTap: () => showProductStockInfo(
+                            context, widget.stockProductId!),
+                      ),
+                    _ActionIconCard(
+                      icon: Icons.image,
+                      onTap: () => widget.onViewImgProduct?.call(),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 10),
                 Row(
@@ -253,6 +260,28 @@ class _ProductScannerWidgetState extends State<ProductScannerWidget> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ActionIconCard extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _ActionIconCard({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        elevation: 2,
+        color: white,
+        child: Padding(
+          padding: const EdgeInsets.all(5.0),
+          child: Icon(icon, color: primaryColorApp, size: 20),
+        ),
+      ),
     );
   }
 }

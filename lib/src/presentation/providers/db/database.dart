@@ -108,7 +108,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 65,
+      version: 66,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -1237,6 +1237,19 @@ class DataBaseSqlite {
         await db.execute(TransferenciaSessionsTable.createTable());
       } catch (e) {
         debugPrint("Error actualizando a v65 (tbl_transferencia_sessions): $e");
+      }
+    }
+
+    if (oldVersion < 66) {
+      // /api/configurations: permisos access_stock_info_* por módulo.
+      for (final col in ConfigurationsTable.stockInfoColumns) {
+        try {
+          await db.execute(
+            'ALTER TABLE ${ConfigurationsTable.tableName} ADD COLUMN $col INTEGER',
+          );
+        } catch (e) {
+          debugPrint("Error actualizando a v66 ($col): $e");
+        }
       }
     }
   }
