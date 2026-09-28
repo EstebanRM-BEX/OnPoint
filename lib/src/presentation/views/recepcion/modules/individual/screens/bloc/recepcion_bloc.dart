@@ -492,6 +492,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       }
     } catch (e, s) {
       debugPrint('Error en RecepcionBloc: $e, $s');
+      emit(FetchDevolucionesFailure('Error al cargar las devoluciones: $e'));
     }
   }
 
@@ -1957,6 +1958,7 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       }
     } catch (e, s) {
       debugPrint('Error en RecepcionBloc: $e, $s');
+      emit(FetchOrdenesCompraFailure('Error al cargar las recepciones: $e'));
     }
   }
 

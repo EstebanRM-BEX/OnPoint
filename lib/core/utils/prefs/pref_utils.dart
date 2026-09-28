@@ -80,6 +80,14 @@ class PrefUtils {
     return preferences.getString(PrefKeys.imeiPDA) ?? "";
   }
 
+  /// device_id que el backend usa para identificar la PDA: MAC, o IMEI si la
+  /// MAC está vacía o es la genérica de Android (02:00:00:00:00:00).
+  static Future<String> getDeviceIdPDA() async {
+    final mac = await getMacPDA();
+    if (mac.isNotEmpty && mac != "02:00:00:00:00:00") return mac;
+    return getImeiPDA();
+  }
+
   static Future<void> setModeloPDA(String modelo) async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     await preferences.setString(PrefKeys.modeloPDA, modelo);

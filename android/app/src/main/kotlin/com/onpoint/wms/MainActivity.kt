@@ -8,6 +8,8 @@ import android.telephony.TelephonyManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
+import java.net.NetworkInterface
 
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "device_info/custom"
@@ -21,8 +23,12 @@ class MainActivity: FlutterActivity() {
                 // Obtener MAC
                 "getMacAddress" -> {
                     try {
-                        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-                        val mac = wifiManager.connectionInfo.macAddress
+                        // WifiManager devuelve siempre 02:00:00:00:00:00 desde
+                        // Android 6; se intenta primero la MAC real de wlan0.
+                        val mac = getWlanMac() ?: run {
+                            val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                            wifiManager.connectionInfo.macAddress
+                        }
                         result.success(mac)
                     } catch (e: Exception) {
                         result.error("ERROR", e.message, null)
@@ -64,5 +70,25 @@ class MainActivity: FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+    }
+
+    /** MAC de wlan0 vía NetworkInterface o sysfs; null si el SO la oculta. */
+    private fun getWlanMac(): String? {
+        try {
+            val bytes = NetworkInterface.getNetworkInterfaces().toList()
+                .firstOrNull { it.name.equals("wlan0", ignoreCase = true) }
+                ?.hardwareAddress
+            if (bytes != null && bytes.isNotEmpty()) {
+                val mac = bytes.joinToString(":") { "%02x".format(it) }
+                if (mac != "02:00:00:00:00:00") return mac
+            }
+        } catch (_: Exception) {
+        }
+        try {
+            val mac = File("/sys/class/net/wlan0/address").readText().trim().lowercase()
+            if (mac.isNotEmpty() && mac != "02:00:00:00:00:00") return mac
+        } catch (_: Exception) {
+        }
+        return null
     }
 }

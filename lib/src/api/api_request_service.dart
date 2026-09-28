@@ -758,8 +758,7 @@ class ApiRequestService {
     }
 
     final packageInfo = await PackageInfo.fromPlatform();
-    final mac = await PrefUtils.getMacPDA();
-    final imei = await PrefUtils.getImeiPDA();
+    final deviceId = await PrefUtils.getDeviceIdPDA();
 
     url = url + (isunecodePath ? '$unencodePath/$endpoint' : '/$endpoint');
 
@@ -772,10 +771,11 @@ class ApiRequestService {
       final request = http.Request('GET', Uri.parse(url));
       request.body = json.encode({
         "params": {
-          "device_id": mac == "02:00:00:00:00:00" ? imei : mac,
+          "device_id": deviceId,
           "version_app": packageInfo.version,
         },
       });
+      debugPrint('📤 GET VALIDATION $endpoint body: ${request.body}');
       request.headers.addAll(headers);
 
       final response = await http.Response.fromStream(

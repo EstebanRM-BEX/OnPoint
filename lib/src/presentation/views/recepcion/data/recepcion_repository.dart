@@ -19,230 +19,187 @@ import 'package:wms_app/src/presentation/views/recepcion/models/response_send_re
 import 'package:wms_app/src/presentation/views/recepcion/models/response_temp_ia_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_validate_model.dart';
 import 'package:wms_app/core/network/network_guard.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 
 class RecepcionRepository {
 //metodo para obtener todas las ordenes de compra
 
-  Future<Recepcionresponse> fetchAllReceptions(bool isLoadinDialog) async {
-    final stopwatch = Stopwatch()..start(); // ⏱ Iniciar conteo
+  Future<Recepcionresponse> fetchAllReceptions(bool isLoadinDialog) =>
+      _fetchEntradas('recepciones', isLoadinDialog);
+
+  Future<Recepcionresponse> fetchAllDevolutions(bool isLoadinDialog) =>
+      _fetchEntradas('recepciones/devs', isLoadinDialog);
+
+  /// Respuesta de error con el mensaje real para mostrarlo en el diálogo.
+  Recepcionresponse _errorResponse(String msg, {int code = 0}) =>
+      Recepcionresponse(
+        result: RecepcionresponseResult(
+          code: code,
+          msg: msg,
+          updateVersion: false,
+          result: [],
+        ),
+      );
+
+  /// GET de recepciones/devoluciones con parseo tolerante y logs del payload.
+  /// Todo camino que no sea éxito devuelve un `msg` descriptivo (nunca un
+  /// fallback genérico silencioso).
+  Future<Recepcionresponse> _fetchEntradas(
+    String endpoint,
+    bool isLoadinDialog,
+  ) async {
+    final tag = '[$endpoint]';
+    final stopwatch = Stopwatch()..start();
 
     try {
       if (!await hasNetwork()) {
-        debugPrint("❌ Sin conexión a Internet.");
-        return Recepcionresponse(
-            result: RecepcionresponseResult(
-                code: 0,
-                msg: "Sin conexión a Internet",
-                updateVersion: false,
-                result: [])); // Retornar un objeto con código 0 y mensaje de error
+        debugPrint("❌ $tag Sin conexión a Internet.");
+        return _errorResponse("Sin conexión a Internet");
       }
 
       final response = await ApiRequestService().getValidation(
-        endpoint: 'recepciones',
+        endpoint: endpoint,
         isunecodePath: true,
         isLoadinDialog: isLoadinDialog,
       );
 
-      stopwatch.stop(); // ⏹ Finalizar conteo
+      stopwatch.stop();
+      final body = response.body;
+      debugPrint(
+          "⏱ $tag HTTP ${response.statusCode} en ${stopwatch.elapsedMilliseconds} ms, ${body.length} chars");
+      debugPrint(
+          "📦 $tag body: ${body.length > 1500 ? '${body.substring(0, 1500)}…' : body}");
 
       if (response.statusCode >= 400) {
-        debugPrint("❌ Error HTTP: ${response.statusCode}");
-        return Recepcionresponse();
+        return _errorResponse(
+          "Error HTTP ${response.statusCode} al consultar $endpoint",
+          code: response.statusCode,
+        );
       }
 
-      final jsonResponse = jsonDecode(response.body);
+      final decoded = jsonDecode(body);
+      if (decoded is! Map) {
+        return _errorResponse(
+            "Respuesta inesperada del servidor (${decoded.runtimeType})");
+      }
+      final jsonResponse = decoded;
+      debugPrint("🔑 $tag claves raíz: ${jsonResponse.keys.toList()}");
 
-      if (jsonResponse.containsKey('result')) {
-        final result = jsonResponse['result'];
-
-        if (jsonResponse['result']['code'] == 400) {
-          return Recepcionresponse(
-            jsonrpc: jsonResponse['jsonrpc'],
-            id: jsonResponse['id'],
-            result: RecepcionresponseResult(
-              code: jsonResponse['result']['code'],
-              msg: jsonResponse['result']['msg'],
-              updateVersion: jsonResponse['result']['update_version'] ?? false,
-              result: [],
-            ),
-          );
-        } else if (result['code'] == 200 && result['result'] is List) {
-          final List<ResultEntrada> ordenes = (result['result'] as List)
-              .map((data) => ResultEntrada.fromMap(data))
-              .toList();
-
-          return Recepcionresponse(
-            jsonrpc: jsonResponse['jsonrpc'],
-            id: jsonResponse['id'],
-            result: RecepcionresponseResult(
-              code: result['code'],
-              result: ordenes,
-              updateVersion: result['update_version'] ?? false,
-            ),
-          );
-        } else if (jsonResponse['result']['code'] == 403) {
-          return Recepcionresponse(
-            jsonrpc: jsonResponse['jsonrpc'],
-            id: jsonResponse['id'],
-            result: RecepcionresponseResult(
-              code: result['code'],
-              msg: result['msg'],
-              updateVersion: result['update_version'] ?? false,
-              result: [],
-            ),
-          );
-        }
-      } else if (jsonResponse.containsKey('error')) {
-        final error = jsonResponse['error'];
+      if (jsonResponse['error'] is Map) {
+        final error = jsonResponse['error'] as Map;
         if (error['code'] == 100) {
-          Get.defaultDialog(
-            title: 'Alerta',
-            titleStyle: const TextStyle(color: Colors.red, fontSize: 18),
-            middleText: 'Sesión expirada, por favor inicie sesión nuevamente',
-            middleTextStyle: const TextStyle(color: Colors.black, fontSize: 14),
-            backgroundColor: Colors.white,
-            radius: 10,
-            actions: [
-              ElevatedButton(
-                onPressed: () => Get.back(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColorApp,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: const Text('Aceptar',
-                    style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          );
+          _showSessionExpiredDialog();
+        }
+        final data = error['data'];
+        final detail = data is Map ? data['message'] : null;
+        return _errorResponse(
+          "${error['message'] ?? 'Error del servidor'}${detail != null ? ': $detail' : ''}",
+        );
+      }
+
+      // Con o sin wrapper JSON-RPC.
+      final result = jsonResponse['result'] is Map
+          ? jsonResponse['result'] as Map
+          : jsonResponse;
+      final code = int.tryParse('${result['code']}');
+      final msg = result['msg']?.toString();
+      final updateVersion = result['update_version'] == true;
+      final data = result['result'];
+
+      debugPrint(
+          "🔎 $tag code=$code (${result['code'].runtimeType}), result=${data.runtimeType}${data is List ? '[${data.length}]' : ''}, msg=$msg");
+
+      if (code != 200) {
+        final deviceId = await PrefUtils.getDeviceIdPDA();
+        final baseMsg =
+            msg ?? "Respuesta sin código válido (code=${result['code']})";
+        return Recepcionresponse(
+          jsonrpc: jsonResponse['jsonrpc'],
+          id: jsonResponse['id'],
+          result: RecepcionresponseResult(
+            code: code ?? 0,
+            msg: "$baseMsg\n(device_id enviado: "
+                "${deviceId.isEmpty ? 'VACÍO' : deviceId})",
+            updateVersion: updateVersion,
+            result: [],
+          ),
+        );
+      }
+
+      // Odoo manda false/null cuando no hay datos.
+      if (data == null || data == false) {
+        return Recepcionresponse(
+          jsonrpc: jsonResponse['jsonrpc'],
+          id: jsonResponse['id'],
+          result: RecepcionresponseResult(
+            code: 200,
+            msg: msg,
+            updateVersion: updateVersion,
+            result: [],
+          ),
+        );
+      }
+
+      if (data is! List) {
+        return _errorResponse(
+            "Formato inesperado: 'result' es ${data.runtimeType}, se esperaba una lista");
+      }
+
+      final ordenes = <ResultEntrada>[];
+      for (var i = 0; i < data.length; i++) {
+        final item = data[i];
+        try {
+          ordenes.add(ResultEntrada.fromMap(item));
+        } catch (e, s) {
+          final name = item is Map ? (item['name'] ?? item['id']) : i;
+          debugPrint("❌ $tag error parseando item $i ($name): $e");
+          debugPrint("📄 $tag item: $item");
+          debugPrint("📍 $s");
+          return _errorResponse("Error al leer la recepción $name: $e");
         }
       }
-    } on SocketException catch (e) {
-      debugPrint('🌐 Error de red: $e');
-    } catch (e, s) {
-      debugPrint('❌ Error general en fetchAllReceptions: $e');
-      debugPrint('📍 Stack: $s');
-    }
 
-    return Recepcionresponse(
+      return Recepcionresponse(
+        jsonrpc: jsonResponse['jsonrpc'],
+        id: jsonResponse['id'],
         result: RecepcionresponseResult(
-            code: 0,
-            msg: "Ocurrió un error inesperado",
-            updateVersion: false,
-            result: [])); // Fallback en todos los casos
+          code: 200,
+          msg: msg,
+          updateVersion: updateVersion,
+          result: ordenes,
+        ),
+      );
+    } on SocketException catch (e) {
+      debugPrint('🌐 $tag Error de red: $e');
+      return _errorResponse("Error de red: ${e.message}");
+    } catch (e, s) {
+      debugPrint('❌ $tag Error general: $e');
+      debugPrint('📍 Stack: $s');
+      return _errorResponse("Error al procesar la respuesta: $e");
+    }
   }
 
-  Future<Recepcionresponse> fetchAllDevolutions(bool isLoadinDialog) async {
-    final stopwatch = Stopwatch()..start(); // ⏱ Iniciar conteo
-
-    try {
-      if (!await hasNetwork()) {
-        debugPrint("❌ Sin conexión a Internet.");
-        return Recepcionresponse(
-            result: RecepcionresponseResult(
-                code: 0,
-                msg: "Sin conexión a Internet",
-                updateVersion: false,
-                result: [])); // Retornar un objeto con código 0 y mensaje de error
-      }
-
-      final response = await ApiRequestService().getValidation(
-        endpoint: 'recepciones/devs',
-        isunecodePath: true,
-        isLoadinDialog: isLoadinDialog,
-      );
-
-      stopwatch.stop(); // ⏹ Finalizar conteo
-      debugPrint(
-          "⏱ fetchAllDevolutions completado en ${stopwatch.elapsedMilliseconds} ms");
-
-      if (response.statusCode >= 400) {
-        debugPrint("❌ Error HTTP: ${response.statusCode}");
-        return Recepcionresponse();
-      }
-
-      final jsonResponse = jsonDecode(response.body);
-
-      if (jsonResponse.containsKey('result')) {
-        final result = jsonResponse['result'];
-
-        if (jsonResponse['result']['code'] == 400) {
-          return Recepcionresponse(
-            jsonrpc: jsonResponse['jsonrpc'],
-            id: jsonResponse['id'],
-            result: RecepcionresponseResult(
-              code: jsonResponse['result']['code'],
-              msg: jsonResponse['result']['msg'],
-              updateVersion: jsonResponse['result']['update_version'] ?? false,
-              result: [],
+  void _showSessionExpiredDialog() {
+    Get.defaultDialog(
+      title: 'Alerta',
+      titleStyle: const TextStyle(color: Colors.red, fontSize: 18),
+      middleText: 'Sesión expirada, por favor inicie sesión nuevamente',
+      middleTextStyle: const TextStyle(color: Colors.black, fontSize: 14),
+      backgroundColor: Colors.white,
+      radius: 10,
+      actions: [
+        ElevatedButton(
+          onPressed: () => Get.back(),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColorApp,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
             ),
-          );
-        } else if (result['code'] == 200 && result['result'] is List) {
-          final List<ResultEntrada> ordenes = (result['result'] as List)
-              .map((data) => ResultEntrada.fromMap(data))
-              .toList();
-
-          return Recepcionresponse(
-            jsonrpc: jsonResponse['jsonrpc'],
-            id: jsonResponse['id'],
-            result: RecepcionresponseResult(
-              code: result['code'],
-              updateVersion: result['update_version'] ?? false,
-              result: ordenes,
-            ),
-          );
-        } else if (jsonResponse['result']['code'] == 403) {
-          return Recepcionresponse(
-            jsonrpc: jsonResponse['jsonrpc'],
-            id: jsonResponse['id'],
-            result: RecepcionresponseResult(
-              code: result['code'],
-              msg: result['msg'],
-              updateVersion: result['update_version'] ?? false,
-              result: [],
-            ),
-          );
-        }
-      } else if (jsonResponse.containsKey('error')) {
-        final error = jsonResponse['error'];
-        if (error['code'] == 100) {
-          Get.defaultDialog(
-            title: 'Alerta',
-            titleStyle: const TextStyle(color: Colors.red, fontSize: 18),
-            middleText: 'Sesión expirada, por favor inicie sesión nuevamente',
-            middleTextStyle: const TextStyle(color: Colors.black, fontSize: 14),
-            backgroundColor: Colors.white,
-            radius: 10,
-            actions: [
-              ElevatedButton(
-                onPressed: () => Get.back(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColorApp,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: const Text('Aceptar',
-                    style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          );
-        }
-      }
-    } on SocketException catch (e) {
-      debugPrint('🌐 Error de red: $e');
-    } catch (e, s) {
-      debugPrint('❌ Error general en fetchAllDevolutions: $e');
-      debugPrint('📍 Stack: $s');
-    }
-
-    return Recepcionresponse(
-        result: RecepcionresponseResult(
-            code: 0,
-            msg: "Ocurrió un error inesperado",
-            updateVersion: false,
-            result: [])); // Fallback en todos los casos
+          ),
+          child: const Text('Aceptar', style: TextStyle(color: Colors.white)),
+        ),
+      ],
+    );
   }
 
   Future<ResponseReceptionBatchs> fetchAllBatchReceptions(
