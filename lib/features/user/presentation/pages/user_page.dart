@@ -19,6 +19,7 @@ import 'package:wms_app/shared/widgets/confirm_delete_dialog.dart';
 import '../widgets/config_header.dart';
 import '../widgets/danger_zone_button.dart';
 import '../widgets/device_info_card.dart';
+import '../widgets/home_modules_config_card.dart';
 import '../widgets/network_indicator_card.dart';
 import '../widgets/sync_actions_card.dart';
 import '../widgets/permissions_widget.dart';
@@ -264,6 +265,8 @@ class _UserPageState extends State<UserPage> {
           _buildSyncActions(context),
           const SizedBox(height: 14),
           PermissionsWidget(profile: profile),
+          const SizedBox(height: 14),
+          const HomeModulesConfigCard(),
           const SizedBox(height: 14),
           const NetworkIndicatorCard(),
           const SizedBox(height: 24),

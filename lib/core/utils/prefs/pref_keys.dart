@@ -15,4 +15,8 @@ class PrefKeys {
   static const String fabricantePDA = "fabricantePDA";
   static const String cookie = "cookie";
   static const String networkOverlayVisible = "networkOverlayVisible";
+
+  // Configuración del home por dispositivo: no se borran al cerrar sesión.
+  static const String homeModulesOrder = "homeModulesOrder";
+  static const String homeModulesHidden = "homeModulesHidden";
 }

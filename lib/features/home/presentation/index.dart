@@ -8,6 +8,7 @@ import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
 import 'package:wms_app/features/home/presentation/widgets/home_header.dart';
+import 'package:wms_app/features/home/presentation/models/home_module_catalog.dart';
 import 'package:wms_app/features/home/presentation/widgets/home_module_grid.dart';
 import 'package:wms_app/features/home/presentation/widgets/operational_summary_card.dart';
 import 'package:wms_app/shared/widgets/auth/auth_brand_gradient.dart';
@@ -40,9 +41,13 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _isExpanded = true;
+  /// null hasta leer las prefs, para no pintar el orden por defecto un frame.
+  HomeModulesLayout? _modulesLayout;
+
   @override
   void initState() {
     super.initState();
+    _loadModulesLayout();
     // Añadimos el observer para escuchar el ciclo de vida de la app.
     WidgetsBinding.instance.addObserver(this);
 
@@ -56,6 +61,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       context.read<UserBloc>().add(LoadUserNoveltiesCountEvent());
       context.read<UserBloc>().add(LoadWarehousesCountEvent());
     });
+  }
+
+  Future<void> _loadModulesLayout() async {
+    final layout = await HomeModulesPrefs.load();
+    if (!mounted) return;
+    setState(() => _modulesLayout = layout);
   }
 
   @override
@@ -166,100 +177,63 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     goToScreen(context, AppRoutes.user);
   }
 
-  List<List<HomeModule>> _modulePages() => [
-    [
-      HomeModule(
-        title: 'Picking',
-        subtitle: 'Preparación',
-        icon: Icons.assignment_turned_in_outlined,
-        onTap: _openPicking,
-      ),
-      HomeModule(
-        title: 'Packing',
-        subtitle: 'Empaque',
-        icon: Icons.inventory_2_outlined,
-        onTap: _openPacking,
-      ),
-      HomeModule(
-        title: 'Devolución',
-        subtitle: 'Retorno',
-        icon: Icons.keyboard_return,
-        onTap: () => _openRoleDialog(
-          'reception',
-          (dialogContext) => DialogDevoluciones(contextHome: dialogContext),
-          seconds: 2,
+  VoidCallback _onTapFor(HomeModuleId id) => switch (id) {
+    HomeModuleId.picking => _openPicking,
+    HomeModuleId.packing => _openPacking,
+    HomeModuleId.devolucion => () => _openRoleDialog(
+      'reception',
+      (dialogContext) => DialogDevoluciones(contextHome: dialogContext),
+      seconds: 2,
+    ),
+    HomeModuleId.recepcion => () => _openRoleDialog(
+      'reception',
+      (_) => DialogRecepcion(contextHome: context),
+      seconds: 2,
+    ),
+    HomeModuleId.transferencia => () => _openRoleDialog(
+      'transfer',
+      (_) => DialogTransferencia(contextHome: context),
+    ),
+    HomeModuleId.inventario => () => _openRoleDialog(
+      'inventory',
+      (dialogContext) => DialogInventario(contextHome: dialogContext),
+    ),
+    // Sin validación de permisos (estaba comentada en la versión anterior):
+    // se mantiene el mismo comportamiento.
+    HomeModuleId.componentes => () => showDialog(
+      context: context,
+      builder: (dialogContext) =>
+          DialogPickingComponentes(contextHome: dialogContext),
+    ),
+    HomeModuleId.entradaProductos => _openEntradaProductos,
+    HomeModuleId.infoRapida => () =>
+        Navigator.pushReplacementNamed(context, 'info-rapida'),
+    HomeModuleId.etiquetas => () =>
+        Navigator.pushReplacementNamed(context, AppRoutes.printLabels),
+    HomeModuleId.expedicion => () =>
+        Navigator.pushReplacementNamed(context, AppRoutes.listExpedition),
+  };
+
+  /// Módulos visibles en el orden configurado, en páginas de 9.
+  List<List<HomeModule>> _modulePages(HomeModulesLayout layout) {
+    final modules = [
+      for (final id in layout.visible)
+        HomeModule(
+          title: id.title,
+          subtitle: id.subtitle,
+          icon: id.icon,
+          onTap: _onTapFor(id),
         ),
-      ),
-      HomeModule(
-        title: 'Recepción',
-        subtitle: 'Ingreso mercancía',
-        icon: Icons.input,
-        onTap: () => _openRoleDialog(
-          'reception',
-          (_) => DialogRecepcion(contextHome: context),
-          seconds: 2,
+    ];
+    const perPage = HomeModuleGrid.modulesPerPage;
+    return [
+      for (var i = 0; i < modules.length; i += perPage)
+        modules.sublist(
+          i,
+          i + perPage > modules.length ? modules.length : i + perPage,
         ),
-      ),
-      HomeModule(
-        title: 'Transferencia',
-        subtitle: 'Entre ubicaciones',
-        icon: Icons.sync_alt,
-        onTap: () => _openRoleDialog(
-          'transfer',
-          (_) => DialogTransferencia(contextHome: context),
-        ),
-      ),
-      HomeModule(
-        title: 'Inventario',
-        subtitle: 'Conteo físico',
-        icon: Icons.shelves,
-        onTap: () => _openRoleDialog(
-          'inventory',
-          (dialogContext) => DialogInventario(contextHome: dialogContext),
-        ),
-      ),
-      HomeModule(
-        title: 'Componentes',
-        subtitle: 'Picking componentes',
-        icon: Icons.settings_suggest_outlined,
-        // Sin validación de permisos (estaba comentada en la versión
-        // anterior): se mantiene el mismo comportamiento.
-        onTap: () => showDialog(
-          context: context,
-          builder: (dialogContext) =>
-              DialogPickingComponentes(contextHome: dialogContext),
-        ),
-      ),
-      HomeModule(
-        title: 'Entrada Prod.',
-        subtitle: 'Entrega productos',
-        icon: Icons.move_to_inbox_outlined,
-        onTap: _openEntradaProductos,
-      ),
-      HomeModule(
-        title: 'Info Rápida',
-        subtitle: 'Consulta directa',
-        icon: Icons.qr_code_scanner,
-        onTap: () => Navigator.pushReplacementNamed(context, 'info-rapida'),
-      ),
-    ],
-    [
-      HomeModule(
-        title: 'Etiquetas',
-        subtitle: 'Impresión',
-        icon: Icons.print_outlined,
-        onTap: () =>
-            Navigator.pushReplacementNamed(context, AppRoutes.printLabels),
-      ),
-      HomeModule(
-        title: 'Expedición',
-        subtitle: 'Despachos',
-        icon: Icons.local_shipping_outlined,
-        onTap: () =>
-            Navigator.pushReplacementNamed(context, AppRoutes.listExpedition),
-      ),
-    ],
-  ];
+    ];
+  }
 
   // ── UI ──────────────────────────────────────────────────────────────────
 
@@ -310,19 +284,40 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               ),
               SafeArea(
                 bottom: false,
-                child: ListView(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    8,
-                    16,
-                    24 + MediaQuery.paddingOf(context).bottom,
-                  ),
-                  children: [
-                    const WarningWidgetCubit(),
-                    _buildHeader(),
-                    _buildSummary(),
-                    const SizedBox(height: 18),
-                    HomeModuleGrid(pages: _modulePages()),
+                child: CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          const WarningWidgetCubit(),
+                          _buildHeader(),
+                          _buildSummary(),
+                          const SizedBox(height: 18),
+                        ]),
+                      ),
+                    ),
+                    // Ocupa el alto restante: con el resumen contraído los
+                    // módulos quedan centrados en el espacio libre; si no
+                    // caben, crece y la página hace scroll como antes.
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        0,
+                        16,
+                        24 + MediaQuery.paddingOf(context).bottom,
+                      ),
+                      sliver: SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Center(
+                          child: _modulesLayout == null
+                              ? const SizedBox.shrink()
+                              : HomeModuleGrid(
+                                  pages: _modulePages(_modulesLayout!),
+                                ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

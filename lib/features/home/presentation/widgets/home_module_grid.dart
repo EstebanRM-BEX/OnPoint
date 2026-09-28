@@ -6,13 +6,13 @@ class HomeModule {
   final String title;
   final String subtitle;
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const HomeModule({
     required this.title,
     required this.subtitle,
     required this.icon,
-    required this.onTap,
+    this.onTap,
   });
 }
 
@@ -26,6 +26,7 @@ class HomeModuleGrid extends StatefulWidget {
   static const double tileHeight = 104;
   static const double gap = 10;
   static const int columns = 3;
+  static const int modulesPerPage = 9;
 
   @override
   State<HomeModuleGrid> createState() => _HomeModuleGridState();
@@ -55,35 +56,37 @@ class _HomeModuleGridState extends State<HomeModuleGrid> {
         (maxRows - 1) * HomeModuleGrid.gap;
 
     return Column(
+      // min: ocupa solo su alto para que el padre pueda centrarlo.
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'MÓDULOS PRINCIPALES',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.8,
-                    color: Color(0xFF475569),
-                  ),
-                ),
-              ),
-              Text(
-                '$_total Disponibles',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: primaryColorApp,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
+        // Padding(
+        //   padding: const EdgeInsets.symmetric(horizontal: 4),
+        //   child: Row(
+        //     children: [
+        //       const Expanded(
+        //         child: Text(
+        //           'MÓDULOS PRINCIPALES',
+        //           style: TextStyle(
+        //             fontSize: 12,
+        //             fontWeight: FontWeight.w700,
+        //             letterSpacing: 0.8,
+        //             color: Color(0xFF475569),
+        //           ),
+        //         ),
+        //       ),
+        //       Text(
+        //         '$_total Disponibles',
+        //         style: const TextStyle(
+        //           fontSize: 11,
+        //           fontWeight: FontWeight.w500,
+        //           color: primaryColorApp,
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        // ),
+        // const SizedBox(height: 10),
         SizedBox(
           height: height,
           child: PageView.builder(
@@ -100,7 +103,7 @@ class _HomeModuleGridState extends State<HomeModuleGrid> {
                 crossAxisSpacing: HomeModuleGrid.gap,
                 mainAxisExtent: HomeModuleGrid.tileHeight,
               ),
-              itemBuilder: (_, j) => _ModuleTile(module: widget.pages[i][j]),
+              itemBuilder: (_, j) => HomeModuleTile(module: widget.pages[i][j]),
             ),
           ),
         ),
@@ -130,9 +133,11 @@ class _HomeModuleGridState extends State<HomeModuleGrid> {
   }
 }
 
-class _ModuleTile extends StatelessWidget {
+/// Tile de un módulo. Público para reutilizarlo en la vista previa de
+/// configuración y que se vea idéntico al home.
+class HomeModuleTile extends StatelessWidget {
   final HomeModule module;
-  const _ModuleTile({required this.module});
+  const HomeModuleTile({super.key, required this.module});
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +179,7 @@ class _ModuleTile extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF334155),
                 ),
