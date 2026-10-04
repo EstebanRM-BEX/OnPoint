@@ -140,6 +140,8 @@ class _DialogCapturaNovedadState extends State<DialogCapturaNovedad> {
                             fit: BoxFit.fill,
                             height: 300,
                             width: 250,
+                            // Foto de cámara: decodificar al tamaño mostrado.
+                            cacheWidth: 500,
                           ),
                         ),
                         const SizedBox(height: 10),

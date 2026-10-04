@@ -59,6 +59,14 @@ class ExpeditionRemoteDataSourceImpl implements ExpeditionRemoteDataSource {
     );
 
     if (response.statusCode >= 400) {
+      // 408 (timeout del cliente), 502/503/504 (proxy/servidor): la red del
+      // dispositivo está bien, es el servidor que tardó demasiado en responder.
+      if (const {408, 502, 503, 504}.contains(response.statusCode)) {
+        throw ServerException(
+          'El servidor tardó demasiado en responder (${response.statusCode}). '
+          'Intenta de nuevo en unos segundos.',
+        );
+      }
       throw ServerException('Error de conexión (${response.statusCode})');
     }
 

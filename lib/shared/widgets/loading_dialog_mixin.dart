@@ -6,56 +6,55 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 /// ciegos cierren rutas equivocadas (bottom sheets, la pantalla misma).
 ///
 /// - [showLoadingDialog] es idempotente: si ya hay un diálogo visible no abre otro.
-/// - [hideLoadingDialog] solo cierra el diálogo que este mixin abrió, usando el
-///   contexto propio del diálogo; si no hay diálogo visible, no hace nada.
+/// - [hideLoadingDialog] solo cierra el diálogo que este mixin abrió, si no hay
+///   diálogo visible no hace nada.
 ///
-/// Blinda la carrera show→hide inmediato: si un error de backend (Odoo) llega
-/// antes de que el `builder` del diálogo alcance a montarse y capturar su
-/// contexto, [hideLoadingDialog] marca un cierre pendiente ([_pendingHide]) que
-/// el propio builder resuelve al montar, evitando que el loading quede pegado y
-/// que [_loadingDialogVisible] se bloquee para siempre.
+/// El diálogo se empuja como una [DialogRoute] cuya referencia se guarda al
+/// instante, y se cierra con `Navigator.removeRoute(esa ruta)`. Así el cierre
+/// es exacto aunque llegue antes de que el diálogo termine de montarse, y
+/// aunque otra ruta (p. ej. el diálogo de "agregar producto") se abra en el
+/// mismo frame. Antes se cerraba con `Navigator.of(dialogContext).pop()`, que
+/// saca la ruta de ARRIBA de la pila, no la del contexto: si otra ruta se abría
+/// justo después del loading, se cerraba esa y el loading quedaba pegado.
 mixin LoadingDialogMixin<T extends StatefulWidget> on State<T> {
-  bool _loadingDialogVisible = false;
-  BuildContext? _loadingDialogContext;
-  bool _pendingHide = false;
+  DialogRoute<void>? _loadingRoute;
+  NavigatorState? _loadingNavigator;
 
-  bool get isLoadingDialogVisible => _loadingDialogVisible;
+  bool get isLoadingDialogVisible => _loadingRoute != null;
 
   void showLoadingDialog(String message) {
-    if (_loadingDialogVisible || !mounted) return;
-    _loadingDialogVisible = true;
-    _pendingHide = false;
-    showDialog(
+    if (_loadingRoute != null || !mounted) return;
+
+    // Mismo navegador que usaba showDialog (rootNavigator por defecto).
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final route = DialogRoute<void>(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) {
-        _loadingDialogContext = dialogContext;
-        // Si pidieron cerrar antes de que el diálogo montara, lo cerramos en
-        // cuanto termine este frame (sin dejarlo pegado).
-        if (_pendingHide) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-          });
-        }
-        return DialogLoading(message: message);
-      },
-    ).whenComplete(() {
-      _loadingDialogVisible = false;
-      _loadingDialogContext = null;
-      _pendingHide = false;
+      themes: InheritedTheme.capture(from: context, to: navigator.context),
+      builder: (_) => DialogLoading(message: message),
+    );
+
+    _loadingRoute = route;
+    _loadingNavigator = navigator;
+    navigator.push(route).whenComplete(() {
+      // Cerrado por nosotros o por otro medio (p. ej. botón atrás).
+      if (identical(_loadingRoute, route)) {
+        _loadingRoute = null;
+        _loadingNavigator = null;
+      }
     });
   }
 
   void hideLoadingDialog() {
-    if (!_loadingDialogVisible) return;
-    final dialogContext = _loadingDialogContext;
-    if (dialogContext == null) {
-      // El builder aún no montó el diálogo; lo cerramos en cuanto lo haga.
-      _pendingHide = true;
-      return;
-    }
-    if (dialogContext.mounted) {
-      Navigator.of(dialogContext).pop();
+    final route = _loadingRoute;
+    final navigator = _loadingNavigator;
+    if (route == null) return;
+
+    _loadingRoute = null;
+    _loadingNavigator = null;
+
+    if (route.isActive && navigator != null && navigator.mounted) {
+      navigator.removeRoute(route);
     }
   }
 }

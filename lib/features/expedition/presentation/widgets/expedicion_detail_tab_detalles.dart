@@ -181,9 +181,14 @@ class _ExpedicionDetailTabDetallesState
           // Confirmar (con o sin backorder) cambia el estado en el backend,
           // así que acá no alcanza con releer la caché local: hay que volver
           // a pedir /api/transferencias/out para traer la lista al día.
-          context
-              .read<ExpedicionListBloc>()
-              .add(const FetchExpedicionesEvent());
+          // El ListBloc llega como argumento de ruta y puede estar ya cerrado
+          // (la lista que lo creó se desmontó): add() lanzaba "Cannot add new
+          // events after calling close" (fatal en Crashlytics). La lista nueva
+          // de pushReplacementNamed crea su propio bloc.
+          final listBloc = context.read<ExpedicionListBloc>();
+          if (!listBloc.isClosed) {
+            listBloc.add(const FetchExpedicionesEvent());
+          }
           Navigator.pushReplacementNamed(context, AppRoutes.listExpedition);
           Get.snackbar(
             '360 Software Informa',

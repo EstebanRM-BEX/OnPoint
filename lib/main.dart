@@ -61,6 +61,8 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/foundation.dart';
 import 'package:wms_app/injection_container.dart';
+import 'package:wms_app/core/utils/diagnostics/crash_filters.dart';
+import 'package:wms_app/core/utils/diagnostics/exit_diagnostics.dart';
 // Chat global desactivado en desarrollo.
 // import 'package:wms_app/features/chat/presentation/widgets/global_chat_overlay.dart';
 
@@ -81,6 +83,12 @@ void main() {
   runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+      // Tope del caché de imágenes decodificadas: el defecto de Flutter es
+      // 100 MB / 1000 imágenes, demasiado para PDAs de 2 a 4 GB donde la app
+      // ya llegó a ser matada por memoria (low memory killer).
+      PaintingBinding.instance.imageCache
+        ..maximumSizeBytes = 40 << 20
+        ..maximumSize = 60;
       await SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
       ]);
@@ -91,8 +99,15 @@ void main() {
       );
 
       // Configuración de errores de Flutter hacia Crashlytics
-      FlutterError.onError =
-          FirebaseCrashlytics.instance.recordFlutterFatalError;
+      FlutterError.onError = (FlutterErrorDetails details) {
+        // Toque fallido en la rueda de fecha (flutter_holo_date_picker): no
+        // rompe la app, no se cuenta como bloqueo.
+        if (isBenignDatePickerTapError(details)) {
+          FirebaseCrashlytics.instance.recordFlutterError(details);
+          return;
+        }
+        FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+      };
 
       // En debug los tiempos no son representativos (JIT): no ensuciar la
       // consola de Performance.
@@ -124,6 +139,10 @@ void main() {
       // (navigatorObservers de GetMaterialApp, abajo). No corre en debug.
       JankMonitor().start();
 
+      // Diagnóstico de cierres que Crashlytics no ve (OOM, kill del sistema,
+      // ANR): motivo de salida de Android y cierre en primer plano.
+      unawaited(ExitDiagnostics.start());
+
       // WebSocket en background: no debe bloquear el primer frame.
       // connect() ya retorna solo si no hay sesión activa.
       unawaited(getIt<IWebSocketService>().connect());
@@ -146,7 +165,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     void logOut() async {
       debugPrint("⏱️ Sesión expirada por inactividad.");
-      await SessionManager.closeSession();
+      // Expiración automática: no borrar packing (productos "Preparado").
+      await SessionManager.closeSession(keepPackingData: true);
     }
 
     return MultiBlocProvider(
@@ -242,7 +262,7 @@ class MyApp extends StatelessWidget {
         ),
         builder: (context, navigator) {
           return SessionTimeoutManager(
-            duration: const Duration(minutes: 240),
+            duration: const Duration(hours: 12),
             onSessionExpired: logOut,
             // Chat global desactivado en desarrollo. Para reactivarlo, envolver
             // de nuevo el navigator con GlobalChatOverlay.

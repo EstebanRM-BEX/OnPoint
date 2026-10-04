@@ -41,6 +41,8 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
     super.dispose();
   }
 
+  bool _navigatedToResult = false;
+
   @override
   void initState() {
     super.initState();
@@ -191,6 +193,15 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
             return;
           }
 
+          // El bloc se toma ahora, con el context del listener aún válido: en
+          // el microtask el árbol puede haber cambiado (ruta reemplazada) y
+          // context.read lanzaba "Provider<InfoRapidaBloc> not found".
+          final bloc = context.read<InfoRapidaBloc>();
+
+          // Un segundo InfoRapidaLoaded no debe navegar dos veces.
+          if (_navigatedToResult) return;
+          _navigatedToResult = true;
+
           Future.microtask(() {
             // Verificamos si el widget sigue montado antes de mostrar UI
             if (!mounted) return;
@@ -207,7 +218,6 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
             final result = state.infoRapidaResult;
 
             // Navegación segura (asumiendo que result no es nulo gracias al chequeo anterior)
-            final bloc = context.read<InfoRapidaBloc>();
             if (result.type == 'product') {
               Navigator.pushReplacementNamed(
                 context,

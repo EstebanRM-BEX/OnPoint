@@ -149,6 +149,22 @@ class _WmsPackingScreenState extends State<ListPackingScreen>
   }
 
   @override
+  void initState() {
+    super.initState();
+    // El listado vive en memoria del bloc. Si la app se reinició (sesión
+    // expirada, proceso muerto) está vacío aunque SQLite conserve los pedidos
+    // y sus productos "Preparado": se cargan desde la BD local, sin red. La
+    // sincronización con Odoo sigue siendo manual (botón de actualizar).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final bloc = context.read<PackingPedidoBloc>();
+      if (bloc.listOfPedidosFilters.isEmpty) {
+        bloc.add(LoadPackingPedidoFromDBEvent());
+      }
+    });
+  }
+
+  @override
   void dispose() {
     focusNodeBuscar.dispose();
     _controllerToDo.dispose();

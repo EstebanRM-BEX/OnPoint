@@ -21,7 +21,23 @@ class ProductosCacheService {
   List<Product>? _cacheAll;
   List<Product>? _cacheUnique;
 
-  Future<List<Product>> getAll({bool forceRefresh = false}) async {
+  /// [retain]: false → si el caché no estaba poblado, la lista cargada se
+  /// devuelve pero NO se guarda en el servicio. Para quien convierte la lista
+  /// a su propio modelo (InventarioBloc → `ProductoInventarioModel`): sin esto
+  /// quedaban 72 mil `Product` en el caché más otros 72 mil modelos en el
+  /// bloc raíz, ambos retenidos mientras la app esté abierta. Si el caché ya
+  /// tiene datos (lo cargó otro consumidor) se reutiliza sin copiar.
+  Future<List<Product>> getAll({
+    bool forceRefresh = false,
+    bool retain = true,
+  }) async {
+    if (!retain && !forceRefresh && (_cacheAll?.isNotEmpty ?? false)) {
+      return UnmodifiableListView(_cacheAll!);
+    }
+    if (!retain) {
+      return DataBaseSqlite().productoInventarioRepository.getAllProducts();
+    }
+
     // No memoizar un resultado vacío: puede ser que todavía no haya
     // terminado la sincronización de productos en background (post-login,
     // fire-and-forget) o un error transitorio de SQLite (el repositorio ya

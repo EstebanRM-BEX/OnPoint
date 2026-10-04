@@ -104,6 +104,9 @@ class _DialogCapturaTemperaturaState
                         fit: BoxFit.fill,
                         height: 180,
                         width: 230,
+                        // Foto de cámara (varios MP): decodificar al tamaño
+                        // mostrado, no a resolución completa.
+                        cacheWidth: 460,
                       ),
                     ),
                     //mostrar el tamaño de la imagen y el formato

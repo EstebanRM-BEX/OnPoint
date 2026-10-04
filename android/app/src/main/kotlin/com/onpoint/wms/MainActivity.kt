@@ -1,5 +1,7 @@
 package com.onpoint.wms
 
+import android.app.ActivityManager
+import android.app.ApplicationExitInfo
 import android.net.wifi.WifiManager
 import android.content.Context
 import android.os.Build
@@ -67,9 +69,59 @@ class MainActivity: FlutterActivity() {
                     }
                 }
 
+                // Motivos de salida recientes del proceso (Android 11+). En
+                // versiones anteriores devuelve lista vacía.
+                "getExitInfo" -> {
+                    try {
+                        result.success(getExitInfo())
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
+
                 else -> result.notImplemented()
             }
         }
+    }
+
+    /** Últimas salidas del proceso según ApplicationExitInfo (API 30+). */
+    private fun getExitInfo(): List<Map<String, Any?>> {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return emptyList()
+        val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        return am.getHistoricalProcessExitReasons(packageName, 0, 5).map {
+            mapOf(
+                "reason" to exitReasonName(it.reason),
+                "description" to it.description,
+                "importance" to it.importance,
+                "pss" to it.pss,
+                "rss" to it.rss,
+                "timestamp" to it.timestamp,
+            )
+        }
+    }
+
+    private fun exitReasonName(reason: Int): String = when (reason) {
+        ApplicationExitInfo.REASON_EXIT_SELF -> "EXIT_SELF"
+        ApplicationExitInfo.REASON_SIGNALED -> "SIGNALED"
+        ApplicationExitInfo.REASON_LOW_MEMORY -> "LOW_MEMORY"
+        ApplicationExitInfo.REASON_CRASH -> "CRASH"
+        ApplicationExitInfo.REASON_CRASH_NATIVE -> "CRASH_NATIVE"
+        ApplicationExitInfo.REASON_ANR -> "ANR"
+        ApplicationExitInfo.REASON_INITIALIZATION_FAILURE -> "INITIALIZATION_FAILURE"
+        ApplicationExitInfo.REASON_PERMISSION_CHANGE -> "PERMISSION_CHANGE"
+        ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE -> "EXCESSIVE_RESOURCE_USAGE"
+        ApplicationExitInfo.REASON_USER_REQUESTED -> "USER_REQUESTED"
+        ApplicationExitInfo.REASON_USER_STOPPED -> "USER_STOPPED"
+        ApplicationExitInfo.REASON_DEPENDENCY_DIED -> "DEPENDENCY_DIED"
+        ApplicationExitInfo.REASON_OTHER -> "OTHER"
+        else -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            when (reason) {
+                ApplicationExitInfo.REASON_FREEZER -> "FREEZER"
+                ApplicationExitInfo.REASON_PACKAGE_STATE_CHANGE -> "PACKAGE_STATE_CHANGE"
+                ApplicationExitInfo.REASON_PACKAGE_UPDATED -> "PACKAGE_UPDATED"
+                else -> "UNKNOWN_$reason"
+            }
+        } else "UNKNOWN_$reason"
     }
 
     /** MAC de wlan0 vía NetworkInterface o sysfs; null si el SO la oculta. */

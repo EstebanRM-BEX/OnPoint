@@ -5,7 +5,16 @@ import 'package:wms_app/core/constants/colors.dart';
 class SummaryMetric {
   final int count;
   final bool loading;
-  const SummaryMetric({required this.count, this.loading = false});
+
+  /// Precarga en cola/en curso: se muestra "En espera" en vez del conteo (que
+  /// vale 0 hasta que termina la inserción en la BD). Si además está cargando
+  /// (`loading`), manda el indicador circular.
+  final bool pending;
+  const SummaryMetric({
+    required this.count,
+    this.loading = false,
+    this.pending = false,
+  });
 }
 
 /// "Resumen operativo": conteos de datos descargados en la PDA. Colapsable.
@@ -277,6 +286,8 @@ class _MetricTile extends StatelessWidget {
           const SizedBox(height: 6),
           metric.loading
               ? const _LoadingValue()
+              : metric.pending
+              ? const _PendingValue()
               : Text(
                   _format(metric.count),
                   maxLines: 1,
@@ -347,6 +358,8 @@ class _HighlightTile extends StatelessWidget {
           ),
           metric.loading
               ? const _LoadingValue(size: 14)
+              : metric.pending
+              ? const _PendingValue()
               : Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -421,6 +434,26 @@ class _LoadingValue extends StatelessWidget {
       child: const CircularProgressIndicator(
         strokeWidth: 2,
         color: primaryColorApp,
+      ),
+    );
+  }
+}
+
+/// Texto "En espera" para métricas cuya precarga aún no termina.
+class _PendingValue extends StatelessWidget {
+  const _PendingValue();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Text(
+      'En espera',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        fontSize: 12,
+        fontStyle: FontStyle.italic,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF94A3B8),
       ),
     );
   }

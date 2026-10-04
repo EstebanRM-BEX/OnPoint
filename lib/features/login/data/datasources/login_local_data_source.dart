@@ -1,5 +1,6 @@
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/error/exceptions.dart';
+import 'package:wms_app/core/services/packing_preservation.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/core/utils/prefs/secure_storage_utils.dart';
 import 'package:wms_app/features/login/domain/entities/user.dart';
@@ -32,6 +33,9 @@ class LoginLocalDataSourceImpl implements LoginLocalDataSource {
       await PrefUtils.setUserName(user.name);
       await PrefUtils.setUserEmail(user.username);
       await PrefUtils.setUserId(user.uid);
+      // Si packing se conservó al expirar la sesión de OTRO usuario/empresa,
+      // se borra; si es el mismo, se mantiene (productos "Preparado").
+      await PackingPreservation.reconcileOnLogin();
       await PrefUtils.setIsLoggedIn(true);
       await PrefUtils.saveLastActiveTime();
     } catch (e) {

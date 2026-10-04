@@ -34,6 +34,9 @@ class JankMonitor {
   AppLifecycleListener? _lifecycle;
   String _currentScreen = 'inicio';
 
+  /// Pantalla visible actual (la mantiene [JankRouteObserver]).
+  String get currentScreen => _currentScreen;
+
   Trace? _trace;
   int _framesTotal = 0;
   int _framesSlow = 0;

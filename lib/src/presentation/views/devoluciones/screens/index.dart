@@ -8,6 +8,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:wms_app/shared/widgets/disposable_controllers_mixin.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -22,7 +23,6 @@ import 'package:wms_app/src/presentation/views/devoluciones/screens/widgets/dial
 import 'package:wms_app/src/presentation/views/devoluciones/screens/widgets/dialog_edit_product_widget.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/widgets/product_card_widget.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/widgets/product_search_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 
 class DevolucionesScreen extends StatefulWidget {
@@ -33,7 +33,7 @@ class DevolucionesScreen extends StatefulWidget {
 }
 
 class _DevolucionesScreenState extends State<DevolucionesScreen>
-    with WidgetsBindingObserver, DisposableControllersMixin {
+    with WidgetsBindingObserver, DisposableControllersMixin, LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
 
@@ -68,14 +68,10 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed && mounted) {
-      showDialog(
-        context: context,
-        builder: (context) =>
-            const DialogLoading(message: "Espere un momento..."),
-      );
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) Navigator.pop(context);
-      });
+      // Idempotente (LoadingDialogMixin): antes cada resume apilaba otro
+      // diálogo y el pop ciego a 1 s cerraba una ruta equivocada.
+      showLoadingDialog("Espere un momento...");
+      Future.delayed(const Duration(seconds: 1), hideLoadingDialog);
     }
   }
 
@@ -306,24 +302,27 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
             FocusScope.of(context).requestFocus(focusNode1);
           });
         } else if (state is GetProductLoading) {
-          showDialog(
-            context: context, // Usa el context del listener
-            barrierDismissible:
-                false, // Evita que el usuario cierre el diálogo tocando fuera
-            builder:
-                (
-                  dialogContext,
-                ) => // Usa un nombre diferente para el contexto del diálogo
-                    const DialogLoading(message: "Buscando información..."),
-          );
+          showLoadingDialog("Buscando información...");
+        } else if (state is DownloadAllTercerosLoading) {
+          showLoadingDialog("Descargando terceros...\nPuede tardar un momento");
+        } else if (state is LoadTercerosFromDBLoading) {
+          showLoadingDialog("Cargando terceros...");
+        } else if (state is LoadTercerosFromDBSuccess ||
+            state is DownloadAllTercerosSuccess) {
+          hideLoadingDialog();
+        } else if (state is DownloadAllTercerosFailure) {
+          hideLoadingDialog();
+          showScrollableErrorDialog(state.error);
+        } else if (state is LoadTercerosFromDBFailure) {
+          // La BD de terceros está vacía: el bloc lanza la descarga a
+          // continuación; el diálogo de carga se reemplaza por el de descarga.
+          hideLoadingDialog();
         } else if (state is GetProductFailure) {
           _audioService.playErrorSound();
           _vibrationService.vibrate();
 
           //esperamos 1 y cerramos el diálogo de carga
-          Future.delayed(const Duration(seconds: 1), () {
-            Navigator.pop(context); // Cierra el diálogo de carga
-          });
+          Future.delayed(const Duration(seconds: 1), hideLoadingDialog);
 
           Get.snackbar(
             '360 Software Informa',
@@ -339,7 +338,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
           }
 
           bloc.add(ChangeStateIsDialogVisibleEvent(true));
-          Navigator.pop(context); // Cierra el diálogo de carga
+          hideLoadingDialog(); // Cierra el diálogo de carga
 
           //mostrar un dialogo para agregar el producto con cantidad y lote si es necesario
           showDialog(
@@ -511,7 +510,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
 
           bloc.add(ChangeStateIsDialogVisibleEvent(true));
 
-          Navigator.pop(context); // Cierra el diálogo de carga
+          hideLoadingDialog(); // Cierra el diálogo de carga
           //verficamos si le producto tiene lote
           if (state.product.tracking == 'lot') {
             showDialog(
@@ -1321,8 +1320,10 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                   onTap: () {
                     if (devolucionesBloc.terceros.isNotEmpty) {
                       Navigator.pushReplacementNamed(context, 'terceros');
-                    } else {
-                      devolucionesBloc.add(LoadTercerosEvent());
+                    } else if (!devolucionesBloc.isLoadingTerceros) {
+                      // Memoria vacía (se libera al salir del módulo): leer de
+                      // SQLite; solo descarga si la BD también está vacía.
+                      devolucionesBloc.add(LoadTercerosFromDBEvent());
                     }
                   },
                   child: Card(

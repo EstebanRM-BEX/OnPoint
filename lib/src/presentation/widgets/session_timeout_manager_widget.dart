@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
@@ -34,6 +35,7 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    HardwareKeyboard.instance.addHandler(_onKeyEvent);
     // Intentamos iniciar el timer (él mismo validará si hay sesión)
     _startTimer();
   }
@@ -41,8 +43,25 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager>
   @override
   void dispose() {
     _timer?.cancel();
+    HardwareKeyboard.instance.removeHandler(_onKeyEvent);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  DateTime _lastKeyActivity = DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// El escáner físico (keyboard-wedge) y las teclas de la PDA entran como
+  /// eventos de teclado, no de toque: el timer de inactividad solo se
+  /// reiniciaba con toques, así que un operario escaneando 4 h sin tocar la
+  /// pantalla era deslogueado en pleno trabajo. Se limita a 1 reinicio cada
+  /// 30 s para no escribir en disco por cada tecla.
+  bool _onKeyEvent(KeyEvent event) {
+    final now = DateTime.now();
+    if (now.difference(_lastKeyActivity) > const Duration(seconds: 30)) {
+      _lastKeyActivity = now;
+      _resetTimer();
+    }
+    return false; // no consume la tecla
   }
 
   // ------------------------------------------------------------------------

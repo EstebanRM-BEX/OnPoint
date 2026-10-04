@@ -294,9 +294,7 @@ class _Tab2ScreenState extends State<Tab2PedidoScreen> with LoadingDialogMixin {
                                                     .currentPedidoPack
                                                     .configPacking,
                                                 false,
-                                                weight == "" || weight == null
-                                                    ? 0.0
-                                                    : double.parse(weight),
+                                                double.tryParse(weight) ?? 0.0,
                                                 pedidoType ?? PackagingType(),
                                               ),
                                             );

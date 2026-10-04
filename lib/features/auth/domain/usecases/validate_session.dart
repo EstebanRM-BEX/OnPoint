@@ -1,6 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/error/failures.dart';
+import 'package:wms_app/core/services/packing_preservation.dart';
 import 'package:wms_app/core/usecases/usecase.dart';
 import 'package:wms_app/features/auth/domain/entities/session_validation_result.dart';
 import 'package:wms_app/features/auth/domain/repositories/auth_repository.dart';
@@ -24,8 +25,11 @@ class ValidateSession implements UseCase<SessionValidationResult, NoParams> {
           return const Right(SessionValidationResult.notLoggedIn());
         }
 
-        // Sesión expirada (más de 4 horas de inactividad)
+        // Sesión expirada (más de 12 horas de inactividad)
         if (session.isExpired()) {
+          // Packing no se borra al expirar; se anota de quién es para borrarlo
+          // solo si inicia sesión otra persona u otra empresa.
+          await PackingPreservation.markOwner();
           await repository.clearSession();
           return const Right(SessionValidationResult.expired());
         }

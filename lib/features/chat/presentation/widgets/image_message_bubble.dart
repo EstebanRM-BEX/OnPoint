@@ -19,8 +19,11 @@ class ImageMessageBubble extends StatelessWidget {
 
   bool get _isNetwork => source.startsWith('http');
 
-  ImageProvider get _provider =>
-      _isNetwork ? NetworkImage(source) : FileImage(File(source));
+  // Burbuja de máx. 240 px de ancho: decodificar a 2x, no a resolución completa.
+  ImageProvider get _provider => ResizeImage(
+        _isNetwork ? NetworkImage(source) : FileImage(File(source)),
+        width: 480,
+      );
 
   @override
   Widget build(BuildContext context) {

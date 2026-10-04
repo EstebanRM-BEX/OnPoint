@@ -266,12 +266,28 @@ class _DialogConfirmatedPackingState extends State<DialogConfirmatedPacking>
                   return;
                 }
 
+                // El teclado decimal en español escribe "1,5": se normaliza a
+                // punto y se valida aquí. El validator del TextFormField no
+                // corre (no hay Form), y double.parse en el llamador lanzaba
+                // FormatException dejando el diálogo pegado (_isConfirming).
+                final weightText = _weightController.text
+                    .trim()
+                    .replaceAll(',', '.');
+                if (widget.manejaPeso &&
+                    (double.tryParse(weightText) ?? -1) < 0) {
+                  Get.snackbar(
+                    "360 Software Informa",
+                    "Ingrese un peso válido",
+                    backgroundColor: white,
+                    colorText: primaryColorApp,
+                    icon: Icon(Icons.error, color: Colors.amber),
+                  );
+                  return;
+                }
+
                 //si todo esta bien, llamamos a la funcion onConfirm
                 _isConfirming = true;
-                widget.onConfirm(
-                  _selectedPackagingType,
-                  _weightController.text,
-                );
+                widget.onConfirm(_selectedPackagingType, weightText);
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(

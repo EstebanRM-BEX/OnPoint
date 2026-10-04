@@ -81,7 +81,11 @@ class InventarioLocalDataSourceImpl implements InventarioLocalDataSource {
   @override
   Future<List<ProductoInventarioModel>> getProductos() async {
     try {
-      final legacyList = await getIt<ProductosCacheService>().getAll();
+      // retain:false — el bloc de inventario guarda su propio modelo; no dejar
+      // además 72 mil `Product` retenidos en el caché compartido.
+      final legacyList = await getIt<ProductosCacheService>().getAll(
+        retain: false,
+      );
       return legacyList
           .map(ProductoInventarioModel.fromLegacy)
           .toList();

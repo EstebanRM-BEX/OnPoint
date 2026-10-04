@@ -115,9 +115,7 @@ class _Tab3PedidoScreenState extends State<Tab3PedidoScreen>
                                                     .currentPedidoPack
                                                     .configPacking,
                                                 true,
-                                                weight == "" || weight == null
-                                                    ? 0.0
-                                                    : double.parse(weight),
+                                                double.tryParse(weight) ?? 0.0,
                                                 pedidoType ?? PackagingType(),
                                               ),
                                             );

@@ -44,7 +44,10 @@ class ChatAvatar extends StatelessWidget {
               color: _bg,
               image: hasImage
                   ? DecorationImage(
-                      image: NetworkImage(contact.avatarUrl!),
+                      image: ResizeImage(
+                        NetworkImage(contact.avatarUrl!),
+                        width: (size * 2).round(),
+                      ),
                       fit: BoxFit.cover,
                     )
                   : null,

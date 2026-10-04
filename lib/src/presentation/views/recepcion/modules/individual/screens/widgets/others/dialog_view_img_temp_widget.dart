@@ -74,6 +74,9 @@ Future<void> showImageDialog(
                         : Image.memory(
                             imageBytes,
                             fit: BoxFit.contain,
+                            // Foto de cámara en un diálogo: no más ancho que
+                            // la pantalla.
+                            cacheWidth: 1080,
                             errorBuilder: (_, __, ___) => const SizedBox(
                               height: 200,
                               child: Center(

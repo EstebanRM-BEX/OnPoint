@@ -559,14 +559,18 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       )) {
         ///buscamos
 
-        await db.productosPedidosRepository.findAndAddQuantityAndDelete(
-          event.product.idProduct ?? 0,
-          event.product.idMove ?? 0,
-          event.product.quantitySeparate ?? 0,
-          event.product.pedidoId ?? 0,
-          'packing-pack',
-          certifiedRowId: event.product.id,
-        );
+        await db.productosPedidosRepository
+            .findAndAddQuantityAndDelete(
+              event.product.idProduct ?? 0,
+              event.product.idMove ?? 0,
+              event.product.quantitySeparate ?? 0,
+              event.product.pedidoId ?? 0,
+              'packing-pack',
+              certifiedRowId: event.product.id,
+            )
+            // Si SQLite queda bloqueado (otra escritura larga), sin límite
+            // el diálogo "Deshaciendo producto..." no se cerraba nunca.
+            .timeout(const Duration(seconds: 15));
         //actualizamos todas las listas
         add(LoadPedidoAndProductsEvent(event.product.pedidoId ?? 0));
         emit(DeleteProductFromTemporaryPackageOkState());
@@ -576,13 +580,15 @@ class PackingPedidoBloc extends Bloc<PackingPedidoEvent, PackingPedidoState> {
       debugPrint('event.product.pedidoId: ${event.product.toMap()}');
 
       // is_separate
-      await db.productosPedidosRepository.revertProductFields(
-        event.product.pedidoId ?? 0,
-        event.product.idProduct ?? 0,
-        event.product.idMove ?? 0,
-        'packing-pack',
-        id: event.product.id,
-      );
+      await db.productosPedidosRepository
+          .revertProductFields(
+            event.product.pedidoId ?? 0,
+            event.product.idProduct ?? 0,
+            event.product.idMove ?? 0,
+            'packing-pack',
+            id: event.product.id,
+          )
+          .timeout(const Duration(seconds: 15));
 
       //actualizamos todas las listas
       add(LoadPedidoAndProductsEvent(event.product.pedidoId ?? 0));

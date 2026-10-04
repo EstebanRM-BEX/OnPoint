@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wms_app/core/services/preload_status.dart';
 import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -53,6 +54,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     // Disparamos los eventos para obtener los conteos de la bd local
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Volver al Home = salir de cualquier módulo: se liberan las listas
+      // grandes de Devoluciones (terceros, productos, barcodes).
+      context.read<dev_bloc.DevolucionesBloc>().add(
+        dev_bloc.ReleaseHeavyDataEvent(),
+      );
       context.read<dev_bloc.DevolucionesBloc>().add(
         dev_bloc.LoadTercerosCountEvent(),
       );
@@ -293,7 +299,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           const WarningWidgetCubit(),
                           _buildHeader(),
                           _buildSummary(),
-                          const SizedBox(height: 18),
                         ]),
                       ),
                     ),
@@ -362,42 +367,57 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             return BlocBuilder<UserBloc, UserState>(
               builder: (context, userState) {
                 final userBloc = context.read<UserBloc>();
-                return OperationalSummaryCard(
-                  expanded: _isExpanded,
-                  onToggle: () => setState(() => _isExpanded = !_isExpanded),
-                  terceros: SummaryMetric(
-                    count: devBloc.tercerosCount,
-                    // Propiedad persistente del bloc (no solo el estado
-                    // transitorio) para evitar carreras.
-                    loading:
-                        devBloc.isLoadingTerceros ||
-                        devState is dev_bloc.DownloadAllTercerosLoading ||
-                        devState is dev_bloc.LoadTercerosFromDBLoading,
+                return ListenableBuilder(
+                  listenable: PreloadStatus.instance,
+                  builder: (context, _) => OperationalSummaryCard(
+                    expanded: _isExpanded,
+                    onToggle: () => setState(() => _isExpanded = !_isExpanded),
+                    terceros: SummaryMetric(
+                      pending: PreloadStatus.instance.isPending(
+                        PreloadStatus.terceros,
+                      ),
+                      count: devBloc.tercerosCount,
+                      // Propiedad persistente del bloc (no solo el estado
+                      // transitorio) para evitar carreras.
+                      loading:
+                          devBloc.isLoadingTerceros ||
+                          devState is dev_bloc.DownloadAllTercerosLoading ||
+                          devState is dev_bloc.LoadTercerosFromDBLoading,
+                    ),
+                    productos: SummaryMetric(
+                      pending: PreloadStatus.instance.isPending(
+                        PreloadStatus.productos,
+                      ),
+                      count: invBloc.productosCount,
+                      // Propiedad persistente del bloc (no solo el estado
+                      // transitorio) para evitar carreras.
+                      loading:
+                          invBloc.isLoading ||
+                          invState is GetProductsLoadingInventory ||
+                          invState is GetProductsLoadingBD,
+                    ),
+                    ubicaciones: SummaryMetric(
+                      pending: PreloadStatus.instance.isPending(
+                        PreloadStatus.ubicaciones,
+                      ),
+                      count: userBloc.locationsCount,
+                      // Propiedad persistente: DownloadLocationsEvent (la
+                      // descarga real post-login) emite DownloadUserDataLoading,
+                      // no UserLocationsLoading, así que ese chequeo solo nunca
+                      // detectaba la carga real.
+                      loading:
+                          userBloc.isLoadingLocations ||
+                          userState is UserLocationsLoading,
+                    ),
+                    novedades: SummaryMetric(
+                      pending: PreloadStatus.instance.isPending(
+                        PreloadStatus.novedades,
+                      ),
+                      count: userBloc.noveltiesCount,
+                      loading: userState is UserNoveltiesLoading,
+                    ),
+                    almacenes: SummaryMetric(count: userBloc.warehousesCount),
                   ),
-                  productos: SummaryMetric(
-                    count: invBloc.productosCount,
-                    // Propiedad persistente del bloc (no solo el estado
-                    // transitorio) para evitar carreras.
-                    loading:
-                        invBloc.isLoading ||
-                        invState is GetProductsLoadingInventory ||
-                        invState is GetProductsLoadingBD,
-                  ),
-                  ubicaciones: SummaryMetric(
-                    count: userBloc.locationsCount,
-                    // Propiedad persistente: DownloadLocationsEvent (la
-                    // descarga real post-login) emite DownloadUserDataLoading,
-                    // no UserLocationsLoading, así que ese chequeo solo nunca
-                    // detectaba la carga real.
-                    loading:
-                        userBloc.isLoadingLocations ||
-                        userState is UserLocationsLoading,
-                  ),
-                  novedades: SummaryMetric(
-                    count: userBloc.noveltiesCount,
-                    loading: userState is UserNoveltiesLoading,
-                  ),
-                  almacenes: SummaryMetric(count: userBloc.warehousesCount),
                 );
               },
             );

@@ -1,5 +1,6 @@
 // ignore_for_file: unnecessary_type_check
 
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
@@ -169,11 +170,23 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     on<InitializeDevolucionesData>(_onInitializeDevolucionesData);
 
     //metodo para descargar todos los terceros
-    on<DownloadAllTercerosEvent>(_onDownloadAllTercerosEvent);
+    // droppable: InitializeDevolucionesData se dispara dos veces (diálogo del
+    // home + initState de la pantalla) y, con la BD vacía, ambas cargas
+    // lanzaban su propia descarga: dos descargas de ~45 MB a la vez que
+    // duplican el pico de memoria (la app moría descargando terceros).
+    on<DownloadAllTercerosEvent>(
+      _onDownloadAllTercerosEvent,
+      transformer: droppable(),
+    );
 
     on<LoadTercerosCountEvent>(_onLoadTercerosCountEvent);
+    on<ReleaseHeavyDataEvent>(_onReleaseHeavyData);
     //metodo para cargar los terceros desde la bd
-    on<LoadTercerosFromDBEvent>(_onLoadTercerosFromDBEvent);
+    // droppable: leer 322 mil filas de SQLite dos veces en paralelo no aporta.
+    on<LoadTercerosFromDBEvent>(
+      _onLoadTercerosFromDBEvent,
+      transformer: droppable(),
+    );
     on<SelectPropietarioEvent>(_onSelectPropietarioEvent);
     on<ResetPropietarioEvent>(_onResetPropietarioEvent);
     on<LoadAllowedWarehousesEvent>(_onLoadAllowedWarehousesEvent);
@@ -197,6 +210,10 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
             'No se encontraron terceros en la base de datos',
           ),
         );
+        // Los terceros ya no se precargan al iniciar sesión: la primera vez
+        // que se entra a Devoluciones la BD está vacía, así que se descargan
+        // aquí (una sola vez; después se leen de SQLite).
+        add(DownloadAllTercerosEvent());
       } else {
         // 2. Actualización en memoria
         terceros.clear();
@@ -274,6 +291,39 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     } finally {
       isLoadingTerceros = false;
     }
+  }
+
+  /// Vacía las listas grandes al salir del módulo (ver [ReleaseHeavyDataEvent]).
+  ///
+  /// Se conservan los conteos (`tercerosCount`: el Resumen operativo del Home
+  /// los usa) y el borrador de la devolución en curso (`productosDevolucion`,
+  /// que además vive en SQLite). Se emite un estado liviano porque el último
+  /// estado emitido (p. ej. `LoadTercerosFromDBSuccess`) guarda una referencia
+  /// a la lista completa y la mantendría viva.
+  void _onReleaseHeavyData(
+    ReleaseHeavyDataEvent event,
+    Emitter<DevolucionesState> emit,
+  ) {
+    // Una carga o descarga en curso volvería a llenar las listas.
+    if (isLoadingTerceros) return;
+
+    terceros = [];
+    tercerosFilters = [];
+    productos = [];
+    productosFilters = [];
+    ubicaciones = [];
+    ubicacionesFilters = [];
+    allBarcodeInventario = [];
+    listLotesProduct = [];
+    listLotesProductFilters = [];
+
+    // Los cachés compartidos tendrían otra copia de las mismas listas; se
+    // recargan de SQLite la próxima vez que algún módulo las pida.
+    getIt<ProductosCacheService>().invalidate();
+    getIt<UbicacionesCacheService>().invalidate();
+    getIt<BarcodesInventarioCacheService>().invalidate();
+
+    emit(DevolucionesInitial());
   }
 
   void _onLoadTercerosCountEvent(

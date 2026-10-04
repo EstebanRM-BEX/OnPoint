@@ -73,7 +73,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final bloc = context.read<ConteoBloc>();
-      if (bloc.ordenConteo.filterType == 'location' && bloc.productos.isEmpty) {
+      if (bloc.productos.isEmpty) {
         bloc.add(GetProductsFromDBEvent());
       }
       _handleDependencies();
@@ -130,6 +130,9 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
   }
 
   void _handleDependencies() {
+    // Se invoca desde callbacks diferidos (post-frame, resumed, onPressed):
+    // si la pantalla ya se desmontó, context.read lanza "Null check operator".
+    if (!mounted) return;
     final bloc = context.read<ConteoBloc>();
     final hasLote = bloc.currentProduct.productTracking == "lot";
 
@@ -649,6 +652,8 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
                             else if (state is ChangeLocationIsOkState) {
                               //cambiamos el foco
                               WidgetsBinding.instance.addPostFrameCallback((_) {
+                                // La pantalla pudo cerrarse antes del frame.
+                                if (!mounted) return;
                                 FocusScope.of(context).requestFocus(focusNode2);
                                 _handleDependencies();
                               });
@@ -656,6 +661,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
                             //*estado cuando el producto es leido ok
                             else if (state is ChangeProductOrderIsOkState) {
                               WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (!mounted) return;
                                 if (context
                                         .read<ConteoBloc>()
                                         .currentProduct
@@ -669,6 +675,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
                               });
                             } else if (state is GetLotesProductSuccess) {
                               WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (!mounted) return;
                                 focusNode5.requestFocus();
                                 _handleDependencies();
                               });

@@ -1832,8 +1832,16 @@ class DataBaseSqlite {
     await db.delete(PedidosPackingTable.tableName);
     await db.delete(ProductosPedidosTable.tableName);
     await db.delete(PackagesTable.tableName);
+    // Packing por pedido (listado de index.dart) vive en tbl_pedido_pack, y el
+    // consolidado en sus propias tablas: antes no se borraban aquí, y tras
+    // cerrar sesión / entrar con otro cliente el listado seguía mostrando los
+    // pedidos del cliente anterior.
+    await db.delete(PedidoPackTable.tableName);
+    await db.delete(BatchPackingConsolidateTable.tableName);
+    await db.delete(PedidosPackingConsolidateTable.tableName);
     await deleBarcodes("packing-batch");
     await deleBarcodes("packing");
+    await deleBarcodes("packing-pack");
   }
 
   Future<void> deleRecepcion(String type) async {
@@ -1917,9 +1925,17 @@ class DataBaseSqlite {
     );
   }
 
-  Future<void> deleAllBarcodes() async {
+  Future<void> deleAllBarcodes({bool keepPacking = false}) async {
     final db = await getDatabaseInstance();
-    //eliminamos todos los codigos de barras
+    //eliminamos todos los codigos de barras (salvo los de packing si se pide)
+    if (keepPacking) {
+      await db.delete(
+        BarcodesPackagesTable.tableName,
+        where: '${BarcodesPackagesTable.columnBarcodeType} NOT LIKE ?',
+        whereArgs: ['packing%'],
+      );
+      return;
+    }
     await db.delete(BarcodesPackagesTable.tableName);
   }
 
@@ -1997,17 +2013,25 @@ class DataBaseSqlite {
     );
   }
 
-  Future<void> deleteBDCloseSession() async {
+  /// [keepPacking]: no borra nada de packing (pedidos, productos, paquetes ni
+  /// sus barcodes). Se usa en cierres de sesión automáticos (expiración), donde
+  /// el operario puede tener productos en estado "Preparado" sin empacar que
+  /// no deben perderse; ver `PackingPreservation`.
+  Future<void> deleteBDCloseSession({bool keepPacking = false}) async {
     await deleAllPicking();
     await delePickAll();
-    await delePackingAll();
+    if (!keepPacking) await delePackingAll();
     await deleAllRecepcion();
     await deleAllTrasnferencia();
     await deleInventario();
     await deleOthers();
     await deleReceptionBatch();
-    await deleAllBarcodes();
+    await deleAllBarcodes(keepPacking: keepPacking);
     await deleConteo();
+    // Terceros son del cliente (empresa): sin esto el siguiente login a OTRO
+    // cliente veía el conteo de terceros del anterior en el Resumen operativo
+    // y, al ya no precargarse, Devoluciones usaba esos terceros ajenos.
+    await deleTerceros();
     await deleExpedicion();
     await deleRecepcionMultiusuario();
     await deleTransferenciaSessions();
