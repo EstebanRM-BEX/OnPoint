@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wms_app/shared/widgets/selection_dialog.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 
@@ -11,12 +10,9 @@ class DialogTransferencia extends StatelessWidget {
   final BuildContext contextHome;
 
   Future<void> _goToInterna(BuildContext context) async {
-    // Misma operación que hacía el onTap de "Transferencia" antes de existir
-    // este selector: cargar ubicaciones/novedades/locations, mostrar el
-    // loading y navegar a la lista de transferencias internas.
-    if (contextHome.read<UserBloc>().ubicaciones.isEmpty) {
-      contextHome.read<UserBloc>().add(LoadUserLocationsEvent());
-    }
+    // Novedades y ubicaciones se leen del caché local (SQLite). No se pide
+    // LoadUserLocationsEvent al UserBloc: es un GET a la API que además
+    // reactivaba el indicador de carga de ubicaciones del resumen del home.
     contextHome.read<TransferenciaBloc>().add(LoadAllNovedadesTransferEvent());
     contextHome.read<TransferenciaBloc>().add(LoadLocations());
 
