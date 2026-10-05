@@ -143,12 +143,23 @@ class PostLoginCoordinator {
     required String statusKey,
   }) async {
     try {
-      final done = stream.firstWhere(isDone).timeout(timeout);
+      // El error (timeout o "No element" si el bloc se cierra) se captura en
+      // el propio future: si start() lanza antes del await, un error posterior
+      // no queda como excepción async sin capturar (fatal en Crashlytics).
+      Object? waitError;
+      final done = stream
+          .firstWhere(isDone)
+          .timeout(timeout)
+          .then<void>((_) {}, onError: (Object e) => waitError = e);
       start();
       await done;
-      debugPrint('📥 [PostLogin] Precarga $label terminada');
+      if (waitError != null) {
+        debugPrint('⚠️ [PostLogin] Precarga $label sin confirmar: $waitError');
+      } else {
+        debugPrint('📥 [PostLogin] Precarga $label terminada');
+      }
     } catch (e) {
-      debugPrint('⚠️ [PostLogin] Precarga $label sin confirmar: $e');
+      debugPrint('⚠️ [PostLogin] Precarga $label no pudo iniciar: $e');
     } finally {
       PreloadStatus.instance.done(statusKey);
     }
