@@ -13,10 +13,15 @@ class ResponseSenTransfer {
     dynamic id;
     ResponseSenTransferResult? result;
 
+    /// true si el servidor respondió 2xx (o sea, procesó el envío) pero el
+    /// cuerpo no se pudo interpretar. No viaja en toMap/fromMap.
+    bool acceptedButUnreadable;
+
     ResponseSenTransfer({
         this.jsonrpc,
         this.id,
         this.result,
+        this.acceptedButUnreadable = false,
     });
 
     factory ResponseSenTransfer.fromMap(Map<String, dynamic> json) => ResponseSenTransfer(
@@ -56,6 +61,11 @@ class ResponseSenTransferResult {
     };
 }
 
+/// Odoo devuelve `false` (no `null`) en los campos vacíos: se normaliza a null.
+int? _intOrNull(dynamic v) => v is int ? v : (v is num ? v.toInt() : null);
+String? _stringOrNull(dynamic v) => v is String ? v : null;
+bool? _boolOrNull(dynamic v) => v is bool ? v : null;
+
 class ResultElement {
     String? error;
     int? idMove;
@@ -66,7 +76,7 @@ class ResultElement {
     dynamic dateTransaction;
     String? newObservation;
     dynamic timeLine;
-    int? userOperatorId;
+    dynamic? userOperatorId;
 
     ResultElement({
         this.error,
@@ -82,14 +92,14 @@ class ResultElement {
     });
 
     factory ResultElement.fromMap(Map<String, dynamic> json) => ResultElement(
-        error: json["error"],
-        idMove: json["id_move"],
-        idTransferencia: json["id_transferencia"],
-        idProduct: json["id_product"],
+        error: _stringOrNull(json["error"]),
+        idMove: _intOrNull(json["id_move"]),
+        idTransferencia: _intOrNull(json["id_transferencia"]),
+        idProduct: _intOrNull(json["id_product"]),
         qtyDone: json["qty_done"],
-        isDoneItem: json["is_done_item"],
+        isDoneItem: _boolOrNull(json["is_done_item"]),
         dateTransaction: json["date_transaction"],
-        newObservation: json["new_observation"],
+        newObservation: _stringOrNull(json["new_observation"]),
         timeLine: json["time_line"],
         userOperatorId: json["user_operator_id"],
     );

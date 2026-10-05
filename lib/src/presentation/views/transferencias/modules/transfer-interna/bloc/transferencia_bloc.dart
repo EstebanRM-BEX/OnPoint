@@ -705,7 +705,14 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
         false,
       );
 
-      if (responseSend.result?.code == 200) {
+      // El servidor procesó el envío pero la respuesta no se pudo leer: en una
+      // línea normal se da por enviada (no hay nada que leer de la respuesta);
+      // en una división hace falta el id_move del remanente, así que no se
+      // puede crear la línea local (ver rama más abajo).
+      final enviadoSinLeer =
+          responseSend.acceptedButUnreadable && !event.isDividio;
+
+      if (responseSend.result?.code == 200 || enviadoSinLeer) {
         //actualizamos la ubicacion destino del producto
 
         //asiganmos la ubicacion al producto
@@ -775,6 +782,15 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
         emit(SendProductToTransferSuccess());
       } else {
         // marcamos tiempo final de sepfaracion
+      } else if (responseSend.acceptedButUnreadable) {
+        // División aceptada por el servidor con respuesta ilegible: NO se
+        // revierte el estado local (Odoo ya la aplicó); hay que refrescar las
+        // transferencias para traer la línea remanente real.
+        add(GetPorductsToTransfer(currentProduct.idTransferencia ?? 0));
+        emit(SendProductToTransferFailure(
+            'El envío llegó al servidor pero no se pudo leer su respuesta. '
+            'No lo repita: actualice las transferencias (ícono de refrescar) '
+            'para ver el estado real.'));
         await db.productTransferenciaRepository.setFieldTableProductTransfer(
             currentProduct.idTransferencia ?? 0,
             int.parse(currentProduct.productId),
@@ -834,7 +850,20 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
             currentProduct.idMove ?? 0);
 
         add(GetPorductsToTransfer(currentProduct.idTransferencia ?? 0));
-        emit(SendProductToTransferFailure(responseSend.result?.msg ?? ""));
+        // Sin mensaje del servidor (respuesta vacía o ilegible) se avisa
+        // igual: antes salía un error en blanco o ninguno.
+        final msg = responseSend.result?.msg;
+        final itemError = responseSend.result?.result?.firstOrNull?.error;
+        emit(
+          SendProductToTransferFailure(
+            (msg != null && msg.isNotEmpty)
+                ? msg
+                : (itemError != null && itemError.isNotEmpty)
+                ? itemError
+                : 'No se pudo enviar el producto. Verifique la conexión e '
+                      'intente de nuevo.',
+          ),
+        );
       }
     } catch (e, s) {
       emit(SendProductToTransferFailure('Error al enviar el producto'));

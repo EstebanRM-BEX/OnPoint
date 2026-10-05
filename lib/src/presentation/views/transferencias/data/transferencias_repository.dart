@@ -414,29 +414,36 @@ class TransferenciasRepository {
         isLoadinDialog: true,
       );
       if (response.statusCode < 400) {
-        // Decodifica la respuesta JSON a un mapa
-        Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        try {
+          // Decodifica la respuesta JSON a un mapa
+          Map<String, dynamic> jsonResponse = jsonDecode(response.body);
 
-        // Verifica si la respuesta contiene la clave 'result' y convierte la lista correctamente
-        var resultData = jsonResponse['result'];
+          // Verifica si la respuesta contiene la clave 'result' y convierte la lista correctamente
+          var resultData = jsonResponse['result'];
 
-        return ResponseSenTransfer(
-          jsonrpc: jsonResponse['jsonrpc'],
-          id: jsonResponse['id'],
-          result: resultData != null
-              ? ResponseSenTransferResult(
-                  code: resultData['code'],
-                  msg: resultData['msg'],
-                  result: resultData['result'] != null
-                      ? List<ResultElement>.from(
-                          resultData['result'].map(
-                            (x) => ResultElement.fromMap(x),
-                          ),
-                        )
-                      : [], // Si no hay elementos en 'result', se retorna una lista vacía
-                )
-              : null, // Si 'result' no existe, asigna null a 'result'
-        );
+          return ResponseSenTransfer(
+            jsonrpc: jsonResponse['jsonrpc'],
+            id: jsonResponse['id'],
+            result: resultData != null
+                ? ResponseSenTransferResult(
+                    code: resultData['code'],
+                    msg: resultData['msg'],
+                    result: resultData['result'] != null
+                        ? List<ResultElement>.from(
+                            resultData['result'].map(
+                              (x) => ResultElement.fromMap(x),
+                            ),
+                          )
+                        : [], // Si no hay elementos en 'result', se retorna una lista vacía
+                  )
+                : null, // Si 'result' no existe, asigna null a 'result'
+          );
+        } catch (e, s) {
+          // El servidor ya procesó el envío (2xx) pero el cuerpo no se pudo
+          // leer: se avisa para no tratarlo como un fallo de envío.
+          debugPrint('Error leyendo respuesta de sendProductTransfer: $e, $s');
+          return ResponseSenTransfer(acceptedButUnreadable: true);
+        }
       }
     } on SocketException catch (e) {
       debugPrint('Error de red: $e');
