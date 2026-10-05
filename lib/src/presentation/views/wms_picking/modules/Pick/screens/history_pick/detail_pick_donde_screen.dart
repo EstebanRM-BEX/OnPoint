@@ -3,6 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/core/services/configuracion_cache_service.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
@@ -23,6 +26,38 @@ class DetailPickDoneScreen extends StatefulWidget {
 
 class _DetailPickDoneScreenState extends State<DetailPickDoneScreen>
     with LoadingDialogMixin {
+  /// Permiso hide_validate_picking leído FRESCO del caché de configuración
+  /// (que se invalida al guardar la config del login/perfil). Antes se leía de
+  /// `PickingPickBloc.configurations`, que se carga una sola vez al abrir un
+  /// pick y puede quedar con un valor viejo. null = todavía no se leyó.
+  bool? _hideValidatePicking;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHideValidatePicking();
+  }
+
+  Future<void> _loadHideValidatePicking() async {
+    try {
+      final userId = await PrefUtils.getUserId();
+      final config =
+          await getIt<ConfiguracionCacheService>().getConfiguration(userId);
+      debugPrint(
+        '🔐 DetailPickDone: hide_validate_picking = '
+        '${config?.result?.result?.hideValidatePicking}',
+      );
+      if (!mounted) return;
+      setState(() {
+        // Sin configuración: se trata como "ocultar" (sin botón), igual que el
+        // diálogo de validación.
+        _hideValidatePicking = config?.result?.result?.hideValidatePicking;
+      });
+    } catch (e) {
+      debugPrint('❌ Error leyendo hide_validate_picking: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
@@ -491,7 +526,11 @@ class _DetailPickDoneScreenState extends State<DetailPickDoneScreen>
                       ),
                     ),
                     const SizedBox(height: 10),
-                    //btn para validar el pick
+                    //btn para validar el pick: se muestra cuando el pick está por
+                    // validar, pero SOLO está activo si el permiso
+                    // hide_validate_picking está en false (misma regla con la
+                    // que sale el diálogo de validación). Con el permiso en
+                    // true (o sin leer todavía) queda desactivado.
                     Visibility(
                       visible: batch?.state == 'confirmed' ||
                           batch?.state == 'assigned',
@@ -499,13 +538,16 @@ class _DetailPickDoneScreenState extends State<DetailPickDoneScreen>
                         style: ElevatedButton.styleFrom(
                           minimumSize: Size(size.width * 0.9, 40),
                           backgroundColor: primaryColorApp,
+                          disabledBackgroundColor: Colors.grey[400],
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 10),
                         ),
-                        onPressed: () {
+                        onPressed: _hideValidatePicking != false
+                            ? null
+                            : () {
                           final unidadesSeparadas =
                               calcularUnidadesSeparadas(batch!);
 
@@ -526,10 +568,12 @@ class _DetailPickDoneScreenState extends State<DetailPickDoneScreen>
                                 );
                               });
                         },
-                        child: const Text(
+                        child: Text(
                           'VALIDAR PICK',
                           style: TextStyle(
-                              color: white,
+                              color: _hideValidatePicking != false
+                                  ? Colors.white70
+                                  : white,
                               fontSize: 14,
                               fontWeight: FontWeight.bold),
                         ),

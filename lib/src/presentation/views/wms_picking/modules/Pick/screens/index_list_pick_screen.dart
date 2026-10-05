@@ -956,8 +956,11 @@ class _IndexListPickScreenState extends State<IndexListPickScreen>
                                     context,
                                     confirmText: 'Buscar',
                                     cancelText: 'Cancelar',
-                                    firstDate: DateTime.now().subtract(
-                                      const Duration(days: 30),
+                                    // Mes anterior completo (desde el día 1) hasta hoy.
+                                    firstDate: DateTime(
+                                      DateTime.now().year,
+                                      DateTime.now().month - 1,
+                                      1,
                                     ),
                                     lastDate: DateTime.now(),
                                     dateFormat: "dd-MMMM-yyyy",
