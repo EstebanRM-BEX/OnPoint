@@ -24,6 +24,7 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 
 class ListTransferenciasScreen extends StatefulWidget {
   const ListTransferenciasScreen({
@@ -42,6 +43,18 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
   final TextEditingController _controllerToDo = TextEditingController();
 
   void validateBarcode(String value, BuildContext context) {
+  /// Filtro local: solo transferencias con el usuario actual como responsable.
+  bool _soloMias = false;
+  int _userId = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    PrefUtils.getUserId().then((id) {
+      if (mounted) setState(() => _userId = id);
+    });
+  }
+
     final bloc = context.read<TransferenciaBloc>();
 
 // ✅ PROTECCIÓN 1: Evitar crash si la lista aún no carga
@@ -179,6 +192,15 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
             );
           }
         }, builder: (context, state) {
+          final pendientes = transferBloc.transferenciasDbFilters
+              .where((e) => e.isFinish == 0 || e.isFinish == null)
+              .toList();
+          final misCount = _userId == 0
+              ? 0
+              : pendientes.where((e) => e.responsableId == _userId).length;
+          final visibles = (_soloMias && _userId != 0)
+              ? pendientes.where((e) => e.responsableId == _userId).toList()
+              : pendientes;
           final transferBloc = context.read<TransferenciaBloc>();
 
           return Scaffold(
@@ -263,6 +285,25 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
                                       ],
                                     ),
                                   ),
+                                ),
+                                // Filtro: solo las asignadas a mí (responsable).
+                                IconButton(
+                                  tooltip: _soloMias
+                                      ? 'Mostrar todas'
+                                      : 'Asignadas a mí ($misCount)',
+                                  icon: Badge(
+                                    isLabelVisible: misCount > 0,
+                                    label: Text('$misCount'),
+                                    child: Icon(
+                                      _soloMias
+                                          ? Icons.person
+                                          : Icons.person_outline,
+                                      color: white,
+                                      size: 22,
+                                    ),
+                                  ),
+                                  onPressed: () =>
+                                      setState(() => _soloMias = !_soloMias),
                                 ),
                                 const Spacer(),
                                 Visibility(
@@ -366,12 +407,7 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
                       },
                     ),
 
-                    (transferBloc.transferenciasDbFilters
-                            .where((element) =>
-                                element.isFinish == 0 ||
-                                element.isFinish == null)
-                            .toList()
-                            .isEmpty)
+                    visibles.isEmpty
                         ? Expanded(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -397,19 +433,9 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
                           )
                         : Expanded(
                             child: ListView.builder(
-                                itemCount: transferBloc.transferenciasDbFilters
-                                    .where((element) =>
-                                        element.isFinish == 0 ||
-                                        element.isFinish == null)
-                                    .toList()
-                                    .length,
+                                itemCount: visibles.length,
                                 itemBuilder: (context, index) {
-                                  final transferenciaDetail = transferBloc
-                                      .transferenciasDbFilters
-                                      .where((element) =>
-                                          element.isFinish == 0 ||
-                                          element.isFinish == null)
-                                      .toList()[index];
+                                  final transferenciaDetail = visibles[index];
                                   return Padding(
                                     padding: const EdgeInsets.only(
                                         left: 10, right: 10, top: 5),
