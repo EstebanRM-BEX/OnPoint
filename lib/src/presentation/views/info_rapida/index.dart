@@ -122,7 +122,8 @@ class _InfoRapidaScreenState extends State<InfoRapidaScreen> {
             // tocables pero productos/ubicaciones siguen vacíos, y navegar
             // ahí mismo a una pantalla que lee esos campos los ve en [].
             final stillLoading =
-                state is InfoRapidaInitial || state is InitInfoRapidaLoading;
+                !context.read<InfoRapidaBloc>().isInitialized &&
+                (state is InfoRapidaInitial || state is InitInfoRapidaLoading);
             if (!stillLoading) return const SizedBox.shrink();
             // AbsorbPointer: bloquea toques al contenido de abajo mientras
             // carga (lo que antes hacía la barrera modal de showDialog).

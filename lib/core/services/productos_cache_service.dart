@@ -63,6 +63,13 @@ class ProductosCacheService {
     return UnmodifiableListView(_cacheAll!);
   }
 
+  /// true si [getAllUnique] ya tiene datos en memoria (acceso síncrono).
+  bool get isUniqueLoaded => _cacheUnique?.isNotEmpty ?? false;
+
+  /// Última copia de [getAllUnique], o vacía si aún no se cargó.
+  List<Product> get currentUnique =>
+      _cacheUnique == null ? const [] : UnmodifiableListView(_cacheUnique!);
+
   Future<List<Product>> getAllUnique({bool forceRefresh = false}) async {
     if (_cacheUnique == null || _cacheUnique!.isEmpty || forceRefresh) {
       _cacheUnique = await DataBaseSqlite().productoInventarioRepository

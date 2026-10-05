@@ -317,10 +317,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     listLotesProduct = [];
     listLotesProductFilters = [];
 
-    // Los cachés compartidos tendrían otra copia de las mismas listas; se
-    // recargan de SQLite la próxima vez que algún módulo las pida.
-    getIt<ProductosCacheService>().invalidate();
-    getIt<UbicacionesCacheService>().invalidate();
+    // Productos y ubicaciones NO se invalidan: son cachés compartidos
+    // (Info Rápida, Conteo, etc.) y vaciarlos al volver al Home obligaba a
+    // recargar ~60k productos de SQLite en cada entrada a otro módulo.
     getIt<BarcodesInventarioCacheService>().invalidate();
 
     emit(DevolucionesInitial());

@@ -92,6 +92,20 @@ class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
   StreamSubscription<dynamic>? _wsSubscription;
 
   InfoRapidaBloc({required this.userBloc}) : super(InfoRapidaInitial()) {
+    // Si las maestras ya están en memoria (entradas posteriores al módulo),
+    // se hidratan de forma síncrona: sin overlay ni nueva consulta a SQLite.
+    final locsCache = getIt<UbicacionesCacheService>();
+    final prodsCache = getIt<ProductosCacheService>();
+    if (locsCache.isLoaded && prodsCache.isUniqueLoaded) {
+      ubicaciones = locsCache.current;
+      ubicacionesFilters = ubicaciones;
+      productos = prodsCache.currentUnique;
+      productosFilters = productos;
+      isInitialized = true;
+      _fetchConfig().then((c) {
+        if (c != null) configurations = c;
+      });
+    }
     on<InfoRapidaEvent>((event, emit) {});
 
     on<GetInfoRapida>(_onGetInfoRapida);
