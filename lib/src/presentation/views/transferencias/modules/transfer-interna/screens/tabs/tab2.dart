@@ -9,13 +9,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/views/transferencias/models/response_transferencias.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
-import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
+import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/cluster_search_dock.dart';
 
 class Tab2ScreenTrans extends StatefulWidget {
   const Tab2ScreenTrans({
@@ -29,43 +30,43 @@ class Tab2ScreenTrans extends StatefulWidget {
   State<Tab2ScreenTrans> createState() => _Tab2ScreenTransState();
 }
 
-class _Tab2ScreenTransState extends State<Tab2ScreenTrans> {
+class _Tab2ScreenTransState extends State<Tab2ScreenTrans>
+    with LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   FocusNode focusNodeBuscar = FocusNode(); //cantidad textformfield
 
   final TextEditingController _controllerToDo = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
-  bool _isSearchVisible = false;
   String _searchQuery = '';
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // No robar foco si hay un diálogo o pantalla encima de este tab, ni
-    // mientras el buscador manual está visible (mismo guard que
-    // recepcion_multiusuario_detail_tab_por_hacer.dart).
+    // mientras el usuario escribe en el buscador manual (didChangeDependencies
+    // se dispara al abrirse el teclado y le quitaría el foco).
     final route = ModalRoute.of(context);
     if (route == null || !route.isCurrent) return;
-    if (_isSearchVisible) return;
+    if (_searchFocusNode.hasFocus) return;
     FocusScope.of(context).requestFocus(focusNodeBuscar);
   }
 
   @override
   void dispose() {
     focusNodeBuscar.dispose();
+    _controllerToDo.dispose();
+    _searchFocusNode.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  void _toggleSearch() {
-    setState(() => _isSearchVisible = !_isSearchVisible);
-    if (!_isSearchVisible) {
-      _searchController.clear();
-      setState(() => _searchQuery = '');
-      Future.microtask(() => focusNodeBuscar.requestFocus());
-    }
+  void _clearSearch() {
+    _searchController.clear();
+    setState(() => _searchQuery = '');
+    focusNodeBuscar.requestFocus();
   }
 
   List<LineasTransferenciaTrans> _filteredProducts(TransferenciaBloc bloc) {
@@ -110,12 +111,9 @@ class _Tab2ScreenTransState extends State<Tab2ScreenTrans> {
 
     /// Función auxiliar para procesar un producto encontrado
     void processProduct(LineasTransferenciaTrans product) {
-      showDialog(
-        context: context,
-        builder: (_) => const DialogLoading(
-          message: 'Cargando información del producto...',
-        ),
-      );
+      // Doble escaneo mientras carga: no apilar otro loading ni navegar dos veces.
+      if (isLoadingDialogVisible) return;
+      showLoadingDialog('Cargando información del producto...');
 
       // Eventos de ubicación
       bloc
@@ -157,7 +155,8 @@ class _Tab2ScreenTransState extends State<Tab2ScreenTrans> {
       Future.microtask(() => focusNodeBuscar.requestFocus());
 
       Future.delayed(const Duration(milliseconds: 1000), () {
-        Navigator.pop(context);
+        if (!mounted) return;
+        hideLoadingDialog();
         goToScreen(
           context,
           'scan-product-transfer',
@@ -244,41 +243,24 @@ class _Tab2ScreenTransState extends State<Tab2ScreenTrans> {
               height: size.height * 0.8,
               child: Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Row(
-                      children: [
-                        if (_isSearchVisible)
-                          Expanded(
-                            child: DynamicSearchBar(
-                              controller: _searchController,
-                              hintText: 'Buscar producto',
-                              persistentKeyboard: true,
-                              onSearchChanged: (value) =>
-                                  setState(() => _searchQuery = value),
-                              onSearchCleared: () =>
-                                  setState(() => _searchQuery = ''),
-                            ),
-                          )
-                        else
-                          const Spacer(),
-                        IconButton(
-                          icon: Icon(
-                            _isSearchVisible ? Icons.close : Icons.search,
-                            color: primaryColorApp,
-                          ),
-                          onPressed: _toggleSearch,
-                        ),
-                      ],
+                  //*buscador manual + lector: el campo invisible del escáner
+                  // conserva el foco; tocar el buscador lo cambia a manual y
+                  // el botón de código de barras reactiva el lector.
+                  ClusterSearchDock(
+                    controller: _searchController,
+                    searchFocusNode: _searchFocusNode,
+                    scannerFocusNode: focusNodeBuscar,
+                    hintText: 'Escanear o buscar producto...',
+                    scanner: BarcodeScannerField(
+                      controller: _controllerToDo,
+                      focusNode: focusNodeBuscar,
+                      onBarcodeScanned: (value, context) {
+                        return validateBarcode(value, context);
+                      },
                     ),
-                  ),
-                  //*espacio para escanear y buscar el producto
-                  BarcodeScannerField(
-                    controller: _controllerToDo,
-                    focusNode: focusNodeBuscar,
-                    onBarcodeScanned: (value, context) {
-                      return validateBarcode(value, context);
-                    },
+                    onChanged: (value) => setState(() => _searchQuery = value),
+                    onCleared: _clearSearch,
+                    onActivateScanner: () => focusNodeBuscar.requestFocus(),
                   ),
 
                   // context.read<UserBloc>().fabricante.contains("Zebra")

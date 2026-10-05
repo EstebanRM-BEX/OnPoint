@@ -15,6 +15,7 @@ class ClusterSearchDock extends StatelessWidget {
   final ValueChanged<String> onChanged;
   final VoidCallback onCleared;
   final VoidCallback onActivateScanner;
+  final String hintText;
 
   const ClusterSearchDock({
     super.key,
@@ -25,6 +26,7 @@ class ClusterSearchDock extends StatelessWidget {
     required this.onChanged,
     required this.onCleared,
     required this.onActivateScanner,
+    this.hintText = 'Escanear o buscar Batch...',
   });
 
   @override
@@ -69,7 +71,7 @@ class ClusterSearchDock extends StatelessWidget {
           style: const TextStyle(fontSize: 13, color: ClusterPalette.slate800),
           decoration: InputDecoration(
             isDense: true,
-            hintText: 'Escanear o buscar Batch...',
+            hintText: hintText,
             hintStyle: const TextStyle(
               fontSize: 13,
               color: ClusterPalette.slate400,
