@@ -930,6 +930,11 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
                 product.isSendOdoo == 0,
           )
           .toList();
+      // Lista completa actualizada: calcularUnidadesSeparadas() (porcentaje
+      // del detalle) suma sobre pickWithProducts.products, no sobre
+      // filteredProducts; sin esto quedaba con las cantidades anteriores a
+      // la edición.
+      pickWithProducts.products = response.products;
       filteredProducts.clear();
       filteredProducts.addAll(products);
       emit(
@@ -2655,6 +2660,27 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       debugPrint("❌ Error en el formatSecondsToHHMMSS $e ->$s");
       return "";
     }
+  }
+
+  /// Relee los productos del pick desde SQLite y actualiza
+  /// `pickWithProducts.products` (base de [calcularUnidadesSeparadas]).
+  /// Devuelve la lista fresca, o la de memoria si la lectura falla. Úsalo
+  /// antes de decidir el cierre del pick, para no depender de que un
+  /// `FetchPickWithProductsEvent` ya haya terminado.
+  Future<List<ProductsBatch>> reloadPickProductsFromDb() async {
+    try {
+      final response = await db.pickProductsRepository.getPickWithProducts(
+        pickWithProducts.pick?.id ?? 0,
+      );
+      final fresh = response?.products;
+      if (fresh != null && fresh.isNotEmpty) {
+        pickWithProducts.products = fresh;
+        return fresh;
+      }
+    } catch (e, s) {
+      debugPrint("❌ Error en reloadPickProductsFromDb: $e -> $s");
+    }
+    return pickWithProducts.products ?? [];
   }
 
   String calcularUnidadesSeparadas() {

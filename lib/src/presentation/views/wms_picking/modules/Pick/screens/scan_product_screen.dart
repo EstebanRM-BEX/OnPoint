@@ -1679,14 +1679,20 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
     }
   }
 
-  void validatePicking(
+  Future<void> validatePicking(
     PickingPickBloc batchBloc,
     BuildContext context,
     ProductsBatch currentProduct,
-  ) {
+  ) async {
     batchBloc.add(
       FetchPickWithProductsEvent(batchBloc.pickWithProducts.pick?.id ?? 0),
     );
+
+    // Progreso y pendientes de envío se calculan sobre datos frescos de
+    // SQLite: el evento anterior es asíncrono y leer la memoria enseguida
+    // podía dar el porcentaje previo al último cambio.
+    final freshProducts = await batchBloc.reloadPickProductsFromDb();
+    if (!mounted) return;
 
     //validamos que la cantidad de productos separados sea igual a la cantidad de productos pedidos
     //validamos el 100 de las unidades separadas
@@ -1695,7 +1701,7 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
     );
     //*validamos is tenemos productos que no se han enviado
     if (unidadesSeparadas == "100.0" || unidadesSeparadas >= 100.0) {
-      var productsToSend = batchBloc.filteredProducts
+      var productsToSend = freshProducts
           .where((element) => element.isSendOdoo == 0)
           .toList();
 
