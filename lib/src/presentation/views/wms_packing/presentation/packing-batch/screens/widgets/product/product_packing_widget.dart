@@ -51,7 +51,9 @@ class ProductDropdownPackingWidget extends StatelessWidget {
                 width: 20,
               ),
               value: selectedProduct,
-              items: listOfProductsName.map((ProductoPedido product) {
+              // Solo el producto actual: la selección manual confirma el
+              // producto que toca, no permite elegir otros de la lista.
+              items: [currentProduct].map((ProductoPedido product) {
                 return DropdownMenuItem<String>(
                   value: product.productId.toString(),
                   child: Container(
