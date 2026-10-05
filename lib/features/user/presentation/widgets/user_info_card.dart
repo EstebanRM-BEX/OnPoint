@@ -25,6 +25,9 @@ class UserInfoCard extends StatefulWidget {
 class _UserInfoCardState extends State<UserInfoCard> {
   // Se lee una sola vez (no en cada rebuild del BlocConsumer de la página).
   late final Future<String> _serverUrl = PrefUtils.getEnterprise();
+  // Correo con el que inició sesión: respaldo cuando la configuración del
+  // usuario no trae `email`.
+  late final Future<String> _loginEmail = PrefUtils.getUserEmail();
 
   String get _initials {
     final parts = (widget.profile.name ?? '')
@@ -54,10 +57,10 @@ class _UserInfoCardState extends State<UserInfoCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Nombre completo (sin recortar): puede ocupar varias
+                    // líneas.
                     Text(
                       profile.name ?? '',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -67,29 +70,38 @@ class _UserInfoCardState extends State<UserInfoCard> {
                     const SizedBox(height: 2),
                     // Correo completo (sin recortar): puede ocupar varias
                     // líneas.
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(top: 2),
-                          child: Icon(
-                            Icons.mail_outline,
-                            size: 13,
-                            color: Color(0xFF94A3B8),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            profile.email ?? '',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF64748B),
+                    FutureBuilder<String>(
+                      future: _loginEmail,
+                      builder: (_, snapshot) {
+                        final email = (profile.email ?? '').isNotEmpty
+                            ? profile.email!
+                            : snapshot.data ?? '';
+                        if (email.isEmpty) return const SizedBox.shrink();
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.only(top: 2),
+                              child: Icon(
+                                Icons.mail_outline,
+                                size: 13,
+                                color: Color(0xFF94A3B8),
+                              ),
                             ),
-                          ),
-                        ),
-                      ],
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                email,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
