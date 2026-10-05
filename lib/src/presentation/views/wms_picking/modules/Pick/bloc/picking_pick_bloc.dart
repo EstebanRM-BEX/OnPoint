@@ -1107,8 +1107,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
             ListItem(
               idMove: product?.idMove ?? 0,
               idProducto: product?.idProduct ?? 0,
-              // idLote: product?.loteId ?? 0,
-              idLote: 0,
+              idLote: product?.loteId ?? event.product.loteId ?? 0,
               idUbicacionDestino: product?.muelleId ?? 0,
               cantidadEnviada: event.cantidad,
               idOperario: userid,
