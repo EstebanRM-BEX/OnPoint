@@ -54,7 +54,9 @@ class LocationDropdownTransferWidget extends StatelessWidget {
               width: 20,
             ),
             value: selectedLocation,
-            items: positionsOrigen.map((String location) {
+            // Solo la ubicación del producto actual, no la lista completa.
+            items: [currentProduct.locationName.toString()]
+                .map((String location) {
               return DropdownMenuItem<String>(
                 value: location,
                 child: Container(

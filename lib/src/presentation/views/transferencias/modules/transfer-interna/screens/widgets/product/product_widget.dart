@@ -51,7 +51,9 @@ class ProductDropdownTransferWidget extends StatelessWidget {
                 width: 20,
               ),
               value: selectedProduct,
-              items: listOfProductsName.map((String product) {
+              // Solo el producto actual, no la lista completa.
+              items: [currentProduct.productName.toString()]
+                  .map((String product) {
                 return DropdownMenuItem<String>(
                   value: product,
                   child: Container(
