@@ -6,6 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/features/expedition/presentation/widgets/dialog_observacion_expedicion_widget.dart';
+import 'package:wms_app/features/expedition/presentation/widgets/expedicion_observacion_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/widgets/others/dialog_backorder_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
@@ -246,26 +248,18 @@ class _Tab1PedidoScreenState extends State<Tab1PedidoScreen>
                                     ],
                                   ),
                                   if (pedidoCurrent.observacion != null &&
-                                      pedidoCurrent
-                                          .observacion!.isNotEmpty) ...[
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text("Observación: ",
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: primaryColorApp)),
-                                    ),
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        pedidoCurrent.observacion.toString(),
-                                        style: TextStyle(
-                                            fontSize: 12, color: black),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
+                                      pedidoCurrent.observacion!.isNotEmpty)
+                                    ExpedicionObservacionWidget(
+                                      observacion: pedidoCurrent.observacion!,
+                                      onVerMas: () => showDialog(
+                                        context: context,
+                                        builder: (_) =>
+                                            DialogObservacionExpedicionWidget(
+                                          observacion:
+                                              pedidoCurrent.observacion!,
+                                        ),
                                       ),
                                     ),
-                                  ],
                                   Row(
                                     children: [
                                       Text(
