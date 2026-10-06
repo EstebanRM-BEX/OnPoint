@@ -9,7 +9,10 @@ import 'package:wms_app/features/expedition/domain/entities/expedicion_detail.da
 import 'package:wms_app/features/expedition/presentation/bloc/confirm/expedicion_confirm_bloc.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/list/expedition_list_bloc.dart';
 import 'package:wms_app/features/expedition/presentation/widgets/dialog_confirmar_pedido_widget.dart';
+import 'package:wms_app/features/expedition/presentation/widgets/dialog_observacion_expedicion_widget.dart';
 import 'package:wms_app/features/expedition/presentation/widgets/dialog_vencidos_expedicion_widget.dart';
+import 'package:wms_app/features/expedition/presentation/widgets/expedicion_detalle_datos_card_widget.dart';
+import 'package:wms_app/features/expedition/presentation/widgets/expedicion_detalle_resumen_card_widget.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
@@ -134,42 +137,20 @@ class _ExpedicionDetailTabDetallesState
         crearBackorder: _crearBackorderPendiente));
   }
 
+  void _mostrarDialogoObservacion(BuildContext context, String observacion) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => DialogObservacionExpedicionWidget(
+        observacion: observacion,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
     final pedido = detail.pedido;
     final mostrarBoton =
         pedido.isTerminated != true && _hideValidateExpedition == true;
-
-    // Mismo estilo label:valor que Tab1PedidoScreen de packing (label en
-    // primaryColorApp, valor en negro/rojo, fontSize 12).
-    Widget row(String label, String value, {Color? valueColor}) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2),
-          child: Row(
-            children: [
-              Text(label,
-                  style: TextStyle(fontSize: 12, color: primaryColorApp)),
-              Expanded(
-                child: Text(value,
-                    style: TextStyle(fontSize: 12, color: valueColor ?? black)),
-              ),
-            ],
-          ),
-        );
-
-    Widget rowIcon(IconData icon, String text, {Color? color}) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2),
-          child: Row(
-            children: [
-              Icon(icon, size: 15, color: primaryColorApp),
-              const SizedBox(width: 5),
-              Expanded(
-                child: Text(text,
-                    style: TextStyle(fontSize: 12, color: color ?? black)),
-              ),
-            ],
-          ),
-        );
 
     return BlocListener<ExpedicionConfirmBloc, ExpedicionConfirmState>(
       listener: (context, state) {
@@ -222,86 +203,129 @@ class _ExpedicionDetailTabDetallesState
           }
         }
       },
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header con el nombre de la expedición.
-            Text(
-              pedido.nombre ?? '',
-              style: TextStyle(
-                  fontSize: 12,
-                  color: primaryColorApp,
-                  fontWeight: FontWeight.bold),
-            ),
-            if (pedido.zonaEntrega != null && pedido.zonaEntrega!.isNotEmpty)
-              row('Zona de entrega: ', pedido.zonaEntrega!),
-            Visibility(
-              visible: pedido.manejoPropietario == true,
-              child: row('Propietario: ',
-                  pedido.propietario ?? 'Sin propietario'),
-            ),
-            row('Operación: ', pedido.pickingType ?? ''),
-            row('Estado: ', pedido.estado ?? 'Sin estado'),
-            if (pedido.observacion != null && pedido.observacion!.isNotEmpty)
-              row('Observación: ', pedido.observacion!),
-            const Divider(color: black, thickness: 1, height: 5),
-            rowIcon(
-              Icons.calendar_month_sharp,
-              pedido.fecha != null
-                  ? DateFormat('dd/MM/yyyy').format(pedido.fecha!)
-                  : 'Sin fecha',
-            ),
-            row('Doc. Origen: ', pedido.documentoOrigen ?? ''),
-            row(
-              'Cliente: ',
-              pedido.cliente ?? 'Sin cliente',
-              valueColor: (pedido.cliente == null || pedido.cliente!.isEmpty)
-                  ? red
-                  : black,
-            ),
-            row('Cantidad de items: ', '${pedido.totalCantidades ?? 0}'),
-            row('Cantidad de paquetes: ', '${pedido.numeroPaquetes ?? 0}'),
-            if (pedido.productoSueltos != null && pedido.productoSueltos! > 0)
-              row('Producto sueltos: ', '${pedido.productoSueltos}'),
-            if (pedido.totalPeso != null && pedido.totalPeso! > 0)
-              row('Peso total: ', '${pedido.totalPeso}'),
-            rowIcon(
-              Icons.person_rounded,
-              pedido.responsable == null || pedido.responsable!.isEmpty
-                  ? 'Sin responsable'
-                  : pedido.responsable!,
-              color: (pedido.responsable == null || pedido.responsable!.isEmpty)
-                  ? red
-                  : black,
-            ),
-            if (pedido.startTimeTransfer != null &&
-                pedido.startTimeTransfer!.isNotEmpty)
-              rowIcon(Icons.timer, 'Iniciado: ${pedido.startTimeTransfer}'),
-            if (pedido.isTerminated == true)
-              rowIcon(Icons.check_circle, 'Expedición confirmada',
-                  color: green),
-            const SizedBox(height: 10),
-            if (mostrarBoton)
-              Center(
-                child: ElevatedButton(
-                  onPressed: () => _handleConfirmar(context),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: Size(size.width * 0.9, 30),
-                    backgroundColor: primaryColorApp,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+      child: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+              child: Column(
+                children: [
+                  ExpedicionDetalleResumenCardWidget(
+                    nombre: pedido.nombre ?? '',
+                    estado: pedido.estado,
+                    operacion: pedido.pickingType,
+                    zonaEntrega: pedido.zonaEntrega,
+                    observacion: pedido.observacion,
+                    onVerObservacion: () => _mostrarDialogoObservacion(
+                        context, pedido.observacion ?? ''),
                   ),
-                  child: const Text(
-                    'Confirmar pedido',
-                    style: TextStyle(color: white, fontSize: 12),
+                  const SizedBox(height: 12),
+                  ExpedicionDetalleDatosCardWidget(
+                    items: '${pedido.totalCantidades ?? 0}',
+                    paquetes: '${pedido.numeroPaquetes ?? 0}',
+                    peso: '${pedido.totalPeso ?? 0}',
+                    datos: [
+                      if (pedido.manejoPropietario == true)
+                        ExpedicionDetalleDato(
+                          icon: Icons.business_outlined,
+                          label: 'Propietario',
+                          value: pedido.propietario ?? 'Sin propietario',
+                          valueColor:
+                              pedido.propietario == null ? red : null,
+                        ),
+                      ExpedicionDetalleDato(
+                        icon: Icons.calendar_month_outlined,
+                        label: 'Fecha',
+                        mono: true,
+                        value: pedido.fecha != null
+                            ? DateFormat('dd/MM/yyyy').format(pedido.fecha!)
+                            : 'Sin fecha',
+                      ),
+                      ExpedicionDetalleDato(
+                        icon: Icons.description_outlined,
+                        label: 'Doc. Origen',
+                        chip: true,
+                        value: pedido.documentoOrigen ?? '',
+                      ),
+                      ExpedicionDetalleDato(
+                        icon: Icons.person_outline,
+                        label: 'Cliente',
+                        value: pedido.cliente ?? 'Sin cliente',
+                        valueColor:
+                            (pedido.cliente == null || pedido.cliente!.isEmpty)
+                                ? red
+                                : const Color(0xFF1E293B),
+                      ),
+                      if (pedido.productoSueltos != null &&
+                          pedido.productoSueltos! > 0)
+                        ExpedicionDetalleDato(
+                          icon: Icons.category_outlined,
+                          label: 'Producto sueltos',
+                          value: '${pedido.productoSueltos}',
+                        ),
+                      ExpedicionDetalleDato(
+                        icon: Icons.account_circle_outlined,
+                        label: 'Operario',
+                        avatar: true,
+                        value: pedido.responsable == null ||
+                                pedido.responsable!.isEmpty
+                            ? 'Sin responsable'
+                            : pedido.responsable!,
+                        valueColor: (pedido.responsable == null ||
+                                pedido.responsable!.isEmpty)
+                            ? red
+                            : null,
+                      ),
+                      if (pedido.startTimeTransfer != null &&
+                          pedido.startTimeTransfer!.isNotEmpty)
+                        ExpedicionDetalleDato(
+                          icon: Icons.schedule,
+                          label: 'Iniciado',
+                          value: pedido.startTimeTransfer!,
+                        ),
+                      if (pedido.isTerminated == true)
+                        const ExpedicionDetalleDato(
+                          icon: Icons.check_circle,
+                          label: 'Estado',
+                          value: 'Expedición confirmada',
+                          valueColor: green,
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (mostrarBoton)
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _handleConfirmar(context),
+                    icon: const Icon(Icons.check, color: white, size: 20),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColorApp,
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    label: const Text(
+                      'Confirmar pedido',
+                      style: TextStyle(
+                          color: white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700),
+                    ),
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
