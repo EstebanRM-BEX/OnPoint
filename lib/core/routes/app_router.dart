@@ -108,6 +108,7 @@ import 'package:wms_app/features/login/presentation/screens/update_required_scre
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/detail_create_tranfer_screen.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/scan_product_create_transfer_screen.dart';
+import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/create_transfer_scope.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/location/location_search_widget.dart';
 import 'package:wms_app/src/presentation/views/transferencias/models/response_transferencias.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/screens/widgets/lote/search_lote_widget.dart';
@@ -938,10 +939,9 @@ class AppRoutes {
 
       createTransfer: (context) {
         final args = _args(context);
-        final bloc = _arg<CreateTransferBloc>(args, 0) ??
-            CreateTransferBloc.resumeOrCreate();
-        return BlocProvider<CreateTransferBloc>.value(
-          value: bloc,
+        final bloc = _arg<CreateTransferBloc>(args, 0);
+        return CreateTransferScope(
+          bloc: bloc,
           child: const CreateTransferScreen(),
         );
       },
@@ -949,10 +949,9 @@ class AppRoutes {
       searchLocationCreateTransfer: (context) {
         final args = _args(context);
         final isLocationDest = _arg<bool>(args, 0) ?? false;
-        final bloc = _arg<CreateTransferBloc>(args, 1) ??
-            CreateTransferBloc.resumeOrCreate();
-        return BlocProvider<CreateTransferBloc>.value(
-          value: bloc,
+        final bloc = _arg<CreateTransferBloc>(args, 1);
+        return CreateTransferScope(
+          bloc: bloc,
           child: SearchLocationCreateTransfercreen(
             isLocationDest: isLocationDest,
           ),
@@ -962,29 +961,26 @@ class AppRoutes {
       searchLoteCreateTransfer: (context) {
         final args = _args(context);
         final currentProduct = _arg<Product>(args, 0);
-        final bloc = _arg<CreateTransferBloc>(args, 1) ??
-            CreateTransferBloc.resumeOrCreate();
-        return BlocProvider<CreateTransferBloc>.value(
-          value: bloc,
+        final bloc = _arg<CreateTransferBloc>(args, 1);
+        return CreateTransferScope(
+          bloc: bloc,
           child: SearchLoteCreateTransferScreen(currentProduct: currentProduct),
         );
       },
 
       detailCreateTransfer: (context) {
         final args = _args(context);
-        final bloc = _arg<CreateTransferBloc>(args, 0) ??
-            CreateTransferBloc.resumeOrCreate();
-        return BlocProvider<CreateTransferBloc>.value(
-          value: bloc,
+        final bloc = _arg<CreateTransferBloc>(args, 0);
+        return CreateTransferScope(
+          bloc: bloc,
           child: DetailCreateTransferScreen(),
         );
       },
       searchProductsCreateTransfer: (context) {
         final args = _args(context);
-        final bloc = _arg<CreateTransferBloc>(args, 0) ??
-            CreateTransferBloc.resumeOrCreate();
-        return BlocProvider<CreateTransferBloc>.value(
-          value: bloc,
+        final bloc = _arg<CreateTransferBloc>(args, 0);
+        return CreateTransferScope(
+          bloc: bloc,
           child: SearchProductCreateTransferScreen(),
         );
       },

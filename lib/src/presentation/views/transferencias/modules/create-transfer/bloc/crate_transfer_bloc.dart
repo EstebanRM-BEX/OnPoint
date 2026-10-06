@@ -47,6 +47,46 @@ class CreateTransferBloc
     _draft = null;
   }
 
+  // ── Ciclo de vida ────────────────────────────────────────────────────────
+  // Cada pantalla del módulo se registra con [attachScope]/[detachScope]
+  // (CreateTransferScope). Al salir del módulo sin trabajo en curso el bloc
+  // se cierra; con borrador (origen/destino/productos) se conserva para
+  // retomarlo con [resumeOrCreate].
+  int _scopeRefs = 0;
+
+  void attachScope() => _scopeRefs++;
+
+  /// Hay algo que perder si se descarta esta instancia.
+  bool get hasDraftWork =>
+      currentUbication != null ||
+      currentUbicationDest != null ||
+      currentProduct != null ||
+      productosCreateTransfer.isNotEmpty;
+
+  /// Se llama al descartarse una pantalla del módulo. La navegación interna es
+  /// por pushReplacementNamed (la siguiente pantalla se monta mientras la
+  /// anterior se descarta), de ahí el margen antes de decidir.
+  void detachScope() {
+    _scopeRefs--;
+    if (_scopeRefs > 0) return;
+    Future<void>.delayed(const Duration(milliseconds: 500), () {
+      if (_scopeRefs > 0 || isClosed || hasDraftWork) return;
+      close();
+    });
+  }
+
+  @override
+  Future<void> close() {
+    if (identical(_draft, this)) _draft = null;
+    newLoteController.dispose();
+    searchControllerLote.dispose();
+    dateLoteController.dispose();
+    searchControllerLocation.dispose();
+    searchControllerProducts.dispose();
+    segundaUnidadController.dispose();
+    return super.close();
+  }
+
   // //*validaciones de campos del estado de la vista
   bool loteIsOk = false;
   bool isLocationOk = true;
