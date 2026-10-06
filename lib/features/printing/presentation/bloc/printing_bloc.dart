@@ -1,3 +1,4 @@
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
@@ -28,7 +29,10 @@ class PrintingBloc extends Bloc<PrintingEvent, PrintingState> {
     on<LoadPrintersEvent>(_onLoadPrinters);
     on<SelectPrinterEvent>(_onSelectPrinter);
     on<SelectReportEvent>(_onSelectReport);
-    on<ExecutePrintEvent>(_onExecutePrint);
+    // droppable: mientras una impresión está en curso se ignoran los
+    // ExecutePrintEvent nuevos (doble toque en "Si, Imprimir"), así se envía
+    // una sola petición de impresión.
+    on<ExecutePrintEvent>(_onExecutePrint, transformer: droppable());
   }
 
   Future<void> _onLoadPrinters(
