@@ -4,7 +4,6 @@ import 'dart:io';
 import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
-import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_bloc.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/cluster_picking/cluster_picking_bloc.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/lote_producto/lote_producto_bloc.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/picking_cluster_list/picking_cluster_list_bloc.dart';
@@ -228,7 +227,6 @@ class MyApp extends StatelessWidget {
           ),
         ),
         BlocProvider(create: (_) => getIt<LoteProductoBloc>()),
-        BlocProvider(create: (_) => getIt<PackagingTypeBloc>()),
         BlocProvider(create: (_) => getIt<PrintingBloc>()),
         // PrintLabelsBloc ya NO se provee acá — vive escopeado a sus propias
         // rutas en app_router.dart (print-labels/-products/-locations).

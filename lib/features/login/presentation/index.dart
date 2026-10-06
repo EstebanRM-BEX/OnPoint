@@ -1,7 +1,7 @@
 import 'package:wms_app/core/utils/prefs/secure_storage_utils.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
-import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_bloc.dart';
-import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_event.dart';
+import 'package:wms_app/features/packaging_types/domain/usecases/get_packaging_types_usecase.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/login/presentation/bloc/login_bloc.dart';
@@ -42,7 +42,8 @@ class _LoginPageState extends State<LoginPage> with LoadingDialogMixin {
           context.read<UserBloc>().add(
             RegisterDeviceEvent(user: state.user, password: password),
           );
-          context.read<PackagingTypeBloc>().add(SyncPackagingTypesEvent());
+          // Dispara y olvida: sin bloc (no hay nadie escuchando el resultado).
+          getIt<GetPackagingTypesUseCase>()();
         }
 
         if (state is LoginFailure) {

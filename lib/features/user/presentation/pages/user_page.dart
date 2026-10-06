@@ -3,6 +3,7 @@ import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_bloc.dart';
+import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_event.dart';
 import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_type_state.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
@@ -37,170 +38,177 @@ class UserPage extends StatefulWidget {
 class _UserPageState extends State<UserPage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: MultiBlocListener(
-        listeners: [
-          BlocListener<HomeBloc, HomeState>(
+    // PackagingTypeBloc solo se usa acá (sincronizar) y en el diálogo de
+    // packing (que crea el suyo): se escopea a la página y se cierra al salir.
+    return BlocProvider<PackagingTypeBloc>(
+      create: (_) => getIt<PackagingTypeBloc>(),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: MultiBlocListener(
+          listeners: [
+            BlocListener<HomeBloc, HomeState>(
+              listener: (context, state) {
+                if (state is AppVersionUpdateState) {
+                  showDialog(
+                    context: context,
+                    builder: (context) => UpdateAppDialog(),
+                  );
+                }
+                if (state is AppVersionLoadedState) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("No hay actualizaciones disponibles"),
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                }
+              },
+            ),
+            BlocListener<InventarioBloc, InventarioState>(
+              listener: (context, state) {
+                debugPrint('state inventario : $state');
+                if (state is GetProductsLoadingInventory) {
+                  showDialog(
+                    context: context,
+                    builder: (context) => const DialogLoading(
+                      message: 'Descargando productos...',
+                    ),
+                  );
+                }
+                if (state is GetProductsSuccess) {
+                  if (Navigator.canPop(context)) Navigator.pop(context);
+                  Get.snackbar(
+                    '360 Software Informa',
+                    "Se han descargado ${state.products.length} productos",
+                    backgroundColor: white,
+                    colorText: primaryColorApp,
+                    icon: const Icon(Icons.check_circle, color: Colors.green),
+                  );
+                }
+                if (state is GetProductsFailureInventory) {
+                  debugPrint("error: ${state.message}");
+                  if (Navigator.canPop(context)) Navigator.pop(context);
+                  Get.snackbar(
+                    '360 Software Informa',
+                    state.message,
+                    backgroundColor: white,
+                    colorText: primaryColorApp,
+                    icon: const Icon(Icons.error, color: Colors.red),
+                  );
+                }
+              },
+            ),
+            BlocListener<PackagingTypeBloc, PackagingTypeState>(
+              listener: (context, state) {
+                debugPrint('state packaging type : $state');
+                if (state is PackagingTypesLoadInProgress) {
+                  showDialog(
+                    context: context,
+                    builder: (context) => const DialogLoading(
+                      message: 'Descargando tipos de empaque...',
+                    ),
+                  );
+                }
+                if (state is PackagingTypesLoadSuccess) {
+                  if (Navigator.canPop(context)) Navigator.pop(context);
+                  Get.snackbar(
+                    '360 Software Informa',
+                    "Se han descargado ${state.packagingTypes.length} tipos de empaque",
+                    backgroundColor: white,
+                    colorText: primaryColorApp,
+                    icon: const Icon(Icons.check_circle, color: Colors.green),
+                  );
+                }
+                if (state is PackagingTypeLoadFailure) {
+                  if (Navigator.canPop(context)) Navigator.pop(context);
+                  Get.snackbar(
+                    '360 Software Informa',
+                    state.message,
+                    backgroundColor: white,
+                    colorText: primaryColorApp,
+                    icon: const Icon(Icons.error, color: Colors.red),
+                  );
+                }
+              },
+            ),
+          ],
+          child: BlocConsumer<UserBloc, UserState>(
             listener: (context, state) {
-              if (state is AppVersionUpdateState) {
-                showDialog(
-                  context: context,
-                  builder: (context) => UpdateAppDialog(),
+              if (state is UserError) {
+                showScrollableErrorDialog(state.message);
+              }
+              if (state is UserOfflineWarning) {
+                Get.snackbar(
+                  '360 Software Informa',
+                  'Sin conexión: mostrando los datos guardados localmente.',
+                  backgroundColor: white,
+                  colorText: primaryColorApp,
+                  icon: const Icon(Icons.cloud_off, color: Colors.orange),
+                  duration: const Duration(seconds: 3),
                 );
               }
-              if (state is AppVersionLoadedState) {
+              if (state is DownloadUserDataLoading) {
+                showDialog(
+                  context: context,
+                  builder: (context) => DialogLoading(message: state.message),
+                );
+              }
+              if (state is DownloadUserDataSuccess) {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+                Get.snackbar(
+                  '360 Software Informa',
+                  state.message,
+                  backgroundColor: white,
+                  colorText: primaryColorApp,
+                  icon: const Icon(Icons.check_circle, color: Colors.green),
+                );
+              }
+              if (state is DownloadUserDataError) {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+                Get.snackbar(
+                  '360 Software Informa',
+                  state.message,
+                  backgroundColor: white,
+                  colorText: primaryColorApp,
+                  icon: const Icon(Icons.error, color: Colors.red),
+                );
+              }
+              if (state is DeviceRegistrationSuccess) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text("No hay actualizaciones disponibles"),
-                    duration: Duration(seconds: 3),
+                    content: Text("Dispositivo registrado correctamente"),
                   ),
                 );
               }
-            },
-          ),
-          BlocListener<InventarioBloc, InventarioState>(
-            listener: (context, state) {
-              debugPrint('state inventario : $state');
-              if (state is GetProductsLoadingInventory) {
-                showDialog(
-                  context: context,
-                  builder: (context) =>
-                      const DialogLoading(message: 'Descargando productos...'),
-                );
-              }
-              if (state is GetProductsSuccess) {
-                if (Navigator.canPop(context)) Navigator.pop(context);
-                Get.snackbar(
-                  '360 Software Informa',
-                  "Se han descargado ${state.products.length} productos",
-                  backgroundColor: white,
-                  colorText: primaryColorApp,
-                  icon: const Icon(Icons.check_circle, color: Colors.green),
-                );
-              }
-              if (state is GetProductsFailureInventory) {
-                debugPrint("error: ${state.message}");
-                if (Navigator.canPop(context)) Navigator.pop(context);
-                Get.snackbar(
-                  '360 Software Informa',
-                  state.message,
-                  backgroundColor: white,
-                  colorText: primaryColorApp,
-                  icon: const Icon(Icons.error, color: Colors.red),
+              if (state is DeviceRegistrationFailure) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Error registro: ${state.message}")),
                 );
               }
             },
-          ),
-          BlocListener<PackagingTypeBloc, PackagingTypeState>(
-            listener: (context, state) {
-              debugPrint('state packaging type : $state');
-              if (state is PackagingTypesLoadInProgress) {
-                showDialog(
-                  context: context,
-                  builder: (context) => const DialogLoading(
-                    message: 'Descargando tipos de empaque...',
-                  ),
-                );
-              }
-              if (state is PackagingTypesLoadSuccess) {
-                if (Navigator.canPop(context)) Navigator.pop(context);
-                Get.snackbar(
-                  '360 Software Informa',
-                  "Se han descargado ${state.packagingTypes.length} tipos de empaque",
-                  backgroundColor: white,
-                  colorText: primaryColorApp,
-                  icon: const Icon(Icons.check_circle, color: Colors.green),
-                );
-              }
-              if (state is PackagingTypeLoadFailure) {
-                if (Navigator.canPop(context)) Navigator.pop(context);
-                Get.snackbar(
-                  '360 Software Informa',
-                  state.message,
-                  backgroundColor: white,
-                  colorText: primaryColorApp,
-                  icon: const Icon(Icons.error, color: Colors.red),
-                );
-              }
-            },
-          ),
-        ],
-        child: BlocConsumer<UserBloc, UserState>(
-          listener: (context, state) {
-            if (state is UserError) {
-              showScrollableErrorDialog(state.message);
-            }
-            if (state is UserOfflineWarning) {
-              Get.snackbar(
-                '360 Software Informa',
-                'Sin conexión: mostrando los datos guardados localmente.',
-                backgroundColor: white,
-                colorText: primaryColorApp,
-                icon: const Icon(Icons.cloud_off, color: Colors.orange),
-                duration: const Duration(seconds: 3),
-              );
-            }
-            if (state is DownloadUserDataLoading) {
-              showDialog(
-                context: context,
-                builder: (context) => DialogLoading(message: state.message),
-              );
-            }
-            if (state is DownloadUserDataSuccess) {
-              if (Navigator.canPop(context)) Navigator.pop(context);
-              Get.snackbar(
-                '360 Software Informa',
-                state.message,
-                backgroundColor: white,
-                colorText: primaryColorApp,
-                icon: const Icon(Icons.check_circle, color: Colors.green),
-              );
-            }
-            if (state is DownloadUserDataError) {
-              if (Navigator.canPop(context)) Navigator.pop(context);
-              Get.snackbar(
-                '360 Software Informa',
-                state.message,
-                backgroundColor: white,
-                colorText: primaryColorApp,
-                icon: const Icon(Icons.error, color: Colors.red),
-              );
-            }
-            if (state is DeviceRegistrationSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Dispositivo registrado correctamente"),
-                ),
-              );
-            }
-            if (state is DeviceRegistrationFailure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Error registro: ${state.message}")),
-              );
-            }
-          },
-          builder: (context, state) {
-            final bloc = context.read<UserBloc>();
-            final loading =
-                state is UserLoading ||
-                (state is UserOfflineWarning && bloc.userConfiguration == null);
-            final ready =
-                bloc.userConfiguration != null && bloc.deviceInfo != null;
+            builder: (context, state) {
+              final bloc = context.read<UserBloc>();
+              final loading =
+                  state is UserLoading ||
+                  (state is UserOfflineWarning &&
+                      bloc.userConfiguration == null);
+              final ready =
+                  bloc.userConfiguration != null && bloc.deviceInfo != null;
 
-            return Column(
-              children: [
-                ConfigHeader(onBack: () => goToScreen(context, '/home')),
-                Expanded(
-                  child: loading
-                      ? const DialogLoading(message: 'Cargando...')
-                      : ready
-                      ? _buildContent(context, bloc)
-                      : const SizedBox.shrink(),
-                ),
-              ],
-            );
-          },
+              return Column(
+                children: [
+                  ConfigHeader(onBack: () => goToScreen(context, '/home')),
+                  Expanded(
+                    child: loading
+                        ? const DialogLoading(message: 'Cargando...')
+                        : ready
+                        ? _buildContent(context, bloc)
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
