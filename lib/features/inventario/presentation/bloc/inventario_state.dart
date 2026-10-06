@@ -98,13 +98,6 @@ class CleanFieldsState extends InventarioState {}
 
 // ─── Productos ────────────────────────────────────────────────────────────────
 
-class GetProductsLoadingInventory extends InventarioState {}
-
-class GetProductsSuccess extends InventarioState {
-  final List<ProductoInventario> products;
-  GetProductsSuccess(this.products);
-}
-
 class GetProductsLoadingBD extends InventarioState {}
 
 class GetProductsSuccessBD extends InventarioState {
@@ -222,27 +215,6 @@ class FilterUbicacionesSuccess extends InventarioState {
 class FilterUbicacionesFailure extends InventarioState {
   final String message;
   FilterUbicacionesFailure(this.message);
-}
-
-// ─── Conteo de productos ─────────────────────────────────────────────────────
-
-class LoadProductosCountSuccess extends InventarioState {
-  final int count;
-  LoadProductosCountSuccess(this.count);
-}
-
-// ─── Progreso de sincronización ──────────────────────────────────────────────
-
-class SyncProgressState extends InventarioState {
-  final String phase;
-  final int processed;
-  final int total;
-
-  SyncProgressState({
-    required this.phase,
-    this.processed = 0,
-    this.total = 0,
-  });
 }
 
 // ─── Sesión expirada (nuevo) ─────────────────────────────────────────────────

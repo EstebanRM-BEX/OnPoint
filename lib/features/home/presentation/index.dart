@@ -21,7 +21,7 @@ import 'package:wms_app/features/home/presentation/widgets/dialog_picking_widget
 import 'package:wms_app/features/home/presentation/widgets/dialog_recepcion_widget.dart';
 import 'package:wms_app/features/home/presentation/widgets/dialog_transferencia_widget.dart';
 import 'package:wms_app/features/home/presentation/widgets/widget.dart';
-import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
+import 'package:wms_app/core/services/productos_sync_service.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/bloc/wms_packing_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/bloc/packing_consolidade_bloc.dart';
@@ -30,8 +30,6 @@ import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart'
-    as dev_bloc;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -41,7 +39,14 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
+  /// Resumen operativo desplegado/contraído. Se guarda por dispositivo
+  /// (sobrevive a salir del Home y a cerrar sesión).
   bool _isExpanded = true;
+
+  /// false hasta leer las prefs: así el resumen no se pinta desplegado un
+  /// frame y luego se contrae con animación.
+  bool _summaryLoaded = false;
+
   /// null hasta leer las prefs, para no pintar el orden por defecto un frame.
   HomeModulesLayout? _modulesLayout;
 
@@ -54,15 +59,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     // Disparamos los eventos para obtener los conteos de la bd local
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Volver al Home = salir de cualquier módulo: se liberan las listas
-      // grandes de Devoluciones (terceros, productos, barcodes).
-      context.read<dev_bloc.DevolucionesBloc>().add(
-        dev_bloc.ReleaseHeavyDataEvent(),
-      );
-      context.read<dev_bloc.DevolucionesBloc>().add(
-        dev_bloc.LoadTercerosCountEvent(),
-      );
-      context.read<InventarioBloc>().add(LoadProductosCountEvent());
+      ProductosSyncService.instance.refreshCount();
       context.read<UserBloc>().add(LoadUserLocationsCountEvent());
       context.read<UserBloc>().add(LoadUserNoveltiesCountEvent());
       context.read<UserBloc>().add(LoadWarehousesCountEvent());
@@ -71,8 +68,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   Future<void> _loadModulesLayout() async {
     final layout = await HomeModulesPrefs.load();
+    final summaryExpanded = await HomeModulesPrefs.loadSummaryExpanded();
     if (!mounted) return;
-    setState(() => _modulesLayout = layout);
+    setState(() {
+      _modulesLayout = layout;
+      _isExpanded = summaryExpanded;
+      _summaryLoaded = true;
+    });
+  }
+
+  void _toggleSummary() {
+    final expanded = !_isExpanded;
+    setState(() => _isExpanded = expanded);
+    HomeModulesPrefs.saveSummaryExpanded(expanded);
   }
 
   @override
@@ -212,12 +220,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           DialogPickingComponentes(contextHome: dialogContext),
     ),
     HomeModuleId.entradaProductos => _openEntradaProductos,
-    HomeModuleId.infoRapida => () =>
-        Navigator.pushReplacementNamed(context, 'info-rapida'),
-    HomeModuleId.etiquetas => () =>
-        Navigator.pushReplacementNamed(context, AppRoutes.printLabels),
-    HomeModuleId.expedicion => () =>
-        Navigator.pushReplacementNamed(context, AppRoutes.listExpedition),
+    HomeModuleId.infoRapida => () => Navigator.pushReplacementNamed(
+      context,
+      'info-rapida',
+    ),
+    HomeModuleId.etiquetas => () => Navigator.pushReplacementNamed(
+      context,
+      AppRoutes.printLabels,
+    ),
+    HomeModuleId.expedicion => () => Navigator.pushReplacementNamed(
+      context,
+      AppRoutes.listExpedition,
+    ),
   };
 
   /// Módulos visibles en el orden configurado, en páginas de 9.
@@ -358,70 +372,47 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Widget _buildSummary() {
-    return BlocBuilder<dev_bloc.DevolucionesBloc, dev_bloc.DevolucionesState>(
-      builder: (context, devState) {
-        final devBloc = context.read<dev_bloc.DevolucionesBloc>();
-        return BlocBuilder<InventarioBloc, InventarioState>(
-          builder: (context, invState) {
-            final invBloc = context.read<InventarioBloc>();
-            return BlocBuilder<UserBloc, UserState>(
-              builder: (context, userState) {
-                final userBloc = context.read<UserBloc>();
-                return ListenableBuilder(
-                  listenable: PreloadStatus.instance,
-                  builder: (context, _) => OperationalSummaryCard(
-                    expanded: _isExpanded,
-                    onToggle: () => setState(() => _isExpanded = !_isExpanded),
-                    terceros: SummaryMetric(
-                      pending: PreloadStatus.instance.isPending(
-                        PreloadStatus.terceros,
-                      ),
-                      count: devBloc.tercerosCount,
-                      // Propiedad persistente del bloc (no solo el estado
-                      // transitorio) para evitar carreras.
-                      loading:
-                          devBloc.isLoadingTerceros ||
-                          devState is dev_bloc.DownloadAllTercerosLoading ||
-                          devState is dev_bloc.LoadTercerosFromDBLoading,
-                    ),
-                    productos: SummaryMetric(
-                      pending: PreloadStatus.instance.isPending(
-                        PreloadStatus.productos,
-                      ),
-                      count: invBloc.productosCount,
-                      // Propiedad persistente del bloc (no solo el estado
-                      // transitorio) para evitar carreras.
-                      loading:
-                          invBloc.isLoading ||
-                          invState is GetProductsLoadingInventory ||
-                          invState is GetProductsLoadingBD,
-                    ),
-                    ubicaciones: SummaryMetric(
-                      pending: PreloadStatus.instance.isPending(
-                        PreloadStatus.ubicaciones,
-                      ),
-                      count: userBloc.locationsCount,
-                      // Propiedad persistente: DownloadLocationsEvent (la
-                      // descarga real post-login) emite DownloadUserDataLoading,
-                      // no UserLocationsLoading, así que ese chequeo solo nunca
-                      // detectaba la carga real.
-                      loading:
-                          userBloc.isLoadingLocations ||
-                          userState is UserLocationsLoading,
-                    ),
-                    novedades: SummaryMetric(
-                      pending: PreloadStatus.instance.isPending(
-                        PreloadStatus.novedades,
-                      ),
-                      count: userBloc.noveltiesCount,
-                      loading: userState is UserNoveltiesLoading,
-                    ),
-                    almacenes: SummaryMetric(count: userBloc.warehousesCount),
-                  ),
-                );
-              },
-            );
-          },
+    if (!_summaryLoaded) return const SizedBox.shrink();
+    return BlocBuilder<UserBloc, UserState>(
+      builder: (context, userState) {
+        final userBloc = context.read<UserBloc>();
+        final productosSync = ProductosSyncService.instance;
+        return ListenableBuilder(
+          listenable: Listenable.merge([PreloadStatus.instance, productosSync]),
+          builder: (context, _) => OperationalSummaryCard(
+            expanded: _isExpanded,
+            onToggle: _toggleSummary,
+            productos: SummaryMetric(
+              pending: PreloadStatus.instance.isPending(
+                PreloadStatus.productos,
+              ),
+              count: productosSync.count,
+              loading: productosSync.isLoading,
+              error: productosSync.error,
+              onRetry: () => productosSync.download(),
+            ),
+            ubicaciones: SummaryMetric(
+              pending: PreloadStatus.instance.isPending(
+                PreloadStatus.ubicaciones,
+              ),
+              count: userBloc.locationsCount,
+              // Propiedad persistente: DownloadLocationsEvent (la
+              // descarga real post-login) emite DownloadUserDataLoading,
+              // no UserLocationsLoading, así que ese chequeo solo nunca
+              // detectaba la carga real.
+              loading:
+                  userBloc.isLoadingLocations ||
+                  userState is UserLocationsLoading,
+            ),
+            novedades: SummaryMetric(
+              pending: PreloadStatus.instance.isPending(
+                PreloadStatus.novedades,
+              ),
+              count: userBloc.noveltiesCount,
+              loading: userState is UserNoveltiesLoading,
+            ),
+            almacenes: SummaryMetric(count: userBloc.warehousesCount),
+          ),
         );
       },
     );

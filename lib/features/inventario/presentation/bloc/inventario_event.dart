@@ -45,11 +45,6 @@ class ChangeIsOkQuantity extends InventarioEvent {
   ChangeIsOkQuantity(this.isQuantity);
 }
 
-class GetProductsEvent extends InventarioEvent {
-  final bool isDialogLoading;
-  GetProductsEvent({this.isDialogLoading = false});
-}
-
 class GetProductsForDB extends InventarioEvent {}
 
 // Typo preservado del legacy
@@ -111,4 +106,3 @@ class SetUbicacionFijaEvent extends InventarioEvent {
 
 class FetchAllBarcodesInventarioEvent extends InventarioEvent {}
 
-class LoadProductosCountEvent extends InventarioEvent {}

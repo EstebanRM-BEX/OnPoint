@@ -10,11 +10,20 @@ class SummaryMetric {
   /// vale 0 hasta que termina la inserción en la BD). Si además está cargando
   /// (`loading`), manda el indicador circular.
   final bool pending;
+
+  /// Mensaje del último intento fallido (null si no hubo error). Se muestra
+  /// "Error" en vez del conteo y, si hay [onRetry], se puede reintentar.
+  final String? error;
+  final VoidCallback? onRetry;
   const SummaryMetric({
     required this.count,
     this.loading = false,
     this.pending = false,
+    this.error,
+    this.onRetry,
   });
+
+  bool get hasError => error != null && !loading;
 }
 
 /// "Resumen operativo": conteos de datos descargados en la PDA. Colapsable.
@@ -24,7 +33,6 @@ class SummaryMetric {
 class OperationalSummaryCard extends StatelessWidget {
   final bool expanded;
   final VoidCallback onToggle;
-  final SummaryMetric terceros;
   final SummaryMetric productos;
   final SummaryMetric ubicaciones;
   final SummaryMetric novedades;
@@ -34,7 +42,6 @@ class OperationalSummaryCard extends StatelessWidget {
     super.key,
     required this.expanded,
     required this.onToggle,
-    required this.terceros,
     required this.productos,
     required this.ubicaciones,
     required this.novedades,
@@ -178,16 +185,7 @@ class _Body extends StatelessWidget {
             children: [
               Expanded(
                 child: _MetricTile(
-                  label: 'TERCEROS',
-                  icon: Icons.group_outlined,
-                  metric: card.terceros,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _MetricTile(
                   label: 'PRODUCTOS',
-                  icon: Icons.inventory_2_outlined,
                   metric: card.productos,
                 ),
               ),
@@ -195,7 +193,6 @@ class _Body extends StatelessWidget {
               Expanded(
                 child: _MetricTile(
                   label: 'UBICACIONES',
-                  icon: Icons.grid_view,
                   metric: card.ubicaciones,
                 ),
               ),
@@ -244,55 +241,45 @@ String _format(int n) {
 
 class _MetricTile extends StatelessWidget {
   final String label;
-  final IconData icon;
   final SummaryMetric metric;
 
-  const _MetricTile({
-    required this.label,
-    required this.icon,
-    required this.metric,
-  });
+  const _MetricTile({required this.label, required this.metric});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.6,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-              ),
-              Icon(icon, size: 14, color: primaryColorApp),
-            ],
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.6,
+              color: Color(0xFF64748B),
+            ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 2),
           metric.loading
-              ? const _LoadingValue()
+              ? const _LoadingValue(size: 14)
+              : metric.hasError
+              ? _ErrorValue(metric: metric)
               : metric.pending
               ? const _PendingValue()
               : Text(
                   _format(metric.count),
                   maxLines: 1,
                   style: const TextStyle(
-                    fontSize: 17,
+                    fontSize: 14,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF1E293B),
                   ),
@@ -353,13 +340,16 @@ class _HighlightTile extends StatelessWidget {
                   ),
                 ),
                 Text(caption, style: TextStyle(fontSize: 10, color: color)),
+                // "En espera" va debajo del texto: a la derecha, junto al
+                // contador, el tile (media pantalla) lo cortaba.
+                if (metric.pending && !metric.loading) const _PendingValue(),
               ],
             ),
           ),
           metric.loading
               ? const _LoadingValue(size: 14)
               : metric.pending
-              ? const _PendingValue()
+              ? const SizedBox.shrink()
               : Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -418,6 +408,46 @@ class _Pill extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Error de descarga: icono + "Error"; tocar reintenta (si hay callback).
+class _ErrorValue extends StatelessWidget {
+  final SummaryMetric metric;
+  const _ErrorValue({required this.metric});
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: metric.error ?? '',
+      triggerMode: TooltipTriggerMode.longPress,
+      child: InkWell(
+        onTap: metric.onRetry,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 14, color: Colors.red),
+            const SizedBox(width: 4),
+            const Flexible(
+              child: Text(
+                'Error',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.red,
+                ),
+              ),
+            ),
+            if (metric.onRetry != null) ...[
+              const SizedBox(width: 4),
+              const Icon(Icons.refresh, size: 14, color: Colors.red),
+            ],
+          ],
+        ),
       ),
     );
   }

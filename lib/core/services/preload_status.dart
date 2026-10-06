@@ -10,7 +10,6 @@ class PreloadStatus extends ChangeNotifier {
   PreloadStatus._();
   static final PreloadStatus instance = PreloadStatus._();
 
-  static const terceros = 'terceros';
   static const productos = 'productos';
   static const ubicaciones = 'ubicaciones';
   static const novedades = 'novedades';

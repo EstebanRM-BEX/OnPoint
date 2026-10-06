@@ -1070,6 +1070,19 @@ extension GetItInjectableX on _i174.GetIt {
             gh<_i1072.ReleaseTransferenciaClaimUseCase>(),
       ),
     );
+    gh.factory<_i731.InventarioBloc>(
+      () => _i731.InventarioBloc(
+        getProductosLocal: gh<_i627.GetProductosLocal>(),
+        getUbicacionesLocal: gh<_i970.GetUbicacionesLocal>(),
+        getLotesProducto: gh<_i704.GetLotesProducto>(),
+        enviarProductoInventario: gh<_i46.EnviarProductoInventario>(),
+        crearLoteInventario: gh<_i589.CrearLoteInventario>(),
+        getBarcodesProducto: gh<_i125.GetBarcodesProducto>(),
+        getAllBarcodesInventario: gh<_i377.GetAllBarcodesInventario>(),
+        getConfiguracionUsuarioInventario:
+            gh<_i476.GetConfiguracionUsuarioInventario>(),
+      ),
+    );
     gh.lazySingleton<_i598.AsignarResponsableUseCase>(
       () => _i598.AsignarResponsableUseCase(gh<_i777.ExpeditionRepository>()),
     );
@@ -1204,21 +1217,6 @@ extension GetItInjectableX on _i174.GetIt {
         getPendingSendProductsUseCase:
             gh<_i542.GetPendingSendProductsUseCase>(),
         networkInfo: gh<_i75.NetworkInfo>(),
-      ),
-    );
-    gh.factory<_i731.InventarioBloc>(
-      () => _i731.InventarioBloc(
-        syncProductosInventario: gh<_i19.SyncProductosInventario>(),
-        getProductosLocal: gh<_i627.GetProductosLocal>(),
-        getProductosCount: gh<_i892.GetProductosCount>(),
-        getUbicacionesLocal: gh<_i970.GetUbicacionesLocal>(),
-        getLotesProducto: gh<_i704.GetLotesProducto>(),
-        enviarProductoInventario: gh<_i46.EnviarProductoInventario>(),
-        crearLoteInventario: gh<_i589.CrearLoteInventario>(),
-        getBarcodesProducto: gh<_i125.GetBarcodesProducto>(),
-        getAllBarcodesInventario: gh<_i377.GetAllBarcodesInventario>(),
-        getConfiguracionUsuarioInventario:
-            gh<_i476.GetConfiguracionUsuarioInventario>(),
       ),
     );
     gh.factory<_i239.ExpedicionListBloc>(

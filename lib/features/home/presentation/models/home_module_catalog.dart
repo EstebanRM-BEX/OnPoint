@@ -114,6 +114,18 @@ abstract final class HomeModulesPrefs {
     );
   }
 
+  /// Estado del "Resumen operativo" (desplegado/contraído). Por dispositivo y
+  /// no se borra al cerrar sesión; por defecto, desplegado.
+  static Future<bool> loadSummaryExpanded() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(PrefKeys.homeSummaryExpanded) ?? true;
+  }
+
+  static Future<void> saveSummaryExpanded(bool expanded) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(PrefKeys.homeSummaryExpanded, expanded);
+  }
+
   static Future<void> reset() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(PrefKeys.homeModulesOrder);

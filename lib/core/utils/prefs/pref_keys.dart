@@ -19,4 +19,5 @@ class PrefKeys {
   // Configuración del home por dispositivo: no se borran al cerrar sesión.
   static const String homeModulesOrder = "homeModulesOrder";
   static const String homeModulesHidden = "homeModulesHidden";
+  static const String homeSummaryExpanded = "homeSummaryExpanded";
 }

@@ -5,7 +5,6 @@ import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/error/failures.dart';
-import 'package:wms_app/core/services/productos_cache_service.dart';
 import 'package:wms_app/core/usecases/usecase.dart';
 import 'package:wms_app/features/inventario/domain/entities/barcode_producto.dart';
 import 'package:wms_app/features/inventario/domain/entities/lote_producto_inventario.dart';
@@ -17,12 +16,9 @@ import 'package:wms_app/features/inventario/domain/usecases/get_all_barcodes_inv
 import 'package:wms_app/features/inventario/domain/usecases/get_barcodes_producto.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_configuracion_usuario_inventario.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_lotes_producto.dart';
-import 'package:wms_app/features/inventario/domain/usecases/get_productos_count.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_productos_local.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_ubicaciones_local.dart';
-import 'package:wms_app/features/inventario/domain/usecases/sync_productos_inventario.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
-import 'package:wms_app/injection_container.dart';
 
 part 'inventario_event.dart';
 part 'inventario_state.dart';
@@ -31,9 +27,7 @@ part 'inventario_state.dart';
 class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
   // ─── Usecases ────────────────────────────────────────────────────────────────
 
-  final SyncProductosInventario syncProductosInventario;
   final GetProductosLocal getProductosLocal;
-  final GetProductosCount getProductosCount;
   final GetUbicacionesLocal getUbicacionesLocal;
   final GetLotesProducto getLotesProducto;
   final EnviarProductoInventario enviarProductoInventario;
@@ -94,21 +88,18 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
   bool isKeyboardVisible = false;
   bool viewQuantity = false;
   bool ubicacionFija = false;
-  bool isLoading = false;
 
   // ─── Configuración y conteo ───────────────────────────────────────────────────
 
   UserConfiguration configurations = UserConfiguration();
   String? selectedAlmacen;
   int quantitySelected = 1;
-  int productosCount = 0;
+
 
   // ─── Constructor ──────────────────────────────────────────────────────────────
 
   InventarioBloc({
-    required this.syncProductosInventario,
     required this.getProductosLocal,
-    required this.getProductosCount,
     required this.getUbicacionesLocal,
     required this.getLotesProducto,
     required this.enviarProductoInventario,
@@ -125,7 +116,6 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
     on<ChangeLocationIsOkEvent>(_onChangeLocationIsOkEvent);
     on<ChangeProductIsOkEvent>(_onChangeProductIsOkEvent);
     on<ChangeIsOkQuantity>(_onChangeIsOkQuantity);
-    on<GetProductsEvent>(_onGetProducts, transformer: restartable());
     on<GetProductsForDB>(_onGetProductsBD, transformer: droppable());
     on<CleanFieldsEent>(_onCleanFieldsEvent);
     on<GetLotesProduct>(_onGetLotesProduct);
@@ -146,7 +136,6 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
       _onFetchAllBarcodesInventarioEvent,
       transformer: droppable(),
     );
-    on<LoadProductosCountEvent>(_onLoadProductosCountEvent);
   }
 
   // ─── Limpieza de campos (typo preservado del legacy) ─────────────────────────
@@ -339,61 +328,6 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
     emit(ChangeQuantityIsOkState(event.isQuantity));
   }
 
-  Future<void> _onGetProducts(
-    GetProductsEvent event,
-    Emitter<InventarioState> emit,
-  ) async {
-    if (isLoading) return;
-    isLoading = true;
-    emit(GetProductsLoadingInventory());
-
-    final syncResult = await syncProductosInventario(
-      SyncProductosParams(
-        isLoadingDialog: event.isDialogLoading,
-        onProgress: (phase, processed, total) {
-          emit(SyncProgressState(phase: phase, processed: processed, total: total));
-        },
-      ),
-    );
-
-    final syncFailure = syncResult.fold<Failure?>((f) => f, (_) => null);
-    if (syncFailure != null) {
-      isLoading = false;
-      if (syncFailure is SessionExpiredFailure) {
-        emit(InventarioSessionExpiredState());
-      }
-      emit(GetProductsFailureInventory(syncFailure.message));
-      return;
-    }
-
-    // El sync recién escribió productos frescos en SQLite — invalida el
-    // cache compartido (ProductosCacheService) para que esta lectura y
-    // cualquier otro consumidor (Conteo, Devoluciones, Info Rápida, Crear
-    // Transferencia) tomen el dato nuevo en vez de una copia vieja en
-    // memoria de antes del sync.
-    getIt<ProductosCacheService>().invalidate();
-
-    final localResult = await getProductosLocal(NoParams());
-    localResult.fold(
-      (failure) {
-        isLoading = false;
-        emit(GetProductsFailureInventory(failure.message));
-      },
-      (productList) {
-        productos = List.from(productList);
-        productosFilters = List.from(productList);
-        productosCount = productList.length;
-        isLoading = false;
-        if (productList.isNotEmpty) {
-          emit(GetProductsSuccess(productos));
-          emit(GetProductsSuccessBD(productos));
-        } else {
-          emit(GetProductsFailureInventory('No se encontraron productos'));
-        }
-      },
-    );
-  }
-
   Future<void> _onGetProductsBD(
     GetProductsForDB event,
     Emitter<InventarioState> emit,
@@ -402,13 +336,11 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
     final result = await getProductosLocal(NoParams());
     result.fold(
       (failure) {
-        isLoading = false;
         emit(GetProductsFailureInventory(failure.message));
       },
       (productList) {
         productos = productList;
         productosFilters = productList;
-        isLoading = false;
         if (productList.isNotEmpty) {
           emit(GetProductsSuccessBD(productList));
         } else {
@@ -651,20 +583,6 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
         emit(FetchAllBarcodesFailure('No se encontraron códigos de barras'));
       }
     });
-  }
-
-  Future<void> _onLoadProductosCountEvent(
-    LoadProductosCountEvent event,
-    Emitter<InventarioState> emit,
-  ) async {
-    final result = await getProductosCount(NoParams());
-    result.fold(
-      (failure) => debugPrint('Error al obtener conteo: ${failure.message}'),
-      (count) {
-        productosCount = count;
-        emit(LoadProductosCountSuccess(count));
-      },
-    );
   }
 
   // ─── Dispose ──────────────────────────────────────────────────────────────────
