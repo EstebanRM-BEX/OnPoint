@@ -12,14 +12,22 @@ import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/features/picking_cluster/presentation/widgets/cluster_palette.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/cluster_search_dock.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/cluster_sort_menu.dart';
-import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/cluster_summary_banner.dart';
+import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/dialog_iniciar_picking_cluster_widget.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/pick_cluster_header.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/picking_batch_card.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_start_picking_widget.dart';
+import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
+
+/// Argumento de ruta para abrir el listado recargando desde el servidor.
+abstract final class PickingClusterRefreshArgs {
+  static const refresh = 'refresh';
+}
 
 class PickingClusterScreen extends StatefulWidget {
-  const PickingClusterScreen({super.key});
+  /// Recarga los clusters del servidor al abrir (en vez de leer solo SQLite).
+  final bool refreshOnOpen;
+
+  const PickingClusterScreen({super.key, this.refreshOnOpen = false});
 
   @override
   State<PickingClusterScreen> createState() => _PickingClusterScreenState();
@@ -41,8 +49,11 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
     // Si el usuario quiere datos frescos de red usa el botón de refresh.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<PickingClusterListBloc>().add(
-          const LoadLocalClustersEvent(),
+        final listBloc = context.read<PickingClusterListBloc>();
+        listBloc.add(
+          widget.refreshOnOpen
+              ? const FetchClustersEvent()
+              : const LoadLocalClustersEvent(),
         );
       }
     });
@@ -183,21 +194,35 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
 
   void _onBatchTapped(PickingBatch batch) {
     final listBloc = context.read<PickingClusterListBloc>();
-    if (batch.startTimePick != "") {
+    final sinTiempo = batch.startTimePick == "";
+    final zonasSinAsignar = batch.zonasTrabajo
+        .where((z) => z.estado?.toLowerCase() != 'asignada')
+        .toList();
+
+    // Con tiempo ya registrado y sin zonas pendientes se abre directo.
+    if (!sinTiempo && zonasSinAsignar.isEmpty) {
       listBloc.add(SelectBatchEvent(batch));
-    } else {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => DialogStartTimeWidget(
-          onAccepted: () async {
-            Navigator.pop(ctx);
-            listBloc.add(SelectBatchEvent(batch, startTime: DateTime.now()));
-          },
-          title: 'Iniciar Picking',
-        ),
-      );
+      return;
     }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => DialogIniciarPickingClusterWidget(
+        mostrarInicioTiempo: sinTiempo,
+        zonasSinAsignar: zonasSinAsignar,
+        onAccepted: () {
+          Navigator.pop(ctx);
+          listBloc.add(
+            SelectBatchEvent(
+              batch,
+              startTime: sinTiempo ? DateTime.now() : null,
+              assignZonas: zonasSinAsignar.isNotEmpty,
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -219,7 +244,10 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                 );
               }
 
-              if (state is ClustersLoadedState) {
+              // El refresco silencioso no abrió diálogo de carga: no hay nada
+              // que cerrar (y se taparía el diálogo de error abierto).
+              if (state is ClustersLoadedState &&
+                  state is! ClustersSilentLoadedState) {
                 if (Navigator.canPop(context)) Navigator.pop(context);
               }
 
@@ -233,6 +261,29 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                   icon: const Icon(Icons.error, color: Colors.red),
                   showProgressIndicator: true,
                   duration: const Duration(seconds: 5),
+                );
+              }
+
+              if (state is BatchZonasAssigningState) {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) =>
+                      const DialogLoading(message: "Asignando zonas..."),
+                );
+              }
+
+              if (state is BatchZonasAssignedState) {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+              }
+
+              if (state is BatchZonasErrorState) {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+                showScrollableErrorDialog(state.message);
+                // Por debajo del diálogo se recarga la lista de batches: el
+                // error suele ser que el batch ya cambió de operario/zonas.
+                context.read<PickingClusterListBloc>().add(
+                  const FetchClustersEvent(silent: true),
                 );
               }
 
@@ -329,10 +380,7 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                       },
                     ),
                   ),
-                  ClusterSummaryBanner(
-                    count: visible.length,
-                    warehouse: _sharedWarehouse(visible),
-                  ),
+                 
                   ClusterSearchDock(
                     controller: _searchController,
                     searchFocusNode: _searchFocusNode,

@@ -40,6 +40,7 @@ class BatchPickingRepository {
             BatchPickingTable.columnStartTimePick: batchItem.startTimePick,
             BatchPickingTable.columnEndTimePick: batchItem.endTimePick,
             BatchPickingTable.columnZonaEntrega: batchItem.zonaEntrega,
+            BatchPickingTable.columnPendingPhase: batchItem.pendingPhase,
             BatchPickingTable.columnPropietario: batchItem.propietario,
             BatchPickingTable.columnManejoPropietario: batchItem.manejoPropietario is bool
                 ? (batchItem.manejoPropietario == true ? 1 : 0)
@@ -126,6 +127,7 @@ class BatchPickingRepository {
           BatchPickingTable.columnIsSeparate,
           BatchPickingTable.columnPropietario,
           BatchPickingTable.columnManejoPropietario,
+          BatchPickingTable.columnPendingPhase,
         ],
         where:
             '${BatchPickingTable.columnUserId} = ? AND ${BatchPickingTable.columnType} = ?',

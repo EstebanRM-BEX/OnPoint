@@ -9,6 +9,15 @@ import '../entities/picking_batch.dart';
 abstract class IPickingClusterRepository {
   // ─── Remote ──────────────────────────────────────────────────────────────
   Future<Either<Failure, List<PickingBatch>>> getPickingBatches();
+
+  /// Asigna al usuario todas las zonas del batch (POST picking_batchs), guarda
+  /// las zonas actualizadas en SQLite y devuelve el batch.
+  Future<Either<Failure, PickingBatch>> assignZonasBatch(int batchId);
+
+  /// Libera las zonas del usuario en el batch (POST release_zone). Devuelve el
+  /// mensaje del servidor.
+  Future<Either<Failure, String>> releaseZonasBatch(
+      int batchId, List<int> zoneIds);
   Future<Either<Failure, List<LoteProducto>>> getLotesProducto(int productId);
   Future<Either<Failure, LoteProducto>> crearLoteProducto(
       int productId, String name, String? expirationDate);

@@ -34,6 +34,33 @@ class PickingClusterRepositoryImpl implements IPickingClusterRepository {
   }
 
   @override
+  Future<Either<Failure, PickingBatch>> assignZonasBatch(int batchId) async {
+    try {
+      final model = await remoteDataSource.assignZonasBatch(batchId);
+      final entity = model.toEntity();
+      await localDataSource.replaceZonasTrabajo(batchId, entity.zonasTrabajo);
+      return Right(entity);
+    } catch (e, s) {
+      log('❌ Error en assignZonasBatch: $e',
+          stackTrace: s, name: 'PickingClusterRepo');
+      return Left(ServerFailure(e.toString().replaceFirst('Exception: ', '')));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> releaseZonasBatch(
+      int batchId, List<int> zoneIds) async {
+    try {
+      final msg = await remoteDataSource.releaseZonasBatch(batchId, zoneIds);
+      return Right(msg);
+    } catch (e, s) {
+      log('❌ Error en releaseZonasBatch: $e',
+          stackTrace: s, name: 'PickingClusterRepo');
+      return Left(ServerFailure(e.toString().replaceFirst('Exception: ', '')));
+    }
+  }
+
+  @override
   Future<Either<Failure, List<LoteProducto>>> getLotesProducto(
       int productId) async {
     try {

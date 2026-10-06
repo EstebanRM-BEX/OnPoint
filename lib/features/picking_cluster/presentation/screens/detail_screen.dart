@@ -5,6 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/routes/app_router.dart';
+import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/features/picking_cluster/domain/entities/zona_trabajo.dart';
+import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/index.dart' show PickingClusterRefreshArgs;
+import 'package:wms_app/features/picking_cluster/presentation/widgets/detail/dialog_liberar_zonas_widget.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/batch_product.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/pedido_validate.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/cluster_picking/cluster_picking_bloc.dart';
@@ -47,6 +52,27 @@ class _DetailClusterScreenState extends State<DetailClusterScreen>
             } else if (state is ImageDetailFailure) {
               hideLoadingDialog();
               showScrollableErrorDialog(state.error);
+            } else if (state is ReleaseZonasLoading) {
+              showLoadingDialog('Liberando zonas...');
+            } else if (state is ReleaseZonasFailure) {
+              hideLoadingDialog();
+              showScrollableErrorDialog(state.error);
+            } else if (state is ReleaseZonasSuccess) {
+              hideLoadingDialog();
+              // Vuelve al listado de clusters y lo recarga desde el servidor.
+              goToScreen(
+                context,
+                AppRoutes.pickingCluster,
+                arguments: PickingClusterRefreshArgs.refresh,
+              );
+              Get.snackbar(
+                '360 Software Informa',
+                state.message,
+                backgroundColor: white,
+                colorText: primaryColorApp,
+                icon: const Icon(Icons.check, color: Colors.green),
+                duration: const Duration(seconds: 3),
+              );
             }
           },
         ),
@@ -143,9 +169,73 @@ class _DetailClusterScreenState extends State<DetailClusterScreen>
                       products,
                     ).length,
                     onPressed: () => goToScreen(context, 'validate-cluster'),
+                    secondaryLabel: 'Liberar zonas',
+                    secondaryIcon: Icons.lock_open_outlined,
+                    onSecondaryPressed: () => _onLiberarZonas(bloc),
                   ),
                 ],
               ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// Zonas del batch asignadas al usuario actual (las únicas que puede liberar).
+  Future<List<ZonaTrabajo>> _zonasDelUsuario(ClusterPickingBloc bloc) async {
+    final userId = await PrefUtils.getUserId();
+    return (bloc.currentBatch?.zonasTrabajo ?? const <ZonaTrabajo>[])
+        .where((z) =>
+            z.estado?.toLowerCase() == 'asignada' &&
+            z.userId == userId &&
+            (z.zoneId ?? z.id) != null)
+        .toList();
+  }
+
+  Future<void> _onLiberarZonas(ClusterPickingBloc bloc) async {
+    final batchId = bloc.currentBatch?.id;
+    if (batchId == null) return;
+
+    final zonas = await _zonasDelUsuario(bloc);
+    if (!mounted) return;
+    if (zonas.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (_) => const DialogInfo(
+          title: 'Liberar zonas',
+          body: 'No tiene zonas asignadas en este batch.',
+        ),
+      );
+      return;
+    }
+
+    // Productos separados sin conexión que aún no llegaron a Odoo: liberar
+    // ahora los dejaría sin enviar (la recarga reemplaza el caché local).
+    final hayPendientes = bloc.products.any((p) => p.isSendOdoo == 0);
+    if (hayPendientes) {
+      showDialog(
+        context: context,
+        builder: (_) => const DialogInfo(
+          title: 'Productos pendientes',
+          body:
+              'Hay productos separados sin enviar al servidor. Sincronícelos '
+              'antes de liberar las zonas.',
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => DialogLiberarZonasWidget(
+        zonas: zonas,
+        onAccepted: () {
+          Navigator.pop(ctx);
+          context.read<DetailClusterBloc>().add(
+            ReleaseZonasEvent(
+              batchId: batchId,
+              zoneIds: zonas.map((z) => (z.zoneId ?? z.id)!).toList(),
             ),
           );
         },

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../../domain/entities/picking_batch.dart';
 import 'pedido_validate_model.dart';
+import 'zona_trabajo_model.dart';
 
 PickingClusterModel pickingClusterModelFromJson(String str) =>
     PickingClusterModel.fromJson(json.decode(str));
@@ -75,6 +76,8 @@ class ResultElementModel {
   final String? zonaEntrega;
   final String? propietario;
   final dynamic manejoPropietario;
+  final String? pendingPhase;
+  final List<ZonaTrabajoModel>? zonasTrabajo;
   // final List<OriginElement>? origin;
   final List<PedidoValidateModel>? pedidosValidate;
   final List<ListItem>? listItems;
@@ -106,6 +109,8 @@ class ResultElementModel {
     this.zonaEntrega,
     this.propietario,
     this.manejoPropietario,
+    this.pendingPhase,
+    this.zonasTrabajo,
     // this.origin,
     this.pedidosValidate,
     this.listItems,
@@ -141,6 +146,13 @@ class ResultElementModel {
         zonaEntrega: json["zona_entrega"],
         propietario: json["propietario"] is bool ? null : json["propietario"] as String?,
         manejoPropietario: json["manejo_propietario"],
+        pendingPhase:
+            json["pending_phase"] is String ? json["pending_phase"] : null,
+        zonasTrabajo: json["zonas_trabajo"] is List
+            ? List<ZonaTrabajoModel>.from((json["zonas_trabajo"] as List)
+                .whereType<Map<String, dynamic>>()
+                .map(ZonaTrabajoModel.fromJson))
+            : [],
         //         json["origin"]!.map((x) => OriginElement.fromJson(x))),
         pedidosValidate: json["pedidos_validate"] == null
             ? []
@@ -180,6 +192,8 @@ class ResultElementModel {
       zonaEntrega: zonaEntrega,
       propietario: propietario,
       manejoPropietario: manejoPropietario,
+      pendingPhase: pendingPhase,
+      zonasTrabajo: zonasTrabajo?.map((z) => z.toEntity()).toList() ?? [],
       pedidosValidate: pedidosValidate?.map((i) => i.toEntity()).toList() ?? [],
       listItems: listItems?.map((i) => i.toEntity()).toList() ?? [],
     );
@@ -212,6 +226,8 @@ class ResultElementModel {
         "zona_entrega": zonaEntrega,
         "propietario": propietario,
         "manejo_propietario": manejoPropietario,
+        "pending_phase": pendingPhase,
+        "zonas_trabajo": zonasTrabajo?.map((z) => z.toJson()).toList() ?? [],
         //     : List<dynamic>.from(origin!.map((x) => x.toJson())),
         "pedidos_validate": pedidosValidate == null
             ? []

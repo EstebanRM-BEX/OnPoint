@@ -5,12 +5,17 @@ import 'package:wms_app/features/picking_cluster/data/models/batch_product_model
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/features/picking_cluster/data/models/pedido_validate_model.dart';
+import 'package:wms_app/features/picking_cluster/data/models/zona_trabajo_model.dart';
 import '../../domain/entities/batch_product.dart';
 import '../../domain/entities/picking_batch.dart';
+import '../../domain/entities/zona_trabajo.dart';
 
 abstract class PickingClusterLocalDataSource {
   Future<void> cachePickingBatches(List<PickingBatch> batches);
   Future<List<PickingBatch>> getCachedPickingBatches();
+
+  /// Reemplaza las zonas de trabajo de un batch (sin tocar sus productos).
+  Future<void> replaceZonasTrabajo(int batchId, List<ZonaTrabajo> zonas);
   Future<List<BatchProduct>> getBatchProducts(int batchId);
 
   /// Productos type='cluster' guardados sin conexión (is_send_odoo = 0),
@@ -67,6 +72,13 @@ class PickingClusterLocalDataSourceImpl
             .toList();
         await DataBaseSqlite().insertPedidosValidate(allPedidosValidate);
 
+        final allZonasTrabajo = batches
+            .expand((b) => b.zonasTrabajo.map(
+                  (z) => ZonaTrabajoModel.fromEntity(z).copyWithBatch(b.id),
+                ))
+            .toList();
+        await DataBaseSqlite().insertZonasTrabajo(allZonasTrabajo);
+
         if (allBarcodes.isNotEmpty) {
           await DataBaseSqlite()
               .barcodesPackagesRepository
@@ -77,6 +89,14 @@ class PickingClusterLocalDataSourceImpl
       log('Error caching picking clusters to sqlite: $e',
           name: 'PickingClusterLocalDS');
     }
+  }
+
+  @override
+  Future<void> replaceZonasTrabajo(int batchId, List<ZonaTrabajo> zonas) async {
+    final models = zonas
+        .map((z) => ZonaTrabajoModel.fromEntity(z).copyWithBatch(batchId))
+        .toList();
+    await DataBaseSqlite().replaceZonasTrabajo(batchId, models);
   }
 
   @override
@@ -92,9 +112,12 @@ class PickingClusterLocalDataSourceImpl
         final entity = model.toPickingBatchEntity();
         final pedidosValidateModels =
             await DataBaseSqlite().getPedidosValidate(entity.id!);
+        final zonasTrabajoModels =
+            await DataBaseSqlite().getZonasTrabajo(entity.id!);
         entities.add(entity.copyWith(
           pedidosValidate:
               pedidosValidateModels.map((m) => m.toEntity()).toList(),
+          zonasTrabajo: zonasTrabajoModels.map((m) => m.toEntity()).toList(),
         ));
       }
       return entities;
@@ -315,6 +338,7 @@ extension BatchMapping on PickingBatch {
       zonaEntrega: zonaEntrega,
       propietario: propietario,
       manejoPropietario: manejoPropietario,
+      pendingPhase: pendingPhase,
       listItems: listItems.map((item) => item.toProductsBatch()).toList(),
     );
   }
@@ -356,6 +380,7 @@ extension BatchModelToEntityMapping on BatchsModel {
       zonaEntrega: zonaEntrega,
       propietario: propietario,
       manejoPropietario: manejoPropietario,
+      pendingPhase: pendingPhase,
       listItems: [],
     );
   }

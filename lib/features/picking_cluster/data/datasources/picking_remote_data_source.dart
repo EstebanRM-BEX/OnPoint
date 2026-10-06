@@ -1,12 +1,21 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../../../src/api/api_request_service.dart';
 import '../models/picking_cluster_model.dart';
 import '../models/lote_producto_model.dart';
 
 abstract class PickingClusterRemoteDataSource {
   Future<List<ResultElementModel>> getPickingBatches();
+
+  /// POST api/cluster/picking_batchs: asigna al usuario las zonas del batch y
+  /// devuelve ese batch (mismo formato del GET, pero un solo elemento).
+  Future<ResultElementModel> assignZonasBatch(int batchId);
+
+  /// POST api/cluster/release_zone: libera las zonas del usuario en el batch.
+  /// Devuelve el `msg` del servidor.
+  Future<String> releaseZonasBatch(int batchId, List<int> zoneIds);
 
   Future<List<LotesProduct>> getLotesProducto(int productId);
 
@@ -47,6 +56,101 @@ class PickingClusterRemoteDataSourceImpl
     } else {
       throw Exception('Failed to load picking batches: ${response.statusCode}');
     }
+  }
+
+  @override
+  Future<ResultElementModel> assignZonasBatch(int batchId) async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    // postPicking envía la cookie de sesión; `post` no la manda y el servidor
+    // responde 404 a las rutas que requieren usuario.
+    final response = await apiRequestService.postPicking(
+      endpoint: 'api/cluster/picking_batchs',
+      body: {
+        "params": {
+          "version_app": packageInfo.version,
+          "id_batch": batchId,
+        },
+      },
+      isLoadinDialog: false,
+      isunecodePath: false,
+    );
+
+    // Odoo responde los rechazos (p. ej. 409 "batch ya asignado") con un JSON
+    // que trae `result.msg`: se intenta leer aunque el HTTP no sea 200 para
+    // mostrar ese mensaje y no solo el código.
+    dynamic decoded;
+    try {
+      decoded = json.decode(response.body);
+    } catch (_) {
+      decoded = null;
+    }
+    if (response.statusCode != 200 && decoded is! Map) {
+      throw Exception('Error al asignar zonas: ${response.statusCode}');
+    }
+
+    final error = decoded is Map ? decoded['error'] : null;
+    if (error != null) {
+      throw Exception(error is Map
+          ? (error['data']?['message'] ?? error['message'] ?? 'Error del servidor')
+          : 'Error del servidor');
+    }
+
+    final result = decoded is Map ? decoded['result'] : null;
+    if (result is! Map) {
+      throw Exception('Respuesta inválida al asignar zonas');
+    }
+    if (result['code'] != 200) {
+      throw Exception(result['msg']?.toString() ?? 'No se pudieron asignar las zonas');
+    }
+
+    // El servidor devuelve un solo batch (objeto); por si viniera como lista.
+    final data = result['result'];
+    final batchJson = data is List ? (data.isEmpty ? null : data.first) : data;
+    if (batchJson is! Map<String, dynamic>) {
+      throw Exception('El servidor no devolvió el batch');
+    }
+    return ResultElementModel.fromJson(batchJson);
+  }
+
+  @override
+  Future<String> releaseZonasBatch(int batchId, List<int> zoneIds) async {
+    final response = await apiRequestService.postPicking(
+      endpoint: 'api/cluster/release_zone',
+      body: {
+        "params": {
+          "id_batch": batchId,
+          "zone_ids": zoneIds,
+        },
+      },
+      isLoadinDialog: false,
+      isunecodePath: false,
+    );
+
+    dynamic decoded;
+    try {
+      decoded = json.decode(response.body);
+    } catch (_) {
+      decoded = null;
+    }
+    if (response.statusCode != 200 && decoded is! Map) {
+      throw Exception('Error al liberar zonas: ${response.statusCode}');
+    }
+
+    final error = decoded is Map ? decoded['error'] : null;
+    if (error != null) {
+      throw Exception(error is Map
+          ? (error['data']?['message'] ?? error['message'] ?? 'Error del servidor')
+          : 'Error del servidor');
+    }
+
+    final result = decoded is Map ? decoded['result'] : null;
+    if (result is! Map) {
+      throw Exception('Respuesta inválida al liberar zonas');
+    }
+    if (result['code'] != 200) {
+      throw Exception(result['msg']?.toString() ?? 'No se pudieron liberar las zonas');
+    }
+    return result['msg']?.toString() ?? 'Zonas liberadas';
   }
 
   @override

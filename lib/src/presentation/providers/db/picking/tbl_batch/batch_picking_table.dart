@@ -32,6 +32,8 @@ class BatchPickingTable {
   static const String columnStartTimePick = 'start_time_pick';
   static const String columnEndTimePick = 'end_time_pick';
   static const String columnZonaEntrega = 'zona_entrega';
+  // Fase pendiente del batch (Pick Cluster): 'products', ...
+  static const String columnPendingPhase = 'pending_phase';
     //propietario
   static const String columnPropietario = 'propietario';
     static const String columnManejoPropietario = 'manejo_propietario';
@@ -72,7 +74,8 @@ class BatchPickingTable {
         $columnEndTimePick VARCHAR(255),
         $columnPropietario TEXT,
         $columnManejoPropietario INTEGER DEFAULT 0,
-        $columnZonaEntrega TEXT
+        $columnZonaEntrega TEXT,
+        $columnPendingPhase TEXT
       )
     ''';
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/batch_pedidos_dialog.dart';
+import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/cluster_zonas_trabajo_dialog.dart';
 import 'package:wms_app/features/picking_cluster/presentation/widgets/cluster_palette.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
 import '../../../../domain/entities/picking_batch.dart';
@@ -55,6 +56,10 @@ class PickingBatchCard extends StatelessWidget {
                 _buildHeader(context),
                 const SizedBox(height: 10),
                 _buildDetails(),
+                if (batch.zonasTrabajo.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  _buildZonas(context),
+                ],
                 const SizedBox(height: 12),
                 const Divider(
                   height: 1,
@@ -226,6 +231,57 @@ class PickingBatchCard extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildZonas(BuildContext context) {
+    final zonas = batch.zonasTrabajo;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Material(
+        color: ClusterPalette.brand50,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: () => ClusterZonasTrabajoDialog.show(
+            context,
+            batchName: batch.name ?? '',
+            zonas: zonas,
+          ),
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: ClusterPalette.brand100),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.map_outlined,
+                  size: 15,
+                  color: ClusterPalette.brand600,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Ver zonas (${zonas.length})',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: ClusterPalette.brand600,
+                  ),
+                ),
+                const SizedBox(width: 2),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 16,
+                  color: ClusterPalette.brand600,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

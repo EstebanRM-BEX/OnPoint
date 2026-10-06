@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'pedido_validate.dart';
+import 'zona_trabajo.dart';
 
 /// Represents a batch or cluster of picking tasks.
 class PickingBatch extends Equatable {
@@ -31,6 +32,8 @@ class PickingBatch extends Equatable {
   final List<PickingBatchItem> listItems;
   final String? propietario;
   final dynamic? manejoPropietario;
+  final String? pendingPhase;
+  final List<ZonaTrabajo> zonasTrabajo;
 
   const PickingBatch({
     this.id,
@@ -60,7 +63,9 @@ class PickingBatch extends Equatable {
     this.pedidosValidate = const [],
     required this.listItems,
     this.manejoPropietario,
-    this.propietario
+    this.propietario,
+    this.pendingPhase,
+    this.zonasTrabajo = const [],
   });
 
   PickingBatch copyWith({
@@ -92,6 +97,8 @@ class PickingBatch extends Equatable {
     List<PickingBatchItem>? listItems,
        String? propietario,
    dynamic? manejoPropietario,
+    String? pendingPhase,
+    List<ZonaTrabajo>? zonasTrabajo,
   }) {
     return PickingBatch(
       id: id ?? this.id,
@@ -122,6 +129,8 @@ class PickingBatch extends Equatable {
       listItems: listItems ?? this.listItems,
       propietario: propietario ?? this.propietario,
       manejoPropietario: manejoPropietario ?? this.manejoPropietario,
+      pendingPhase: pendingPhase ?? this.pendingPhase,
+      zonasTrabajo: zonasTrabajo ?? this.zonasTrabajo,
     );
   }
 
@@ -155,6 +164,8 @@ class PickingBatch extends Equatable {
         listItems,
         propietario,
         manejoPropietario,
+        pendingPhase,
+        zonasTrabajo,
       ];
 }
 

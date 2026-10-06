@@ -87,6 +87,7 @@ import 'package:wms_app/src/presentation/providers/db/devoluciones/tbl_terceros/
 import 'package:wms_app/src/presentation/views/wms_picking/models/BatchWithProducts_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/features/picking_cluster/data/models/pedido_validate_model.dart';
+import 'package:wms_app/features/picking_cluster/data/models/zona_trabajo_model.dart';
 
 import 'package:sqflite/sqflite.dart';
 
@@ -109,7 +110,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 66,
+      version: 67,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -292,6 +293,8 @@ class DataBaseSqlite {
         FOREIGN KEY (batch_id) REFERENCES tblbatchs (id)
       )
     ''');
+
+    await db.execute(_createZonasTrabajoSql);
 
     // tabla de tipos de empaque
     await db.execute('''
@@ -1253,6 +1256,23 @@ class DataBaseSqlite {
         }
       }
     }
+
+    if (oldVersion < 67) {
+      // Pick Cluster: zonas de trabajo del batch (zonas_trabajo) y fase
+      // pendiente (pending_phase) de /api/cluster/picking_batchs.
+      try {
+        await db.execute(_createZonasTrabajoSql);
+      } catch (e) {
+        debugPrint("Error actualizando a v67 (tblbatch_zonas_trabajo): $e");
+      }
+      try {
+        await db.execute(
+          'ALTER TABLE ${BatchPickingTable.tableName} ADD COLUMN ${BatchPickingTable.columnPendingPhase} TEXT',
+        );
+      } catch (e) {
+        debugPrint("Error actualizando a v67 (pending_phase): $e");
+      }
+    }
   }
 
   //todo repositorios de las tablas
@@ -1515,6 +1535,78 @@ class DataBaseSqlite {
     }
   }
 
+  static const String _createZonasTrabajoSql = '''
+    CREATE TABLE IF NOT EXISTS tblbatch_zonas_trabajo (
+      id INTEGER,
+      batch_id INTEGER,
+      zone_id INTEGER,
+      name TEXT,
+      estado TEXT,
+      user_id INTEGER,
+      user_name TEXT,
+      UNIQUE(batch_id, zone_id),
+      FOREIGN KEY (batch_id) REFERENCES tblbatchs (id)
+    )
+  ''';
+
+  Future<void> insertZonasTrabajo(List<ZonaTrabajoModel> zonas) async {
+    try {
+      final db = await getDatabaseInstance();
+      await db.transaction((txn) async {
+        final batch = txn.batch();
+        for (var z in zonas) {
+          batch.insert(
+            'tblbatch_zonas_trabajo',
+            {
+              "id": z.id,
+              "batch_id": z.batchId,
+              "zone_id": z.zoneId,
+              "name": z.name,
+              "estado": z.estado,
+              "user_id": z.userId,
+              "user_name": z.userName,
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+        await batch.commit(noResult: true);
+      });
+    } catch (e) {
+      debugPrint('Error insertZonasTrabajo: $e');
+    }
+  }
+
+  /// Reemplaza todas las zonas de un batch (p. ej. tras asignarlas al usuario).
+  Future<void> replaceZonasTrabajo(
+      int batchId, List<ZonaTrabajoModel> zonas) async {
+    try {
+      final db = await getDatabaseInstance();
+      await db.delete(
+        'tblbatch_zonas_trabajo',
+        where: 'batch_id = ?',
+        whereArgs: [batchId],
+      );
+      await insertZonasTrabajo(zonas);
+    } catch (e) {
+      debugPrint('Error replaceZonasTrabajo: $e');
+    }
+  }
+
+  Future<List<ZonaTrabajoModel>> getZonasTrabajo(int batchId) async {
+    try {
+      final db = await getDatabaseInstance();
+      final List<Map<String, dynamic>> maps = await db.query(
+        'tblbatch_zonas_trabajo',
+        where: 'batch_id = ?',
+        whereArgs: [batchId],
+      );
+      return maps.map((m) => ZonaTrabajoModel.fromJson(m)).toList();
+    } catch (e) {
+      debugPrint('Error getZonasTrabajo: $e');
+      return [];
+    }
+  }
+
   Future<void> insertPedidosValidate(List<PedidoValidateModel> pedidos) async {
     try {
       final db = await getDatabaseInstance();
@@ -1728,6 +1820,7 @@ class DataBaseSqlite {
     await db.delete(BatchPickingTable.tableName);
     await db.delete('tblbatch_products');
     await db.delete('tblbatch_pedidos_validate');
+    await db.delete('tblbatch_zonas_trabajo');
     await db.delete(SubmuellesTable.tableName);
     await deleOrigin("picking");
     await deleOrigin("components");
@@ -1742,6 +1835,7 @@ class DataBaseSqlite {
     );
     await db.delete('tblbatch_products', where: 'type = ?', whereArgs: [type]);
     await db.delete('tblbatch_pedidos_validate');
+    await db.delete('tblbatch_zonas_trabajo');
     await deleBarcodes(type);
     await db.delete(SubmuellesTable.tableName);
     await deleOrigin(type);

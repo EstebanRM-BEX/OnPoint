@@ -15,3 +15,14 @@ class ViewProductImageDetailEvent extends DetailClusterEvent {
   @override
   List<Object?> get props => [idProduct];
 }
+
+/// Libera las zonas del usuario en el batch (zone_ids de zonas_trabajo).
+class ReleaseZonasEvent extends DetailClusterEvent {
+  final int batchId;
+  final List<int> zoneIds;
+
+  const ReleaseZonasEvent({required this.batchId, required this.zoneIds});
+
+  @override
+  List<Object?> get props => [batchId, zoneIds];
+}
