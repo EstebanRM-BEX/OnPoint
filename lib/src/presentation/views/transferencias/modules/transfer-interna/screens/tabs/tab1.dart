@@ -645,8 +645,8 @@ class _Tab1ScreenTransState extends State<Tab1ScreenTrans>
                                   .configurations
                                   .result
                                   ?.result
-                                  ?.hideValidateTransfer ==
-                              false,
+                                  ?.hideValidateTransfer !=
+                              true,
                           child: ElevatedButton(
                             onPressed: () {
                               showDialog(
