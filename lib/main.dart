@@ -11,6 +11,8 @@ import 'package:wms_app/features/picking_cluster/presentation/bloc/detail_cluste
 import 'package:wms_app/features/picking_cluster/presentation/bloc/validate_cluster/validate_cluster_bloc.dart';
 import 'package:wms_app/features/picking_cluster/domain/usecases/get_picking_cluster_data.dart';
 import 'package:wms_app/features/picking_cluster/domain/usecases/get_local_picking_cluster_data.dart';
+import 'package:wms_app/features/picking_cluster/domain/usecases/assign_batch_zonas_use_case.dart';
+import 'package:wms_app/features/picking_cluster/domain/usecases/release_batch_zonas_use_case.dart';
 import 'package:wms_app/features/picking_cluster/domain/usecases/start_time_pick_use_case.dart';
 import 'package:wms_app/features/picking_cluster/domain/usecases/view_product_image_usecase.dart';
 import 'package:wms_app/features/picking_cluster/domain/usecases/validate_pedido_usecase.dart';
@@ -208,11 +210,13 @@ class MyApp extends StatelessWidget {
             getPickingClusterData: getIt<GetPickingClusterData>(),
             getLocalPickingClusterData: getIt<GetLocalPickingClusterData>(),
             startTimePickUseCase: getIt<StartTimePickUseCase>(),
+            assignBatchZonasUseCase: getIt<AssignBatchZonasUseCase>(),
           ),
         ),
         BlocProvider(
           create: (_) => DetailClusterBloc(
             viewProductImageUseCase: getIt<ViewProductImageUseCase>(),
+            releaseBatchZonasUseCase: getIt<ReleaseBatchZonasUseCase>(),
           ),
         ),
         BlocProvider(

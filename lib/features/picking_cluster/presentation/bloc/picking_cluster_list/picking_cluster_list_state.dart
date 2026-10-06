@@ -20,6 +20,12 @@ class ClustersLoadedState extends PickingClusterListState {
   List<Object?> get props => [batches];
 }
 
+/// Lista recargada en segundo plano: la pantalla la repinta pero no cierra
+/// diálogos ni muestra mensajes.
+class ClustersSilentLoadedState extends ClustersLoadedState {
+  const ClustersSilentLoadedState(super.batches);
+}
+
 class ClustersErrorState extends PickingClusterListState {
   final String message;
 
@@ -37,6 +43,21 @@ class BatchStartTimeErrorState extends PickingClusterListState {
   final String message;
 
   const BatchStartTimeErrorState(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+/// Asignando al usuario las zonas del batch (antes de abrirlo).
+class BatchZonasAssigningState extends PickingClusterListState {}
+
+/// Zonas asignadas correctamente; el flujo continúa hacia el batch.
+class BatchZonasAssignedState extends PickingClusterListState {}
+
+class BatchZonasErrorState extends PickingClusterListState {
+  final String message;
+
+  const BatchZonasErrorState(this.message);
 
   @override
   List<Object?> get props => [message];

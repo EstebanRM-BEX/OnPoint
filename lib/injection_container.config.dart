@@ -336,6 +336,10 @@ import 'features/picking_cluster/domain/usecases/set_cluster_batch_pedido_field_
     as _i274;
 import 'features/picking_cluster/domain/usecases/set_cluster_batch_product_field_use_case.dart'
     as _i915;
+import 'features/picking_cluster/domain/usecases/assign_batch_zonas_use_case.dart'
+    as _i9001;
+import 'features/picking_cluster/domain/usecases/release_batch_zonas_use_case.dart'
+    as _i9002;
 import 'features/picking_cluster/domain/usecases/start_time_pick_use_case.dart'
     as _i612;
 import 'features/picking_cluster/domain/usecases/validate_pedido_usecase.dart'
@@ -747,6 +751,12 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i915.SetClusterBatchProductFieldUseCase(
         gh<_i932.IPickingClusterRepository>(),
       ),
+    );
+    gh.lazySingleton<_i9001.AssignBatchZonasUseCase>(
+      () => _i9001.AssignBatchZonasUseCase(gh<_i932.IPickingClusterRepository>()),
+    );
+    gh.lazySingleton<_i9002.ReleaseBatchZonasUseCase>(
+      () => _i9002.ReleaseBatchZonasUseCase(gh<_i932.IPickingClusterRepository>()),
     );
     gh.lazySingleton<_i612.StartTimePickUseCase>(
       () => _i612.StartTimePickUseCase(gh<_i932.IPickingClusterRepository>()),

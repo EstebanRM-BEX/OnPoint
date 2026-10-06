@@ -101,6 +101,7 @@ class BatchsModel {
 
   final String? propietario;
   final dynamic? manejoPropietario;
+  final String? pendingPhase;
 
   List<ProductsBatch>? listItems;
 
@@ -137,6 +138,7 @@ class BatchsModel {
     this.origin,
     this.propietario,
     this.manejoPropietario,
+    this.pendingPhase,
   });
 
   factory BatchsModel.fromJson(String str) =>
@@ -182,7 +184,8 @@ class BatchsModel {
         ? []
         : List<Origin>.from(json["origin"]!.map((x) => Origin.fromMap(x))),
     propietario: json["propietario"],
-    manejoPropietario: json["manejo_propietario"]
+    manejoPropietario: json["manejo_propietario"],
+    pendingPhase: json["pending_phase"] is String ? json["pending_phase"] : null,
   );
 
   Map<String, dynamic> toMap() => {
@@ -222,6 +225,7 @@ class BatchsModel {
         : List<dynamic>.from(origin!.map((x) => x.toMap())),
     "propietario" : propietario,
     "manejo_propietario" : manejoPropietario,
+    "pending_phase": pendingPhase,
   };
 }
 

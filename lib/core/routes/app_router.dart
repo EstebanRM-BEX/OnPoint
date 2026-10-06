@@ -647,7 +647,10 @@ class AppRoutes {
       pickingComponentesBatch: (_) => PickingCompoBatchScreen(),
 
       //todo picking cluster
-      pickingCluster: (_) => const PickingClusterScreen(),
+      pickingCluster: (context) => PickingClusterScreen(
+        refreshOnOpen: ModalRoute.of(context)?.settings.arguments ==
+            PickingClusterRefreshArgs.refresh,
+      ),
       scanProductCluster: (_) => const ScanProductCluster(),
       detailCluster: (_) => const DetailClusterScreen(),
       validateCluster: (_) => const ValidateScreen(),
