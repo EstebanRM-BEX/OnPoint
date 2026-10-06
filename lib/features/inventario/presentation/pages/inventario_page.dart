@@ -13,6 +13,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/core/services/productos_sync_service.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
@@ -42,16 +43,16 @@ class _InventarioScreenState extends State<InventarioScreen>
     with WidgetsBindingObserver, LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
-  final ValueNotifier<String> _syncPhaseNotifier =
-      ValueNotifier('Cargando productos...');
   FocusNode focusNode1 = FocusNode(); // ubicacion de origen
   FocusNode focusNode2 = FocusNode(); // producto
   FocusNode focusNode3 = FocusNode(); // cantidad por pda
   FocusNode focusNode4 = FocusNode(); // cantidad textformfield
   // Watchdog: reabre el teclado si el IME del PDA lo cierra solo mientras
   // el campo de cantidad manual conserva el foco.
-  late final KeyboardWatchdog _kbWatchdog =
-      KeyboardWatchdog(state: this, focusNode: focusNode4);
+  late final KeyboardWatchdog _kbWatchdog = KeyboardWatchdog(
+    state: this,
+    focusNode: focusNode4,
+  );
   FocusNode focusNode5 = FocusNode(); // lote
 
   @override
@@ -65,7 +66,6 @@ class _InventarioScreenState extends State<InventarioScreen>
 
   @override
   void dispose() {
-    _syncPhaseNotifier.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _kbWatchdog.dispose();
     super.dispose();
@@ -292,7 +292,11 @@ class _InventarioScreenState extends State<InventarioScreen>
       Future.microtask(() => focusNode3.requestFocus());
     } else {
       validateScannedBarcode(
-          scan, currentProduct ?? const ProductoInventario(), bloc, false);
+        scan,
+        currentProduct ?? const ProductoInventario(),
+        bloc,
+        false,
+      );
       Future.microtask(() => focusNode3.requestFocus());
     }
   }
@@ -314,7 +318,7 @@ class _InventarioScreenState extends State<InventarioScreen>
       return false;
     }
     _audioService.playErrorSound();
-      _vibrationService.vibrate();
+    _vibrationService.vibrate();
     return false;
   }
 
@@ -398,6 +402,42 @@ class _InventarioScreenState extends State<InventarioScreen>
     }
   }
 
+  /// Descarga de productos con el servicio compartido (sin pasar por el bloc);
+  /// al terminar se recarga la lista local del módulo.
+  Future<void> _downloadProductos() async {
+    final service = ProductosSyncService.instance;
+    if (service.isLoading) return;
+    final bloc = context.read<InventarioBloc>();
+    final navigator = Navigator.of(context, rootNavigator: true);
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: ListenableBuilder(
+          listenable: service,
+          builder: (_, _) => DialogLoading(
+            message: service.progress?.label ?? 'Cargando productos...',
+          ),
+        ),
+      ),
+    );
+    final outcome = await service.download();
+    if (navigator.canPop()) navigator.pop();
+    if (!mounted) return;
+
+    switch (outcome) {
+      case ProductosSyncSuccess():
+        bloc.add(GetProductsForDB());
+      case ProductosSyncSessionExpired():
+        SessionExpiredHelper.showDialog();
+      case ProductosSyncFailure(:final message):
+        showScrollableErrorDialog(message);
+      case ProductosSyncAlreadyRunning():
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
@@ -407,29 +447,6 @@ class _InventarioScreenState extends State<InventarioScreen>
 
         if (state is InventarioSessionExpiredState) {
           SessionExpiredHelper.showDialog();
-        }
-
-        if (state is GetProductsLoadingInventory) {
-          _syncPhaseNotifier.value = 'Cargando productos...';
-          showDialog(
-            barrierDismissible: false,
-            context: context,
-            builder: (context) {
-              return WillPopScope(
-                onWillPop: () async => false,
-                child: ValueListenableBuilder<String>(
-                  valueListenable: _syncPhaseNotifier,
-                  builder: (_, phase, __) => DialogLoading(message: phase),
-                ),
-              );
-            },
-          );
-        }
-
-        if (state is SyncProgressState) {
-          _syncPhaseNotifier.value = state.total > 0
-              ? '${state.phase}\n${state.processed} / ${state.total} productos'
-              : state.phase;
         }
 
         if (state is GetProductsLoadingBD) {
@@ -763,14 +780,8 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                           actions: [
                                                             ElevatedButton(
                                                               onPressed: () {
-                                                                context
-                                                                    .read<
-                                                                      InventarioBloc
-                                                                    >()
-                                                                    .add(
-                                                                      GetProductsEvent(),
-                                                                    );
                                                                 Get.back();
+                                                                _downloadProductos();
                                                               },
                                                               style: ElevatedButton.styleFrom(
                                                                 backgroundColor:
@@ -1326,27 +1337,30 @@ class _InventarioScreenState extends State<InventarioScreen>
                                   },
                                   controller: bloc.cantidadController,
                                   keyboardType: TextInputType.number,
-                                  decoration: InputDecorations.authInputDecoration(
-                                    hintText: 'Cantidad',
-                                    labelText: 'Cantidad',
-                                    suffixIconButton: IconButton(
-                                      onPressed: () {
-                                        bloc.add(
-                                          ShowQuantityEvent(!bloc.viewQuantity),
-                                        );
-                                        bloc.cantidadController.clear();
-                                        Future.delayed(
-                                          const Duration(milliseconds: 100),
-                                          () {
-                                            FocusScope.of(
-                                              context,
-                                            ).requestFocus(focusNode3);
+                                  decoration:
+                                      InputDecorations.authInputDecoration(
+                                        hintText: 'Cantidad',
+                                        labelText: 'Cantidad',
+                                        suffixIconButton: IconButton(
+                                          onPressed: () {
+                                            bloc.add(
+                                              ShowQuantityEvent(
+                                                !bloc.viewQuantity,
+                                              ),
+                                            );
+                                            bloc.cantidadController.clear();
+                                            Future.delayed(
+                                              const Duration(milliseconds: 100),
+                                              () {
+                                                FocusScope.of(
+                                                  context,
+                                                ).requestFocus(focusNode3);
+                                              },
+                                            );
                                           },
-                                        );
-                                      },
-                                      icon: const Icon(Icons.clear),
-                                    ),
-                                  ),
+                                          icon: const Icon(Icons.clear),
+                                        ),
+                                      ),
                                 ),
                               ),
                             ),

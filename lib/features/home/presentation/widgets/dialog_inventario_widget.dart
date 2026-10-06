@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/services/productos_sync_service.dart';
 import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
 import 'package:wms_app/shared/widgets/selection_dialog.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
@@ -19,9 +20,10 @@ class DialogInventario extends StatelessWidget {
     bloc.add(LoadConfigurationsUserInventory()); // configuración
 
     Navigator.pop(context);
-    // Se valida con productosCount (ya cargado desde BD en el initState del
-    // home) y no con la lista en memoria, que GetProductsForDB aún no pobló.
-    if (bloc.productosCount == 0) {
+    // Se valida con el conteo del servicio (ya cargado desde BD en el
+    // initState del home) y no con la lista en memoria, que GetProductsForDB
+    // aún no pobló.
+    if (ProductosSyncService.instance.count == 0) {
       Get.snackbar(
         '360 Software Informa',
         'No hay productos cargados, por favor descargue los productos desde '

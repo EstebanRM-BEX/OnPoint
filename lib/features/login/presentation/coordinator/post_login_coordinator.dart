@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:wms_app/core/services/preload_status.dart';
+import 'package:wms_app/core/services/productos_sync_service.dart';
 import 'package:wms_app/features/home/domain/entities/app_version.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
-import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
 
@@ -28,15 +28,15 @@ class PostLoginResult {
 class PostLoginCoordinator {
   final HomeBloc homeBloc;
   final WMSPickingBloc pickingBloc;
-  final InventarioBloc inventarioBloc;
   final UserBloc userBloc;
+  final ProductosSyncService productosSync;
 
   PostLoginCoordinator({
     required this.homeBloc,
     required this.pickingBloc,
-    required this.inventarioBloc,
     required this.userBloc,
-  });
+    ProductosSyncService? productosSync,
+  }) : productosSync = productosSync ?? ProductosSyncService.instance;
 
   Future<PostLoginResult> run() async {
     // ── PASO 1: Recargar datos del usuario y configuraciones ──
@@ -93,17 +93,7 @@ class PostLoginCoordinator {
       PreloadStatus.novedades,
     ]);
 
-    await _runAndWait<InventarioState>(
-      stream: inventarioBloc.stream,
-      start: () => inventarioBloc.add(GetProductsEvent(isDialogLoading: false)),
-      isDone: (s) =>
-          s is GetProductsSuccess ||
-          s is GetProductsFailureInventory ||
-          s is InventarioSessionExpiredState,
-      timeout: heavyTimeout,
-      label: 'productos',
-      statusKey: PreloadStatus.productos,
-    );
+    await _downloadProductos(heavyTimeout);
 
     await _runAndWait<UserState>(
       stream: userBloc.stream,
@@ -126,6 +116,21 @@ class PostLoginCoordinator {
     );
 
     pickingBloc.add(LoadAllNovedades());
+  }
+
+  /// Descarga de productos (catálogo grande). Nunca lanza: si falla o expira
+  /// el tiempo, la siguiente precarga sigue.
+  Future<void> _downloadProductos(Duration timeout) async {
+    try {
+      final outcome = await productosSync.download().timeout(timeout);
+      debugPrint(
+        '📥 [PostLogin] Precarga productos: ${outcome.runtimeType}',
+      );
+    } catch (e) {
+      debugPrint('⚠️ [PostLogin] Precarga productos sin confirmar: $e');
+    } finally {
+      PreloadStatus.instance.done(PreloadStatus.productos);
+    }
   }
 
   /// Lanza [start] y espera el primer estado que cumpla [isDone] (o el

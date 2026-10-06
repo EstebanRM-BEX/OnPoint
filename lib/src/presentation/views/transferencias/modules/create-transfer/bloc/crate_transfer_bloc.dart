@@ -6,7 +6,7 @@ import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/core/services/barcodes_inventario_cache_service.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/core/services/productos_cache_service.dart';
-import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
+import 'package:wms_app/core/services/productos_sync_service.dart';
 import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
@@ -833,15 +833,15 @@ class CreateTransferBloc
       var response = await getIt<ProductosCacheService>().getAll();
       if (response.isEmpty) {
         // Puede ser que la sincronización de productos en background
-        // (post-login, fire-and-forget vía InventarioBloc.GetProductsEvent)
+        // (post-login, fire-and-forget vía ProductosSyncService.download)
         // todavía esté en curso — en vez de adivinar un tiempo fijo de
         // espera, se consulta el estado real de esa sincronización y se
         // espera solo mientras siga activa (con un tope de 15s por si algo
         // se cuelga). Si no hay sync en curso y sigue vacío, sí es que
         // realmente no hay productos en la BD.
-        final inventarioBloc = getIt<InventarioBloc>();
+        final productosSync = ProductosSyncService.instance;
         var esperas = 0;
-        while (inventarioBloc.isLoading && esperas < 30) {
+        while (productosSync.isLoading && esperas < 30) {
           await Future.delayed(const Duration(milliseconds: 500));
           esperas++;
         }

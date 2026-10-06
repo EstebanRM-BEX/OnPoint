@@ -12,7 +12,8 @@ import 'package:wms_app/features/home/presentation/widgets/update_app_dialog_wid
 import 'package:wms_app/core/services/terceros_download_service.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
-import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
+import 'package:wms_app/core/services/productos_sync_service.dart';
+import 'package:wms_app/features/inventario/presentation/widgets/session_expired_helper.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import '../bloc/user_bloc.dart';
@@ -60,40 +61,6 @@ class _UserPageState extends State<UserPage> {
                       content: Text("No hay actualizaciones disponibles"),
                       duration: Duration(seconds: 3),
                     ),
-                  );
-                }
-              },
-            ),
-            BlocListener<InventarioBloc, InventarioState>(
-              listener: (context, state) {
-                debugPrint('state inventario : $state');
-                if (state is GetProductsLoadingInventory) {
-                  showDialog(
-                    context: context,
-                    builder: (context) => const DialogLoading(
-                      message: 'Descargando productos...',
-                    ),
-                  );
-                }
-                if (state is GetProductsSuccess) {
-                  if (Navigator.canPop(context)) Navigator.pop(context);
-                  Get.snackbar(
-                    '360 Software Informa',
-                    "Se han descargado ${state.products.length} productos",
-                    backgroundColor: white,
-                    colorText: primaryColorApp,
-                    icon: const Icon(Icons.check_circle, color: Colors.green),
-                  );
-                }
-                if (state is GetProductsFailureInventory) {
-                  debugPrint("error: ${state.message}");
-                  if (Navigator.canPop(context)) Navigator.pop(context);
-                  Get.snackbar(
-                    '360 Software Informa',
-                    state.message,
-                    backgroundColor: white,
-                    colorText: primaryColorApp,
-                    icon: const Icon(Icons.error, color: Colors.red),
                   );
                 }
               },
@@ -252,6 +219,49 @@ class _UserPageState extends State<UserPage> {
     );
   }
 
+  /// Descarga de productos sin pasar por InventarioBloc (que solo existe dentro
+  /// del módulo de inventario). El diálogo muestra el avance por fases.
+  Future<void> _downloadProductos(BuildContext context) async {
+    final service = ProductosSyncService.instance;
+    if (service.isLoading) return;
+    final navigator = Navigator.of(context, rootNavigator: true);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => ListenableBuilder(
+        listenable: service,
+        builder: (_, _) => DialogLoading(
+          message: service.progress?.label ?? 'Descargando productos...',
+        ),
+      ),
+    );
+    final outcome = await service.download();
+    if (navigator.canPop()) navigator.pop();
+
+    switch (outcome) {
+      case ProductosSyncSuccess(:final count):
+        Get.snackbar(
+          '360 Software Informa',
+          'Se han descargado $count productos',
+          backgroundColor: white,
+          colorText: primaryColorApp,
+          icon: const Icon(Icons.check_circle, color: Colors.green),
+        );
+      case ProductosSyncSessionExpired():
+        SessionExpiredHelper.showDialog();
+      case ProductosSyncFailure(:final message):
+        Get.snackbar(
+          '360 Software Informa',
+          message,
+          backgroundColor: white,
+          colorText: primaryColorApp,
+          icon: const Icon(Icons.error, color: Colors.red),
+        );
+      case ProductosSyncAlreadyRunning():
+        break;
+    }
+  }
+
   /// Descarga de terceros sin pasar por DevolucionesBloc (que solo existe
   /// dentro del flujo de devolución).
   Future<void> _downloadTerceros(BuildContext context) async {
@@ -301,8 +311,7 @@ class _UserPageState extends State<UserPage> {
         SyncAction(
           label: 'Descargar productos',
           icon: Icons.inventory_2_outlined,
-          onPressed: () =>
-              context.read<InventarioBloc>().add(GetProductsEvent()),
+          onPressed: () => _downloadProductos(context),
         ),
         SyncAction(
           label: 'Descargar ubicaciones',
