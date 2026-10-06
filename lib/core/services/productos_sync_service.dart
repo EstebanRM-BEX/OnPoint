@@ -165,6 +165,16 @@ class ProductosSyncService extends ChangeNotifier {
     }
   }
 
+  /// Vuelve al estado inicial (sin productos, sin error). Se usa cuando la base
+  /// de datos local se borra: el conteo y el error anteriores ya no valen.
+  /// No interrumpe una descarga en curso.
+  void reset() {
+    _count = 0;
+    _error = null;
+    if (!_isLoading) _progress = null;
+    notifyListeners();
+  }
+
   /// Relee el conteo de productos de SQLite (sin descargar nada).
   Future<void> refreshCount() async {
     final result = await _getProductosCount(NoParams());

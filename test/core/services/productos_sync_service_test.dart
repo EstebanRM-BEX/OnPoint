@@ -219,4 +219,20 @@ void main() {
       expect(service.count, 7);
     });
   });
+
+  group('reset', () {
+    test('vuelve a conteo 0 y sin error, y notifica', () async {
+      syncOk();
+      when(() => count(any())).thenAnswer((_) async => const Right(30));
+      await service.download();
+      var notified = 0;
+      service.addListener(() => notified++);
+
+      service.reset();
+
+      expect(service.count, 0);
+      expect(service.error, isNull);
+      expect(notified, 1);
+    });
+  });
 }

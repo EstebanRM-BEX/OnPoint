@@ -6,6 +6,7 @@ import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
 import 'package:wms_app/core/services/novedades_cache_service.dart';
 import 'package:wms_app/core/services/packing_preservation.dart';
 import 'package:wms_app/core/services/productos_cache_service.dart';
+import 'package:wms_app/core/services/productos_sync_service.dart';
 import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/core/utils/widgets/app_restart_widget.dart';
@@ -33,7 +34,7 @@ class SessionManager {
     await PrefUtils.clearPrefs();
     getIt<IStorageService>().removeUrlWebsite();
     await DataBaseSqlite().deleteBDCloseSession(keepPacking: keepPackingData);
-    _invalidateMemoryCaches();
+    invalidateMemoryCaches();
     await PrefUtils.setIsLoggedIn(false);
 
     // Recrea el árbol: los blocs se cierran y `CheckAuthPage` (initialRoute)
@@ -45,11 +46,17 @@ class SessionManager {
   /// [AppRestart.restart] (que solo recrea widgets/blocs). Sin esto, la
   /// siguiente sesión —otro cliente/almacén— lee la lista vieja en memoria
   /// aunque SQLite ya esté vacío.
-  static void _invalidateMemoryCaches() {
+  ///
+  /// Público porque también lo necesita todo borrado de la base de datos
+  /// (`DataBaseSqlite.deleteBDCloseSession`), no solo el cierre de sesión: el
+  /// botón "Eliminar base de datos" del perfil dejaba estos caches con datos
+  /// que ya no existían en SQLite.
+  static void invalidateMemoryCaches() {
     getIt<UbicacionesCacheService>().invalidate();
     getIt<ProductosCacheService>().invalidate();
     getIt<NovedadesCacheService>().invalidate();
     getIt<BarcodesInventarioCacheService>().invalidate();
     getIt<ConfiguracionCacheService>().invalidate();
+    ProductosSyncService.instance.reset();
   }
 }

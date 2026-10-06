@@ -1,3 +1,4 @@
+import 'package:wms_app/core/services/session_manager.dart';
 // ignore_for_file: avoid_print, depend_on_referenced_packages, unnecessary_string_interpolations, unnecessary_brace_in_string_interps, unrelated_type_equality_checks, unnecessary_null_comparison, prefer_conditional_assignment
 
 import 'package:flutter/material.dart';
@@ -2035,6 +2036,9 @@ class DataBaseSqlite {
     await deleExpedicion();
     await deleRecepcionMultiusuario();
     await deleTransferenciaSessions();
+    // SQLite quedó vacío: los caches en memoria (singletons de getIt) ya no
+    // reflejan nada.
+    SessionManager.invalidateMemoryCaches();
   }
 
   //*metodo para actualizar la tabla de productos de un batch
