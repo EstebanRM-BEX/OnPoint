@@ -18,10 +18,11 @@ import 'package:wms_app/features/expedition/presentation/widgets/expedicion_sort
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
-import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
-import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
+import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/cluster_search_dock.dart';
+import 'package:wms_app/features/picking_cluster/presentation/widgets/cluster_palette.dart';
+import 'package:wms_app/features/expedition/presentation/widgets/expedicion_list_header_widget.dart';
 
 class ListExpeditionScreen extends StatefulWidget {
   const ListExpeditionScreen({super.key});
@@ -80,7 +81,6 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen>
   /// completa, no la filtrada por el buscador de texto.
   void _handleScan(String value, BuildContext context) {
     final scan = value.trim().toLowerCase();
-    _scanController.clear();
     if (scan.isEmpty) return;
 
     final bloc = context.read<ExpedicionListBloc>();
@@ -89,7 +89,6 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen>
       final documentoOrigen = expedicion.documentoOrigen?.toLowerCase() ?? '';
       if (nombre == scan || documentoOrigen == scan) {
         _handleExpedicionTap(context, expedicion);
-        Future.microtask(() => _scanFocusNode.requestFocus());
         return;
       }
     }
@@ -100,7 +99,6 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen>
   void _showScanError() {
     _audioService.playErrorSound();
     _vibrationService.vibrate();
-    Future.microtask(() => _scanFocusNode.requestFocus());
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Expedición no encontrada en la lista')),
     );
@@ -138,7 +136,6 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen>
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
     final bloc = context.read<ExpedicionListBloc>();
 
     return MultiBlocListener(
@@ -178,225 +175,172 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen>
       child: PopScope(
         canPop: false,
         child: Scaffold(
-          backgroundColor: primaryColorApp,
-          body: SafeArea(
-            child: Container(
-              color: Colors.white,
-              child: Column(
-                children: [
-                  // WarningWidgetCubit ya escucha ConnectionStatusCubit por su
-                  // cuenta: envolver el header en otro BlocBuilder solo
-                  // reconstruiría toda la barra sin usar el estado.
-                  Container(
-                    width: size.width,
-                    color: primaryColorApp,
-                    child: Column(
-                      children: [
-                        const WarningWidgetCubit(),
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: () => Navigator.pushReplacementNamed(
-                                context,
-                                '/home',
-                              ),
-                              icon: const Icon(
-                                Icons.arrow_back,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
-                            const Expanded(
-                              child: Text(
-                                'EXPEDICIONES',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            if (_selectedPropietario != null)
-                              IconButton(
-                                onPressed: () =>
-                                    setState(() => _selectedPropietario = null),
-                                icon: const Icon(
-                                  Icons.person_search_outlined,
-                                  color: Colors.amber,
-                                ),
-                              ),
-                            IconButton(
-                              onPressed: () => bloc.add(
-                                const FetchExpedicionesEvent(
-                                  isLoadinDialog: true,
-                                ),
-                              ),
-                              icon: const Icon(
-                                Icons.refresh,
-                                color: Colors.white,
-                                size: 26,
-                              ),
-                            ),
-                            BlocBuilder<
-                              ExpedicionListBloc,
-                              ExpedicionListState
-                            >(
-                              builder: (context, state) {
-                                final expediciones = state is ExpedicionesLoaded
-                                    ? state.expediciones
-                                    : <ExpedicionPedido>[];
-                                return ExpedicionSortMenuWidget(
-                                  currentFilterKey: bloc.currentFilterKey,
-                                  onSort: (field, ascending) => bloc.add(
-                                    SortExpedicionListEvent(field, ascending),
-                                  ),
-                                  onFilterPropietario: () =>
-                                      showExpedicionPropietarioFilterSheet(
-                                        context,
-                                        expediciones: expediciones,
-                                        selected: _selectedPropietario,
-                                        onSelected: (value) => setState(
-                                          () => _selectedPropietario = value,
-                                        ),
-                                      ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
+          backgroundColor: ClusterPalette.surface,
+          body: Column(
+            children: [
+              BlocBuilder<ExpedicionListBloc, ExpedicionListState>(
+                builder: (context, state) {
+                  final expediciones = state is ExpedicionesLoaded
+                      ? state.expediciones
+                      : <ExpedicionPedido>[];
+                  return ExpedicionListHeaderWidget(
+                    onBack: () =>
+                        Navigator.pushReplacementNamed(context, '/home'),
+                    onRefresh: () => bloc.add(
+                      const FetchExpedicionesEvent(isLoadinDialog: true),
                     ),
-                  ),
-                  DynamicSearchBar(
-                    controller: _searchController,
-                    focusNode: _searchFocusNode,
-                    hintText: 'Buscar expedición...',
-                    onSearchChanged: (value) =>
-                        bloc.add(SearchExpedicionEvent(value)),
-                    onSearchCleared: () =>
-                        bloc.add(const SearchExpedicionEvent('')),
-                  ),
-                  BarcodeScannerField(
-                    controller: _scanController,
-                    focusNode: _scanFocusNode,
-                    onBarcodeScanned: (value, context) =>
-                        _handleScan(value, context),
-                  ),
-                  Expanded(
-                    child: BlocConsumer<ExpedicionListBloc, ExpedicionListState>(
-                      listenWhen: (previous, current) =>
-                          current is NeedUpdateVersionExpedicionState ||
-                          current is ExpedicionListError,
-                      listener: (context, state) {
-                        if (state is NeedUpdateVersionExpedicionState) {
-                          Get.snackbar(
-                            'Actualización disponible',
-                            'Hay una nueva versión de la app disponible',
-                            backgroundColor: white,
-                            colorText: primaryColorApp,
-                            snackPosition: SnackPosition.TOP,
-                          );
-                        }
-                        if (state is ExpedicionListError) {
-                          showScrollableErrorDialog(state.message);
-                        }
-                      },
-                      buildWhen: (previous, current) =>
-                          current is ExpedicionesLoaded ||
-                          current is ExpedicionListLoading ||
-                          current is ExpedicionListDbLoading ||
-                          current is ExpedicionListError,
-                      builder: (context, state) {
-                        if (state is ExpedicionListLoading ||
-                            state is ExpedicionListDbLoading) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
+                    onClearPropietario: _selectedPropietario != null
+                        ? () => setState(() => _selectedPropietario = null)
+                        : null,
+                    menu: ExpedicionSortMenuWidget(
+                      currentFilterKey: bloc.currentFilterKey,
+                      onSort: (field, ascending) =>
+                          bloc.add(SortExpedicionListEvent(field, ascending)),
+                      onFilterPropietario: () =>
+                          showExpedicionPropietarioFilterSheet(
+                            context,
+                            expediciones: expediciones,
+                            selected: _selectedPropietario,
+                            onSelected: (value) =>
+                                setState(() => _selectedPropietario = value),
+                          ),
+                    ),
+                  );
+                },
+              ),
+              ClusterSearchDock(
+                controller: _searchController,
+                searchFocusNode: _searchFocusNode,
+                scannerFocusNode: _scanFocusNode,
+                hintText: 'Buscar expedición...',
+                scanner: BarcodeScannerField(
+                  controller: _scanController,
+                  focusNode: _scanFocusNode,
+                  clearOnScan: true,
+                  refocusOnScan: true,
+                  onBarcodeScanned: (value, context) =>
+                      _handleScan(value, context),
+                ),
+                onChanged: (value) => bloc.add(SearchExpedicionEvent(value)),
+                onCleared: () {
+                  _searchController.clear();
+                  bloc.add(const SearchExpedicionEvent(''));
+                  // Igual que Pick Cluster: al limpiar, el foco vuelve al
+                  // lector para seguir escaneando.
+                  _scanFocusNode.requestFocus();
+                },
+                onActivateScanner: () => _scanFocusNode.requestFocus(),
+              ),
+              Expanded(
+                child: BlocConsumer<ExpedicionListBloc, ExpedicionListState>(
+                  listenWhen: (previous, current) =>
+                      current is NeedUpdateVersionExpedicionState ||
+                      current is ExpedicionListError,
+                  listener: (context, state) {
+                    if (state is NeedUpdateVersionExpedicionState) {
+                      Get.snackbar(
+                        'Actualización disponible',
+                        'Hay una nueva versión de la app disponible',
+                        backgroundColor: white,
+                        colorText: primaryColorApp,
+                        snackPosition: SnackPosition.TOP,
+                      );
+                    }
+                    if (state is ExpedicionListError) {
+                      showScrollableErrorDialog(state.message);
+                    }
+                  },
+                  buildWhen: (previous, current) =>
+                      current is ExpedicionesLoaded ||
+                      current is ExpedicionListLoading ||
+                      current is ExpedicionListDbLoading ||
+                      current is ExpedicionListError,
+                  builder: (context, state) {
+                    if (state is ExpedicionListLoading ||
+                        state is ExpedicionListDbLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                        if (state is ExpedicionListError) {
-                          return Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.error_outline,
-                                    color: red,
-                                    size: 40,
-                                  ),
-                                  const SizedBox(height: 10),
-                                  const Text(
-                                    'No se pudieron cargar las expediciones.',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(color: grey, fontSize: 14),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  ElevatedButton(
-                                    onPressed: () => bloc.add(
-                                      const FetchExpedicionesFromDbEvent(),
-                                    ),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: primaryColorApp,
-                                    ),
-                                    child: const Text(
-                                      'Reintentar',
-                                      style: TextStyle(color: white),
-                                    ),
-                                  ),
-                                ],
+                    if (state is ExpedicionListError) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                color: red,
+                                size: 40,
                               ),
-                            ),
-                          );
-                        }
-
-                        final expediciones = state is ExpedicionesLoaded
-                            ? state.expediciones
-                            : <ExpedicionPedido>[];
-
-                        final listToShow = expediciones
-                            .where(
-                              (e) =>
-                                  e.isTerminated != true &&
-                                  (_selectedPropietario == null ||
-                                      e.propietario == _selectedPropietario),
-                            )
-                            .toList();
-
-                        if (listToShow.isEmpty) {
-                          return const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(24),
-                              child: Text(
-                                'No se encontraron resultados.\nIntenta con otra búsqueda.',
+                              const SizedBox(height: 10),
+                              const Text(
+                                'No se pudieron cargar las expediciones.',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(color: grey, fontSize: 14),
                               ),
-                            ),
-                          );
-                        }
-
-                        return ListView.builder(
-                          itemCount: listToShow.length,
-                          itemBuilder: (context, index) {
-                            final expedicion = listToShow[index];
-                            return InkWell(
-                              onTap: () =>
-                                  _handleExpedicionTap(context, expedicion),
-                              child: ExpedicionCardWidget(
-                                expedicion: expedicion,
+                              const SizedBox(height: 10),
+                              ElevatedButton(
+                                onPressed: () => bloc.add(
+                                  const FetchExpedicionesFromDbEvent(),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primaryColorApp,
+                                ),
+                                child: const Text(
+                                  'Reintentar',
+                                  style: TextStyle(color: white),
+                                ),
                               ),
-                            );
-                          },
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    final expediciones = state is ExpedicionesLoaded
+                        ? state.expediciones
+                        : <ExpedicionPedido>[];
+
+                    final listToShow = expediciones
+                        .where(
+                          (e) =>
+                              e.isTerminated != true &&
+                              (_selectedPropietario == null ||
+                                  e.propietario == _selectedPropietario),
+                        )
+                        .toList();
+
+                    if (listToShow.isEmpty) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text(
+                            'No se encontraron resultados.\nIntenta con otra búsqueda.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: grey, fontSize: 14),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+                      itemCount: listToShow.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 14),
+                      itemBuilder: (context, index) {
+                        final expedicion = listToShow[index];
+                        return ExpedicionCardWidget(
+                          expedicion: expedicion,
+                          onTap: () =>
+                              _handleExpedicionTap(context, expedicion),
                         );
                       },
-                    ),
-                  ),
-                ],
+                    );
+                  },
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
