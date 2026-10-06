@@ -6,7 +6,6 @@ import 'package:wms_app/features/home/domain/entities/app_version.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
 import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
-import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
 
 /// Destino de navegación al terminar el arranque post-login.
@@ -28,14 +27,12 @@ class PostLoginResult {
 /// y la secuencia se puede testear con blocs mockeados sin montar pantallas.
 class PostLoginCoordinator {
   final HomeBloc homeBloc;
-  final DevolucionesBloc devolucionesBloc;
   final WMSPickingBloc pickingBloc;
   final InventarioBloc inventarioBloc;
   final UserBloc userBloc;
 
   PostLoginCoordinator({
     required this.homeBloc,
-    required this.devolucionesBloc,
     required this.pickingBloc,
     required this.inventarioBloc,
     required this.userBloc,

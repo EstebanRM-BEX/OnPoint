@@ -1,3 +1,4 @@
+import 'package:wms_app/src/presentation/views/devoluciones/screens/widgets/show_devoluciones_dialog.dart';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -447,7 +448,7 @@ class _DialogEditProductState extends State<DialogEditProduct> {
                         child: GestureDetector(
                           onTap: () {
                             bloc.isDialogVisible = true;
-                            showDialog(
+                            showDevolucionesDialog(
                               context: context,
                               builder: (context) {
                                 return NewLoteScreenDevolucion();

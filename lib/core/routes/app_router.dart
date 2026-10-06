@@ -62,7 +62,9 @@ import 'package:wms_app/src/presentation/views/conteo/screens/widgets/lote/new_l
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/new_product/location/location_search_widget.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/new_product/lote/search_lote_widget.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/new_product/product/product_search_widget.dart';
+import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/index.dart';
+import 'package:wms_app/src/presentation/views/devoluciones/screens/widgets/devoluciones_scope.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/locations_dest_screen.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/terceros_screen.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/propietario_screen.dart';
@@ -326,6 +328,14 @@ class AppRoutes {
     if (args == null || args.length <= index) return null;
     final value = args[index];
     return value is T ? value : null;
+  }
+
+  /// Envuelve una pantalla del flujo de devoluciones con el bloc recibido por
+  /// argumento. Sin bloc (p. ej. hot restart en medio del flujo) vuelve al home.
+  static Widget _devolucionesScope(BuildContext context, WidgetBuilder child) {
+    final bloc = _arg<DevolucionesBloc>(_args(context), 0);
+    if (bloc == null) return _invalidArgs(context);
+    return DevolucionesScope(bloc: bloc, child: Builder(builder: child));
   }
 
   /// Pantalla de fallback cuando los argumentos obligatorios son inválidos.
@@ -1029,11 +1039,32 @@ class AppRoutes {
       },
 
       //todo devoluciones
-      devolucionesCreate: (_) => DevolucionesScreen(),
-      terceros: (_) => const Terceroscreen(),
-      propietarioDevoluciones: (_) => const PropietarioScreen(),
-      almacenesDevoluciones: (_) => const AlmacenesDevolucionesScreen(),
-      ubicacionesDevoluciones: (_) => LocationDestDevolucionesScreen(),
+      // DevolucionesBloc ya NO vive en el MultiBlocProvider raíz: lo crea el
+      // diálogo del Home al elegir "Crear Nueva" y viaja como argumento en
+      // cada pushReplacementNamed del flujo (BlocProvider.value) para no
+      // perder el borrador entre pantallas.
+      devolucionesCreate: (context) {
+        return DevolucionesScope(
+          bloc: _arg<DevolucionesBloc>(_args(context), 0),
+          child: DevolucionesScreen(),
+        );
+      },
+      terceros: (context) => _devolucionesScope(
+        context,
+        (_) => const Terceroscreen(),
+      ),
+      propietarioDevoluciones: (context) => _devolucionesScope(
+        context,
+        (_) => const PropietarioScreen(),
+      ),
+      almacenesDevoluciones: (context) => _devolucionesScope(
+        context,
+        (_) => const AlmacenesDevolucionesScreen(),
+      ),
+      ubicacionesDevoluciones: (context) => _devolucionesScope(
+        context,
+        (_) => LocationDestDevolucionesScreen(),
+      ),
     };
   }
 }

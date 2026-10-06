@@ -11,6 +11,7 @@ import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/core/services/barcodes_inventario_cache_service.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/core/services/productos_cache_service.dart';
+import 'package:wms_app/core/services/terceros_download_service.dart';
 import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
@@ -100,6 +101,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
   bool isLoadingTerceros = false;
 
   DevolucionesRepository devolucionesRepository = DevolucionesRepository();
+  final TercerosDownloadService _tercerosDownload = TercerosDownloadService();
 
   DevolucionesBloc() : super(DevolucionesInitial()) {
     on<DevolucionesEvent>((event, emit) {});
@@ -180,7 +182,6 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     );
 
     on<LoadTercerosCountEvent>(_onLoadTercerosCountEvent);
-    on<ReleaseHeavyDataEvent>(_onReleaseHeavyData);
     //metodo para cargar los terceros desde la bd
     // droppable: leer 322 mil filas de SQLite dos veces en paralelo no aporta.
     on<LoadTercerosFromDBEvent>(
@@ -191,6 +192,55 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     on<ResetPropietarioEvent>(_onResetPropietarioEvent);
     on<LoadAllowedWarehousesEvent>(_onLoadAllowedWarehousesEvent);
     on<SelectWarehouseEvent>(_onSelectWarehouseEvent);
+  }
+
+  // ── Ciclo de vida ────────────────────────────────────────────────────────
+  // El bloc se crea al entrar a una devolución y viaja como argumento entre
+  // sus pantallas (pushReplacementNamed), así que ninguna pantalla puede
+  // cerrarlo sola en su dispose. Cada DevolucionesScope se registra aquí y
+  // el bloc se cierra cuando ya no queda ninguna (ver [detachScope]).
+  int _scopeRefs = 0;
+
+  void attachScope() => _scopeRefs++;
+
+  /// Se llama al descartarse una pantalla del flujo. Si no queda ninguna
+  /// activa tras un breve margen (la siguiente pantalla del flujo se monta
+  /// mientras la anterior aún se está descartando), se sale del módulo.
+  void detachScope() {
+    _scopeRefs--;
+    if (_scopeRefs > 0) return;
+    Future<void>.delayed(const Duration(milliseconds: 500), () {
+      if (_scopeRefs <= 0 && !isClosed) close();
+    });
+  }
+
+  @override
+  Future<void> close() {
+    searchControllerLocation.dispose();
+    searchControllerProducts.dispose();
+    searchControllerTerceros.dispose();
+    searchControllerLote.dispose();
+    newLoteController.dispose();
+    dateLoteController.dispose();
+    searchControllerLocationDest.dispose();
+    segundaUnidadController.dispose();
+    searchControllerAlmacen.dispose();
+
+    // Listas grandes (terceros, productos, barcodes) fuera de memoria al
+    // salir del módulo. Productos y ubicaciones NO se invalidan: son cachés
+    // compartidos (Info Rápida, Conteo, etc.).
+    terceros = [];
+    tercerosFilters = [];
+    productos = [];
+    productosFilters = [];
+    ubicaciones = [];
+    ubicacionesFilters = [];
+    allBarcodeInventario = [];
+    listLotesProduct = [];
+    listLotesProductFilters = [];
+    getIt<BarcodesInventarioCacheService>().invalidate();
+
+    return super.close();
   }
 
   void _onLoadTercerosFromDBEvent(
@@ -245,84 +295,27 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
     Emitter<DevolucionesState> emit,
   ) async {
     isLoadingTerceros = true;
-    final stopwatchAPI = Stopwatch()..start();
     try {
       emit(DownloadAllTercerosLoading());
 
-      // 1. Petición a la API
-      final apiTerceros = await devolucionesRepository.fetAllTerceros(false);
-      stopwatchAPI.stop();
+      final apiTerceros = await _tercerosDownload.download();
 
-      if (apiTerceros.isEmpty) {
-        emit(
-          DownloadAllTercerosFailure('No se encontraron terceros en la nube'),
-        );
-      } else {
-        final stopwatchDB = Stopwatch()..start();
+      // Actualización en memoria
+      terceros.clear();
+      terceros = List.from(apiTerceros);
+      tercerosFilters.clear();
+      tercerosFilters = List.from(apiTerceros);
+      tercerosCount = apiTerceros.length;
 
-        // 2. Limpieza previa de tabla local (opcional, pero recomendado para mantener consistencia)
-        await db.tercerosRepository.deleTerceros();
-
-        // 3. Inserción masiva en la base de datos local
-        await db.tercerosRepository.insertTerceros(apiTerceros);
-        stopwatchDB.stop();
-
-        // 4. Actualización en memoria
-        terceros.clear();
-        terceros = List.from(apiTerceros);
-        tercerosFilters.clear();
-        tercerosFilters = List.from(apiTerceros);
-        tercerosCount = apiTerceros.length;
-
-        // Registro de tiempos y cantidad de datos
-        debugPrint(
-          '⏱️ TERCEROS - Tiempo API: ${stopwatchAPI.elapsedMilliseconds} ms (${(stopwatchAPI.elapsedMilliseconds / 1000).toStringAsFixed(2)} s)',
-        );
-        debugPrint(
-          '⏱️ TERCEROS - Tiempo DB: ${stopwatchDB.elapsedMilliseconds} ms (${(stopwatchDB.elapsedMilliseconds / 1000).toStringAsFixed(2)} s)',
-        );
-        debugPrint('📦 TERCEROS - Datos guardados: ${apiTerceros.length}');
-
-        emit(DownloadAllTercerosSuccess(apiTerceros));
-      }
+      emit(DownloadAllTercerosSuccess(apiTerceros));
+    } on TercerosDownloadException catch (e) {
+      emit(DownloadAllTercerosFailure(e.message));
     } catch (e, s) {
       debugPrint("❌ Error en _onDownloadAllTercerosEvent: $e, $s");
       emit(DownloadAllTercerosFailure('Error al descargar terceros: $e'));
     } finally {
       isLoadingTerceros = false;
     }
-  }
-
-  /// Vacía las listas grandes al salir del módulo (ver [ReleaseHeavyDataEvent]).
-  ///
-  /// Se conservan los conteos (`tercerosCount`: el Resumen operativo del Home
-  /// los usa) y el borrador de la devolución en curso (`productosDevolucion`,
-  /// que además vive en SQLite). Se emite un estado liviano porque el último
-  /// estado emitido (p. ej. `LoadTercerosFromDBSuccess`) guarda una referencia
-  /// a la lista completa y la mantendría viva.
-  void _onReleaseHeavyData(
-    ReleaseHeavyDataEvent event,
-    Emitter<DevolucionesState> emit,
-  ) {
-    // Una carga o descarga en curso volvería a llenar las listas.
-    if (isLoadingTerceros) return;
-
-    terceros = [];
-    tercerosFilters = [];
-    productos = [];
-    productosFilters = [];
-    ubicaciones = [];
-    ubicacionesFilters = [];
-    allBarcodeInventario = [];
-    listLotesProduct = [];
-    listLotesProductFilters = [];
-
-    // Productos y ubicaciones NO se invalidan: son cachés compartidos
-    // (Info Rápida, Conteo, etc.) y vaciarlos al volver al Home obligaba a
-    // recargar ~60k productos de SQLite en cada entrada a otro módulo.
-    getIt<BarcodesInventarioCacheService>().invalidate();
-
-    emit(DevolucionesInitial());
   }
 
   void _onLoadTercerosCountEvent(

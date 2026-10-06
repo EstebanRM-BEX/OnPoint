@@ -6,7 +6,6 @@ import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/login/presentation/bloc/login_bloc.dart';
 import 'package:wms_app/features/login/presentation/coordinator/post_login_coordinator.dart';
-import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
@@ -64,7 +63,6 @@ class _LoginPageState extends State<LoginPage> with LoadingDialogMixin {
 
             final result = await PostLoginCoordinator(
               homeBloc: context.read<HomeBloc>(),
-              devolucionesBloc: context.read<DevolucionesBloc>(),
               pickingBloc: context.read<WMSPickingBloc>(),
               inventarioBloc: context.read<InventarioBloc>(),
               userBloc: context.read<UserBloc>(),

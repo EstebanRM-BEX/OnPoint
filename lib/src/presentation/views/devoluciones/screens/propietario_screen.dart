@@ -71,9 +71,10 @@ class _PropietarioScreenState extends State<PropietarioScreen> {
                                               color: white),
                                           onPressed: () {
                                             Navigator.pushReplacementNamed(
-                                              context,
-                                              'devoluciones-create',
-                                            );
+ context,
+ 'devoluciones-create',
+ arguments: [context.read<DevolucionesBloc>()],
+ );
                                           },
                                         ),
                                         Padding(
@@ -223,7 +224,10 @@ class _PropietarioScreenState extends State<PropietarioScreen> {
                       onPressed: () {
                         bloc.add(SelectPropietarioEvent(Terceros()));
                         Navigator.pushReplacementNamed(
-                            context, 'devoluciones-create');
+ context,
+ 'devoluciones-create',
+ arguments: [context.read<DevolucionesBloc>()],
+ );
                       },
                       child: Text(
                         'Continuar sin propietario',
@@ -243,7 +247,10 @@ class _PropietarioScreenState extends State<PropietarioScreen> {
                               selectedIndex = null;
                             });
                             Navigator.pushReplacementNamed(
-                                context, 'devoluciones-create');
+ context,
+ 'devoluciones-create',
+ arguments: [context.read<DevolucionesBloc>()],
+ );
                           }
                         },
                         style: ElevatedButton.styleFrom(

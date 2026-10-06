@@ -75,9 +75,10 @@ class _LocationDestScreenState extends State<LocationDestDevolucionesScreen> {
                                                 color: white),
                                             onPressed: () {
                                               Navigator.pushReplacementNamed(
-                                                context,
-                                                'devoluciones-create',
-                                              );
+ context,
+ 'devoluciones-create',
+ arguments: [context.read<DevolucionesBloc>()],
+ );
                                             },
                                           ),
                                           Padding(
@@ -366,9 +367,10 @@ class _LocationDestScreenState extends State<LocationDestDevolucionesScreen> {
                               });
 
                               Navigator.pushReplacementNamed(
-                                context,
-                                'devoluciones-create',
-                              );
+ context,
+ 'devoluciones-create',
+ arguments: [context.read<DevolucionesBloc>()],
+ );
                             }
                             debugPrint(
                                 "selectedUbication: ${bloc.ubicacionesFilters[selectedIndex!].toMap()}");

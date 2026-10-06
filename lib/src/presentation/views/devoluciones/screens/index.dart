@@ -1,3 +1,4 @@
+import 'package:wms_app/src/presentation/views/devoluciones/screens/widgets/show_devoluciones_dialog.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/core/utils/widgets/dialog_dispositivo_no_autorizado_widget.dart';
@@ -282,7 +283,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
         if (state is AddProductFailure) {
           showScrollableErrorDialog(state.error);
         } else if (state is DeviceNotAuthorized) {
-          showDialog(
+          showDevolucionesDialog(
             context: context,
             barrierDismissible: false,
             builder: (context) => const DialogUnauthorizedDevice(),
@@ -341,7 +342,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
           hideLoadingDialog(); // Cierra el diálogo de carga
 
           //mostrar un dialogo para agregar el producto con cantidad y lote si es necesario
-          showDialog(
+          showDevolucionesDialog(
             context: context,
             builder: (context) {
               return DialogEditProduct(
@@ -364,7 +365,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
           //dialogo para mostrar la devolucion creada
           final bloc = context.read<DevolucionesBloc>();
           final propietarioDocumento = bloc.currentPropietario.document;
-          showDialog(
+          showDevolucionesDialog(
             context: context,
             builder: (context) {
               return BackdropFilter(
@@ -513,7 +514,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
           hideLoadingDialog(); // Cierra el diálogo de carga
           //verficamos si le producto tiene lote
           if (state.product.tracking == 'lot') {
-            showDialog(
+            showDevolucionesDialog(
               barrierDismissible: false,
               context: context,
               builder: (context) {
@@ -601,7 +602,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                                                           Navigator.pop(
                                                             context,
                                                           ); // Cierra el diálogo
-                                                          showDialog(
+                                                          showDevolucionesDialog(
                                                             context: context,
                                                             builder: (context) {
                                                               return DialogEditProduct(
@@ -814,7 +815,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                               context,
                             ); // Cierra el diálogo de carga
                             //mostrar un dialogo para agregar el producto con cantidad y lote si es necesario
-                            showDialog(
+                            showDevolucionesDialog(
                               context: context,
                               builder: (context) {
                                 return DialogEditProduct(
@@ -847,7 +848,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
               },
             );
           } else {
-            showDialog(
+            showDevolucionesDialog(
               context: context,
               builder: (context) {
                 return BackdropFilter(
@@ -1020,7 +1021,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                             LoadCurrentProductEvent(state.product.toProduct()),
                           );
                           Navigator.pop(context); // Cierra el diálogo
-                          showDialog(
+                          showDevolucionesDialog(
                             context: context,
                             builder: (context) {
                               return DialogEditProduct(
@@ -1068,7 +1069,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
             mini: true,
             onPressed: () {
               devolucionesBloc.add(ChangeStateIsDialogVisibleEvent(true));
-              showDialog(
+              showDevolucionesDialog(
                 context: context,
                 builder: (context) {
                   return SearchProductDevScreen();
@@ -1167,9 +1168,10 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                       ? null
                       : () {
                           Navigator.pushReplacementNamed(
-                            context,
-                            'ubicaciones-devoluciones',
-                          );
+ context,
+ 'ubicaciones-devoluciones',
+ arguments: [context.read<DevolucionesBloc>()],
+ );
                         },
                   child: Card(
                     color:
@@ -1257,9 +1259,10 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                 child: GestureDetector(
                   onTap: () {
                     Navigator.pushReplacementNamed(
-                      context,
-                      'almacenes-devoluciones',
-                    );
+ context,
+ 'almacenes-devoluciones',
+ arguments: [context.read<DevolucionesBloc>()],
+ );
                   },
                   child: Card(
                     elevation: 2,
@@ -1319,7 +1322,11 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                 child: GestureDetector(
                   onTap: () {
                     if (devolucionesBloc.terceros.isNotEmpty) {
-                      Navigator.pushReplacementNamed(context, 'terceros');
+                      Navigator.pushReplacementNamed(
+ context,
+ 'terceros',
+ arguments: [context.read<DevolucionesBloc>()],
+ );
                     } else if (!devolucionesBloc.isLoadingTerceros) {
                       // Memoria vacía (se libera al salir del módulo): leer de
                       // SQLite; solo descarga si la BD también está vacía.
@@ -1431,9 +1438,10 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                 child: GestureDetector(
                   onTap: () {
                     Navigator.pushReplacementNamed(
-                      context,
-                      'propietario-devoluciones',
-                    );
+ context,
+ 'propietario-devoluciones',
+ arguments: [context.read<DevolucionesBloc>()],
+ );
                   },
                   child: Card(
                     elevation: 2,
@@ -1650,7 +1658,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                 return ProductDevolucionCard(
                   product: product,
                   onRemove: () {
-                    showDialog(
+                    showDevolucionesDialog(
                       context: context,
                       builder: (context) {
                         return DialogDeletedProduct(product: product);
@@ -1665,7 +1673,7 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                     context.read<DevolucionesBloc>().add(
                       LoadCurrentProductEvent(product.toProduct()),
                     );
-                    showDialog(
+                    showDevolucionesDialog(
                       context: context,
                       builder: (context) {
                         return DialogEditProduct(

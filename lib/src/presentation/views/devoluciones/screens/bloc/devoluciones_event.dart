@@ -169,4 +169,3 @@ class SelectWarehouseEvent extends DevolucionesEvent {
 /// productos, ubicaciones, barcodes). Se lanza al volver al Home: el bloc vive
 /// en el árbol raíz y las retenía mientras la app estuviera abierta. Al volver
 /// a entrar, `InitializeDevolucionesData` las recarga desde SQLite.
-class ReleaseHeavyDataEvent extends DevolucionesEvent {}

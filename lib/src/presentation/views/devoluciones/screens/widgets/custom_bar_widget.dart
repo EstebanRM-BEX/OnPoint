@@ -1,4 +1,5 @@
 // CustomAppBar permanece igual
+import 'package:wms_app/src/presentation/views/devoluciones/screens/widgets/show_devoluciones_dialog.dart';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -48,7 +49,7 @@ class CustomAppBar extends StatelessWidget {
                     icon: const Icon(Icons.delete, color: white),
                     onPressed: () {
                       //mostramos un dialogo de confirmación
-                      showDialog(
+                      showDevolucionesDialog(
                         context: context,
                         builder: (context) {
                           return BackdropFilter(

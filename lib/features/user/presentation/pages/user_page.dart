@@ -8,7 +8,7 @@ import 'package:wms_app/features/packaging_types/presentation/bloc/packaging_typ
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/home/presentation/widgets/update_app_dialog_widget.dart';
-import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
+import 'package:wms_app/core/services/terceros_download_service.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
 import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
@@ -118,38 +118,6 @@ class _UserPageState extends State<UserPage> {
                 Get.snackbar(
                   '360 Software Informa',
                   state.message,
-                  backgroundColor: white,
-                  colorText: primaryColorApp,
-                  icon: const Icon(Icons.error, color: Colors.red),
-                );
-              }
-            },
-          ),
-          BlocListener<DevolucionesBloc, DevolucionesState>(
-            listener: (context, state) {
-              debugPrint('state devoluciones: $state');
-              if (state is DownloadAllTercerosLoading) {
-                showDialog(
-                  context: context,
-                  builder: (context) =>
-                      const DialogLoading(message: 'Descargando terceros...'),
-                );
-              }
-              if (state is DownloadAllTercerosSuccess) {
-                if (Navigator.canPop(context)) Navigator.pop(context);
-                Get.snackbar(
-                  '360 Software Informa',
-                  "Se han descargado ${state.terceros.length} terceros",
-                  backgroundColor: white,
-                  colorText: primaryColorApp,
-                  icon: const Icon(Icons.check_circle, color: Colors.green),
-                );
-              }
-              if (state is DownloadAllTercerosFailure) {
-                if (Navigator.canPop(context)) Navigator.pop(context);
-                Get.snackbar(
-                  '360 Software Informa',
-                  state.error,
                   backgroundColor: white,
                   colorText: primaryColorApp,
                   icon: const Icon(Icons.error, color: Colors.red),
@@ -276,6 +244,37 @@ class _UserPageState extends State<UserPage> {
     );
   }
 
+  /// Descarga de terceros sin pasar por DevolucionesBloc (que solo existe
+  /// dentro del flujo de devolución).
+  Future<void> _downloadTerceros(BuildContext context) async {
+    if (TercerosDownloadService.isRunning) return;
+    final navigator = Navigator.of(context, rootNavigator: true);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const DialogLoading(message: 'Descargando terceros...'),
+    );
+    String? error;
+    int count = 0;
+    try {
+      count = (await TercerosDownloadService().download()).length;
+    } on TercerosDownloadException catch (e) {
+      error = e.message;
+    } catch (e) {
+      error = 'Error al descargar terceros: $e';
+    }
+    if (navigator.canPop()) navigator.pop();
+    Get.snackbar(
+      '360 Software Informa',
+      error ?? 'Se han descargado $count terceros',
+      backgroundColor: white,
+      colorText: primaryColorApp,
+      icon: error == null
+          ? const Icon(Icons.check_circle, color: Colors.green)
+          : const Icon(Icons.error, color: Colors.red),
+    );
+  }
+
   Widget _buildSyncActions(BuildContext context) {
     return SyncActionsCard(
       primary: SyncAction(
@@ -312,8 +311,7 @@ class _UserPageState extends State<UserPage> {
         SyncAction(
           label: 'Descargar terceros',
           icon: Icons.people_outline,
-          onPressed: () =>
-              context.read<DevolucionesBloc>().add(DownloadAllTercerosEvent()),
+          onPressed: () => _downloadTerceros(context),
         ),
         SyncAction(
           label: 'Descargar tipos de empaque',

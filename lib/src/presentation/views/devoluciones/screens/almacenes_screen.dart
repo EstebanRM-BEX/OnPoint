@@ -68,7 +68,10 @@ class _AlmacenesDevolucionesScreenState
                                           color: white),
                                       onPressed: () {
                                         Navigator.pushReplacementNamed(
-                                            context, 'devoluciones-create');
+ context,
+ 'devoluciones-create',
+ arguments: [context.read<DevolucionesBloc>()],
+ );
                                       },
                                     ),
                                     Padding(
@@ -220,7 +223,10 @@ class _AlmacenesDevolucionesScreenState
                               FocusScope.of(context).unfocus();
                               setState(() => selectedIndex = null);
                               Navigator.pushReplacementNamed(
-                                  context, 'devoluciones-create');
+ context,
+ 'devoluciones-create',
+ arguments: [context.read<DevolucionesBloc>()],
+ );
                             }
                           },
                           style: ElevatedButton.styleFrom(

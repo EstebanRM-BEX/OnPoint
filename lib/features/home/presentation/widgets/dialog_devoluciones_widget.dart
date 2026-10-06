@@ -49,9 +49,15 @@ class DialogDevoluciones extends StatelessWidget {
           description: 'Registrar una devolución nueva',
           icon: Icons.add_circle_outline,
           onTap: () {
-            context.read<DevolucionesBloc>().add(InitializeDevolucionesData());
+            // Instancia nueva por devolución; la pantalla dispara
+            // InitializeDevolucionesData en su initState.
+            final bloc = DevolucionesBloc();
             Navigator.pop(context);
-            Navigator.pushReplacementNamed(context, 'devoluciones-create');
+            Navigator.pushReplacementNamed(
+              context,
+              'devoluciones-create',
+              arguments: [bloc],
+            );
           },
         ),
       ],

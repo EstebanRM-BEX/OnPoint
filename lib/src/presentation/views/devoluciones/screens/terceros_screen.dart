@@ -72,9 +72,10 @@ class _TerceroscreenState extends State<Terceroscreen> {
                                                 color: white),
                                             onPressed: () {
                                               Navigator.pushReplacementNamed(
-                                                context,
-                                                'devoluciones-create',
-                                              );
+ context,
+ 'devoluciones-create',
+ arguments: [context.read<DevolucionesBloc>()],
+ );
                                             },
                                           ),
                                           Padding(
@@ -261,9 +262,10 @@ class _TerceroscreenState extends State<Terceroscreen> {
                               });
 
                               Navigator.pushReplacementNamed(
-                                context,
-                                'devoluciones-create',
-                              );
+ context,
+ 'devoluciones-create',
+ arguments: [context.read<DevolucionesBloc>()],
+ );
                             }
                           },
                           style: ElevatedButton.styleFrom(

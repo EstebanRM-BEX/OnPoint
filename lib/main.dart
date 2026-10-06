@@ -32,7 +32,6 @@ import 'package:wms_app/core/utils/performance/jank_monitor.dart';
 import 'package:wms_app/core/utils/widgets/app_restart_widget.dart';
 import 'package:wms_app/core/utils/widgets/error_widget.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
-import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
 import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/batchs/bloc/recepcion_batch_bloc.dart';
@@ -189,7 +188,8 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => PickingPickBloc()),
         BlocProvider(create: (_) => RecepcionBatchBloc()),
         BlocProvider(create: (_) => PackingPedidoBloc()),
-        BlocProvider(create: (_) => DevolucionesBloc()),
+        // DevolucionesBloc ya NO se provee acá — lo crea el diálogo del Home
+        // y viaja como argumento por las rutas de devoluciones.
         BlocProvider(create: (_) => ConteoBloc()),
         // CreateTransferBloc ya NO se provee acá — vive escopeado a las
         // rutas 'create-transfer'/'detail-create-transfer'/
