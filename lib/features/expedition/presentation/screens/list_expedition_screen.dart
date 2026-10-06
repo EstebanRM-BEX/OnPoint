@@ -189,7 +189,7 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen>
                     onRefresh: () => bloc.add(
                       const FetchExpedicionesEvent(isLoadinDialog: true),
                     ),
-                    onClearPropietario: _selectedPropietario != null
+                    onPropietarioActivoTap: _selectedPropietario != null
                         ? () => setState(() => _selectedPropietario = null)
                         : null,
                     menu: ExpedicionSortMenuWidget(
@@ -324,16 +324,14 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen>
                       );
                     }
 
-                    return ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+                    return ListView.builder(
                       itemCount: listToShow.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 14),
                       itemBuilder: (context, index) {
                         final expedicion = listToShow[index];
-                        return ExpedicionCardWidget(
-                          expedicion: expedicion,
+                        return InkWell(
                           onTap: () =>
                               _handleExpedicionTap(context, expedicion),
+                          child: ExpedicionCardWidget(expedicion: expedicion),
                         );
                       },
                     );

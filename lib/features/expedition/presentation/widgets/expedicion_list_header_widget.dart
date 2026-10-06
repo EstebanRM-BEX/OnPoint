@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:wms_app/shared/widgets/onpoint_header_surface.dart';
 
-/// Cabecera de ListExpeditionScreen: volver, título, refrescar y menú de
-/// orden/filtro sobre el degradado de marca (mismo estilo que Pick Cluster).
+/// Cabecera de las listas de expedición / packing: volver, título, refrescar y
+/// menú de orden/filtro sobre el degradado de marca (mismo estilo que Pick
+/// Cluster).
 class ExpedicionListHeaderWidget extends StatelessWidget {
+  final String title;
   final VoidCallback onBack;
   final VoidCallback onRefresh;
   final Widget? menu;
 
-  /// Si hay un filtro de propietario activo, muestra el botón para quitarlo.
-  final VoidCallback? onClearPropietario;
+  /// Botón ámbar visible cuando hay un filtro de propietario activo.
+  final VoidCallback? onPropietarioActivoTap;
 
   const ExpedicionListHeaderWidget({
     super.key,
     required this.onBack,
+    this.title = 'EXPEDICIONES',
     required this.onRefresh,
     this.menu,
-    this.onClearPropietario,
+    this.onPropietarioActivoTap,
   });
 
   @override
@@ -27,13 +30,13 @@ class ExpedicionListHeaderWidget extends StatelessWidget {
         child: Row(
           children: [
             _action(Icons.arrow_back, 'Volver', onBack),
-            const Expanded(
+            Expanded(
               child: Text(
-                'EXPEDICIONES',
+                title,
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -41,11 +44,11 @@ class ExpedicionListHeaderWidget extends StatelessWidget {
                 ),
               ),
             ),
-            if (onClearPropietario != null)
+            if (onPropietarioActivoTap != null)
               _action(
                 Icons.person_search_outlined,
-                'Quitar filtro',
-                onClearPropietario!,
+                'Filtro de propietario',
+                onPropietarioActivoTap!,
                 color: Colors.amber,
               ),
             _action(Icons.refresh, 'Refrescar', onRefresh),
