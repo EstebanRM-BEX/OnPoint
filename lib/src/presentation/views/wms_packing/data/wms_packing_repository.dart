@@ -391,6 +391,12 @@ class WmsPackingRepository {
     } catch (e, s) {
       // Manejo de otros errores
       debugPrint('Error resPackingPedido: $e, $s');
+      // Se muestra el error real en el diálogo en vez de "Error desconocido".
+      return PackingPedidoResult(
+        code: 500,
+        msg: 'Error al procesar los pedidos de packing: $e',
+        updateVersion: false,
+      );
     }
     return PackingPedidoResult(
       code: 500,
