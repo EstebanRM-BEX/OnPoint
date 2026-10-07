@@ -20,7 +20,6 @@ import 'package:wms_app/features/picking_cluster/domain/usecases/send_product_od
 import 'package:wms_app/features/picking_cluster/domain/usecases/set_cluster_batch_product_field_use_case.dart';
 import 'package:wms_app/features/picking_cluster/domain/usecases/end_time_pick_use_case.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/features/printing/presentation/bloc/printing_bloc.dart';
 import 'package:wms_app/firebase_options.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/routes/app_router.dart';
@@ -32,13 +31,11 @@ import 'package:wms_app/core/utils/widgets/app_restart_widget.dart';
 import 'package:wms_app/core/utils/widgets/error_widget.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
 import 'package:wms_app/features/home/presentation/bloc/home_bloc.dart';
-import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/batchs/bloc/recepcion_batch_bloc.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/bloc/recepcion_bloc.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/bloc/wms_packing_bloc.dart';
-import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/bloc/packing_consolidade_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart';
@@ -183,7 +180,8 @@ class MyApp extends StatelessWidget {
         // InfoRapidaBloc/TransferInfoBloc ya NO se proveen acá — viven
         // escopeados a sus propias rutas en app_router.dart (ver comentario
         // en la sección "todo info rapida").
-        BlocProvider(create: (_) => getIt<InventarioBloc>()),
+        // InventarioBloc ya NO se provee acá — lo abre el diálogo del Home y
+        // viaja como argumento por las rutas del módulo (InventarioScope).
         BlocProvider(create: (_) => PickingPickBloc()),
         BlocProvider(create: (_) => RecepcionBatchBloc()),
         BlocProvider(create: (_) => PackingPedidoBloc()),
@@ -194,7 +192,8 @@ class MyApp extends StatelessWidget {
         // rutas 'create-transfer'/'detail-create-transfer'/
         // 'search-product-create-transfer'/'search-location-create-transfer'/
         // 'search-lote-create-transfer' en app_router.dart.
-        BlocProvider(create: (_) => PackingConsolidateBloc()),
+        // PackingConsolidateBloc ya NO se provee acá — lo comparten las rutas del
+        // flujo (PackingConsolidateScope) y se cierra al salir.
         // EnterpriseBloc ya NO se provee acá — vive escopeado a la ruta
         // 'enterprice' en app_router.dart.
         BlocProvider(create: (_) => getIt<ClusterPickingBloc>()),
@@ -243,7 +242,7 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         initialRoute: AppRoutes.checkout,
         routes: AppRoutes.routes,
-        navigatorObservers: [JankRouteObserver()],
+        navigatorObservers: [JankRouteObserver(), RouteStackTracker.instance],
         supportedLocales: const [Locale('es', 'ES')],
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,

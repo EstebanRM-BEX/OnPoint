@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/widgets/show_packing_consolidate_dialog.dart';
 import 'dart:io';
 import 'dart:ui';
 
@@ -193,7 +194,7 @@ class _DialogAdvetenciaCantidadScreenState
           ElevatedButton(
               onPressed: selectedNovedad != null
                   ? () async {
-                      showDialog(
+                      showPackingConsolidateDialog(
                         context: context,
                         builder: (_) {
                           return DialogCapturaNovedad(

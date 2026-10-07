@@ -24,7 +24,6 @@ import 'package:wms_app/features/home/presentation/widgets/widget.dart';
 import 'package:wms_app/core/services/productos_sync_service.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/bloc/wms_packing_bloc.dart';
-import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/bloc/packing_consolidade_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/widgets/dialog_packing_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart';
@@ -132,9 +131,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (rol == 'packing' || rol == 'admin') {
       context.read<WmsPackingBloc>().add(LoadAllNovedadesPackingEvent());
       context.read<PackingPedidoBloc>().add(LoadAllNovedadesPackEvent());
-      context.read<PackingConsolidateBloc>().add(
-        LoadAllNovedadesPackingConsolidateEvent(),
-      );
       showDialog(
         context: context,
         builder: (dialogContext) => DialogPacking(contextHome: dialogContext),

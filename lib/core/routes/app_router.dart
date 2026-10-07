@@ -82,6 +82,8 @@ import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/
 import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/screens/product_info_screen.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/modules/transfer/screens/transfer_info_screen.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/modules/transfer/widget/locations_dest_widget.dart';
+import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
+import 'package:wms_app/features/inventario/presentation/widgets/inventario_scope.dart';
 import 'package:wms_app/features/inventario/domain/entities/producto_inventario.dart';
 import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart'
     show Product;
@@ -127,6 +129,7 @@ import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/packing_consolidade_detail_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/packing_consolidate_list_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/scan_product_screen.dart';
+import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/widgets/packing_consolidate_scope.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/index.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/locations_dest_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/packing_detail.dart';
@@ -692,12 +695,18 @@ class AppRoutes {
       },
 
       //todo packing consolidade
-      listPackingConsolidade: (_) => ListPackingConsolidadeScreen(),
+      // PackingConsolidateBloc ya NO vive en el MultiBlocProvider raíz: lo comparten
+      // las 4 pantallas del flujo (PackingConsolidateScope) y se cierra al salir.
+      listPackingConsolidade: (_) => PackingConsolidateScope(
+        child: ListPackingConsolidadeScreen(),
+      ),
 
       packingConsolidateList: (context) {
         final args = _args(context);
         final batchModel = _arg<BatchPackingModel>(args, 0);
-        return PackingConsolidateListScreen(batchModel: batchModel);
+        return PackingConsolidateScope(
+          child: PackingConsolidateListScreen(batchModel: batchModel),
+        );
       },
 
       packingConsolidateDetail: (context) {
@@ -706,10 +715,12 @@ class AppRoutes {
         final batchModel = _arg<BatchPackingModel>(args, 1);
         final initialTabIndex = _arg<int>(args, 2);
         if (initialTabIndex == null) return _invalidArgs(context);
-        return PackingConsolidateDetailScreen(
-          packingModel: packingModel,
-          batchModel: batchModel,
-          initialTabIndex: initialTabIndex,
+        return PackingConsolidateScope(
+          child: PackingConsolidateDetailScreen(
+            packingModel: packingModel,
+            batchModel: batchModel,
+            initialTabIndex: initialTabIndex,
+          ),
         );
       },
 
@@ -717,9 +728,11 @@ class AppRoutes {
         final args = _args(context);
         final packingModel = _arg<PedidoPacking>(args, 0);
         final batchModel = _arg<BatchPackingModel>(args, 1);
-        return ScanProductPackingConsolidateScreen(
-          packingModel: packingModel,
-          batchModel: batchModel,
+        return PackingConsolidateScope(
+          child: ScanProductPackingConsolidateScreen(
+            packingModel: packingModel,
+            batchModel: batchModel,
+          ),
         );
       },
 
@@ -747,14 +760,30 @@ class AppRoutes {
       user: (_) => const UserPage(),
 
       //todo  inventario
-      inventario: (_) => const InventarioScreen(),
-      searchLocation: (_) => const SearchLocationScreen(),
-      searchProduct: (_) => const SearchProductScreen(),
+      // InventarioBloc ya NO vive en el MultiBlocProvider raíz: lo abre el
+      // diálogo del Home (InventarioBloc.open) y viaja como argumento entre las
+      // pantallas del módulo; InventarioScope lo cierra al salir si no hay nada
+      // en curso.
+      inventario: (context) => InventarioScope(
+        bloc: _arg<InventarioBloc>(_args(context), 0),
+        child: const InventarioScreen(),
+      ),
+      searchLocation: (context) => InventarioScope(
+        bloc: _arg<InventarioBloc>(_args(context), 0),
+        child: const SearchLocationScreen(),
+      ),
+      searchProduct: (context) => InventarioScope(
+        bloc: _arg<InventarioBloc>(_args(context), 0),
+        child: const SearchProductScreen(),
+      ),
 
       newLoteInventario: (context) {
         final args = _args(context);
         final currentProduct = _arg<ProductoInventario>(args, 0);
-        return NewLoteInventarioScreen(currentProduct: currentProduct);
+        return InventarioScope(
+          bloc: _arg<InventarioBloc>(args, 1),
+          child: NewLoteInventarioScreen(currentProduct: currentProduct),
+        );
       },
 
       locationDestSearch: (context) {
@@ -1111,6 +1140,9 @@ class _InfoRapidaScopeState extends State<InfoRapidaScope> {
 /// builder eso creaba un bloc nuevo: la pantalla pasaba a escucharlo mientras
 /// las cargas iniciales seguían en el anterior, y el diálogo no se cerraba
 /// nunca. Aquí la instancia vive en el State y sobrevive a esos rebuilds.
+///
+/// Cierra el bloc al salir del módulo: cada pantalla se registra en el bloc
+/// ([PrintLabelsBloc.attachScope]) y la última en descartarse lo cierra.
 class PrintLabelsScope extends StatefulWidget {
   const PrintLabelsScope({super.key, required this.bloc, required this.child});
 
@@ -1124,6 +1156,18 @@ class PrintLabelsScope extends StatefulWidget {
 
 class _PrintLabelsScopeState extends State<PrintLabelsScope> {
   late final PrintLabelsBloc _bloc = widget.bloc ?? PrintLabelsBloc();
+
+  @override
+  void initState() {
+    super.initState();
+    _bloc.attachScope();
+  }
+
+  @override
+  void dispose() {
+    _bloc.detachScope();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

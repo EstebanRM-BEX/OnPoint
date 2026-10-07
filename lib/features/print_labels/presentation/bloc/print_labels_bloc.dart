@@ -71,6 +71,24 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
     on<ClearRangeLocationsEvent>(_onClearRangeLocations);
   }
 
+  // ── Ciclo de vida ────────────────────────────────────────────────────────
+  // Cada pantalla del módulo se registra con [attachScope]/[detachScope]
+  // (PrintLabelsScope). La navegación interna es por pushReplacementNamed (la
+  // siguiente pantalla se monta mientras la anterior se descarta), así que el
+  // bloc se cierra solo cuando ya no queda ninguna, tras un breve margen. La
+  // selección de etiquetas no se conserva al salir del módulo.
+  int _scopeRefs = 0;
+
+  void attachScope() => _scopeRefs++;
+
+  void detachScope() {
+    _scopeRefs--;
+    if (_scopeRefs > 0) return;
+    Future<void>.delayed(const Duration(milliseconds: 500), () {
+      if (_scopeRefs <= 0 && !isClosed) close();
+    });
+  }
+
   @override
   Future<void> close() {
     searchControllerLocation.dispose();

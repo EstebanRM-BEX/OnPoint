@@ -806,9 +806,10 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                         );
                                                       } else {
                                                         Navigator.pushReplacementNamed(
-                                                          context,
-                                                          'search-product',
-                                                        );
+ context,
+ 'search-product',
+ arguments: [context.read<InventarioBloc>()],
+ );
                                                       }
                                                     }
                                                   : null,
@@ -1080,9 +1081,7 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                     Navigator.pushReplacementNamed(
                                                       context,
                                                       'new-lote-inventario',
-                                                      arguments: [
-                                                        bloc.currentProduct,
-                                                      ],
+                                                      arguments: [bloc.currentProduct, bloc],
                                                     );
                                                   },
                                                   icon: Icon(

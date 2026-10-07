@@ -177,10 +177,10 @@ class _SearchLocationScreenState extends State<SearchLocationScreen> {
                               });
 
                               Navigator.pushReplacementNamed(
-                                context,
-                                'inventario',
-                                arguments: selectedLocation,
-                              );
+ context,
+ 'inventario',
+ arguments: [context.read<InventarioBloc>()],
+ );
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -241,9 +241,10 @@ class _AppBarInfo extends StatelessWidget {
                         icon: const Icon(Icons.arrow_back, color: white),
                         onPressed: () {
                           Navigator.pushReplacementNamed(
-                            context,
-                            'inventario',
-                          );
+ context,
+ 'inventario',
+ arguments: [context.read<InventarioBloc>()],
+ );
                         },
                       ),
                       Padding(

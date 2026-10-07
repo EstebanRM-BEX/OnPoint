@@ -19,12 +19,76 @@ import 'package:wms_app/features/inventario/domain/usecases/get_lotes_producto.d
 import 'package:wms_app/features/inventario/domain/usecases/get_productos_local.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_ubicaciones_local.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
+import 'package:wms_app/injection_container.dart';
 
 part 'inventario_event.dart';
 part 'inventario_state.dart';
 
 @injectable
 class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
+  // ─── Ciclo de vida ────────────────────────────────────────────────────────────
+  // El bloc vive escopeado a las rutas del módulo (InventarioScope): se crea al
+  // entrar y viaja como argumento entre sus pantallas. Al salir del módulo sin
+  // nada en curso se cierra; con una ubicación/producto/lote elegido se conserva
+  // (_draft) para retomarlo al volver a entrar.
+  static InventarioBloc? _draft;
+
+  /// Entrada al módulo desde el Home: retoma el borrador si existe (o crea uno)
+  /// y marca que las listas se recarguen de SQLite. La recarga no arranca acá:
+  /// leer ~72 mil productos bloquea el hilo de UI y dejaba la pantalla a medio
+  /// pintar durante la transición; InventarioScope la dispara cuando la
+  /// pantalla ya terminó de aparecer ([reloadIfPending]).
+  static InventarioBloc open() {
+    final bloc = resumeOrCreate();
+    bloc._reloadPending = true;
+    return bloc;
+  }
+
+  /// Reutiliza el bloc en curso si existe; si no, crea uno nuevo.
+  static InventarioBloc resumeOrCreate() => _draft ??= getIt<InventarioBloc>();
+
+  /// Descarta el borrador (el próximo ingreso arranca en blanco).
+  static void clearDraft() => _draft = null;
+
+  bool _reloadPending = false;
+
+  /// Recarga las listas si la entrada al módulo lo pidió (una sola vez).
+  void reloadIfPending() {
+    if (!_reloadPending || isClosed) return;
+    _reloadPending = false;
+    reload();
+  }
+
+  /// Carga ubicaciones, productos, barcodes y configuración del módulo.
+  void reload() {
+    add(GetLocationsEvent());
+    add(GetProductsForDB());
+    add(FetchAllBarcodesInventarioEvent());
+    add(LoadConfigurationsUserInventory());
+  }
+
+  int _scopeRefs = 0;
+
+  void attachScope() => _scopeRefs++;
+
+  /// Hay algo que perder si se descarta esta instancia.
+  bool get hasDraftWork =>
+      currentUbication != null ||
+      currentProduct != null ||
+      currentProductLote != null;
+
+  /// Se llama al descartarse una pantalla del módulo. La navegación interna es
+  /// por pushReplacementNamed (la siguiente pantalla se monta mientras la
+  /// anterior se descarta), de ahí el margen antes de decidir.
+  void detachScope() {
+    _scopeRefs--;
+    if (_scopeRefs > 0) return;
+    Future<void>.delayed(const Duration(milliseconds: 500), () {
+      if (_scopeRefs > 0 || isClosed || hasDraftWork) return;
+      close();
+    });
+  }
+
   // ─── Usecases ────────────────────────────────────────────────────────────────
 
   final GetProductosLocal getProductosLocal;
@@ -589,6 +653,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
 
   @override
   Future<void> close() {
+    if (identical(_draft, this)) _draft = null;
     searchControllerLocation.dispose();
     searchControllerProducts.dispose();
     searchControllerLote.dispose();

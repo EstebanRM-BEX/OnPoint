@@ -30,6 +30,53 @@ part 'packing_consolidade_state.dart';
 
 class PackingConsolidateBloc
     extends Bloc<PackingConsolidateEvent, PackingConsolidateState> {
+  // ── Ciclo de vida ────────────────────────────────────────────────────────
+  // El bloc vive escopeado a las rutas del flujo de Packing Consolidado
+  // (PackingConsolidateScope): una sola instancia a la vez, que comparten sus
+  // pantallas. Cada pantalla se registra con [attachScope]/[detachScope]; la
+  // navegación interna es por pushReplacementNamed (la siguiente se monta
+  // mientras la anterior se descarta), así que el bloc se cierra solo cuando ya
+  // no queda ninguna, tras un breve margen. La selección en curso no se
+  // conserva al salir (lo empacado ya está en SQLite y en Odoo).
+  static PackingConsolidateBloc? _current;
+
+  /// Instancia del flujo en curso; si no hay, crea una. Al crearla carga las
+  /// novedades (el constructor) y los batches guardados en SQLite: la lista no
+  /// tiene carga inicial propia y antes dependía de que el bloc global ya la
+  /// tuviera en memoria.
+  static PackingConsolidateBloc resumeOrCreate() =>
+      _current ??= PackingConsolidateBloc()..add(LoadBatchPackingFromDBEvent());
+
+  int _scopeRefs = 0;
+
+  void attachScope() => _scopeRefs++;
+
+  void detachScope() {
+    _scopeRefs--;
+    if (_scopeRefs > 0) return;
+    Future<void>.delayed(const Duration(milliseconds: 500), () {
+      if (_scopeRefs <= 0 && !isClosed) close();
+    });
+  }
+
+  /// Los handlers que llaman a la API vuelven a lanzar eventos después de un
+  /// `await`; si el operario ya salió del flujo el bloc está cerrado y `add`
+  /// lanzaría un StateError.
+  void _addIfOpen(PackingConsolidateEvent event) {
+    if (!isClosed) add(event);
+  }
+
+  @override
+  Future<void> close() {
+    if (identical(_current, this)) _current = null;
+    searchController.dispose();
+    searchControllerPedido.dispose();
+    searchControllerProduct.dispose();
+    controllerTemperature.dispose();
+    temperatureController.dispose();
+    return super.close();
+  }
+
   //valores de scan
   String scannedValue1 = '';
   String scannedValue2 = '';
@@ -565,7 +612,7 @@ class PackingConsolidateBloc
         }
 
         //actualizamos la lista de productos
-        add(LoadAllProductsFromPedidoEvent(
+        _addIfOpen(LoadAllProductsFromPedidoEvent(
           event.pedidoId,
         ));
         emit(UnPackignSuccess("Desempaquetado del producto exitoso"));
@@ -650,7 +697,7 @@ class PackingConsolidateBloc
         temperatureController.clear();
         resultTemperature = TemperatureIa();
 
-        add(LoadAllProductsFromPedidoEvent(currentProduct.pedidoId ?? 0));
+        _addIfOpen(LoadAllProductsFromPedidoEvent(currentProduct.pedidoId ?? 0));
 
         emit(SendTemperatureSuccess(
             response.result ?? 'Temperatura enviada correctamente'));
@@ -716,7 +763,7 @@ class PackingConsolidateBloc
         //limpiamos el dato de temperatura
         resultTemperature = TemperatureIa();
 
-        add(LoadAllProductsFromPedidoEvent(currentProduct.pedidoId ?? 0));
+        _addIfOpen(LoadAllProductsFromPedidoEvent(currentProduct.pedidoId ?? 0));
 
         emit(SendTemperatureSuccess(
             response.result ?? 'Temperatura enviada correctamente'));
@@ -841,7 +888,7 @@ class PackingConsolidateBloc
       quantitySelected = 0;
       viewQuantity = false;
       //actualizamos la lista de productos
-      add(LoadAllProductsFromPedidoEvent(
+      _addIfOpen(LoadAllProductsFromPedidoEvent(
         event.pedidoId,
       ));
       emit(SetPickingPackingOkState());
@@ -1056,7 +1103,7 @@ class PackingConsolidateBloc
 
       listOfProductsForPacking = [];
 
-      add(LoadAllProductsFromPedidoEvent(event.productos[0].pedidoId ?? 0));
+      _addIfOpen(LoadAllProductsFromPedidoEvent(event.productos[0].pedidoId ?? 0));
 
       emit(SetPackingsOkState('Empaquetado exitoso'));
     } catch (e, s) {
@@ -1162,7 +1209,7 @@ class PackingConsolidateBloc
       //actualizamos la cantidad se mparada
       quantitySelected = 0;
       viewQuantity = false;
-      add(LoadAllProductsFromPedidoEvent(event.pedidoId));
+      _addIfOpen(LoadAllProductsFromPedidoEvent(event.pedidoId));
       emit(SetPickingPackingOkState());
     } catch (e, s) {
       debugPrint('Error en el  _onSetPickingsEvent: $e, $s');
@@ -1196,7 +1243,7 @@ class PackingConsolidateBloc
           id: event.product.id);
 
       //actualizamos todas las listas
-      add(LoadAllProductsFromPedidoEvent(event.product.pedidoId ?? 0));
+      _addIfOpen(LoadAllProductsFromPedidoEvent(event.product.pedidoId ?? 0));
 
       emit(DeleteProductFromTemporaryPackageOkState());
     } catch (e, s) {
@@ -1368,7 +1415,7 @@ class PackingConsolidateBloc
     try {
       emit(LoadingLoadAllProductsFromPedido());
 
-      add(LoadConfigurationsUserPackConsolidate());
+      _addIfOpen(LoadConfigurationsUserPackConsolidate());
 
       // Lanzar productos y paquetes en paralelo (independientes entre sí)
       // Barcodes NO puede paralelizarse: depende de listOfProductosProgress[0].batchId
@@ -1891,7 +1938,7 @@ class PackingConsolidateBloc
           //creamos las cajas que ya estan creadas
 
           // //* Carga los batches desde la base de datos
-          add(LoadBatchPackingFromDBEvent());
+          _addIfOpen(LoadBatchPackingFromDBEvent());
         }
 
         emit(PackingConsolidateLoaded(

@@ -1,3 +1,4 @@
+import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/widgets/show_packing_consolidate_dialog.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
@@ -179,7 +180,7 @@ class _ListPackingConsolidadeScreenState
       if (batch.userName == null ||
           batch.userName == "" ||
           batch.userName == 0) {
-        showDialog(
+        showPackingConsolidateDialog(
           context: context,
           barrierDismissible: false,
           builder: (dialogContext) => DialogAsignUserWidget(
@@ -226,7 +227,7 @@ class _ListPackingConsolidadeScreenState
     final packingConsolidateBloc = context.read<PackingConsolidateBloc>();
 
     if (batch.startTimePack == "" || batch.startTimePack == null) {
-      showDialog(
+      showPackingConsolidateDialog(
         context: context,
         barrierDismissible:
             false, // No permitir que el usuario cierre el diálogo manualmente
@@ -252,7 +253,7 @@ class _ListPackingConsolidadeScreenState
     // 1. Variable para capturar el contexto ESPECÍFICO del diálogo
     BuildContext? dialogContext;
 
-    showDialog(
+    showPackingConsolidateDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) {
@@ -321,7 +322,7 @@ class _ListPackingConsolidadeScreenState
 
         if (state is AssignUserToBatchLoading) {
           // mostramos un dialogo de carga y despues
-          showDialog(
+          showPackingConsolidateDialog(
             context: context,
             barrierDismissible:
                 false, // No permitir que el usuario cierre el diálogo manualmente
@@ -680,7 +681,7 @@ class _ListPackingConsolidadeScreenState
 
                                             //todo
 
-                                            showDialog(
+                                            showPackingConsolidateDialog(
                                                 context: context,
                                                 builder: (context) =>
                                                     BackdropFilter(
@@ -833,7 +834,7 @@ class _ListPackingConsolidadeScreenState
                                                 batch.startTimePack != ""
                                                     ? GestureDetector(
                                                         onTap: () {
-                                                          showDialog(
+                                                          showPackingConsolidateDialog(
                                                               context: context,
                                                               builder:
                                                                   (context) =>

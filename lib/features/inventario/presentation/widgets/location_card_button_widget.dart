@@ -1,3 +1,4 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 // lib/features/inventario/presentation/widgets/location_card_button_widget.dart
 
 import 'package:flutter/material.dart';
@@ -53,9 +54,10 @@ class LocationCardButton extends StatelessWidget {
                       );
                     } else {
                       Navigator.pushReplacementNamed(
-                        context,
-                        routeName,
-                      );
+ context,
+ routeName,
+ arguments: [context.read<InventarioBloc>()],
+ );
                     }
                   }
                 : null,

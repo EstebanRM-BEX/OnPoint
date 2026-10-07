@@ -1,3 +1,4 @@
+import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/widgets/show_packing_consolidate_dialog.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
@@ -281,7 +282,7 @@ class _ScanProductPackingConsolidateScreenState
           }
 
           if (state is SetPickingPackingLoadingState) {
-            showDialog(
+            showPackingConsolidateDialog(
               context: context,
               builder: (context) => const DialogLoading(
                 message: "Separando producto...",
@@ -300,7 +301,7 @@ class _ScanProductPackingConsolidateScreenState
               if (packinghBloc
                       .configurations.result?.result?.showPhotoTemperature ==
                   true) {
-                showDialog(
+                showPackingConsolidateDialog(
                   barrierDismissible:
                       false, // Evita que se cierre tocando fuera del diálogo
                   context: context,
@@ -315,7 +316,7 @@ class _ScanProductPackingConsolidateScreenState
 
                 return;
               } else {
-                showDialog(
+                showPackingConsolidateDialog(
                   barrierDismissible:
                       false, // Evita que se cierre tocando fuera del diálogo
                   context: context,
@@ -661,7 +662,7 @@ class _ScanProductPackingConsolidateScreenState
                                   ),
                                   listOfBarcodes: packingBloc.listOfBarcodes,
                                   onBarcodesDialogTap: () {
-                                    showDialog(
+                                    showPackingConsolidateDialog(
                                       context: context,
                                       builder: (context) {
                                         return DialogBarcodes(
@@ -1035,7 +1036,7 @@ class _ScanProductPackingConsolidateScreenState
     } else {
       FocusScope.of(context).unfocus();
       if (cantidad < (currentProduct.quantity ?? 0)) {
-        showDialog(
+        showPackingConsolidateDialog(
             context: context,
             builder: (context) {
               return DialogPackingAdvetenciaCantidadScreen(

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../../core/constants/colors.dart';
 import '../../domain/entities/printer.dart';
 import '../../domain/entities/printer_report.dart';
+import 'package:wms_app/injection_container.dart';
 import '../bloc/printing_bloc.dart';
 
 class ModalPrintersList extends StatefulWidget {
@@ -36,11 +37,17 @@ class ModalPrintersList extends StatefulWidget {
       isScrollControlled: true,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => ModalPrintersList(
-        resIds: resIds,
-        model: model,
-        companyId: companyId,
-        onPrintSuccess: onPrintSuccess,
+      // PrintingBloc solo lo usa este modal: se crea al abrirlo y se cierra con
+      // él (no vive en el MultiBlocProvider raíz). Impresora y reporte elegidos
+      // no se recuerdan entre aperturas.
+      builder: (context) => BlocProvider<PrintingBloc>(
+        create: (_) => getIt<PrintingBloc>(),
+        child: ModalPrintersList(
+          resIds: resIds,
+          model: model,
+          companyId: companyId,
+          onPrintSuccess: onPrintSuccess,
+        ),
       ),
     );
   }

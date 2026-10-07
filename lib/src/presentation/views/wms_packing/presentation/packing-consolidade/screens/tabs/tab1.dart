@@ -1,5 +1,6 @@
 // ignore_for_file: unrelated_type_equality_checks, use_build_context_synchronously
 
+import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/widgets/show_packing_consolidate_dialog.dart';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -29,7 +30,7 @@ class Tab1Screen extends StatelessWidget {
   final BatchPackingModel? batchModel;
 
   void _showQRDialog(BuildContext context, String data) {
-    showDialog(
+    showPackingConsolidateDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
@@ -330,7 +331,7 @@ class Tab1Screen extends StatelessWidget {
                                                   return;
                                                 }
 
-                                                showDialog(
+                                                showPackingConsolidateDialog(
                                                     context: context,
                                                     builder: (context) {
                                                       return BackdropFilter(
@@ -776,7 +777,7 @@ class Tab1Screen extends StatelessWidget {
                                                                     return;
                                                                   }
 //todo
-                                                                  showDialog(
+                                                                  showPackingConsolidateDialog(
                                                                     context:
                                                                         context,
                                                                     builder: (_) =>

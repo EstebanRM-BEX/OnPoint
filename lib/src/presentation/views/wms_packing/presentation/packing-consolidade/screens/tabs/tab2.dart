@@ -1,3 +1,4 @@
+import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/widgets/show_packing_consolidate_dialog.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/features/packaging_types/domain/entities/packaging_type.dart';
@@ -107,7 +108,7 @@ class _Tab2ScreenState extends State<Tab2Screen> {
         ..add(ClearScannedValuePackEvent('toDo'));
 
       // 2. ABRIR DIÁLOGO Y CAPTURAR SU CONTEXTO
-      showDialog(
+      showPackingConsolidateDialog(
         context: context,
         barrierDismissible: false,
         builder: (ctx) {
@@ -223,7 +224,7 @@ class _Tab2ScreenState extends State<Tab2Screen> {
 
                                 FocusScope.of(context).unfocus();
 
-                                showDialog(
+                                showPackingConsolidateDialog(
                                   context: context,
                                   builder: (_) {
                                     final bloc =
@@ -589,7 +590,7 @@ class _Tab2ScreenState extends State<Tab2Screen> {
                                                   // Variable para almacenar el contexto del diálogo
                                                   BuildContext? dialogContext;
 
-                                                  showDialog(
+                                                  showPackingConsolidateDialog(
                                                     context: context,
                                                     barrierDismissible: false,
                                                     builder: (ctx) {

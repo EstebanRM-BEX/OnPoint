@@ -13,16 +13,9 @@ class DialogInventario extends StatelessWidget {
   final BuildContext contextHome;
 
   void _goToInventarioRapido(BuildContext context) {
-    final bloc = context.read<InventarioBloc>();
-    bloc.add(GetLocationsEvent()); // ubicaciones
-    bloc.add(GetProductsForDB()); // productos
-    bloc.add(FetchAllBarcodesInventarioEvent()); // demás códigos de barras
-    bloc.add(LoadConfigurationsUserInventory()); // configuración
-
     Navigator.pop(context);
-    // Se valida con el conteo del servicio (ya cargado desde BD en el
-    // initState del home) y no con la lista en memoria, que GetProductsForDB
-    // aún no pobló.
+    // Se valida con el conteo del servicio (ya cargado desde BD en el initState
+    // del home) y no con listas en memoria.
     if (ProductosSyncService.instance.count == 0) {
       Get.snackbar(
         '360 Software Informa',
@@ -34,7 +27,13 @@ class DialogInventario extends StatelessWidget {
       );
       return;
     }
-    Navigator.pushReplacementNamed(context, 'inventario');
+    // El bloc nace al entrar al módulo (retoma el borrador si lo hay) y viaja
+    // como argumento por sus pantallas; InventarioScope lo cierra al salir.
+    Navigator.pushReplacementNamed(
+      context,
+      'inventario',
+      arguments: [InventarioBloc.open()],
+    );
   }
 
   void _goToConteo(BuildContext context) {

@@ -1,5 +1,6 @@
 // ignore_for_file: unrelated_type_equality_checks, avoid_print
 
+import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/widgets/show_packing_consolidate_dialog.dart';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -47,7 +48,7 @@ class Tab3Screen extends StatelessWidget {
                                 .isEmpty
                             ? null
                             : () {
-                                showDialog(
+                                showPackingConsolidateDialog(
                                   context: context,
                                   builder: (_) {
                                     final bloc =
@@ -193,7 +194,7 @@ class Tab3Screen extends StatelessWidget {
                                                 child: GestureDetector(
                                                   onTap: () {
                                                     //dialogo de confirmacion
-                                                    showDialog(
+                                                    showPackingConsolidateDialog(
                                                         context: context,
                                                         builder:
                                                             (_) =>

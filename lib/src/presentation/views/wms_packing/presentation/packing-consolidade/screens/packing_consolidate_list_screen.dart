@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/widgets/show_packing_consolidate_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -45,7 +46,7 @@ class _PackingConsolidateListScreenState
           pedido.id ?? 0,
         ));
 
-    showDialog(
+    showPackingConsolidateDialog(
       context: context,
       barrierDismissible:
           false, // No permitir que el usuario cierre el diálogo manualmente

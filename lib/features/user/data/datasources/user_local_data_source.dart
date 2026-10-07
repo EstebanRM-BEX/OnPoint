@@ -1,6 +1,7 @@
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/core/services/novedades_cache_service.dart';
+import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
@@ -75,6 +76,9 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
     }).toList();
 
     await db.ubicacionesRepository.syncUbicaciones(legacyLocations);
+    // Igual que novedades: el sync escribió ubicaciones frescas en SQLite,
+    // el cache compartido en memoria debe volver a leerlas.
+    getIt<UbicacionesCacheService>().invalidate();
   }
 
   @override
