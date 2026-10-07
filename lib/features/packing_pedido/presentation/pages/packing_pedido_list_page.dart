@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/features/expedition/presentation/widgets/expedicion_list_header_widget.dart';
@@ -132,7 +133,7 @@ class _PackingPedidoListViewState extends State<_PackingPedidoListView> {
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     } else {
-      Navigator.of(context).pushReplacementNamed('/home');
+      Navigator.of(context).pushReplacementNamed(AppRoutes.home);
     }
   }
 

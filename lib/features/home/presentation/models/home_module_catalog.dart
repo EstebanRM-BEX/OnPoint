@@ -23,7 +23,14 @@ enum HomeModuleId {
   ),
   infoRapida('Info Rápida', 'Consulta directa', Icons.qr_code_scanner),
   etiquetas('Etiquetas', 'Impresión', Icons.print_outlined),
-  expedicion('Expedición', 'Despachos', Icons.local_shipping_outlined);
+  expedicion('Expedición', 'Despachos', Icons.local_shipping_outlined),
+
+  /// Packing por pedido nuevo (features/packing_pedido), en prueba junto al
+  /// actual. Oculto por defecto: se habilita por dispositivo en el editor.
+  packingPedidoV2('Packing Pedido', 'Nuevo (prueba)', Icons.inventory_outlined);
+
+  /// Módulos que aparecen ocultos hasta que alguien los habilite.
+  static const Set<HomeModuleId> hiddenByDefault = {packingPedidoV2};
 
   final String title;
   final String subtitle;
@@ -44,7 +51,7 @@ class HomeModulesLayout {
 
   static const HomeModulesLayout defaults = HomeModulesLayout(
     order: HomeModuleId.values,
-    hidden: {},
+    hidden: HomeModuleId.hiddenByDefault,
   );
 
   List<HomeModuleId> get visible =>
@@ -90,15 +97,18 @@ abstract final class HomeModulesPrefs {
       for (final name in savedOrder)
         if (byName[name] != null) byName[name]!,
     ];
-    // Módulos nuevos (no guardados todavía) van al final y visibles.
-    for (final id in HomeModuleId.values) {
-      if (!order.contains(id)) order.add(id);
-    }
     final hidden = <HomeModuleId>{
       for (final name
           in prefs.getStringList(PrefKeys.homeModulesHidden) ?? const [])
         if (byName[name] != null) byName[name]!,
     };
+    // Módulos nuevos (no guardados todavía) van al final; visibles salvo los
+    // que nacen ocultos.
+    for (final id in HomeModuleId.values) {
+      if (order.contains(id)) continue;
+      order.add(id);
+      if (HomeModuleId.hiddenByDefault.contains(id)) hidden.add(id);
+    }
     return HomeModulesLayout(order: order, hidden: hidden);
   }
 

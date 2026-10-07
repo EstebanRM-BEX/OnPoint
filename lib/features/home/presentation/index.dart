@@ -140,6 +140,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
+  /// Packing por pedido nuevo: mismo permiso que el packing actual.
+  Future<void> _openPackingPedidoV2() async {
+    final String rol = await PrefUtils.getUserRol();
+    if (!mounted) return;
+    if (rol == 'packing' || rol == 'admin') {
+      Navigator.pushReplacementNamed(context, AppRoutes.packingPedidoV2);
+    } else {
+      _denyAccess();
+    }
+  }
+
   /// [builder] recibe el contexto del diálogo; cada módulo decide qué
   /// contexto pasar como `contextHome` (se respeta el de la versión previa).
   void _openRoleDialog(String rol, WidgetBuilder builder, {int seconds = 4}) {
@@ -228,6 +239,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       context,
       AppRoutes.listExpedition,
     ),
+    HomeModuleId.packingPedidoV2 => _openPackingPedidoV2,
   };
 
   /// Módulos visibles en el orden configurado, en páginas de 9.

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/features/expedition/domain/entities/item_suelto_expedicion.dart';
+import 'package:wms_app/features/packing_pedido/presentation/pages/packing_pedido_list_page.dart';
 import 'package:wms_app/features/expedition/domain/entities/paquete_expedicion.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/assignment/expedicion_assignment_bloc.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/confirm/expedicion_confirm_bloc.dart';
@@ -292,6 +293,10 @@ class AppRoutes {
   static const String scanProductExpedition = 'scan-product-expedition';
   static const String expeditionDetail = 'expedition-detail';
 
+  // Packing por pedido nuevo (features/packing_pedido), en prueba junto al
+  // módulo actual. Las pantallas internas navegan con Navigator.push.
+  static const String packingPedidoV2 = 'packing-pedido-v2';
+
   //todas las pantallas de recepción multiusuario
   static const String listRecepcionMultiusuario = 'list-recepcion-multiusuario';
   static const String recepcionMultiusuarioDetail =
@@ -389,6 +394,8 @@ class AppRoutes {
       // refrescarlo al confirmar; Scan necesita el mismo ScanBloc que ya
       // usan las pestañas de Detail) — por eso viajan como argumento extra
       // de la ruta en vez de crearse de cero ahí.
+      packingPedidoV2: (_) => const PackingPedidoListPage(),
+
       listExpedition: (_) => MultiBlocProvider(
         providers: [
           BlocProvider(create: (_) => getIt<ExpedicionListBloc>()),
