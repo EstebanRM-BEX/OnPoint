@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/shared/widgets/selection_dialog.dart';
 
 class DialogPacking extends StatelessWidget {
@@ -32,7 +33,10 @@ class DialogPacking extends StatelessWidget {
           icon: Icons.receipt_long_outlined,
           onTap: () {
             Navigator.pop(context);
-            Navigator.pushReplacementNamed(contextHome, 'list-packing');
+            Navigator.pushReplacementNamed(
+              contextHome,
+              AppRoutes.packingPedidoV2,
+            );
           },
         ),
         SelectionOption(

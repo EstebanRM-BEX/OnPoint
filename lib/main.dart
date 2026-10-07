@@ -23,6 +23,7 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/firebase_options.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/routes/app_router.dart';
+import 'package:wms_app/core/routes/empty_stack_guard.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
 import 'package:wms_app/src/api/http_response_handler.dart';
 import 'package:wms_app/core/services/session_manager.dart';
@@ -36,7 +37,6 @@ import 'package:wms_app/src/presentation/views/recepcion/modules/individual/scre
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/bloc/wms_packing_bloc.dart';
-import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/bloc/picking_pick_bloc.dart';
@@ -190,7 +190,6 @@ class MyApp extends StatelessWidget {
         // viaja como argumento por las rutas del módulo (InventarioScope).
         BlocProvider(create: (_) => PickingPickBloc()),
         BlocProvider(create: (_) => RecepcionBatchBloc()),
-        BlocProvider(create: (_) => PackingPedidoBloc()),
         // DevolucionesBloc ya NO se provee acá — lo crea el diálogo del Home
         // y viaja como argumento por las rutas de devoluciones.
         BlocProvider(create: (_) => ConteoBloc()),
@@ -247,7 +246,12 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         initialRoute: AppRoutes.checkout,
         routes: AppRoutes.routes,
-        navigatorObservers: [JankRouteObserver(), RouteStackTracker.instance],
+        navigatorObservers: [
+          JankRouteObserver(),
+          RouteStackTracker.instance,
+          // Nunca dejar el Navigator sin pantalla (negro): monta Home.
+          EmptyStackGuard(),
+        ],
         supportedLocales: const [Locale('es', 'ES')],
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
@@ -265,6 +269,7 @@ class MyApp extends StatelessWidget {
         builder: (context, navigator) {
           return SessionTimeoutManager(
             duration: const Duration(hours: 12),
+            navigatorKey: navigatorKey,
             onSessionExpired: logOut,
             // Chat global desactivado en desarrollo. Para reactivarlo, envolver
             // de nuevo el navigator con GlobalChatOverlay.

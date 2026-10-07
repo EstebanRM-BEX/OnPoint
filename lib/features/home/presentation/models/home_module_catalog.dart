@@ -23,14 +23,10 @@ enum HomeModuleId {
   ),
   infoRapida('Info Rápida', 'Consulta directa', Icons.qr_code_scanner),
   etiquetas('Etiquetas', 'Impresión', Icons.print_outlined),
-  expedicion('Expedición', 'Despachos', Icons.local_shipping_outlined),
-
-  /// Packing por pedido nuevo (features/packing_pedido), en prueba junto al
-  /// actual. Oculto por defecto: se habilita por dispositivo en el editor.
-  packingPedidoV2('Packing Pedido', 'Nuevo (prueba)', Icons.inventory_outlined);
+  expedicion('Expedición', 'Despachos', Icons.local_shipping_outlined);
 
   /// Módulos que aparecen ocultos hasta que alguien los habilite.
-  static const Set<HomeModuleId> hiddenByDefault = {packingPedidoV2};
+  static const Set<HomeModuleId> hiddenByDefault = {};
 
   final String title;
   final String subtitle;

@@ -23,9 +23,8 @@ import 'package:wms_app/features/home/presentation/widgets/dialog_transferencia_
 import 'package:wms_app/features/home/presentation/widgets/widget.dart';
 import 'package:wms_app/core/services/productos_sync_service.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
+import 'package:wms_app/features/home/presentation/widgets/dialog_packing_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-batch/bloc/wms_packing_bloc.dart';
-import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/bloc/packing_pedido_bloc.dart';
-import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/widgets/dialog_packing_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -130,22 +129,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (!mounted) return;
     if (rol == 'packing' || rol == 'admin') {
       context.read<WmsPackingBloc>().add(LoadAllNovedadesPackingEvent());
-      context.read<PackingPedidoBloc>().add(LoadAllNovedadesPackEvent());
       showDialog(
         context: context,
         builder: (dialogContext) => DialogPacking(contextHome: dialogContext),
       );
-    } else {
-      _denyAccess();
-    }
-  }
-
-  /// Packing por pedido nuevo: mismo permiso que el packing actual.
-  Future<void> _openPackingPedidoV2() async {
-    final String rol = await PrefUtils.getUserRol();
-    if (!mounted) return;
-    if (rol == 'packing' || rol == 'admin') {
-      Navigator.pushReplacementNamed(context, AppRoutes.packingPedidoV2);
     } else {
       _denyAccess();
     }
@@ -239,7 +226,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       context,
       AppRoutes.listExpedition,
     ),
-    HomeModuleId.packingPedidoV2 => _openPackingPedidoV2,
   };
 
   /// Módulos visibles en el orden configurado, en páginas de 9.

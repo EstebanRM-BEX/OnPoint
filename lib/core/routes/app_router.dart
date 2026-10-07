@@ -131,10 +131,6 @@ import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/packing_consolidate_list_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/scan_product_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/widgets/packing_consolidate_scope.dart';
-import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/index.dart';
-import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/locations_dest_screen.dart';
-import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/packing_detail.dart';
-import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing/screens/sacn_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/batch_detail.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/batch_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/screens/history_pick/detail_pick_donde_screen.dart';
@@ -197,12 +193,6 @@ class AppRoutes {
       'pedido-packing-consolidate-list';
   static const String packingConsolidateDetail = 'packing-consolidate-detail';
   static const String scanProductConsolidate = 'scan-product-consolidate';
-
-  //todas las pantallas de packing por pedido
-  static const String listPacking = 'list-packing';
-  static const String detailPackingPedido = 'detail-packing-pedido';
-  static const String scanPack = 'scan-pack';
-  static const String locationsDestPacking = 'locations-dest-packing';
 
   //todas las pantallas de inventario
   static const String inventario = 'inventario';
@@ -293,8 +283,9 @@ class AppRoutes {
   static const String scanProductExpedition = 'scan-product-expedition';
   static const String expeditionDetail = 'expedition-detail';
 
-  // Packing por pedido nuevo (features/packing_pedido), en prueba junto al
-  // módulo actual. Las pantallas internas navegan con Navigator.push.
+  // Packing por pedido (features/packing_pedido, Clean Architecture). Se
+  // entra desde el diálogo de selección de Packing del home. Las pantallas
+  // internas navegan con Navigator.push.
   static const String packingPedidoV2 = 'packing-pedido-v2';
 
   //todas las pantallas de recepción multiusuario
@@ -741,25 +732,6 @@ class AppRoutes {
             batchModel: batchModel,
           ),
         );
-      },
-
-      //todo packing por pedido
-      listPacking: (_) => ListPackingScreen(),
-
-      detailPackingPedido: (context) {
-        final args = _args(context);
-        final initialTabIndex = _arg<int>(args, 0);
-        if (initialTabIndex == null) return _invalidArgs(context);
-        return PackingPedidoDetailScreen(initialTabIndex: initialTabIndex);
-      },
-
-      scanPack: (_) => ScanPackScreen(),
-
-      locationsDestPacking: (context) {
-        final args = _args(context);
-        final isMoreItems = _arg<bool>(args, 0);
-        if (isMoreItems == null) return _invalidArgs(context);
-        return LocationDestPackingScreen(isMoreItems: isMoreItems);
       },
 
       //todo auth
