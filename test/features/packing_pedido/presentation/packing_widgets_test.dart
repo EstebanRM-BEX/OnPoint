@@ -353,12 +353,17 @@ void main() {
     });
   });
 
-  testWidgets('CantidadScanCard: aplicar deshabilitado fuera del paso', (
+  testWidgets('CantidadScanCard: diseño anterior, aplicar solo en su paso', (
     t,
   ) async {
     var aplicado = 0;
+    var editar = 0;
+    final scanController = TextEditingController();
+    final scanFocus = FocusNode();
     final controller = TextEditingController();
     final focus = FocusNode();
+    addTearDown(scanController.dispose);
+    addTearDown(scanFocus.dispose);
     addTearDown(controller.dispose);
     addTearDown(focus.dispose);
     Widget card({required bool activo}) => app(
@@ -370,20 +375,29 @@ void main() {
         editando: false,
         puedeEditar: true,
         ocupado: false,
+        scanController: scanController,
+        scanFocus: scanFocus,
+        onEscaneo: (_) {},
         controller: controller,
         focusNode: focus,
-        onAlternarEdicion: () {},
+        onAlternarEdicion: () => editar++,
         onAplicar: () => aplicado++,
       ),
     );
 
     await t.pumpWidget(card(activo: false));
+    expect(find.text('Recoger:'), findsOneWidget);
+    expect(find.text('10'), findsOneWidget);
+    expect(find.text('3'), findsOneWidget);
     await t.tap(find.text('APLICAR CANTIDAD'));
+    await t.tap(find.byIcon(Icons.edit_note_rounded));
     expect(aplicado, 0);
+    expect(editar, 0);
 
     await t.pumpWidget(card(activo: true));
     await t.tap(find.text('APLICAR CANTIDAD'));
+    await t.tap(find.byIcon(Icons.edit_note_rounded));
     expect(aplicado, 1);
-    expect(find.byIcon(Icons.edit_note_rounded), findsOneWidget);
+    expect(editar, 1);
   });
 }

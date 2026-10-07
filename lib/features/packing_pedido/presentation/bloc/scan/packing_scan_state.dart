@@ -11,6 +11,10 @@ class PackingScanState extends Equatable {
   final ProductoPacking? producto;
   final PasoScanPack paso;
 
+  /// Paso donde falló el último escaneo (la tarjeta se pinta en rojo, como
+  /// en el módulo anterior). Se limpia al avanzar.
+  final PasoScanPack? errorEn;
+
   /// Cantidad separada hasta ahora.
   final double cantidad;
   final bool editandoCantidad;
@@ -35,6 +39,7 @@ class PackingScanState extends Equatable {
     this.status = ScanPackStatus.inicial,
     this.producto,
     this.paso = PasoScanPack.ubicacion,
+    this.errorEn,
     this.cantidad = 0,
     this.editandoCantidad = false,
     this.cantidadEnDecision,
@@ -59,6 +64,8 @@ class PackingScanState extends Equatable {
     ScanPackStatus? status,
     ProductoPacking? producto,
     PasoScanPack? paso,
+    PasoScanPack? errorEn,
+    bool limpiarError = false,
     double? cantidad,
     bool? editandoCantidad,
     double? cantidadEnDecision,
@@ -76,6 +83,7 @@ class PackingScanState extends Equatable {
       status: status ?? this.status,
       producto: producto ?? this.producto,
       paso: paso ?? this.paso,
+      errorEn: limpiarError ? null : (errorEn ?? this.errorEn),
       cantidad: cantidad ?? this.cantidad,
       editandoCantidad: editandoCantidad ?? this.editandoCantidad,
       cantidadEnDecision: limpiarDecision
@@ -97,6 +105,7 @@ class PackingScanState extends Equatable {
     status,
     producto,
     paso,
+    errorEn,
     cantidad,
     editandoCantidad,
     cantidadEnDecision,

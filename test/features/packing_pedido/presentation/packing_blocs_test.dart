@@ -143,6 +143,9 @@ void main() {
     registerFallbackValue(
       EnviarTemperaturaPackParams(producto: productoTest(), temperatura: 0),
     );
+    registerFallbackValue(
+      EnviarImagenNovedadPackParams(producto: productoTest(), imagePath: ''),
+    );
   });
 
   // ── Lista ─────────────────────────────────────────────────────────────────
@@ -630,6 +633,80 @@ void main() {
       verify: (bloc) {
         expect(bloc.state.requiereTemperatura, isFalse);
         expect(bloc.state.finalizado, isTrue);
+      },
+    );
+
+    blocTest<PackingScanBloc, PackingScanState>(
+      'escaneo errado marca el paso en rojo y al acertar se limpia',
+      build: build,
+      act: (bloc) async {
+        bloc.add(ScanPackIniciado(linea()));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const ScanPackLeido('MAL'));
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.errorEn, PasoScanPack.ubicacion);
+        bloc.add(const ScanPackLeido('loc-a1'));
+      },
+      wait: const Duration(milliseconds: 10),
+      verify: (bloc) {
+        expect(bloc.state.paso, PasoScanPack.producto);
+        expect(bloc.state.errorEn, isNull);
+      },
+    );
+
+    blocTest<PackingScanBloc, PackingScanState>(
+      'aceptar parcial con foto: sube la foto y después separa',
+      build: build,
+      setUp: () => when(() => novedadImg(any())).thenAnswer(
+        (i) async => Right(
+          (i.positionalArguments.first as EnviarImagenNovedadPackParams)
+              .producto,
+        ),
+      ),
+      act: (bloc) async {
+        bloc.add(
+          ScanPackIniciado(
+            linea(quantity: 10, locationOk: true, productOk: true),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const CantidadPackAplicada(4));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(
+          const SeparacionParcialPackAceptada('Faltante', imagePath: '/f.jpg'),
+        );
+      },
+      wait: const Duration(milliseconds: 10),
+      verify: (bloc) {
+        verifyInOrder([() => novedadImg(any()), () => separar(any())]);
+        expect(bloc.state.resultado, ResultadoScanPack.separado);
+      },
+    );
+
+    blocTest<PackingScanBloc, PackingScanState>(
+      'si la foto falla no separa y se puede volver a aplicar',
+      build: build,
+      setUp: () => when(
+        () => novedadImg(any()),
+      ).thenAnswer((_) async => const Left(ServerFailure('sin red'))),
+      act: (bloc) async {
+        bloc.add(
+          ScanPackIniciado(
+            linea(quantity: 10, locationOk: true, productOk: true),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const CantidadPackAplicada(4));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(
+          const SeparacionParcialPackAceptada('Faltante', imagePath: '/f.jpg'),
+        );
+      },
+      wait: const Duration(milliseconds: 10),
+      verify: (bloc) {
+        verifyNever(() => separar(any()));
+        expect(bloc.state.cantidadEnDecision, isNull);
+        expect(bloc.state.operacion.esError, isTrue);
       },
     );
 

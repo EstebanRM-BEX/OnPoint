@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/producto_packing.dart';
 import 'package:wms_app/features/packing_pedido/presentation/bloc/scan/packing_scan_bloc.dart';
-import 'package:wms_app/features/packing_pedido/presentation/widgets/common/info_linea_pack.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/common/packing_operacion_listener.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/dialogs/decision_parcial_dialog.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/dialogs/temperatura_pack_dialog.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/scan/cantidad_scan_card.dart';
-import 'package:wms_app/features/packing_pedido/presentation/widgets/scan/paso_scan_card.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/scan/producto_dropdown_pack.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/scan/scan_pack_header.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/scan/ubicacion_dropdown_pack.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/injection_container.dart';
-import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/shared/widgets/scanner_location_widget.dart';
+import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
+import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
+import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
+import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
 
-/// Escaneo de una línea: ubicación → producto → cantidad. Al terminar vuelve
-/// al detalle (o pide la temperatura antes, si el producto la maneja).
+/// Escaneo de una línea ("CERTIFICACION") con el diseño del módulo
+/// anterior: tarjeta de ubicación, tarjeta de producto y franja de cantidad.
+/// Al terminar vuelve al detalle (o pide antes la temperatura).
 class PackingScanPage extends StatelessWidget {
   final ProductoPacking producto;
 
@@ -45,25 +51,55 @@ class _ScanView extends StatefulWidget {
 }
 
 class _ScanViewState extends State<_ScanView> {
-  final _scanController = TextEditingController();
-  final _scanFocus = FocusNode();
+  final _ubicacionController = TextEditingController();
+  final _ubicacionFocus = FocusNode();
+  final _productoController = TextEditingController();
+  final _productoFocus = FocusNode();
+  final _cantidadScanController = TextEditingController();
+  final _cantidadScanFocus = FocusNode();
   final _cantidadController = TextEditingController();
   final _cantidadFocus = FocusNode();
 
   PackingScanBloc get _bloc => context.read<PackingScanBloc>();
 
   @override
+  void initState() {
+    super.initState();
+    _enfocarPaso();
+  }
+
+  @override
   void dispose() {
-    _scanController.dispose();
-    _scanFocus.dispose();
+    _ubicacionController.dispose();
+    _ubicacionFocus.dispose();
+    _productoController.dispose();
+    _productoFocus.dispose();
+    _cantidadScanController.dispose();
+    _cantidadScanFocus.dispose();
     _cantidadController.dispose();
     _cantidadFocus.dispose();
     super.dispose();
   }
 
-  void _enfocarLector() => WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (mounted && !_bloc.state.editandoCantidad) _scanFocus.requestFocus();
+  /// Foco al campo de escaneo del paso actual. Solo al cambiar de paso o al
+  /// cerrar la edición manual: nunca en cada rebuild (robaba el foco).
+  void _enfocarPaso() => WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!mounted) return;
+    final s = _bloc.state;
+    if (s.editandoCantidad) return;
+    switch (s.paso) {
+      case PasoScanPack.ubicacion:
+        _ubicacionFocus.requestFocus();
+      case PasoScanPack.producto:
+        _productoFocus.requestFocus();
+      case PasoScanPack.cantidad:
+        _cantidadScanFocus.requestFocus();
+      case PasoScanPack.terminado:
+        break;
+    }
   });
+
+  void _leer(String valor) => _bloc.add(ScanPackLeido(valor));
 
   void _aplicar() {
     final s = _bloc.state;
@@ -72,9 +108,13 @@ class _ScanViewState extends State<_ScanView> {
         _cantidadController.text.trim().replaceAll(',', '.'),
       );
       if (v == null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Cantidad inválida')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            duration: const Duration(milliseconds: 1000),
+            content: const Text('Cantidad inválida'),
+            backgroundColor: Colors.red[200],
+          ),
+        );
         return;
       }
       _bloc.add(CantidadPackAplicada(v));
@@ -84,8 +124,22 @@ class _ScanViewState extends State<_ScanView> {
     FocusScope.of(context).unfocus();
   }
 
+  Future<void> _verImagenProducto(int idProduct) async {
+    final r = await getIt<GetUrlImagenProducto>()(
+      GetUrlImagenProductoParams(productId: idProduct),
+    );
+    if (!mounted) return;
+    r.fold(
+      (_) => ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Imagen no disponible'))),
+      (url) => showImageDialog(context, url),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
     return MultiBlocListener(
       listeners: [
         BlocListener<PackingScanBloc, PackingScanState>(
@@ -93,7 +147,7 @@ class _ScanViewState extends State<_ScanView> {
               a.cantidadEnDecision == null && b.cantidadEnDecision != null,
           listener: (context, _) async {
             await showDecisionParcialDialog(context, _bloc);
-            _enfocarLector();
+            _enfocarPaso();
           },
         ),
         BlocListener<PackingScanBloc, PackingScanState>(
@@ -112,9 +166,8 @@ class _ScanViewState extends State<_ScanView> {
               _cantidadController.text = s.cantidad > 0
                   ? s.cantidad.toString()
                   : '';
-            } else {
-              _enfocarLector();
             }
+            _enfocarPaso();
           },
         ),
       ],
@@ -125,124 +178,124 @@ class _ScanViewState extends State<_ScanView> {
           'imagenNovedad',
           'leerTemperatura',
         },
-        child: BlocBuilder<PackingScanBloc, PackingScanState>(
-          builder: (context, s) {
-            final p = s.producto;
-            if (p == null) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
-            return Scaffold(
-              backgroundColor: white,
-              body: Column(
-                children: [
-                  ScanPackHeader(
-                    producto: p,
-                    onBack: () => Navigator.of(context).pop(false),
-                  ),
-                  // Campo invisible del lector: siempre presente, toma el foco
-                  // salvo mientras se digita la cantidad.
-                  BarcodeScannerField(
-                    controller: _scanController,
-                    focusNode: _scanFocus,
-                    clearOnScan: true,
-                    refocusOnScan: true,
-                    onBarcodeScanned: (v, _) => _bloc.add(ScanPackLeido(v)),
-                  ),
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.only(bottom: 24),
-                      children: [
-                        PasoScanCard(
-                          titulo: 'Ubicación',
-                          icono: Icons.location_on,
-                          estado: _estado(s.paso, PasoScanPack.ubicacion),
-                          onManual: s.config.locationPackManual
-                              ? () => _bloc.add(
-                                  const UbicacionPackConfirmadaManual(),
-                                )
-                              : null,
-                          contenido: [
-                            InfoLineaPack(
-                              valor: p.locationName,
-                              vacio: 'Sin ubicación',
-                              negrita: true,
-                            ),
-                            InfoLineaPack(
-                              etiqueta: 'Barcode',
-                              valor: p.barcodeLocation,
-                            ),
-                          ],
-                        ),
-                        PasoScanCard(
-                          titulo: 'Producto',
-                          icono: Icons.inventory_2_outlined,
-                          estado: _estado(s.paso, PasoScanPack.producto),
-                          onManual: s.config.manualProductSelectionPack
-                              ? () => _bloc.add(
-                                  const ProductoPackConfirmadoManual(),
-                                )
-                              : null,
-                          contenido: [
-                            InfoLineaPack(valor: p.productName, negrita: true),
-                            InfoLineaPack(
-                              etiqueta: 'Código',
-                              valor: p.productCode,
-                            ),
-                            InfoLineaPack(
-                              etiqueta: 'Barcode',
-                              valor: p.barcode,
-                              vacio: 'Sin barcode',
-                            ),
-                            if (p.loteName.isNotEmpty)
-                              InfoLineaPack(
-                                etiqueta: 'Lote',
-                                valor: p.loteName,
-                              ),
-                            if (s.barcodes.isNotEmpty)
-                              InfoLineaPack(
-                                etiqueta: 'Otros códigos',
-                                valor: s.barcodes
-                                    .map(
-                                      (b) => b.cantidad > 1
-                                          ? '${b.barcode} (x${b.cantidad.toStringAsFixed(0)})'
-                                          : b.barcode,
-                                    )
-                                    .join(', '),
-                              ),
-                          ],
-                        ),
-                        CantidadScanCard(
-                          activo: s.paso == PasoScanPack.cantidad,
-                          cantidad: s.cantidad,
-                          total: p.quantity,
-                          unidades: p.unidades,
-                          editando: s.editandoCantidad,
-                          puedeEditar: s.config.manualQuantityPack,
-                          ocupado: s.ocupado,
-                          controller: _cantidadController,
-                          focusNode: _cantidadFocus,
-                          onAlternarEdicion: () =>
-                              _bloc.add(const EdicionCantidadPackAlternada()),
-                          onAplicar: _aplicar,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
+        child: PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) Navigator.of(context).pop(false);
           },
+          child: BlocBuilder<PackingScanBloc, PackingScanState>(
+            builder: (context, s) {
+              final p = s.producto;
+              if (p == null) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
+              final ubicacionOk = s.paso.index > PasoScanPack.ubicacion.index;
+              final productoOk = s.paso.index > PasoScanPack.producto.index;
+              return Scaffold(
+                backgroundColor: Colors.white,
+                body: Column(
+                  children: [
+                    ScanPackHeader(
+                      onBack: () => Navigator.of(context).pop(false),
+                      onImprimir: () => ModalPrintersList.show(
+                        context,
+                        resIds: [p.idMove],
+                        companyId: 1,
+                      ),
+                    ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Column(
+                          children: [
+                            LocationScannerWidget(
+                              isLocationOk: s.errorEn != PasoScanPack.ubicacion,
+                              locationIsOk: ubicacionOk,
+                              productIsOk: productoOk,
+                              quantityIsOk: productoOk,
+                              locationDestIsOk: false,
+                              currentLocationId: p.locationName,
+                              onValidateLocation: _leer,
+                              focusNode: _ubicacionFocus,
+                              controller: _ubicacionController,
+                              locationDropdown: UbicacionDropdownPack(
+                                producto: p,
+                                confirmada: ubicacionOk,
+                                onConfirmar: s.config.locationPackManual
+                                    ? () => _bloc.add(
+                                        const UbicacionPackConfirmadaManual(),
+                                      )
+                                    : null,
+                              ),
+                            ),
+                            ProductScannerWidget(
+                              isProductOk: s.errorEn != PasoScanPack.producto,
+                              productIsOk: productoOk,
+                              locationIsOk: ubicacionOk,
+                              quantityIsOk: productoOk,
+                              locationDestIsOk: false,
+                              currentProductId: p.productName,
+                              barcode: p.barcode,
+                              lotId: p.loteName,
+                              origin: '',
+                              expireDate: p.expireDate,
+                              size: size,
+                              onValidateProduct: _leer,
+                              focusNode: _productoFocus,
+                              controller: _productoController,
+                              productDropdown: ProductoDropdownPack(
+                                producto: p,
+                                onConfirmar:
+                                    s.config.manualProductSelectionPack &&
+                                        s.paso == PasoScanPack.producto
+                                    ? () => _bloc.add(
+                                        const ProductoPackConfirmadoManual(),
+                                      )
+                                    : null,
+                              ),
+                              expiryWidget: ExpirationBadgeWidget(
+                                expirationDate: p.expireDate,
+                              ),
+                              listOfBarcodes: s.barcodes,
+                              onBarcodesDialogTap: () => showDialog(
+                                context: context,
+                                builder: (_) =>
+                                    DialogBarcodes(listOfBarcodes: s.barcodes),
+                              ),
+                              onViewImgProduct: () =>
+                                  _verImagenProducto(p.idProduct),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    CantidadScanCard(
+                      activo: s.paso == PasoScanPack.cantidad,
+                      conError: s.errorEn == PasoScanPack.cantidad,
+                      cantidad: s.cantidad,
+                      total: p.quantity,
+                      unidades: p.unidades,
+                      editando: s.editandoCantidad,
+                      puedeEditar: s.config.manualQuantityPack,
+                      ocupado: s.ocupado,
+                      scanController: _cantidadScanController,
+                      scanFocus: _cantidadScanFocus,
+                      onEscaneo: _leer,
+                      controller: _cantidadController,
+                      focusNode: _cantidadFocus,
+                      onAlternarEdicion: () =>
+                          _bloc.add(const EdicionCantidadPackAlternada()),
+                      onAplicar: _aplicar,
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
-  }
-
-  static EstadoPasoScan _estado(PasoScanPack actual, PasoScanPack paso) {
-    if (actual == paso) return EstadoPasoScan.activo;
-    return actual.index > paso.index
-        ? EstadoPasoScan.hecho
-        : EstadoPasoScan.pendiente;
   }
 }

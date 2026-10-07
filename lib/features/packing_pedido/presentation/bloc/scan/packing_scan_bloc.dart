@@ -195,7 +195,13 @@ class PackingScanBloc extends Bloc<PackingScanEvent, PackingScanState> {
       (f) async =>
           emit(state.copyWith(operacion: state.operacion.fallo('escaneo', f))),
       (actualizado) async {
-        emit(state.copyWith(producto: actualizado, cantidad: total));
+        emit(
+          state.copyWith(
+            producto: actualizado,
+            cantidad: total,
+            limpiarError: true,
+          ),
+        );
         // Completa por escaneo: se separa sola.
         if (PackingRules.evaluarCantidad(actualizado, total) ==
             ValidacionCantidad.completa) {
@@ -206,7 +212,10 @@ class PackingScanBloc extends Bloc<PackingScanEvent, PackingScanState> {
   }
 
   void _errorEscaneo(Emitter<PackingScanState> emit, String mensaje) => emit(
-    state.copyWith(operacion: state.operacion.error('escaneo', mensaje)),
+    state.copyWith(
+      errorEn: state.paso,
+      operacion: state.operacion.error('escaneo', mensaje),
+    ),
   );
 
   Future<void> _confirmarUbicacion(
@@ -218,7 +227,13 @@ class PackingScanBloc extends Bloc<PackingScanEvent, PackingScanState> {
       (f) => emit(
         state.copyWith(operacion: state.operacion.fallo('ubicacion', f)),
       ),
-      (act) => emit(state.copyWith(producto: act, paso: PasoScanPack.producto)),
+      (act) => emit(
+        state.copyWith(
+          producto: act,
+          paso: PasoScanPack.producto,
+          limpiarError: true,
+        ),
+      ),
     );
   }
 
@@ -231,7 +246,12 @@ class PackingScanBloc extends Bloc<PackingScanEvent, PackingScanState> {
       (f) =>
           emit(state.copyWith(operacion: state.operacion.fallo('producto', f))),
       (act) => emit(
-        state.copyWith(producto: act, paso: PasoScanPack.cantidad, cantidad: 0),
+        state.copyWith(
+          producto: act,
+          paso: PasoScanPack.cantidad,
+          cantidad: 0,
+          limpiarError: true,
+        ),
       ),
     );
   }
@@ -317,9 +337,37 @@ class PackingScanBloc extends Bloc<PackingScanEvent, PackingScanState> {
     SeparacionParcialPackAceptada event,
     Emitter<PackingScanState> emit,
   ) async {
-    final p = state.producto;
+    var p = state.producto;
     final cantidad = state.cantidadEnDecision;
     if (p == null || cantidad == null) return;
+
+    // Con foto: se sube antes de separar (como el módulo anterior); si
+    // falla, el producto no se separa y se vuelve a aplicar la cantidad.
+    final foto = event.imagePath;
+    if (foto != null) {
+      emit(
+        state.copyWith(
+          operacion: state.operacion.procesar(
+            'imagenNovedad',
+            'Enviando imagen...',
+          ),
+        ),
+      );
+      final r = await enviarImagenNovedad(
+        EnviarImagenNovedadPackParams(producto: p, imagePath: foto),
+      );
+      final conFoto = r.fold((f) {
+        emit(
+          state.copyWith(
+            limpiarDecision: true,
+            operacion: state.operacion.fallo('imagenNovedad', f),
+          ),
+        );
+        return null;
+      }, (act) => act);
+      if (conFoto == null) return;
+      p = conFoto;
+    }
     await _separar(emit, p, cantidad, event.novedad);
   }
 

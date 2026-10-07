@@ -1,59 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/features/packing_pedido/domain/entities/producto_packing.dart';
 import 'package:wms_app/shared/widgets/onpoint_header_surface.dart';
 
-/// Barra superior del escaneo con el producto en curso.
+/// Barra superior del escaneo: fondo OnPoint con el contenido del módulo
+/// anterior (volver, "CERTIFICACION" e imprimir).
 class ScanPackHeader extends StatelessWidget {
-  final ProductoPacking producto;
   final VoidCallback onBack;
+  final VoidCallback onImprimir;
 
   const ScanPackHeader({
     super.key,
-    required this.producto,
     required this.onBack,
+    required this.onImprimir,
   });
 
   @override
   Widget build(BuildContext context) {
     return OnPointHeaderSurface(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(4, 2, 16, 14),
+        padding: const EdgeInsets.fromLTRB(4, 2, 10, 12),
         child: Row(
           children: [
             IconButton(
-              icon: const Icon(Icons.arrow_back, color: white),
               onPressed: onBack,
+              icon: const Icon(Icons.arrow_back, color: white, size: 30),
             ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'ESCANEAR PRODUCTO',
-                    style: TextStyle(
-                      color: white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    producto.productName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: white.withValues(alpha: 0.85),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
+            const Expanded(
+              child: Text(
+                'CERTIFICACION',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: white, fontSize: 18),
               ),
             ),
-            if (producto.isProductSplit)
-              const Tooltip(
-                message: 'Producto dividido',
-                child: Icon(Icons.call_split, color: white),
-              ),
+            GestureDetector(
+              onTap: onImprimir,
+              child: const Icon(Icons.print, color: white, size: 25),
+            ),
+            const SizedBox(width: 10),
           ],
         ),
       ),

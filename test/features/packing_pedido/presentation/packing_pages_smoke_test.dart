@@ -195,9 +195,18 @@ void main() {
     await t.pumpWidget(conRed(PackingScanPage(producto: productoTest())));
     await t.pump();
 
-    expect(find.text('ESCANEAR PRODUCTO'), findsOneWidget);
+    expect(find.text('CERTIFICACION'), findsOneWidget);
+    expect(find.text('Ubicación de origen'), findsOneWidget);
+    expect(find.text('Producto'), findsOneWidget);
+    expect(find.text('Recoger:'), findsOneWidget);
     expect(find.text('APLICAR CANTIDAD'), findsOneWidget);
-    expect(find.text('Confirmar a mano'), findsOneWidget);
     expect(t.takeException(), isNull);
+
+    // Los íconos PNG del diseño anterior quedan cargando en el cache de
+    // imágenes al terminar: se desmonta y se vacía para no reportar fuga.
+    await t.pumpWidget(const SizedBox());
+    PaintingBinding.instance.imageCache
+      ..clear()
+      ..clearLiveImages();
   });
 }

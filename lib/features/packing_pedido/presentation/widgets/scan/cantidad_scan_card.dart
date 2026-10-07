@@ -1,18 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/common/pack_formatos.dart';
+import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 
-/// Paso de cantidad: contador escaneado / total, edición manual (con
-/// permiso) y "Aplicar cantidad".
+/// Franja inferior de cantidad con el diseño del módulo anterior: "Recoger:
+/// N und", lector con el conteo escaneado, lápiz para digitar (con permiso),
+/// campo manual y "APLICAR CANTIDAD".
 class CantidadScanCard extends StatelessWidget {
+  /// El paso de cantidad está activo (producto confirmado).
   final bool activo;
+
+  /// El último escaneo de cantidad falló (tarjeta roja).
+  final bool conError;
   final double cantidad;
   final double total;
   final String unidades;
   final bool editando;
   final bool puedeEditar;
   final bool ocupado;
+  final TextEditingController scanController;
+  final FocusNode scanFocus;
+  final ValueChanged<String> onEscaneo;
   final TextEditingController controller;
   final FocusNode focusNode;
   final VoidCallback onAlternarEdicion;
@@ -27,119 +37,147 @@ class CantidadScanCard extends StatelessWidget {
     required this.editando,
     required this.puedeEditar,
     required this.ocupado,
+    required this.scanController,
+    required this.scanFocus,
+    required this.onEscaneo,
     required this.controller,
     required this.focusNode,
     required this.onAlternarEdicion,
     required this.onAplicar,
+    this.conError = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final ancho = MediaQuery.sizeOf(context).width;
     final fmt = PackFormatos.cantidad;
-    final avance = total <= 0 ? 0.0 : (cantidad / total).clamp(0.0, 1.0);
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 6, 12, 6),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: activo ? white : const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: activo ? primaryColorApp : const Color(0xFFE2E8F0),
-          width: activo ? 2 : 1,
-        ),
-      ),
+    return SizedBox(
+      width: ancho,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              Icon(Icons.numbers, color: primaryColorApp, size: 18),
-              const SizedBox(width: 6),
-              Text(
-                'Cantidad',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: primaryColorApp,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Card(
+              color: conError
+                  ? Colors.red[200]
+                  : (activo ? white : Colors.grey[300]),
+              elevation: 5,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Row(
+                  children: [
+                    const Text(
+                      'Recoger:',
+                      style: TextStyle(color: Colors.black, fontSize: 14),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Text(
+                        fmt(total),
+                        style: TextStyle(color: primaryColorApp, fontSize: 14),
+                      ),
+                    ),
+                    Text(
+                      unidades,
+                      style: const TextStyle(color: Colors.black, fontSize: 14),
+                    ),
+                    const Spacer(),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        alignment: Alignment.center,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            SizedBox(
+                              width: double.infinity,
+                              child: BarcodeScannerField(
+                                controller: scanController,
+                                focusNode: scanFocus,
+                                autofocus: false,
+                                clearOnScan: true,
+                                refocusOnScan: true,
+                                onBarcodeScanned: (v, _) => onEscaneo(v),
+                              ),
+                            ),
+                            IgnorePointer(
+                              child: Text(
+                                fmt(cantidad),
+                                style: const TextStyle(
+                                  color: black,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: puedeEditar && activo
+                          ? onAlternarEdicion
+                          : null,
+                      icon: Icon(
+                        Icons.edit_note_rounded,
+                        color: primaryColorApp,
+                        size: 30,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const Spacer(),
-              if (activo && puedeEditar)
-                IconButton(
-                  tooltip: editando ? 'Volver al escáner' : 'Digitar cantidad',
-                  icon: Icon(
-                    editando ? Icons.qr_code_scanner : Icons.edit_note_rounded,
-                    color: primaryColorApp,
-                  ),
-                  onPressed: onAlternarEdicion,
-                ),
-            ],
+            ),
           ),
-          Center(
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: fmt(cantidad),
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w800,
-                      color: primaryColorApp,
+          if (editando)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+              child: SizedBox(
+                height: 40,
+                child: TextFormField(
+                  focusNode: focusNode,
+                  autofocus: true,
+                  controller: controller,
+                  showCursor: true,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                  ],
+                  onFieldSubmitted: (_) => onAplicar(),
+                  decoration: InputDecorations.authInputDecoration(
+                    hintText: 'Cantidad',
+                    labelText: 'Cantidad',
+                    suffixIconButton: IconButton(
+                      onPressed: () {
+                        controller.clear();
+                        onAlternarEdicion();
+                      },
+                      icon: const Icon(Icons.clear),
                     ),
                   ),
-                  TextSpan(
-                    text: ' / ${fmt(total)} ${unidades.trim()}',
-                    style: const TextStyle(fontSize: 16, color: grey),
-                  ),
-                ],
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: ElevatedButton(
+              onPressed: activo && !ocupado ? onAplicar : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColorApp,
+                minimumSize: Size(ancho * 0.93, 35),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text(
+                'APLICAR CANTIDAD',
+                style: TextStyle(color: Colors.white, fontSize: 14),
               ),
             ),
           ),
           const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: avance,
-              minHeight: 6,
-              backgroundColor: const Color(0xFFE2E8F0),
-              color: avance >= 1 ? green : primaryColorApp,
-            ),
-          ),
-          if (editando) ...[
-            const SizedBox(height: 10),
-            TextField(
-              controller: controller,
-              focusNode: focusNode,
-              autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-              ],
-              decoration: const InputDecoration(
-                labelText: 'Cantidad',
-                border: OutlineInputBorder(),
-                isDense: true,
-              ),
-              onSubmitted: (_) => onAplicar(),
-            ),
-          ],
-          const SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: activo && !ocupado ? onAplicar : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColorApp,
-              minimumSize: const Size.fromHeight(40),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text(
-              'APLICAR CANTIDAD',
-              style: TextStyle(color: white, fontSize: 14),
-            ),
-          ),
         ],
       ),
     );

@@ -52,10 +52,13 @@ class CantidadPackAplicada extends PackingScanEvent {
 /// Cantidad menor aceptada con novedad (el resto queda para backorder).
 class SeparacionParcialPackAceptada extends PackingScanEvent {
   final String novedad;
-  const SeparacionParcialPackAceptada(this.novedad);
+
+  /// Foto de evidencia: se sube primero y, si falla, no se separa.
+  final String? imagePath;
+  const SeparacionParcialPackAceptada(this.novedad, {this.imagePath});
 
   @override
-  List<Object?> get props => [novedad];
+  List<Object?> get props => [novedad, imagePath];
 }
 
 /// Cantidad menor separada y el resto como línea nueva en "Por hacer".
