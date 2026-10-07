@@ -225,6 +225,21 @@ void main() {
       },
     );
 
+    blocTest<PackingPedidoListBloc, PackingPedidoListState>(
+      'sincronizar abre un solo aviso de carga: la API va sin diálogo propio',
+      build: build,
+      setUp: () => when(() => sync(any())).thenAnswer(
+        (_) async => const Right(SyncPedidosPackResult(pedidos: [])),
+      ),
+      act: (bloc) => bloc.add(const ListaPackSincronizada()),
+      verify: (bloc) {
+        final params =
+            verify(() => sync(captureAny())).captured.single
+                as SyncPedidosPackParams;
+        expect(params.isLoadingDialog, isFalse);
+      },
+    );
+
     test('búsqueda sin tildes y orden por prioridad', () {
       const s = PackingPedidoListState(pedidos: [a, b]);
       expect(s.copyWith(query: 'nandu').visibles, [a]);

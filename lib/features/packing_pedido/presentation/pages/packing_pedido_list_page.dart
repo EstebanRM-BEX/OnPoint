@@ -179,9 +179,7 @@ class _PackingPedidoListViewState extends State<_PackingPedidoListView> {
                     onBack: _volver,
                     onRefresh: () {
                       if (state.sincronizando) return;
-                      _bloc.add(
-                        const ListaPackSincronizada(isLoadingDialog: true),
-                      );
+                      _bloc.add(const ListaPackSincronizada());
                     },
                     onPropietarioActivoTap: state.propietario == null
                         ? null

@@ -87,11 +87,14 @@ class PackingPedidoListBloc
     emit(
       state.copyWith(
         sincronizando: true,
-        operacion: state.operacion.procesar('sincronizar'),
+        operacion: state.operacion.procesar(
+          'sincronizar',
+          'Actualizando pedidos...',
+        ),
       ),
     );
     final r = await syncPedidos(
-      SyncPedidosPackParams(isLoadingDialog: event.isLoadingDialog),
+      const SyncPedidosPackParams(isLoadingDialog: false),
     );
     r.fold(
       (f) => emit(

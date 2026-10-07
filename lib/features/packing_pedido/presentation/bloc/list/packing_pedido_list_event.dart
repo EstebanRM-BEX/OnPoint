@@ -16,12 +16,11 @@ class ListaPackIniciada extends PackingPedidoListEvent {
   List<Object?> get props => [sincronizar];
 }
 
+/// Trae los pedidos de Odoo. El aviso de carga lo da el bloc
+/// ([PackingPedidoListState.operacion]); la API no abre diálogo propio, si no
+/// quedan dos apilados.
 class ListaPackSincronizada extends PackingPedidoListEvent {
-  final bool isLoadingDialog;
-  const ListaPackSincronizada({this.isLoadingDialog = false});
-
-  @override
-  List<Object?> get props => [isLoadingDialog];
+  const ListaPackSincronizada();
 }
 
 class BusquedaPedidoPackCambiada extends PackingPedidoListEvent {
