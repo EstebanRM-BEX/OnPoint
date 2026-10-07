@@ -399,6 +399,8 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       }
     } catch (e, s) {
       debugPrint('Error en el fetch de transferencias: $e=>$s');
+      // Sin este emit el loading de la lista quedaba pegado para siempre.
+      emit(EntregaError('Error al cargar las transferencias'));
     }
   }
 
@@ -709,8 +711,23 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       // línea normal se da por enviada (no hay nada que leer de la respuesta);
       // en una división hace falta el id_move del remanente, así que no se
       // puede crear la línea local (ver rama más abajo).
-      final enviadoSinLeer =
-          responseSend.acceptedButUnreadable && !event.isDividio;
+      // Tras un timeout se consulta al servidor si la línea ya figura enviada.
+      var aceptado = responseSend.acceptedButUnreadable;
+      String? avisoSinVerificar;
+      if (responseSend.outcomeUnknown) {
+        final confirmado = await _transferenciasRepository.wasLineSent(
+          currentProduct.idTransferencia ?? 0,
+          currentProduct.idMove ?? 0,
+        );
+        if (confirmado == true) {
+          aceptado = true;
+        } else if (confirmado == null) {
+          avisoSinVerificar =
+              'No se pudo confirmar si el servidor recibió el envío. '
+              'Actualice las transferencias antes de reintentar.';
+        }
+      }
+      final enviadoSinLeer = aceptado && !event.isDividio;
 
       if (responseSend.result?.code == 200 || enviadoSinLeer) {
         //actualizamos la ubicacion destino del producto
@@ -780,17 +797,17 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
 
         add(GetPorductsToTransfer(currentProduct.idTransferencia ?? 0));
         emit(SendProductToTransferSuccess());
-      } else {
-        // marcamos tiempo final de sepfaracion
-      } else if (responseSend.acceptedButUnreadable) {
+      } else if (aceptado) {
         // División aceptada por el servidor con respuesta ilegible: NO se
         // revierte el estado local (Odoo ya la aplicó); hay que refrescar las
         // transferencias para traer la línea remanente real.
         add(GetPorductsToTransfer(currentProduct.idTransferencia ?? 0));
         emit(SendProductToTransferFailure(
-            'El envío llegó al servidor pero no se pudo leer su respuesta. '
+            'El envío llegó al servidor pero no se pudo confirmar su resultado. '
             'No lo repita: actualice las transferencias (ícono de refrescar) '
             'para ver el estado real.'));
+      } else {
+        // marcamos tiempo final de sepfaracion
         await db.productTransferenciaRepository.setFieldTableProductTransfer(
             currentProduct.idTransferencia ?? 0,
             int.parse(currentProduct.productId),
@@ -852,7 +869,7 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
         add(GetPorductsToTransfer(currentProduct.idTransferencia ?? 0));
         // Sin mensaje del servidor (respuesta vacía o ilegible) se avisa
         // igual: antes salía un error en blanco o ninguno.
-        final msg = responseSend.result?.msg;
+        final msg = avisoSinVerificar ?? responseSend.result?.msg;
         final itemError = responseSend.result?.result?.firstOrNull?.error;
         emit(
           SendProductToTransferFailure(
@@ -1565,6 +1582,8 @@ class TransferenciaBloc extends Bloc<TransferenciaEvent, TransferenciaState> {
       }
     } catch (e, s) {
       debugPrint('Error en el fetch de transferencias: $e=>$s');
+      // Sin este emit el loading de la lista quedaba pegado para siempre.
+      emit(TransferenciaError('Error al cargar las transferencias'));
     }
   }
 

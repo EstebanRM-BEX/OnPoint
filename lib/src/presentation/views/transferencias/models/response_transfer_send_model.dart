@@ -17,11 +17,16 @@ class ResponseSenTransfer {
     /// cuerpo no se pudo interpretar. No viaja en toMap/fromMap.
     bool acceptedButUnreadable;
 
+    /// true si la petición expiró (timeout) y no se sabe si el servidor la
+    /// procesó. Hay que verificarlo antes de revertir el estado local.
+    bool outcomeUnknown;
+
     ResponseSenTransfer({
         this.jsonrpc,
         this.id,
         this.result,
         this.acceptedButUnreadable = false,
+        this.outcomeUnknown = false,
     });
 
     factory ResponseSenTransfer.fromMap(Map<String, dynamic> json) => ResponseSenTransfer(

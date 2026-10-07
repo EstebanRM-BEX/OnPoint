@@ -3,6 +3,7 @@ import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/features/product_stock/presentation/widgets/show_product_stock_info.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
@@ -50,18 +51,48 @@ class ProductDropdownCreateTransferWidget extends StatelessWidget {
             ),
           ),
         ),
-        if (!context.read<UserBloc>().fabricante.contains("Zebra"))
-          Padding(
+        Builder(builder: (context) {
+          final bloc = context.read<CreateTransferBloc>();
+          final showName =
+              !context.read<UserBloc>().fabricante.contains("Zebra");
+          // access_stock_info_transfer: ícono de ubicaciones (stock_info).
+          final stockProductId = bloc.configurations.result?.result
+                      ?.accessStockInfoTransfer ==
+                  true
+              ? bloc.currentProduct?.productId
+              : null;
+          if (!showName && stockProductId == null) {
+            return const SizedBox.shrink();
+          }
+          return Padding(
             padding: const EdgeInsets.symmetric(vertical: 5),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                context.read<CreateTransferBloc>().currentProduct?.name ??
-                    "Esperando escaneo",
-                style: const TextStyle(color: black, fontSize: 14),
-              ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: showName
+                      ? Text(
+                          bloc.currentProduct?.name ?? "Esperando escaneo",
+                          style: const TextStyle(color: black, fontSize: 14),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                if (stockProductId != null && stockProductId > 0)
+                  GestureDetector(
+                    onTap: () => showProductStockInfo(context, stockProductId),
+                    child: Card(
+                      elevation: 2,
+                      color: white,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Icon(Icons.location_on,
+                            color: primaryColorApp, size: 20),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          ),
+          );
+        }),
         Align(
           alignment: Alignment.centerLeft,
           child: Row(

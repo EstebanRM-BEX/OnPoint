@@ -13,6 +13,7 @@ import 'package:wms_app/core/utils/widgets/dialog_dispositivo_no_autorizado_widg
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_start_picking_widget.dart';
@@ -20,7 +21,6 @@ import 'package:wms_app/src/presentation/views/transferencias/models/response_tr
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
@@ -35,7 +35,8 @@ class ListEntradaProductsScreen extends StatefulWidget {
       _ListTransferenciasScreenState();
 }
 
-class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
+class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen>
+    with LoadingDialogMixin {
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.sizeOf(context);
@@ -115,13 +116,7 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
             listener: (context, state) {
           if (state is EntregaLoading) {
             context.read<TransferenciaBloc>().add(LoadLocations());
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (context) => const DialogLoading(
-                message: 'Cargando transferencias...',
-              ),
-            );
+            showLoadingDialog('Cargando transferencias...');
           } else if (state is NeedUpdateVersionState) {
             Get.snackbar(
               '360 Software Informa',
@@ -133,12 +128,16 @@ class _ListTransferenciasScreenState extends State<ListEntradaProductsScreen> {
               duration: Duration(seconds: 5),
             );
           } else if (state is EntregaError) {
-            Navigator.pop(context);
+            // hide* solo cierra el loading que abrió esta pantalla: al llegar
+            // desde el detalle (goToScreen) el EntregaLoading se emite antes
+            // de montar la lista, y un Navigator.pop ciego sacaba la única
+            // ruta del stack → pantalla negra.
+            hideLoadingDialog();
             showScrollableErrorDialog(state.message);
           } else if (state is EntregaLoaded) {
-            Navigator.pop(context);
+            hideLoadingDialog();
           } else if (state is DeviceNotAuthorized) {
-            Navigator.pop(context);
+            hideLoadingDialog();
             showDialog(
               context: context,
               barrierDismissible: false,

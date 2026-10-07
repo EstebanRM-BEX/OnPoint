@@ -18,6 +18,7 @@ import 'package:wms_app/src/presentation/views/transferencias/modules/create-tra
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/response_create_transfer_mode.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/response_validate_stock_model.dart';
 import 'package:wms_app/core/network/network_guard.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 @lazySingleton
 class TransferenciasRepository {
@@ -413,6 +414,11 @@ class TransferenciasRepository {
         },
         isLoadinDialog: true,
       );
+      // Timeout: el servidor pudo haber procesado el envío igual. No se asume
+      // fallo; el bloc lo verifica con wasLineSent antes de revertir.
+      if (response.statusCode == 408) {
+        return ResponseSenTransfer(outcomeUnknown: true);
+      }
       if (response.statusCode < 400) {
         try {
           // Decodifica la respuesta JSON a un mapa
@@ -442,6 +448,20 @@ class TransferenciasRepository {
           // El servidor ya procesó el envío (2xx) pero el cuerpo no se pudo
           // leer: se avisa para no tratarlo como un fallo de envío.
           debugPrint('Error leyendo respuesta de sendProductTransfer: $e, $s');
+          // Se registra el cuerpo en Crashlytics (no fatal) para poder
+          // diagnosticar qué campo cambió de tipo; sin esto no queda rastro.
+          final body = response.body;
+          FirebaseCrashlytics.instance
+              .recordError(
+                e,
+                s,
+                reason: 'send_transfer 2xx ilegible',
+                information: [
+                  'transferencia=${transferRequest.idTransferencia}',
+                  'body=${body.length > 1500 ? body.substring(0, 1500) : body}',
+                ],
+              )
+              .catchError((_) {});
           return ResponseSenTransfer(acceptedButUnreadable: true);
         }
       }
@@ -454,6 +474,24 @@ class TransferenciasRepository {
       return ResponseSenTransfer(); // Retornamos un objeto vacío en caso de error de red
     }
     return ResponseSenTransfer(); // Retornamos un objeto vacío en caso de error de red
+  }
+
+  /// Verifica contra el servidor si una línea ya figura como enviada.
+  /// true = enviada, false = no figura, null = no se pudo verificar.
+  Future<bool?> wasLineSent(int idTransferencia, int idMove) async {
+    try {
+      final r = await fetAllTransferencias(false);
+      if (r.code != 200) return null;
+      final transfer =
+          r.result?.where((t) => t.id == idTransferencia).firstOrNull;
+      if (transfer == null) return null;
+      return transfer.lineasTransferenciaEnviadas
+              ?.any((l) => l.idMove == idMove) ??
+          false;
+    } catch (e) {
+      debugPrint('Error verificando línea enviada: $e');
+      return null;
+    }
   }
 
   Future<ResponseSenTransfer> sendProductTransferPick(

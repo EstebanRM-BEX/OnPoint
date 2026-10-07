@@ -19,9 +19,9 @@ import 'package:wms_app/src/presentation/views/transferencias/models/response_tr
 import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-interna/bloc/transferencia_bloc.dart';
 import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
@@ -36,13 +36,13 @@ class ListTransferenciasScreen extends StatefulWidget {
       _ListTransferenciasScreenState();
 }
 
-class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
+class _ListTransferenciasScreenState extends State<ListTransferenciasScreen>
+    with LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   FocusNode focusNodeBuscar = FocusNode();
   final TextEditingController _controllerToDo = TextEditingController();
 
-  void validateBarcode(String value, BuildContext context) {
   /// Filtro local: solo transferencias con el usuario actual como responsable.
   bool _soloMias = false;
   int _userId = 0;
@@ -55,6 +55,7 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
     });
   }
 
+  void validateBarcode(String value, BuildContext context) {
     final bloc = context.read<TransferenciaBloc>();
 
 // ✅ PROTECCIÓN 1: Evitar crash si la lista aún no carga
@@ -141,20 +142,18 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
             );
           } else if (state is TransferenciaLoading) {
             context.read<TransferenciaBloc>().add(LoadLocations());
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (context) => const DialogLoading(
-                message: 'Cargando transferencias...',
-              ),
-            );
+            showLoadingDialog('Cargando transferencias...');
           } else if (state is TransferenciaError) {
-            Navigator.pop(context);
+            // hide* solo cierra el loading que abrió esta pantalla: al llegar
+            // desde el detalle (goToScreen) el TransferenciaLoading se emite
+            // antes de montar la lista, y un Navigator.pop ciego sacaba la
+            // única ruta del stack → pantalla negra.
+            hideLoadingDialog();
             showScrollableErrorDialog(state.message);
           } else if (state is TransferenciaLoaded) {
-            Navigator.pop(context);
+            hideLoadingDialog();
           } else if (state is DeviceNotAuthorized) {
-            Navigator.pop(context);
+            hideLoadingDialog();
             showDialog(
               context: context,
               barrierDismissible: false,
@@ -192,6 +191,7 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
             );
           }
         }, builder: (context, state) {
+          final transferBloc = context.read<TransferenciaBloc>();
           final pendientes = transferBloc.transferenciasDbFilters
               .where((e) => e.isFinish == 0 || e.isFinish == null)
               .toList();
@@ -201,7 +201,6 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
           final visibles = (_soloMias && _userId != 0)
               ? pendientes.where((e) => e.responsableId == _userId).toList()
               : pendientes;
-          final transferBloc = context.read<TransferenciaBloc>();
 
           return Scaffold(
             backgroundColor: primaryColorApp,
@@ -286,6 +285,7 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
                                     ),
                                   ),
                                 ),
+                                const Spacer(),
                                 // Filtro: solo las asignadas a mí (responsable).
                                 IconButton(
                                   tooltip: _soloMias
@@ -305,7 +305,6 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
                                   onPressed: () =>
                                       setState(() => _soloMias = !_soloMias),
                                 ),
-                                const Spacer(),
                                 Visibility(
                                   visible: context
                                           .read<TransferenciaBloc>()
@@ -865,18 +864,13 @@ class _ListTransferenciasScreenState extends State<ListTransferenciasScreen> {
       transferenciaBloc.add(CurrentTransferencia(transfer));
       transferenciaBloc.add(LoadLocations());
 
-      showDialog(
-        context: context,
-        barrierDismissible:
-            false, // No permitir que el usuario cierre el diálogo manualmente
-        builder: (_) => const DialogLoading(
-          message: 'Cargando interfaz...',
-        ),
-      );
+      // Si ya hay un loading abierto (doble escaneo/tap) no apilamos otro.
+      if (isLoadingDialogVisible) return;
+      showLoadingDialog('Cargando interfaz...');
 
       await Future.delayed(const Duration(seconds: 1));
       if (mounted) {
-        Navigator.pop(context);
+        hideLoadingDialog();
         goToScreen(
           context,
           'transferencia-detail',

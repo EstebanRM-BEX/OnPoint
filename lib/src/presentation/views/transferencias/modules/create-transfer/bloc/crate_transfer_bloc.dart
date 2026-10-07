@@ -167,6 +167,9 @@ class CreateTransferBloc
   CreateTransferBloc() : super(CrateTransferInitial()) {
     on<LoadConfigurationsUserCreateTransferEvent>(
         _onLoadConfigurationsUserEvent);
+    // Permisos del usuario (p. ej. access_stock_info_transfer); antes el
+    // evento estaba registrado pero nunca se disparaba.
+    add(LoadConfigurationsUserCreateTransferEvent());
 
     on<ValidateFieldsEvent>(_onValidateFields);
 

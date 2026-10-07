@@ -6,6 +6,7 @@ import 'package:wms_app/injection_container.dart';
 
 import 'package:flutter/material.dart';
 import 'package:wms_app/shared/widgets/disposable_controllers_mixin.dart';
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
@@ -27,7 +28,6 @@ import 'package:wms_app/src/presentation/views/transferencias/modules/transfer-i
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/shared/widgets/scanner_location_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
 import 'package:wms_app/shared/widgets/segunda_unidad_input_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
@@ -44,7 +44,7 @@ class ScanProductTrasnferScreen extends StatefulWidget {
 }
 
 class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
-    with WidgetsBindingObserver, DisposableControllersMixin {
+    with WidgetsBindingObserver, DisposableControllersMixin, LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
 
@@ -87,19 +87,13 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
     if (state == AppLifecycleState.resumed) {
       if (mounted) {
         // Aquí se ejecutan las acciones solo si la pantalla aún está montada
-        showDialog(
-          context: context,
-          builder: (context) {
-            return const DialogLoading(
-              message: "Espere un momento...",
-            );
-          },
-        );
+        // Mixin: no apila un loading por cada resume y, al cerrar, saca
+        // SOLO este diálogo (un pop ciego cerraba cualquier diálogo que el
+        // operario tuviera abierto encima, o la pantalla misma).
+        showLoadingDialog("Espere un momento...");
         Future.delayed(const Duration(seconds: 1), () {
-          // El widget puede haberse desmontado durante el segundo de espera
-          // (el operario navegó a otra pantalla) — un pop ciego contra un
-          // context ya inválido congelaba/cerraba la app.
-          if (mounted) Navigator.pop(context);
+          // El widget puede haberse desmontado durante el segundo de espera.
+          if (mounted) hideLoadingDialog();
         });
       }
     }
