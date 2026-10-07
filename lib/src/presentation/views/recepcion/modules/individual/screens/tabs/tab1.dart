@@ -259,7 +259,13 @@ class _Tab1ScreenRecepState extends State<Tab1ScreenRecep>
             body: Column(
               children: [
                 //*detalles del batch
-                Container(
+                // Flexible + scroll: con los detalles desplegados en pantallas
+                // chicas la tarjeta + el botón de terminar no entraban
+                // (RenderFlex overflow). Loose fit mantiene el botón justo
+                // debajo de la tarjeta cuando sí cabe.
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   width: double.infinity,
@@ -612,6 +618,8 @@ class _Tab1ScreenRecepState extends State<Tab1ScreenRecep>
                         ],
                       ),
                     ),
+                  ),
+                ),
                   ),
                 ),
                 // const Spacer(),
