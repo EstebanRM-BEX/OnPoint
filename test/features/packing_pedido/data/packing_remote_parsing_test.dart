@@ -102,6 +102,97 @@ void main() {
       expect(PedidoPackApi.productoFromApi({'lote_id': false}).loteId, isNull);
       expect(PedidoPackApi.productoFromApi({'lote_id': 0}).loteId, isNull);
     });
+
+    test('preparado=true: línea de lista_productos_preparados queda "listo" y '
+        'certificada, con la cantidad preparada', () {
+      // Forma real de un item de `lista_productos_preparados` /
+      // `transferencias/pack/prepare`.
+      final p = PedidoPackApi.productoFromApi(
+        {
+          'id_move': 476109,
+          'pedido_id': 94731,
+          'id_product': 5196,
+          'product_id': [5196, '[159753] PRUEBAS GNL 1'],
+          'product_code': '159753',
+          'quantity': 2.0,
+          'cantidad_a_empacar': 2.0,
+          'unidades': 'Unidades',
+          'observation': 'Sin novedad',
+          'novedad': 'Sin novedad',
+          'observacion': 'Sin novedad',
+          'time': 3.0,
+          'lote_id': 0,
+          'lot_id': [],
+        },
+        pedidoId: 94731,
+        preparado: true,
+      );
+
+      expect(p.estado, EstadoProductoPacking.listo);
+      expect(p.certificado, isTrue);
+      expect(p.quantity, 2.0);
+      expect(p.quantitySeparate, 2.0);
+      expect(p.cantidadAEnviar, 2.0);
+      expect(p.observation, 'Sin novedad');
+      expect(p.timeSeparate, 3.0);
+      expect(p.idPackage, isNull);
+    });
+
+    test('preparado=true toma la novedad de novedad/observacion si falta '
+        'observation', () {
+      final p = PedidoPackApi.productoFromApi({
+        'observation': false,
+        'novedad': 'Averiado',
+      }, preparado: true);
+      expect(p.observation, 'Averiado');
+    });
+
+    test('paquete gana sobre preparado si ambos llegaran a darse', () {
+      final paquete = PedidoPackApi.paqueteFromApi({
+        'id': 1,
+        'pedido_id': 10,
+      }, pedidoId: 10);
+      final p = PedidoPackApi.productoFromApi(
+        {'quantity': 5},
+        paquete: paquete,
+        preparado: true,
+      );
+      expect(p.estado, EstadoProductoPacking.empacado);
+      expect(p.idPackage, 1);
+    });
+  });
+
+  group('PedidoPackApi.fromMap: lista_productos_preparados', () {
+    test('se parsean como líneas "listo"', () {
+      final pedido = PedidoPackApi.fromMap({
+        'id': 10,
+        'lista_productos': [],
+        'lista_productos_preparados': [
+          {
+            'id_move': 1,
+            'id_product': 5,
+            'product_id': [5, 'Producto 5'],
+            'quantity': 4.0,
+            'observation': 'Sin novedad',
+          },
+        ],
+      });
+      expect(pedido.preparados, hasLength(1));
+      expect(pedido.preparados!.single.estado, EstadoProductoPacking.listo);
+      expect(pedido.preparados!.single.quantity, 4.0);
+    });
+
+    test('sin el campo es null; con lista vacía es []', () {
+      final sinCampo = PedidoPackApi.fromMap({'id': 10, 'lista_productos': []});
+      expect(sinCampo.preparados, isNull);
+
+      final vacio = PedidoPackApi.fromMap({
+        'id': 10,
+        'lista_productos': [],
+        'lista_productos_preparados': [],
+      });
+      expect(vacio.preparados, isEmpty);
+    });
   });
 
   group('MovesDevueltosApi.moveDe', () {
@@ -143,6 +234,39 @@ void main() {
         ],
       );
       expect(r.moveDe(empacada)?['id_move'], 2);
+    });
+  });
+
+  group('respuesta de transferencias/pack/prepare', () {
+    test('result.items se parsean como líneas "listo"', () {
+      final json = PackingPedidoRemoteDataSourceImpl.decode(
+        res({
+          'result': {
+            'code': 200,
+            'msg': 'Productos enviados a preparado',
+            'result': {
+              'items': [
+                {
+                  'id_move': 476109,
+                  'id_product': 5196,
+                  'quantity': 2.0,
+                  'observation': 'Sin novedad',
+                },
+              ],
+            },
+          },
+        }),
+      );
+      final r = PackingPedidoRemoteDataSourceImpl.result(json);
+      final data = r['result'];
+      final items = [
+        for (final i in OdooParse.maps(data['items']))
+          PedidoPackApi.productoFromApi(i, pedidoId: 10, preparado: true),
+      ];
+      expect(r['msg'], 'Productos enviados a preparado');
+      expect(items, hasLength(1));
+      expect(items.single.estado, EstadoProductoPacking.listo);
+      expect(items.single.idMove, 476109);
     });
   });
 }

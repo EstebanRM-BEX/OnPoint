@@ -30,6 +30,9 @@ class PackingEntorno {
 
   Future<String> userName() => PrefUtils.getUserName();
 
+  /// MAC (o IMEI si la MAC no está disponible) de la PDA.
+  Future<String> deviceId() => PrefUtils.getDeviceIdPDA();
+
   /// Dueño de los datos locales: empresa + usuario.
   Future<String> owner() async =>
       '${await PrefUtils.getEnterprise()}|${await PrefUtils.getUserId()}';

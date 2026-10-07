@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/features/packing_pedido/data/datasources/local/packing_pedido_database.dart';
 import 'package:wms_app/features/packing_pedido/data/models/packing_api_models.dart';
@@ -7,17 +6,21 @@ import 'package:wms_app/features/packing_pedido/domain/entities/producto_packing
 import 'package:wms_app/features/packing_pedido/domain/rules/packing_rules.dart';
 
 /// Lleva a SQLite lo que dice Odoo sin perder el trabajo local del operario
-/// (líneas separadas que todavía no se empacan, avance del escaneo).
+/// (avance del escaneo en una línea "por hacer" todavía no enviada).
 ///
 /// Odoo es la fuente de verdad de: qué pedidos existen, qué moves tiene cada
-/// uno y cuánto queda por hacer, y qué hay dentro de cada caja. Lo único que
-/// vive solo en el dispositivo son las líneas "listo" (separadas sin caja).
+/// uno y cuánto queda por hacer, qué está preparado (desde que
+/// `transferencias/pack/prepare` pasó a ser quien separa) y qué hay dentro de
+/// cada caja. Nada vive solo en el dispositivo salvo el progreso de un
+/// escaneo en curso sobre una línea "por hacer".
 class PackingReconciler {
   const PackingReconciler._();
 
   static const _t = PackingPedidoDatabase.tProductos;
   static const _eps = PackingRules.epsilon;
 
+  static final _porHacer = EstadoProductoPacking.porHacer.name;
+  static final _listo = EstadoProductoPacking.listo.name;
   static final _empacado = EstadoProductoPacking.empacado.name;
 
   // ── Sincronización completa ───────────────────────────────────────────────
@@ -99,6 +102,20 @@ class PackingReconciler {
       );
     }
 
+    // Preparados: Odoo manda la lista completa y actual (ya no es trabajo
+    // local-only desde que separar/dividir pasó por `pack/prepare`). Si no
+    // vino el campo, no se tocan.
+    if (api.preparados != null) {
+      await txn.delete(
+        _t,
+        where: 'pedido_id = ? AND estado = ?',
+        whereArgs: [pedidoId, _listo],
+      );
+      for (final p in api.preparados!) {
+        await txn.insert(_t, PackingDbMappers.productoToRow(p));
+      }
+    }
+
     // Paquetes: Odoo manda. Si no vino el campo, no se tocan.
     if (api.paquetes != null) {
       await txn.delete(
@@ -126,8 +143,9 @@ class PackingReconciler {
     await _reconciliarMoves(txn, pedidoId, api.productos);
   }
 
-  /// Por cada move de la API: lo pendiente = cantidad API − lo que ya está
-  /// "listo" en el dispositivo. Queda una sola fila "por hacer" con eso.
+  /// Deja una sola fila "por hacer" por move, con la cantidad que manda la
+  /// API (ya neta de lo preparado: el backend descuenta `cantidad_preparada`
+  /// antes de mandar `lista_productos`).
   static Future<void> _reconciliarMoves(
     Transaction txn,
     int pedidoId,
@@ -137,67 +155,26 @@ class PackingReconciler {
 
     final locales = (await txn.query(
       _t,
-      where: 'pedido_id = ? AND estado != ?',
-      whereArgs: [pedidoId, _empacado],
+      where: 'pedido_id = ? AND estado = ?',
+      whereArgs: [pedidoId, _porHacer],
       orderBy: 'id',
     )).map(PackingDbMappers.productoFromRow).toList();
 
-    // Filas cuyo move ya no existe. Las "listo" se reasignan a un move
-    // compatible (producto + lote + ubicación): Odoo pudo haberle cambiado
-    // el id al move. Si no hay compatible, el trabajo local ya no aplica.
+    // Filas "por hacer" cuyo move ya no existe en la API (cancelado,
+    // reemplazado o ya preparado por completo): el avance local ya no aplica.
     for (final f in locales.where((f) => !porMove.containsKey(f.idMove))) {
-      final destino = f.isListo
-          ? apiMoves.where((m) => _mismaClave(m, f)).firstOrNull
-          : null;
-      if (destino != null) {
-        await txn.update(
-          _t,
-          {'id_move': destino.idMove},
-          where: 'id = ?',
-          whereArgs: [f.id],
-        );
-      } else {
-        await txn.delete(_t, where: 'id = ?', whereArgs: [f.id]);
-      }
+      await txn.delete(_t, where: 'id = ?', whereArgs: [f.id]);
     }
 
     for (final api in apiMoves) {
-      final filas = (await txn.query(
+      final porHacer = (await txn.query(
         _t,
-        where: 'pedido_id = ? AND id_move = ? AND estado != ?',
-        whereArgs: [pedidoId, api.idMove, _empacado],
+        where: 'pedido_id = ? AND id_move = ? AND estado = ?',
+        whereArgs: [pedidoId, api.idMove, _porHacer],
         orderBy: 'id',
       )).map(PackingDbMappers.productoFromRow).toList();
 
-      final listos = filas.where((f) => f.isListo).toList();
-      final porHacer = filas.where((f) => f.isPorHacer).toList();
-      final enListo = listos.fold<double>(0, (s, f) => s + f.cantidadAEnviar);
-
-      // Odoo bajó la cantidad por debajo de lo separado: el trabajo local ya
-      // no cuadra, se descarta y la línea vuelve completa a "por hacer".
-      if (enListo > api.quantity + _eps) {
-        debugPrint(
-          '⚠️ packing_pedido move ${api.idMove}: listo=$enListo > '
-          'api=${api.quantity}, se descarta lo separado',
-        );
-        for (final f in listos) {
-          await txn.delete(_t, where: 'id = ?', whereArgs: [f.id]);
-        }
-        await _dejarPendiente(txn, api, porHacer, api.quantity);
-        continue;
-      }
-
-      // Datos de la API también en las "listo" (nombres, ubicaciones…).
-      for (final f in listos) {
-        await txn.update(
-          _t,
-          PackingDbMappers.productoDatosApi(api),
-          where: 'id = ?',
-          whereArgs: [f.id],
-        );
-      }
-
-      await _dejarPendiente(txn, api, porHacer, api.quantity - enListo);
+      await _dejarPendiente(txn, api, porHacer, api.quantity);
     }
   }
 
@@ -351,9 +328,4 @@ class PackingReconciler {
     quantitySeparate: 0,
     certificado: false,
   );
-
-  static bool _mismaClave(ProductoPacking a, ProductoPacking b) =>
-      a.idProduct == b.idProduct &&
-      (a.loteId ?? 0) == (b.loteId ?? 0) &&
-      a.barcodeLocation == b.barcodeLocation;
 }

@@ -13,6 +13,7 @@ Map<String, dynamic> pedidoJson({
   int id = 10,
   List<Map<String, dynamic>> productos = const [],
   List<Map<String, dynamic>>? paquetes = const [],
+  List<Map<String, dynamic>>? preparados,
 }) => {
   'id': id,
   'batch_id': false,
@@ -27,6 +28,7 @@ Map<String, dynamic> pedidoJson({
   'location_name_cluster': 'CL-1',
   'lista_productos': productos,
   if (paquetes != null) 'lista_paquetes': paquetes,
+  if (preparados != null) 'lista_productos_preparados': preparados,
 };
 
 Map<String, dynamic> moveJson({
@@ -57,6 +59,28 @@ Map<String, dynamic> moveJson({
   ],
 };
 
+/// JSON de una línea de `lista_productos_preparados` (lo que manda
+/// `transferencias/pack/prepare` y, desde la sincronización, también
+/// `transferencias/pack`).
+Map<String, dynamic> preparadoJson({
+  int idMove = 100,
+  int idProduct = 500,
+  double quantity = 4,
+  String observation = 'Sin novedad',
+}) => {
+  'id_move': idMove,
+  'pedido_id': 10,
+  'id_product': idProduct,
+  'product_id': [idProduct, 'Producto $idProduct'],
+  'product_code': 'P$idProduct',
+  'quantity': quantity,
+  'cantidad_a_empacar': quantity,
+  'unidades': 'Unidades',
+  'observation': observation,
+  'novedad': observation,
+  'time': 2,
+};
+
 void main() {
   setUpAll(sqfliteFfiInit);
 
@@ -79,6 +103,27 @@ void main() {
   Future<PedidoPackDetalle> detalle([int id = 10]) => local.getDetalle(id);
 
   double total(List<ProductoPacking> l) => l.fold(0, (s, p) => s + p.quantity);
+
+  /// Simula lo que hace el repositorio tras llamar a
+  /// `transferencias/pack/prepare`: inserta la fila "listo" devuelta por el
+  /// servidor y descuenta [cantidad] de la fila pendiente.
+  Future<List<ProductoPacking>> aplicarPreparado(
+    ProductoPacking pendiente,
+    double cantidad, {
+    String observacion = 'Sin novedad',
+  }) => local.aplicarPreparado(
+    pendiente: pendiente,
+    preparados: [
+      pendiente.copyWith(
+        quantity: cantidad,
+        quantitySeparate: cantidad,
+        estado: EstadoProductoPacking.listo,
+        certificado: true,
+        observation: observacion,
+      ),
+    ],
+    cantidadEnviada: cantidad,
+  );
 
   group('sincronización', () {
     test('guarda pedido, líneas por hacer y barcodes', () async {
@@ -132,17 +177,17 @@ void main() {
     });
 
     test(
-      'conserva lo separado sin empacar y deja el resto por hacer',
+      'sin lista_productos_preparados no toca "listo"; "por hacer" usa la '
+      'cantidad de la API tal cual (ya neta del lado del servidor)',
       () async {
         await sync([
           pedidoJson(productos: [moveJson()]),
         ]);
         final linea = (await detalle()).porHacer.single;
-        await local.dividir(linea, 4, DateTime.now());
+        await aplicarPreparado(linea, 4);
 
-        // Odoo todavía ve el move completo (10): nada se empacó.
         await sync([
-          pedidoJson(productos: [moveJson()]),
+          pedidoJson(productos: [moveJson(quantity: 6)]),
         ]);
 
         final d = await detalle();
@@ -152,24 +197,29 @@ void main() {
     );
 
     test(
-      'Odoo bajó la cantidad por debajo de lo separado: se descarta lo local',
+      'lista_productos_preparados reemplaza "listo"; vacía lo borra',
       () async {
         await sync([
           pedidoJson(productos: [moveJson()]),
         ]);
-        await local.dividir(
-          (await detalle()).porHacer.single,
-          8,
-          DateTime.now(),
-        );
+        final linea = (await detalle()).porHacer.single;
+        await aplicarPreparado(linea, 4); // "listo" local, no vino de la API
 
         await sync([
-          pedidoJson(productos: [moveJson(quantity: 5)]),
+          pedidoJson(
+            productos: [moveJson(quantity: 6)],
+            preparados: [preparadoJson(quantity: 6)],
+          ),
         ]);
+        var d = await detalle();
+        expect(d.listos, hasLength(1));
+        expect(d.listos.single.quantity, 6);
 
-        final d = await detalle();
+        await sync([
+          pedidoJson(productos: [moveJson(quantity: 6)], preparados: const []),
+        ]);
+        d = await detalle();
         expect(d.listos, isEmpty);
-        expect(d.porHacer.single.quantity, 5);
       },
     );
 
@@ -225,43 +275,63 @@ void main() {
     });
   });
 
-  group('dividir y deshacer', () {
+  group('preparar (separar/dividir) y deshacer', () {
     setUp(
       () => sync([
         pedidoJson(productos: [moveJson()]),
       ]),
     );
 
-    test(
-      'dividir deja la parte en listos y el resto como fila nueva',
-      () async {
-        await local.dividir(
-          (await detalle()).porHacer.single,
-          4,
-          DateTime.now(),
-        );
+    test('aplicarPreparado inserta la fila "listo" (con PK real) y deja el '
+        'resto como fila nueva "por hacer"', () async {
+      final pendiente = (await detalle()).porHacer.single;
+      final insertados = await aplicarPreparado(pendiente, 4);
 
-        final d = await detalle();
-        expect(d.listos.single.quantity, 4);
-        expect(d.listos.single.cantidadAEnviar, 4);
-        expect(d.listos.single.isProductSplit, isTrue);
-        expect(d.porHacer.single.quantity, 6);
-        expect(d.porHacer.single.productOk, isFalse);
-        expect(total(d.todos), 10);
+      expect(insertados, hasLength(1));
+      expect(insertados.single.id, isNot(0));
+      expect(insertados.single.estado, EstadoProductoPacking.listo);
+
+      final d = await detalle();
+      expect(d.listos.single.quantity, 4);
+      expect(d.listos.single.cantidadAEnviar, 4);
+      expect(d.porHacer.single.quantity, 6);
+      // El resto queda fresco: hay que reescanear ubicación y producto.
+      expect(d.porHacer.single.productOk, isFalse);
+      expect(d.porHacer.single.locationOk, isFalse);
+      expect(d.porHacer.single.isProductSplit, isTrue);
+      expect(total(d.todos), 10);
+    });
+
+    test('cantidad igual a la pendiente: no queda fila "por hacer"', () async {
+      final pendiente = (await detalle()).porHacer.single;
+      await aplicarPreparado(pendiente, 10);
+
+      final d = await detalle();
+      expect(d.listos.single.quantity, 10);
+      expect(d.porHacer, isEmpty);
+    });
+
+    test(
+      'si la fila pendiente ya no existe (se borró), lanza CacheException',
+      () async {
+        final pendiente = (await detalle()).porHacer.single;
+        await local.actualizarProducto(pendiente.id, {'quantity': 1});
+        // Simula que otra operación ya la consumió por completo.
+        await aplicarPreparado(pendiente.copyWith(quantity: 1), 1);
+
+        await expectLater(
+          local.aplicarPreparado(
+            pendiente: pendiente,
+            preparados: [pendiente.copyWith(quantity: 4)],
+            cantidadEnviada: 4,
+          ),
+          throwsA(isA<CacheException>()),
+        );
       },
     );
 
-    test('dividir la cantidad completa falla sin tocar nada', () async {
-      final linea = (await detalle()).porHacer.single;
-      await expectLater(
-        local.dividir(linea, 10, DateTime.now()),
-        throwsA(isA<CacheException>()),
-      );
-      expect((await detalle()).porHacer.single.quantity, 10);
-    });
-
     test('deshacer suma la cantidad a la fila restante', () async {
-      await local.dividir((await detalle()).porHacer.single, 4, DateTime.now());
+      await aplicarPreparado((await detalle()).porHacer.single, 4);
       await local.deshacerSeparacion((await detalle()).listos.single);
 
       final d = await detalle();
@@ -272,11 +342,7 @@ void main() {
     test(
       'deshacer con la restante ya empezada funciona (bug legacy)',
       () async {
-        await local.dividir(
-          (await detalle()).porHacer.single,
-          4,
-          DateTime.now(),
-        );
+        await aplicarPreparado((await detalle()).porHacer.single, 4);
         final resto = (await detalle()).porHacer.single;
         await local.actualizarProducto(resto.id, {
           'location_ok': 1,
@@ -295,11 +361,7 @@ void main() {
     test(
       'deshacer cuando la restante ya se separó no duplica (bug legacy)',
       () async {
-        await local.dividir(
-          (await detalle()).porHacer.single,
-          4,
-          DateTime.now(),
-        );
+        await aplicarPreparado((await detalle()).porHacer.single, 4);
         // La restante (6) se separa completa.
         final resto = (await detalle()).porHacer.single;
         await local.actualizarProducto(resto.id, {
@@ -321,18 +383,10 @@ void main() {
     );
 
     test(
-      'dividir varias veces y deshacer en otro orden suma siempre 10',
+      'preparar varias veces y deshacer en otro orden suma siempre 10',
       () async {
-        await local.dividir(
-          (await detalle()).porHacer.single,
-          4,
-          DateTime.now(),
-        );
-        await local.dividir(
-          (await detalle()).porHacer.single,
-          3,
-          DateTime.now(),
-        );
+        await aplicarPreparado((await detalle()).porHacer.single, 4);
+        await aplicarPreparado((await detalle()).porHacer.single, 3);
 
         var d = await detalle();
         expect(d.listos.map((p) => p.quantity), unorderedEquals([4, 3]));
@@ -374,11 +428,7 @@ void main() {
         await sync([
           pedidoJson(productos: [moveJson()]),
         ]);
-        await local.dividir(
-          (await detalle()).porHacer.single,
-          4,
-          DateTime.now(),
-        );
+        await aplicarPreparado((await detalle()).porHacer.single, 4);
         final listo = (await detalle()).listos.single;
 
         final pedido = (await detalle()).pedido;
@@ -456,7 +506,7 @@ void main() {
           ],
         ),
       ]);
-      await local.dividir((await detalle()).porHacer.single, 2, DateTime.now());
+      await aplicarPreparado((await detalle()).porHacer.single, 2);
       final d0 = await detalle();
 
       final eliminado = await local.aplicarDesempaque(

@@ -56,16 +56,18 @@ abstract class PackingPedidoRepository {
     double cantidad,
   );
 
-  /// Separa la línea con [cantidad] (completa o parcial con [novedad]) y la
-  /// deja en "Listos".
+  /// Envía la línea a preparar con [cantidad] (completa o parcial con
+  /// [novedad]) al servidor y la deja en "Listos". Requiere red.
   Future<Either<Failure, ProductoPacking>> separarProducto({
     required ProductoPacking producto,
     required double cantidad,
     String? novedad,
   });
 
-  /// Separa [cantidad] y deja el resto como una línea nueva en "Por hacer".
-  /// Atómico: o quedan las dos filas o ninguna.
+  /// Envía [cantidad] a preparar y deja el resto como una línea nueva en
+  /// "Por hacer" (hay que reescanear ubicación y producto). Misma operación
+  /// de servidor que [separarProducto], con una observación fija. Requiere
+  /// red.
   Future<Either<Failure, Unit>> dividirProducto({
     required ProductoPacking producto,
     required double cantidad,

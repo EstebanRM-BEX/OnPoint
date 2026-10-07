@@ -62,6 +62,37 @@ class ItemEmpaqueApi {
   };
 }
 
+/// Línea que se manda a preparar (separar o dividir) un producto.
+class ItemPrepararApi {
+  final int idMove;
+  final int idProducto;
+  final double cantidadAEmpacar;
+  final String observacion;
+  final double timeLine;
+  final String fechaTransaccion;
+  final int idOperario;
+
+  const ItemPrepararApi({
+    required this.idMove,
+    required this.idProducto,
+    required this.cantidadAEmpacar,
+    required this.observacion,
+    required this.timeLine,
+    required this.fechaTransaccion,
+    required this.idOperario,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'id_move': idMove,
+    'id_producto': idProducto,
+    'cantidad_a_empacar': cantidadAEmpacar,
+    'observacion': observacion,
+    'time_line': timeLine,
+    'fecha_transaccion': fechaTransaccion,
+    'id_operario': idOperario,
+  };
+}
+
 /// Endpoints de Odoo del packing por pedido. Mismos bodies que el módulo
 /// legacy, pero sin diálogos: los errores salen como excepciones tipadas y
 /// la presentación decide cómo mostrarlos.
@@ -69,6 +100,14 @@ abstract class PackingPedidoRemoteDataSource {
   Future<PedidosPackApiResult> fetchPedidos({required bool isLoadingDialog});
 
   Future<void> asignarResponsable({required int pedidoId, required int userId});
+
+  /// Separa o divide un producto: Odoo calcula lo que queda pendiente.
+  Future<PreparadoApiResult> prepararProducto({
+    required int pedidoId,
+    required String deviceId,
+    required int idOperario,
+    required List<ItemPrepararApi> items,
+  });
 
   /// [campo] = `start_time_transfer` o `end_time_transfer`.
   Future<void> enviarTiempo({
@@ -254,6 +293,33 @@ class PackingPedidoRemoteDataSourceImpl
       );
     }
     result(json);
+  }
+
+  @override
+  Future<PreparadoApiResult> prepararProducto({
+    required int pedidoId,
+    required String deviceId,
+    required int idOperario,
+    required List<ItemPrepararApi> items,
+  }) async {
+    final response = await _post('transferencias/pack/prepare', {
+      'device_id': deviceId,
+      'id_transferencia': pedidoId,
+      'id_operario': idOperario,
+      'list_items': items.map((i) => i.toMap()).toList(),
+    });
+    final r = result(decode(response));
+    final data = r['result'];
+    final itemsJson = data is Map<String, dynamic>
+        ? OdooParse.maps(data['items'])
+        : const <Map<String, dynamic>>[];
+    return PreparadoApiResult(
+      mensaje: OdooParse.str(r['msg']),
+      creados: [
+        for (final i in itemsJson)
+          PedidoPackApi.productoFromApi(i, pedidoId: pedidoId, preparado: true),
+      ],
+    );
   }
 
   @override

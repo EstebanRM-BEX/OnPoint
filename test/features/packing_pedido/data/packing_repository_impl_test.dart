@@ -30,6 +30,7 @@ void main() {
     registerFallbackValue(paqueteTest());
     registerFallbackValue(pedidoTest);
     registerFallbackValue(<ItemEmpaqueApi>[]);
+    registerFallbackValue(<ItemPrepararApi>[]);
     registerFallbackValue(<ProductoPacking>[]);
     registerFallbackValue(
       PaqueteCreadoApi(paquete: paqueteTest(), filasEmpacadas: const []),
@@ -269,6 +270,154 @@ void main() {
       expect(r.toNullable()?.desincronizado, isTrue);
     },
   );
+
+  group('separarProducto / dividirProducto (transferencias/pack/prepare)', () {
+    final pendiente = productoTest();
+    final preparado = productoTest(
+      id: 2,
+      quantity: 4,
+      quantitySeparate: 4,
+      estado: EstadoProductoPacking.listo,
+      certificado: true,
+    );
+
+    void stubPreparar() {
+      when(() => local.getProducto(any())).thenAnswer((_) async => pendiente);
+      when(() => entorno.deviceId()).thenAnswer((_) async => 'AA:BB:CC');
+      when(
+        () => remote.prepararProducto(
+          pedidoId: any(named: 'pedidoId'),
+          deviceId: any(named: 'deviceId'),
+          idOperario: any(named: 'idOperario'),
+          items: any(named: 'items'),
+        ),
+      ).thenAnswer(
+        (_) async => PreparadoApiResult(mensaje: 'ok', creados: [preparado]),
+      );
+      when(
+        () => local.aplicarPreparado(
+          pendiente: any(named: 'pendiente'),
+          preparados: any(named: 'preparados'),
+          cantidadEnviada: any(named: 'cantidadEnviada'),
+        ),
+      ).thenAnswer((_) async => [preparado]);
+    }
+
+    test('sin red falla antes de llamar al servidor', () async {
+      when(() => entorno.hayRed()).thenAnswer((_) async => false);
+
+      final r = await repo.separarProducto(producto: pendiente, cantidad: 4);
+
+      expect(r.getLeft().toNullable(), isA<NetworkFailure>());
+      verifyZeroInteractions(remote);
+    });
+
+    test(
+      'separarProducto manda la observación y aplica lo preparado',
+      () async {
+        stubPreparar();
+
+        final r = await repo.separarProducto(
+          producto: pendiente,
+          cantidad: 4,
+          novedad: 'Averiado',
+        );
+
+        expect(r.toNullable(), preparado);
+        final items =
+            verify(
+                  () => remote.prepararProducto(
+                    pedidoId: 10,
+                    deviceId: 'AA:BB:CC',
+                    idOperario: 7,
+                    items: captureAny(named: 'items'),
+                  ),
+                ).captured.single
+                as List<ItemPrepararApi>;
+        expect(items.single.toMap()['observacion'], 'Averiado');
+        expect(items.single.toMap()['cantidad_a_empacar'], 4);
+        verify(
+          () => local.aplicarPreparado(
+            pendiente: pendiente,
+            preparados: [preparado],
+            cantidadEnviada: 4,
+          ),
+        ).called(1);
+      },
+    );
+
+    test('separarProducto sin novedad manda "Sin novedad"', () async {
+      stubPreparar();
+
+      await repo.separarProducto(producto: pendiente, cantidad: 4);
+
+      final items =
+          verify(
+                () => remote.prepararProducto(
+                  pedidoId: any(named: 'pedidoId'),
+                  deviceId: any(named: 'deviceId'),
+                  idOperario: any(named: 'idOperario'),
+                  items: captureAny(named: 'items'),
+                ),
+              ).captured.single
+              as List<ItemPrepararApi>;
+      expect(items.single.toMap()['observacion'], 'Sin novedad');
+    });
+
+    test(
+      'dividirProducto manda la observación fija "Producto dividido"',
+      () async {
+        stubPreparar();
+
+        final r = await repo.dividirProducto(producto: pendiente, cantidad: 4);
+
+        expect(r.isRight(), isTrue);
+        final items =
+            verify(
+                  () => remote.prepararProducto(
+                    pedidoId: any(named: 'pedidoId'),
+                    deviceId: any(named: 'deviceId'),
+                    idOperario: any(named: 'idOperario'),
+                    items: captureAny(named: 'items'),
+                  ),
+                ).captured.single
+                as List<ItemPrepararApi>;
+        expect(items.single.toMap()['observacion'], 'Producto dividido');
+      },
+    );
+
+    test(
+      'la línea ya no está "por hacer": falla sin llamar al servidor',
+      () async {
+        when(() => local.getProducto(any())).thenAnswer(
+          (_) async => productoTest(estado: EstadoProductoPacking.listo),
+        );
+
+        final r = await repo.separarProducto(producto: pendiente, cantidad: 4);
+
+        expect(r.getLeft().toNullable(), isA<CacheFailure>());
+        verifyZeroInteractions(remote);
+      },
+    );
+
+    test('si el servidor preparó pero no se pudo guardar localmente, avisa que '
+        'hay que refrescar', () async {
+      stubPreparar();
+      when(
+        () => local.aplicarPreparado(
+          pendiente: any(named: 'pendiente'),
+          preparados: any(named: 'preparados'),
+          cantidadEnviada: any(named: 'cantidadEnviada'),
+        ),
+      ).thenThrow(const CacheException('ya no existe'));
+
+      final r = await repo.separarProducto(producto: pendiente, cantidad: 4);
+
+      final f = r.getLeft().toNullable();
+      expect(f, isA<ServerFailure>());
+      expect(f!.message, contains('Actualice el pedido'));
+    });
+  });
 
   test('sesión expirada se mapea a SessionExpiredFailure', () async {
     when(

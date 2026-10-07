@@ -34,12 +34,18 @@ abstract class PackingPedidoLocalDataSource {
   );
   Future<List<BarcodeProductoPacking>> getBarcodes(int pedidoId, int idProduct);
 
-  /// Separa [cantidad] de la fila y deja el resto en una fila nueva.
-  Future<void> dividir(
-    ProductoPacking producto,
-    double cantidad,
-    DateTime ahora,
-  );
+  /// Inserta [preparados] (lo que Odoo acaba de preparar, normalmente una
+  /// fila) como nuevas filas "listo" y descuenta [cantidadEnviada] de
+  /// [pendiente] (la fila "por hacer" enviada a preparar): la borra si no
+  /// queda nada, o dejar el resto como "por hacer" sin confirmar (como una
+  /// división: hay que volver a escanear ubicación y producto).
+  ///
+  /// Devuelve las filas insertadas con su PK real de SQLite.
+  Future<List<ProductoPacking>> aplicarPreparado({
+    required ProductoPacking pendiente,
+    required List<ProductoPacking> preparados,
+    required double cantidadEnviada,
+  });
 
   Future<void> deshacerSeparacion(ProductoPacking producto);
 
@@ -248,67 +254,59 @@ class PackingPedidoLocalDataSourceImpl implements PackingPedidoLocalDataSource {
   });
 
   @override
-  Future<void> dividir(
-    ProductoPacking producto,
-    double cantidad,
-    DateTime ahora,
-  ) => _guard('dividir', () async {
-    await (await _db).transaction((txn) async {
-      final actual = await _filaEnTxn(txn, producto.id);
-      if (!actual.isPorHacer) {
-        throw const CacheException('El producto ya fue separado');
-      }
-      final resto = actual.quantity - cantidad;
-      if (cantidad <= 0 || resto <= PackingRules.epsilon) {
-        throw const CacheException('Cantidad a dividir inválida');
+  Future<List<ProductoPacking>> aplicarPreparado({
+    required ProductoPacking pendiente,
+    required List<ProductoPacking> preparados,
+    required double cantidadEnviada,
+  }) => _guard('aplicarPreparado', () async {
+    return (await _db).transaction((txn) async {
+      // Relee la fila pendiente dentro de la transacción: si ya no existe
+      // (otra operación la consumió) o cambió de cantidad mientras la
+      // petición estaba en vuelo, se usa el dato fresco.
+      final actual = await _filaEnTxn(txn, pendiente.id);
+
+      // Lo que Odoo acaba de preparar entra como filas nuevas "listo", con
+      // su PK real (el bloc la necesita para acciones posteriores, p. ej.
+      // enviar la temperatura).
+      final insertados = <ProductoPacking>[];
+      for (final p in preparados) {
+        final row = PackingDbMappers.productoToRow(p);
+        final id = await txn.insert(_tProductos, row);
+        insertados.add(PackingDbMappers.productoFromRow({...row, 'id': id}));
       }
 
-      // La fila actual queda con la parte separada.
-      await txn.update(
-        _tProductos,
-        {
-          'quantity': cantidad,
-          'quantity_separate': cantidad,
-          'estado': EstadoProductoPacking.listo.name,
-          'certificado': 1,
-          'is_product_split': 1,
-          'observation': 'Producto dividido',
-          'time_separate': segundosDesde(actual.timeSeparateStart, ahora),
-        },
-        where: 'id = ?',
-        whereArgs: [actual.id],
-      );
+      // La fila "por hacer" enviada: se borra si Odoo preparó toda la
+      // cantidad; si no, el resto queda "por hacer" fresco (hay que
+      // reescanear ubicación y producto), igual que al dividir.
+      final resto = actual.quantity - cantidadEnviada;
+      if (resto <= PackingRules.epsilon) {
+        await txn.delete(
+          _tProductos,
+          where: 'id = ?',
+          whereArgs: [pendiente.id],
+        );
+      } else {
+        await txn.update(
+          _tProductos,
+          {
+            'quantity': resto,
+            'quantity_separate': 0,
+            'estado': EstadoProductoPacking.porHacer.name,
+            'certificado': 0,
+            'is_product_split': 1,
+            'observation': '',
+            'location_ok': 0,
+            'product_ok': 0,
+            'quantity_ok': 0,
+            'time_separate_start': null,
+            'time_separate': 0,
+          },
+          where: 'id = ?',
+          whereArgs: [pendiente.id],
+        );
+      }
 
-      // El resto entra como fila nueva, limpia, en "por hacer".
-      await txn.insert(
-        _tProductos,
-        PackingDbMappers.productoToRow(
-          ProductoPacking(
-            id: 0,
-            pedidoId: actual.pedidoId,
-            batchId: actual.batchId,
-            idMove: actual.idMove,
-            idProduct: actual.idProduct,
-            productName: actual.productName,
-            productCode: actual.productCode,
-            barcode: actual.barcode,
-            loteId: actual.loteId,
-            loteName: actual.loteName,
-            expireDate: actual.expireDate,
-            tracking: actual.tracking,
-            unidades: actual.unidades,
-            weight: actual.weight,
-            idLocation: actual.idLocation,
-            locationName: actual.locationName,
-            barcodeLocation: actual.barcodeLocation,
-            idLocationDest: actual.idLocationDest,
-            locationDestName: actual.locationDestName,
-            manejaTemperatura: actual.manejaTemperatura,
-            quantity: resto,
-            isProductSplit: true,
-          ),
-        ),
-      );
+      return insertados;
     });
   });
 

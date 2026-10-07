@@ -13,12 +13,17 @@ class PedidoPackApi {
 
   /// null si la API no mandó `lista_paquetes`: no se asume que no hay cajas.
   final List<PaquetePacking>? paquetes;
+
+  /// Líneas ya preparadas (tab "Preparado"), de `lista_productos_preparados`.
+  /// null si la API no mandó el campo: no se asume que no hay preparados.
+  final List<ProductoPacking>? preparados;
   final List<BarcodeProductoPacking> barcodes;
 
   const PedidoPackApi({
     required this.pedido,
     required this.productos,
     required this.paquetes,
+    required this.preparados,
     required this.barcodes,
   });
 
@@ -109,21 +114,32 @@ class PedidoPackApi {
           ]
         : null;
 
+    final preparados = json['lista_productos_preparados'] is List
+        ? [
+            for (final p in OdooParse.maps(json['lista_productos_preparados']))
+              productoFromApi(p, pedidoId: id, preparado: true),
+          ]
+        : null;
+
     return PedidoPackApi(
       pedido: pedido,
       productos: productos,
       paquetes: paquetes,
+      preparados: preparados,
       barcodes: barcodes,
     );
   }
 
-  /// Línea de `lista_productos` (por hacer) o un stock.move de las respuestas
-  /// de empaque/desempaque. Con [paquete], la línea queda empacada en él.
+  /// Línea de `lista_productos` (por hacer), de `lista_productos_preparados`
+  /// (con [preparado]) o un stock.move de las respuestas de
+  /// empaque/desempaque/preparado. Con [paquete], la línea queda empacada en
+  /// él (gana sobre [preparado] si ambos llegaran a darse).
   static ProductoPacking productoFromApi(
     Map<String, dynamic> json, {
     int? pedidoId,
     PaquetePacking? paquete,
     bool certificado = true,
+    bool preparado = false,
   }) {
     // lote_id llega como entero en lista_productos y como [id, nombre] dentro
     // de los paquetes; el nombre viene en lot_id o en el propio lote_id.
@@ -135,6 +151,18 @@ class PedidoPackApi {
 
     final quantity = OdooParse.dbl(json['quantity']);
     final empacado = paquete != null;
+    final listo = preparado && !empacado;
+
+    // `lista_productos_preparados` manda la novedad en `observation`,
+    // `observacion` y `novedad` (los tres con el mismo valor); los paquetes
+    // solo en `observation`.
+    String observacion() {
+      for (final clave in ['observation', 'novedad', 'observacion']) {
+        final v = OdooParse.str(json[clave]);
+        if (v.isNotEmpty) return v;
+      }
+      return '';
+    }
 
     return ProductoPacking(
       id: 0,
@@ -170,18 +198,20 @@ class PedidoPackApi {
           ? (OdooParse.dbl(json['quantity_separate']) > 0
                 ? OdooParse.dbl(json['quantity_separate'])
                 : quantity)
-          : 0,
+          : (listo ? quantity : 0),
       estado: empacado
           ? EstadoProductoPacking.empacado
-          : EstadoProductoPacking.porHacer,
-      certificado:
-          empacado &&
-          (json.containsKey('is_certificate')
-              ? OdooParse.boolean(json['is_certificate'])
-              : certificado),
+          : (listo
+                ? EstadoProductoPacking.listo
+                : EstadoProductoPacking.porHacer),
+      certificado: empacado
+          ? (json.containsKey('is_certificate')
+                ? OdooParse.boolean(json['is_certificate'])
+                : certificado)
+          : listo,
       idPackage: paquete?.id,
       packageName: paquete?.name ?? '',
-      observation: empacado ? OdooParse.str(json['observation']) : '',
+      observation: (empacado || listo) ? observacion() : '',
       manejaTemperatura: OdooParse.boolean(json['maneja_temperatura']),
       temperatura: OdooParse.dbl(json['temperatura']),
       image: OdooParse.str(json['image']),
@@ -217,6 +247,16 @@ class PedidoPackApi {
       ],
     );
   }
+}
+
+/// Respuesta de `transferencias/pack/prepare` (separar/dividir un producto).
+class PreparadoApiResult {
+  final String mensaje;
+
+  /// Lo que se acaba de preparar en esta llamada (`result.items`).
+  final List<ProductoPacking> creados;
+
+  const PreparadoApiResult({required this.mensaje, required this.creados});
 }
 
 /// Respuesta de `send_transfer/pack` / `send_cluster/pack`.

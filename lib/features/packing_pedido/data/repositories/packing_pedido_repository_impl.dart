@@ -165,32 +165,89 @@ class PackingPedidoRepositoryImpl implements PackingPedidoRepository {
     required ProductoPacking producto,
     required double cantidad,
     String? novedad,
-  }) => _run('separarProducto', () async {
-    final actual = await local.getProducto(producto.id);
-    if (!actual.isPorHacer) {
-      throw const CacheException('El producto ya fue separado');
-    }
-    return local.actualizarProducto(producto.id, {
-      'estado': EstadoProductoPacking.listo.name,
-      'certificado': 1,
-      'quantity_separate': cantidad,
-      'quantity_ok': 1,
-      'observation': novedad ?? 'Sin novedad',
-      'time_separate': PackingPedidoLocalDataSourceImpl.segundosDesde(
-        actual.timeSeparateStart,
-        entorno.ahora(),
-      ),
-    });
-  });
+  }) => _run(
+    'separarProducto',
+    () => _preparar(
+      producto: producto,
+      cantidad: cantidad,
+      observacion: (novedad == null || novedad.isEmpty)
+          ? 'Sin novedad'
+          : novedad,
+    ),
+    requiereRed: true,
+  );
 
   @override
   Future<Either<Failure, Unit>> dividirProducto({
     required ProductoPacking producto,
     required double cantidad,
   }) => _run('dividirProducto', () async {
-    await local.dividir(producto, cantidad, entorno.ahora());
+    await _preparar(
+      producto: producto,
+      cantidad: cantidad,
+      observacion: 'Producto dividido',
+    );
     return unit;
-  });
+  }, requiereRed: true);
+
+  /// Envía a `transferencias/pack/prepare` y aplica la respuesta local.
+  /// Separar (completo o parcial con novedad) y dividir son la misma
+  /// operación en el servidor; solo cambia la observación enviada.
+  Future<ProductoPacking> _preparar({
+    required ProductoPacking producto,
+    required double cantidad,
+    required String observacion,
+  }) async {
+    final actual = await local.getProducto(producto.id);
+    if (!actual.isPorHacer) {
+      throw const CacheException('El producto ya fue separado');
+    }
+
+    final idOperario = await entorno.userId();
+    final tiempo = PackingPedidoLocalDataSourceImpl.segundosDesde(
+      actual.timeSeparateStart,
+      entorno.ahora(),
+    );
+    final respuesta = await remote.prepararProducto(
+      pedidoId: actual.pedidoId,
+      deviceId: await entorno.deviceId(),
+      idOperario: idOperario,
+      items: [
+        ItemPrepararApi(
+          idMove: actual.idMove,
+          idProducto: actual.idProduct,
+          cantidadAEmpacar: cantidad,
+          observacion: observacion,
+          timeLine: tiempo > 0 ? tiempo : 2,
+          fechaTransaccion: formatoFecha(entorno.ahora()),
+          idOperario: idOperario,
+        ),
+      ],
+    );
+
+    try {
+      final insertados = await local.aplicarPreparado(
+        pendiente: actual,
+        preparados: respuesta.creados,
+        cantidadEnviada: cantidad,
+      );
+      if (insertados.isEmpty) {
+        throw const ServerException(
+          'El servidor no devolvió el producto preparado',
+        );
+      }
+      return insertados.firstWhere(
+        (p) => p.idMove == actual.idMove,
+        orElse: () => insertados.first,
+      );
+    } on CacheException catch (e) {
+      // Odoo ya preparó el producto: el dispositivo tiene que refrescar.
+      throw ServerException(
+        'El producto se preparó en el servidor pero no se pudo guardar en '
+        'el dispositivo. Actualice el pedido. (${e.message})',
+      );
+    }
+  }
 
   @override
   Future<Either<Failure, Unit>> deshacerSeparacion(ProductoPacking producto) =>
