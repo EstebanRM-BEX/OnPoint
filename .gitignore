@@ -55,3 +55,6 @@ app.*.map.json
 
 # FVM Version Cache
 .fvm/
+# Notas de sesión y documentos locales
+CONTEXTO_SESION_*.md
+docs/*.pdf
