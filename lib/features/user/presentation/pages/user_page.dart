@@ -18,6 +18,7 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import '../bloc/user_bloc.dart';
 import 'package:wms_app/shared/widgets/confirm_delete_dialog.dart';
+import '../widgets/app_inspector_card.dart';
 import '../widgets/config_header.dart';
 import '../widgets/danger_zone_button.dart';
 import '../widgets/device_info_card.dart';
@@ -212,6 +213,8 @@ class _UserPageState extends State<UserPage> {
           const HomeModulesConfigCard(),
           const SizedBox(height: 14),
           const NetworkIndicatorCard(),
+          const SizedBox(height: 14),
+          const AppInspectorCard(),
           const SizedBox(height: 24),
           DangerZoneButton(onPressed: _showDeleteDatabaseConfirmation),
         ],

@@ -48,6 +48,8 @@ import 'package:wms_app/features/expedition/data/services/expedition_sync_coordi
 import 'package:wms_app/features/websocket/presentation/bloc/websocket_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:wms_app/core/utils/diagnostics/bloc_registry.dart';
+import 'package:wms_app/features/app_inspector/presentation/widgets/app_inspector_overlay.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
@@ -58,6 +60,7 @@ import 'package:flutter/foundation.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/core/utils/diagnostics/crash_filters.dart';
 import 'package:wms_app/core/utils/diagnostics/exit_diagnostics.dart';
+import 'package:wms_app/core/utils/diagnostics/route_stack_tracker.dart';
 // Chat global desactivado en desarrollo.
 // import 'package:wms_app/features/chat/presentation/widgets/global_chat_overlay.dart';
 
@@ -126,6 +129,9 @@ void main() {
         unencodePath: '/api',
         httpHandler: HttpResponseHandler(),
       );
+
+      // Registro de Blocs vivos/cerrados para el Inspector (Configuración).
+      Bloc.observer = AppBlocObserver.instance;
 
       runApp(AppRestart(child: const MyApp()));
 
@@ -226,7 +232,6 @@ class MyApp extends StatelessWidget {
           ),
         ),
         BlocProvider(create: (_) => getIt<LoteProductoBloc>()),
-        BlocProvider(create: (_) => getIt<PrintingBloc>()),
         // PrintLabelsBloc ya NO se provee acá — vive escopeado a sus propias
         // rutas en app_router.dart (print-labels/-products/-locations).
         BlocProvider(create: (_) => getIt<WebSocketBloc>()),
@@ -263,8 +268,11 @@ class MyApp extends StatelessWidget {
             onSessionExpired: logOut,
             // Chat global desactivado en desarrollo. Para reactivarlo, envolver
             // de nuevo el navigator con GlobalChatOverlay.
-            child: NetworkQualityOverlay(
-              child: navigator ?? const SizedBox.shrink(),
+            child: AppInspectorOverlay(
+              navigatorKey: navigatorKey,
+              child: NetworkQualityOverlay(
+                child: navigator ?? const SizedBox.shrink(),
+              ),
             ),
           );
         },

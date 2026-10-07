@@ -194,6 +194,16 @@ class PrefUtils {
     return prefs.getBool(PrefKeys.networkOverlayVisible) ?? false;
   }
 
+  static Future<void> setAppInspectorVisible(bool visible) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(PrefKeys.appInspectorVisible, visible);
+  }
+
+  static Future<bool> getAppInspectorVisible() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(PrefKeys.appInspectorVisible) ?? false;
+  }
+
   static Future<void> clearSession() async {
     await SecureStorage.deleteUserPass();
     SharedPreferences preferences = await SharedPreferences.getInstance();

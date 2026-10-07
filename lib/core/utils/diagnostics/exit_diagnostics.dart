@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wms_app/core/utils/diagnostics/route_stack_tracker.dart';
 import 'package:wms_app/core/utils/performance/jank_monitor.dart';
 
 /// Diagnóstico de cierres que Crashlytics no ve (OOM, kill del sistema, ANR).
@@ -34,6 +35,7 @@ class ExitDiagnostics {
   static const _kLastState = 'diag_last_state';
   static const _kLastScreen = 'diag_last_screen';
   static const _kLastRssMb = 'diag_last_rss_mb';
+  static const _kLastUi = 'diag_last_ui';
   static const _kLastTs = 'diag_last_ts';
   static const _kLastExitTs = 'diag_last_exit_reported_ts';
 
@@ -105,6 +107,13 @@ class ExitDiagnostics {
     FirebaseCrashlytics.instance
       ..setCustomKey('rss_mb', rss)
       ..setCustomKey('screen', screen);
+    final ui = RouteStackTracker.instance.snapshot();
+    FirebaseCrashlytics.instance
+      ..setCustomKey('nav_pages', ui.pages)
+      ..setCustomKey('nav_overlays', ui.overlays)
+      ..setCustomKey('widget_elements', ui.elements)
+      ..setCustomKey('nav_stack', ui.stack);
+    await prefs.setString(_kLastUi, ui.toString());
     await prefs.setString(_kLastState, state);
     await prefs.setString(_kLastScreen, screen);
     await prefs.setInt(_kLastRssMb, rss);
@@ -120,6 +129,7 @@ class ExitDiagnostics {
 
     final screen = prefs.getString(_kLastScreen) ?? '?';
     final rss = prefs.getInt(_kLastRssMb) ?? -1;
+    final ui = prefs.getString(_kLastUi) ?? '?';
     final lastTs = prefs.getInt(_kLastTs);
     final when = lastTs == null
         ? '?'
@@ -131,8 +141,13 @@ class ExitDiagnostics {
       ),
       StackTrace.current,
       reason:
-          'screen=$screen rss_mb=$rss ultimo_latido=$when',
-      information: ['screen: $screen', 'rss_mb: $rss', 'ultimo_latido: $when'],
+          'screen=$screen rss_mb=$rss ui=[$ui] ultimo_latido=$when',
+      information: [
+        'screen: $screen',
+        'rss_mb: $rss',
+        'ui: $ui',
+        'ultimo_latido: $when',
+      ],
       fatal: false,
     );
   }
