@@ -93,8 +93,12 @@ class _LocationDestScannerWidgetState extends State<LocationDestScannerWidget> {
               children: [
                 widget.dropdownWidget,
                 const SizedBox(height: 5),
+                // El texto de la ubicación de destino es el hint de este campo
+                // (el campo en sí es invisible, solo recibe el escáner). Con 15 px
+                // de alto el hint de 14 px se cortaba por abajo ("Packing" →
+                // "Packina"): se da altura suficiente y sin relleno interno.
                 Container(
-                  height: 15,
+                  height: 24,
                   margin: const EdgeInsets.only(bottom: 5),
                   child: TextFormField(
                     showCursor: false,
@@ -122,6 +126,8 @@ class _LocationDestScannerWidgetState extends State<LocationDestScannerWidget> {
                       widget.controller.clear();
                     },
                     decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
                       hintText: widget.muelleHint,
                       hintStyle: const TextStyle(fontSize: 14, color: black),
                       disabledBorder: InputBorder.none,
