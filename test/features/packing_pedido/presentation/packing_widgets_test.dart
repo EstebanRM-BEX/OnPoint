@@ -15,6 +15,7 @@ import 'package:wms_app/features/packing_pedido/presentation/widgets/dialogs/bac
 import 'package:wms_app/features/packing_pedido/presentation/widgets/list/pedido_pack_card.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/scan/cantidad_scan_card.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/por_hacer_tab.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/producto_por_hacer_card.dart';
 import 'package:wms_app/injection_container.dart';
 
 import '../domain/packing_test_data.dart';
@@ -95,37 +96,49 @@ void main() {
     expect(marcado, isTrue);
   });
 
-  testWidgets(
-    'ProductoPackCard: sin barcode no muestra la fila; pedido e imprimir',
-    (t) async {
-      var impreso = 0;
-      await t.pumpWidget(
-        app(
-          ProductoPackCard(
-            producto: ProductoPacking(
-              id: 1,
-              pedidoId: 13,
-              idMove: 100,
-              idProduct: 500,
-              productName: 'Sin código',
-              unidades: 'Und',
-              quantity: 2,
-            ),
-            mostrarPedido: true,
-            onImprimir: () => impreso++,
+  testWidgets('ProductoPorHacerCard: mismo diseño que el módulo anterior', (
+    t,
+  ) async {
+    var impreso = 0;
+    var tocado = 0;
+    await t.pumpWidget(
+      app(
+        ProductoPorHacerCard(
+          producto: const ProductoPacking(
+            id: 1,
+            pedidoId: 13,
+            idMove: 100,
+            idProduct: 500,
+            productName: 'Leche entera',
+            locationName: 'WH/Stock/A1',
+            unidades: 'Und',
+            tracking: 'lot',
+            manejaTemperatura: true,
+            quantity: 2,
           ),
+          seleccionado: false,
+          onTap: () => tocado++,
+          onImprimir: () => impreso++,
         ),
-      );
-      expect(find.textContaining('Barcode'), findsNothing);
-      expect(find.text('Unidad de medida: '), findsOneWidget);
-      expect(find.text('Und'), findsOneWidget);
-      expect(find.text('Cantidad: 2'), findsOneWidget);
-      expect(find.text('Pedido: '), findsOneWidget);
-      expect(find.text('13'), findsOneWidget);
-      await t.tap(find.byIcon(Icons.print));
-      expect(impreso, 1);
-    },
-  );
+      ),
+    );
+    expect(find.text('Leche entera'), findsOneWidget);
+    expect(find.text('WH/Stock/A1'), findsOneWidget);
+    expect(find.text('Pedido: '), findsOneWidget);
+    expect(find.text('13'), findsOneWidget);
+    expect(find.text('Unidad de medida: '), findsOneWidget);
+    expect(find.text('Und'), findsOneWidget);
+    expect(find.text('Sin lote'), findsOneWidget);
+    expect(find.byIcon(Icons.thermostat_outlined), findsOneWidget);
+    expect(find.byType(Checkbox), findsOneWidget);
+    expect(find.textContaining('Barcode'), findsNothing);
+
+    await t.tap(find.byIcon(Icons.print));
+    expect(impreso, 1);
+    expect(tocado, 0);
+    await t.tap(find.text('Leche entera'));
+    expect(tocado, 1);
+  });
 
   group('PorHacerTab', () {
     late MockDetailBloc bloc;

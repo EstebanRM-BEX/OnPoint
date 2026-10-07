@@ -14,12 +14,6 @@ class ProductoPackCard extends StatelessWidget {
   final ValueChanged<bool>? onSeleccionar;
   final Widget? accion;
 
-  /// Muestra la fila "Pedido" (número del pedido).
-  final bool mostrarPedido;
-
-  /// Ícono de imprimir en la fila del pedido (null = sin ícono).
-  final VoidCallback? onImprimir;
-
   const ProductoPackCard({
     super.key,
     required this.producto,
@@ -27,8 +21,6 @@ class ProductoPackCard extends StatelessWidget {
     this.seleccionado,
     this.onSeleccionar,
     this.accion,
-    this.mostrarPedido = false,
-    this.onImprimir,
   });
 
   static String fmt(double v) =>
@@ -88,38 +80,6 @@ class ProductoPackCard extends StatelessWidget {
                         icono: Icons.location_on_outlined,
                         valor: p.locationName,
                         vacio: 'Sin ubicación',
-                      ),
-                    if (mostrarPedido)
-                      // El ícono va pegado al número del pedido, no al borde.
-                      Row(
-                        children: [
-                          Text(
-                            'Pedido: ',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: primaryColorApp,
-                            ),
-                          ),
-                          Text(
-                            '${p.pedidoId}',
-                            style: const TextStyle(fontSize: 12, color: black),
-                          ),
-                          if (onImprimir != null) ...[
-                            const SizedBox(width: 8),
-                            IconButton(
-                              tooltip: 'Imprimir',
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              icon: Icon(
-                                Icons.print,
-                                color: primaryColorApp,
-                                size: 25,
-                              ),
-                              onPressed: onImprimir,
-                            ),
-                          ],
-                        ],
                       ),
                     if (p.isEmpacado)
                       InfoLineaPack(
