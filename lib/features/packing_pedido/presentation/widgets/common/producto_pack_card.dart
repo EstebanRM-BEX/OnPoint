@@ -126,6 +126,11 @@ class ProductoPackCard extends StatelessWidget {
                         icono: Icons.inventory_2_outlined,
                         valor: p.packageName,
                       ),
+                    if (p.unidades.isNotEmpty)
+                      InfoLineaPack(
+                        etiqueta: 'Unidad de medida',
+                        valor: p.unidades,
+                      ),
                     _Cantidades(producto: p),
                     if (p.observation.isNotEmpty &&
                         p.observation != 'Sin novedad')
@@ -167,14 +172,13 @@ class _Cantidades extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = producto;
     final fmt = ProductoPackCard.fmt;
-    final unidad = p.unidades.isEmpty ? '' : ' ${p.unidades}';
     return Padding(
       padding: const EdgeInsets.only(top: 2),
       child: Wrap(
         spacing: 12,
         children: [
           Text(
-            'Cantidad: ${fmt(p.quantity)}$unidad',
+            'Cantidad: ${fmt(p.quantity)}',
             style: TextStyle(fontSize: 12, color: primaryColorApp),
           ),
           if (!p.isPorHacer || p.quantitySeparate > 0)

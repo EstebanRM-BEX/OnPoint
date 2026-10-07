@@ -108,6 +108,7 @@ void main() {
               idMove: 100,
               idProduct: 500,
               productName: 'Sin código',
+              unidades: 'Und',
               quantity: 2,
             ),
             mostrarPedido: true,
@@ -116,6 +117,9 @@ void main() {
         ),
       );
       expect(find.textContaining('Barcode'), findsNothing);
+      expect(find.text('Unidad de medida: '), findsOneWidget);
+      expect(find.text('Und'), findsOneWidget);
+      expect(find.text('Cantidad: 2'), findsOneWidget);
       expect(find.text('Pedido: '), findsOneWidget);
       expect(find.text('13'), findsOneWidget);
       await t.tap(find.byIcon(Icons.print));
