@@ -58,6 +58,9 @@ class ProductoPacking extends Equatable {
   final int? idPackage;
   final String packageName;
 
+  /// ID asignado por Odoo al preparar la línea (para cancelar o devolver a por hacer).
+  final int? idPreparado;
+
   final String observation;
 
   final bool manejaTemperatura;
@@ -102,6 +105,7 @@ class ProductoPacking extends Equatable {
     this.isProductSplit = false,
     this.idPackage,
     this.packageName = '',
+    this.idPreparado,
     this.observation = '',
     this.manejaTemperatura = false,
     this.temperatura = 0,
@@ -149,6 +153,7 @@ class ProductoPacking extends Equatable {
     bool? isProductSplit,
     int? idPackage,
     String? packageName,
+    int? idPreparado,
     String? observation,
     double? temperatura,
     String? image,
@@ -186,6 +191,7 @@ class ProductoPacking extends Equatable {
       isProductSplit: isProductSplit ?? this.isProductSplit,
       idPackage: idPackage ?? this.idPackage,
       packageName: packageName ?? this.packageName,
+      idPreparado: idPreparado ?? this.idPreparado,
       observation: observation ?? this.observation,
       manejaTemperatura: manejaTemperatura,
       temperatura: temperatura ?? this.temperatura,
@@ -208,6 +214,7 @@ class ProductoPacking extends Equatable {
     estado,
     certificado,
     idPackage,
+    idPreparado,
     observation,
     locationOk,
     productOk,

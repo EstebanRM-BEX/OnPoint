@@ -21,6 +21,11 @@ class DetallePackRecargado extends PackingPedidoDetailEvent {
   const DetallePackRecargado();
 }
 
+/// Solicita refrescar el detalle desde el servidor (p. ej. al entrar a la pestaña "Preparado").
+class DetallePackRefrescoRemotoSolicitado extends PackingPedidoDetailEvent {
+  const DetallePackRefrescoRemotoSolicitado();
+}
+
 class BusquedaProductoPackCambiada extends PackingPedidoDetailEvent {
   final String query;
   const BusquedaProductoPackCambiada(this.query);
@@ -78,4 +83,8 @@ class SeparacionPackDeshecha extends PackingPedidoDetailEvent {
 
   @override
   List<Object?> get props => [producto];
+}
+
+class TodosPreparadosPackCancelados extends PackingPedidoDetailEvent {
+  const TodosPreparadosPackCancelados();
 }

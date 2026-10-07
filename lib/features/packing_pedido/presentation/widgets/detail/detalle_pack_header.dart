@@ -20,6 +20,7 @@ class DetallePackHeader extends StatelessWidget {
   final VoidCallback? onImprimir;
   final TabController controller;
   final List<TabContadorPack> tabs;
+  final ValueChanged<int>? onTabTap;
 
   const DetallePackHeader({
     super.key,
@@ -28,6 +29,7 @@ class DetallePackHeader extends StatelessWidget {
     required this.controller,
     required this.tabs,
     this.onImprimir,
+    this.onTabTap,
   });
 
   @override
@@ -64,6 +66,7 @@ class DetallePackHeader extends StatelessWidget {
           ),
           TabBar(
             controller: controller,
+            onTap: onTabTap,
             isScrollable: false,
             // Sin la línea divisoria de Material 3 a todo el ancho: sobre el
             // degradado se veía como una franja negra.

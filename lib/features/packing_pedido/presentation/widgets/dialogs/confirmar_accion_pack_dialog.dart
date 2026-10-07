@@ -26,9 +26,10 @@ Future<bool> confirmarAccionPack(
       ),
       actionsAlignment: MainAxisAlignment.center,
       actions: [
-        OutlinedButton(
+        ElevatedButton(
           onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Cancelar'),
+          style: ElevatedButton.styleFrom(backgroundColor: grey),
+          child: const Text('Cancelar', style: TextStyle(color: white)),
         ),
         ElevatedButton(
           onPressed: () => Navigator.pop(ctx, true),

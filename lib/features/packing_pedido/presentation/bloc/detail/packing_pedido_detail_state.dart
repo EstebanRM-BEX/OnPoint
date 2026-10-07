@@ -16,6 +16,10 @@ class PackingPedidoDetailState extends Equatable {
   final ConfigPackingUsuario config;
   final PackingOperacion operacion;
 
+  /// Indica si se está sincronizando el detalle en segundo plano desde el servidor
+  /// (p. ej. al entrar a la pestaña "Preparado").
+  final bool cargandoRemoto;
+
   const PackingPedidoDetailState({
     this.pedidoId,
     this.status = DetallePackStatus.inicial,
@@ -25,6 +29,7 @@ class PackingPedidoDetailState extends Equatable {
     this.isSticker = false,
     this.config = const ConfigPackingUsuario(),
     this.operacion = PackingOperacion.ninguna,
+    this.cargandoRemoto = false,
   });
 
   List<ProductoPacking> get porHacerVisibles => (detalle?.porHacer ?? const [])
@@ -51,6 +56,7 @@ class PackingPedidoDetailState extends Equatable {
     bool? isSticker,
     ConfigPackingUsuario? config,
     PackingOperacion? operacion,
+    bool? cargandoRemoto,
   }) {
     return PackingPedidoDetailState(
       pedidoId: pedidoId,
@@ -61,6 +67,7 @@ class PackingPedidoDetailState extends Equatable {
       isSticker: isSticker ?? this.isSticker,
       config: config ?? this.config,
       operacion: operacion ?? this.operacion,
+      cargandoRemoto: cargandoRemoto ?? this.cargandoRemoto,
     );
   }
 
@@ -74,5 +81,6 @@ class PackingPedidoDetailState extends Equatable {
     isSticker,
     config,
     operacion,
+    cargandoRemoto,
   ];
 }

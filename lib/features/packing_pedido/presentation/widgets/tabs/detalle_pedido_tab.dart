@@ -80,6 +80,14 @@ class DetallePedidoTab extends StatelessWidget {
         InfoLineaPack(etiqueta: 'Total productos', valor: '${p.numeroLineas}'),
         InfoLineaPack(etiqueta: 'Total de unidades', valor: fmt(p.numeroItems)),
         InfoLineaPack(
+          etiqueta: 'Productos preparados',
+          valor: '${detalle.cantidadPreparados}',
+        ),
+        InfoLineaPack(
+          etiqueta: 'Cantidad preparada',
+          valor: fmt(detalle.cantidadPreparada),
+        ),
+        InfoLineaPack(
           etiqueta: 'Productos empacados',
           valor: '${detalle.empacados.length}',
         ),

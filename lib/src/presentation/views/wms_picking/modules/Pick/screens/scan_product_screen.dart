@@ -408,8 +408,13 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
           },
         );
       } else {
-        //validamos si el usuario tiene el permiso
-        if (batchBloc.configurations.result?.result?.allowMoveExcessProduction == true) {
+        //el permiso de exceso es solo de producción (componentes); en el
+        //pick por pedido nunca se puede separar más de lo pedido
+        final esPickPedido =
+            batchBloc.pickWithProducts.pick?.typePick == 'pick';
+        if (!esPickPedido &&
+            batchBloc.configurations.result?.result?.allowMoveExcessProduction ==
+                true) {
           batchBloc.add(
             ChangeQuantitySeparate(
               cantidad,

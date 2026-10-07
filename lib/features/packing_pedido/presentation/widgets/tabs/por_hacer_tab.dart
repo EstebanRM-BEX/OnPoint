@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -6,12 +7,11 @@ import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/producto_packing.dart';
 import 'package:wms_app/features/packing_pedido/presentation/bloc/detail/packing_pedido_detail_bloc.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/common/lista_vacia_pack.dart';
-import 'package:wms_app/features/packing_pedido/presentation/widgets/common/barra_lector_pack.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/common/pack_search_dock.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/producto_por_hacer_card.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
-import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
 /// Pestaña "Por hacer": escanear un producto lo abre directo en cantidad;
 /// tocarlo abre el escaneo completo. Con permiso `scanProduct` se puede
@@ -36,28 +36,51 @@ class PorHacerTab extends StatefulWidget {
   State<PorHacerTab> createState() => _PorHacerTabState();
 }
 
-class _PorHacerTabState extends State<PorHacerTab> {
+class _PorHacerTabState extends State<PorHacerTab> with WidgetsBindingObserver {
   final _scanController = TextEditingController();
   final _scanFocus = FocusNode();
   final _searchController = TextEditingController();
   final _searchFocus = FocusNode();
-  bool _buscando = false;
+  bool _modoScanner = true;
+  Timer? _focusRetryTimer;
 
   @override
   void initState() {
     super.initState();
-    if (widget.activo) _enfocarLector();
+    WidgetsBinding.instance.addObserver(this);
+    _searchFocus.addListener(_onSearchFocusChanged);
+    _scanFocus.addListener(_onScanFocusChanged);
+    if (widget.activo) {
+      _enfocarLector();
+    }
   }
 
   @override
   void didUpdateWidget(covariant PorHacerTab old) {
     super.didUpdateWidget(old);
-    // Solo al volver a la pestaña; no en cada rebuild (robaba el foco).
-    if (widget.activo && !old.activo && !_buscando) _enfocarLector();
+    // Solo cuando la pestaña está a la vista y el modo escáner está activo
+    if (widget.activo && (!old.activo || _modoScanner) && !_searchFocus.hasFocus) {
+      _enfocarLector();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Al despertar el dispositivo del estado de reposo (screen sleep / lock)
+    if (state == AppLifecycleState.resumed) {
+      if (widget.activo && _modoScanner && !_searchFocus.hasFocus) {
+        _enfocarLector();
+      }
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _focusRetryTimer?.cancel();
+    _searchFocus.removeListener(_onSearchFocusChanged);
+    _scanFocus.removeListener(_onScanFocusChanged);
     _scanController.dispose();
     _scanFocus.dispose();
     _searchController.dispose();
@@ -65,9 +88,84 @@ class _PorHacerTabState extends State<PorHacerTab> {
     super.dispose();
   }
 
-  void _enfocarLector() => WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (mounted && !_buscando) _scanFocus.requestFocus();
-  });
+  void _onSearchFocusChanged() {
+    if (!mounted) return;
+    if (_searchFocus.hasFocus) {
+      if (_modoScanner) {
+        setState(() => _modoScanner = false);
+      }
+    } else {
+      // Si la búsqueda perdió el foco y no hay texto buscado,
+      // volvemos a poner el lector como activo automáticamente.
+      if (_searchController.text.trim().isEmpty && !_modoScanner) {
+        setState(() => _modoScanner = true);
+        _enfocarLector();
+      }
+    }
+  }
+
+  void _onScanFocusChanged() {
+    if (!mounted) return;
+    // El foco debe estar SIEMPRE presente cuando el modo scan está activo.
+    // Si se perdió (ej: reposo, toque exterior) y no estamos en búsqueda, lo retomamos.
+    if (_modoScanner &&
+        !_scanFocus.hasFocus &&
+        !_searchFocus.hasFocus &&
+        widget.activo &&
+        (ModalRoute.of(context)?.isCurrent ?? true)) {
+      _enfocarLector();
+    }
+  }
+
+  void _enfocarLector() {
+    if (!mounted || !_modoScanner || _searchFocus.hasFocus) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted &&
+          _modoScanner &&
+          !_searchFocus.hasFocus &&
+          (ModalRoute.of(context)?.isCurrent ?? true)) {
+        _scanFocus.requestFocus();
+      }
+    });
+
+    // Reintento de seguridad para despertar de reposo en Android (donde el
+    // window manager puede tardar unos milisegundos en habilitar el foco).
+    _focusRetryTimer?.cancel();
+    _focusRetryTimer = Timer(const Duration(milliseconds: 150), () {
+      if (mounted &&
+          _modoScanner &&
+          !_searchFocus.hasFocus &&
+          !_scanFocus.hasFocus &&
+          widget.activo &&
+          (ModalRoute.of(context)?.isCurrent ?? true)) {
+        _scanFocus.requestFocus();
+      }
+    });
+  }
+
+  void _activarLector() {
+    _searchFocus.unfocus();
+    if (!_modoScanner) {
+      setState(() => _modoScanner = true);
+    }
+    _enfocarLector();
+  }
+
+  void _limpiarBusqueda() {
+    _searchController.clear();
+    _bloc.add(const BusquedaProductoPackCambiada(''));
+    _activarLector();
+  }
+
+  void _onSearchSubmitted(String valor) {
+    final v = valor.trim();
+    if (v.isEmpty) return;
+    final p = widget.state.detalle?.porHacerConCodigo(v);
+    if (p != null) {
+      widget.onAbrir(p, false);
+    }
+  }
 
   PackingPedidoDetailBloc get _bloc => context.read<PackingPedidoDetailBloc>();
 
@@ -86,13 +184,30 @@ class _PorHacerTabState extends State<PorHacerTab> {
     widget.onAbrir(p, true);
   }
 
-  void _alternarBusqueda() {
-    setState(() => _buscando = !_buscando);
-    if (!_buscando) {
-      _searchController.clear();
-      _bloc.add(const BusquedaProductoPackCambiada(''));
-      _enfocarLector();
-    }
+  Widget _buildSelectAllButton({
+    required bool todosSeleccionados,
+    required VoidCallback onPressed,
+  }) {
+    return Tooltip(
+      message: todosSeleccionados ? 'Quitar selección' : 'Seleccionar todos',
+      child: Material(
+        color: todosSeleccionados ? primaryColorApp : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(12),
+        elevation: todosSeleccionados ? 2 : 0,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(12),
+          child: SizedBox.square(
+            dimension: 44,
+            child: Icon(
+              todosSeleccionados ? Icons.checklist_rtl : Icons.checklist,
+              color: todosSeleccionados ? Colors.white : primaryColorApp,
+              size: 22,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -121,8 +236,13 @@ class _PorHacerTabState extends State<PorHacerTab> {
           : null,
       body: Column(
         children: [
-          BarraLectorPack(
-            lector: BarcodeScannerField(
+          PackSearchDock(
+            controller: _searchController,
+            searchFocusNode: _searchFocus,
+            scannerFocusNode: _scanFocus,
+            isScannerActive: _modoScanner,
+            hintText: 'Escanear o buscar producto...',
+            scanner: BarcodeScannerField(
               controller: _scanController,
               focusNode: _scanFocus,
               autofocus: false,
@@ -130,30 +250,21 @@ class _PorHacerTabState extends State<PorHacerTab> {
               refocusOnScan: true,
               onBarcodeScanned: (v, _) => _onEscaneo(v),
             ),
-            texto: 'Escanee un producto',
-            buscando: _buscando,
-            onBuscar: _alternarBusqueda,
-            seleccionTodos: puedeEmpacar && !_buscando
-                ? (todos
-                      ? () => _bloc.add(const SeleccionPackReemplazada([]))
-                      : () => _bloc.add(
-                          SeleccionPackReemplazada(productos.map((p) => p.id)),
-                        ))
+            onChanged: (v) => _bloc.add(BusquedaProductoPackCambiada(v)),
+            onCleared: _limpiarBusqueda,
+            onActivateScanner: _activarLector,
+            onSubmitted: _onSearchSubmitted,
+            action: puedeEmpacar
+                ? _buildSelectAllButton(
+                    todosSeleccionados: todos,
+                    onPressed: () => _bloc.add(
+                      SeleccionPackReemplazada(
+                        todos ? const [] : productos.map((p) => p.id),
+                      ),
+                    ),
+                  )
                 : null,
-            todosSeleccionados: todos,
           ),
-          if (_buscando)
-            DynamicSearchBar(
-              controller: _searchController,
-              focusNode: _searchFocus,
-              hintText: 'Buscar producto',
-              closeKeyboardOnClear: false,
-              persistentKeyboard: true,
-              onSearchChanged: (v) =>
-                  _bloc.add(BusquedaProductoPackCambiada(v)),
-              onSearchCleared: () =>
-                  _bloc.add(const BusquedaProductoPackCambiada('')),
-            ),
           Expanded(
             child: productos.isEmpty
                 ? const ListaVaciaPack(

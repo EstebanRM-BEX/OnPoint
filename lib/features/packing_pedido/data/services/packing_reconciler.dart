@@ -42,7 +42,7 @@ class PackingReconciler {
     }
 
     for (final p in api) {
-      await _sincronizarPedido(txn, p);
+      await sincronizarPedido(txn, p);
     }
   }
 
@@ -61,7 +61,7 @@ class PackingReconciler {
     );
   }
 
-  static Future<void> _sincronizarPedido(
+  static Future<void> sincronizarPedido(
     Transaction txn,
     PedidoPackApi api,
   ) async {

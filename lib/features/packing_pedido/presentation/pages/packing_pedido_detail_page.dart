@@ -64,16 +64,36 @@ class _DetailViewState extends State<_DetailView>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs =
       TabController(length: 5, vsync: this, initialIndex: widget.tabInicial)
-        ..addListener(() {
-          if (!_tabs.indexIsChanging) setState(() {});
-        });
+        ..addListener(_onTabChanged);
 
   static const _tabPorHacer = 1;
+  static const _tabPreparado = 2;
   static const _tabPaquetes = 4;
 
   PackingPedidoDetailBloc get _detail =>
       context.read<PackingPedidoDetailBloc>();
   PackingPackagesBloc get _packages => context.read<PackingPackagesBloc>();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.tabInicial == _tabPreparado) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _detail.add(const DetallePackRefrescoRemotoSolicitado());
+        }
+      });
+    }
+  }
+
+  void _onTabChanged() {
+    if (!_tabs.indexIsChanging) {
+      setState(() {});
+      if (_tabs.index == _tabPreparado) {
+        _detail.add(const DetallePackRefrescoRemotoSolicitado());
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -152,8 +172,23 @@ class _DetailViewState extends State<_DetailView>
       context,
       titulo: 'Devolver a por hacer',
       mensaje: '¿Devolver ${p.productName} a por hacer?',
+      aceptar: 'Devolver',
+      destructiva: true,
     );
     if (ok && mounted) _detail.add(SeparacionPackDeshecha(p));
+  }
+
+  Future<void> _deshacerTodos() async {
+    final listos = _detail.state.detalle?.listos ?? const [];
+    if (listos.isEmpty) return;
+    final ok = await confirmarAccionPack(
+      context,
+      titulo: 'Devolver todos a por hacer',
+      mensaje: '¿Devolver todos los productos preparados a por hacer?',
+      aceptar: 'Devolver',
+      destructiva: true,
+    );
+    if (ok && mounted) _detail.add(const TodosPreparadosPackCancelados());
   }
 
   void _imprimir(List<int> ids, {dynamic companyId = 1}) {
@@ -320,6 +355,11 @@ class _DetailViewState extends State<_DetailView>
                     pedido.id,
                   ], companyId: pedido.warehouseId ?? 1),
             controller: _tabs,
+            onTabTap: (index) {
+              if (index == _tabPreparado) {
+                _detail.add(const DetallePackRefrescoRemotoSolicitado());
+              }
+            },
             tabs: [
               const TabContadorPack('Detalles', Icons.details, -1, red),
               TabContadorPack(
@@ -375,6 +415,7 @@ class _DetailViewState extends State<_DetailView>
                         state: state,
                         onEmpacar: () => _empacar(certificado: true),
                         onDeshacer: _deshacer,
+                        onDeshacerTodos: editable ? _deshacerTodos : null,
                       ),
                       EmpacadosTab(
                         empacados: detalle.empacados,

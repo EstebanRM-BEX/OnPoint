@@ -206,6 +206,8 @@ import 'features/packing_pedido/domain/usecases/marcar_producto_ok_usecase.dart'
     as _i783;
 import 'features/packing_pedido/domain/usecases/marcar_ubicacion_ok_usecase.dart'
     as _i780;
+import 'features/packing_pedido/domain/usecases/refrescar_detalle_pack_usecase.dart'
+    as _i1021;
 import 'features/packing_pedido/domain/usecases/registrar_tiempo_pack_usecase.dart'
     as _i339;
 import 'features/packing_pedido/domain/usecases/separar_producto_usecase.dart'
@@ -983,6 +985,11 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i780.MarcarUbicacionOkUseCase>(
       () => _i780.MarcarUbicacionOkUseCase(gh<_i820.PackingPedidoRepository>()),
     );
+    gh.lazySingleton<_i1021.RefrescarDetallePackUseCase>(
+      () => _i1021.RefrescarDetallePackUseCase(
+        gh<_i820.PackingPedidoRepository>(),
+      ),
+    );
     gh.lazySingleton<_i339.RegistrarTiempoPackUseCase>(
       () =>
           _i339.RegistrarTiempoPackUseCase(gh<_i820.PackingPedidoRepository>()),
@@ -1127,6 +1134,15 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i95.StartStopTimePickUseCase>(
       () => _i95.StartStopTimePickUseCase(gh<_i661.PickingRepository>()),
     );
+    gh.factory<_i694.PackingPedidoDetailBloc>(
+      () => _i694.PackingPedidoDetailBloc(
+        gh<_i454.GetPedidoPackDetalleUseCase>(),
+        gh<_i1021.RefrescarDetallePackUseCase>(),
+        gh<_i167.CrearPaqueteUseCase>(),
+        gh<_i425.DeshacerSeparacionUseCase>(),
+        gh<_i786.GetConfigPackingUseCase>(),
+      ),
+    );
     gh.factory<_i994.RecepcionMultiusuarioLoteBloc>(
       () => _i994.RecepcionMultiusuarioLoteBloc(
         fetchLotesProductoUseCase: gh<_i384.FetchLotesProductoUseCase>(),
@@ -1185,14 +1201,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i311.SaveUserSession>(
       () => _i311.SaveUserSession(gh<_i889.LoginRepository>()),
-    );
-    gh.factory<_i694.PackingPedidoDetailBloc>(
-      () => _i694.PackingPedidoDetailBloc(
-        gh<_i454.GetPedidoPackDetalleUseCase>(),
-        gh<_i167.CrearPaqueteUseCase>(),
-        gh<_i425.DeshacerSeparacionUseCase>(),
-        gh<_i786.GetConfigPackingUseCase>(),
-      ),
     );
     gh.factory<_i782.PackingConfirmBloc>(
       () => _i782.PackingConfirmBloc(gh<_i7.ValidarPedidoPackUseCase>()),

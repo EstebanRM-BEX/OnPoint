@@ -36,6 +36,10 @@ abstract class PackingPedidoRepository {
 
   Future<Either<Failure, PedidoPackDetalle>> getPedidoDetalle(int pedidoId);
 
+  /// Consulta el detalle del pedido en el servidor (`transferencias/pack/detail`),
+  /// sincroniza sus productos y paquetes localmente y devuelve el [PedidoPackDetalle] actualizado.
+  Future<Either<Failure, PedidoPackDetalle>> refrescarDetalleRemoto(int pedidoId);
+
   // ── Escaneo y separación ──────────────────────────────────────────────────
 
   Future<Either<Failure, List<BarcodeProductoPacking>>> getBarcodesProducto(
@@ -76,6 +80,13 @@ abstract class PackingPedidoRepository {
   /// Devuelve una línea de "Listos" a "Por hacer". Si venía de una división,
   /// su cantidad se suma a la fila restante.
   Future<Either<Failure, Unit>> deshacerSeparacion(ProductoPacking producto);
+
+  /// Devuelve productos preparados a "Por hacer" vía `transferencias/pack/prepare/cancel`
+  /// y sincroniza el detalle completo del pedido en el dispositivo.
+  Future<Either<Failure, String>> cancelarPreparados({
+    required int pedidoId,
+    required List<ProductoPacking> productos,
+  });
 
   // ── Paquetes ──────────────────────────────────────────────────────────────
 

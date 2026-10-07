@@ -38,8 +38,19 @@ class ProductoPreparadoCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Flexible(
+                  if (onEliminar != null) ...[
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: onEliminar,
+                      child: const Padding(
+                        padding: EdgeInsets.only(right: 8),
+                        child: Icon(Icons.delete, color: red, size: 20),
+                      ),
+                    ),
+                  ],
+                  Expanded(
                     child: Text(
                       p.productName,
                       maxLines: 2,
@@ -47,11 +58,6 @@ class ProductoPreparadoCard extends StatelessWidget {
                       style: _valor,
                     ),
                   ),
-                  if (onEliminar != null)
-                    GestureDetector(
-                      onTap: onEliminar,
-                      child: const Icon(Icons.delete, color: red, size: 20),
-                    ),
                 ],
               ),
               Card(

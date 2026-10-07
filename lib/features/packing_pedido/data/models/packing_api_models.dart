@@ -211,6 +211,7 @@ class PedidoPackApi {
           : listo,
       idPackage: paquete?.id,
       packageName: paquete?.name ?? '',
+      idPreparado: OdooParse.integer(json['id_preparado']),
       observation: (empacado || listo) ? observacion() : '',
       manejaTemperatura: OdooParse.boolean(json['maneja_temperatura']),
       temperatura: OdooParse.dbl(json['temperatura']),

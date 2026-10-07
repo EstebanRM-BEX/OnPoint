@@ -75,6 +75,7 @@ class PackingScanBloc extends Bloc<PackingScanEvent, PackingScanState> {
     on<TemperaturaPackLeida>(_onTemperaturaLeida, transformer: droppable());
     on<TemperaturaPackEnviada>(_onTemperaturaEnviada, transformer: droppable());
     on<ImagenNovedadPackEnviada>(_onImagenNovedad, transformer: droppable());
+    on<ErrorScanPackLimpiado>(_onErrorLimpiado);
   }
 
   // ── Inicio ────────────────────────────────────────────────────────────────
@@ -218,6 +219,28 @@ class PackingScanBloc extends Bloc<PackingScanEvent, PackingScanState> {
     ),
   );
 
+  void _errorCantidad(Emitter<PackingScanState> emit, String mensaje) => emit(
+    state.copyWith(
+      errorEn: state.paso,
+      operacion: state.operacion.error('cantidadManual', mensaje),
+    ),
+  );
+
+  void _errorPermiso(Emitter<PackingScanState> emit, String mensaje) => emit(
+    state.copyWith(
+      operacion: state.operacion.error('manual', mensaje),
+    ),
+  );
+
+  void _onErrorLimpiado(
+    ErrorScanPackLimpiado event,
+    Emitter<PackingScanState> emit,
+  ) {
+    if (state.errorEn != null) {
+      emit(state.copyWith(limpiarError: true));
+    }
+  }
+
   Future<void> _confirmarUbicacion(
     Emitter<PackingScanState> emit,
     ProductoPacking p,
@@ -263,7 +286,7 @@ class PackingScanBloc extends Bloc<PackingScanEvent, PackingScanState> {
     final p = state.producto;
     if (p == null || state.paso != PasoScanPack.ubicacion) return;
     if (!state.config.locationPackManual) {
-      return _errorEscaneo(
+      return _errorPermiso(
         emit,
         'No tiene permiso para confirmar la ubicación a mano',
       );
@@ -278,7 +301,7 @@ class PackingScanBloc extends Bloc<PackingScanEvent, PackingScanState> {
     final p = state.producto;
     if (p == null || state.paso != PasoScanPack.producto) return;
     if (!state.config.manualProductSelectionPack) {
-      return _errorEscaneo(
+      return _errorPermiso(
         emit,
         'No tiene permiso para confirmar el producto a mano',
       );
@@ -294,7 +317,7 @@ class PackingScanBloc extends Bloc<PackingScanEvent, PackingScanState> {
   ) {
     if (state.paso != PasoScanPack.cantidad) return;
     if (!state.config.manualQuantityPack) {
-      return _errorEscaneo(emit, 'No tiene permiso para digitar la cantidad');
+      return _errorPermiso(emit, 'No tiene permiso para digitar la cantidad');
     }
     emit(state.copyWith(editandoCantidad: !state.editandoCantidad));
   }
@@ -313,9 +336,9 @@ class PackingScanBloc extends Bloc<PackingScanEvent, PackingScanState> {
 
     switch (PackingRules.evaluarCantidad(p, cantidad)) {
       case ValidacionCantidad.invalida:
-        return _errorEscaneo(emit, 'La cantidad debe ser mayor a cero');
+        return _errorCantidad(emit, 'La cantidad debe ser mayor a cero');
       case ValidacionCantidad.excede:
-        return _errorEscaneo(
+        return _errorCantidad(
           emit,
           'La cantidad no puede ser mayor a ${_fmt(p.quantity)}',
         );

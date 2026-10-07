@@ -684,13 +684,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
               currentProduct.idProduct ?? 0,
             ),
           );
-          //eliminamos el pick de la lista actual
-          await db.pickRepository.deletePickById(event.idPick);
-          //eliminamos de la lista en memoria
-          listOfPick.removeWhere((pick) => pick.id == event.idPick);
-          listOfPickFiltered.removeWhere((pick) => pick.id == event.idPick);
-          //pedimos los nuevos picks
-          add(FetchPickingPickEvent(false));
+          await _quitarPickCerrado(event.idPick);
         }
         emit(
           CreateBackOrderOrNotSuccess(
@@ -715,6 +709,23 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
       );
       debugPrint('Error en el _onCreateBackOrder: $e, $s');
     }
+  }
+
+  /// Saca el pick cerrado de la BD local y de las listas en memoria (pick y
+  /// componentes) y recarga el listado de su tipo. Sin esto, un PC cerrado
+  /// seguía apareciendo en la lista de componentes: solo se limpiaba el
+  /// listado de pick. Componentes se recarga desde BD (ya sin el pick) para
+  /// no depender de la red al volver a la lista.
+  Future<void> _quitarPickCerrado(int idPick) async {
+    final esComponentes = pickWithProducts.pick?.typePick != 'pick';
+    await db.pickRepository.deletePickById(idPick);
+    listOfPick.removeWhere((pick) => pick.id == idPick);
+    listOfPickFiltered.removeWhere((pick) => pick.id == idPick);
+    listOfPickCompo.removeWhere((pick) => pick.id == idPick);
+    listOfPickCompoFiltered.removeWhere((pick) => pick.id == idPick);
+    add(esComponentes
+        ? FetchPickingComponentesFromDBEvent(false)
+        : FetchPickingPickEvent(false));
   }
 
   void _onPickOkEvent(PickOkEvent event, Emitter<PickingPickState> emit) async {
@@ -744,8 +755,7 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
           currentProduct.idProduct ?? 0,
         ),
       );
-      //pedimos los nuevos picks
-      add(FetchPickingPickEvent(false));
+      await _quitarPickCerrado(event.idPick);
 
       emit(PickOkEventSuccess('Pick cerrado correctamente'));
     } catch (e, s) {
@@ -1029,7 +1039,11 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
               idProducto: product.idProduct ?? 0,
               idLote: product.loteId ?? 0,
               idUbicacionDestino: product.muelleId ?? 0,
-              cantidadEnviada: product.quantitySeparate ?? 0,
+              cantidadEnviada: await _cantidadPermitida(
+                product.batchId ?? 0,
+                product.quantitySeparate,
+                product.quantity,
+              ),
               idOperario: userid,
               timeLine: product.timeSeparate == null
                   ? 30.0
@@ -1114,7 +1128,11 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
               idProducto: product?.idProduct ?? 0,
               idLote: product?.loteId ?? event.product.loteId ?? 0,
               idUbicacionDestino: product?.muelleId ?? 0,
-              cantidadEnviada: event.cantidad,
+              cantidadEnviada: await _cantidadPermitida(
+                event.product.batchId ?? 0,
+                event.cantidad,
+                product?.quantity ?? event.product.quantity,
+              ),
               idOperario: userid,
               timeLine: product?.timeSeparate == null
                   ? 30.0
@@ -1332,7 +1350,11 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
               idProducto: event.product.idProduct ?? 0,
               idLote: event.product.loteId ?? 0,
               idUbicacionDestino: event.product.muelleId ?? 0,
-              cantidadEnviada: event.product.quantitySeparate ?? 0,
+              cantidadEnviada: await _cantidadPermitida(
+                event.product.batchId ?? 0,
+                event.product.quantitySeparate,
+                event.product.quantity,
+              ),
               idOperario: userid,
               timeLine: event.product.timeSeparate == null
                   ? 30.0
@@ -1808,7 +1830,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
     Emitter<PickingPickState> emit,
   ) async {
     try {
-      if (quantitySelected > (currentProduct.quantity ?? 0)) {
+      // `+ event.quantity`: antes solo se frenaba si ya estaba pasado, así
+      // que con lo pedido completo (o fraccionado) aún sumaba una vez más.
+      if (quantitySelected + event.quantity > (currentProduct.quantity ?? 0)) {
         return;
       } else {
         quantitySelected = quantitySelected + event.quantity;
@@ -1982,6 +2006,26 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   }
 
   //*metodo para enviar al wms
+  /// Cantidad que se puede enviar a Odoo. Pick por pedido ("pick") y
+  /// componentes comparten este bloc: el exceso solo vale para componentes
+  /// (producción, con su permiso); en pick por pedido se limita a lo pedido.
+  /// Todo envío de cantidades debe pasar por aquí.
+  Future<dynamic> _cantidadPermitida(
+    int pickId,
+    dynamic cantidad,
+    dynamic pedido,
+  ) async {
+    final enviar = (cantidad ?? 0) as num;
+    final maximo = (pedido ?? 0) as num;
+    if (enviar <= maximo) return enviar;
+    final pick = await db.pickRepository.getPickById(pickId);
+    // Pick no encontrado: se limita, el exceso es la excepción.
+    if (pick != null && pick.typePick != 'pick') return enviar;
+    debugPrint(
+        '⛔ Pick $pickId: se intentó enviar $enviar (pedido $maximo); se limita');
+    return maximo;
+  }
+
   Future<SendResult> sendProuctOdoo() async {
     try {
       DateTime dateTimeActuality = DateTime.parse(DateTime.now().toString());
@@ -2023,15 +2067,11 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
               idLote: product?.loteId ?? 0,
               idUbicacionDestino: product?.muelleId ?? 0,
 
-              cantidadEnviada:
-                  (product?.quantitySeparate ?? 0.0) >
-                      (product?.quantity ??
-                          0.0) // Asegura que ambos lados sean numéricos
-                  ? (product?.quantitySeparate ?? 0.0)
-                  //  (product?.quantity ??
-                  //     0.0) // Si es verdadero, usa quantity, pero también con ?? 0.0
-                  : (product?.quantitySeparate ??
-                        0.0), // Si es falso, usa quantitySeparate
+              cantidadEnviada: await _cantidadPermitida(
+                pickWithProducts.pick?.id ?? 0,
+                product?.quantitySeparate,
+                product?.quantity,
+              ),
               idOperario: userid,
               timeLine: product?.timeSeparate == null
                   ? 30.0

@@ -366,20 +366,28 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                   });
             });
       } else {
-        batchBloc.add(ChangeQuantitySeparate(
-          cantidad,
-          currentProduct.idProduct ?? 0,
-          currentProduct.idMove ?? 0,
+        //el permiso de exceso es solo de producción (componentes); en el
+        //pick por pedido nunca se puede separar más de lo pedido
+        final esPickPedido =
+            batchBloc.pickWithProducts.pick?.typePick == 'pick';
+        if (!esPickPedido &&
+            batchBloc.configurations.result?.result?.allowMoveExcessProduction ==
+                true) {
+          batchBloc.add(ChangeQuantitySeparate(
+            cantidad,
+            currentProduct.idProduct ?? 0,
+            currentProduct.idMove ?? 0,
+          ));
+          _nextProduct(currentProduct, batchBloc);
+          return;
+        }
+        _vibrationService.vibrate();
+        _audioService.playErrorSound();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          duration: const Duration(milliseconds: 1000),
+          content: const Text('Cantidad erronea'),
+          backgroundColor: Colors.red[200],
         ));
-
-        _nextProduct(currentProduct, batchBloc);
-        // _vibrationService.vibrate();
-        // _audioService.playErrorSound();
-        // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        //   duration: const Duration(milliseconds: 1000),
-        //   content: const Text('Cantidad erronea'),
-        //   backgroundColor: Colors.red[200],
-        // ));
       }
     }
   }

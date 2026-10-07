@@ -119,6 +119,26 @@ class PackingPedidoRepositoryImpl implements PackingPedidoRepository {
   Future<Either<Failure, PedidoPackDetalle>> getPedidoDetalle(int pedidoId) =>
       _run('getPedidoDetalle', () => local.getDetalle(pedidoId));
 
+  @override
+  Future<Either<Failure, PedidoPackDetalle>> refrescarDetalleRemoto(
+    int pedidoId,
+  ) => _run(
+    'refrescarDetalleRemoto',
+    () async {
+      final deviceId = await entorno.deviceId();
+      final versionApp = await entorno.versionApp();
+      final api = await remote.fetchDetallePedido(
+        pedidoId: pedidoId,
+        deviceId: deviceId,
+        versionApp: versionApp,
+      );
+      await local.ensureOwner(await entorno.owner());
+      await local.sincronizarDetalleRemoto(api);
+      return local.getDetalle(pedidoId);
+    },
+    requiereRed: true,
+  );
+
   // ── Escaneo y separación ──────────────────────────────────────────────────
 
   @override
@@ -255,6 +275,42 @@ class PackingPedidoRepositoryImpl implements PackingPedidoRepository {
         await local.deshacerSeparacion(producto);
         return unit;
       });
+
+  @override
+  Future<Either<Failure, String>> cancelarPreparados({
+    required int pedidoId,
+    required List<ProductoPacking> productos,
+  }) => _run(
+    'cancelarPreparados',
+    () async {
+      final deviceId = await entorno.deviceId();
+      final versionApp = await entorno.versionApp();
+      final items = [
+        for (final p in productos)
+          ItemCanceladoPreparadoApi(
+            idPreparado: p.idPreparado ?? 0,
+            idMove: p.idMove,
+          ),
+      ];
+
+      final msg = await remote.cancelarPreparados(
+        pedidoId: pedidoId,
+        deviceId: deviceId,
+        items: items,
+      );
+
+      final api = await remote.fetchDetallePedido(
+        pedidoId: pedidoId,
+        deviceId: deviceId,
+        versionApp: versionApp,
+      );
+      await local.ensureOwner(await entorno.owner());
+      await local.sincronizarDetalleRemoto(api);
+
+      return msg;
+    },
+    requiereRed: true,
+  );
 
   // ── Paquetes ──────────────────────────────────────────────────────────────
 

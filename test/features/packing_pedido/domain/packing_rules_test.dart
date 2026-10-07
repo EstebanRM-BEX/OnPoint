@@ -310,6 +310,30 @@ void main() {
       );
       expect(d.progresoEmpacado, 25);
     });
+
+    test('cantidadPreparados y cantidadPreparada calculan sobre listos', () {
+      final d = PedidoPackDetalle(
+        pedido: const PedidoPack(id: 10, numeroItems: 20),
+        listos: [
+          productoTest(
+            id: 1,
+            estado: EstadoProductoPacking.listo,
+            certificado: true,
+            quantity: 10,
+            quantitySeparate: 4,
+          ),
+          productoTest(
+            id: 2,
+            estado: EstadoProductoPacking.listo,
+            certificado: true,
+            quantity: 6,
+            quantitySeparate: 6,
+          ),
+        ],
+      );
+      expect(d.cantidadPreparados, 2);
+      expect(d.cantidadPreparada, 10.0);
+    });
   });
 
   group('PedidoPack', () {

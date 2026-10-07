@@ -18,6 +18,7 @@ abstract class PackingPedidoLocalDataSource {
   Future<void> ensureOwner(String owner);
 
   Future<void> guardarSync(List<PedidoPackApi> pedidos);
+  Future<void> sincronizarDetalleRemoto(PedidoPackApi pedido);
 
   Future<List<PedidoPack>> getPedidos();
   Future<PedidoPack> getPedido(int pedidoId);
@@ -105,6 +106,14 @@ class PackingPedidoLocalDataSourceImpl implements PackingPedidoLocalDataSource {
     'sync',
     () async => (await _db).transaction(
       (txn) => PackingReconciler.sincronizar(txn, pedidos),
+    ),
+  );
+
+  @override
+  Future<void> sincronizarDetalleRemoto(PedidoPackApi pedido) => _guard(
+    'sincronizarDetalleRemoto',
+    () async => (await _db).transaction(
+      (txn) => PackingReconciler.sincronizarPedido(txn, pedido),
     ),
   );
 

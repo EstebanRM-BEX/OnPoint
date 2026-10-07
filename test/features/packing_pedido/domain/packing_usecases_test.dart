@@ -14,6 +14,7 @@ import 'package:wms_app/features/packing_pedido/domain/usecases/deshacer_separac
 import 'package:wms_app/features/packing_pedido/domain/usecases/dividir_producto_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/eliminar_paquete_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/enviar_temperatura_pack_usecase.dart';
+import 'package:wms_app/features/packing_pedido/domain/usecases/refrescar_detalle_pack_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/separar_producto_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/validar_pedido_pack_usecase.dart';
 
@@ -180,12 +181,15 @@ void main() {
       );
 
       when(
-        () => repo.deshacerSeparacion(any()),
-      ).thenAnswer((_) async => const Right(unit));
+        () => repo.cancelarPreparados(
+          pedidoId: any(named: 'pedidoId'),
+          productos: any(named: 'productos'),
+        ),
+      ).thenAnswer((_) async => const Right('Productos devueltos a por hacer'));
       final listo = productoTest(estado: EstadoProductoPacking.listo);
       expect(
         await useCase(DeshacerSeparacionParams(producto: listo)),
-        const Right(unit),
+        const Right('Productos devueltos a por hacer'),
       );
     });
   });
@@ -423,6 +427,27 @@ void main() {
       verify(
         () => repo.enviarTemperatura(producto: p, temperatura: 4),
       ).called(1);
+    });
+  });
+
+  group('RefrescarDetallePackUseCase', () {
+    late RefrescarDetallePackUseCase useCase;
+    setUp(() => useCase = RefrescarDetallePackUseCase(repo));
+
+    test('delega al repositorio con el id del pedido', () async {
+      final detalle = PedidoPackDetalle(
+        pedido: pedidoTest,
+        porHacer: const [],
+        listos: const [],
+      );
+      when(
+        () => repo.refrescarDetalleRemoto(123),
+      ).thenAnswer((_) async => Right(detalle));
+
+      final r = await useCase(const RefrescarDetallePackParams(pedidoId: 123));
+
+      expect(r, Right(detalle));
+      verify(() => repo.refrescarDetalleRemoto(123)).called(1);
     });
   });
 }

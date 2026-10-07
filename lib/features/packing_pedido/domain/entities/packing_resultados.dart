@@ -61,6 +61,13 @@ class PedidoPackDetalle extends Equatable {
     return null;
   }
 
+  /// Cantidad de productos (líneas) en estado preparado.
+  int get cantidadPreparados => listos.length;
+
+  /// Cantidad total de unidades preparadas.
+  double get cantidadPreparada =>
+      listos.fold<double>(0, (s, p) => s + p.cantidadAEnviar);
+
   /// Porcentaje empacado sobre las unidades del pedido (para el aviso de
   /// backorder al validar).
   double get progresoEmpacado {

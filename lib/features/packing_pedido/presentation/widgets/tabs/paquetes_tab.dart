@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
@@ -7,8 +8,8 @@ import 'package:wms_app/features/packing_pedido/domain/entities/packing_catalogo
 import 'package:wms_app/features/packing_pedido/domain/entities/paquete_packing.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/producto_packing.dart';
 import 'package:wms_app/features/packing_pedido/presentation/bloc/packages/packing_packages_bloc.dart';
-import 'package:wms_app/features/packing_pedido/presentation/widgets/common/barra_lector_pack.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/common/lista_vacia_pack.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/common/pack_search_dock.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/packages/paquete_pack_card.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
@@ -42,35 +43,133 @@ class PaquetesTab extends StatefulWidget {
   State<PaquetesTab> createState() => _PaquetesTabState();
 }
 
-class _PaquetesTabState extends State<PaquetesTab> {
+class _PaquetesTabState extends State<PaquetesTab> with WidgetsBindingObserver {
   final _scanController = TextEditingController();
   final _scanFocus = FocusNode();
+  final _searchController = TextEditingController();
+  final _searchFocus = FocusNode();
+  bool _modoScanner = true;
+  Timer? _focusRetryTimer;
+  String _filtro = '';
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _searchFocus.addListener(_onSearchFocusChanged);
+    _scanFocus.addListener(_onScanFocusChanged);
     context.read<PackingPackagesBloc>().add(
       const UbicacionesMuellePackCargadas(),
     );
-    if (widget.activo) _enfocarLector();
+    if (widget.activo) {
+      _enfocarLector();
+    }
   }
 
   @override
   void didUpdateWidget(covariant PaquetesTab old) {
     super.didUpdateWidget(old);
-    if (widget.activo && !old.activo) _enfocarLector();
+    if (widget.activo && (!old.activo || _modoScanner) && !_searchFocus.hasFocus) {
+      _enfocarLector();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      if (widget.activo && _modoScanner && !_searchFocus.hasFocus) {
+        _enfocarLector();
+      }
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _focusRetryTimer?.cancel();
+    _searchFocus.removeListener(_onSearchFocusChanged);
+    _scanFocus.removeListener(_onScanFocusChanged);
     _scanController.dispose();
     _scanFocus.dispose();
+    _searchController.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
-  void _enfocarLector() => WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (mounted) _scanFocus.requestFocus();
-  });
+  void _onSearchFocusChanged() {
+    if (!mounted) return;
+    if (_searchFocus.hasFocus) {
+      if (_modoScanner) {
+        setState(() => _modoScanner = false);
+      }
+    } else {
+      if (_searchController.text.trim().isEmpty && !_modoScanner) {
+        setState(() => _modoScanner = true);
+        _enfocarLector();
+      }
+    }
+  }
+
+  void _onScanFocusChanged() {
+    if (!mounted) return;
+    if (_modoScanner &&
+        !_scanFocus.hasFocus &&
+        !_searchFocus.hasFocus &&
+        widget.activo &&
+        (ModalRoute.of(context)?.isCurrent ?? true)) {
+      _enfocarLector();
+    }
+  }
+
+  void _enfocarLector() {
+    if (!mounted || !_modoScanner || _searchFocus.hasFocus) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted &&
+          _modoScanner &&
+          !_searchFocus.hasFocus &&
+          (ModalRoute.of(context)?.isCurrent ?? true)) {
+        _scanFocus.requestFocus();
+      }
+    });
+
+    _focusRetryTimer?.cancel();
+    _focusRetryTimer = Timer(const Duration(milliseconds: 150), () {
+      if (mounted &&
+          _modoScanner &&
+          !_searchFocus.hasFocus &&
+          !_scanFocus.hasFocus &&
+          widget.activo &&
+          (ModalRoute.of(context)?.isCurrent ?? true)) {
+        _scanFocus.requestFocus();
+      }
+    });
+  }
+
+  void _activarLector() {
+    _searchFocus.unfocus();
+    if (!_modoScanner) {
+      setState(() => _modoScanner = true);
+    }
+    _enfocarLector();
+  }
+
+  void _limpiarBusqueda() {
+    _searchController.clear();
+    setState(() => _filtro = '');
+    _activarLector();
+  }
+
+  void _onSearchChanged(String valor) {
+    setState(() => _filtro = valor.trim().toLowerCase());
+  }
+
+  void _onSearchSubmitted(String valor) {
+    final v = valor.trim();
+    if (v.isEmpty) return;
+    _onEscaneo(v);
+  }
 
   void _onEscaneo(String valor) {
     final bloc = context.read<PackingPackagesBloc>();
@@ -96,15 +195,34 @@ class _PaquetesTabState extends State<PaquetesTab> {
       );
   }
 
+  bool _coincidePaquete(PaquetePacking p, String q) {
+    if (q.isEmpty) return true;
+    if (p.name.toLowerCase().contains(q)) return true;
+    if (p.packingBarcode.toLowerCase().contains(q)) return true;
+    if (p.consecutivo.toLowerCase().contains(q)) return true;
+    if (p.locationDestName.toLowerCase().contains(q)) return true;
+    if (p.locationDestBarcode.toLowerCase().contains(q)) return true;
+    return p.productos.any(
+      (prod) =>
+          prod.productName.toLowerCase().contains(q) ||
+          prod.productCode.toLowerCase().contains(q) ||
+          prod.barcode.toLowerCase().contains(q),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<PackingPackagesBloc, PackingPackagesState>(
       builder: (context, state) {
         final bloc = context.read<PackingPackagesBloc>();
         final paquetes = state.paquetes;
+        final paquetesFiltrados = paquetes
+            .where((p) => _coincidePaquete(p, _filtro))
+            .toList();
         final seleccion = state.seleccionados;
-        final todos =
-            paquetes.isNotEmpty && seleccion.length == paquetes.length;
+        final listaSeleccion = _filtro.isEmpty ? paquetes : paquetesFiltrados;
+        final todos = listaSeleccion.isNotEmpty &&
+            listaSeleccion.every((p) => seleccion.contains(p.id));
         final hayDestino = state.paquetesDestino.isNotEmpty;
 
         return Scaffold(
@@ -123,8 +241,81 @@ class _PaquetesTabState extends State<PaquetesTab> {
               : null,
           body: Column(
             children: [
-              BarraLectorPack(
-                lector: BarcodeScannerField(
+              PackSearchDock(
+                controller: _searchController,
+                searchFocusNode: _searchFocus,
+                scannerFocusNode: _scanFocus,
+                isScannerActive: _modoScanner,
+                hintText: 'Escanear o buscar caja o muelle...',
+                onChanged: _onSearchChanged,
+                onCleared: _limpiarBusqueda,
+                onActivateScanner: _activarLector,
+                onSubmitted: _onSearchSubmitted,
+                action: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (paquetes.isNotEmpty)
+                      Tooltip(
+                        message: todos
+                            ? 'Deseleccionar todos'
+                            : 'Seleccionar todos',
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () {
+                            if (todos) {
+                              final idsRestantes = seleccion.difference(
+                                listaSeleccion.map((p) => p.id).toSet(),
+                              );
+                              bloc.add(
+                                SeleccionPaquetesPackReemplazada(idsRestantes),
+                              );
+                            } else {
+                              final nuevosIds = {
+                                ...seleccion,
+                                ...listaSeleccion.map((p) => p.id),
+                              };
+                              bloc.add(
+                                SeleccionPaquetesPackReemplazada(nuevosIds),
+                              );
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: Icon(
+                              todos
+                                  ? Icons.check_box
+                                  : Icons.check_box_outline_blank,
+                              color: todos ? primaryColorApp : grey,
+                              size: 22,
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (widget.esCluster && widget.editable) ...[
+                      const SizedBox(width: 4),
+                      Tooltip(
+                        message: 'Asignar ubicación de destino',
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: hayDestino
+                              ? () => widget.onAsignarUbicacion(null)
+                              : null,
+                          child: Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: Icon(
+                              Icons.add_location_alt,
+                              color: hayDestino
+                                  ? primaryColorApp
+                                  : grey.withOpacity(0.5),
+                              size: 22,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                scanner: BarcodeScannerField(
                   controller: _scanController,
                   focusNode: _scanFocus,
                   autofocus: false,
@@ -132,28 +323,6 @@ class _PaquetesTabState extends State<PaquetesTab> {
                   refocusOnScan: true,
                   onBarcodeScanned: (v, _) => _onEscaneo(v),
                 ),
-                texto: 'Escanee una caja o ubicación',
-                seleccionTodos: paquetes.isEmpty
-                    ? null
-                    : () => bloc.add(
-                        SeleccionPaquetesPackReemplazada(
-                          todos ? const [] : paquetes.map((p) => p.id),
-                        ),
-                      ),
-                todosSeleccionados: todos,
-                acciones: [
-                  if (widget.esCluster && widget.editable)
-                    IconButton(
-                      tooltip: 'Asignar ubicación de destino',
-                      icon: Icon(
-                        Icons.add_location_alt,
-                        color: hayDestino ? primaryColorApp : grey,
-                      ),
-                      onPressed: hayDestino
-                          ? () => widget.onAsignarUbicacion(null)
-                          : null,
-                    ),
-                ],
               ),
               Expanded(
                 child: paquetes.isEmpty
@@ -161,31 +330,36 @@ class _PaquetesTabState extends State<PaquetesTab> {
                         titulo: 'No hay paquetes',
                         subtitulo: 'Empaque productos para crear cajas',
                       )
-                    : ListView.builder(
-                        padding: const EdgeInsets.only(top: 4, bottom: 90),
-                        itemCount: paquetes.length,
-                        itemBuilder: (_, i) {
-                          final p = paquetes[i];
-                          return PaquetePackCard(
-                            paquete: p,
-                            esCluster: widget.esCluster,
-                            onAsignarUbicacion: () =>
-                                widget.onAsignarUbicacion(null),
-                            seleccionado: seleccion.contains(p.id),
-                            expandido: state.expandido == p.id,
-                            editable: widget.editable,
-                            onSeleccionar: (v) => bloc.add(
-                              PaquetePackSeleccionado(p.id, seleccionado: v),
-                            ),
-                            onExpandir: () =>
-                                bloc.add(PaquetePackExpandido(p.id)),
-                            onImprimir: () => widget.onImprimir([p.id]),
-                            onEliminar: () => widget.onEliminar(p),
-                            onDesempacar: (prod) =>
-                                widget.onDesempacar(p, prod),
-                          );
-                        },
-                      ),
+                    : paquetesFiltrados.isEmpty
+                        ? const ListaVaciaPack(
+                            titulo: 'No se encontraron paquetes',
+                            subtitulo: 'Intenta con otro término o código',
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.only(top: 4, bottom: 90),
+                            itemCount: paquetesFiltrados.length,
+                            itemBuilder: (_, i) {
+                              final p = paquetesFiltrados[i];
+                              return PaquetePackCard(
+                                paquete: p,
+                                esCluster: widget.esCluster,
+                                onAsignarUbicacion: () =>
+                                    widget.onAsignarUbicacion(null),
+                                seleccionado: seleccion.contains(p.id),
+                                expandido: state.expandido == p.id,
+                                editable: widget.editable,
+                                onSeleccionar: (v) => bloc.add(
+                                  PaquetePackSeleccionado(p.id, seleccionado: v),
+                                ),
+                                onExpandir: () =>
+                                    bloc.add(PaquetePackExpandido(p.id)),
+                                onImprimir: () => widget.onImprimir([p.id]),
+                                onEliminar: () => widget.onEliminar(p),
+                                onDesempacar: (prod) =>
+                                    widget.onDesempacar(p, prod),
+                              );
+                            },
+                          ),
               ),
             ],
           ),

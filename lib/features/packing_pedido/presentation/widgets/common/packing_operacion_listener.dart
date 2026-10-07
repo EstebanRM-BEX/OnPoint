@@ -23,6 +23,9 @@ class PackingOperacionListener<B extends StateStreamable<S>, S>
   /// lugar de un diálogo.
   final Set<String> erroresCortos;
 
+  /// Acciones cuyo error no muestra snackbar ni diálogo (solo sonido y vibración).
+  final Set<String> erroresSilenciosos;
+
   /// Acciones cuyo éxito no muestra snackbar.
   final Set<String> exitosSilenciosos;
 
@@ -38,6 +41,7 @@ class PackingOperacionListener<B extends StateStreamable<S>, S>
     required this.child,
     this.onExito,
     this.erroresCortos = const {'escaneo'},
+    this.erroresSilenciosos = const {},
     this.exitosSilenciosos = const {},
     this.conDuracionMinima = const {},
     this.duracionMinima = const Duration(milliseconds: 700),
@@ -112,6 +116,9 @@ class _PackingOperacionListenerState<B extends StateStreamable<S>, S>
           case TipoOperacion.error:
           case TipoOperacion.desincronizado:
             _feedbackError();
+            if (widget.erroresSilenciosos.contains(op.accion)) {
+              break;
+            }
             if (widget.erroresCortos.contains(op.accion)) {
               _snack(op.mensaje, error: true);
             } else {

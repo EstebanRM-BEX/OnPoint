@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/producto_packing.dart';
 import 'package:wms_app/features/packing_pedido/presentation/bloc/scan/packing_scan_bloc.dart';
@@ -59,6 +62,7 @@ class _ScanViewState extends State<_ScanView> {
   final _cantidadScanFocus = FocusNode();
   final _cantidadController = TextEditingController();
   final _cantidadFocus = FocusNode();
+  Timer? _limpiarErrorTimer;
 
   PackingScanBloc get _bloc => context.read<PackingScanBloc>();
 
@@ -70,6 +74,7 @@ class _ScanViewState extends State<_ScanView> {
 
   @override
   void dispose() {
+    _limpiarErrorTimer?.cancel();
     _ubicacionController.dispose();
     _ubicacionFocus.dispose();
     _productoController.dispose();
@@ -104,12 +109,15 @@ class _ScanViewState extends State<_ScanView> {
   /// Vuelve al detalle cerrando antes cualquier diálogo que quede encima
   /// (p. ej. el de temperatura).
   void _cerrar() {
+    if (!mounted) return;
     final ruta = ModalRoute.of(context);
     final navigator = Navigator.of(context);
     if (ruta != null && !ruta.isCurrent) {
       navigator.popUntil((r) => r == ruta);
     }
-    navigator.pop(true);
+    if (navigator.canPop()) {
+      navigator.pop(true);
+    }
   }
 
   void _aplicar() {
@@ -119,11 +127,13 @@ class _ScanViewState extends State<_ScanView> {
         _cantidadController.text.trim().replaceAll(',', '.'),
       );
       if (v == null) {
+        getIt<IAudioService>().playErrorSound();
+        getIt<IVibrationService>().vibrate();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            duration: const Duration(milliseconds: 1000),
+            duration: const Duration(milliseconds: 1500),
             content: const Text('Cantidad inválida'),
-            backgroundColor: Colors.red[200],
+            backgroundColor: Colors.red[300],
           ),
         );
         return;
@@ -177,12 +187,29 @@ class _ScanViewState extends State<_ScanView> {
             _enfocarPaso();
           },
         ),
+        BlocListener<PackingScanBloc, PackingScanState>(
+          listenWhen: (a, b) =>
+              b.errorEn != null &&
+              (a.errorEn != b.errorEn || a.operacion.seq != b.operacion.seq),
+          listener: (context, _) {
+            _limpiarErrorTimer?.cancel();
+            _limpiarErrorTimer = Timer(const Duration(milliseconds: 1500), () {
+              if (mounted) {
+                _bloc.add(const ErrorScanPackLimpiado());
+              }
+            });
+          },
+        ),
       ],
       child: PackingOperacionListener<PackingScanBloc, PackingScanState>(
         operacion: (s) => s.operacion,
         // Separar es local y rápido: el "Enviando producto..." se ve un
         // instante antes de cerrar.
         conDuracionMinima: const {'separar', 'dividir'},
+        // Errores de escaneo no muestran avisos visuales (solo sonido, vibración y card roja temporal).
+        erroresSilenciosos: const {'escaneo'},
+        // Errores de acciones manuales muestran snackbar corto para informar el motivo.
+        erroresCortos: const {'cantidadManual', 'manual'},
         // Se cierra recién con el diálogo de carga cerrado y solo si todo
         // salió bien (separado/dividido y, si aplica, temperatura enviada).
         onExito: (context, state, _) {

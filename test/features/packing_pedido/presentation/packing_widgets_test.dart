@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:leak_tracker_flutter_testing/leak_tracker_flutter_testing.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
@@ -17,8 +18,15 @@ import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/produc
 import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/producto_preparado_card.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/list/pedido_pack_card.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/scan/cantidad_scan_card.dart';
+import 'package:wms_app/features/packing_pedido/domain/entities/paquete_packing.dart';
+import 'package:wms_app/features/packing_pedido/presentation/bloc/packages/packing_packages_bloc.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/detalle_pedido_tab.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/paquetes_tab.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/por_hacer_tab.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/preparados_tab.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/producto_por_hacer_card.dart';
+import 'package:wms_app/features/packing_pedido/presentation/bloc/common/packing_operacion.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/common/packing_operacion_listener.dart';
 import 'package:wms_app/injection_container.dart';
 
 import '../domain/packing_test_data.dart';
@@ -34,27 +42,40 @@ class FakeAudio implements IAudioService {
 }
 
 class FakeVibration implements IVibrationService {
+  int vibraciones = 0;
   @override
-  Future<void> vibrate({int duration = 500}) async {}
+  Future<void> vibrate({int duration = 500}) async => vibraciones++;
+}
+
+class TestOpCubit extends Cubit<PackingOperacion> {
+  TestOpCubit() : super(const PackingOperacion());
+  void emitOp(PackingOperacion op) => emit(op);
 }
 
 class MockDetailBloc
     extends MockBloc<PackingPedidoDetailEvent, PackingPedidoDetailState>
     implements PackingPedidoDetailBloc {}
 
+class MockPackagesBloc
+    extends MockBloc<PackingPackagesEvent, PackingPackagesState>
+    implements PackingPackagesBloc {}
+
 Widget app(Widget child) => MaterialApp(home: Scaffold(body: child));
 
 void main() {
   late FakeAudio audio;
+  late FakeVibration vibration;
 
   setUp(() {
     audio = FakeAudio();
+    vibration = FakeVibration();
     if (getIt.isRegistered<IAudioService>()) {
       getIt.unregister<IAudioService>();
     }
-    if (!getIt.isRegistered<IVibrationService>()) {
-      getIt.registerSingleton<IVibrationService>(FakeVibration());
+    if (getIt.isRegistered<IVibrationService>()) {
+      getIt.unregister<IVibrationService>();
     }
+    getIt.registerSingleton<IVibrationService>(vibration);
     getIt.registerSingleton<IAudioService>(audio);
   });
 
@@ -94,6 +115,10 @@ void main() {
     expect(find.text('4'), findsOneWidget);
     expect(find.text('Faltante'), findsOneWidget);
     expect(find.textContaining('01:02:05'), findsOneWidget);
+    // El ícono de eliminar está a la izquierda frente al nombre
+    final posDelete = t.getTopLeft(find.byIcon(Icons.delete));
+    final posNombre = t.getTopLeft(find.text('Producto A'));
+    expect(posDelete.dx, lessThan(posNombre.dx));
     // Parcial (4 de 10): recuadro ámbar como en el módulo anterior.
     final recuadro = t.widgetList<Card>(find.byType(Card)).last;
     expect(recuadro.color, Colors.amber[100]);
@@ -272,6 +297,46 @@ void main() {
       await t.tap(find.text('Producto A'));
       expect(escaneado, isFalse);
     });
+
+    testWidgets('búsqueda manual emite evento y botón limpiar limpia', (
+      t,
+    ) async {
+      await montar(t, (_, __) {});
+      await t.pump();
+
+      // Buscar por TextField manual
+      final searchField = find.byWidgetPredicate(
+        (w) =>
+            w is TextField &&
+            w.decoration?.hintText == 'Escanear o buscar producto...',
+      );
+      expect(searchField, findsOneWidget);
+
+      await t.enterText(searchField, 'Producto');
+      await t.pump();
+      verify(
+        () => bloc.add(const BusquedaProductoPackCambiada('Producto')),
+      ).called(1);
+
+      // Botón limpiar
+      final clearBtn = find.byTooltip('Limpiar');
+      expect(clearBtn, findsOneWidget);
+      await t.tap(clearBtn);
+      await t.pump();
+      verify(
+        () => bloc.add(const BusquedaProductoPackCambiada('')),
+      ).called(1);
+    });
+
+    testWidgets('botón de lector activa el foco del escáner', (t) async {
+      await montar(t, (_, __) {});
+      await t.pump();
+
+      final scannerBtn = find.byTooltip('Lector activo');
+      expect(scannerBtn, findsOneWidget);
+      await t.tap(scannerBtn);
+      await t.pumpAndSettle();
+    });
   });
 
   group('showBackorderPackDialog', () {
@@ -400,4 +465,347 @@ void main() {
     expect(aplicado, 1);
     expect(editar, 1);
   });
+
+  testWidgets('CantidadScanCard: conError pinta la card de rojo', (t) async {
+    final scanController = TextEditingController();
+    final scanFocus = FocusNode();
+    final controller = TextEditingController();
+    final focus = FocusNode();
+    addTearDown(scanController.dispose);
+    addTearDown(scanFocus.dispose);
+    addTearDown(controller.dispose);
+    addTearDown(focus.dispose);
+
+    await t.pumpWidget(
+      app(
+        CantidadScanCard(
+          activo: true,
+          conError: true,
+          cantidad: 1,
+          total: 5,
+          unidades: 'Und',
+          editando: false,
+          puedeEditar: true,
+          ocupado: false,
+          scanController: scanController,
+          scanFocus: scanFocus,
+          onEscaneo: (_) {},
+          controller: controller,
+          focusNode: focus,
+          onAlternarEdicion: () {},
+          onAplicar: () {},
+        ),
+      ),
+    );
+
+    final card = t.widget<Card>(find.byType(Card));
+    expect(card.color, Colors.red[200]);
+  });
+
+  group('PackingOperacionListener: feedback de errores', () {
+    testWidgets(
+      'error silencioso (escaneo) da sonido y vibración pero NO snackbar ni dialog',
+      (t) async {
+        final cubit = TestOpCubit();
+        addTearDown(cubit.close);
+
+        await t.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: BlocProvider.value(
+                value: cubit,
+                child: PackingOperacionListener<TestOpCubit, PackingOperacion>(
+                  operacion: (s) => s,
+                  erroresSilenciosos: const {'escaneo'},
+                  child: const SizedBox(),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        cubit.emitOp(
+          const PackingOperacion(
+            tipo: TipoOperacion.error,
+            accion: 'escaneo',
+            mensaje: 'Ubicación errónea',
+            seq: 1,
+          ),
+        );
+        await t.pump();
+        await t.pump(const Duration(milliseconds: 50));
+
+        expect(audio.errores, 1);
+        expect(vibration.vibraciones, 1);
+        expect(find.byType(SnackBar), findsNothing);
+        expect(find.text('Ubicación errónea'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'error manual (cantidadManual) da sonido, vibración Y snackbar con motivo',
+      (t) async {
+        final cubit = TestOpCubit();
+        addTearDown(cubit.close);
+
+        await t.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: BlocProvider.value(
+                value: cubit,
+                child: PackingOperacionListener<TestOpCubit, PackingOperacion>(
+                  operacion: (s) => s,
+                  erroresSilenciosos: const {'escaneo'},
+                  erroresCortos: const {'cantidadManual'},
+                  child: const SizedBox(),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        cubit.emitOp(
+          const PackingOperacion(
+            tipo: TipoOperacion.error,
+            accion: 'cantidadManual',
+            mensaje: 'Cantidad inválida',
+            seq: 1,
+          ),
+        );
+        await t.pump();
+        await t.pump(const Duration(milliseconds: 50));
+
+        expect(audio.errores, 1);
+        expect(vibration.vibraciones, 1);
+        expect(find.byType(SnackBar), findsOneWidget);
+        expect(find.text('Cantidad inválida'), findsOneWidget);
+      },
+    );
+  });
+
+  testWidgets(
+    'DetallePedidoTab: muestra productos preparados y cantidad preparada',
+    experimentalLeakTesting: LeakTesting.settings.withIgnoredAll(),
+    (t) async {
+      final detalle = PedidoPackDetalle(
+        pedido: const PedidoPack(
+          id: 1,
+          name: 'WH/PACK/1',
+          numeroLineas: 3,
+          numeroItems: 25,
+        ),
+        listos: [
+          productoTest(
+            id: 10,
+            estado: EstadoProductoPacking.listo,
+            certificado: true,
+            quantity: 10,
+            quantitySeparate: 4,
+          ),
+          productoTest(
+            id: 11,
+            estado: EstadoProductoPacking.listo,
+            certificado: true,
+            quantity: 6,
+            quantitySeparate: 6,
+          ),
+        ],
+        empacados: [
+          productoTest(
+            id: 12,
+            estado: EstadoProductoPacking.empacado,
+            certificado: true,
+            quantity: 5,
+            quantitySeparate: 5,
+          ),
+        ],
+      );
+
+      t.view.physicalSize = const Size(800, 1600);
+      t.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        t.view.resetPhysicalSize();
+        t.view.resetDevicePixelRatio();
+      });
+
+      await t.pumpWidget(
+        app(DetallePedidoTab(detalle: detalle, onConfirmar: () {})),
+      );
+
+      expect(find.textContaining('Productos preparados'), findsOneWidget);
+      expect(find.text('2'), findsOneWidget);
+      expect(find.textContaining('Cantidad preparada'), findsOneWidget);
+      expect(find.text('10'), findsOneWidget);
+      await t.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets(
+    'PreparadosTab: muestra boton Eliminar todos y Empacar y dispara callbacks',
+    (t) async {
+      var eliminarTodosCount = 0;
+      var empacarCount = 0;
+      var deshacerCount = 0;
+
+      final listo = productoTest(
+        id: 10,
+        estado: EstadoProductoPacking.listo,
+        certificado: true,
+        quantity: 10,
+        quantitySeparate: 4,
+      );
+      final listo2 = productoTest(
+        id: 11,
+        estado: EstadoProductoPacking.listo,
+        certificado: true,
+        quantity: 5,
+        quantitySeparate: 5,
+      );
+
+      final state = PackingPedidoDetailState(
+        pedidoId: 1,
+        status: DetallePackStatus.listo,
+        detalle: PedidoPackDetalle(
+          pedido: pedidoTest,
+          listos: [listo, listo2],
+        ),
+      );
+
+      t.view.physicalSize = const Size(800, 1600);
+      t.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        t.view.resetPhysicalSize();
+        t.view.resetDevicePixelRatio();
+      });
+
+      await t.pumpWidget(
+        app(
+          Scaffold(
+            body: PreparadosTab(
+              state: state,
+              onEmpacar: () => empacarCount++,
+              onDeshacer: (_) => deshacerCount++,
+              onDeshacerTodos: () => eliminarTodosCount++,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Eliminar todos'), findsOneWidget);
+      expect(find.textContaining('Empacar (2)'), findsOneWidget);
+
+      await t.tap(find.text('Eliminar todos'));
+      expect(eliminarTodosCount, 1);
+
+      await t.tap(find.textContaining('Empacar (2)'));
+      expect(empacarCount, 1);
+
+      await t.tap(find.byIcon(Icons.delete).first);
+      expect(deshacerCount, 1);
+
+      await t.pumpWidget(const SizedBox());
+    },
+  );
+
+  group('PaquetesTab', () {
+    late MockPackagesBloc packagesBloc;
+
+    setUp(() {
+      packagesBloc = MockPackagesBloc();
+    });
+
+    Future<void> montar(
+      WidgetTester t, {
+      required List<PaquetePacking> paquetes,
+      Set<int> seleccionados = const {},
+    }) async {
+      when(() => packagesBloc.state).thenReturn(
+        PackingPackagesState(
+          paquetes: paquetes,
+          seleccionados: seleccionados,
+        ),
+      );
+      await t.pumpWidget(
+        MaterialApp(
+          home: BlocProvider<PackingPackagesBloc>.value(
+            value: packagesBloc,
+            child: Scaffold(
+              body: PaquetesTab(
+                activo: true,
+                editable: true,
+                esCluster: true,
+                onImprimir: (_) {},
+                onEliminar: (_) {},
+                onDesempacar: (_, __) {},
+                onAsignarUbicacion: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await t.pump();
+    }
+
+    testWidgets(
+      'filtra paquetes por nombre o código de barras y permite limpiar',
+      experimentalLeakTesting: LeakTesting.settings.withIgnoredAll(),
+      (t) async {
+        final p1 = paqueteTest(id: 1, consecutivo: 'Caja 1', packingBarcode: 'PACK-001');
+        final p2 = paqueteTest(id: 2, consecutivo: 'Caja 2', packingBarcode: 'PACK-002');
+
+        await montar(t, paquetes: [p1, p2]);
+        await t.pump(const Duration(milliseconds: 200));
+
+        expect(find.text('Caja 1'), findsOneWidget);
+        expect(find.text('Caja 2'), findsOneWidget);
+
+        final searchField = find.byWidgetPredicate(
+          (w) =>
+              w is TextField &&
+              w.decoration?.hintText == 'Escanear o buscar caja o muelle...',
+        );
+        expect(searchField, findsOneWidget);
+
+        await t.enterText(searchField, '002');
+        await t.pump();
+
+        expect(find.text('Caja 1'), findsNothing);
+        expect(find.text('Caja 2'), findsOneWidget);
+
+        // Limpiar filtro
+        final clearBtn = find.byTooltip('Limpiar');
+        expect(clearBtn, findsOneWidget);
+        await t.tap(clearBtn);
+        await t.pump();
+
+        expect(find.text('Caja 1'), findsOneWidget);
+        expect(find.text('Caja 2'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'muestra estado vacío cuando la búsqueda no coincide',
+      experimentalLeakTesting: LeakTesting.settings.withIgnoredAll(),
+      (t) async {
+        final p1 = paqueteTest(id: 1, consecutivo: 'Caja 1', packingBarcode: 'PACK-001');
+
+        await montar(t, paquetes: [p1]);
+        await t.pump(const Duration(milliseconds: 200));
+
+        expect(find.text('Caja 1'), findsOneWidget);
+
+        final searchField = find.byWidgetPredicate(
+          (w) =>
+              w is TextField &&
+              w.decoration?.hintText == 'Escanear o buscar caja o muelle...',
+        );
+        await t.enterText(searchField, 'inexistente');
+        await t.pump();
+
+        expect(find.text('Caja 1'), findsNothing);
+        expect(find.text('No se encontraron paquetes'), findsOneWidget);
+      },
+    );
+  });
 }
+

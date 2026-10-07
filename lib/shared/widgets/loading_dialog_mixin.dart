@@ -19,11 +19,15 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screen
 mixin LoadingDialogMixin<T extends StatefulWidget> on State<T> {
   DialogRoute<void>? _loadingRoute;
   NavigatorState? _loadingNavigator;
+  final ValueNotifier<String> _loadingMessage = ValueNotifier<String>('');
 
   bool get isLoadingDialogVisible => _loadingRoute != null;
 
   void showLoadingDialog(String message) {
-    if (_loadingRoute != null || !mounted) return;
+    if (!mounted) return;
+    _loadingMessage.value = message;
+
+    if (_loadingRoute != null) return;
 
     // Mismo navegador que usaba showDialog (rootNavigator por defecto).
     final navigator = Navigator.of(context, rootNavigator: true);
@@ -31,7 +35,10 @@ mixin LoadingDialogMixin<T extends StatefulWidget> on State<T> {
       context: context,
       barrierDismissible: false,
       themes: InheritedTheme.capture(from: context, to: navigator.context),
-      builder: (_) => DialogLoading(message: message),
+      builder: (_) => DialogLoading(
+        message: message,
+        messageListenable: _loadingMessage,
+      ),
     );
 
     _loadingRoute = route;
@@ -56,5 +63,12 @@ mixin LoadingDialogMixin<T extends StatefulWidget> on State<T> {
     if (route.isActive && navigator != null && navigator.mounted) {
       navigator.removeRoute(route);
     }
+  }
+
+  @override
+  void dispose() {
+    hideLoadingDialog();
+    _loadingMessage.dispose();
+    super.dispose();
   }
 }

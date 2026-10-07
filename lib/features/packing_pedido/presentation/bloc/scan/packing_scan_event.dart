@@ -95,3 +95,8 @@ class ImagenNovedadPackEnviada extends PackingScanEvent {
   @override
   List<Object?> get props => [imagePath];
 }
+
+/// Limpia el estado de error visual en las tarjetas (vuelven a su color normal).
+class ErrorScanPackLimpiado extends PackingScanEvent {
+  const ErrorScanPackLimpiado();
+}

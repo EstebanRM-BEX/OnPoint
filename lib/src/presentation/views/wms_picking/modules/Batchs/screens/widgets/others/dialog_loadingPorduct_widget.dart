@@ -2,15 +2,21 @@
 
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
 
 class DialogLoading extends StatelessWidget {
-  const DialogLoading(
-      {super.key, this.message = 'Pasando al siguiente producto...'});
+  const DialogLoading({
+    super.key,
+    this.message = 'Pasando al siguiente producto...',
+    this.messageListenable,
+  });
 
   final String message;
+  final ValueListenable<String>? messageListenable;
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -42,7 +48,16 @@ class DialogLoading extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
               ),
-              Text(message, style: const TextStyle(color: grey, fontSize: 14)),
+              if (messageListenable != null)
+                ValueListenableBuilder<String>(
+                  valueListenable: messageListenable!,
+                  builder: (_, msg, __) => Text(
+                    msg.isEmpty ? message : msg,
+                    style: const TextStyle(color: grey, fontSize: 14),
+                  ),
+                )
+              else
+                Text(message, style: const TextStyle(color: grey, fontSize: 14)),
             ],
           )),
           content: Column(

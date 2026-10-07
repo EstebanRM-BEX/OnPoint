@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:firebase_performance/firebase_performance.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 /// Cliente HTTP que registra cada petición como `HttpMetric` en Firebase
@@ -20,6 +21,7 @@ class PerformanceHttpClient extends http.BaseClient {
 
     try {
       await metric.start();
+      final sw = Stopwatch()..start(); // TEMP
       if (request.contentLength != null) {
         metric.requestPayloadSize = request.contentLength;
       }
@@ -43,6 +45,10 @@ class PerformanceHttpClient extends http.BaseClient {
             sink.addError(error, stack);
           },
           handleDone: (sink) {
+            // TEMP: medir qué endpoint trae payloads grandes.
+            debugPrint('[HTTP-SIZE] ${request.method} ${request.url.path} '
+                '${(bytes / 1024 / 1024).toStringAsFixed(2)} MB '
+                '${sw.elapsedMilliseconds} ms');
             metric.responsePayloadSize = bytes;
             unawaited(metric.stop());
             sink.close();

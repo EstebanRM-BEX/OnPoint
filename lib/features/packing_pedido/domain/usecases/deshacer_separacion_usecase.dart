@@ -7,28 +7,45 @@ import 'package:wms_app/features/packing_pedido/domain/failures/packing_failures
 import 'package:wms_app/features/packing_pedido/domain/repositories/packing_pedido_repository.dart';
 
 class DeshacerSeparacionParams {
-  final ProductoPacking producto;
+  final int pedidoId;
+  final List<ProductoPacking> productos;
 
-  const DeshacerSeparacionParams({required this.producto});
+  DeshacerSeparacionParams({
+    int? pedidoId,
+    List<ProductoPacking>? productos,
+    ProductoPacking? producto,
+  })  : pedidoId = pedidoId ?? producto?.pedidoId ?? 0,
+        productos =
+            productos ?? (producto != null ? [producto] : const <ProductoPacking>[]);
+
+  ProductoPacking? get producto => productos.isNotEmpty ? productos.first : null;
 }
 
-/// Devuelve una línea de "Listos" a "Por hacer" (antes de empacarla).
+/// Devuelve líneas de "Listos" a "Por hacer" (antes de empacarlas) vía Odoo.
 @lazySingleton
 class DeshacerSeparacionUseCase
-    implements UseCase<Unit, DeshacerSeparacionParams> {
+    implements UseCase<String, DeshacerSeparacionParams> {
   final PackingPedidoRepository repository;
 
   DeshacerSeparacionUseCase(this.repository);
 
   @override
-  Future<Either<Failure, Unit>> call(DeshacerSeparacionParams params) async {
-    if (!params.producto.isListo) {
+  Future<Either<Failure, String>> call(DeshacerSeparacionParams params) async {
+    if (params.productos.isEmpty) {
+      return const Left(
+        PackingValidationFailure('No hay productos para devolver'),
+      );
+    }
+    if (params.productos.any((p) => !p.isListo)) {
       return const Left(
         PackingValidationFailure(
-          'Solo se puede deshacer un producto listo sin empacar',
+          'Solo se puede devolver un producto listo sin empacar',
         ),
       );
     }
-    return repository.deshacerSeparacion(params.producto);
+    return repository.cancelarPreparados(
+      pedidoId: params.pedidoId,
+      productos: params.productos,
+    );
   }
 }

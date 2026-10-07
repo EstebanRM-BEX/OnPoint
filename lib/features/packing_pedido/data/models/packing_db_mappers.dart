@@ -126,6 +126,7 @@ class PackingDbMappers {
     'barcode_location': p.barcodeLocation,
     'id_location_dest': p.idLocationDest,
     'location_dest_name': p.locationDestName,
+    'id_preparado': p.idPreparado,
     'maneja_temperatura': _b(p.manejaTemperatura),
   };
 
@@ -182,6 +183,7 @@ class PackingDbMappers {
       isProductSplit: _bool(r['is_product_split']),
       idPackage: _i(r['id_package']),
       packageName: _s(r['package_name']),
+      idPreparado: _i(r['id_preparado']),
       observation: _s(r['observation']),
       manejaTemperatura: _bool(r['maneja_temperatura']),
       temperatura: _d(r['temperatura']),

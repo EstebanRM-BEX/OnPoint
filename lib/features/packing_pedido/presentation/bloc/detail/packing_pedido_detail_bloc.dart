@@ -11,6 +11,7 @@ import 'package:wms_app/features/packing_pedido/domain/usecases/crear_paquete_us
 import 'package:wms_app/features/packing_pedido/domain/usecases/deshacer_separacion_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/get_config_packing_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/get_pedido_pack_detalle_usecase.dart';
+import 'package:wms_app/features/packing_pedido/domain/usecases/refrescar_detalle_pack_usecase.dart';
 import 'package:wms_app/features/packing_pedido/presentation/bloc/common/packing_operacion.dart';
 
 part 'packing_pedido_detail_event.dart';
@@ -24,24 +25,34 @@ part 'packing_pedido_detail_state.dart';
 class PackingPedidoDetailBloc
     extends Bloc<PackingPedidoDetailEvent, PackingPedidoDetailState> {
   final GetPedidoPackDetalleUseCase getDetalle;
+  final RefrescarDetallePackUseCase refrescarDetalle;
   final CrearPaqueteUseCase crearPaquete;
   final DeshacerSeparacionUseCase deshacerSeparacion;
   final GetConfigPackingUseCase getConfig;
 
   PackingPedidoDetailBloc(
     this.getDetalle,
+    this.refrescarDetalle,
     this.crearPaquete,
     this.deshacerSeparacion,
     this.getConfig,
   ) : super(const PackingPedidoDetailState()) {
     on<DetallePackIniciado>(_onIniciado, transformer: restartable());
     on<DetallePackRecargado>(_onRecargado, transformer: restartable());
+    on<DetallePackRefrescoRemotoSolicitado>(
+      _onRefrescoRemoto,
+      transformer: droppable(),
+    );
     on<BusquedaProductoPackCambiada>(_onBusqueda);
     on<ProductoPackSeleccionado>(_onSeleccionado);
     on<SeleccionPackReemplazada>(_onSeleccionReemplazada);
     on<StickerPackCambiado>(_onSticker);
     on<PaquetePackCreado>(_onCrearPaquete, transformer: droppable());
     on<SeparacionPackDeshecha>(_onDeshacer, transformer: droppable());
+    on<TodosPreparadosPackCancelados>(
+      _onCancelarTodos,
+      transformer: droppable(),
+    );
   }
 
   Future<void> _onIniciado(
@@ -63,6 +74,39 @@ class PackingPedidoDetailBloc
     DetallePackRecargado event,
     Emitter<PackingPedidoDetailState> emit,
   ) => _cargar(emit);
+
+  Future<void> _onRefrescoRemoto(
+    DetallePackRefrescoRemotoSolicitado event,
+    Emitter<PackingPedidoDetailState> emit,
+  ) async {
+    final id = state.pedidoId;
+    if (id == null) return;
+    if (state.cargandoRemoto) return;
+
+    emit(state.copyWith(cargandoRemoto: true));
+    final r = await refrescarDetalle(RefrescarDetallePackParams(pedidoId: id));
+    r.fold(
+      (f) => emit(
+        state.copyWith(
+          cargandoRemoto: false,
+          operacion: state.operacion.fallo('refrescarRemoto', f),
+        ),
+      ),
+      (detalle) {
+        final vigentes = {
+          for (final p in [...detalle.porHacer, ...detalle.listos]) p.id,
+        };
+        emit(
+          state.copyWith(
+            cargandoRemoto: false,
+            status: DetallePackStatus.listo,
+            detalle: detalle,
+            seleccionados: state.seleccionados.intersection(vigentes),
+          ),
+        );
+      },
+    );
+  }
 
   Future<void> _cargar(Emitter<PackingPedidoDetailState> emit) async {
     final id = state.pedidoId;
@@ -166,24 +210,57 @@ class PackingPedidoDetailBloc
     SeparacionPackDeshecha event,
     Emitter<PackingPedidoDetailState> emit,
   ) async {
+    final pedidoId = state.pedidoId ?? event.producto.pedidoId;
+    await _cancelarPreparados(
+      pedidoId: pedidoId,
+      productos: [event.producto],
+      emit: emit,
+    );
+  }
+
+  Future<void> _onCancelarTodos(
+    TodosPreparadosPackCancelados event,
+    Emitter<PackingPedidoDetailState> emit,
+  ) async {
+    final listos = state.detalle?.listos ?? const <ProductoPacking>[];
+    if (listos.isEmpty) return;
+    final pedidoId = state.pedidoId ?? listos.first.pedidoId;
+    await _cancelarPreparados(
+      pedidoId: pedidoId,
+      productos: listos,
+      emit: emit,
+    );
+  }
+
+  Future<void> _cancelarPreparados({
+    required int pedidoId,
+    required List<ProductoPacking> productos,
+    required Emitter<PackingPedidoDetailState> emit,
+  }) async {
     emit(
       state.copyWith(
-        operacion: state.operacion.procesar('deshacer', 'Deshaciendo...'),
+        operacion: state.operacion.procesar(
+          'deshacer',
+          productos.length == 1
+              ? 'Devolviendo producto...'
+              : 'Devolviendo productos...',
+        ),
       ),
     );
     final r = await deshacerSeparacion(
-      DeshacerSeparacionParams(producto: event.producto),
+      DeshacerSeparacionParams(pedidoId: pedidoId, productos: productos),
     );
     await r.fold(
       (f) async =>
           emit(state.copyWith(operacion: state.operacion.fallo('deshacer', f))),
-      (_) async {
+      (msg) async {
+        final idsBorrar = productos.map((p) => p.id).toSet();
         emit(
           state.copyWith(
-            seleccionados: {...state.seleccionados}..remove(event.producto.id),
+            seleccionados: state.seleccionados.difference(idsBorrar),
             operacion: state.operacion.exito(
               'deshacer',
-              'Producto devuelto a por hacer',
+              msg.isNotEmpty ? msg : 'Productos devueltos a por hacer',
             ),
           ),
         );

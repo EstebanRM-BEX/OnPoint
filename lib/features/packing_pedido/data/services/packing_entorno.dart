@@ -1,4 +1,5 @@
 import 'package:injectable/injectable.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:wms_app/core/network/network_guard.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/core/services/novedades_cache_service.dart';
@@ -32,6 +33,16 @@ class PackingEntorno {
 
   /// MAC (o IMEI si la MAC no está disponible) de la PDA.
   Future<String> deviceId() => PrefUtils.getDeviceIdPDA();
+
+  /// Versión de la app (p. ej. "1.7.2").
+  Future<String> versionApp() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      return info.version;
+    } catch (_) {
+      return '';
+    }
+  }
 
   /// Dueño de los datos locales: empresa + usuario.
   Future<String> owner() async =>

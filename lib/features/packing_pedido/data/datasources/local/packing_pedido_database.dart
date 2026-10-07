@@ -10,7 +10,7 @@ import 'package:sqflite/sqflite.dart';
 @lazySingleton
 class PackingPedidoDatabase {
   static const fileName = 'packing_pedido_v2.db';
-  static const version = 1;
+  static const version = 2;
 
   static const tPedidos = 'pp_pedidos';
   static const tProductos = 'pp_productos';
@@ -42,6 +42,13 @@ class PackingPedidoDatabase {
       version: version,
       onConfigure: (db) => db.execute('PRAGMA foreign_keys = OFF'),
       onCreate: (db, _) => createSchema(db),
+      onUpgrade: (db, oldV, newV) async {
+        if (oldV < 2) {
+          await db.execute(
+            'ALTER TABLE $tProductos ADD COLUMN id_preparado INTEGER;',
+          );
+        }
+      },
     );
     _db = db;
     return db;
@@ -130,6 +137,7 @@ class PackingPedidoDatabase {
         is_product_split INTEGER NOT NULL DEFAULT 0,
         id_package INTEGER,
         package_name TEXT,
+        id_preparado INTEGER,
         observation TEXT,
         maneja_temperatura INTEGER NOT NULL DEFAULT 0,
         temperatura REAL,

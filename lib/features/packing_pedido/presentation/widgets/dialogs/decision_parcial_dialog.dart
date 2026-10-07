@@ -15,13 +15,42 @@ import 'package:wms_app/src/presentation/views/recepcion/modules/individual/scre
 Future<void> showDecisionParcialDialog(
   BuildContext context,
   PackingScanBloc bloc,
-) {
-  return showDialog(
+) async {
+  final novedad = await showDialog<String>(
     context: context,
     barrierDismissible: false,
     builder: (_) =>
         BlocProvider.value(value: bloc, child: const _DecisionParcialDialog()),
   );
+  if (novedad == null) return;
+  if (!context.mounted) return;
+
+  var respondido = false;
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          bloc.add(const DecisionParcialPackCancelada());
+          Navigator.of(context).pop();
+        }
+      },
+      child: DialogCapturaNovedad(
+        onResult: (File? foto) {
+          respondido = true;
+          bloc.add(
+            SeparacionParcialPackAceptada(novedad, imagePath: foto?.path),
+          );
+        },
+      ),
+    ),
+  );
+
+  if (!respondido) {
+    bloc.add(const DecisionParcialPackCancelada());
+  }
 }
 
 class _DecisionParcialDialog extends StatefulWidget {
@@ -34,24 +63,9 @@ class _DecisionParcialDialog extends StatefulWidget {
 class _DecisionParcialDialogState extends State<_DecisionParcialDialog> {
   String? _novedad;
 
-  /// "Aceptar": pregunta por la foto de evidencia y acepta con o sin ella.
+  /// "Aceptar": cierra la decisión devolviendo la novedad seleccionada.
   void _aceptar() {
-    final bloc = context.read<PackingScanBloc>();
-    final navigator = Navigator.of(context);
-    final novedad = _novedad!;
-    showDialog(
-      context: context,
-      builder: (_) => DialogCapturaNovedad(
-        onResult: (File? foto) {
-          navigator
-            ..pop() // foto
-            ..pop(); // decisión
-          bloc.add(
-            SeparacionParcialPackAceptada(novedad, imagePath: foto?.path),
-          );
-        },
-      ),
-    );
+    Navigator.of(context).pop(_novedad);
   }
 
   @override

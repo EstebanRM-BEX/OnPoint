@@ -93,11 +93,34 @@ class ItemPrepararApi {
   };
 }
 
+/// Línea que se manda a cancelar/devolver de preparado a "Por hacer".
+class ItemCanceladoPreparadoApi {
+  final int idPreparado;
+  final int idMove;
+
+  const ItemCanceladoPreparadoApi({
+    required this.idPreparado,
+    required this.idMove,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'id_preparado': idPreparado,
+    'id_move': idMove,
+  };
+}
+
 /// Endpoints de Odoo del packing por pedido. Mismos bodies que el módulo
 /// legacy, pero sin diálogos: los errores salen como excepciones tipadas y
 /// la presentación decide cómo mostrarlos.
 abstract class PackingPedidoRemoteDataSource {
   Future<PedidosPackApiResult> fetchPedidos({required bool isLoadingDialog});
+
+  /// Consulta el detalle actualizado del pedido vía `transferencias/pack/detail`.
+  Future<PedidoPackApi> fetchDetallePedido({
+    required int pedidoId,
+    required String deviceId,
+    required String versionApp,
+  });
 
   Future<void> asignarResponsable({required int pedidoId, required int userId});
 
@@ -107,6 +130,13 @@ abstract class PackingPedidoRemoteDataSource {
     required String deviceId,
     required int idOperario,
     required List<ItemPrepararApi> items,
+  });
+
+  /// Devuelve productos preparados a "Por hacer" vía `transferencias/pack/prepare/cancel`.
+  Future<String> cancelarPreparados({
+    required int pedidoId,
+    required String deviceId,
+    required List<ItemCanceladoPreparadoApi> items,
   });
 
   /// [campo] = `start_time_transfer` o `end_time_transfer`.
@@ -276,6 +306,25 @@ class PackingPedidoRemoteDataSourceImpl
   }
 
   @override
+  Future<PedidoPackApi> fetchDetallePedido({
+    required int pedidoId,
+    required String deviceId,
+    required String versionApp,
+  }) async {
+    final response = await _post('transferencias/pack/detail', {
+      'device_id': deviceId,
+      'version_app': versionApp,
+      'id_transferencia': pedidoId,
+    });
+    final r = result(decode(response));
+    final data = r['result'];
+    if (data is! Map<String, dynamic>) {
+      throw const ServerException('Respuesta sin detalle de pedido');
+    }
+    return PedidoPackApi.fromMap(data);
+  }
+
+  @override
   Future<void> asignarResponsable({
     required int pedidoId,
     required int userId,
@@ -320,6 +369,21 @@ class PackingPedidoRemoteDataSourceImpl
           PedidoPackApi.productoFromApi(i, pedidoId: pedidoId, preparado: true),
       ],
     );
+  }
+
+  @override
+  Future<String> cancelarPreparados({
+    required int pedidoId,
+    required String deviceId,
+    required List<ItemCanceladoPreparadoApi> items,
+  }) async {
+    final response = await _post('transferencias/pack/prepare/cancel', {
+      'device_id': deviceId,
+      'id_transferencia': pedidoId,
+      'list_items': items.map((i) => i.toMap()).toList(),
+    });
+    final r = result(decode(response));
+    return OdooParse.str(r['msg']);
   }
 
   @override

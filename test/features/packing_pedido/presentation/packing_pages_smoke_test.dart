@@ -1,6 +1,7 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,6 +21,7 @@ import 'package:wms_app/features/packing_pedido/presentation/bloc/scan/packing_s
 import 'package:wms_app/features/packing_pedido/presentation/pages/packing_pedido_detail_page.dart';
 import 'package:wms_app/features/packing_pedido/presentation/pages/packing_pedido_list_page.dart';
 import 'package:wms_app/features/packing_pedido/presentation/pages/packing_scan_page.dart';
+import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/injection_container.dart';
 
 import '../domain/packing_test_data.dart';
@@ -109,6 +111,7 @@ void main() {
   );
 
   setUpAll(() {
+    Get.testMode = true;
     if (getIt.isRegistered<IAudioService>()) getIt.unregister<IAudioService>();
     getIt.registerSingleton<IAudioService>(FakeAudio());
     if (!getIt.isRegistered<IVibrationService>()) {
@@ -266,6 +269,62 @@ void main() {
       expect(find.text('Enviando producto...'), findsNothing);
       expect(find.text('CERTIFICACION'), findsNothing);
       expect(resultado, isTrue);
+
+      await t.pumpWidget(const SizedBox());
+      PaintingBinding.instance.imageCache
+        ..clear()
+        ..clearLiveImages();
+    },
+  );
+
+  testWidgets(
+    'decision parcial: seleccionar novedad y rechazar foto no desmonta PackingScanPage prematuramente',
+    (t) async {
+      final bloc = MockScanBloc();
+      final base = PackingScanState(
+        status: ScanPackStatus.listo,
+        producto: productoTest(quantity: 10),
+        paso: PasoScanPack.cantidad,
+        cantidad: 5,
+        novedades: const [Novedad(id: 1, name: 'Dañado', code: 'DAN')],
+      );
+      final enDecision = base.copyWith(cantidadEnDecision: 5);
+      when(() => bloc.state).thenReturn(enDecision);
+      whenListen(
+        bloc,
+        Stream<PackingScanState>.fromIterable([enDecision]),
+        initialState: base,
+      );
+      registrar<PackingScanBloc>(() => bloc);
+
+      await t.pumpWidget(conRed(PackingScanPage(producto: productoTest())));
+      await t.pump();
+      await t.pumpAndSettle();
+
+      expect(find.text('360 Software Informa'), findsOneWidget);
+      expect(find.text('Seleccionar novedad'), findsOneWidget);
+
+      await t.tap(find.text('Seleccionar novedad'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Dañado').last);
+      await t.pumpAndSettle();
+
+      await t.tap(find.text('Aceptar'));
+      await t.pumpAndSettle();
+
+      expect(
+        find.text('¿Deseas tomar una foto como evidencia de la novedad?'),
+        findsOneWidget,
+      );
+
+      await t.tap(find.text('No'));
+      await t.pumpAndSettle();
+
+      verify(
+        () => bloc.add(const SeparacionParcialPackAceptada('Dañado')),
+      ).called(1);
+
+      expect(find.text('CERTIFICACION'), findsOneWidget);
 
       await t.pumpWidget(const SizedBox());
       PaintingBinding.instance.imageCache

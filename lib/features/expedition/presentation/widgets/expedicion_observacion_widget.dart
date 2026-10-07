@@ -29,13 +29,19 @@ class ExpedicionObservacionWidget extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final excede = (TextPainter(
-            text: TextSpan(text: observacion, style: _textStyle),
+          // Medir con el mismo estilo efectivo que pinta el Text (hereda
+          // fuente/altura del DefaultTextStyle del tema); con _textStyle a
+          // secas la medición daba menos líneas y el "Ver más" no aparecía.
+          final estilo = DefaultTextStyle.of(context).style.merge(_textStyle);
+          final painter = TextPainter(
+            text: TextSpan(text: observacion, style: estilo),
             maxLines: 2,
             textDirection: Directionality.of(context),
             textScaler: MediaQuery.textScalerOf(context),
-          )..layout(maxWidth: constraints.maxWidth))
-              .didExceedMaxLines;
+            locale: Localizations.maybeLocaleOf(context),
+          )..layout(maxWidth: constraints.maxWidth);
+          final excede = painter.didExceedMaxLines;
+          painter.dispose();
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +95,7 @@ class ExpedicionObservacionWidget extends StatelessWidget {
                 observacion,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: _textStyle,
+                style: estilo,
               ),
             ],
           );

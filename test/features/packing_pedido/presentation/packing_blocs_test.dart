@@ -28,6 +28,7 @@ import 'package:wms_app/features/packing_pedido/domain/usecases/get_ubicaciones_
 import 'package:wms_app/features/packing_pedido/domain/usecases/leer_temperatura_ia_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/marcar_producto_ok_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/marcar_ubicacion_ok_usecase.dart';
+import 'package:wms_app/features/packing_pedido/domain/usecases/refrescar_detalle_pack_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/registrar_tiempo_pack_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/repositories/packing_pedido_repository.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/separar_producto_usecase.dart';
@@ -51,6 +52,8 @@ class MockAsignar extends Mock implements AsignarResponsablePackUseCase {}
 class MockConfig extends Mock implements GetConfigPackingUseCase {}
 
 class MockDetalle extends Mock implements GetPedidoPackDetalleUseCase {}
+
+class MockRefrescarDetalle extends Mock implements RefrescarDetallePackUseCase {}
 
 class MockCrear extends Mock implements CrearPaqueteUseCase {}
 
@@ -100,6 +103,7 @@ void main() {
       ),
     );
     registerFallbackValue(const GetPedidoPackDetalleParams(pedidoId: 0));
+    registerFallbackValue(const RefrescarDetallePackParams(pedidoId: 0));
     registerFallbackValue(
       CrearPaqueteParams(
         pedido: pedidoTest,
@@ -306,6 +310,7 @@ void main() {
 
   group('PackingPedidoDetailBloc', () {
     late MockDetalle getDetalle;
+    late MockRefrescarDetalle refrescar;
     late MockCrear crear;
     late MockDeshacer deshacer;
     late MockConfig config;
@@ -325,6 +330,7 @@ void main() {
 
     setUp(() {
       getDetalle = MockDetalle();
+      refrescar = MockRefrescarDetalle();
       crear = MockCrear();
       deshacer = MockDeshacer();
       config = MockConfig();
@@ -332,10 +338,11 @@ void main() {
         (_) async => const Right(ConfigPackingUsuario(scanProduct: true)),
       );
       when(() => getDetalle(any())).thenAnswer((_) async => Right(detalle));
+      when(() => refrescar(any())).thenAnswer((_) async => Right(detalle));
     });
 
     PackingPedidoDetailBloc build() =>
-        PackingPedidoDetailBloc(getDetalle, crear, deshacer, config);
+        PackingPedidoDetailBloc(getDetalle, refrescar, crear, deshacer, config);
 
     blocTest<PackingPedidoDetailBloc, PackingPedidoDetailState>(
       'abrir un pedido carga el detalle y limpia lo del anterior',
@@ -396,6 +403,91 @@ void main() {
       verify: (bloc) {
         expect(bloc.state.seleccionados, {2});
         expect(bloc.state.operacion.mensaje, 'Peso inválido');
+      },
+    );
+
+    blocTest<PackingPedidoDetailBloc, PackingPedidoDetailState>(
+      'refresco remoto exitoso actualiza detalle y limpia cargandoRemoto',
+      build: build,
+      seed: () => PackingPedidoDetailState(
+        pedidoId: 10,
+        status: DetallePackStatus.listo,
+        detalle: detalle,
+      ),
+      act: (bloc) => bloc.add(const DetallePackRefrescoRemotoSolicitado()),
+      verify: (bloc) {
+        expect(bloc.state.cargandoRemoto, isFalse);
+        expect(bloc.state.detalle, detalle);
+        verify(() => refrescar(const RefrescarDetallePackParams(pedidoId: 10)))
+            .called(1);
+      },
+    );
+
+    blocTest<PackingPedidoDetailBloc, PackingPedidoDetailState>(
+      'refresco remoto fallido preserva detalle y emite operacion con fallo',
+      build: build,
+      seed: () => PackingPedidoDetailState(
+        pedidoId: 10,
+        status: DetallePackStatus.listo,
+        detalle: detalle,
+      ),
+      setUp: () => when(() => refrescar(any())).thenAnswer(
+        (_) async => const Left(ServerFailure('Error al refrescar')),
+      ),
+      act: (bloc) => bloc.add(const DetallePackRefrescoRemotoSolicitado()),
+      verify: (bloc) {
+        expect(bloc.state.cargandoRemoto, isFalse);
+        expect(bloc.state.detalle, detalle);
+        expect(bloc.state.operacion.tipo, TipoOperacion.error);
+        expect(bloc.state.operacion.mensaje, 'Error al refrescar');
+      },
+    );
+
+    blocTest<PackingPedidoDetailBloc, PackingPedidoDetailState>(
+      'SeparacionPackDeshecha exitosa delega y recarga detalle',
+      build: build,
+      seed: () => PackingPedidoDetailState(
+        pedidoId: 10,
+        status: DetallePackStatus.listo,
+        detalle: detalle,
+      ),
+      setUp: () => when(
+        () => deshacer(any()),
+      ).thenAnswer((_) async => const Right('Producto cancelado')),
+      act: (bloc) => bloc.add(SeparacionPackDeshecha(listo)),
+      verify: (bloc) {
+        final params =
+            verify(() => deshacer(captureAny())).captured.single
+                as DeshacerSeparacionParams;
+        expect(params.pedidoId, 10);
+        expect(params.productos, [listo]);
+        expect(bloc.state.operacion.tipo, TipoOperacion.exito);
+        expect(bloc.state.operacion.mensaje, 'Producto cancelado');
+        verify(() => getDetalle(any())).called(1);
+      },
+    );
+
+    blocTest<PackingPedidoDetailBloc, PackingPedidoDetailState>(
+      'TodosPreparadosPackCancelados cancela todos los listos y recarga detalle',
+      build: build,
+      seed: () => PackingPedidoDetailState(
+        pedidoId: 10,
+        status: DetallePackStatus.listo,
+        detalle: detalle,
+      ),
+      setUp: () => when(
+        () => deshacer(any()),
+      ).thenAnswer((_) async => const Right('Todos cancelados')),
+      act: (bloc) => bloc.add(const TodosPreparadosPackCancelados()),
+      verify: (bloc) {
+        final params =
+            verify(() => deshacer(captureAny())).captured.single
+                as DeshacerSeparacionParams;
+        expect(params.pedidoId, 10);
+        expect(params.productos, [listo]);
+        expect(bloc.state.operacion.tipo, TipoOperacion.exito);
+        expect(bloc.state.operacion.mensaje, 'Todos cancelados');
+        verify(() => getDetalle(any())).called(1);
       },
     );
 
@@ -651,6 +743,44 @@ void main() {
       verify: (bloc) {
         expect(bloc.state.paso, PasoScanPack.producto);
         expect(bloc.state.errorEn, isNull);
+      },
+    );
+
+    blocTest<PackingScanBloc, PackingScanState>(
+      'ErrorScanPackLimpiado limpia errorEn sin alterar el paso actual',
+      build: build,
+      act: (bloc) async {
+        bloc.add(ScanPackIniciado(linea()));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const ScanPackLeido('MAL'));
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.errorEn, PasoScanPack.ubicacion);
+        expect(bloc.state.operacion.accion, 'escaneo');
+        bloc.add(const ErrorScanPackLimpiado());
+      },
+      wait: const Duration(milliseconds: 10),
+      verify: (bloc) {
+        expect(bloc.state.paso, PasoScanPack.ubicacion);
+        expect(bloc.state.errorEn, isNull);
+      },
+    );
+
+    blocTest<PackingScanBloc, PackingScanState>(
+      'cantidad manual inválida emite operacion con accion cantidadManual',
+      build: build,
+      act: (bloc) async {
+        bloc.add(
+          ScanPackIniciado(
+            linea(quantity: 10, locationOk: true, productOk: true),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const CantidadPackAplicada(0));
+      },
+      wait: const Duration(milliseconds: 10),
+      verify: (bloc) {
+        expect(bloc.state.operacion.esError, isTrue);
+        expect(bloc.state.operacion.accion, 'cantidadManual');
       },
     );
 
