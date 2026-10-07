@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/producto_packing.dart';
-import 'package:wms_app/features/packing_pedido/presentation/widgets/common/producto_pack_card.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/common/pack_formatos.dart';
 
 /// Tarjeta de producto de "Por hacer", con el mismo diseño que el módulo de
 /// packing por pedido anterior: nombre, ubicación (con ícono de
@@ -85,7 +85,10 @@ class ProductoPorHacerCard extends StatelessWidget {
                       Row(
                         children: [
                           Text('Cantidad: ', style: _etiqueta),
-                          Text(ProductoPackCard.fmt(p.quantity), style: _valor),
+                          Text(
+                            PackFormatos.cantidad(p.quantity),
+                            style: _valor,
+                          ),
                           const Spacer(),
                           Text('Unidad de medida: ', style: _etiqueta),
                           Text(p.unidades, style: _valor),

@@ -5,7 +5,7 @@ import 'package:wms_app/features/expedition/presentation/widgets/dialog_observac
 import 'package:wms_app/features/expedition/presentation/widgets/expedicion_observacion_widget.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/packing_resultados.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/common/info_linea_pack.dart';
-import 'package:wms_app/features/packing_pedido/presentation/widgets/common/producto_pack_card.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/common/pack_formatos.dart';
 
 /// Pestaña "Detalles": datos del pedido, avance y botón de confirmar.
 class DetallePedidoTab extends StatelessWidget {
@@ -23,7 +23,7 @@ class DetallePedidoTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = detalle.pedido;
-    final fmt = ProductoPackCard.fmt;
+    final fmt = PackFormatos.cantidad;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/packing_catalogos.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/paquete_packing.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/producto_packing.dart';
@@ -21,6 +22,7 @@ import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/por_ha
 import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/preparados_tab.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/injection_container.dart';
+import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 
 /// Detalle de un pedido con sus 5 pestañas.
 class PackingPedidoDetailPage extends StatelessWidget {
@@ -95,8 +97,19 @@ class _DetailViewState extends State<_DetailView>
     final s = _detail.state;
     final pedido = s.detalle?.pedido;
     if (pedido == null) return;
+    // "Preparado" empaca todos (como el módulo anterior): se seleccionan
+    // todos los listos sin tocar lo elegido en "Por hacer".
+    final listos = s.detalle?.listos ?? const <ProductoPacking>[];
+    if (certificado) {
+      _detail.add(
+        SeleccionPackReemplazada({
+          ...s.seleccionadosPorHacer.map((p) => p.id),
+          ...listos.map((p) => p.id),
+        }),
+      );
+    }
     final cantidad = certificado
-        ? s.seleccionadosListos.length
+        ? listos.length
         : s.seleccionadosPorHacer.length;
     showDialog(
       context: context,
@@ -113,6 +126,19 @@ class _DetailViewState extends State<_DetailView>
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _verImagenProducto(int idProduct) async {
+    final r = await getIt<GetUrlImagenProducto>()(
+      GetUrlImagenProductoParams(productId: idProduct),
+    );
+    if (!mounted) return;
+    r.fold(
+      (_) => ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Imagen no disponible'))),
+      (url) => showImageDialog(context, url),
     );
   }
 
@@ -345,7 +371,10 @@ class _DetailViewState extends State<_DetailView>
                         onEmpacar: () => _empacar(certificado: true),
                         onDeshacer: _deshacer,
                       ),
-                      EmpacadosTab(empacados: detalle.empacados),
+                      EmpacadosTab(
+                        empacados: detalle.empacados,
+                        onVerImagenProducto: _verImagenProducto,
+                      ),
                       PaquetesTab(
                         activo: _tabs.index == _tabPaquetes,
                         editable: editable,

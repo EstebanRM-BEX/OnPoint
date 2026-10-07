@@ -171,8 +171,10 @@ void main() {
       await t.pumpAndSettle();
       expect(t.takeException(), isNull, reason: 'pestaña $tab');
     }
-    // En "Paquetes" la caja abierta muestra su producto con desempacar.
-    expect(find.byIcon(Icons.unarchive), findsOneWidget);
+    // En "Paquetes" la caja abierta muestra su producto con desempacar y el
+    // QR de la caja, como en el módulo anterior.
+    expect(find.byIcon(Icons.delete), findsOneWidget);
+    expect(find.byIcon(Icons.qr_code), findsOneWidget);
   });
 
   testWidgets('escaneo: pinta los tres pasos sin errores', (t) async {

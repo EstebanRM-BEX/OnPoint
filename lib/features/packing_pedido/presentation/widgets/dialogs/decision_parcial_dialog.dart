@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/packing_pedido/presentation/bloc/scan/packing_scan_bloc.dart';
-import 'package:wms_app/features/packing_pedido/presentation/widgets/common/producto_pack_card.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/common/pack_formatos.dart';
 
 /// Cantidad menor a la de la línea: aceptar con novedad (el faltante queda
 /// para backorder, foto opcional) o dividir (el resto queda por hacer).
@@ -46,7 +46,7 @@ class _DecisionParcialDialogState extends State<_DecisionParcialDialog> {
     final s = bloc.state;
     final cantidad = s.cantidadEnDecision ?? 0;
     final total = s.producto?.quantity ?? 0;
-    final fmt = ProductoPackCard.fmt;
+    final fmt = PackFormatos.cantidad;
 
     return AlertDialog(
       backgroundColor: white,

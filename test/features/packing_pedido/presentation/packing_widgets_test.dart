@@ -10,8 +10,11 @@ import 'package:wms_app/features/packing_pedido/domain/entities/packing_resultad
 import 'package:wms_app/features/packing_pedido/domain/entities/pedido_pack.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/producto_packing.dart';
 import 'package:wms_app/features/packing_pedido/presentation/bloc/detail/packing_pedido_detail_bloc.dart';
-import 'package:wms_app/features/packing_pedido/presentation/widgets/common/producto_pack_card.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/common/pack_formatos.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/dialogs/backorder_pack_dialog.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/packages/producto_en_paquete_tile.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/producto_empacado_card.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/producto_preparado_card.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/list/pedido_pack_card.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/scan/cantidad_scan_card.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/por_hacer_tab.dart';
@@ -73,27 +76,80 @@ void main() {
     expect(tocado, isTrue);
   });
 
-  testWidgets('ProductoPackCard: novedad, checkbox y separado parcial', (
-    t,
-  ) async {
-    bool? marcado;
+  testWidgets('ProductoPreparadoCard: diseño anterior y eliminar', (t) async {
+    var eliminado = 0;
     await t.pumpWidget(
       app(
-        ProductoPackCard(
+        ProductoPreparadoCard(
           producto: productoTest(
             estado: EstadoProductoPacking.listo,
             certificado: true,
             quantitySeparate: 4,
-          ).copyWith(observation: 'Faltante'),
-          seleccionado: false,
-          onSeleccionar: (v) => marcado = v,
+          ).copyWith(observation: 'Faltante', timeSeparate: 3725),
+          onEliminar: () => eliminado++,
         ),
       ),
     );
+    expect(find.text('Cantidad a empacar: '), findsOneWidget);
+    expect(find.text('4'), findsOneWidget);
     expect(find.text('Faltante'), findsOneWidget);
-    expect(find.text('Separado: 4'), findsOneWidget);
-    await t.tap(find.byType(Checkbox));
-    expect(marcado, isTrue);
+    expect(find.textContaining('01:02:05'), findsOneWidget);
+    // Parcial (4 de 10): recuadro ámbar como en el módulo anterior.
+    final recuadro = t.widgetList<Card>(find.byType(Card)).last;
+    expect(recuadro.color, Colors.amber[100]);
+    await t.tap(find.byIcon(Icons.delete));
+    expect(eliminado, 1);
+  });
+
+  testWidgets('ProductoEmpacadoCard: certificado, paquete e imprimir', (
+    t,
+  ) async {
+    var impreso = 0;
+    var imagen = 0;
+    await t.pumpWidget(
+      app(
+        ProductoEmpacadoCard(
+          producto: productoTest(
+            estado: EstadoProductoPacking.empacado,
+            certificado: true,
+            quantitySeparate: 6,
+            idPackage: 1,
+          ).copyWith(packageName: 'PACK-1'),
+          onImprimir: () => impreso++,
+          onVerImagenProducto: () => imagen++,
+        ),
+      ),
+    );
+    expect(find.text('Si'), findsOneWidget);
+    expect(find.text('PACK-1'), findsOneWidget);
+    expect(find.text('6'), findsOneWidget);
+    await t.tap(find.byIcon(Icons.print));
+    await t.tap(find.byIcon(Icons.image));
+    expect(impreso, 1);
+    expect(imagen, 1);
+  });
+
+  testWidgets('ProductoEnPaqueteTile: no certificado en rojo', (t) async {
+    await t.pumpWidget(
+      app(
+        ProductoEnPaqueteTile(
+          producto: productoTest(
+            estado: EstadoProductoPacking.empacado,
+            idPackage: 1,
+          ),
+        ),
+      ),
+    );
+    expect(find.textContaining('No certificado'), findsOneWidget);
+    expect(find.byIcon(Icons.warning), findsOneWidget);
+    expect(find.byIcon(Icons.delete), findsNothing);
+  });
+
+  test('PackFormatos', () {
+    expect(PackFormatos.cantidad(10), '10');
+    expect(PackFormatos.cantidad(2.5), '2.50');
+    expect(PackFormatos.duracion(3725), '01:02:05');
+    expect(PackFormatos.duracion(0), '00:00:00');
   });
 
   testWidgets('ProductoPorHacerCard: mismo diseño que el módulo anterior', (

@@ -168,6 +168,9 @@ class _PaquetesTabState extends State<PaquetesTab> {
                           final p = paquetes[i];
                           return PaquetePackCard(
                             paquete: p,
+                            esCluster: widget.esCluster,
+                            onAsignarUbicacion: () =>
+                                widget.onAsignarUbicacion(null),
                             seleccionado: seleccion.contains(p.id),
                             expandido: state.expandido == p.id,
                             editable: widget.editable,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/features/packing_pedido/presentation/widgets/common/producto_pack_card.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/common/pack_formatos.dart';
 
 /// Paso de cantidad: contador escaneado / total, edición manual (con
 /// permiso) y "Aplicar cantidad".
@@ -35,7 +35,7 @@ class CantidadScanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fmt = ProductoPackCard.fmt;
+    final fmt = PackFormatos.cantidad;
     final avance = total <= 0 ? 0.0 : (cantidad / total).clamp(0.0, 1.0);
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 6, 12, 6),
