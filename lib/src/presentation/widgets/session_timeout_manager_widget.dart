@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/core/routes/empty_stack_guard.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
 import 'package:wms_app/injection_container.dart';
@@ -13,10 +14,14 @@ class SessionTimeoutManager extends StatefulWidget {
   final Duration duration;
   final VoidCallback onSessionExpired;
 
+  /// Para verificar al volver de background que haya una pantalla montada.
+  final GlobalKey<NavigatorState>? navigatorKey;
+
   const SessionTimeoutManager({
     super.key,
     required this.child,
     required this.onSessionExpired,
+    this.navigatorKey,
     this.duration = const Duration(minutes: 5), // Configurar tiempo aquí
   });
 
@@ -82,6 +87,12 @@ class _SessionTimeoutManagerState extends State<SessionTimeoutManager>
         _timer?.cancel();
       }
     } else if (state == AppLifecycleState.resumed) {
+      // Si el stack quedó vacío mientras estaba en background, la app volvía
+      // a una pantalla negra con solo el overlay de validación encima.
+      EmptyStackGuard.ensureScreen(
+        widget.navigatorKey?.currentState,
+        reason: 'resume',
+      );
       _handleResume();
     }
   }

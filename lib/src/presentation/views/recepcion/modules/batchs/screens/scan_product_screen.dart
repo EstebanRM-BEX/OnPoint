@@ -1,3 +1,4 @@
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
@@ -29,7 +30,6 @@ import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_
 
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
 
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiration_badge_widget.dart';
@@ -50,7 +50,7 @@ class ScanProductRceptionBatchScreen extends StatefulWidget {
 }
 
 class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
-    with WidgetsBindingObserver, DisposableControllersMixin {
+    with WidgetsBindingObserver, DisposableControllersMixin, LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   @override
@@ -67,20 +67,15 @@ class _ScanProductOrderScreenState extends State<ScanProductRceptionBatchScreen>
     if (state == AppLifecycleState.resumed) {
       if (mounted) {
         // Aquí se ejecutan las acciones solo si la pantalla aún está montada
-        showDialog(
-          context: context,
-          builder: (context) {
-            return const DialogLoading(
-              message: "Espere un momento...",
-            );
-          },
-        );
+        // Mixin: cierra SOLO este loading. El pop ciego sacaba la ruta de
+        // arriba y, si era la única pantalla, dejaba el stack vacío (negro).
+        showLoadingDialog("Espere un momento...");
         _handleDependencies();
         Future.delayed(const Duration(seconds: 1), () {
           // El widget puede haberse desmontado durante el segundo de espera
           // (el operario navegó a otra pantalla) — un pop ciego contra un
           // context ya inválido congelaba/cerraba la app.
-          if (mounted) Navigator.pop(context);
+          if (mounted) hideLoadingDialog();
         });
       }
     }

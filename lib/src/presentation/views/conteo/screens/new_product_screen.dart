@@ -1,3 +1,4 @@
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
@@ -35,7 +36,7 @@ class NewProductConteoScreen extends StatefulWidget {
 }
 
 class _NewProductConteoScreenState extends State<NewProductConteoScreen>
-    with WidgetsBindingObserver, DisposableControllersMixin {
+    with WidgetsBindingObserver, DisposableControllersMixin, LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   //*focus
@@ -91,13 +92,11 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
     super.didChangeAppLifecycleState(state);
 
     if (state == AppLifecycleState.resumed && mounted) {
-      showDialog(
-        context: context,
-        builder: (context) =>
-            const DialogLoading(message: "Espere un momento..."),
-      );
+      // Mixin: cierra SOLO este loading. El pop ciego sacaba la ruta de
+      // arriba y, si era la única pantalla, dejaba el stack vacío (negro).
+      showLoadingDialog("Espere un momento...");
       Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) Navigator.pop(context);
+        if (mounted) hideLoadingDialog();
       });
       _handleDependencies();
     }

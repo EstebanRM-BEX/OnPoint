@@ -80,33 +80,14 @@ class _InventarioScreenState extends State<InventarioScreen>
     }
   }
 
+  /// Mixin: cierra SOLO este loading (antes un pop a la ruta de arriba podía
+  /// sacar la pantalla en vez del diálogo).
   void _showAndAutoCloseLoadingDialog() {
     if (!mounted) return;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) =>
-          const DialogLoading(message: "Espere un momento..."),
-    ).then((_) {
-      debugPrint('Diálogo cerrado');
-    });
-
+    showLoadingDialog("Espere un momento...");
     Future.delayed(const Duration(seconds: 1), () {
-      _safeCloseDialog();
+      if (mounted) hideLoadingDialog();
     });
-  }
-
-  void _safeCloseDialog() {
-    if (!mounted) return;
-
-    if (Navigator.of(context, rootNavigator: false).canPop()) {
-      try {
-        Navigator.of(context, rootNavigator: false).pop();
-      } catch (e) {
-        debugPrint('Error al cerrar diálogo: $e');
-      }
-    }
   }
 
   @override

@@ -26,7 +26,6 @@ import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/batch_product.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/features/picking_cluster/presentation/widgets/dropdowbutton_widget.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/lote_producto/lote_producto_bloc.dart';
@@ -672,19 +671,14 @@ class _ScanProductClusterState extends State<ScanProductCluster>
     if (state == AppLifecycleState.resumed) {
       if (mounted) {
         // Aquí se ejecutan las acciones solo si la pantalla aún está montada
-        showDialog(
-          context: context,
-          builder: (context) {
-            return const DialogLoading(
-              message: "Espere un momento...",
-            );
-          },
-        );
+        // Mixin: cierra SOLO este loading. El pop ciego sacaba la ruta de
+        // arriba y, si era la única pantalla, dejaba el stack vacío (negro).
+        showLoadingDialog("Espere un momento...");
         Future.delayed(const Duration(seconds: 1), () {
           // El widget puede haberse desmontado durante el segundo de espera
           // (el operario navegó a otra pantalla) — un pop ciego contra un
           // context ya inválido congelaba/cerraba la app.
-          if (mounted) Navigator.pop(context);
+          if (mounted) hideLoadingDialog();
         });
       }
     }

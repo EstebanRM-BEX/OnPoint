@@ -1,3 +1,4 @@
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
@@ -36,7 +37,7 @@ class TransferInfoScreen extends StatefulWidget {
 }
 
 class _TransferInfoScreenState extends State<TransferInfoScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
 
@@ -60,19 +61,14 @@ class _TransferInfoScreenState extends State<TransferInfoScreen>
     if (state == AppLifecycleState.resumed) {
       if (mounted) {
         // Aquí se ejecutan las acciones solo si la pantalla aún está montada
-        showDialog(
-          context: context,
-          builder: (context) {
-            return const DialogLoading(
-              message: "Espere un momento...",
-            );
-          },
-        );
+        // Mixin: cierra SOLO este loading. El pop ciego sacaba la ruta de
+        // arriba y, si era la única pantalla, dejaba el stack vacío (negro).
+        showLoadingDialog("Espere un momento...");
         Future.delayed(const Duration(seconds: 1), () {
           // El widget puede haberse desmontado durante el segundo de espera
           // (el operario navegó a otra pantalla) — un pop ciego contra un
           // context ya inválido congelaba/cerraba la app.
-          if (mounted) Navigator.pop(context);
+          if (mounted) hideLoadingDialog();
         });
       }
     }

@@ -1,3 +1,4 @@
+import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
@@ -26,7 +27,6 @@ import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/shared/widgets/scanner_location_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/shared/widgets/scanner_product_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/quantity/scanner_quantity_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
@@ -41,7 +41,7 @@ class ScanProductConteoScreen extends StatefulWidget {
 }
 
 class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
-    with WidgetsBindingObserver, DisposableControllersMixin {
+    with WidgetsBindingObserver, DisposableControllersMixin, LoadingDialogMixin {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
 
@@ -93,13 +93,11 @@ class _ScanProductConteoScreenState extends State<ScanProductConteoScreen>
     super.didChangeAppLifecycleState(state);
 
     if (state == AppLifecycleState.resumed && mounted) {
-      showDialog(
-        context: context,
-        builder: (context) =>
-            const DialogLoading(message: "Espere un momento..."),
-      );
+      // Mixin: cierra SOLO este loading. El pop ciego sacaba la ruta de
+      // arriba y, si era la única pantalla, dejaba el stack vacío (negro).
+      showLoadingDialog("Espere un momento...");
       Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) Navigator.pop(context);
+        if (mounted) hideLoadingDialog();
       });
       // _handleFocusAccordingToState();
     }
