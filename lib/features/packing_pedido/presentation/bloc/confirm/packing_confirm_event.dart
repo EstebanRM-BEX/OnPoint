@@ -7,13 +7,15 @@ sealed class PackingConfirmEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+/// Valida el pedido; antes revisa que no queden listos sin empacar y que
+/// haya al menos una caja.
 class ValidacionPackSolicitada extends PackingConfirmEvent {
-  final PedidoPack pedido;
+  final PedidoPackDetalle detalle;
   final bool crearBackorder;
-  const ValidacionPackSolicitada(this.pedido, {required this.crearBackorder});
+  const ValidacionPackSolicitada(this.detalle, {required this.crearBackorder});
 
   @override
-  List<Object?> get props => [pedido, crearBackorder];
+  List<Object?> get props => [detalle, crearBackorder];
 }
 
 /// El operario acepta validar con productos vencidos.

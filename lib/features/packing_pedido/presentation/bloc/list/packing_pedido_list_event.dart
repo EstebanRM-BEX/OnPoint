@@ -48,3 +48,21 @@ class ResponsablePackAsignado extends PackingPedidoListEvent {
   @override
   List<Object?> get props => [pedidoId];
 }
+
+/// Registra la hora de inicio del pedido y lo deja listo para abrir.
+class InicioPedidoPackRegistrado extends PackingPedidoListEvent {
+  final PedidoPack pedido;
+  const InicioPedidoPackRegistrado(this.pedido);
+
+  @override
+  List<Object?> get props => [pedido];
+}
+
+class PropietarioPackFiltrado extends PackingPedidoListEvent {
+  /// null = todos.
+  final String? propietario;
+  const PropietarioPackFiltrado(this.propietario);
+
+  @override
+  List<Object?> get props => [propietario];
+}

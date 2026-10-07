@@ -29,6 +29,13 @@ class PackingPackagesState extends Equatable {
   List<PaquetePacking> get paquetesSeleccionados =>
       paquetes.where((p) => seleccionados.contains(p.id)).toList();
 
+  /// Cajas a las que se asigna la ubicación: las seleccionadas o, si no hay
+  /// selección, la caja abierta.
+  List<PaquetePacking> get paquetesDestino {
+    if (seleccionados.isNotEmpty) return paquetesSeleccionados;
+    return paquetes.where((p) => p.id == expandido).toList();
+  }
+
   List<UbicacionMuelle> get ubicacionesVisibles {
     final q = queryUbicacion.trim().toLowerCase();
     if (q.isEmpty) return ubicaciones;

@@ -7,7 +7,9 @@ import 'package:wms_app/features/packing_pedido/domain/entities/packing_catalogo
 import 'package:wms_app/features/packing_pedido/domain/entities/pedido_pack.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/asignar_responsable_pack_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/get_config_packing_usecase.dart';
+import 'package:wms_app/features/packing_pedido/domain/repositories/packing_pedido_repository.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/get_pedidos_pack_local_usecase.dart';
+import 'package:wms_app/features/packing_pedido/domain/usecases/registrar_tiempo_pack_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/sync_pedidos_pack_usecase.dart';
 import 'package:wms_app/features/packing_pedido/presentation/bloc/common/packing_operacion.dart';
 
@@ -23,18 +25,29 @@ class PackingPedidoListBloc
   final GetPedidosPackLocalUseCase getPedidosLocal;
   final AsignarResponsablePackUseCase asignarResponsable;
   final GetConfigPackingUseCase getConfig;
+  final RegistrarTiempoPackUseCase registrarTiempo;
 
   PackingPedidoListBloc(
     this.syncPedidos,
     this.getPedidosLocal,
     this.asignarResponsable,
     this.getConfig,
+    this.registrarTiempo,
   ) : super(const PackingPedidoListState()) {
     on<ListaPackIniciada>(_onIniciada, transformer: droppable());
     on<ListaPackSincronizada>(_onSincronizada, transformer: droppable());
     on<BusquedaPedidoPackCambiada>(_onBusqueda);
     on<OrdenPedidosPackCambiado>(_onOrden);
+    on<PropietarioPackFiltrado>(
+      (e, emit) => emit(
+        state.copyWith(
+          propietario: e.propietario,
+          limpiarPropietario: e.propietario == null,
+        ),
+      ),
+    );
     on<ResponsablePackAsignado>(_onAsignar, transformer: droppable());
+    on<InicioPedidoPackRegistrado>(_onInicio, transformer: droppable());
   }
 
   Future<void> _onIniciada(
@@ -132,9 +145,39 @@ class PackingPedidoListBloc
           pedidos: [
             for (final p in state.pedidos) p.id == pedido.id ? pedido : p,
           ],
-          pedidoAsignado: pedido,
-          operacion: state.operacion.exito('asignar'),
+          pedidoAbierto: pedido,
+          operacion: state.operacion.exito('abrir'),
         ),
+      ),
+    );
+  }
+
+  Future<void> _onInicio(
+    InicioPedidoPackRegistrado event,
+    Emitter<PackingPedidoListState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        operacion: state.operacion.procesar('inicio', 'Iniciando pedido...'),
+      ),
+    );
+    // El tiempo es informativo: si no se puede enviar, el pedido igual se abre.
+    await registrarTiempo(
+      RegistrarTiempoPackParams(
+        pedidoId: event.pedido.id,
+        marca: MarcaTiempoPack.inicio,
+      ),
+    );
+    final local = await getPedidosLocal(NoParams());
+    final pedidos = local.getOrElse((_) => state.pedidos);
+    final abierto =
+        pedidos.where((p) => p.id == event.pedido.id).firstOrNull ??
+        event.pedido;
+    emit(
+      state.copyWith(
+        pedidos: pedidos,
+        pedidoAbierto: abierto,
+        operacion: state.operacion.exito('abrir'),
       ),
     );
   }

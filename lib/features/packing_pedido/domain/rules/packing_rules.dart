@@ -1,3 +1,4 @@
+import 'package:wms_app/features/packing_pedido/domain/entities/packing_resultados.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/paquete_packing.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/producto_packing.dart';
 
@@ -104,6 +105,20 @@ class PackingRules {
     if (sinCantidad.isNotEmpty) {
       return 'El producto ${sinCantidad.first.productName} no tiene cantidad '
           'para empacar';
+    }
+    return null;
+  }
+
+  /// null si el pedido se puede validar; si no, el motivo. No se valida con
+  /// líneas separadas sin empacar ni sin ninguna caja.
+  static String? validarCierre(PedidoPackDetalle detalle) {
+    if (detalle.pedido.isTerminate) return 'El pedido ya está terminado';
+    if (detalle.listos.isNotEmpty) {
+      return 'No se puede confirmar un pedido con productos listos sin '
+          'empacar';
+    }
+    if (detalle.paquetes.isEmpty) {
+      return 'No se puede confirmar un pedido sin paquetes';
     }
     return null;
   }

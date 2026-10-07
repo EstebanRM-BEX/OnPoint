@@ -1186,6 +1186,14 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i311.SaveUserSession>(
       () => _i311.SaveUserSession(gh<_i889.LoginRepository>()),
     );
+    gh.factory<_i694.PackingPedidoDetailBloc>(
+      () => _i694.PackingPedidoDetailBloc(
+        gh<_i454.GetPedidoPackDetalleUseCase>(),
+        gh<_i167.CrearPaqueteUseCase>(),
+        gh<_i425.DeshacerSeparacionUseCase>(),
+        gh<_i786.GetConfigPackingUseCase>(),
+      ),
+    );
     gh.factory<_i782.PackingConfirmBloc>(
       () => _i782.PackingConfirmBloc(gh<_i7.ValidarPedidoPackUseCase>()),
     );
@@ -1237,25 +1245,10 @@ extension GetItInjectableX on _i174.GetIt {
         printReport: gh<_i152.PrintReport>(),
       ),
     );
-    gh.factory<_i663.PackingPedidoListBloc>(
-      () => _i663.PackingPedidoListBloc(
-        gh<_i621.SyncPedidosPackUseCase>(),
-        gh<_i793.GetPedidosPackLocalUseCase>(),
-        gh<_i306.AsignarResponsablePackUseCase>(),
-        gh<_i786.GetConfigPackingUseCase>(),
-      ),
-    );
     gh.factory<_i672.TransferenciaMultiusuarioPoolBloc>(
       () => _i672.TransferenciaMultiusuarioPoolBloc(
         fetchTransferenciaPoolUseCase:
             gh<_i373.FetchTransferenciaPoolUseCase>(),
-      ),
-    );
-    gh.factory<_i694.PackingPedidoDetailBloc>(
-      () => _i694.PackingPedidoDetailBloc(
-        gh<_i454.GetPedidoPackDetalleUseCase>(),
-        gh<_i167.CrearPaqueteUseCase>(),
-        gh<_i425.DeshacerSeparacionUseCase>(),
       ),
     );
     gh.factory<_i1070.LoginBloc>(
@@ -1267,6 +1260,15 @@ extension GetItInjectableX on _i174.GetIt {
             gh<_i744.FetchTransferenciaLotesProductoUseCase>(),
         createTransferenciaLoteUseCase:
             gh<_i833.CreateTransferenciaLoteUseCase>(),
+      ),
+    );
+    gh.factory<_i663.PackingPedidoListBloc>(
+      () => _i663.PackingPedidoListBloc(
+        gh<_i621.SyncPedidosPackUseCase>(),
+        gh<_i793.GetPedidosPackLocalUseCase>(),
+        gh<_i306.AsignarResponsablePackUseCase>(),
+        gh<_i786.GetConfigPackingUseCase>(),
+        gh<_i339.RegistrarTiempoPackUseCase>(),
       ),
     );
     gh.factory<_i996.TransferenciaMultiusuarioMyClaimsBloc>(

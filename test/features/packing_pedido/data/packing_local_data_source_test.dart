@@ -21,6 +21,10 @@ Map<String, dynamic> pedidoJson({
   'priority': '0',
   'location_dest_id': 30,
   'location_dest_name': 'WH/Salida',
+  'warehouse_id': 3,
+  'proveedor': 'Proveedor X',
+  'propietario': false,
+  'location_name_cluster': 'CL-1',
   'lista_productos': productos,
   if (paquetes != null) 'lista_paquetes': paquetes,
 };
@@ -86,6 +90,12 @@ void main() {
 
       final d = await detalle();
       expect(d.pedido.name, 'WH/PACK/10');
+      expect(d.pedido.warehouseId, 3);
+      expect(d.pedido.proveedor, 'Proveedor X');
+      expect(d.pedido.propietario, '');
+      expect(d.pedido.locationNameCluster, 'CL-1');
+      expect(d.barcodes.map((b) => b.barcode), contains('CAJA12-500'));
+      expect(d.porHacerConCodigo('ALT-501')?.idProduct, 501);
       expect(d.porHacer, hasLength(2));
       expect(d.porHacer.first.productName, 'Producto 500');
       expect(d.porHacer.first.locationName, 'WH/Stock/A1');

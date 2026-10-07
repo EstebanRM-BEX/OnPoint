@@ -176,8 +176,15 @@ class PackingPedidoLocalDataSourceImpl implements PackingPedidoLocalDataSource {
             return c != 0 ? c : a.id - b.id;
           });
 
+        final barcodes = (await db.query(
+          _tBarcodes,
+          where: 'pedido_id = ?',
+          whereArgs: [pedidoId],
+        )).map(PackingDbMappers.barcodeFromRow).toList();
+
         return PedidoPackDetalle(
           pedido: pedido,
+          barcodes: barcodes,
           porHacer: porHacer,
           listos: productos.where((p) => p.isListo).toList(),
           empacados: empacados,

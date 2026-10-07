@@ -252,7 +252,7 @@ class PackingPackagesBloc
     final r = await asignarUbicacion(
       AsignarUbicacionPaquetesParams(
         pedidoId: pedido.id,
-        paquetes: state.paquetesSeleccionados,
+        paquetes: state.paquetesDestino,
         ubicacion: ubicacion,
       ),
     );

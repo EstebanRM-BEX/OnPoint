@@ -25,7 +25,17 @@ class PedidoPack extends Equatable {
   final int? locationDestId;
   final String locationDestName;
   final String locationDestBarcode;
+  final int? warehouseId;
   final String warehouseName;
+
+  /// Pedidos de cluster: la ubicación sale de estos campos.
+  final String locationNameCluster;
+  final String locationBarcodeCluster;
+
+  final String proveedor;
+  final String propietario;
+  final bool manejoPropietario;
+  final int cantidadProductos;
 
   final int? responsableId;
   final String responsable;
@@ -67,7 +77,14 @@ class PedidoPack extends Equatable {
     this.locationDestId,
     this.locationDestName = '',
     this.locationDestBarcode = '',
+    this.warehouseId,
     this.warehouseName = '',
+    this.locationNameCluster = '',
+    this.locationBarcodeCluster = '',
+    this.proveedor = '',
+    this.propietario = '',
+    this.manejoPropietario = false,
+    this.cantidadProductos = 0,
     this.responsableId,
     this.responsable = '',
     this.backorderId,
@@ -90,8 +107,27 @@ class PedidoPack extends Equatable {
   bool get esPrioritario => priority == '1';
   bool get tieneBackorder => backorderName.isNotEmpty;
   bool get tieneResponsable => responsableId != null && responsableId != 0;
+  bool get iniciado => startTimeTransfer.isNotEmpty;
+
+  /// Ubicación a mostrar: la de cluster en pedidos cluster.
+  String get ubicacionVisible => esCluster ? locationNameCluster : locationName;
+
+  /// El escáner de la lista abre el pedido por nombre, referencia, zona de
+  /// entrega o barcode de ubicación.
+  bool coincideConEscaneo(String valor) {
+    final v = valor.trim().toLowerCase();
+    if (v.isEmpty) return false;
+    return [
+      name,
+      referencia,
+      zonaEntrega,
+      locationBarcode,
+      locationBarcodeCluster,
+    ].any((c) => c.isNotEmpty && c.toLowerCase() == v);
+  }
 
   PedidoPack copyWith({
+    int? numeroPaquetes,
     int? responsableId,
     String? responsable,
     String? startTimeTransfer,
@@ -118,7 +154,14 @@ class PedidoPack extends Equatable {
       locationDestId: locationDestId,
       locationDestName: locationDestName,
       locationDestBarcode: locationDestBarcode,
+      warehouseId: warehouseId,
       warehouseName: warehouseName,
+      locationNameCluster: locationNameCluster,
+      locationBarcodeCluster: locationBarcodeCluster,
+      proveedor: proveedor,
+      propietario: propietario,
+      manejoPropietario: manejoPropietario,
+      cantidadProductos: cantidadProductos,
       responsableId: responsableId ?? this.responsableId,
       responsable: responsable ?? this.responsable,
       backorderId: backorderId,
@@ -126,7 +169,7 @@ class PedidoPack extends Equatable {
       createBackorder: createBackorder,
       numeroLineas: numeroLineas,
       numeroItems: numeroItems,
-      numeroPaquetes: numeroPaquetes,
+      numeroPaquetes: numeroPaquetes ?? this.numeroPaquetes,
       orderTms: orderTms,
       zonaEntrega: zonaEntrega,
       zonaEntregaTms: zonaEntregaTms,

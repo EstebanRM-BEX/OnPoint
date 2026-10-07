@@ -13,6 +13,7 @@ class PackingPedidoDetailState extends Equatable {
   /// PKs de las líneas seleccionadas para empacar (de "Por hacer" o "Listos").
   final Set<int> seleccionados;
   final bool isSticker;
+  final ConfigPackingUsuario config;
   final PackingOperacion operacion;
 
   const PackingPedidoDetailState({
@@ -22,6 +23,7 @@ class PackingPedidoDetailState extends Equatable {
     this.query = '',
     this.seleccionados = const {},
     this.isSticker = false,
+    this.config = const ConfigPackingUsuario(),
     this.operacion = PackingOperacion.ninguna,
   });
 
@@ -47,6 +49,7 @@ class PackingPedidoDetailState extends Equatable {
     String? query,
     Set<int>? seleccionados,
     bool? isSticker,
+    ConfigPackingUsuario? config,
     PackingOperacion? operacion,
   }) {
     return PackingPedidoDetailState(
@@ -56,6 +59,7 @@ class PackingPedidoDetailState extends Equatable {
       query: query ?? this.query,
       seleccionados: seleccionados ?? this.seleccionados,
       isSticker: isSticker ?? this.isSticker,
+      config: config ?? this.config,
       operacion: operacion ?? this.operacion,
     );
   }
@@ -68,6 +72,7 @@ class PackingPedidoDetailState extends Equatable {
     query,
     seleccionados,
     isSticker,
+    config,
     operacion,
   ];
 }

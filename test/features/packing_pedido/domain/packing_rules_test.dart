@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wms_app/features/packing_pedido/domain/entities/packing_catalogos.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/packing_resultados.dart';
+import 'package:wms_app/features/packing_pedido/domain/entities/pedido_pack.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/producto_packing.dart';
 import 'package:wms_app/features/packing_pedido/domain/rules/packing_rules.dart';
 
@@ -250,6 +252,79 @@ void main() {
       expect(p.coincideCon('pack-5'), isTrue);
       expect(p.coincideCon('PACK0001'), isTrue);
       expect(p.coincideCon(''), isFalse);
+    });
+  });
+
+  group('validarCierre', () {
+    test('pide cajas y que no queden listos', () {
+      expect(
+        PackingRules.validarCierre(const PedidoPackDetalle(pedido: pedidoTest)),
+        contains('sin paquetes'),
+      );
+      expect(
+        PackingRules.validarCierre(
+          PedidoPackDetalle(
+            pedido: pedidoTest,
+            paquetes: [paqueteTest()],
+            listos: [productoTest(estado: EstadoProductoPacking.listo)],
+          ),
+        ),
+        contains('listos'),
+      );
+      expect(
+        PackingRules.validarCierre(
+          PedidoPackDetalle(pedido: pedidoTest, paquetes: [paqueteTest()]),
+        ),
+        isNull,
+      );
+    });
+  });
+
+  group('PedidoPackDetalle', () {
+    test('porHacerConCodigo: barcode, código o alterno del producto', () {
+      final p = productoTest();
+      final d = PedidoPackDetalle(
+        pedido: pedidoTest,
+        porHacer: [p],
+        barcodes: const [
+          BarcodeProductoPacking(idMove: 1, idProduct: 500, barcode: 'CAJA12'),
+        ],
+      );
+      expect(d.porHacerConCodigo('7701234'), p);
+      expect(d.porHacerConCodigo('pa-01'), p);
+      expect(d.porHacerConCodigo('caja12'), p);
+      expect(d.porHacerConCodigo('nada'), isNull);
+    });
+
+    test('progresoEmpacado sobre las unidades del pedido', () {
+      final d = PedidoPackDetalle(
+        pedido: const PedidoPack(id: 10, numeroItems: 20),
+        empacados: [
+          productoTest(
+            estado: EstadoProductoPacking.empacado,
+            quantity: 5,
+            quantitySeparate: 5,
+            certificado: true,
+          ),
+        ],
+      );
+      expect(d.progresoEmpacado, 25);
+    });
+  });
+
+  group('PedidoPack', () {
+    test('coincideConEscaneo y ubicación visible de cluster', () {
+      const p = PedidoPack(
+        id: 1,
+        name: 'WH/PACK/1',
+        zonaEntrega: 'ZONA-NORTE',
+        configPacking: 'cluster',
+        locationName: 'A',
+        locationNameCluster: 'CL-1',
+      );
+      expect(p.coincideConEscaneo('zona-norte'), isTrue);
+      expect(p.coincideConEscaneo(''), isFalse);
+      expect(p.ubicacionVisible, 'CL-1');
     });
   });
 }

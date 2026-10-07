@@ -105,6 +105,15 @@ class PackingScanBloc extends Bloc<PackingScanEvent, PackingScanState> {
         novedades: novedades.getOrElse((_) => const []),
       ),
     );
+
+    if (event.productoEscaneado) {
+      if (state.paso == PasoScanPack.ubicacion) {
+        await _confirmarUbicacion(emit, state.producto!);
+      }
+      if (state.paso == PasoScanPack.producto) {
+        await _confirmarProducto(emit, state.producto!);
+      }
+    }
   }
 
   static PasoScanPack _pasoDe(ProductoPacking p) {

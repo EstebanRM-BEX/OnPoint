@@ -9,10 +9,14 @@ sealed class PackingScanEvent extends Equatable {
 
 class ScanPackIniciado extends PackingScanEvent {
   final ProductoPacking producto;
-  const ScanPackIniciado(this.producto);
+
+  /// El producto se escaneó desde "Por hacer": ubicación y producto quedan
+  /// confirmados y se arranca en la cantidad.
+  final bool productoEscaneado;
+  const ScanPackIniciado(this.producto, {this.productoEscaneado = false});
 
   @override
-  List<Object?> get props => [producto];
+  List<Object?> get props => [producto, productoEscaneado];
 }
 
 /// Lectura del escáner; se interpreta según el paso actual.

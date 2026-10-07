@@ -2,7 +2,9 @@ import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
+import 'package:wms_app/features/packing_pedido/domain/entities/packing_resultados.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/pedido_pack.dart';
+import 'package:wms_app/features/packing_pedido/domain/rules/packing_rules.dart';
 import 'package:wms_app/features/packing_pedido/domain/failures/packing_failures.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/validar_pedido_pack_usecase.dart';
 import 'package:wms_app/features/packing_pedido/presentation/bloc/common/packing_operacion.dart';
@@ -26,12 +28,19 @@ class PackingConfirmBloc
   Future<void> _onValidar(
     ValidacionPackSolicitada event,
     Emitter<PackingConfirmState> emit,
-  ) => _validar(
-    emit,
-    event.pedido,
-    event.crearBackorder,
-    aceptarVencidos: false,
-  );
+  ) async {
+    final error = PackingRules.validarCierre(event.detalle);
+    if (error != null) {
+      emit(state.copyWith(operacion: state.operacion.error('validar', error)));
+      return;
+    }
+    await _validar(
+      emit,
+      event.detalle.pedido,
+      event.crearBackorder,
+      aceptarVencidos: false,
+    );
+  }
 
   Future<void> _onAceptarVencidos(
     VencidosPackAceptados event,

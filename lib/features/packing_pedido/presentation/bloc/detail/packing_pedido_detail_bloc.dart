@@ -2,11 +2,14 @@ import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
+import 'package:wms_app/core/usecases/usecase.dart';
 import 'package:wms_app/features/packaging_types/domain/entities/packaging_type.dart';
+import 'package:wms_app/features/packing_pedido/domain/entities/packing_catalogos.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/packing_resultados.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/producto_packing.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/crear_paquete_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/deshacer_separacion_usecase.dart';
+import 'package:wms_app/features/packing_pedido/domain/usecases/get_config_packing_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/get_pedido_pack_detalle_usecase.dart';
 import 'package:wms_app/features/packing_pedido/presentation/bloc/common/packing_operacion.dart';
 
@@ -23,11 +26,13 @@ class PackingPedidoDetailBloc
   final GetPedidoPackDetalleUseCase getDetalle;
   final CrearPaqueteUseCase crearPaquete;
   final DeshacerSeparacionUseCase deshacerSeparacion;
+  final GetConfigPackingUseCase getConfig;
 
   PackingPedidoDetailBloc(
     this.getDetalle,
     this.crearPaquete,
     this.deshacerSeparacion,
+    this.getConfig,
   ) : super(const PackingPedidoDetailState()) {
     on<DetallePackIniciado>(_onIniciado, transformer: restartable());
     on<DetallePackRecargado>(_onRecargado, transformer: restartable());
@@ -49,6 +54,8 @@ class PackingPedidoDetailBloc
         status: DetallePackStatus.cargando,
       ),
     );
+    final config = await getConfig(NoParams());
+    emit(state.copyWith(config: config.getOrElse((_) => state.config)));
     await _cargar(emit);
   }
 

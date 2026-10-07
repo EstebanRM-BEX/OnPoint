@@ -28,6 +28,8 @@ import 'package:wms_app/features/packing_pedido/domain/usecases/get_ubicaciones_
 import 'package:wms_app/features/packing_pedido/domain/usecases/leer_temperatura_ia_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/marcar_producto_ok_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/marcar_ubicacion_ok_usecase.dart';
+import 'package:wms_app/features/packing_pedido/domain/usecases/registrar_tiempo_pack_usecase.dart';
+import 'package:wms_app/features/packing_pedido/domain/repositories/packing_pedido_repository.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/separar_producto_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/sync_pedidos_pack_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/validar_pedido_pack_usecase.dart';
@@ -84,11 +86,19 @@ class MockAsignarUbic extends Mock implements AsignarUbicacionPaquetesUseCase {}
 
 class MockValidar extends Mock implements ValidarPedidoPackUseCase {}
 
+class MockTiempo extends Mock implements RegistrarTiempoPackUseCase {}
+
 void main() {
   setUpAll(() {
     registerFallbackValue(NoParams());
     registerFallbackValue(const SyncPedidosPackParams(isLoadingDialog: false));
     registerFallbackValue(const AsignarResponsablePackParams(pedidoId: 0));
+    registerFallbackValue(
+      const RegistrarTiempoPackParams(
+        pedidoId: 0,
+        marca: MarcaTiempoPack.inicio,
+      ),
+    );
     registerFallbackValue(const GetPedidoPackDetalleParams(pedidoId: 0));
     registerFallbackValue(
       CrearPaqueteParams(
@@ -142,6 +152,7 @@ void main() {
     late MockGetLocal getLocal;
     late MockAsignar asignar;
     late MockConfig config;
+    late MockTiempo tiempo;
 
     const a = PedidoPack(
       id: 1,
@@ -156,6 +167,7 @@ void main() {
       getLocal = MockGetLocal();
       asignar = MockAsignar();
       config = MockConfig();
+      tiempo = MockTiempo();
       when(() => config(any())).thenAnswer(
         (_) async =>
             const Right(ConfigPackingUsuario(manualQuantityPack: true)),
@@ -163,7 +175,7 @@ void main() {
     });
 
     PackingPedidoListBloc build() =>
-        PackingPedidoListBloc(sync, getLocal, asignar, config);
+        PackingPedidoListBloc(sync, getLocal, asignar, config, tiempo);
 
     blocTest<PackingPedidoListBloc, PackingPedidoListState>(
       'sin pedidos locales sincroniza con Odoo',
@@ -232,7 +244,8 @@ void main() {
       ),
       act: (bloc) => bloc.add(const ResponsablePackAsignado(1)),
       verify: (bloc) {
-        expect(bloc.state.pedidoAsignado?.responsableId, 7);
+        expect(bloc.state.pedidoAbierto?.responsableId, 7);
+        expect(bloc.state.operacion.accion, 'abrir');
         expect(bloc.state.pedidos.first.responsable, 'Op');
         expect(bloc.state.operacion.tipo, TipoOperacion.exito);
       },
@@ -248,6 +261,27 @@ void main() {
       verify: (bloc) =>
           expect(bloc.state.operacion.tipo, TipoOperacion.sesionExpirada),
     );
+
+    blocTest<PackingPedidoListBloc, PackingPedidoListState>(
+      'iniciar pedido registra el tiempo y lo abre aunque el envío falle',
+      build: build,
+      seed: () => const PackingPedidoListState(pedidos: [a]),
+      setUp: () {
+        when(
+          () => tiempo(any()),
+        ).thenAnswer((_) async => const Left(NetworkFailure('sin red')));
+        when(() => getLocal(any())).thenAnswer(
+          (_) async =>
+              Right([a.copyWith(startTimeTransfer: '2026-10-07 08:00:00')]),
+        );
+      },
+      act: (bloc) => bloc.add(const InicioPedidoPackRegistrado(a)),
+      verify: (bloc) {
+        expect(bloc.state.pedidoAbierto?.iniciado, isTrue);
+        expect(bloc.state.operacion.accion, 'abrir');
+        expect(bloc.state.operacion.tipo, TipoOperacion.exito);
+      },
+    );
   });
 
   // ── Detalle ───────────────────────────────────────────────────────────────
@@ -256,6 +290,7 @@ void main() {
     late MockDetalle getDetalle;
     late MockCrear crear;
     late MockDeshacer deshacer;
+    late MockConfig config;
 
     final porHacer = productoTest(id: 1);
     final listo = productoTest(
@@ -274,11 +309,15 @@ void main() {
       getDetalle = MockDetalle();
       crear = MockCrear();
       deshacer = MockDeshacer();
+      config = MockConfig();
+      when(() => config(any())).thenAnswer(
+        (_) async => const Right(ConfigPackingUsuario(scanProduct: true)),
+      );
       when(() => getDetalle(any())).thenAnswer((_) async => Right(detalle));
     });
 
     PackingPedidoDetailBloc build() =>
-        PackingPedidoDetailBloc(getDetalle, crear, deshacer);
+        PackingPedidoDetailBloc(getDetalle, crear, deshacer, config);
 
     blocTest<PackingPedidoDetailBloc, PackingPedidoDetailState>(
       'abrir un pedido carga el detalle y limpia lo del anterior',
@@ -580,6 +619,19 @@ void main() {
     );
 
     blocTest<PackingScanBloc, PackingScanState>(
+      'producto escaneado desde por hacer arranca en la cantidad',
+      build: build,
+      act: (bloc) =>
+          bloc.add(ScanPackIniciado(linea(), productoEscaneado: true)),
+      wait: const Duration(milliseconds: 10),
+      verify: (bloc) {
+        expect(bloc.state.paso, PasoScanPack.cantidad);
+        verify(() => ubicOk(any())).called(1);
+        verify(() => prodOk(any())).called(1);
+      },
+    );
+
+    blocTest<PackingScanBloc, PackingScanState>(
       'sin permiso no deja confirmar la ubicación a mano',
       build: build,
       act: (bloc) async {
@@ -726,6 +778,10 @@ void main() {
 
   group('PackingConfirmBloc', () {
     late MockValidar validar;
+    final detalleCerrable = PedidoPackDetalle(
+      pedido: pedidoTest,
+      paquetes: [paqueteTest()],
+    );
 
     setUp(() => validar = MockValidar());
 
@@ -747,7 +803,7 @@ void main() {
       },
       act: (bloc) async {
         bloc.add(
-          const ValidacionPackSolicitada(pedidoTest, crearBackorder: true),
+          ValidacionPackSolicitada(detalleCerrable, crearBackorder: true),
         );
         await Future<void>.delayed(Duration.zero);
         expect(bloc.state.vencidosPendientes, isNotNull);
@@ -773,12 +829,38 @@ void main() {
         () => validar(any()),
       ).thenAnswer((_) async => const Left(ServerFailure('no se pudo'))),
       act: (bloc) => bloc.add(
-        const ValidacionPackSolicitada(pedidoTest, crearBackorder: false),
+        ValidacionPackSolicitada(detalleCerrable, crearBackorder: false),
       ),
       verify: (bloc) {
         expect(bloc.state.validado, isFalse);
         expect(bloc.state.vencidosPendientes, isNull);
         expect(bloc.state.operacion.mensaje, 'no se pudo');
+      },
+    );
+
+    blocTest<PackingConfirmBloc, PackingConfirmState>(
+      'con listos sin empacar o sin cajas no llega a Odoo',
+      build: () => PackingConfirmBloc(validar),
+      act: (bloc) => bloc
+        ..add(
+          ValidacionPackSolicitada(
+            PedidoPackDetalle(
+              pedido: pedidoTest,
+              paquetes: [paqueteTest()],
+              listos: [productoTest(estado: EstadoProductoPacking.listo)],
+            ),
+            crearBackorder: false,
+          ),
+        )
+        ..add(
+          const ValidacionPackSolicitada(
+            PedidoPackDetalle(pedido: pedidoTest),
+            crearBackorder: false,
+          ),
+        ),
+      verify: (bloc) {
+        expect(bloc.state.operacion.mensaje, contains('sin paquetes'));
+        verifyNever(() => validar(any()));
       },
     );
   });

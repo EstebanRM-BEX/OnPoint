@@ -8,35 +8,43 @@ class PackingPedidoListState extends Equatable {
   final ListaPackStatus status;
   final List<PedidoPack> pedidos;
   final String query;
+
+  /// Filtro por propietario (null = todos).
+  final String? propietario;
   final OrdenPedidosPack orden;
   final bool ascendente;
   final bool sincronizando;
   final bool needUpdateVersion;
   final ConfigPackingUsuario config;
 
-  /// Pedido recién asignado al usuario: la UI navega al detalle.
-  final PedidoPack? pedidoAsignado;
+  /// Pedido listo para abrir (asignado o con el inicio registrado): la UI
+  /// navega al detalle cuando la operación 'abrir' termina en éxito.
+  final PedidoPack? pedidoAbierto;
   final PackingOperacion operacion;
 
   const PackingPedidoListState({
     this.status = ListaPackStatus.inicial,
     this.pedidos = const [],
     this.query = '',
+    this.propietario,
     this.orden = OrdenPedidosPack.prioridad,
     this.ascendente = false,
     this.sincronizando = false,
     this.needUpdateVersion = false,
     this.config = const ConfigPackingUsuario(),
-    this.pedidoAsignado,
+    this.pedidoAbierto,
     this.operacion = PackingOperacion.ninguna,
   });
 
   /// Pedidos filtrados por [query] (sin tildes) y ordenados por [orden].
   List<PedidoPack> get visibles {
     final q = normalizar(query);
+    final base = pedidos
+        .where((p) => !p.isTerminate)
+        .where((p) => propietario == null || p.propietario == propietario);
     final filtrados = q.isEmpty
-        ? [...pedidos]
-        : pedidos.where((p) {
+        ? base.toList()
+        : base.where((p) {
             return normalizar(p.name).contains(q) ||
                 normalizar(p.referencia).contains(q) ||
                 normalizar(p.contactoName).contains(q) ||
@@ -58,6 +66,15 @@ class PackingPedidoListState extends Equatable {
     return filtrados;
   }
 
+  /// Propietarios de los pedidos activos, para el filtro.
+  List<String> get propietarios =>
+      (pedidos
+          .where((p) => !p.isTerminate && p.propietario.isNotEmpty)
+          .map((p) => p.propietario)
+          .toSet()
+          .toList()
+        ..sort());
+
   static String normalizar(String s) {
     const tildes = {
       'á': 'a',
@@ -75,24 +92,29 @@ class PackingPedidoListState extends Equatable {
     ListaPackStatus? status,
     List<PedidoPack>? pedidos,
     String? query,
+    String? propietario,
+    bool limpiarPropietario = false,
     OrdenPedidosPack? orden,
     bool? ascendente,
     bool? sincronizando,
     bool? needUpdateVersion,
     ConfigPackingUsuario? config,
-    PedidoPack? pedidoAsignado,
+    PedidoPack? pedidoAbierto,
     PackingOperacion? operacion,
   }) {
     return PackingPedidoListState(
       status: status ?? this.status,
       pedidos: pedidos ?? this.pedidos,
       query: query ?? this.query,
+      propietario: limpiarPropietario
+          ? null
+          : (propietario ?? this.propietario),
       orden: orden ?? this.orden,
       ascendente: ascendente ?? this.ascendente,
       sincronizando: sincronizando ?? this.sincronizando,
       needUpdateVersion: needUpdateVersion ?? this.needUpdateVersion,
       config: config ?? this.config,
-      pedidoAsignado: pedidoAsignado ?? this.pedidoAsignado,
+      pedidoAbierto: pedidoAbierto ?? this.pedidoAbierto,
       operacion: operacion ?? this.operacion,
     );
   }
@@ -102,12 +124,13 @@ class PackingPedidoListState extends Equatable {
     status,
     pedidos,
     query,
+    propietario,
     orden,
     ascendente,
     sincronizando,
     needUpdateVersion,
     config,
-    pedidoAsignado,
+    pedidoAbierto,
     operacion,
   ];
 }
