@@ -383,10 +383,7 @@ class PackingScanBloc extends Bloc<PackingScanEvent, PackingScanState> {
       state.copyWith(
         status: ScanPackStatus.procesando,
         limpiarDecision: true,
-        operacion: state.operacion.procesar(
-          'dividir',
-          'Dividiendo producto...',
-        ),
+        operacion: state.operacion.procesar('dividir', 'Enviando producto...'),
       ),
     );
     final r = await dividirProducto(
@@ -426,7 +423,7 @@ class PackingScanBloc extends Bloc<PackingScanEvent, PackingScanState> {
         status: ScanPackStatus.procesando,
         limpiarDecision: true,
         editandoCantidad: false,
-        operacion: state.operacion.procesar('separar', 'Separando producto...'),
+        operacion: state.operacion.procesar('separar', 'Enviando producto...'),
       ),
     );
     final r = await separarProducto(

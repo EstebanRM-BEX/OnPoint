@@ -12,7 +12,7 @@ import 'package:wms_app/features/packing_pedido/presentation/bloc/scan/packing_s
 /// Registro de temperatura tras separar un producto que la maneja, con el
 /// diseño del módulo anterior: con `showPhotoTemperature` se toma la foto,
 /// se analiza con IA y se envía; si no, se digita. No se puede cerrar sin
-/// enviarla; se cierra solo cuando el envío termina bien.
+/// enviarla; la pantalla de escaneo lo cierra cuando el envío termina bien.
 Future<void> showTemperaturaPackDialog(
   BuildContext context,
   PackingScanBloc bloc,
@@ -25,13 +25,9 @@ Future<void> showTemperaturaPackDialog(
       value: bloc,
       child: PopScope(
         canPop: false,
-        child: BlocListener<PackingScanBloc, PackingScanState>(
-          listenWhen: (a, b) => a.requiereTemperatura && !b.requiereTemperatura,
-          listener: (dialogContext, _) => Navigator.of(dialogContext).pop(),
-          child: conFoto
-              ? const _TemperaturaFotoDialog()
-              : const _TemperaturaManualDialog(),
-        ),
+        child: conFoto
+            ? const _TemperaturaFotoDialog()
+            : const _TemperaturaManualDialog(),
       ),
     ),
   );

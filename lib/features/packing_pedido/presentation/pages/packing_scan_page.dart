@@ -101,6 +101,17 @@ class _ScanViewState extends State<_ScanView> {
 
   void _leer(String valor) => _bloc.add(ScanPackLeido(valor));
 
+  /// Vuelve al detalle cerrando antes cualquier diálogo que quede encima
+  /// (p. ej. el de temperatura).
+  void _cerrar() {
+    final ruta = ModalRoute.of(context);
+    final navigator = Navigator.of(context);
+    if (ruta != null && !ruta.isCurrent) {
+      navigator.popUntil((r) => r == ruta);
+    }
+    navigator.pop(true);
+  }
+
   void _aplicar() {
     final s = _bloc.state;
     if (s.editandoCantidad) {
@@ -155,10 +166,6 @@ class _ScanViewState extends State<_ScanView> {
           listener: (context, _) => showTemperaturaPackDialog(context, _bloc),
         ),
         BlocListener<PackingScanBloc, PackingScanState>(
-          listenWhen: (a, b) => !a.finalizado && b.finalizado,
-          listener: (context, _) => Navigator.of(context).pop(true),
-        ),
-        BlocListener<PackingScanBloc, PackingScanState>(
           listenWhen: (a, b) =>
               a.paso != b.paso || a.editandoCantidad != b.editandoCantidad,
           listener: (_, s) {
@@ -173,6 +180,14 @@ class _ScanViewState extends State<_ScanView> {
       ],
       child: PackingOperacionListener<PackingScanBloc, PackingScanState>(
         operacion: (s) => s.operacion,
+        // Separar es local y rápido: el "Enviando producto..." se ve un
+        // instante antes de cerrar.
+        conDuracionMinima: const {'separar', 'dividir'},
+        // Se cierra recién con el diálogo de carga cerrado y solo si todo
+        // salió bien (separado/dividido y, si aplica, temperatura enviada).
+        onExito: (context, state, _) {
+          if (state.finalizado) _cerrar();
+        },
         exitosSilenciosos: const {
           'separar',
           'imagenNovedad',

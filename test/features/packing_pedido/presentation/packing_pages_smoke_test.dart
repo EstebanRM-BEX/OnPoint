@@ -15,6 +15,7 @@ import 'package:wms_app/features/packing_pedido/presentation/bloc/confirm/packin
 import 'package:wms_app/features/packing_pedido/presentation/bloc/detail/packing_pedido_detail_bloc.dart';
 import 'package:wms_app/features/packing_pedido/presentation/bloc/list/packing_pedido_list_bloc.dart';
 import 'package:wms_app/features/packing_pedido/presentation/bloc/packages/packing_packages_bloc.dart';
+import 'package:wms_app/features/packing_pedido/presentation/bloc/common/packing_operacion.dart';
 import 'package:wms_app/features/packing_pedido/presentation/bloc/scan/packing_scan_bloc.dart';
 import 'package:wms_app/features/packing_pedido/presentation/pages/packing_pedido_detail_page.dart';
 import 'package:wms_app/features/packing_pedido/presentation/pages/packing_pedido_list_page.dart';
@@ -209,4 +210,67 @@ void main() {
       ..clear()
       ..clearLiveImages();
   });
+
+  testWidgets(
+    'aplicar cantidad: muestra "Enviando producto...", lo cierra y vuelve',
+    (t) async {
+      final bloc = MockScanBloc();
+      final base = PackingScanState(
+        status: ScanPackStatus.listo,
+        producto: productoTest(quantity: 2),
+        paso: PasoScanPack.cantidad,
+        cantidad: 2,
+      );
+      const ninguna = PackingOperacion.ninguna;
+      final procesando = ninguna.procesar('separar', 'Enviando producto...');
+      final enviando = base.copyWith(
+        status: ScanPackStatus.procesando,
+        operacion: procesando,
+      );
+      final listo = base.copyWith(
+        status: ScanPackStatus.listo,
+        paso: PasoScanPack.terminado,
+        resultado: ResultadoScanPack.separado,
+        operacion: procesando.exito('separar'),
+      );
+      whenListen(
+        bloc,
+        Stream.fromIterable([enviando, listo]),
+        initialState: base,
+      );
+      registrar<PackingScanBloc>(() => bloc);
+
+      bool? resultado;
+      await t.pumpWidget(
+        conRed(
+          Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () async {
+                resultado = await Navigator.of(context).push<bool>(
+                  MaterialPageRoute(
+                    builder: (_) => PackingScanPage(producto: productoTest()),
+                  ),
+                );
+              },
+              child: const Text('abrir'),
+            ),
+          ),
+        ),
+      );
+      await t.tap(find.text('abrir'));
+      await t.pump(); // push
+      await t.pump(); // enviando
+      expect(find.text('Enviando producto...'), findsOneWidget);
+
+      await t.pumpAndSettle(const Duration(seconds: 1));
+      expect(find.text('Enviando producto...'), findsNothing);
+      expect(find.text('CERTIFICACION'), findsNothing);
+      expect(resultado, isTrue);
+
+      await t.pumpWidget(const SizedBox());
+      PaintingBinding.instance.imageCache
+        ..clear()
+        ..clearLiveImages();
+    },
+  );
 }

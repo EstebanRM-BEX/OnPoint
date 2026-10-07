@@ -84,13 +84,18 @@ class _DetailViewState extends State<_DetailView>
   // ── Acciones ──────────────────────────────────────────────────────────────
 
   Future<void> _abrirProducto(ProductoPacking p, bool escaneado) async {
-    await Navigator.of(context).push(
+    final separado = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) =>
             PackingScanPage(producto: p, productoEscaneado: escaneado),
       ),
     );
-    if (mounted) _detail.add(const DetallePackRecargado());
+    if (!mounted) return;
+    _detail.add(const DetallePackRecargado());
+    // Tras separar se queda (o vuelve) en "Por hacer" para seguir.
+    if (separado == true && _tabs.index != _tabPorHacer) {
+      _tabs.animateTo(_tabPorHacer);
+    }
   }
 
   void _empacar({required bool certificado}) {

@@ -12,7 +12,7 @@ import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 /// Traduce el [PackingOperacion] de un bloc en feedback de pantalla:
 /// diálogo de carga (uno solo), snackbar de éxito, error con sonido y
 /// vibración, y sesión expirada. Las páginas solo reaccionan a lo propio en
-/// [onExito].
+/// [onExito], que se llama después de cerrar el diálogo de carga.
 class PackingOperacionListener<B extends StateStreamable<S>, S>
     extends StatefulWidget {
   final PackingOperacion Function(S state) operacion;
@@ -25,6 +25,11 @@ class PackingOperacionListener<B extends StateStreamable<S>, S>
 
   /// Acciones cuyo éxito no muestra snackbar.
   final Set<String> exitosSilenciosos;
+
+  /// Acciones cuyo diálogo de carga se ve al menos [duracionMinima]:
+  /// operaciones locales muy rápidas en las que, si no, solo parpadea.
+  final Set<String> conDuracionMinima;
+  final Duration duracionMinima;
   final Widget child;
 
   const PackingOperacionListener({
@@ -34,6 +39,8 @@ class PackingOperacionListener<B extends StateStreamable<S>, S>
     this.onExito,
     this.erroresCortos = const {'escaneo'},
     this.exitosSilenciosos = const {},
+    this.conDuracionMinima = const {},
+    this.duracionMinima = const Duration(milliseconds: 700),
   });
 
   @override
@@ -44,6 +51,8 @@ class PackingOperacionListener<B extends StateStreamable<S>, S>
 class _PackingOperacionListenerState<B extends StateStreamable<S>, S>
     extends State<PackingOperacionListener<B, S>>
     with LoadingDialogMixin {
+  DateTime? _cargandoDesde;
+
   void _feedbackError() {
     getIt<IAudioService>().playErrorSound();
     getIt<IVibrationService>().vibrate();
@@ -61,29 +70,47 @@ class _PackingOperacionListenerState<B extends StateStreamable<S>, S>
       );
   }
 
+  /// Espera lo que falte para cumplir la duración mínima del diálogo.
+  Future<void> _esperarMinimo(String accion) async {
+    final desde = _cargandoDesde;
+    if (desde == null || !widget.conDuracionMinima.contains(accion)) return;
+    final resta = widget.duracionMinima - DateTime.now().difference(desde);
+    if (resta > Duration.zero) await Future<void>.delayed(resta);
+  }
+
+  void _ocultarCarga() {
+    _cargandoDesde = null;
+    hideLoadingDialog();
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<B, S>(
       listenWhen: (a, b) => widget.operacion(a).seq != widget.operacion(b).seq,
-      listener: (context, state) {
+      listener: (context, state) async {
         final op = widget.operacion(state);
+        if (op.tipo == TipoOperacion.procesando) {
+          _cargandoDesde ??= DateTime.now();
+          showLoadingDialog(op.mensaje.isEmpty ? 'Procesando...' : op.mensaje);
+          return;
+        }
+
+        await _esperarMinimo(op.accion);
+        if (!mounted) return;
+        _ocultarCarga();
+
         switch (op.tipo) {
           case TipoOperacion.procesando:
-            showLoadingDialog(
-              op.mensaje.isEmpty ? 'Procesando...' : op.mensaje,
-            );
           case TipoOperacion.ninguna:
-            hideLoadingDialog();
+            break;
           case TipoOperacion.exito:
-            hideLoadingDialog();
             if (op.mensaje.isNotEmpty &&
                 !widget.exitosSilenciosos.contains(op.accion)) {
               _snack(op.mensaje);
             }
-            widget.onExito?.call(context, state, op);
+            widget.onExito?.call(this.context, state, op);
           case TipoOperacion.error:
           case TipoOperacion.desincronizado:
-            hideLoadingDialog();
             _feedbackError();
             if (widget.erroresCortos.contains(op.accion)) {
               _snack(op.mensaje, error: true);
@@ -91,7 +118,6 @@ class _PackingOperacionListenerState<B extends StateStreamable<S>, S>
               showScrollableErrorDialog(op.mensaje);
             }
           case TipoOperacion.sesionExpirada:
-            hideLoadingDialog();
             SessionExpiredHelper.showDialog();
         }
       },
