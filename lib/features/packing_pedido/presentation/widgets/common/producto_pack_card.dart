@@ -90,23 +90,36 @@ class ProductoPackCard extends StatelessWidget {
                         vacio: 'Sin ubicación',
                       ),
                     if (mostrarPedido)
-                      InfoLineaPack(
-                        etiqueta: 'Pedido',
-                        valor: '${p.pedidoId}',
-                        trailing: onImprimir == null
-                            ? null
-                            : IconButton(
-                                tooltip: 'Imprimir',
-                                visualDensity: VisualDensity.compact,
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                icon: Icon(
-                                  Icons.print,
-                                  color: primaryColorApp,
-                                  size: 25,
-                                ),
-                                onPressed: onImprimir,
+                      // El ícono va pegado al número del pedido, no al borde.
+                      Row(
+                        children: [
+                          Text(
+                            'Pedido: ',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: primaryColorApp,
+                            ),
+                          ),
+                          Text(
+                            '${p.pedidoId}',
+                            style: const TextStyle(fontSize: 12, color: black),
+                          ),
+                          if (onImprimir != null) ...[
+                            const SizedBox(width: 8),
+                            IconButton(
+                              tooltip: 'Imprimir',
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              icon: Icon(
+                                Icons.print,
+                                color: primaryColorApp,
+                                size: 25,
                               ),
+                              onPressed: onImprimir,
+                            ),
+                          ],
+                        ],
                       ),
                     if (p.isEmpacado)
                       InfoLineaPack(
