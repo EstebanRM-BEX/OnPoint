@@ -65,6 +65,10 @@ class DetallePackHeader extends StatelessWidget {
           TabBar(
             controller: controller,
             isScrollable: false,
+            // Sin la línea divisoria de Material 3 a todo el ancho: sobre el
+            // degradado se veía como una franja negra.
+            dividerColor: Colors.transparent,
+            dividerHeight: 0,
             indicatorColor: white,
             indicatorWeight: 3,
             labelPadding: EdgeInsets.zero,
