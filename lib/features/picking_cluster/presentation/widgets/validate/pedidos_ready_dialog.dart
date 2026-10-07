@@ -13,8 +13,8 @@ import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 /// Diálogo que ofrece validar los pedidos cuyos productos ya se enviaron.
 ///
 /// Cada pedido es un [PedidoValidateCard] desplegable (muelle, avance y sus
-/// productos). Se valida escaneando el barcode del muelle —el lector solo
-/// escucha con todas las tarjetas cerradas— o, con [allowTapValidate]
+/// productos). Se valida escaneando el barcode del muelle —el lector escucha
+/// siempre, con tarjetas abiertas o cerradas— o, con [allowTapValidate]
 /// (permiso `showButtonValidateClusterPicking`), con el botón "Validar".
 /// La validación la hace [ValidateClusterBloc] (reenvío de pendientes +
 /// backend + BD local).
@@ -38,24 +38,16 @@ class _PedidosReadyDialogState extends State<PedidosReadyDialog> {
   final IAudioService _audioService = getIt<IAudioService>();
   final IVibrationService _vibrationService = getIt<IVibrationService>();
   final FocusNode _scanFocus = FocusNode();
-  // Con una tarjeta desplegada el foco se estaciona aquí: los escaneos se
-  // ignoran y la pantalla de escaneo de fondo no puede tomarlo (un escaneo
-  // se procesaría como ubicación/producto del picking).
-  final FocusNode _idleFocus = FocusNode();
   final TextEditingController _scanController = TextEditingController();
 
-  final Set<int?> _expanded = {};
   final Set<int> _validated = {};
   int? _validatingId;
   String? _error;
 
-  bool get _allValidated =>
-      widget.pedidos.every((p) => _validated.contains(p.idPedido));
+  bool _isValidated(PedidoValidate p) =>
+      p.isValidated == true || _validated.contains(p.idPedido);
 
-  /// El lector escucha solo con todas las tarjetas cerradas.
-  bool get _scannerEnabled => _expanded.isEmpty;
-
-  FocusNode get _targetFocus => _scannerEnabled ? _scanFocus : _idleFocus;
+  bool get _allValidated => widget.pedidos.every(_isValidated);
 
   @override
   void initState() {
@@ -66,7 +58,7 @@ class _PedidosReadyDialogState extends State<PedidosReadyDialog> {
     // que alguna vez lo tenga — un listener sobre _scanFocus no se enteraría.
     FocusManager.instance.addListener(_keepScannerFocus);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _targetFocus.requestFocus();
+      if (mounted) _scanFocus.requestFocus();
     });
   }
 
@@ -74,47 +66,44 @@ class _PedidosReadyDialogState extends State<PedidosReadyDialog> {
   void dispose() {
     FocusManager.instance.removeListener(_keepScannerFocus);
     _scanFocus.dispose();
-    _idleFocus.dispose();
     _scanController.dispose();
     super.dispose();
   }
 
-  // Mientras el diálogo sea la ruta activa, el foco se queda en el lector
-  // (todas cerradas) o estacionado en _idleFocus (alguna desplegada).
+  // Mientras el diálogo sea la ruta activa, el foco se queda en el lector,
+  // esté o no desplegada alguna tarjeta.
   void _keepScannerFocus() {
-    if (_targetFocus.hasFocus) return;
+    if (_scanFocus.hasFocus) return;
     Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted &&
-          !_targetFocus.hasFocus &&
+          !_scanFocus.hasFocus &&
           ModalRoute.of(context)?.isCurrent == true) {
-        _targetFocus.requestFocus();
+        _scanFocus.requestFocus();
       }
     });
   }
 
-  void _onExpansionChanged(PedidoValidate pedido, bool expanded) {
-    setState(() {
-      if (expanded) {
-        _expanded.add(pedido.idPedido);
-      } else {
-        _expanded.remove(pedido.idPedido);
-      }
-    });
-    _targetFocus.requestFocus();
-  }
+  // Desplegar/cerrar una tarjeta no apaga el lector: solo devuelve el foco.
+  void _onExpansionChanged() => _scanFocus.requestFocus();
 
   void _onScan(String value) {
-    if (_validatingId != null || !_scannerEnabled) return;
+    if (_validatingId != null) return;
     final code = value.trim().toLowerCase();
-    final pedido = widget.pedidos
-        .where(
-          (p) =>
-              !_validated.contains(p.idPedido) &&
-              (p.barcodeMuelle ?? '').toLowerCase() == code,
-        )
-        .firstOrNull;
-    if (pedido == null) {
+    final matches = widget.pedidos
+        .where((p) => (p.barcodeMuelle ?? '').trim().toLowerCase() == code)
+        .toList();
+    if (matches.isEmpty) {
       _fail('El código $value no corresponde a ningún muelle de esta lista');
+      return;
+    }
+    // Varios pedidos pueden compartir muelle: se valida el primero pendiente.
+    final pedido = matches.where((p) => !_isValidated(p)).firstOrNull;
+    if (pedido == null) {
+      _fail(
+        matches.length == 1
+            ? 'El pedido ${matches.first.namePedido ?? ''} ya está validado'
+            : 'Los pedidos del muelle ${matches.first.muelle ?? value} ya están validados',
+      );
       return;
     }
     _validate(pedido);
@@ -160,58 +149,49 @@ class _PedidosReadyDialogState extends State<PedidosReadyDialog> {
           _fail(state.msg);
         }
       },
-      child: Focus(
-        focusNode: _idleFocus,
-        child: Dialog(
-          backgroundColor: Colors.white,
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 24,
+      child: Dialog(
+        backgroundColor: Colors.white,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.8,
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.sizeOf(context).height * 0.8,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildHeader(),
-                  _buildHiddenScanner(),
-                  if (_error != null) ...[
-                    const SizedBox(height: 8),
-                    _ErrorBanner(message: _error!),
-                  ],
-                  const SizedBox(height: 12),
-                  Flexible(
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: widget.pedidos.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (_, i) =>
-                          _buildPedidoCard(widget.pedidos[i]),
-                    ),
-                  ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHeader(),
+                _buildHiddenScanner(),
+                if (_error != null) ...[
                   const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: _validatingId != null
-                          ? null
-                          : () => Navigator.of(context).pop(),
-                      child: Text(
-                        _allValidated ? 'Continuar' : 'Ahora no',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
+                  _ErrorBanner(message: _error!),
+                ],
+                const SizedBox(height: 12),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: widget.pedidos.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (_, i) => _buildPedidoCard(widget.pedidos[i]),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _validatingId != null
+                        ? null
+                        : () => Navigator.of(context).pop(),
+                    child: Text(
+                      _allValidated ? 'Continuar' : 'Ahora no',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -242,9 +222,7 @@ class _PedidosReadyDialogState extends State<PedidosReadyDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                count == 1
-                    ? 'Pedido completado'
-                    : 'Pedidos completados',
+                count == 1 ? 'Pedido completado' : 'Pedidos completados',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -315,7 +293,7 @@ class _PedidosReadyDialogState extends State<PedidosReadyDialog> {
       onValidate: widget.allowTapValidate && _validatingId == null
           ? () => _validate(pedido)
           : null,
-      onExpansionChanged: (expanded) => _onExpansionChanged(pedido, expanded),
+      onExpansionChanged: (_) => _onExpansionChanged(),
     );
   }
 }

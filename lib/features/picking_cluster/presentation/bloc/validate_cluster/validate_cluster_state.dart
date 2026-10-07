@@ -10,7 +10,16 @@ sealed class ValidateClusterState extends Equatable {
 class ValidateClusterInitial extends ValidateClusterState {}
 
 // El barcode escaneado no corresponde a ningún pedido del batch
-class BarcodeValidateNotFoundState extends ValidateClusterState {}
+// Con timestamp: sin él Equatable descartaba el segundo "no encontrado"
+// seguido y el operario no recibía ni sonido ni mensaje.
+class BarcodeValidateNotFoundState extends ValidateClusterState {
+  final int timestamp;
+  BarcodeValidateNotFoundState()
+    : timestamp = DateTime.now().microsecondsSinceEpoch;
+
+  @override
+  List<Object?> get props => [timestamp];
+}
 
 // El usuario intentó cerrar el batch sin haber validado todos los pedidos
 class BatchNotAllValidatedState extends ValidateClusterState {

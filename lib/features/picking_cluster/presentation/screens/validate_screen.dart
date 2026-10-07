@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
@@ -18,6 +17,7 @@ import 'package:wms_app/features/picking_cluster/presentation/widgets/validate/p
 import 'package:wms_app/features/picking_cluster/presentation/widgets/validate/validate_batch_header.dart';
 import 'package:wms_app/features/picking_cluster/presentation/widgets/validate/validate_batch_menu.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 
 class ValidateScreen extends StatefulWidget {
   const ValidateScreen({super.key});
@@ -36,32 +36,44 @@ class _ValidateScreenState extends State<ValidateScreen> {
   @override
   void initState() {
     super.initState();
-    focusNodeBuscar.addListener(_onFocusChange);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (mounted) FocusScope.of(context).requestFocus(focusNodeBuscar);
+    // Escuchamos el foco GLOBAL, no solo el del lector: si otro nodo lo toma
+    // antes de que el lector lo tenga alguna vez (pantalla anterior con
+    // requestFocus retrasados, el unfocus del Enter, el menú), un listener
+    // sobre focusNodeBuscar nunca se entera y el escaneo se pierde.
+    // Mismo patrón que PedidosReadyDialog.
+    FocusManager.instance.addListener(_keepScannerFocus);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) focusNodeBuscar.requestFocus();
+    });
   }
 
   @override
   void dispose() {
-    focusNodeBuscar.removeListener(_onFocusChange);
+    FocusManager.instance.removeListener(_keepScannerFocus);
     focusNodeBuscar.dispose();
     _controllerToDo.dispose();
     super.dispose();
   }
 
-  // Restaura el foco al scanner cuando se pierde, siempre que no haya un diálogo encima.
-  void _onFocusChange() {
-    if (!focusNodeBuscar.hasFocus && mounted) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted && ModalRoute.of(context)?.isCurrent == true) {
-          focusNodeBuscar.requestFocus();
-        }
-      });
-    }
+  // Mientras esta pantalla sea la ruta activa, el foco vuelve al lector.
+  void _keepScannerFocus() {
+    if (focusNodeBuscar.hasFocus) return;
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted &&
+          !focusNodeBuscar.hasFocus &&
+          ModalRoute.of(context)?.isCurrent == true) {
+        focusNodeBuscar.requestFocus();
+      }
+    });
+  }
+
+  /// Errores en el diálogo estándar de la app, no en snackbar: el operario
+  /// debe leerlo y aceptarlo. Al cerrarlo el foco vuelve al lector.
+  Future<void> _showError(String message) async {
+    _vibrationService.vibrate();
+    _audioService.playErrorSound();
+    await showScrollableErrorDialog(message);
+    if (mounted) focusNodeBuscar.requestFocus();
   }
 
   void validateBarcode(String value, BuildContext context) {
@@ -83,44 +95,24 @@ class _ValidateScreenState extends State<ValidateScreen> {
           BlocListener<ValidateClusterBloc, ValidateClusterState>(
             listener: (context, state) {
               if (state is BarcodeValidateNotFoundState) {
-                _vibrationService.vibrate();
-                _audioService.playErrorSound();
+                _showError('Código no encontrado en la lista');
+              }
+
+              if (state is MarkPedidoValidatedSuccessState) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Código no encontrado en la lista'),
+                    content: Text('Pedido validado'),
+                    duration: Duration(seconds: 2),
                   ),
                 );
-                Future.microtask(() {
-                  if (mounted) focusNodeBuscar.requestFocus();
-                });
               }
 
               if (state is ValidatePedidoErrorState) {
-                Get.snackbar(
-                  '360 Software Informa',
-                  state.msg,
-                  backgroundColor: white,
-                  colorText: primaryColorApp,
-                  icon: const Icon(Icons.error, color: Colors.red),
-                  showProgressIndicator: true,
-                  duration: const Duration(seconds: 5),
-                );
-                Future.microtask(() {
-                  if (mounted) focusNodeBuscar.requestFocus();
-                });
+                _showError(state.msg);
               }
 
               if (state is BatchNotAllValidatedState) {
-                Get.snackbar(
-                  '360 Software Informa',
-                  state.message,
-                  backgroundColor: white,
-                  colorText: primaryColorApp,
-                  icon: const Icon(Icons.error, color: Colors.red),
-                );
-                Future.microtask(() {
-                  if (mounted) focusNodeBuscar.requestFocus();
-                });
+                _showError(state.message);
               }
 
               if (state is BatchCloseLoadingState) {
@@ -143,15 +135,7 @@ class _ValidateScreenState extends State<ValidateScreen> {
 
               if (state is BatchCloseErrorState) {
                 if (Navigator.canPop(context)) Navigator.pop(context);
-                Get.snackbar(
-                  '360 Software Informa',
-                  state.message,
-                  backgroundColor: white,
-                  colorText: primaryColorApp,
-                  icon: const Icon(Icons.error, color: Colors.red),
-                  showProgressIndicator: true,
-                  duration: const Duration(seconds: 5),
-                );
+                _showError(state.message);
               }
             },
           ),

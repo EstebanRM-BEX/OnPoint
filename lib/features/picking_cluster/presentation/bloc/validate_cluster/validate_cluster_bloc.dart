@@ -49,13 +49,29 @@ class ValidateClusterBloc
   ) async {
     final scan = event.barcode.trim().toLowerCase();
 
-    final pedido = clusterPickingBloc.pedidosValidate.firstWhere(
-      (p) => p.barcodeMuelle?.toLowerCase() == scan,
+    final matches = clusterPickingBloc.pedidosValidate
+        .where((p) => (p.barcodeMuelle ?? '').trim().toLowerCase() == scan)
+        .toList();
+
+    if (matches.isEmpty) {
+      emit(BarcodeValidateNotFoundState());
+      return;
+    }
+
+    // Varios pedidos pueden compartir muelle: antes `firstWhere` devolvía
+    // siempre el primero, aunque ya estuviera validado, y los demás nunca
+    // se podían validar por escaneo.
+    final pedido = matches.firstWhere(
+      (p) => p.isValidated != true,
       orElse: () => const PedidoValidate(),
     );
 
     if (pedido.idPedido == null) {
-      emit(BarcodeValidateNotFoundState());
+      emit(
+        ValidatePedidoErrorState(
+          'Los pedidos del muelle ${matches.first.muelle ?? event.barcode} ya están validados',
+        ),
+      );
       return;
     }
 

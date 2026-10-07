@@ -197,6 +197,11 @@ class ValidatePedidoStateSuccess extends ClusterPickingState {
 class PedidosValidateUpdatedState extends ClusterPickingState {
   final List<PedidoValidate> pedidosValidate;
   const PedidosValidateUpdatedState(this.pedidosValidate);
+
+  // Sin props, Equatable lo veía igual al anterior y el bloc descartaba el
+  // emit: desde el segundo pedido validado la lista no se repintaba.
+  @override
+  List<Object> get props => [pedidosValidate];
 }
 
 class LoadValidatePedidoState extends ClusterPickingState {}

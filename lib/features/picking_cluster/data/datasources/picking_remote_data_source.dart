@@ -220,13 +220,20 @@ class PickingClusterRemoteDataSourceImpl
       "params": params,
     };
 
-    debugPrint('requestBody: $requestBody');
+    // JSON exacto que viaja en el body (postPicking hace json.encode).
+    debugPrint(
+      '📦 VALIDATE_PEDIDO body → ${const JsonEncoder.withIndent('  ').convert(requestBody)}',
+    );
 
     final response = await apiRequestService.postPicking(
       endpoint: 'cluster/validate_pedido/id',
       body: requestBody,
       isLoadinDialog: true,
       isunecodePath: true,
+    );
+
+    debugPrint(
+      '📦 VALIDATE_PEDIDO response ${response.statusCode} → ${response.body}',
     );
 
     try {
