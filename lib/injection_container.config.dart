@@ -157,6 +157,63 @@ import 'features/packaging_types/domain/usecases/get_packaging_types_usecase.dar
     as _i658;
 import 'features/packaging_types/presentation/bloc/packaging_type_bloc.dart'
     as _i475;
+import 'features/packing_pedido/data/datasources/local/packing_pedido_database.dart'
+    as _i879;
+import 'features/packing_pedido/data/datasources/packing_pedido_local_data_source.dart'
+    as _i479;
+import 'features/packing_pedido/data/datasources/packing_pedido_remote_data_source.dart'
+    as _i276;
+import 'features/packing_pedido/data/repositories/packing_pedido_repository_impl.dart'
+    as _i439;
+import 'features/packing_pedido/data/services/packing_entorno.dart' as _i251;
+import 'features/packing_pedido/domain/repositories/packing_pedido_repository.dart'
+    as _i820;
+import 'features/packing_pedido/domain/usecases/actualizar_cantidad_separada_usecase.dart'
+    as _i360;
+import 'features/packing_pedido/domain/usecases/asignar_responsable_pack_usecase.dart'
+    as _i306;
+import 'features/packing_pedido/domain/usecases/asignar_ubicacion_paquetes_usecase.dart'
+    as _i744;
+import 'features/packing_pedido/domain/usecases/crear_paquete_usecase.dart'
+    as _i167;
+import 'features/packing_pedido/domain/usecases/desempacar_producto_usecase.dart'
+    as _i545;
+import 'features/packing_pedido/domain/usecases/deshacer_separacion_usecase.dart'
+    as _i425;
+import 'features/packing_pedido/domain/usecases/dividir_producto_usecase.dart'
+    as _i124;
+import 'features/packing_pedido/domain/usecases/eliminar_paquete_usecase.dart'
+    as _i295;
+import 'features/packing_pedido/domain/usecases/enviar_imagen_novedad_pack_usecase.dart'
+    as _i245;
+import 'features/packing_pedido/domain/usecases/enviar_temperatura_pack_usecase.dart'
+    as _i529;
+import 'features/packing_pedido/domain/usecases/get_barcodes_producto_pack_usecase.dart'
+    as _i415;
+import 'features/packing_pedido/domain/usecases/get_config_packing_usecase.dart'
+    as _i786;
+import 'features/packing_pedido/domain/usecases/get_novedades_pack_usecase.dart'
+    as _i1044;
+import 'features/packing_pedido/domain/usecases/get_pedido_pack_detalle_usecase.dart'
+    as _i454;
+import 'features/packing_pedido/domain/usecases/get_pedidos_pack_local_usecase.dart'
+    as _i793;
+import 'features/packing_pedido/domain/usecases/get_ubicaciones_muelle_usecase.dart'
+    as _i312;
+import 'features/packing_pedido/domain/usecases/leer_temperatura_ia_usecase.dart'
+    as _i997;
+import 'features/packing_pedido/domain/usecases/marcar_producto_ok_usecase.dart'
+    as _i783;
+import 'features/packing_pedido/domain/usecases/marcar_ubicacion_ok_usecase.dart'
+    as _i780;
+import 'features/packing_pedido/domain/usecases/registrar_tiempo_pack_usecase.dart'
+    as _i339;
+import 'features/packing_pedido/domain/usecases/separar_producto_usecase.dart'
+    as _i856;
+import 'features/packing_pedido/domain/usecases/sync_pedidos_pack_usecase.dart'
+    as _i621;
+import 'features/packing_pedido/domain/usecases/validar_pedido_pack_usecase.dart'
+    as _i7;
 import 'features/picking/data/datasources/pick_scan_local_data_source.dart'
     as _i380;
 import 'features/picking/data/datasources/pick_scan_remote_data_source.dart'
@@ -430,6 +487,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i456.UbicacionesCacheService>(
       () => _i456.UbicacionesCacheService(),
     );
+    gh.lazySingleton<_i879.PackingPedidoDatabase>(
+      () => _i879.PackingPedidoDatabase(),
+    );
     gh.lazySingleton<_i519.Client>(() => registerModule.httpClient);
     gh.lazySingleton<_i895.Connectivity>(() => registerModule.connectivity);
     gh.lazySingleton<_i552.DataBaseSqlite>(() => registerModule.database);
@@ -453,6 +513,9 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i232.UserLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()),
     );
     gh.lazySingleton<_i688.IAudioService>(() => _i927.AudioServiceImpl());
+    gh.lazySingleton<_i276.PackingPedidoRemoteDataSource>(
+      () => _i276.PackingPedidoRemoteDataSourceImpl(),
+    );
     gh.lazySingleton<_i130.PickingClusterLocalDataSource>(
       () => _i130.PickingClusterLocalDataSourceImpl(),
     );
@@ -467,6 +530,11 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i311.IDeviceInfoService>(
       () => _i910.DeviceInfoServiceImpl(),
+    );
+    gh.lazySingleton<_i479.PackingPedidoLocalDataSource>(
+      () => _i479.PackingPedidoLocalDataSourceImpl(
+        gh<_i879.PackingPedidoDatabase>(),
+      ),
     );
     gh.lazySingleton<_i791.AuthLocalDataSource>(
       () => _i791.AuthLocalDataSourceImpl(),
@@ -534,6 +602,13 @@ extension GetItInjectableX on _i174.GetIt {
       ),
     );
     gh.lazySingleton<_i1062.IWebSocketService>(() => _i1020.WebSocketService());
+    gh.lazySingleton<_i251.PackingEntorno>(
+      () => _i251.PackingEntorno(
+        gh<_i208.ConfiguracionCacheService>(),
+        gh<_i268.NovedadesCacheService>(),
+        gh<_i456.UbicacionesCacheService>(),
+      ),
+    );
     gh.lazySingleton<_i854.EnterpriseLocalDataSource>(
       () => _i854.EnterpriseLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()),
     );
@@ -800,6 +875,13 @@ extension GetItInjectableX on _i174.GetIt {
         crearLoteProductoUseCase: gh<_i975.CrearLoteProductoUseCase>(),
       ),
     );
+    gh.lazySingleton<_i820.PackingPedidoRepository>(
+      () => _i439.PackingPedidoRepositoryImpl(
+        gh<_i276.PackingPedidoRemoteDataSource>(),
+        gh<_i479.PackingPedidoLocalDataSource>(),
+        gh<_i251.PackingEntorno>(),
+      ),
+    );
     gh.lazySingleton<_i312.GetAppVersion>(
       () => _i312.GetAppVersion(gh<_i649.HomeRepository>()),
     );
@@ -814,6 +896,95 @@ extension GetItInjectableX on _i174.GetIt {
         claimTransferenciaProductUseCase:
             gh<_i719.ClaimTransferenciaProductUseCase>(),
       ),
+    );
+    gh.lazySingleton<_i360.ActualizarCantidadSeparadaUseCase>(
+      () => _i360.ActualizarCantidadSeparadaUseCase(
+        gh<_i820.PackingPedidoRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i306.AsignarResponsablePackUseCase>(
+      () => _i306.AsignarResponsablePackUseCase(
+        gh<_i820.PackingPedidoRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i744.AsignarUbicacionPaquetesUseCase>(
+      () => _i744.AsignarUbicacionPaquetesUseCase(
+        gh<_i820.PackingPedidoRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i167.CrearPaqueteUseCase>(
+      () => _i167.CrearPaqueteUseCase(gh<_i820.PackingPedidoRepository>()),
+    );
+    gh.lazySingleton<_i545.DesempacarProductoUseCase>(
+      () =>
+          _i545.DesempacarProductoUseCase(gh<_i820.PackingPedidoRepository>()),
+    );
+    gh.lazySingleton<_i425.DeshacerSeparacionUseCase>(
+      () =>
+          _i425.DeshacerSeparacionUseCase(gh<_i820.PackingPedidoRepository>()),
+    );
+    gh.lazySingleton<_i124.DividirProductoUseCase>(
+      () => _i124.DividirProductoUseCase(gh<_i820.PackingPedidoRepository>()),
+    );
+    gh.lazySingleton<_i295.EliminarPaqueteUseCase>(
+      () => _i295.EliminarPaqueteUseCase(gh<_i820.PackingPedidoRepository>()),
+    );
+    gh.lazySingleton<_i245.EnviarImagenNovedadPackUseCase>(
+      () => _i245.EnviarImagenNovedadPackUseCase(
+        gh<_i820.PackingPedidoRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i529.EnviarTemperaturaPackUseCase>(
+      () => _i529.EnviarTemperaturaPackUseCase(
+        gh<_i820.PackingPedidoRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i415.GetBarcodesProductoPackUseCase>(
+      () => _i415.GetBarcodesProductoPackUseCase(
+        gh<_i820.PackingPedidoRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i786.GetConfigPackingUseCase>(
+      () => _i786.GetConfigPackingUseCase(gh<_i820.PackingPedidoRepository>()),
+    );
+    gh.lazySingleton<_i1044.GetNovedadesPackUseCase>(
+      () => _i1044.GetNovedadesPackUseCase(gh<_i820.PackingPedidoRepository>()),
+    );
+    gh.lazySingleton<_i454.GetPedidoPackDetalleUseCase>(
+      () => _i454.GetPedidoPackDetalleUseCase(
+        gh<_i820.PackingPedidoRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i793.GetPedidosPackLocalUseCase>(
+      () =>
+          _i793.GetPedidosPackLocalUseCase(gh<_i820.PackingPedidoRepository>()),
+    );
+    gh.lazySingleton<_i312.GetUbicacionesMuelleUseCase>(
+      () => _i312.GetUbicacionesMuelleUseCase(
+        gh<_i820.PackingPedidoRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i997.LeerTemperaturaIaUseCase>(
+      () => _i997.LeerTemperaturaIaUseCase(gh<_i820.PackingPedidoRepository>()),
+    );
+    gh.lazySingleton<_i783.MarcarProductoOkUseCase>(
+      () => _i783.MarcarProductoOkUseCase(gh<_i820.PackingPedidoRepository>()),
+    );
+    gh.lazySingleton<_i780.MarcarUbicacionOkUseCase>(
+      () => _i780.MarcarUbicacionOkUseCase(gh<_i820.PackingPedidoRepository>()),
+    );
+    gh.lazySingleton<_i339.RegistrarTiempoPackUseCase>(
+      () =>
+          _i339.RegistrarTiempoPackUseCase(gh<_i820.PackingPedidoRepository>()),
+    );
+    gh.lazySingleton<_i856.SepararProductoUseCase>(
+      () => _i856.SepararProductoUseCase(gh<_i820.PackingPedidoRepository>()),
+    );
+    gh.lazySingleton<_i621.SyncPedidosPackUseCase>(
+      () => _i621.SyncPedidosPackUseCase(gh<_i820.PackingPedidoRepository>()),
+    );
+    gh.lazySingleton<_i7.ValidarPedidoPackUseCase>(
+      () => _i7.ValidarPedidoPackUseCase(gh<_i820.PackingPedidoRepository>()),
     );
     gh.lazySingleton<_i985.ClaimRecepcionProductUseCase>(
       () => _i985.ClaimRecepcionProductUseCase(
