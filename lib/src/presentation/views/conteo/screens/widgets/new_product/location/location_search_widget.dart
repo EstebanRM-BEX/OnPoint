@@ -55,7 +55,8 @@ class _SearchLocationScreenState extends State<SearchLocationConteoScreen> {
     if (!mounted) return;
     final bloc = context.read<ConteoBloc>();
     final needsLoad = (bloc.ordenConteo.filterType == 'category' ||
-            bloc.ordenConteo.filterType == 'product') &&
+            bloc.ordenConteo.filterType == 'product' ||
+            bloc.ordenConteo.filterType == 'general') &&
         bloc.ubicaciones.isEmpty;
     if (needsLoad) {
       _showLoadingDialog();

@@ -25,6 +25,27 @@ class Tab1ScreenConteo extends StatelessWidget {
         listener: (context, state) {},
         builder: (context, state) {
           final ordeConteoBd = context.read<ConteoBloc>().ordenConteo;
+          final lineas = context.read<ConteoBloc>().lineasContadas;
+          final lineasHechas =
+              lineas.where((element) => element.isDoneItem == 1).length;
+
+          // Sin líneas ni por hacer ni contadas: la orden aún no tiene nada
+          // que contar (p. ej. orden general recién creada), no está completa.
+          final String estadoLabel;
+          final Color estadoColor;
+          if (lineas.isEmpty) {
+            estadoLabel = 'Sin líneas';
+            estadoColor = Colors.grey;
+          } else if (lineasHechas == lineas.length) {
+            estadoLabel = 'Completado';
+            estadoColor = green;
+          } else if (lineasHechas == 0) {
+            estadoLabel = 'Pendiente';
+            estadoColor = red;
+          } else {
+            estadoLabel = 'En progreso';
+            estadoColor = yellow;
+          }
           return Scaffold(
             backgroundColor: white,
             body: Column(
@@ -236,44 +257,9 @@ class Tab1ScreenConteo extends StatelessWidget {
                               Align(
                                   alignment: Alignment.centerLeft,
                                   child: Text(
-                                    ordeConteoBd.numeroLineas ==
-                                            context
-                                                .read<ConteoBloc>()
-                                                .lineasContadas
-                                                .where((element) =>
-                                                    element.isDoneItem == 1)
-                                                .toList()
-                                                .length
-                                        ? 'Completado'
-                                        : context
-                                                .read<ConteoBloc>()
-                                                .lineasContadas
-                                                .where((element) =>
-                                                    element.isDoneItem == 1)
-                                                .toList()
-                                                .isEmpty
-                                            ? 'Pendiente'
-                                            : 'En progreso',
+                                    estadoLabel,
                                     style: TextStyle(
-                                        fontSize: 14,
-                                        color: ordeConteoBd.numeroLineas ==
-                                                context
-                                                    .read<ConteoBloc>()
-                                                    .lineasContadas
-                                                    .where((element) =>
-                                                        element.isDoneItem == 1)
-                                                    .toList()
-                                                    .length
-                                            ? green
-                                            : context
-                                                    .read<ConteoBloc>()
-                                                    .lineasContadas
-                                                    .where((element) =>
-                                                        element.isDoneItem == 1)
-                                                    .toList()
-                                                    .isEmpty
-                                                ? red
-                                                : yellow),
+                                        fontSize: 14, color: estadoColor),
                                   )),
                             ],
                           ),

@@ -442,12 +442,8 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       productos.clear();
       if (response.isNotEmpty) {
         productos.addAll(response);
-        // Para filterType "location" los filtros se asignan aquí, después de
-        // que la maestra está lista, no antes (evita asignar lista vacía).
-        if (ordenConteo.filterType == 'location') {
-          productosFilters = List.of(productos);
-          productosFiltersSearch = List.of(productos);
-        }
+        // La maestra ya está lista: recalculamos las listas de la orden actual.
+        _aplicarFiltrosNuevoProducto();
         debugPrint('productos de la bd::::: ${productos.length}');
         emit(GetProductsSuccessBD(response));
       } else {
@@ -467,15 +463,12 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       debugPrint('🔍 Buscando productos con query: "${event.query}"');
       emit(SearchLoading());
 
-      // Para filterType "location" se busca en la maestra completa;
-      // para "category" / "product" solo en los productos de la orden.
-      final List<Product> listaFuente = ordenConteo.filterType == "location"
-          ? productos
-          : productosFilters;
+      // productosFilters ya contiene los productos válidos para la orden.
+      final List<Product> listaFuente = productosFilters;
 
       final query = event.query.toLowerCase();
       if (query.isEmpty) {
-        productosFiltersSearch = listaFuente;
+        productosFiltersSearch = List.of(listaFuente);
       } else {
         productosFiltersSearch = listaFuente.where((product) {
           final name = (product.name ?? '').toLowerCase();
@@ -501,17 +494,12 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     try {
       emit(SearchLoading());
 
-      // Para filterType "category"/"product" se busca en la maestra completa;
-      // para "location" / "combined" solo en las ubicaciones de la orden.
-      final listaFuente =
-          (ordenConteo.filterType == "category" ||
-              ordenConteo.filterType == "product")
-          ? ubicaciones
-          : ubicacionesFilters;
+      // ubicacionesFilters ya contiene las ubicaciones válidas para la orden.
+      final listaFuente = ubicacionesFilters;
 
       final query = event.query.toLowerCase();
       if (query.isEmpty) {
-        ubicacionesFiltersSearch = listaFuente;
+        ubicacionesFiltersSearch = List.of(listaFuente);
       } else {
         ubicacionesFiltersSearch = listaFuente.where((location) {
           final name = (location.name ?? '').toLowerCase();
@@ -532,118 +520,31 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   ) async {
     try {
       emit(LoadNewProductLoading());
-      debugPrint('entro al bloc');
-      //vamos a cargar la informacion pa crear un nuevo producto
-      //todo: para este filtro solo podemos crear un producto con las ubicaciones de la orden de conteo y los productos de la orden
-      if (ordenConteo.filterType == 'combined') {
-        //llenamos el listado de ubicacioones
-        ubicacionesFilters.clear();
-        ubicacionesFiltersSearch.clear();
-        ubicacionesFilters = ubicacionesConteo.map((allowed) {
-          return ResultUbicaciones(
-            id: allowed.id ?? 0,
-            name: allowed.name ?? '',
-            barcode: allowed.barcode ?? '',
-            locationId: allowed.id ?? 0,
-            locationName: allowed.name ?? '',
-            idWarehouse: 0,
-            warehouseName: '',
-          );
-        }).toList();
-        ubicacionesFiltersSearch = ubicacionesFilters;
-        //llenamos la lista de productos
-        productosFilters.clear();
-        productosFiltersSearch.clear();
 
-        final productosMap = {for (final p in productos) p.productId: p};
+      // Cada vez que se abre "nuevo producto" se parte de cero: nada de la
+      // orden anterior (listas, búsquedas ni selección) debe quedar cargado.
+      currentUbication = null;
+      currentNewProduct = null;
+      searchControllerLocation.clear();
+      searchControllerProducts.clear();
+      _aplicarFiltrosNuevoProducto();
 
-        // Productos por categoría (de categoriasConteo vs maestra)
-        final allowedCategories = categoriasConteo.map((c) => c.name).toSet();
-        final productosPorCategoria = categoriasConteo.isNotEmpty
-            ? productos
-                .where((p) => allowedCategories.contains(p.category))
-                .toList()
-            : <Product>[];
+      final filterType = ordenConteo.filterType;
 
-        // Productos por productosOrdenConteo (si no hay categorías, se usan solos)
-        final productosPorOrden = productosOrdenConteo
-            .map((allowed) => productosMap[allowed.id])
-            .whereType<Product>()
-            .toList();
+      // Maestra de productos: la usan todos los filtros (directa o para
+      // resolver categorías / productos de la orden).
+      if (productos.isEmpty) add(GetProductsFromDBEvent());
 
-        // Unión sin duplicados: categorías + productos de la orden
-        final seen = <int>{};
-        productosFilters = [
-          ...productosPorCategoria,
-          ...productosPorOrden,
-        ].where((p) => seen.add(p.productId ?? 0)).toList();
-
-        productosFiltersSearch = productosFilters;
-        emit(LoadNewProductSuccess());
-        return;
-      } else if (ordenConteo.filterType == "location") {
-
-        
-        add(GetProductsFromDBEvent());
-        //las ubicaciones que llegan en la orden
-        ubicacionesFilters.clear();
-        ubicacionesFiltersSearch.clear();
-        ubicacionesFilters = ubicacionesConteo.map((allowed) {
-          return ResultUbicaciones(
-            id: allowed.id ?? 0,
-            name: allowed.name ?? '',
-            barcode: allowed.barcode ?? '',
-            locationId: allowed.id ?? 0,
-            locationName: allowed.name ?? '',
-            idWarehouse: 0,
-            warehouseName: '',
-          );
-        }).toList();
-        ubicacionesFiltersSearch = ubicacionesFilters;
-
-       
-        emit(LoadNewProductSuccess());
-        return;
-
-        //filtro por ubicacion
-      } else if (ordenConteo.filterType == "category" ||
-          ordenConteo.filterType == "product") {
+      // Maestra de ubicaciones: solo cuando la orden no restringe ubicaciones.
+      if (filterType == 'category' ||
+          filterType == 'product' ||
+          filterType == 'general') {
         add(GetLocationsConteoEvent());
-        productosFilters.clear();
-        productosFiltersSearch.clear();
-
-        if (ordenConteo.filterType == "category") {
-          // Para filterType "category" los productos válidos se determinan
-          // por las categorías de la orden (categoriasConteo), no por una
-          // lista explícita de productos (productosOrdenConteo, que para
-          // este tipo de orden viene vacía).
-          final allowedCategories = categoriasConteo
-              .map((c) => c.name)
-              .toSet();
-          productosFilters = productos
-              .where((p) => allowedCategories.contains(p.category))
-              .toList();
-        } else {
-          final productosMap = {for (final p in productos) p.productId: p};
-          productosFilters = productosOrdenConteo
-              .map((allowed) => productosMap[allowed.id])
-              .whereType<Product>()
-              .toList();
-        }
-        productosFiltersSearch = productosFilters;
-
-        //llenamos el listado de ubicacioones de la maestra
-        ubicacionesFilters.clear();
-        ubicacionesFiltersSearch.clear();
-
-        ubicacionesFiltersSearch = ubicaciones;
-        ubicacionesFilters = ubicaciones;
       }
 
+      debugPrint("filterType: $filterType");
       debugPrint("ubicacionesFilters: ${ubicacionesFilters.length}");
       debugPrint("productosFilters: ${productosFilters.length}");
-
-      //cargamos las ubicaciones de la maestra
 
       emit(LoadNewProductSuccess());
     } catch (e) {
@@ -653,6 +554,84 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
         ),
       );
     }
+  }
+
+  /// Calcula las ubicaciones y productos disponibles para agregar un producto
+  /// nuevo según el `filterType` de la orden actual:
+  /// - combined: ubicaciones de la orden + productos de categorías/orden.
+  /// - location: ubicaciones de la orden + maestra de productos.
+  /// - category: maestra de ubicaciones + productos de las categorías.
+  /// - product: maestra de ubicaciones + productos de la orden.
+  /// - general: maestra de ubicaciones del almacén + maestra de productos.
+  ///
+  /// Se llama al abrir "nuevo producto" y cada vez que termina de cargar una
+  /// maestra. Siempre asigna listas nuevas (nunca referencias a las maestras)
+  /// para que limpiar un filtro no vacíe la maestra ni arrastre datos de otra
+  /// orden.
+  void _aplicarFiltrosNuevoProducto() {
+    final filterType = ordenConteo.filterType;
+
+    List<ResultUbicaciones> nuevasUbicaciones = [];
+    List<Product> nuevosProductos = [];
+
+    if (filterType == 'combined') {
+      nuevasUbicaciones = _ubicacionesDeLaOrden();
+      final seen = <int>{};
+      nuevosProductos = [
+        ..._productosPorCategoria(),
+        ..._productosDeLaOrden(),
+      ].where((p) => seen.add(p.productId ?? 0)).toList();
+    } else if (filterType == 'location') {
+      nuevasUbicaciones = _ubicacionesDeLaOrden();
+      nuevosProductos = List.of(productos);
+    } else if (filterType == 'category') {
+      nuevasUbicaciones = List.of(ubicaciones);
+      nuevosProductos = _productosPorCategoria();
+    } else if (filterType == 'product') {
+      nuevasUbicaciones = List.of(ubicaciones);
+      nuevosProductos = _productosDeLaOrden();
+    } else if (filterType == 'general') {
+      final warehouseId = ordenConteo.warehouseId ?? 0;
+      nuevasUbicaciones = warehouseId == 0
+          ? List.of(ubicaciones)
+          : ubicaciones.where((u) => u.idWarehouse == warehouseId).toList();
+      nuevosProductos = List.of(productos);
+    }
+
+    ubicacionesFilters = nuevasUbicaciones;
+    ubicacionesFiltersSearch = List.of(nuevasUbicaciones);
+    productosFilters = nuevosProductos;
+    productosFiltersSearch = List.of(nuevosProductos);
+  }
+
+  List<ResultUbicaciones> _ubicacionesDeLaOrden() {
+    return ubicacionesConteo.map((allowed) {
+      return ResultUbicaciones(
+        id: allowed.id ?? 0,
+        name: allowed.name ?? '',
+        barcode: allowed.barcode ?? '',
+        locationId: allowed.id ?? 0,
+        locationName: allowed.name ?? '',
+        idWarehouse: 0,
+        warehouseName: '',
+      );
+    }).toList();
+  }
+
+  List<Product> _productosPorCategoria() {
+    if (categoriasConteo.isEmpty) return [];
+    final allowedCategories = categoriasConteo.map((c) => c.name).toSet();
+    return productos
+        .where((p) => allowedCategories.contains(p.category))
+        .toList();
+  }
+
+  List<Product> _productosDeLaOrden() {
+    final productosMap = {for (final p in productos) p.productId: p};
+    return productosOrdenConteo
+        .map((allowed) => productosMap[allowed.id])
+        .whereType<Product>()
+        .toList();
   }
 
   void _onLoadLocations(
@@ -665,6 +644,8 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       ubicaciones.clear();
       if (response.isNotEmpty) {
         ubicaciones.addAll(response);
+        // La maestra ya está lista: recalculamos las listas de la orden actual.
+        _aplicarFiltrosNuevoProducto();
         debugPrint("ubicaciones bd ::: ${ubicaciones.length}");
         emit(LoadLocationsSuccess(ubicaciones));
       } else {
@@ -1259,9 +1240,9 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
 
     if (event.resetAll == true) {
       ubicacionesFiltersSearch = [];
-      ubicacionesFilters.clear();
-      productosFilters.clear();
-      productosFiltersSearch.clear();
+      ubicacionesFilters = [];
+      productosFilters = [];
+      productosFiltersSearch = [];
     }
 
     if (event.isLoading == true) {
@@ -1592,6 +1573,17 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     Emitter<ConteoState> emit,
   ) async {
     try {
+      // Si cambiamos de orden, descartamos las listas de "nuevo producto"
+      // de la orden anterior.
+      if (ordenConteo.id != event.ordenConteoId) {
+        ubicacionesFilters = [];
+        ubicacionesFiltersSearch = [];
+        productosFilters = [];
+        productosFiltersSearch = [];
+        currentUbication = null;
+        currentNewProduct = null;
+      }
+
       //obtenemos la orden de conteo desde la bd
       ordenConteo =
           await db.ordenRepository.getOrdenById(event.ordenConteoId ?? 0) ??
