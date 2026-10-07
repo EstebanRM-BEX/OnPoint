@@ -8,6 +8,7 @@ import 'package:wms_app/features/packing_pedido/presentation/bloc/detail/packing
 import 'package:wms_app/features/packing_pedido/presentation/widgets/common/lista_vacia_pack.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/common/producto_pack_card.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/common/barra_lector_pack.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
@@ -175,6 +176,14 @@ class _PorHacerTabState extends State<PorHacerTab> {
                         onTap: s.pedidoTerminado
                             ? null
                             : () => widget.onAbrir(p, false),
+                        mostrarPedido: true,
+                        // Mismo destino que el módulo anterior: la línea
+                        // (id_move) con la compañía 1.
+                        onImprimir: () => ModalPrintersList.show(
+                          context,
+                          resIds: [p.idMove],
+                          companyId: 1,
+                        ),
                       );
                     },
                   ),

@@ -95,6 +95,34 @@ void main() {
     expect(marcado, isTrue);
   });
 
+  testWidgets(
+    'ProductoPackCard: sin barcode no muestra la fila; pedido e imprimir',
+    (t) async {
+      var impreso = 0;
+      await t.pumpWidget(
+        app(
+          ProductoPackCard(
+            producto: ProductoPacking(
+              id: 1,
+              pedidoId: 13,
+              idMove: 100,
+              idProduct: 500,
+              productName: 'Sin código',
+              quantity: 2,
+            ),
+            mostrarPedido: true,
+            onImprimir: () => impreso++,
+          ),
+        ),
+      );
+      expect(find.textContaining('Barcode'), findsNothing);
+      expect(find.text('Pedido: '), findsOneWidget);
+      expect(find.text('13'), findsOneWidget);
+      await t.tap(find.byIcon(Icons.print));
+      expect(impreso, 1);
+    },
+  );
+
   group('PorHacerTab', () {
     late MockDetailBloc bloc;
     final producto = productoTest(id: 7);

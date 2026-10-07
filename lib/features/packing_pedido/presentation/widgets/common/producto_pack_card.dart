@@ -14,6 +14,12 @@ class ProductoPackCard extends StatelessWidget {
   final ValueChanged<bool>? onSeleccionar;
   final Widget? accion;
 
+  /// Muestra la fila "Pedido" (número del pedido).
+  final bool mostrarPedido;
+
+  /// Ícono de imprimir en la fila del pedido (null = sin ícono).
+  final VoidCallback? onImprimir;
+
   const ProductoPackCard({
     super.key,
     required this.producto,
@@ -21,6 +27,8 @@ class ProductoPackCard extends StatelessWidget {
     this.seleccionado,
     this.onSeleccionar,
     this.accion,
+    this.mostrarPedido = false,
+    this.onImprimir,
   });
 
   static String fmt(double v) =>
@@ -65,11 +73,8 @@ class ProductoPackCard extends StatelessWidget {
                       ),
                     ),
                     InfoLineaPack(etiqueta: 'Código', valor: p.productCode),
-                    InfoLineaPack(
-                      etiqueta: 'Barcode',
-                      valor: p.barcode,
-                      vacio: 'Sin barcode',
-                    ),
+                    if (p.barcode.isNotEmpty)
+                      InfoLineaPack(etiqueta: 'Barcode', valor: p.barcode),
                     if (p.tieneLote || p.loteName.isNotEmpty)
                       InfoLineaPack(
                         etiqueta: 'Lote',
@@ -83,6 +88,25 @@ class ProductoPackCard extends StatelessWidget {
                         icono: Icons.location_on_outlined,
                         valor: p.locationName,
                         vacio: 'Sin ubicación',
+                      ),
+                    if (mostrarPedido)
+                      InfoLineaPack(
+                        etiqueta: 'Pedido',
+                        valor: '${p.pedidoId}',
+                        trailing: onImprimir == null
+                            ? null
+                            : IconButton(
+                                tooltip: 'Imprimir',
+                                visualDensity: VisualDensity.compact,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                icon: Icon(
+                                  Icons.print,
+                                  color: primaryColorApp,
+                                  size: 25,
+                                ),
+                                onPressed: onImprimir,
+                              ),
                       ),
                     if (p.isEmpacado)
                       InfoLineaPack(
