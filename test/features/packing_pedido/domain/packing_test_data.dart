@@ -14,6 +14,7 @@ ProductoPacking productoTest({
   int? idPackage,
   bool manejaTemperatura = false,
   String productName = 'Producto A',
+  String barcodeLocation = 'LOC-A1',
 }) {
   return ProductoPacking(
     id: id,
@@ -23,6 +24,7 @@ ProductoPacking productoTest({
     productName: productName,
     productCode: 'PA-01',
     barcode: '7701234',
+    barcodeLocation: barcodeLocation,
     quantity: quantity,
     quantitySeparate: quantitySeparate,
     estado: estado,

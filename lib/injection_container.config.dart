@@ -214,6 +214,16 @@ import 'features/packing_pedido/domain/usecases/sync_pedidos_pack_usecase.dart'
     as _i621;
 import 'features/packing_pedido/domain/usecases/validar_pedido_pack_usecase.dart'
     as _i7;
+import 'features/packing_pedido/presentation/bloc/confirm/packing_confirm_bloc.dart'
+    as _i782;
+import 'features/packing_pedido/presentation/bloc/detail/packing_pedido_detail_bloc.dart'
+    as _i694;
+import 'features/packing_pedido/presentation/bloc/list/packing_pedido_list_bloc.dart'
+    as _i663;
+import 'features/packing_pedido/presentation/bloc/packages/packing_packages_bloc.dart'
+    as _i1072;
+import 'features/packing_pedido/presentation/bloc/scan/packing_scan_bloc.dart'
+    as _i718;
 import 'features/picking/data/datasources/pick_scan_local_data_source.dart'
     as _i380;
 import 'features/picking/data/datasources/pick_scan_remote_data_source.dart'
@@ -1050,6 +1060,14 @@ extension GetItInjectableX on _i174.GetIt {
         transferRepository: gh<_i895.TransferenciasRepository>(),
       ),
     );
+    gh.factory<_i1072.PackingPackagesBloc>(
+      () => _i1072.PackingPackagesBloc(
+        gh<_i545.DesempacarProductoUseCase>(),
+        gh<_i295.EliminarPaqueteUseCase>(),
+        gh<_i312.GetUbicacionesMuelleUseCase>(),
+        gh<_i744.AsignarUbicacionPaquetesUseCase>(),
+      ),
+    );
     gh.lazySingleton<_i601.FetchComponentsFromDbUseCase>(
       () => _i601.FetchComponentsFromDbUseCase(
         gh<_i268.PickingComponentsRepository>(),
@@ -1168,6 +1186,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i311.SaveUserSession>(
       () => _i311.SaveUserSession(gh<_i889.LoginRepository>()),
     );
+    gh.factory<_i782.PackingConfirmBloc>(
+      () => _i782.PackingConfirmBloc(gh<_i7.ValidarPedidoPackUseCase>()),
+    );
     gh.lazySingleton<_i589.CrearLoteInventario>(
       () => _i589.CrearLoteInventario(gh<_i925.InventarioRepository>()),
     );
@@ -1216,10 +1237,25 @@ extension GetItInjectableX on _i174.GetIt {
         printReport: gh<_i152.PrintReport>(),
       ),
     );
+    gh.factory<_i663.PackingPedidoListBloc>(
+      () => _i663.PackingPedidoListBloc(
+        gh<_i621.SyncPedidosPackUseCase>(),
+        gh<_i793.GetPedidosPackLocalUseCase>(),
+        gh<_i306.AsignarResponsablePackUseCase>(),
+        gh<_i786.GetConfigPackingUseCase>(),
+      ),
+    );
     gh.factory<_i672.TransferenciaMultiusuarioPoolBloc>(
       () => _i672.TransferenciaMultiusuarioPoolBloc(
         fetchTransferenciaPoolUseCase:
             gh<_i373.FetchTransferenciaPoolUseCase>(),
+      ),
+    );
+    gh.factory<_i694.PackingPedidoDetailBloc>(
+      () => _i694.PackingPedidoDetailBloc(
+        gh<_i454.GetPedidoPackDetalleUseCase>(),
+        gh<_i167.CrearPaqueteUseCase>(),
+        gh<_i425.DeshacerSeparacionUseCase>(),
       ),
     );
     gh.factory<_i1070.LoginBloc>(
@@ -1239,6 +1275,21 @@ extension GetItInjectableX on _i174.GetIt {
             gh<_i301.FetchTransferenciaMyClaimsUseCase>(),
         releaseTransferenciaClaimUseCase:
             gh<_i1072.ReleaseTransferenciaClaimUseCase>(),
+      ),
+    );
+    gh.factory<_i718.PackingScanBloc>(
+      () => _i718.PackingScanBloc(
+        gh<_i415.GetBarcodesProductoPackUseCase>(),
+        gh<_i786.GetConfigPackingUseCase>(),
+        gh<_i1044.GetNovedadesPackUseCase>(),
+        gh<_i780.MarcarUbicacionOkUseCase>(),
+        gh<_i783.MarcarProductoOkUseCase>(),
+        gh<_i360.ActualizarCantidadSeparadaUseCase>(),
+        gh<_i856.SepararProductoUseCase>(),
+        gh<_i124.DividirProductoUseCase>(),
+        gh<_i997.LeerTemperaturaIaUseCase>(),
+        gh<_i529.EnviarTemperaturaPackUseCase>(),
+        gh<_i245.EnviarImagenNovedadPackUseCase>(),
       ),
     );
     gh.factory<_i731.InventarioBloc>(

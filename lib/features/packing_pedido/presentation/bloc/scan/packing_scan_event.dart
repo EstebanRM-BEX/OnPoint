@@ -1,0 +1,90 @@
+part of 'packing_scan_bloc.dart';
+
+sealed class PackingScanEvent extends Equatable {
+  const PackingScanEvent();
+
+  @override
+  List<Object?> get props => [];
+}
+
+class ScanPackIniciado extends PackingScanEvent {
+  final ProductoPacking producto;
+  const ScanPackIniciado(this.producto);
+
+  @override
+  List<Object?> get props => [producto];
+}
+
+/// Lectura del escáner; se interpreta según el paso actual.
+class ScanPackLeido extends PackingScanEvent {
+  final String valor;
+  const ScanPackLeido(this.valor);
+
+  @override
+  List<Object?> get props => [valor];
+}
+
+class UbicacionPackConfirmadaManual extends PackingScanEvent {
+  const UbicacionPackConfirmadaManual();
+}
+
+class ProductoPackConfirmadoManual extends PackingScanEvent {
+  const ProductoPackConfirmadoManual();
+}
+
+class EdicionCantidadPackAlternada extends PackingScanEvent {
+  const EdicionCantidadPackAlternada();
+}
+
+/// "Aplicar cantidad". Sin [cantidad] usa lo escaneado hasta ahora.
+class CantidadPackAplicada extends PackingScanEvent {
+  final double? cantidad;
+  const CantidadPackAplicada([this.cantidad]);
+
+  @override
+  List<Object?> get props => [cantidad];
+}
+
+/// Cantidad menor aceptada con novedad (el resto queda para backorder).
+class SeparacionParcialPackAceptada extends PackingScanEvent {
+  final String novedad;
+  const SeparacionParcialPackAceptada(this.novedad);
+
+  @override
+  List<Object?> get props => [novedad];
+}
+
+/// Cantidad menor separada y el resto como línea nueva en "Por hacer".
+class DivisionPackSolicitada extends PackingScanEvent {
+  const DivisionPackSolicitada();
+}
+
+class DecisionParcialPackCancelada extends PackingScanEvent {
+  const DecisionParcialPackCancelada();
+}
+
+class TemperaturaPackLeida extends PackingScanEvent {
+  final String imagePath;
+  const TemperaturaPackLeida(this.imagePath);
+
+  @override
+  List<Object?> get props => [imagePath];
+}
+
+/// Sin [imagePath], temperatura digitada a mano.
+class TemperaturaPackEnviada extends PackingScanEvent {
+  final double temperatura;
+  final String? imagePath;
+  const TemperaturaPackEnviada(this.temperatura, {this.imagePath});
+
+  @override
+  List<Object?> get props => [temperatura, imagePath];
+}
+
+class ImagenNovedadPackEnviada extends PackingScanEvent {
+  final String imagePath;
+  const ImagenNovedadPackEnviada(this.imagePath);
+
+  @override
+  List<Object?> get props => [imagePath];
+}
