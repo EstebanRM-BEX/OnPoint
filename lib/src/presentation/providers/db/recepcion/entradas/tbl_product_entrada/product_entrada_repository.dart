@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
+import 'package:wms_app/src/presentation/providers/db/sql_chunks.dart';
 import 'package:wms_app/src/presentation/providers/db/recepcion/entradas/tbl_product_entrada/product_entrada_table.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_deleted_product_model.dart';
@@ -24,16 +25,16 @@ class ProductsEntradaRepository {
             .toSet();
 
         // Consulta única para obtener los registros existentes en la tabla
-        final List<Map<String, dynamic>> existingRows = await txn.query(
+        final List<Map<String, dynamic>> existingRows = await queryWhereIn(
+          txn,
           ProductRecepcionTable.tableName,
           columns: [
             ProductRecepcionTable.columnProductId,
             ProductRecepcionTable.columnIdMove,
             ProductRecepcionTable.columnIdRecepcion,
           ],
-          where:
-              '${ProductRecepcionTable.columnProductId} IN (${List.filled(productIds.length, '?').join(',')})',
-          whereArgs: productIds,
+          inColumn: ProductRecepcionTable.columnProductId,
+          values: productIds,
         );
 
         // Construir un Set de claves compuestas de los registros existentes.
@@ -262,12 +263,15 @@ class ProductsEntradaRepository {
       int idRecepcion, List<int> listIdMove) async {
     try {
       Database db = await DataBaseSqlite().getDatabaseInstance();
-      final resDelete = await db.delete(
-        ProductRecepcionTable.tableName,
-        where:
-            '${ProductRecepcionTable.columnIdRecepcion} = ? AND ${ProductRecepcionTable.columnIdMove} IN (${List.filled(listIdMove.length, '?').join(',')})',
-        whereArgs: [idRecepcion, ...listIdMove],
-      );
+      var resDelete = 0;
+      for (final chunk in sqlChunks(listIdMove)) {
+        resDelete += await db.delete(
+          ProductRecepcionTable.tableName,
+          where:
+              '${ProductRecepcionTable.columnIdRecepcion} = ? AND ${ProductRecepcionTable.columnIdMove} IN (${List.filled(chunk.length, '?').join(',')})',
+          whereArgs: [idRecepcion, ...chunk],
+        );
+      }
       debugPrint('Productos eliminados de la entrada: $resDelete');
       return resDelete;
     } catch (e, s) {

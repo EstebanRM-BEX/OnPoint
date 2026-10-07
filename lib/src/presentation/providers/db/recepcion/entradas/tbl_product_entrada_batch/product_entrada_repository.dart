@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
+import 'package:wms_app/src/presentation/providers/db/sql_chunks.dart';
 import 'package:wms_app/src/presentation/providers/db/recepcion/entradas/tbl_product_entrada_batch/product_entrada_batch_table.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_batch_model.dart';
 
@@ -23,16 +24,16 @@ class ProductsEntradaBatchRepository {
             .toSet();
 
         // Consulta única para obtener los registros existentes en la tabla
-        final List<Map<String, dynamic>> existingRows = await txn.query(
+        final List<Map<String, dynamic>> existingRows = await queryWhereIn(
+          txn,
           ProductRecepcionBatchTable.tableName,
           columns: [
             ProductRecepcionBatchTable.columnProductId,
             ProductRecepcionBatchTable.columnIdMove,
             ProductRecepcionBatchTable.columnIdRecepcion,
           ],
-          where:
-              '${ProductRecepcionBatchTable.columnProductId} IN (${List.filled(productIds.length, '?').join(',')})',
-          whereArgs: productIds,
+          inColumn: ProductRecepcionBatchTable.columnProductId,
+          values: productIds,
         );
 
         // Construir un Set de claves compuestas de los registros existentes.
