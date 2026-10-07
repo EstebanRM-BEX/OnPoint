@@ -595,10 +595,8 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen>
                                               context,
                                               confirmText: 'Seleccionar',
                                               cancelText: 'Cancelar',
-                                              firstDate: DateTime.now()
-                                                  .subtract(
-                                                    const Duration(days: 30),
-                                                  ),
+                                              // En conteo se pueden registrar lotes ya vencidos
+                                              firstDate: DateTime(1980),
                                               lastDate: DateTime.now().add(
                                                 const Duration(days: 2000),
                                               ),
@@ -1032,33 +1030,6 @@ class _NewLoteScreenState extends State<NewLoteOrdenScreen>
                                     ),
                                   );
                                   conteoBloc.newLoteController.text = nombreFinal;
-                                }
-
-                                // Validar que la fecha no sea pasada o igual a hoy
-                                if (selectedDate != null) {
-                                  final now = DateTime.now();
-                                  final soloFechaSeleccionada = DateTime(
-                                      selectedDate!.year,
-                                      selectedDate!.month,
-                                      selectedDate!.day);
-                                  final soloHoy =
-                                      DateTime(now.year, now.month, now.day);
-
-                                  if (soloFechaSeleccionada
-                                          .isBefore(soloHoy) ||
-                                      soloFechaSeleccionada
-                                          .isAtSameMomentAs(soloHoy)) {
-                                    Get.snackbar(
-                                      'Error al crear lote',
-                                      'La fecha de caducidad debe ser mayor a la fecha actual.',
-                                      backgroundColor: white,
-                                      duration: const Duration(seconds: 4),
-                                      colorText: primaryColorApp,
-                                      icon:
-                                          Icon(Icons.error, color: Colors.amber),
-                                    );
-                                    return;
-                                  }
                                 }
 
                                 // Todas las validaciones pasaron — mostrar confirmación

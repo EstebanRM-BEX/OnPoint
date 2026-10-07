@@ -502,8 +502,7 @@ class _NewLoteScreenState extends State<SearchLoteCreateTransferScreen>
                                             context,
                                             confirmText: 'Seleccionar',
                                             cancelText: 'Cancelar',
-                                            firstDate: DateTime.now().subtract(
-                                                const Duration(days: 30)),
+                                            firstDate: DateTime(1980),
                                             lastDate: DateTime.now().add(
                                                 const Duration(days: 2000)),
                                             dateFormat: "dd-MMMM-yyyy",

@@ -529,8 +529,7 @@ class _NewLoteScreenState extends State<NewLoteScreenDevolucion> {
                                             context,
                                             confirmText: 'Seleccionar',
                                             cancelText: 'Cancelar',
-                                            firstDate: DateTime.now().subtract(
-                                                const Duration(days: 30)),
+                                            firstDate: DateTime(1980),
                                             lastDate: DateTime.now().add(
                                                 const Duration(days: 2000)),
                                             dateFormat: "dd-MMMM-yyyy",
@@ -854,33 +853,6 @@ class _NewLoteScreenState extends State<NewLoteScreenDevolucion> {
                                                 DateTime.now().hour,
                                                 DateTime.now().minute,
                                                 DateTime.now().second));
-                                  }
-
-                                  //validacion que la fecha del lote no puede ser menor o igual la fecha actual
-                                  if (selectedDate != null) {
-                                    final now = DateTime.now();
-                                    final selectedDateOnly = DateTime(
-                                        selectedDate!.year,
-                                        selectedDate!.month,
-                                        selectedDate!.day);
-                                    final nowDateOnly =
-                                        DateTime(now.year, now.month, now.day);
-
-                                    if (selectedDateOnly
-                                            .isBefore(nowDateOnly) ||
-                                        selectedDateOnly
-                                            .isAtSameMomentAs(nowDateOnly)) {
-                                      Get.snackbar(
-                                        'Error al crear lote',
-                                        'La fecha de caducidad debe ser mayor a la fecha actual.\nRevise la fecha de caducidad real del producto e intente de nuevo',
-                                        backgroundColor: white,
-                                        duration: const Duration(seconds: 4),
-                                        colorText: primaryColorApp,
-                                        icon: Icon(Icons.error,
-                                            color: Colors.amber),
-                                      );
-                                      return;
-                                    }
                                   }
 
                                   context.read<DevolucionesBloc>().add(

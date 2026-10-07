@@ -184,26 +184,6 @@ class _TransferenciaMultiusuarioNewLoteScreenState
       return;
     }
 
-    if (_selectedDate != null) {
-      final now = DateTime.now();
-      final selectedDateOnly = DateTime(
-        _selectedDate!.year,
-        _selectedDate!.month,
-        _selectedDate!.day,
-      );
-      final nowDateOnly = DateTime(now.year, now.month, now.day);
-      if (!selectedDateOnly.isAfter(nowDateOnly) && !priorityExpiration) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'La fecha de caducidad debe ser mayor a la fecha actual',
-            ),
-          ),
-        );
-        return;
-      }
-    }
-
     context.read<TransferenciaMultiusuarioLoteBloc>().add(
       CreateTransferenciaLoteEvent(
         productId: productId,
@@ -611,9 +591,7 @@ class _TransferenciaMultiusuarioNewLoteScreenState
                     titleText: 'Seleccione una fecha',
                     confirmText: 'Seleccionar',
                     cancelText: 'Cancelar',
-                    firstDate: DateTime.now().subtract(
-                      const Duration(days: 30),
-                    ),
+                    firstDate: DateTime(1980),
                     lastDate: DateTime.now().add(const Duration(days: 2000)),
                     dateFormat: "dd-MMMM-yyyy",
                     locale: DateTimePickerLocale.es,
