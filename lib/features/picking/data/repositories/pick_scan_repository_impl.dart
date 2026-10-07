@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:injectable/injectable.dart';
 import 'package:intl/intl.dart';
@@ -245,6 +246,22 @@ class PickScanRepositoryImpl implements PickScanRepository {
     }
   }
 
+  /// Cantidad que se puede enviar a Odoo. Pick por pedido ("pick") y
+  /// componentes comparten este flujo: el exceso solo vale para componentes
+  /// (producción, con su permiso); en pick por pedido se limita a lo pedido.
+  Future<dynamic> _cantidadPermitida(
+      int pickId, dynamic cantidad, dynamic pedido) async {
+    final enviar = (cantidad ?? 0) as num;
+    final maximo = (pedido ?? 0) as num;
+    if (enviar <= maximo) return enviar;
+    final pick = await localDataSource.getPickById(pickId);
+    // Pick no encontrado: se limita, el exceso es la excepción.
+    if (pick != null && pick.typePick != 'pick') return enviar;
+    debugPrint(
+        '⛔ Pick $pickId: se intentó enviar $enviar (pedido $maximo); se limita');
+    return maximo;
+  }
+
   @override
   Future<Either<Failure, ScanSendResult>> sendProductToOdoo(
       int pickId, int productId, int idMove, int currentBatchId) async {
@@ -268,10 +285,8 @@ class PickScanRepositoryImpl implements PickScanRepository {
             idProducto: product.idProduct ?? 0,
             idLote: product.loteId ?? 0,
             idUbicacionDestino: product.muelleId ?? 0,
-            cantidadEnviada:
-                (product.quantitySeparate ?? 0.0) > (product.quantity ?? 0.0)
-                    ? (product.quantitySeparate ?? 0.0)
-                    : (product.quantitySeparate ?? 0.0),
+            cantidadEnviada: await _cantidadPermitida(
+                pickId, product.quantitySeparate, product.quantity),
             idOperario: userId,
             timeLine: product.timeSeparate == null
                 ? 30.0

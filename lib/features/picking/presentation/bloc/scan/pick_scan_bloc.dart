@@ -370,7 +370,9 @@ class PickScanBloc extends Bloc<PickScanEvent, PickScanState> {
   void _onAddQuantitySeparateEvent(
       AddQuantitySeparate event, Emitter<PickScanState> emit) async {
     try {
-      if (quantitySelected > (currentProduct.quantity ?? 0)) {
+      // `+ event.quantity`: antes solo se frenaba si ya estaba pasado, así
+      // que con lo pedido completo (o fraccionado) aún sumaba una vez más.
+      if (quantitySelected + event.quantity > (currentProduct.quantity ?? 0)) {
         return;
       }
       quantitySelected = quantitySelected + event.quantity;
@@ -781,6 +783,11 @@ class PickScanBloc extends Bloc<PickScanEvent, PickScanState> {
 
       add(PickingOkEvent(
           pickWithProducts.pick?.id ?? 0, currentProduct.idProduct ?? 0));
+      // Sacamos el pick cerrado de la BD local para que no siga apareciendo
+      // en el listado (pick o componentes) al volver.
+      await DataBaseSqlite().pickRepository.deletePickById(event.idPick);
+      listOfPick.removeWhere((pick) => pick.id == event.idPick);
+      listOfPickFiltered.removeWhere((pick) => pick.id == event.idPick);
       // La lista de picks se refresca desde PickingListBloc al volver
 
       emit(PickOkEventSuccess('Pick cerrado correctamente'));

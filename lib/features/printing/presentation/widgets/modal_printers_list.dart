@@ -6,6 +6,7 @@ import '../../domain/entities/printer.dart';
 import '../../domain/entities/printer_report.dart';
 import 'package:wms_app/injection_container.dart';
 import '../bloc/printing_bloc.dart';
+import 'slide_to_print_button.dart';
 
 class ModalPrintersList extends StatefulWidget {
   final List<dynamic> resIds;
@@ -343,70 +344,7 @@ class _ReportTile extends StatelessWidget {
               style: const TextStyle(fontSize: 10, color: grey)),
           trailing: IconButton(
             onPressed: (state is! PrintingInProgress)
-                ? () {
-                    Get.defaultDialog(
-                      title: 'Confirmación',
-                      middleText:
-                          '¿Desea imprimir el reporte "${report.name}" en la impresora "${printer.printerName}"?',
-                      textConfirm: 'Si, Imprimir',
-                      textCancel: 'Cancelar',
-                      confirmTextColor: white,
-                      buttonColor: primaryColorApp,
-                      onConfirm: () {
-                        Get.back();
-
-                        // resIds puede traer valores null (p.ej. idMove/id de
-                        // un producto/batch que aún no tiene ese campo
-                        // asignado); `List<int>.from` con un null revienta
-                        // con "type 'Null' is not a subtype of type 'int'" y
-                        // no hay feedback para el usuario. Filtramos y
-                        // validamos antes de construir el evento.
-                        final safeResIds =
-                            resIds.whereType<int>().toList();
-                        if (safeResIds.isEmpty) {
-                          Get.snackbar(
-                            '360 Software Informa',
-                            'No se pudo imprimir: el producto/lote no tiene un identificador válido.',
-                            backgroundColor: white,
-                            colorText: primaryColorApp,
-                            icon: const Icon(Icons.error, color: Colors.red),
-                          );
-                          return;
-                        }
-
-                        // companyId también puede llegar null (p.ej.
-                        // warehouseId nulo de un pedido sin ese dato) desde
-                        // algún caller que no le puso el `?? 1` de respaldo;
-                        // int.parse('null') lanza FormatException. tryParse
-                        // + fallback a 1 evita ese crash sin depender de que
-                        // cada pantalla lo maneje.
-                        final safeCompanyId =
-                            int.tryParse(companyId.toString()) ?? 1;
-
-                        context
-                            .read<PrintingBloc>()
-                            .add(SelectPrinterEvent(printer));
-                        context
-                            .read<PrintingBloc>()
-                            .add(SelectReportEvent(report));
-                        context.read<PrintingBloc>().add(ExecutePrintEvent(
-                            resIds: safeResIds,
-                            companyId: safeCompanyId,
-                            copies: copies));
-                        debugPrint(printer.hostmachine);
-                        debugPrint(printer.printerType);
-                        debugPrint(printer.hostmachine);
-                        debugPrint('reporte: ${report.name}');
-                        debugPrint('reporte: ${report.reportName}');
-                        debugPrint('reporte: ${report.id}');
-                        debugPrint('reporte: ${report.reportType}');
-                        debugPrint('reporte: ${report.model}');
-                        debugPrint('safeResIds: ${safeResIds.join(', ')}');
-                        debugPrint('safeCompanyId: $safeCompanyId');
-                        debugPrint('copies: $copies');
-                      },
-                    );
-                  }
+                ? () => _confirmarImpresion(context)
                 : null,
             icon: isPrintingThis
                 ? const SizedBox(
@@ -422,5 +360,59 @@ class _ReportTile extends StatelessWidget {
         );
       },
     );
+  }
+
+  void _confirmarImpresion(BuildContext context) {
+    final bloc = context.read<PrintingBloc>();
+    Get.defaultDialog(
+      title: 'Confirmación',
+      content: Column(
+        children: [
+          Text(
+            '¿Desea imprimir el reporte "${report.name}" en la impresora "${printer.printerName}"?',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14),
+          ),
+          const SizedBox(height: 16),
+          SlideToPrintButton(
+            onSubmit: () {
+              Get.back();
+              _imprimir(bloc);
+            },
+          ),
+        ],
+      ),
+      textCancel: 'Cancelar',
+    );
+  }
+
+  void _imprimir(PrintingBloc bloc) {
+    // resIds puede traer valores null (p.ej. idMove/id de un producto/batch
+    // que aún no tiene ese campo asignado); `List<int>.from` con un null
+    // revienta con "type 'Null' is not a subtype of type 'int'" y no hay
+    // feedback para el usuario. Filtramos y validamos antes de construir el
+    // evento.
+    final safeResIds = resIds.whereType<int>().toList();
+    if (safeResIds.isEmpty) {
+      Get.snackbar(
+        '360 Software Informa',
+        'No se pudo imprimir: el producto/lote no tiene un identificador válido.',
+        backgroundColor: white,
+        colorText: primaryColorApp,
+        icon: const Icon(Icons.error, color: Colors.red),
+      );
+      return;
+    }
+
+    // companyId también puede llegar null (p.ej. warehouseId nulo de un
+    // pedido sin ese dato) desde algún caller que no le puso el `?? 1` de
+    // respaldo; int.parse('null') lanza FormatException. tryParse + fallback
+    // a 1 evita ese crash sin depender de que cada pantalla lo maneje.
+    final safeCompanyId = int.tryParse(companyId.toString()) ?? 1;
+
+    bloc.add(SelectPrinterEvent(printer));
+    bloc.add(SelectReportEvent(report));
+    bloc.add(ExecutePrintEvent(
+        resIds: safeResIds, companyId: safeCompanyId, copies: copies));
   }
 }
