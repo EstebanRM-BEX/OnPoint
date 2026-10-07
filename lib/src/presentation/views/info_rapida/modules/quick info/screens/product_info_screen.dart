@@ -163,36 +163,44 @@ class ProductInfoScreen extends StatelessWidget {
               top: false,
               child: Container(
                 width: size.width,
-                height: size.height,
                 color: Colors.grey.shade50,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                // Header, detalle del producto, título y buscador quedan
+                // fijos; solo la lista de ubicaciones hace scroll.
+                child: LayoutBuilder(
+                  builder: (context, constraints) => Column(
                     children: [
                       AppBar(size: size),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 14, 12, 0),
-                        child: ProductDetailCard(
-                          product: product,
-                          isEditMode: bloc.isEdit,
-                          isExpanded: bloc.isExpanded,
-                          nameController: nameController,
-                          referenceController: referenceController,
-                          priceController: priceController,
-                          pesoController: pesoController,
-                          volumenController: volumenController,
-                          barcodeController: barcodeController,
-                          onViewImage: () {
-                            context.read<InfoRapidaBloc>().add(
-                              ViewProductImageEvent(product.id ?? 0),
-                            );
-                          },
-                          onToggleExpanded: () {
-                            context.read<InfoRapidaBloc>().add(
-                              ToggleProductExpansionEvent(!bloc.isExpanded),
-                            );
-                          },
-                          onSubmitUpdate: submitUpdate,
+                      // Tope de altura: en modo edición/expandido la card
+                      // crece y, con el teclado abierto, dejaría sin espacio
+                      // a la lista. Si lo supera, scrollea por dentro.
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: constraints.maxHeight * 0.45,
+                        ),
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(12, 14, 12, 0),
+                          child: ProductDetailCard(
+                            product: product,
+                            isEditMode: bloc.isEdit,
+                            isExpanded: bloc.isExpanded,
+                            nameController: nameController,
+                            referenceController: referenceController,
+                            priceController: priceController,
+                            pesoController: pesoController,
+                            volumenController: volumenController,
+                            barcodeController: barcodeController,
+                            onViewImage: () {
+                              context.read<InfoRapidaBloc>().add(
+                                ViewProductImageEvent(product.id ?? 0),
+                              );
+                            },
+                            onToggleExpanded: () {
+                              context.read<InfoRapidaBloc>().add(
+                                ToggleProductExpansionEvent(!bloc.isExpanded),
+                              );
+                            },
+                            onSubmitUpdate: submitUpdate,
+                          ),
                         ),
                       ),
                       Padding(
@@ -465,11 +473,9 @@ class ProductInfoScreen extends StatelessWidget {
                           onTap: () {},
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      Expanded(
                         child: ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                           cacheExtent: 500, // Precarga 500px adicionales
                           itemCount: bloc.ubicacionesProducto?.length ?? 0,
                           separatorBuilder: (_, __) =>

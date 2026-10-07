@@ -53,6 +53,7 @@ class ProductDetailCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: white,
         borderRadius: BorderRadius.circular(18),
@@ -68,29 +69,29 @@ class ProductDetailCard extends StatelessWidget {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(10),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 GestureDetector(
                   onTap: onViewImage,
                   child: Container(
-                    width: 64,
-                    height: 64,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
                       color: primaryColorApp.withOpacity(0.06),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: primaryColorApp.withOpacity(0.15)),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.image_outlined, color: primaryColorApp, size: 26),
+                        Icon(Icons.image_outlined, color: primaryColorApp, size: 20),
                         const SizedBox(height: 2),
                         Text(
                           'Foto',
                           style: TextStyle(
-                            fontSize: 9,
+                            fontSize: 8,
                             fontWeight: FontWeight.bold,
                             color: primaryColorApp,
                           ),
@@ -99,13 +100,13 @@ class ProductDetailCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
                         decoration: BoxDecoration(
                           color: primaryColorApp.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(20),
@@ -121,12 +122,12 @@ class ProductDetailCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       isEditMode
                           ? TextFormField(
                               controller: nameController,
                               maxLines: 2,
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                               decoration: InputDecoration(
                                 isDense: true,
                                 contentPadding:
@@ -142,17 +143,17 @@ class ProductDetailCard extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 13,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
                                 height: 1.2,
                               ),
                             ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 2),
                       Text(
                         'Categoría: ${product.categoria ?? 'Sin categoría'}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                        style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
                       ),
                     ],
                   ),
@@ -160,10 +161,43 @@ class ProductDetailCard extends StatelessWidget {
               ],
             ),
           ),
+          // Arriba de los detalles para que no se desplace al expandir.
+          InkWell(
+            onTap: onToggleExpanded,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                border: Border.symmetric(
+                  horizontal: BorderSide(color: Colors.grey.shade100),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    isExpanded ? 'Ocultar detalles' : 'Mostrar detalles',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  AnimatedRotation(
+                    turns: isExpanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(Icons.keyboard_arrow_down_rounded,
+                        size: 18, color: Colors.grey.shade500),
+                  ),
+                ],
+              ),
+            ),
+          ),
           if (isExpanded) ...[
-            Divider(height: 1, color: Colors.grey.shade100),
             Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(10),
               child: Column(
                 children: [
                   Row(
@@ -175,7 +209,7 @@ class ProductDetailCard extends StatelessWidget {
                         color: Colors.green.shade700,
                         bg: Colors.green.shade50,
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       _KpiTile(
                         label: 'Previsto',
                         value: '${product.previsto ?? 0}',
@@ -185,7 +219,7 @@ class ProductDetailCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
@@ -206,7 +240,7 @@ class ProductDetailCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Expanded(
@@ -230,7 +264,7 @@ class ProductDetailCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   _AttributeField(
                     label: 'Volumen m³',
                     value: product.volumen != null ? '${product.volumen} m³' : '0 m³',
@@ -238,9 +272,9 @@ class ProductDetailCard extends StatelessWidget {
                     editable: isEditMode,
                     numeric: true,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade50,
                       borderRadius: BorderRadius.circular(10),
@@ -337,39 +371,6 @@ class ProductDetailCard extends StatelessWidget {
               ),
             ),
           ],
-          InkWell(
-            onTap: onToggleExpanded,
-            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(18)),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                border: Border(top: BorderSide(color: Colors.grey.shade100)),
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(18)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    isExpanded ? 'Ocultar detalles' : 'Mostrar detalles',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade500,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  AnimatedRotation(
-                    turns: isExpanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Icon(Icons.keyboard_arrow_down_rounded,
-                        size: 18, color: Colors.grey.shade500),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -395,7 +396,7 @@ class _KpiTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(12),
@@ -420,7 +421,7 @@ class _KpiTile extends StatelessWidget {
               children: [
                 Text(value,
                     style:
-                        TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: color)),
+                        TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)),
                 const SizedBox(width: 3),
                 Text(unit,
                     style: TextStyle(
@@ -452,7 +453,7 @@ class _AttributeField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
         color: editable ? white : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(10),
@@ -465,7 +466,7 @@ class _AttributeField extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
           ),
           const SizedBox(width: 6),
           Expanded(

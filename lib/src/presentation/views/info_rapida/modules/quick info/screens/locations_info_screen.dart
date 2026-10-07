@@ -222,7 +222,6 @@ class _LocationInfoScreenState extends State<LocationInfoScreen> {
               top: false,
               child: Container(
                 width: size.width,
-                height: size.height,
                 color: Colors.grey.shade50,
                 child: Column(
                   children: [
@@ -264,134 +263,173 @@ class _LocationInfoScreenState extends State<LocationInfoScreen> {
                         );
                       },
                     ),
+                    // Detalle de la ubicación, buscador y título quedan
+                    // fijos; solo la lista de productos hace scroll.
                     Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.fromLTRB(12, 14, 12, 16),
-                        children: [
-                          if (ubicacion != null)
-                            LocationDetailCard(
-                              ubicacion: ubicacion,
-                              isEditMode: bloc.isEdit,
-                              nameController: nameController,
-                              barcodeController: barcodeController,
-                              onSubmitUpdate: submitUpdate,
-                            ),
-                          const SizedBox(height: 14),
-                          DynamicSearchBar(
-                            controller: bloc.searchControllerProducts,
-                            hintText: "Buscar producto o código de barras...",
-                            // watchdog: reabre el teclado si el IME del PDA
-                            // (Zebra/Urovo/Chainway) lo cierra solo.
-                            persistentKeyboard: true,
-                            onSearchChanged: (value) {
-                              bloc.add(SearchProductLocationEvent(value));
-                            },
-                            onSearchCleared: () {
-                              bloc.searchControllerProducts.clear();
-                              bloc.add(SearchProductLocationEvent(''));
-                            },
-                            onTap: () {},
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Text(
-                                "Productos",
-                                style: TextStyle(
-                                  color: Colors.grey.shade900,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) => Column(
+                          children: [
+                            if (ubicacion != null)
+                              // Tope de altura: en modo edición con el teclado
+                              // abierto la card dejaría sin espacio a la lista.
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxHeight: constraints.maxHeight * 0.45,
                                 ),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: primaryColorApp.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  '${lista.length}',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: primaryColorApp,
+                                child: SingleChildScrollView(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    12,
+                                    14,
+                                    12,
+                                    0,
+                                  ),
+                                  child: LocationDetailCard(
+                                    ubicacion: ubicacion,
+                                    isEditMode: bloc.isEdit,
+                                    nameController: nameController,
+                                    barcodeController: barcodeController,
+                                    onSubmitUpdate: submitUpdate,
                                   ),
                                 ),
                               ),
-                              const Spacer(),
-                              if (massTransferActive)
-                                _PillButton(
-                                  icon: todosSeleccionados
-                                      ? Icons.deselect
-                                      : Icons.select_all,
-                                  label: todosSeleccionados
-                                      ? "Deselec. todos"
-                                      : "Selec. todos",
-                                  onTap: () => bloc.add(
-                                    SelectAllAvailableProductsEvent(),
-                                  ),
-                                ),
-                              const SizedBox(width: 8),
-                              _PillButton(
-                                icon: bloc.isAscending
-                                    ? Icons.arrow_upward
-                                    : Icons.arrow_downward,
-                                label: "Ordenar",
-                                onTap: () {
-                                  bloc.add(
-                                    SortProductsEvent(!bloc.isAscending),
-                                  );
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(12, 14, 12, 0),
+                              child: DynamicSearchBar(
+                                controller: bloc.searchControllerProducts,
+                                hintText:
+                                    "Buscar producto o código de barras...",
+                                // watchdog: reabre el teclado si el IME del PDA
+                                // (Zebra/Urovo/Chainway) lo cierra solo.
+                                persistentKeyboard: true,
+                                onSearchChanged: (value) {
+                                  bloc.add(SearchProductLocationEvent(value));
                                 },
+                                onSearchCleared: () {
+                                  bloc.searchControllerProducts.clear();
+                                  bloc.add(SearchProductLocationEvent(''));
+                                },
+                                onTap: () {},
                               ),
-                              const SizedBox(width: 8),
-                              InkWell(
-                                borderRadius: BorderRadius.circular(20),
-                                onTap: () =>
-                                    _showPropietarioFilter(context, bloc),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(6),
-                                  child: Icon(
-                                    Icons.person_search_outlined,
-                                    color: _selectedPropietario != null
-                                        ? Colors.amber.shade800
-                                        : primaryColorApp,
-                                    size: 20,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                12,
+                                12,
+                                12,
+                                10,
+                              ),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    "Productos",
+                                    style: TextStyle(
+                                      color: Colors.grey.shade900,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: primaryColorApp.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      '${lista.length}',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: primaryColorApp,
+                                      ),
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  if (massTransferActive)
+                                    _PillButton(
+                                      icon: todosSeleccionados
+                                          ? Icons.deselect
+                                          : Icons.select_all,
+                                      label: todosSeleccionados
+                                          ? "Deselec. todos"
+                                          : "Selec. todos",
+                                      onTap: () => bloc.add(
+                                        SelectAllAvailableProductsEvent(),
+                                      ),
+                                    ),
+                                  const SizedBox(width: 8),
+                                  _PillButton(
+                                    icon: bloc.isAscending
+                                        ? Icons.arrow_upward
+                                        : Icons.arrow_downward,
+                                    label: "Ordenar",
+                                    onTap: () {
+                                      bloc.add(
+                                        SortProductsEvent(!bloc.isAscending),
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(width: 8),
+                                  InkWell(
+                                    borderRadius: BorderRadius.circular(20),
+                                    onTap: () =>
+                                        _showPropietarioFilter(context, bloc),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(6),
+                                      child: Icon(
+                                        Icons.person_search_outlined,
+                                        color: _selectedPropietario != null
+                                            ? Colors.amber.shade800
+                                            : primaryColorApp,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          ...List.generate(lista.length, (index) {
-                            final producto = lista[index];
-                            final isSelected = bloc.productosFiltersMassTransfer
-                                .any((p) => p.id == producto.id);
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: MassTransferProductCard(
-                                producto: producto,
-                                massTransferActive: massTransferActive,
-                                isSelected: isSelected,
-                                onToggleSelected: (selected) {
-                                  bloc.add(
-                                    ToggleProductMassTransferEvent(
-                                      producto,
-                                      selected,
+                            ),
+                            Expanded(
+                              child: ListView.builder(
+                                padding: const EdgeInsets.fromLTRB(
+                                  12,
+                                  0,
+                                  12,
+                                  16,
+                                ),
+                                itemCount: lista.length,
+                                itemBuilder: (context, index) {
+                                  final producto = lista[index];
+                                  final isSelected = bloc
+                                      .productosFiltersMassTransfer
+                                      .any((p) => p.id == producto.id);
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: MassTransferProductCard(
+                                      producto: producto,
+                                      massTransferActive: massTransferActive,
+                                      isSelected: isSelected,
+                                      onToggleSelected: (selected) {
+                                        bloc.add(
+                                          ToggleProductMassTransferEvent(
+                                            producto,
+                                            selected,
+                                          ),
+                                        );
+                                      },
+                                      onOpenDetail: () => getInfoProduct(
+                                        producto.id?.toString() ?? '',
+                                        context,
+                                      ),
                                     ),
                                   );
                                 },
-                                onOpenDetail: () => getInfoProduct(
-                                  producto.id?.toString() ?? '',
-                                  context,
-                                ),
                               ),
-                            );
-                          }),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],

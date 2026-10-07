@@ -39,7 +39,7 @@ class LocationCard extends StatelessWidget {
     final zoneIcon = _isReturnsZone ? Icons.undo_rounded : Icons.warehouse_rounded;
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: white,
         borderRadius: BorderRadius.circular(16),
@@ -59,14 +59,14 @@ class LocationCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 28,
-                height: 28,
+                width: 24,
+                height: 24,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: zoneIconBg,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(zoneIcon, size: 15, color: zoneColor),
+                child: Icon(zoneIcon, size: 13, color: zoneColor),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -84,7 +84,7 @@ class LocationCard extends StatelessWidget {
                     ),
                     Text(
                       ubicacion.ubicacion ?? 'Sin nombre',
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 12,
@@ -113,9 +113,9 @@ class LocationCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: 5),
             decoration: BoxDecoration(
               color: Colors.grey.shade50,
               borderRadius: BorderRadius.circular(10),
@@ -143,7 +143,7 @@ class LocationCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           _MetaRow(
             'Propietario:',
             (ubicacion.propietario == null || ubicacion.propietario == '')
@@ -171,7 +171,7 @@ class LocationCard extends StatelessWidget {
             valueColor: ubicacion.packing == true ? Colors.red : null,
           ),
           if (ubicacion.packing == false) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -180,7 +180,7 @@ class LocationCard extends StatelessWidget {
                   foregroundColor: primaryColorApp,
                   backgroundColor: primaryColorApp.withOpacity(0.06),
                   side: BorderSide(color: primaryColorApp.withOpacity(0.4)),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  padding: const EdgeInsets.symmetric(vertical: 7),
                   shape:
                       RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
@@ -253,10 +253,10 @@ class _MetaRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 1),
       child: Row(
         children: [
-          Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade400)),
+          Text(label, style: TextStyle(fontSize: 10, color: Colors.grey.shade400)),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -265,7 +265,7 @@ class _MetaRow extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: FontWeight.w600,
                 color: valueColor ?? Colors.grey.shade700,
               ),
