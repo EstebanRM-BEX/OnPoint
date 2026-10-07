@@ -119,13 +119,13 @@ void main() {
       }
     });
 
-    testWidgets('muestra "—" como ping inicial (antes de cualquier medición)',
+    testWidgets('muestra "Midiendo…" como ping inicial (antes de cualquier medición)',
         (tester) async {
       await tester.pumpWidget(_buildWidget());
       await tester.pump();
 
       // Sin red en tests → el estado inicial es "measuring", sin ping inventado
-      expect(find.text('—'), findsOneWidget);
+      expect(find.text('Midiendo…'), findsOneWidget);
       expect(find.text('0ms'), findsNothing);
     });
   });
@@ -180,7 +180,7 @@ void main() {
           reason: 'Debe mostrar una etiqueta de calidad al expandir');
     });
 
-    testWidgets('al expandir muestra el texto "Ping:"', (tester) async {
+    testWidgets('al expandir muestra el texto "Respuesta del servidor:"', (tester) async {
       await tester.pumpWidget(_buildWidget());
       await tester.pump();
 
@@ -191,7 +191,7 @@ void main() {
       await tester.pump();
 
       expect(
-        find.textContaining('Ping:'),
+        find.textContaining('Respuesta del servidor:'),
         findsOneWidget,
         reason: 'El ping debe ser visible en estado expandido',
       );

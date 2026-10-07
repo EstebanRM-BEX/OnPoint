@@ -6,10 +6,7 @@ import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/network/connectivity_extensions.dart';
 import 'package:wms_app/core/network/reachability_probe.dart';
 
-enum ConnectionStatus {
-  online,
-  offline,
-}
+enum ConnectionStatus { online, offline }
 
 /// Motivo por el que [ConnectionStatus.offline] (para mensajes al usuario).
 enum NetworkIssue { none, noInternet, serverUnreachable }
@@ -105,7 +102,8 @@ class NetworkInfoImpl with WidgetsBindingObserver implements NetworkInfo {
   @override
   void reportNetworkError() {
     // Con la sonda en curso o recién hecha no aporta nada.
-    if (_inFlight != null || _isFresh() && _status == ConnectionStatus.offline) {
+    if (_inFlight != null ||
+        _isFresh() && _status == ConnectionStatus.offline) {
       return;
     }
     verify(force: true);

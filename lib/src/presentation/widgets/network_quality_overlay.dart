@@ -7,11 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/prefs/pref_utils.dart';
+import 'package:wms_app/core/network/network_quality_metrics.dart';
+import 'package:wms_app/core/network/network_quality_probes.dart';
+import 'package:wms_app/core/network/network_quality_sampler.dart';
 import 'package:wms_app/injection_container.dart' show getIt;
 import 'package:wms_app/src/presentation/providers/network_overlay/network_overlay_cubit.dart';
 
-enum _NetQuality { measuring, excellent, good, poor, offline }
+enum _NetQuality { measuring, optimal, acceptable, problematic, offline }
 
 enum _SpeedState { idle, measuring, done, error }
 
@@ -30,11 +32,7 @@ class NetworkQualityOverlay extends StatefulWidget {
 
 class _NetworkQualityOverlayState extends State<NetworkQualityOverlay>
     with WidgetsBindingObserver {
-  // Fallback cuando aún no hay URL de empresa (pre-login).
-  static const _fallbackPingHost = 'www.gstatic.com';
-  static const _pingInterval = Duration(seconds: 5);
-  static const _pingTimeout = Duration(seconds: 4);
-  static const _pingTargetTtl = Duration(minutes: 1);
+  static const _config = NetworkQualityConfig();
   static const _speedTestUrl =
       'https://speed.cloudflare.com/__down?bytes=1000000';
   static const _margin = 4.0;
@@ -45,7 +43,10 @@ class _NetworkQualityOverlayState extends State<NetworkQualityOverlay>
   Offset? _position;
 
   _NetQuality _quality = _NetQuality.measuring;
-  int? _pingMs;
+  final _window = NetworkQualityWindow(_config);
+  late final NetworkQualitySampler _sampler;
+  void Function()? _disposeProbe;
+  NetworkQualityStats _stats = NetworkQualityStats.empty;
   String _connectionType = '';
   bool _isExpanded = false;
 
@@ -54,11 +55,9 @@ class _NetworkQualityOverlayState extends State<NetworkQualityOverlay>
 
   bool _visible = false;
   bool _foreground = true;
-  bool _pinging = false;
-  (String, int)? _pingTarget;
-  DateTime? _pingTargetAt;
+  bool _monitoring = false;
+  DateTime? _lastSpeedAt;
 
-  Timer? _pingTimer;
   StreamSubscription? _connectivitySub;
   StreamSubscription? _statusSub;
   StreamSubscription? _overlaySub;
@@ -68,6 +67,14 @@ class _NetworkQualityOverlayState extends State<NetworkQualityOverlay>
     super.initState();
     if (NetworkQualityOverlay.disableNetworkCallsForTesting) return;
     WidgetsBinding.instance.addObserver(this);
+    final probe = buildRttProbe(_config);
+    _disposeProbe = probe.dispose;
+    _sampler = NetworkQualitySampler(
+      window: _window,
+      probe: probe.probe,
+      canSample: () => getIt<NetworkInfo>().current != ConnectionStatus.offline,
+      onSample: (_) => _publishStats(),
+    );
     // El monitoreo solo corre mientras el overlay es visible y la app está en
     // primer plano: oculto o minimizado no debe gastar red ni batería.
     final overlay = context.read<NetworkOverlayCubit>();
@@ -90,6 +97,7 @@ class _NetworkQualityOverlayState extends State<NetworkQualityOverlay>
     WidgetsBinding.instance.removeObserver(this);
     _overlaySub?.cancel();
     _stopMonitoring();
+    _disposeProbe?.call();
     super.dispose();
   }
 
@@ -123,37 +131,59 @@ class _NetworkQualityOverlayState extends State<NetworkQualityOverlay>
   void _onTap() {
     final wasExpanded = _isExpanded;
     setState(() => _isExpanded = !_isExpanded);
-    if (!wasExpanded) _measureSpeed();
+    if (wasExpanded) return;
+    // La descarga de 1 MB solo se lanza al expandir y no más seguido que
+    // speedTestMinInterval; el botón de refrescar la repite a pedido.
+    final last = _lastSpeedAt;
+    if (last == null ||
+        DateTime.now().difference(last) >= _config.speedTestMinInterval) {
+      _measureSpeed();
+    }
   }
 
   void _startMonitoring() {
-    if (_pingTimer != null) return;
+    if (_monitoring) return;
+    _monitoring = true;
+    // Al arrancar o volver de segundo plano las muestras previas ya no
+    // representan la red.
+    _window.clearShort();
+    _stats = _window.stats;
     // Valor inicial: onConnectivityChanged solo emite en cambios.
     Connectivity().checkConnectivity().then(_onConnectivity);
     _connectivitySub = Connectivity().onConnectivityChanged.listen(
       _onConnectivity,
     );
     // El estado offline lo decide NetworkInfo (una sola fuente de verdad);
-    // este overlay solo mide la latencia cuando hay conexión.
+    // este overlay solo mide cuando hay conexión.
     _statusSub = getIt<NetworkInfo>().onStatusChanged.listen((status) {
       if (!mounted) return;
+      _sampler.invalidate();
+      _window.clearShort();
       if (status == ConnectionStatus.offline) {
         setState(() {
           _quality = _NetQuality.offline;
-          _pingMs = null;
+          _stats = NetworkQualityStats.empty;
         });
       } else {
-        setState(() => _quality = _NetQuality.measuring);
-        _measurePing();
+        setState(() {
+          _quality = _NetQuality.measuring;
+          _stats = NetworkQualityStats.empty;
+        });
+        _sampler.sampleOnce();
       }
     });
-    _pingTimer = Timer.periodic(_pingInterval, (_) => _measurePing());
-    _measurePing();
+    if (getIt<NetworkInfo>().current == ConnectionStatus.offline) {
+      _quality = _NetQuality.offline;
+    } else {
+      _quality = _NetQuality.measuring;
+    }
+    _sampler.start();
   }
 
   void _stopMonitoring() {
-    _pingTimer?.cancel();
-    _pingTimer = null;
+    _monitoring = false;
+    if (NetworkQualityOverlay.disableNetworkCallsForTesting) return;
+    _sampler.stop();
     _connectivitySub?.cancel();
     _connectivitySub = null;
     _statusSub?.cancel();
@@ -174,75 +204,25 @@ class _NetworkQualityOverlayState extends State<NetworkQualityOverlay>
     });
   }
 
-  /// Host y puerto del ping: el servidor Odoo activo (lo que importa a la app).
-  /// Se cachea un minuto para no leer prefs en cada ping.
-  Future<(String, int)> _resolvePingTarget() async {
-    final at = _pingTargetAt;
-    if (_pingTarget != null &&
-        at != null &&
-        DateTime.now().difference(at) < _pingTargetTtl) {
-      return _pingTarget!;
-    }
-    final url = await PrefUtils.getEnterprise();
-    final uri = Uri.tryParse(url.trim());
-    final target = (uri == null || uri.host.isEmpty)
-        ? (_fallbackPingHost, 443)
-        : (
-            uri.host,
-            uri.hasPort ? uri.port : (uri.scheme == 'http' ? 80 : 443),
-          );
-    _pingTarget = target;
-    _pingTargetAt = DateTime.now();
-    return target;
-  }
-
-  Future<void> _measurePing() async {
-    if (!mounted || _pinging) return;
-    final network = getIt<NetworkInfo>();
-    if (network.current == ConnectionStatus.offline) {
-      if (_quality != _NetQuality.offline) {
-        setState(() {
-          _quality = _NetQuality.offline;
-          _pingMs = null;
-        });
-      }
-      return;
-    }
-    _pinging = true;
-    try {
-      final (host, port) = await _resolvePingTarget();
-      final sw = Stopwatch()..start();
-      final socket = await Socket.connect(host, port, timeout: _pingTimeout);
-      sw.stop();
-      socket.destroy();
-      final ms = sw.elapsedMilliseconds;
-      if (!mounted) return;
-      setState(() {
-        _pingMs = ms;
-        _quality = ms < 100
-            ? _NetQuality.excellent
-            : ms < 300
-            ? _NetQuality.good
-            : _NetQuality.poor;
-      });
-    } catch (_) {
-      // Un ping fallido no es "sin conexión": eso lo decide NetworkInfo.
-      if (!mounted) return;
-      setState(() {
-        _pingMs = null;
-        _quality = network.current == ConnectionStatus.offline
-            ? _NetQuality.offline
-            : _NetQuality.poor;
-      });
-    } finally {
-      _pinging = false;
-    }
+  void _publishStats() {
+    if (!mounted) return;
+    final stats = _window.stats;
+    setState(() {
+      _stats = stats;
+      _quality = switch (stats.level) {
+        NetworkQualityLevel.measuring => _NetQuality.measuring,
+        NetworkQualityLevel.optimal => _NetQuality.optimal,
+        NetworkQualityLevel.acceptable => _NetQuality.acceptable,
+        NetworkQualityLevel.problematic => _NetQuality.problematic,
+      };
+    });
   }
 
   Future<void> _measureSpeed() async {
     if (NetworkQualityOverlay.disableNetworkCallsForTesting) return;
     if (_speedState == _SpeedState.measuring) return;
     if (getIt<NetworkInfo>().current == ConnectionStatus.offline) return;
+    _lastSpeedAt = DateTime.now();
     setState(() {
       _speedState = _SpeedState.measuring;
       _speedMbps = 0;
@@ -282,11 +262,11 @@ class _NetworkQualityOverlayState extends State<NetworkQualityOverlay>
     switch (_quality) {
       case _NetQuality.measuring:
         return Colors.white70;
-      case _NetQuality.excellent:
+      case _NetQuality.optimal:
         return Colors.greenAccent;
-      case _NetQuality.good:
+      case _NetQuality.acceptable:
         return Colors.orangeAccent;
-      case _NetQuality.poor:
+      case _NetQuality.problematic:
         return Colors.redAccent;
       case _NetQuality.offline:
         return Colors.grey;
@@ -297,12 +277,12 @@ class _NetworkQualityOverlayState extends State<NetworkQualityOverlay>
     switch (_quality) {
       case _NetQuality.measuring:
         return 'Midiendo…';
-      case _NetQuality.excellent:
-        return 'Excelente';
-      case _NetQuality.good:
-        return 'Regular';
-      case _NetQuality.poor:
-        return 'Débil';
+      case _NetQuality.optimal:
+        return 'Óptimo';
+      case _NetQuality.acceptable:
+        return 'Aceptable';
+      case _NetQuality.problematic:
+        return 'Problemático';
       case _NetQuality.offline:
         return 'Sin señal';
     }
@@ -312,18 +292,34 @@ class _NetworkQualityOverlayState extends State<NetworkQualityOverlay>
     switch (_quality) {
       case _NetQuality.measuring:
         return 0;
-      case _NetQuality.excellent:
+      case _NetQuality.optimal:
         return 4;
-      case _NetQuality.good:
+      case _NetQuality.acceptable:
         return 3;
-      case _NetQuality.poor:
+      case _NetQuality.problematic:
         return 1;
       case _NetQuality.offline:
         return 0;
     }
   }
 
-  String get _pingText => _pingMs == null ? '—' : '${_pingMs}ms';
+  static String _ms(num? v) => v == null ? '—' : '${v.round()}ms';
+
+  String get _pingText => _ms(_stats.avgMs);
+
+  /// Texto de la píldora colapsada: nunca queda vacía.
+  String get _collapsedText {
+    if (_quality == _NetQuality.offline) return 'Sin señal';
+    if (_stats.avgMs != null) return _pingText;
+    if (_stats.samples > 0) return 'Sin resp.';
+    return 'Midiendo…';
+  }
+
+  String get _latencyLabel => _config.probeMode == NetworkProbeMode.tcpConnect
+      ? 'Latencia de red'
+      : 'Respuesta del servidor';
+
+  String get _percentileLabel => 'p${_config.latencyPercentile.round()}';
 
   @override
   Widget build(BuildContext context) {
@@ -360,7 +356,10 @@ class _NetworkQualityOverlayState extends State<NetworkQualityOverlay>
                         width: 1,
                       ),
                     ),
-                    child: _isExpanded ? _buildExpanded() : _buildCollapsed(),
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: _isExpanded ? _buildExpanded() : _buildCollapsed(),
+                    ),
                   ),
                 ),
               ),
@@ -380,7 +379,7 @@ class _NetworkQualityOverlayState extends State<NetworkQualityOverlay>
         _SignalBars(bars: _signalBars, color: _qualityColor, size: 14),
         const SizedBox(width: 5),
         Text(
-          _quality == _NetQuality.offline ? 'Sin señal' : _pingText,
+          _collapsedText,
           style: TextStyle(
             color: _qualityColor,
             fontSize: 11,
@@ -423,10 +422,39 @@ class _NetworkQualityOverlayState extends State<NetworkQualityOverlay>
               style: const TextStyle(color: Colors.white70, fontSize: 10),
             ),
             if (_quality != _NetQuality.offline) ...[
-              Text(
-                'Ping: $_pingText',
-                style: const TextStyle(color: Colors.white70, fontSize: 10),
-              ),
+              for (final line in [
+                '$_latencyLabel: $_pingText',
+                '$_percentileLabel: ${_ms(_stats.percentileMs)}  '
+                    'Mín/Máx: ${_ms(_stats.minMs)} / ${_ms(_stats.maxMs)}',
+                'Jitter: ${_ms(_stats.jitterMs)}',
+                'Pérdida: ${_stats.lossPercent.toStringAsFixed(1)}% '
+                    '(${_stats.lossLost}/${_stats.lossTotal})',
+              ])
+                Text(
+                  line,
+                  style: const TextStyle(color: Colors.white70, fontSize: 10),
+                ),
+              if (_stats.causeMessage != null) ...[
+                const SizedBox(height: 3),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 190),
+                  child: Text(
+                    _stats.causeMessage! +
+                        (_sampler.lastError == null
+                            ? ''
+                            : '\n(${_sampler.lastError})'),
+                    style: TextStyle(
+                      color: _qualityColor,
+                      fontSize: 10,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ] else if (_quality == _NetQuality.measuring)
+                Text(
+                  'Muestras: ${_stats.successes}/${_config.minSuccessSamples}',
+                  style: const TextStyle(color: Colors.white54, fontSize: 10),
+                ),
               const SizedBox(height: 4),
               _buildSpeedRow(),
             ],
