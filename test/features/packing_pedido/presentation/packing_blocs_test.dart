@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
@@ -200,6 +202,22 @@ void main() {
         expect(bloc.state.pedidos, [a, b]);
         expect(bloc.state.config.manualQuantityPack, isTrue);
         expect(bloc.state.status, ListaPackStatus.listo);
+      },
+    );
+
+    test(
+      'si se cierra mientras lee SQLite no sincroniza ni lanza error',
+      () async {
+        final local = Completer<Either<Failure, List<PedidoPack>>>();
+        when(() => getLocal(any())).thenAnswer((_) => local.future);
+        final bloc = build()..add(const ListaPackIniciada());
+        await Future<void>.delayed(Duration.zero);
+
+        final closing = bloc.close();
+        local.complete(const Right([]));
+        await closing;
+
+        verifyNever(() => sync(any()));
       },
     );
 

@@ -2,6 +2,7 @@ import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
+import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
 import 'package:wms_app/core/usecases/usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/packing_catalogos.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/pedido_pack.dart';
@@ -20,7 +21,8 @@ part 'packing_pedido_list_state.dart';
 /// asignación de responsable.
 @injectable
 class PackingPedidoListBloc
-    extends Bloc<PackingPedidoListEvent, PackingPedidoListState> {
+    extends Bloc<PackingPedidoListEvent, PackingPedidoListState>
+    with SafeBlocMixin<PackingPedidoListEvent, PackingPedidoListState> {
   final SyncPedidosPackUseCase syncPedidos;
   final GetPedidosPackLocalUseCase getPedidosLocal;
   final AsignarResponsablePackUseCase asignarResponsable;
@@ -74,8 +76,10 @@ class PackingPedidoListBloc
       ),
     );
 
-    // Primera vez sin datos locales: se trae de Odoo.
-    if (event.sincronizar || state.pedidos.isEmpty) {
+    // Primera vez sin datos locales: se trae de Odoo. Si el operario salió
+    // de la pantalla mientras se leía SQLite, el bloc ya está cerrado y el
+    // add() tiraba "Cannot add new events after calling close".
+    if (!isClosing && (event.sincronizar || state.pedidos.isEmpty)) {
       add(const ListaPackSincronizada());
     }
   }
