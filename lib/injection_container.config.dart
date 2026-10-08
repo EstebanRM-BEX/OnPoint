@@ -141,6 +141,18 @@ import 'features/info_rapida/domain/usecases/get_consultas_recientes_usecase.dar
     as _i120;
 import 'features/info_rapida/domain/usecases/guardar_consulta_reciente_usecase.dart'
     as _i701;
+import 'features/info_rapida/presentation/bloc/catalog/catalog_search_bloc.dart'
+    as _i942;
+import 'features/info_rapida/presentation/bloc/location/location_info_bloc.dart'
+    as _i407;
+import 'features/info_rapida/presentation/bloc/mass_transfer/mass_transfer_bloc.dart'
+    as _i834;
+import 'features/info_rapida/presentation/bloc/product/product_info_bloc.dart'
+    as _i396;
+import 'features/info_rapida/presentation/bloc/scan/info_rapida_scan_bloc.dart'
+    as _i106;
+import 'features/info_rapida/presentation/bloc/transfer/transfer_info_bloc.dart'
+    as _i854;
 import 'features/inventario/data/datasources/inventario_local_data_source.dart'
     as _i812;
 import 'features/inventario/data/datasources/inventario_remote_data_source.dart'
@@ -1575,9 +1587,36 @@ extension GetItInjectableX on _i174.GetIt {
       () =>
           _i335.PickScanRemoteDataSourceImpl(gh<_i616.GetUrlImagenProducto>()),
     );
+    gh.factory<_i407.LocationInfoBloc>(
+      () => _i407.LocationInfoBloc(
+        actualizarUbicacion: gh<_i292.ActualizarUbicacionUseCase>(),
+      ),
+    );
     gh.factory<_i777.ExpedicionConfirmBloc>(
       () => _i777.ExpedicionConfirmBloc(
         confirmarPedidoUseCase: gh<_i868.ConfirmarPedidoUseCase>(),
+      ),
+    );
+    gh.factory<_i106.InfoRapidaScanBloc>(
+      () => _i106.InfoRapidaScanBloc(
+        consultarPorBarcode: gh<_i219.ConsultarPorBarcodeUseCase>(),
+        consultarPorId: gh<_i713.ConsultarPorIdUseCase>(),
+        getConsultasRecientes: gh<_i120.GetConsultasRecientesUseCase>(),
+        guardarConsultaReciente: gh<_i701.GuardarConsultaRecienteUseCase>(),
+        borrarConsultasRecientes: gh<_i520.BorrarConsultasRecientesUseCase>(),
+        getConfiguracionUsuario: gh<_i460.GetConfiguracionUsuarioUseCase>(),
+      ),
+    );
+    gh.factory<_i942.CatalogSearchBloc>(
+      () => _i942.CatalogSearchBloc(
+        getCatalogoProductos: gh<_i968.GetCatalogoProductosUseCase>(),
+        getCatalogoUbicaciones: gh<_i235.GetCatalogoUbicacionesUseCase>(),
+      ),
+    );
+    gh.factory<_i834.MassTransferBloc>(
+      () => _i834.MassTransferBloc(
+        crearTransferenciaMasiva: gh<_i1018.CrearTransferenciaMasivaUseCase>(),
+        getCatalogoUbicaciones: gh<_i235.GetCatalogoUbicacionesUseCase>(),
       ),
     );
     gh.lazySingleton<_i1048.PickScanRepository>(
@@ -1595,6 +1634,18 @@ extension GetItInjectableX on _i174.GetIt {
         getUserNovelties: gh<_i465.GetUserNovelties>(),
         registerDevice: gh<_i902.RegisterDevice>(),
         saveUserSession: gh<_i311.SaveUserSession>(),
+      ),
+    );
+    gh.factory<_i396.ProductInfoBloc>(
+      () => _i396.ProductInfoBloc(
+        actualizarProducto: gh<_i447.ActualizarProductoUseCase>(),
+        getUrlImagenProducto: gh<_i616.GetUrlImagenProducto>(),
+      ),
+    );
+    gh.factory<_i854.TransferInfoBloc>(
+      () => _i854.TransferInfoBloc(
+        crearTransferencia: gh<_i101.CrearTransferenciaIndividualUseCase>(),
+        getCatalogoUbicaciones: gh<_i235.GetCatalogoUbicacionesUseCase>(),
       ),
     );
     gh.lazySingleton<_i360.AssignMuelleUseCase>(
