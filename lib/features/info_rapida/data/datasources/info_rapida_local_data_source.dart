@@ -15,7 +15,7 @@ import 'package:wms_app/features/info_rapida/domain/entities/info_rapida_params.
 import 'package:wms_app/features/info_rapida/domain/entities/recent_query.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
-import 'package:wms_app/src/presentation/views/info_rapida/models/update_product_request.dart';
+import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/update_product_request.dart';
 
 /// Contrato del origen de datos local para Información Rápida.
 abstract class InfoRapidaLocalDataSource {
