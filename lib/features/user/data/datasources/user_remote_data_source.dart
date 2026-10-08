@@ -42,6 +42,12 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
       }
 
       return config;
+    } else if (response.statusCode == 404) {
+      // Odoo multi-base responde 404 (no el code 100) cuando la cookie de
+      // sesión ya no es válida: no sabe a qué base enrutar la petición.
+      throw const ServerException(
+        'Tu sesión no es válida o expiró. Inicia sesión de nuevo.',
+      );
     } else {
       throw ServerException('Error del servidor: ${response.statusCode}');
     }

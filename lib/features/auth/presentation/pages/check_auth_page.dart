@@ -24,6 +24,24 @@ class _CheckAuthPageState extends State<CheckAuthPage> {
   /// del arranque) e ignora los posteriores.
   bool _yaNavego = false;
 
+  /// Sale del gate hacia 'enterprice' quitando todo el stack.
+  ///
+  /// Antes se hacía `showScrollableErrorDialog` + `pushReplacementNamed`: el
+  /// replace sustituía al DIÁLOGO (la ruta de arriba), no a esta página, así
+  /// que `CheckAuthPage` quedaba viva debajo con sus listeners, y el diálogo
+  /// se cruzaba con la transición de la página (parpadeo blanco ↔ diálogo).
+  /// Ahora se navega primero y el error se muestra ya sobre 'enterprice'.
+  void _irAEnterprise([String? error]) {
+    if (_yaNavego) return;
+    _yaNavego = true;
+    Navigator.pushNamedAndRemoveUntil(context, 'enterprice', (_) => false);
+    if (error != null) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => showScrollableErrorDialog(error),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -34,7 +52,7 @@ class _CheckAuthPageState extends State<CheckAuthPage> {
             // Sesión válida - registrar dispositivo para verificar autorización
             context.read<UserBloc>().add(RegisterDeviceEvent());
           } else if (state is AuthNotLoggedIn || state is AuthExpired || state is AuthError) {
-            Navigator.pushReplacementNamed(context, 'enterprice');
+            _irAEnterprise();
           }
         },
         child: BlocListener<UserBloc, UserState>(
@@ -49,15 +67,12 @@ class _CheckAuthPageState extends State<CheckAuthPage> {
               return;
             }
             if (state is UserError) {
-              _yaNavego = true;
-              showScrollableErrorDialog(state.message);
-              Navigator.pushReplacementNamed(context, 'enterprice');
+              _irAEnterprise(state.message);
               return;
             }
             if (state is DeviceRegistrationFailure) {
-              _yaNavego = true;
-              showScrollableErrorDialog(state.message);
-              Navigator.pushReplacementNamed(context, 'enterprice');
+              _irAEnterprise(state.message);
+              return;
             }
             if (state is UserLoaded) {
               _yaNavego = true;
