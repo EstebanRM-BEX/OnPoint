@@ -19,7 +19,6 @@ abstract class InfoRapidaRemoteDataSource {
     required String barcode,
     required String deviceId,
     required String versionApp,
-    bool isLoadingDialog = false,
   });
 
   /// Consulta información manual por ID (producto o ubicación).
@@ -28,32 +27,23 @@ abstract class InfoRapidaRemoteDataSource {
     required bool isProduct,
     required String deviceId,
     required String versionApp,
-    bool isLoadingDialog = false,
   });
 
   /// Actualiza los atributos de un producto en el backend.
   Future<ProductoInfo> updateProduct(
-    ActualizarProductoParams params, {
-    bool isLoadingDialog = false,
-  });
+    ActualizarProductoParams params);
 
   /// Actualiza el nombre y código de barras de una ubicación en el backend.
   Future<UbicacionInfo> updateLocation(
-    ActualizarUbicacionParams params, {
-    bool isLoadingDialog = false,
-  });
+    ActualizarUbicacionParams params);
 
   /// Crea una transferencia directa individual de un producto.
   Future<TransferenciaIndividualResult> crearTransferenciaIndividual(
-    CrearTransferenciaIndividualParams params, {
-    bool isLoadingDialog = false,
-  });
+    CrearTransferenciaIndividualParams params);
 
   /// Crea una transferencia masiva de múltiples productos.
   Future<TransferenciaMasivaResult> crearTransferenciaMasiva(
-    CrearTransferenciaMasivaParams params, {
-    bool isLoadingDialog = false,
-  });
+    CrearTransferenciaMasivaParams params);
 }
 
 /// Implementación del origen de datos remoto utilizando [ApiRequestService].
@@ -106,7 +96,6 @@ class InfoRapidaRemoteDataSourceImpl implements InfoRapidaRemoteDataSource {
     required String barcode,
     required String deviceId,
     required String versionApp,
-    bool isLoadingDialog = false,
   }) async {
     try {
       final response = await _apiService.getInfo(
@@ -118,7 +107,7 @@ class InfoRapidaRemoteDataSourceImpl implements InfoRapidaRemoteDataSource {
             'version_app': versionApp,
           },
         },
-        isLoadinDialog: isLoadingDialog,
+        isLoadinDialog: false,
       );
 
       final json = _decodeResponse(response);
@@ -134,7 +123,6 @@ class InfoRapidaRemoteDataSourceImpl implements InfoRapidaRemoteDataSource {
     required bool isProduct,
     required String deviceId,
     required String versionApp,
-    bool isLoadingDialog = false,
   }) async {
     try {
       final response = await _apiService.getInfo(
@@ -152,7 +140,7 @@ class InfoRapidaRemoteDataSourceImpl implements InfoRapidaRemoteDataSource {
                   'version_app': versionApp,
                 },
         },
-        isLoadinDialog: isLoadingDialog,
+        isLoadinDialog: false,
       );
 
       final json = _decodeResponse(response);
@@ -164,9 +152,7 @@ class InfoRapidaRemoteDataSourceImpl implements InfoRapidaRemoteDataSource {
 
   @override
   Future<ProductoInfo> updateProduct(
-    ActualizarProductoParams params, {
-    bool isLoadingDialog = false,
-  }) async {
+    ActualizarProductoParams params) async {
     try {
       final response = await _apiService.postPacking(
         endpoint: 'update_product',
@@ -181,7 +167,7 @@ class InfoRapidaRemoteDataSourceImpl implements InfoRapidaRemoteDataSource {
             'volume': params.volume,
           },
         },
-        isLoadinDialog: isLoadingDialog,
+        isLoadinDialog: false,
       );
 
       final json = _decodeResponse(response);
@@ -199,9 +185,7 @@ class InfoRapidaRemoteDataSourceImpl implements InfoRapidaRemoteDataSource {
 
   @override
   Future<UbicacionInfo> updateLocation(
-    ActualizarUbicacionParams params, {
-    bool isLoadingDialog = false,
-  }) async {
+    ActualizarUbicacionParams params) async {
     try {
       final response = await _apiService.postPacking(
         endpoint: 'update_location',
@@ -212,7 +196,7 @@ class InfoRapidaRemoteDataSourceImpl implements InfoRapidaRemoteDataSource {
             'barcode': params.barcode,
           },
         },
-        isLoadinDialog: isLoadingDialog,
+        isLoadinDialog: false,
       );
 
       final json = _decodeResponse(response);
@@ -230,9 +214,7 @@ class InfoRapidaRemoteDataSourceImpl implements InfoRapidaRemoteDataSource {
 
   @override
   Future<TransferenciaIndividualResult> crearTransferenciaIndividual(
-    CrearTransferenciaIndividualParams params, {
-    bool isLoadingDialog = false,
-  }) async {
+    CrearTransferenciaIndividualParams params) async {
     try {
       final response = await _apiService.postPacking(
         endpoint: 'crear_transferencia',
@@ -254,7 +236,7 @@ class InfoRapidaRemoteDataSourceImpl implements InfoRapidaRemoteDataSource {
             'date_end': params.dateEnd,
           },
         },
-        isLoadinDialog: isLoadingDialog,
+        isLoadinDialog: false,
       );
 
       final json = _decodeResponse(response);
@@ -281,9 +263,7 @@ class InfoRapidaRemoteDataSourceImpl implements InfoRapidaRemoteDataSource {
 
   @override
   Future<TransferenciaMasivaResult> crearTransferenciaMasiva(
-    CrearTransferenciaMasivaParams params, {
-    bool isLoadingDialog = false,
-  }) async {
+    CrearTransferenciaMasivaParams params) async {
     try {
       final response = await _apiService.postPacking(
         endpoint: 'transferencias/create_trasferencia',
@@ -310,7 +290,7 @@ class InfoRapidaRemoteDataSourceImpl implements InfoRapidaRemoteDataSource {
                 .toList(),
           },
         },
-        isLoadinDialog: isLoadingDialog,
+        isLoadinDialog: false,
       );
 
       final json = _decodeResponse(response);
