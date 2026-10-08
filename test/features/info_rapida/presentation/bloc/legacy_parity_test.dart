@@ -256,6 +256,62 @@ void main() {
     );
   });
 
+  group('LocationInfoBloc seleccionar todos alterna', () {
+    LocationInfoState conDosPropietarios({List<ProductoUbicacion>? sel}) =>
+        LocationInfoState(
+          status: LocationInfoStatus.ready,
+          modoSeleccionMasiva: true,
+          productosSeleccionados: sel ?? const [],
+          ubicacion: UbicacionInfo(
+            id: 10,
+            nombre: 'A1',
+            productos: [
+              _prod(1, propietario: 'A'),
+              _prod(2, propietario: 'A'),
+              _prod(3, propietario: 'B'),
+            ],
+          ),
+        );
+
+    LocationInfoBloc build() =>
+        LocationInfoBloc(actualizarUbicacion: _MockActualizarUbicacion());
+
+    blocTest<LocationInfoBloc, LocationInfoState>(
+      'con otro propietario en la ubicación igual queda "todos seleccionados"',
+      build: build,
+      seed: conDosPropietarios,
+      act: (b) => b.add(const SeleccionarTodosProductosDisponiblesEvent()),
+      verify: (b) {
+        expect(b.state.productosSeleccionados.map((p) => p.id), [1, 2]);
+        expect(b.state.todosCompatiblesSeleccionados, isTrue);
+      },
+    );
+
+    blocTest<LocationInfoBloc, LocationInfoState>(
+      'tocar de nuevo deselecciona',
+      build: build,
+      seed: () => conDosPropietarios(
+        sel: [_prod(1, propietario: 'A'), _prod(2, propietario: 'A')],
+      ),
+      act: (b) => b.add(const SeleccionarTodosProductosDisponiblesEvent()),
+      verify: (b) {
+        expect(b.state.productosSeleccionados, isEmpty);
+        expect(b.state.todosCompatiblesSeleccionados, isFalse);
+      },
+    );
+
+    blocTest<LocationInfoBloc, LocationInfoState>(
+      'con una selección parcial completa los compatibles',
+      build: build,
+      seed: () => conDosPropietarios(sel: [_prod(2, propietario: 'A')]),
+      act: (b) => b.add(const SeleccionarTodosProductosDisponiblesEvent()),
+      verify: (b) => expect(
+        b.state.productosSeleccionados.map((p) => p.id).toSet(),
+        {1, 2},
+      ),
+    );
+  });
+
   group('ProductInfoBloc', () {
     UbicacionProducto u(int id, {String? caducidad, String? entrada}) =>
         UbicacionProducto(

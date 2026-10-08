@@ -254,12 +254,7 @@ class _LocationInfoViewState extends State<_LocationInfoView>
               .where((p) => p.propietario == _selectedPropietario)
               .toList();
 
-    final disponibles = (ubicacion?.productos ?? const []).where(
-      esDisponibleParaMasiva,
-    );
-    final todosSeleccionados =
-        disponibles.isNotEmpty &&
-        disponibles.every((p) => _estaSeleccionado(state, p));
+    final todosSeleccionados = state.todosCompatiblesSeleccionados;
 
     return Scaffold(
       // Mismo color que el cuerpo: evita la franja plana detrás del status
@@ -338,10 +333,10 @@ class _LocationInfoViewState extends State<_LocationInfoView>
                             label: todosSeleccionados
                                 ? 'Deselec. todos'
                                 : 'Selec. todos',
+                            // El bloc alterna: con todos seleccionados los
+                            // quita (igual que el legacy).
                             onTap: () => bloc.add(
-                              todosSeleccionados
-                                  ? const DeseleccionarTodosProductosEvent()
-                                  : const SeleccionarTodosProductosDisponiblesEvent(),
+                              const SeleccionarTodosProductosDisponiblesEvent(),
                             ),
                           ),
                         const SizedBox(width: 8),
@@ -388,7 +383,7 @@ class _LocationInfoViewState extends State<_LocationInfoView>
                           child: MassTransferProductCard(
                             producto: producto,
                             massTransferActive: masiva,
-                            isSelected: _estaSeleccionado(state, producto),
+                            isSelected: state.estaSeleccionado(producto),
                             onToggleSelected: (selected) => bloc.add(
                               ToggleProductoSeleccionadoEvent(
                                 producto,
@@ -421,8 +416,4 @@ class _LocationInfoViewState extends State<_LocationInfoView>
           : null,
     );
   }
-
-  bool _estaSeleccionado(LocationInfoState state, ProductoUbicacion p) => state
-      .productosSeleccionados
-      .any((s) => s.id == p.id && s.loteId == p.loteId);
 }

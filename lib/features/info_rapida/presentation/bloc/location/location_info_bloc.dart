@@ -229,6 +229,8 @@ class LocationInfoBloc extends Bloc<LocationInfoEvent, LocationInfoState>
     ));
   }
 
+  /// Alterna como en el legacy: si ya están todos los compatibles
+  /// seleccionados los quita; si no, los agrega.
   void _onSeleccionarTodos(
     SeleccionarTodosProductosDisponiblesEvent event,
     Emitter<LocationInfoState> emit,
@@ -236,43 +238,35 @@ class LocationInfoBloc extends Bloc<LocationInfoEvent, LocationInfoState>
     final ubicacion = state.ubicacion;
     if (ubicacion == null) return;
 
-    // Igual que el legacy: solo se pueden transferir los que no están en un
-    // paquete y tienen cantidad a la mano.
-    final disponibles =
-        ubicacion.productos.where(esDisponibleParaMasiva).toList();
-    if (disponibles.isEmpty) return;
+    final compatibles = state.compatiblesSeleccionTodos;
+    if (compatibles.isEmpty) return;
 
-    final String? keyObjetivo;
-    if (state.productosSeleccionados.isNotEmpty) {
-      keyObjetivo = state.propietarioActivoKey;
-    } else {
-      final primer = disponibles.first;
-      keyObjetivo = PropietarioRules.normalizeKey(
-        tieneManejoPropietario: primer.manejoPropietario,
-        propietario: primer.propietario,
-      );
+    if (state.todosCompatiblesSeleccionados) {
+      emit(state.copyWith(
+        productosSeleccionados: state.productosSeleccionados
+            .where((s) => !compatibles
+                .any((c) => c.id == s.id && c.loteId == s.loteId))
+            .toList(),
+        mensajeError: () => null,
+        failure: () => null,
+      ));
+      return;
     }
 
-    final seleccionados = <ProductoUbicacion>[];
-    int omitidosPorPropietario = 0;
+    final seleccionados = [
+      ...state.productosSeleccionados,
+      for (final c in compatibles)
+        if (!state.estaSeleccionado(c)) c,
+    ];
 
-    for (final prod in disponibles) {
-      final prodKey = PropietarioRules.normalizeKey(
-        tieneManejoPropietario: prod.manejoPropietario,
-        propietario: prod.propietario,
-      );
-
-      if (PropietarioRules.sonCompatibles(keyObjetivo, prodKey)) {
-        seleccionados.add(prod);
-      } else {
-        omitidosPorPropietario++;
-      }
-    }
-
+    final omitidos = ubicacion.productos
+            .where(esDisponibleParaMasiva)
+            .length -
+        compatibles.length;
     String? aviso;
-    if (omitidosPorPropietario > 0) {
+    if (omitidos > 0) {
       aviso = 'Se seleccionaron ${seleccionados.length} productos. '
-          '$omitidosPorPropietario fueron omitidos por pertenecer a otro propietario.';
+          '$omitidos fueron omitidos por pertenecer a otro propietario.';
     }
 
     emit(state.copyWith(

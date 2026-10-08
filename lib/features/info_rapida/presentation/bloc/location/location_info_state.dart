@@ -37,6 +37,43 @@ class LocationInfoState extends Equatable {
   int get totalProductos => ubicacion?.productos.length ?? 0;
   int get totalSeleccionados => productosSeleccionados.length;
 
+  /// Productos que entran en "Seleccionar todos": disponibles para la masiva
+  /// y del mismo propietario que la selección actual (o que el primer
+  /// disponible si no hay nada seleccionado). Igual que el legacy.
+  List<ProductoUbicacion> get compatiblesSeleccionTodos {
+    final disponibles = (ubicacion?.productos ?? const <ProductoUbicacion>[])
+        .where(esDisponibleParaMasiva)
+        .toList();
+    if (disponibles.isEmpty) return const [];
+
+    final keyObjetivo = productosSeleccionados.isNotEmpty
+        ? propietarioActivoKey
+        : PropietarioRules.normalizeKey(
+            tieneManejoPropietario: disponibles.first.manejoPropietario,
+            propietario: disponibles.first.propietario,
+          );
+
+    return disponibles
+        .where((p) => PropietarioRules.sonCompatibles(
+              keyObjetivo,
+              PropietarioRules.normalizeKey(
+                tieneManejoPropietario: p.manejoPropietario,
+                propietario: p.propietario,
+              ),
+            ))
+        .toList();
+  }
+
+  bool estaSeleccionado(ProductoUbicacion p) => productosSeleccionados
+      .any((s) => s.id == p.id && s.loteId == p.loteId);
+
+  /// `true` si "Seleccionar todos" ya está aplicado: el botón pasa a
+  /// deseleccionar.
+  bool get todosCompatiblesSeleccionados {
+    final compatibles = compatiblesSeleccionTodos;
+    return compatibles.isNotEmpty && compatibles.every(estaSeleccionado);
+  }
+
   /// Retorna la clave canónica del propietario de los productos seleccionados actualmente,
   /// o null si no hay ninguno seleccionado o todos son sin propietario.
   String? get propietarioActivoKey {
