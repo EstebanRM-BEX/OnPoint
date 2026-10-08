@@ -57,66 +57,8 @@ class InfoRapidaRepositoryImpl implements InfoRapidaRepository {
     return ServerFailure(e.toString());
   }
 
-  RecentQuery _buildRecentQuery({
-    required String query,
-    required bool isManual,
-    required bool isProduct,
-    required InfoRapida info,
-  }) {
-    switch (info) {
-      case ProductoInfo p:
-        final title = p.referencia.isNotEmpty
-            ? p.referencia
-            : (p.codigoBarras.isNotEmpty ? p.codigoBarras : query);
-        final qty = p.cantidadDisponible != null
-            ? '${p.cantidadDisponible} ${p.unidadMedida ?? 'un.'}'
-            : null;
-        return RecentQuery(
-          query: query,
-          isManual: isManual,
-          isProduct: true,
-          type: 'product',
-          title: title,
-          subtitle: p.nombre,
-          badge: qty,
-          date: DateTime.now(),
-        );
-      case UbicacionInfo u:
-        final title = u.nombre.isNotEmpty ? u.nombre : query;
-        final subtitle = [u.nombreAlmacen, u.ubicacionPadre]
-            .whereType<String>()
-            .where((s) => s.trim().isNotEmpty)
-            .join(' • ');
-        final badge =
-            u.numeroProductos != null ? '${u.numeroProductos} prod.' : null;
-        return RecentQuery(
-          query: query,
-          isManual: isManual,
-          isProduct: false,
-          type: 'ubicacion',
-          title: title,
-          subtitle: subtitle,
-          badge: badge,
-          date: DateTime.now(),
-        );
-      case PaqueteInfo pq:
-        final title = pq.nombre.isNotEmpty ? pq.nombre : query;
-        final badge = pq.numeroProductos != null
-            ? '${pq.numeroProductos} prod.'
-            : (pq.totalProductos != null ? '${pq.totalProductos} prod.' : null);
-        return RecentQuery(
-          query: query,
-          isManual: isManual,
-          isProduct: false,
-          type: 'paquete',
-          title: title,
-          subtitle: pq.nombreAlmacen ?? '',
-          badge: badge,
-          date: DateTime.now(),
-        );
-    }
-  }
-
+  // Las consultas no se guardan aquí en "Últimas consultas": lo decide el
+  // bloc (las internas, como refrescar tras una transferencia, no van).
   @override
   Future<Either<Failure, InfoRapida>> consultarPorBarcode(String barcode) async {
     if (!await _entorno.hayRed()) {
@@ -132,14 +74,6 @@ class InfoRapidaRepositoryImpl implements InfoRapidaRepository {
         deviceId: deviceId,
         versionApp: versionApp,
       );
-
-      final recent = _buildRecentQuery(
-        query: barcode,
-        isManual: false,
-        isProduct: result is ProductoInfo,
-        info: result,
-      );
-      await _localDataSource.saveRecentQuery(recent);
 
       return Right(result);
     } catch (e) {
@@ -166,14 +100,6 @@ class InfoRapidaRepositoryImpl implements InfoRapidaRepository {
         deviceId: deviceId,
         versionApp: versionApp,
       );
-
-      final recent = _buildRecentQuery(
-        query: id.toString(),
-        isManual: true,
-        isProduct: isProduct,
-        info: result,
-      );
-      await _localDataSource.saveRecentQuery(recent);
 
       return Right(result);
     } catch (e) {

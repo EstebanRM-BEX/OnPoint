@@ -238,38 +238,11 @@ class InfoRapidaScanBloc
     required bool isManual,
     bool isProduct = true,
   }) async {
-    final recent = switch (info) {
-      ProductoInfo p => RecentQuery(
-          query: query,
-          isManual: isManual,
-          isProduct: true,
-          type: 'product',
-          title: p.nombre,
-          subtitle: p.referencia.isNotEmpty ? p.referencia : p.codigoBarras,
-          badge: p.ubicaciones.isNotEmpty ? '${p.ubicaciones.length} ubicaciones' : null,
-          date: DateTime.now(),
-        ),
-      UbicacionInfo u => RecentQuery(
-          query: query,
-          isManual: isManual,
-          isProduct: false,
-          type: 'ubicacion',
-          title: u.nombre,
-          subtitle: u.codigoBarras,
-          badge: '${u.productos.length} productos',
-          date: DateTime.now(),
-        ),
-      PaqueteInfo pq => RecentQuery(
-          query: query,
-          isManual: isManual,
-          isProduct: false,
-          type: 'paquete',
-          title: pq.nombre,
-          subtitle: pq.codigoBarras,
-          badge: '${pq.productos.length} productos',
-          date: DateTime.now(),
-        ),
-    };
+    final recent = RecentQuery.fromInfo(
+      query: query,
+      isManual: isManual,
+      info: info,
+    );
 
     await guardarConsultaReciente(GuardarConsultaRecienteParams(query: recent));
   }

@@ -136,7 +136,7 @@ void main() {
       verifyZeroInteractions(remote);
     });
 
-    test('retorna ProductoInfo y guarda la consulta en recientes', () async {
+    test('retorna ProductoInfo sin guardar en recientes (lo decide el bloc)', () async {
       when(
         () => remote.getInfoQuick(
           barcode: '770001',
@@ -148,10 +148,10 @@ void main() {
       final result = await repository.consultarPorBarcode('770001');
 
       expect(result.getRight().toNullable(), testProducto);
-      verify(() => local.saveRecentQuery(any())).called(1);
+      verifyNever(() => local.saveRecentQuery(any()));
     });
 
-    test('retorna UbicacionInfo y guarda consulta en recientes', () async {
+    test('retorna UbicacionInfo sin guardar en recientes', () async {
       when(
         () => remote.getInfoQuick(
           barcode: 'LOC-A01',
@@ -163,10 +163,10 @@ void main() {
       final result = await repository.consultarPorBarcode('LOC-A01');
 
       expect(result.getRight().toNullable(), testUbicacion);
-      verify(() => local.saveRecentQuery(any())).called(1);
+      verifyNever(() => local.saveRecentQuery(any()));
     });
 
-    test('retorna PaqueteInfo y guarda consulta en recientes', () async {
+    test('retorna PaqueteInfo sin guardar en recientes', () async {
       when(
         () => remote.getInfoQuick(
           barcode: 'BOX100',
@@ -178,7 +178,7 @@ void main() {
       final result = await repository.consultarPorBarcode('BOX100');
 
       expect(result.getRight().toNullable(), testPaquete);
-      verify(() => local.saveRecentQuery(any())).called(1);
+      verifyNever(() => local.saveRecentQuery(any()));
     });
 
     test('mapea DispositivoNoAutorizadoException a DispositivoNoAutorizadoFailure', () async {
@@ -318,7 +318,7 @@ void main() {
       verifyZeroInteractions(remote);
     });
 
-    test('retorna ProductoInfo y persiste consulta reciente al ser exitoso', () async {
+    test('retorna ProductoInfo sin guardar en recientes', () async {
       when(
         () => remote.getInfoQuickManual(
           id: 1,
@@ -331,7 +331,7 @@ void main() {
       final result = await repository.consultarPorId(id: 1, isProduct: true);
 
       expect(result.getRight().toNullable(), testProducto);
-      verify(() => local.saveRecentQuery(any())).called(1);
+      verifyNever(() => local.saveRecentQuery(any()));
     });
   });
 
