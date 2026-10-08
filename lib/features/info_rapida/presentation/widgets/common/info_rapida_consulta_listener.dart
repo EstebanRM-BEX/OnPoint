@@ -54,11 +54,15 @@ class _InfoRapidaConsultaListenerState extends State<InfoRapidaConsultaListener>
         hideLoadingDialog();
         final info = state.resultado;
         if (info == null) return;
+        // Bug 6 ("solo avisar"): el resultado se muestra igual.
+        if (info.actualizarVersion) _avisarNuevaVersion();
         if (widget.onResultado != null) {
           widget.onResultado!(info);
           return;
         }
-        InfoRapidaSnackbar.success('Información encontrada');
+        if (!info.actualizarVersion) {
+          InfoRapidaSnackbar.success('Información encontrada');
+        }
         InfoRapidaNavigator.abrirResultado(
           context,
           info,
@@ -84,10 +88,7 @@ class _InfoRapidaConsultaListenerState extends State<InfoRapidaConsultaListener>
       return;
     }
     if (state.isActualizarVersion) {
-      InfoRapidaSnackbar.warning(
-        'Hay una nueva versión disponible. Actualiza desde la configuración '
-        'de la app, pulsando el nombre de usuario en el Home',
-      );
+      _avisarNuevaVersion();
       return;
     }
 
@@ -98,6 +99,11 @@ class _InfoRapidaConsultaListenerState extends State<InfoRapidaConsultaListener>
     getIt<IVibrationService>().vibrate();
     getIt<IAudioService>().playErrorSound();
   }
+
+  void _avisarNuevaVersion() => InfoRapidaSnackbar.warning(
+        'Hay una nueva versión disponible. Actualiza desde la configuración '
+        'de la app, pulsando el nombre de usuario en el Home',
+      );
 
   @override
   Widget build(BuildContext context) {

@@ -16,5 +16,10 @@ part 'paquete_info.dart';
 /// }
 /// ```
 sealed class InfoRapida extends Equatable {
-  const InfoRapida();
+  /// El backend pidió actualizar la app (`update_version`) pero devolvió el
+  /// resultado igual: se avisa y se muestra (bug 6 del plan, decidido "solo
+  /// avisar").
+  final bool actualizarVersion;
+
+  const InfoRapida({this.actualizarVersion = false});
 }

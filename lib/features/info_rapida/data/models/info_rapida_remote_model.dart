@@ -44,14 +44,6 @@ class InfoRapidaRemoteModel {
     final msg = OdooParse.str(resultMap['msg']);
     final updateVersion = OdooParse.boolean(resultMap['update_version']);
 
-    if (updateVersion) {
-      throw ActualizarVersionException(
-        msg.isEmpty
-            ? 'Hay una actualización requerida para continuar utilizando la app.'
-            : msg,
-      );
-    }
-
     if (code == 403) {
       throw DispositivoNoAutorizadoException(
         msg.isEmpty
@@ -75,10 +67,30 @@ class InfoRapidaRemoteModel {
     final type = OdooParse.str(resultMap['type']).toLowerCase();
     final innerResult = resultMap['result'];
 
+    // update_version: si viene el resultado se muestra con aviso (bug 6,
+    // "solo avisar"); si no viene, no hay nada que abrir y se informa.
+    if (updateVersion && innerResult is! Map<String, dynamic>) {
+      throw ActualizarVersionException(
+        msg.isEmpty
+            ? 'Hay una actualización requerida para continuar utilizando la app.'
+            : msg,
+      );
+    }
+
     if (innerResult is! Map<String, dynamic>) {
       throw const NoEncontradoException('La consulta no devolvió datos válidos.');
     }
 
+    final info = _parseTipo(type, innerResult);
+    if (!updateVersion) return info;
+    return switch (info) {
+      ProductoInfo p => p.copyWith(actualizarVersion: true),
+      UbicacionInfo u => u.copyWith(actualizarVersion: true),
+      PaqueteInfo pq => pq.copyWith(actualizarVersion: true),
+    };
+  }
+
+  static InfoRapida _parseTipo(String type, Map<String, dynamic> innerResult) {
     switch (type) {
       case 'product':
         return _parseProducto(innerResult);

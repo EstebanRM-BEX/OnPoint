@@ -22,6 +22,7 @@ class ProductoInfo extends InfoRapida {
   final int? idPropietario;
 
   const ProductoInfo({
+    super.actualizarVersion,
     required this.id,
     required this.nombre,
     this.precio,
@@ -43,6 +44,7 @@ class ProductoInfo extends InfoRapida {
   });
 
   ProductoInfo copyWith({
+    bool? actualizarVersion,
     int? id,
     String? nombre,
     double? precio,
@@ -63,6 +65,7 @@ class ProductoInfo extends InfoRapida {
     int? idPropietario,
   }) {
     return ProductoInfo(
+      actualizarVersion: actualizarVersion ?? this.actualizarVersion,
       id: id ?? this.id,
       nombre: nombre ?? this.nombre,
       precio: precio ?? this.precio,
@@ -104,6 +107,7 @@ class ProductoInfo extends InfoRapida {
         manejoPropietario,
         propietario,
         idPropietario,
+        actualizarVersion,
       ];
 }
 

@@ -50,6 +50,39 @@ void main() {
   });
 
   group('InfoRapidaRemoteModel - fromResultMap errores', () {
+    test('update_version con resultado lo devuelve marcado (bug 6: solo avisar)',
+        () {
+      final info = InfoRapidaRemoteModel.fromResultMap({
+        'code': 200,
+        'update_version': true,
+        'type': 'ubicacion',
+        'result': {'id': 10, 'nombre': 'A1', 'productos': []},
+      });
+
+      expect(info, isA<UbicacionInfo>());
+      expect(info.actualizarVersion, isTrue);
+    });
+
+    test('sin update_version el resultado no viene marcado', () {
+      final info = InfoRapidaRemoteModel.fromResultMap({
+        'code': 200,
+        'type': 'ubicacion',
+        'result': {'id': 10, 'nombre': 'A1', 'productos': []},
+      });
+
+      expect(info.actualizarVersion, isFalse);
+    });
+
+    test('update_version con 404 sigue siendo "no encontrado"', () {
+      expect(
+        () => InfoRapidaRemoteModel.fromResultMap({
+          'code': 404,
+          'update_version': true,
+        }),
+        throwsA(isA<NoEncontradoException>()),
+      );
+    });
+
     test('lanza ActualizarVersionException si update_version es true', () {
       final resultMap = {
         'code': 200,

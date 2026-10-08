@@ -13,6 +13,7 @@ class PaqueteInfo extends InfoRapida {
   final List<ProductoUbicacion> productos;
 
   const PaqueteInfo({
+    super.actualizarVersion,
     this.id,
     required this.nombre,
     this.codigoBarras = '',
@@ -25,6 +26,7 @@ class PaqueteInfo extends InfoRapida {
   });
 
   PaqueteInfo copyWith({
+    bool? actualizarVersion,
     int? id,
     String? nombre,
     String? codigoBarras,
@@ -36,6 +38,7 @@ class PaqueteInfo extends InfoRapida {
     List<ProductoUbicacion>? productos,
   }) {
     return PaqueteInfo(
+      actualizarVersion: actualizarVersion ?? this.actualizarVersion,
       id: id ?? this.id,
       nombre: nombre ?? this.nombre,
       codigoBarras: codigoBarras ?? this.codigoBarras,
@@ -59,5 +62,6 @@ class PaqueteInfo extends InfoRapida {
         nombreAlmacen,
         fechaEmpaquetado,
         productos,
+        actualizarVersion,
       ];
 }

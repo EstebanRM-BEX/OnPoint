@@ -18,6 +18,7 @@ class UbicacionInfo extends InfoRapida {
   final bool? manejoPropietario;
 
   const UbicacionInfo({
+    super.actualizarVersion,
     required this.id,
     required this.nombre,
     this.codigoBarras = '',
@@ -35,6 +36,7 @@ class UbicacionInfo extends InfoRapida {
   });
 
   UbicacionInfo copyWith({
+    bool? actualizarVersion,
     int? id,
     String? nombre,
     String? codigoBarras,
@@ -51,6 +53,7 @@ class UbicacionInfo extends InfoRapida {
     bool? manejoPropietario,
   }) {
     return UbicacionInfo(
+      actualizarVersion: actualizarVersion ?? this.actualizarVersion,
       id: id ?? this.id,
       nombre: nombre ?? this.nombre,
       codigoBarras: codigoBarras ?? this.codigoBarras,
@@ -84,6 +87,7 @@ class UbicacionInfo extends InfoRapida {
         propietario,
         idPropietario,
         manejoPropietario,
+        actualizarVersion,
       ];
 }
 
