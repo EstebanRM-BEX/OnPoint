@@ -208,16 +208,33 @@ class InfoRapidaLocalDataSourceImpl implements InfoRapidaLocalDataSource {
 
   @override
   Future<void> syncLocalLocationUpdated(ActualizarUbicacionParams params) async {
-    // 1. Actualizar o insertar en SQLite
+    // insertOrUpdateSingle reemplaza la fila completa: si solo se pasaban
+    // id/name/barcode quedaban en null almacén, ubicación padre y muelle
+    // (bug 3 del plan). Se parte de la ubicación existente.
+    final actuales = await _ubicacionesCache.getAll();
+    ResultUbicaciones? existente;
+    for (final u in actuales) {
+      if (u.id == params.locationId) {
+        existente = u;
+        break;
+      }
+    }
+
+    // 1. Actualizar o insertar en SQLite conservando el resto de campos
     await _database.ubicacionesRepository.insertOrUpdateSingle(
       ResultUbicaciones(
         id: params.locationId,
         name: params.name,
         barcode: params.barcode,
+        locationId: existente?.locationId,
+        locationName: existente?.locationName,
+        idWarehouse: existente?.idWarehouse,
+        warehouseName: existente?.warehouseName,
+        isADockAlter: existente?.isADockAlter,
       ),
     );
 
-    // 2. Refrescar el caché en memoria de ubicaciones
+    // 2. Refrescar el caché en memoria para que las listas vean el cambio
     await _ubicacionesCache.refresh();
   }
 }
