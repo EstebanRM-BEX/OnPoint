@@ -71,19 +71,6 @@ import 'package:wms_app/src/presentation/views/devoluciones/screens/locations_de
 import 'package:wms_app/src/presentation/views/devoluciones/screens/terceros_screen.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/propietario_screen.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/almacenes_screen.dart';
-import 'package:wms_app/features/user/presentation/bloc/user_bloc.dart';
-import 'package:wms_app/src/presentation/views/info_rapida/models/info_rapida_model.dart';
-import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/bloc/info_rapida_bloc.dart';
-import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/screens/create-transfer/create_mass_trasnfer_screen.dart';
-import 'package:wms_app/src/presentation/views/info_rapida/modules/transfer/bloc/transfer_info_bloc.dart';
-import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/screens/create-transfer/widgets/locationDest/location_search_widget.dart';
-import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/screens/list_locations_screen.dart';
-import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/screens/list_products_screen.dart';
-import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/screens/locations_info_screen.dart';
-import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/screens/paquete_info_screen.dart';
-import 'package:wms_app/src/presentation/views/info_rapida/modules/quick%20info/screens/product_info_screen.dart';
-import 'package:wms_app/src/presentation/views/info_rapida/modules/transfer/screens/transfer_info_screen.dart';
-import 'package:wms_app/src/presentation/views/info_rapida/modules/transfer/widget/locations_dest_widget.dart';
 import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
 import 'package:wms_app/features/inventario/presentation/widgets/inventario_scope.dart';
 import 'package:wms_app/features/inventario/domain/entities/producto_inventario.dart';
@@ -252,23 +239,10 @@ class AppRoutes {
   static const String almacenesDevoluciones = 'almacenes-devoluciones';
   static const String ubicacionesDevoluciones = 'ubicaciones-devoluciones';
 
-  // Información Rápida migrada (features/info_rapida). Solo esta ruta de
-  // entrada: las pantallas internas navegan con Navigator.push.
-  static const String infoRapidaV2 = 'info-rapida-v2';
-
-  //todas las pantallas de info rapida
+  // Información Rápida (features/info_rapida). Solo la ruta de entrada: las
+  // pantallas internas navegan con Navigator.push. El módulo legacy
+  // (views/info_rapida) queda como backup sin rutas.
   static const String infoRapida = 'info-rapida';
-  static const String productInfo = 'product-info';
-  static const String locationInfo = 'location-info';
-  static const String paqueteInfo = 'paquete-info';
-  static const String transferInfo = 'transfer-info';
-  static const String listLocation = 'list-location';
-  static const String listProduct = 'list-product';
-  static const String searchLocationDestTransInfo =
-      'search-locations-dest-trans-info';
-  static const String createMassTransfer = 'create-mass-transfer';
-  static const String searchLocationCreateMassTransfer =
-      'search-location-create-mass-transfer';
 
   //todas las pantallas de asistente ia
   static const String asistenteIa = 'asistente-ia';
@@ -875,85 +849,7 @@ class AppRoutes {
       },
 
       //todo info rapida
-      // InfoRapidaBloc (y TransferInfoBloc en el sub-flujo de transferencia)
-      // ya no viven en el MultiBlocProvider raíz — se crean una sola vez al
-      // entrar al módulo (o al primer punto donde ya no llega uno por
-      // argumento) y viajan como argumento extra en cada pushReplacementNamed
-      // interno, envueltos con BlocProvider.value para no perder los datos
-      // ya cargados (ubicaciones/productos, resultado de la última
-      // búsqueda) en cada paso.
-      infoRapidaV2: (_) => const InfoRapidaPage(),
-
-      infoRapida: (context) {
-        final args = _args(context);
-        final bloc = _arg<InfoRapidaBloc>(args, 0);
-        return InfoRapidaScope(
-          bloc: bloc,
-          child: const InfoRapidaScreen(),
-        );
-      },
-      productInfo: (context) {
-        final args = _args(context);
-        final bloc = _arg<InfoRapidaBloc>(args, 0);
-        return InfoRapidaScope(
-          bloc: bloc,
-          child: ProductInfoScreen(),
-        );
-      },
-
-      locationInfo: (context) {
-        final args = _args(context);
-        final info = _arg<InfoRapidaResult>(args, 0);
-        final bloc = _arg<InfoRapidaBloc>(args, 1);
-        return InfoRapidaScope(
-          bloc: bloc,
-          child: LocationInfoScreen(infoRapidaResult: info),
-        );
-      },
-
-      paqueteInfo: (context) {
-        final args = _args(context);
-        final info = _arg<InfoRapidaResult>(args, 0);
-        final bloc = _arg<InfoRapidaBloc>(args, 1);
-        return InfoRapidaScope(
-          bloc: bloc,
-          child: PaqueteInfoScreen(infoRapidaResult: info),
-        );
-      },
-
-      createMassTransfer: (context) {
-        final args = _args(context);
-        final bloc = _arg<InfoRapidaBloc>(args, 0);
-        return InfoRapidaScope(
-          bloc: bloc,
-          child: const CreateMassTrasferScreen(),
-        );
-      },
-
-      searchLocationCreateMassTransfer: (context) {
-        final args = _args(context);
-        final isLocationDest = _arg<bool>(args, 0) ?? false;
-        final bloc = _arg<InfoRapidaBloc>(args, 1);
-        return InfoRapidaScope(
-          bloc: bloc,
-          child: SearchLocationCreateMassTransfercreen(
-            isLocationDest: isLocationDest,
-          ),
-        );
-      },
-
-      transferInfo: (context) {
-        final args = _args(context);
-        final info = _arg<InfoResult>(args, 0);
-        final ubi = _arg<Ubicacion>(args, 1);
-        final infoRapidaBloc = _arg<InfoRapidaBloc>(args, 2);
-        final transferInfoBloc = _arg<TransferInfoBloc>(args, 3);
-        return TransferInfoScope(
-          infoRapidaBloc: infoRapidaBloc,
-          transferInfoBloc: transferInfoBloc,
-          child: TransferInfoScreen(infoRapidaResult: info, ubicacion: ubi),
-        );
-      },
+      infoRapida: (_) => const InfoRapidaPage(),
 
       createTransfer: (context) {
         final args = _args(context);
@@ -1000,39 +896,6 @@ class AppRoutes {
         return CreateTransferScope(
           bloc: bloc,
           child: SearchProductCreateTransferScreen(),
-        );
-      },
-
-      listLocation: (context) {
-        final args = _args(context);
-        final bloc = _arg<InfoRapidaBloc>(args, 0);
-        return InfoRapidaScope(
-          bloc: bloc,
-          child: ListLocationsScreen(),
-        );
-      },
-      listProduct: (context) {
-        final args = _args(context);
-        final bloc = _arg<InfoRapidaBloc>(args, 0);
-        return InfoRapidaScope(
-          bloc: bloc,
-          child: ListProductsScreen(),
-        );
-      },
-
-      searchLocationDestTransInfo: (context) {
-        final args = _args(context);
-        final info = _arg<InfoResult>(args, 0);
-        final ubi = _arg<Ubicacion>(args, 1);
-        final infoRapidaBloc = _arg<InfoRapidaBloc>(args, 2);
-        final transferInfoBloc = _arg<TransferInfoBloc>(args, 3);
-        return TransferInfoScope(
-          infoRapidaBloc: infoRapidaBloc,
-          transferInfoBloc: transferInfoBloc,
-          child: LocationDestTransfInfoScreen(
-            infoRapidaResult: info,
-            ubicacion: ubi,
-          ),
         );
       },
 
@@ -1083,45 +946,7 @@ class AppRoutes {
   }
 }
 
-/// Mantiene viva UNA sola instancia de [InfoRapidaBloc] por entrada al módulo.
-///
-/// El builder de una ruta puede volver a ejecutarse (rebuild de la página), y
-/// hacerlo con `BlocProvider.value(value: InfoRapidaBloc(...))` creaba un bloc
-/// NUEVO en cada pasada: la pantalla quedaba escuchando a un bloc distinto del
-/// que estaba resolviendo la búsqueda en curso, así que el estado final no
-/// llegaba nunca y el loader de "Buscando información..." se quedaba pegado.
-/// Al vivir en el State, la instancia sobrevive a esos rebuilds.
-///
-/// No se cierra al descartarse: la navegación interna del módulo es por
-/// `pushReplacementNamed` pasando el mismo bloc como argumento, así que la
-/// pantalla siguiente lo sigue usando (mismo ciclo de vida que antes).
-class InfoRapidaScope extends StatefulWidget {
-  const InfoRapidaScope({super.key, required this.bloc, required this.child});
-
-  /// Bloc que llegó por argumento de ruta; si es null se crea uno acá.
-  final InfoRapidaBloc? bloc;
-  final Widget child;
-
-  @override
-  State<InfoRapidaScope> createState() => _InfoRapidaScopeState();
-}
-
-class _InfoRapidaScopeState extends State<InfoRapidaScope> {
-  late final InfoRapidaBloc _bloc;
-
-  @override
-  void initState() {
-    super.initState();
-    _bloc = widget.bloc ?? InfoRapidaBloc(userBloc: context.read<UserBloc>());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocProvider<InfoRapidaBloc>.value(value: _bloc, child: widget.child);
-  }
-}
-
-/// Igual que [InfoRapidaScope] para las rutas de impresión de etiquetas.
+/// Mantiene viva una sola instancia del bloc de impresión de etiquetas.
 ///
 /// El builder de la ruta lee `ModalRoute.of(context)` (en `_args`), así que
 /// se re-ejecuta cuando cambia el estado de la ruta — por ejemplo al abrirse
@@ -1162,55 +987,6 @@ class _PrintLabelsScopeState extends State<PrintLabelsScope> {
   Widget build(BuildContext context) {
     return BlocProvider<PrintLabelsBloc>.value(
       value: _bloc,
-      child: widget.child,
-    );
-  }
-}
-
-/// Igual que [InfoRapidaScope], pero para las rutas del sub-flujo de
-/// transferencia, que necesitan el [InfoRapidaBloc] y el [TransferInfoBloc].
-///
-/// Importa sobre todo acá: a 'transfer-info' se entra desde product-info sin
-/// TransferInfoBloc en los argumentos, así que el bloc se crea en esta ruta.
-/// Creándolo dentro del builder, un rebuild de la página lo reemplazaba por
-/// otro y la pantalla dejaba de escuchar al que estaba enviando la
-/// transferencia: el diálogo de red (que es de GetX, no del bloc) aparecía y
-/// se cerraba igual, pero el resultado — éxito o error — no llegaba nunca.
-class TransferInfoScope extends StatefulWidget {
-  const TransferInfoScope({
-    super.key,
-    required this.infoRapidaBloc,
-    required this.transferInfoBloc,
-    required this.child,
-  });
-
-  final InfoRapidaBloc? infoRapidaBloc;
-  final TransferInfoBloc? transferInfoBloc;
-  final Widget child;
-
-  @override
-  State<TransferInfoScope> createState() => _TransferInfoScopeState();
-}
-
-class _TransferInfoScopeState extends State<TransferInfoScope> {
-  late final InfoRapidaBloc _infoRapidaBloc;
-  late final TransferInfoBloc _transferInfoBloc;
-
-  @override
-  void initState() {
-    super.initState();
-    _infoRapidaBloc =
-        widget.infoRapidaBloc ?? InfoRapidaBloc(userBloc: context.read<UserBloc>());
-    _transferInfoBloc = widget.transferInfoBloc ?? TransferInfoBloc();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<InfoRapidaBloc>.value(value: _infoRapidaBloc),
-        BlocProvider<TransferInfoBloc>.value(value: _transferInfoBloc),
-      ],
       child: widget.child,
     );
   }

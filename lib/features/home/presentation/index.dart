@@ -216,7 +216,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     HomeModuleId.entradaProductos => _openEntradaProductos,
     HomeModuleId.infoRapida => () => Navigator.pushReplacementNamed(
       context,
-      'info-rapida',
+      AppRoutes.infoRapida,
     ),
     HomeModuleId.etiquetas => () => Navigator.pushReplacementNamed(
       context,
@@ -225,10 +225,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     HomeModuleId.expedicion => () => Navigator.pushReplacementNamed(
       context,
       AppRoutes.listExpedition,
-    ),
-    HomeModuleId.infoRapidaV2 => () => Navigator.pushReplacementNamed(
-      context,
-      AppRoutes.infoRapidaV2,
     ),
   };
 
