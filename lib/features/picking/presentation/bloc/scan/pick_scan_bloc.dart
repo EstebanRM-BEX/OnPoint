@@ -428,7 +428,7 @@ class PickScanBloc extends Bloc<PickScanEvent, PickScanState>
           _loadDataInfo();
           _products();
           _getPosicions();
-          add(FetchBarcodesProductEvent());
+          if (!isClosing) add(FetchBarcodesProductEvent());
 
           emit(LoadProductsBatchSuccesStateBD(
               listOfProductsBatch: filteredProducts));
@@ -572,6 +572,28 @@ class PickScanBloc extends Bloc<PickScanEvent, PickScanState>
         .timeout(const Duration(seconds: 30), onTimeout: () => []);
   }
 
+  /// Cierre local del pick después de validar en Odoo: tiempo de fin y
+  /// marca de separado. Se ejecuta acá (no con add()) porque son escrituras
+  /// que no pueden perderse si el operario sale de la pantalla mientras se
+  /// valida: con add() el evento se descartaría con el bloc cerrándose y el
+  /// pick quedaría validado en Odoo pero abierto en local.
+  Future<void> _cerrarPickLocal(int pickId, {bool registrarFin = true}) async {
+    if (registrarFin) {
+      final tiempo = await recordPickTimeUseCase(
+          RecordPickTimeParams(pickId: pickId, timeType: 'end_time_transfer'));
+      tiempo.fold(
+        (f) => debugPrint('❌ Error registrando fin del pick: ${f.message}'),
+        (_) {},
+      );
+    }
+    final hecho =
+        await markPickAsDoneUseCase(MarkPickAsDoneParams(pickId: pickId));
+    hecho.fold(
+      (f) => debugPrint('❌ Error marcando pick como separado: ${f.message}'),
+      (_) {},
+    );
+  }
+
   void _onValidateConfirmEvent(
       ValidateConfirmEvent event, Emitter<PickScanState> emit) async {
     try {
@@ -580,14 +602,15 @@ class PickScanBloc extends Bloc<PickScanEvent, PickScanState>
       final result = await validateConfirmPickUseCase(ValidateConfirmPickParams(
           pickId: event.idPick, isBackOrder: event.isBackOrder));
 
-      result.fold(
-        (failure) => emit(ValidateConfirmFailure(failure.message)),
-        (msg) {
-          add(PickingOkEvent(
-              pickWithProducts.pick?.id ?? 0, currentProduct.idProduct ?? 0));
-          emit(ValidateConfirmSuccess(event.isBackOrder, msg));
-        },
-      );
+      final msg = result.fold((failure) => null, (m) => m);
+      if (msg == null) {
+        emit(ValidateConfirmFailure(
+            result.fold((f) => f.message, (_) => '')));
+        return;
+      }
+      await _cerrarPickLocal(pickWithProducts.pick?.id ?? 0,
+          registrarFin: false);
+      emit(ValidateConfirmSuccess(event.isBackOrder, msg));
     } catch (e, s) {
       emit(ValidateConfirmFailure('Error al validar la confirmacion'));
       debugPrint('❌ Error en _onValidateConfirmEvent: $e, $s');
@@ -603,32 +626,38 @@ class PickScanBloc extends Bloc<PickScanEvent, PickScanState>
       final result = await validateTransferUseCase(ValidateTransferParams(
           pickId: event.idPick, isBackOrder: event.isBackOrder));
 
-      result.fold(
-        (failure) => emit(CreateBackOrderOrNotFailure(
-            failure.message, event.isBackOrder)),
-        (msg) {
-          add(StartOrStopTimeTransfer(event.idPick, 'end_time_transfer'));
+      final msg = result.fold((failure) => null, (m) => m);
+      if (msg == null) {
+        emit(CreateBackOrderOrNotFailure(
+            result.fold((f) => f.message, (_) => ''), event.isBackOrder));
+        return;
+      }
 
-          if (event.isExternalProduct == true) {
-            // Historial gestionado por PickingListBloc al navegar de vuelta
-          } else {
-            add(ValidateFieldsEvent(field: "locationDest", isOk: true));
-            add(ChangeLocationDestIsOkEvent(true, currentProduct.idProduct ?? 0,
-                pickWithProducts.pick?.id ?? 0, currentProduct.idMove ?? 0));
-            isSearch = true;
-            add(PickingOkEvent(
-                pickWithProducts.pick?.id ?? 0, currentProduct.idProduct ?? 0));
-            // Remove pick from local DB
-            final db = DataBaseSqlite();
-            db.pickRepository.deletePickById(event.idPick);
-            listOfPick.removeWhere((pick) => pick.id == event.idPick);
-            listOfPickFiltered.removeWhere((pick) => pick.id == event.idPick);
-            // La lista de picks se refresca desde PickingListBloc al volver
-          }
+      if (event.isExternalProduct == true) {
+        // Historial gestionado por PickingListBloc al navegar de vuelta
+        final tiempo = await recordPickTimeUseCase(RecordPickTimeParams(
+            pickId: event.idPick, timeType: 'end_time_transfer'));
+        tiempo.fold(
+          (f) => debugPrint('❌ Error registrando fin del pick: ${f.message}'),
+          (_) {},
+        );
+      } else {
+        isSearch = true;
+        await _cerrarPickLocal(event.idPick);
+        // Estado de UI del scan: si la pantalla ya se cerró no hace falta.
+        if (!isClosing) {
+          add(ValidateFieldsEvent(field: "locationDest", isOk: true));
+          add(ChangeLocationDestIsOkEvent(true, currentProduct.idProduct ?? 0,
+              pickWithProducts.pick?.id ?? 0, currentProduct.idMove ?? 0));
+        }
+        // Remove pick from local DB
+        await DataBaseSqlite().pickRepository.deletePickById(event.idPick);
+        listOfPick.removeWhere((pick) => pick.id == event.idPick);
+        listOfPickFiltered.removeWhere((pick) => pick.id == event.idPick);
+        // La lista de picks se refresca desde PickingListBloc al volver
+      }
 
-          emit(CreateBackOrderOrNotSuccess(event.isBackOrder, msg));
-        },
-      );
+      emit(CreateBackOrderOrNotSuccess(event.isBackOrder, msg));
     } catch (e, s) {
       emit(CreateBackOrderOrNotFailure(
           'Error al crear la backorder', event.isBackOrder));
@@ -723,7 +752,9 @@ class PickScanBloc extends Bloc<PickScanEvent, PickScanState>
       }
 
       emit(CurrentProductChangedState(currentProduct: currentProduct));
-      add(FetchPickWithProductsEvent(pickWithProducts.pick?.id ?? 0));
+      if (!isClosing) {
+        add(FetchPickWithProductsEvent(pickWithProducts.pick?.id ?? 0));
+      }
     } catch (e, s) {
       emit(CurrentProductChangedStateError(
           'Error crítico al procesar el cambio de producto.'));
@@ -743,8 +774,10 @@ class PickScanBloc extends Bloc<PickScanEvent, PickScanState>
       result.fold(
         (failure) => emit(SubMuelleEditFail(failure.message)),
         (msg) {
-          add(FetchPickWithProductsEvent(
-              event.productsSeparate.first.batchId ?? 0));
+          if (!isClosing) {
+            add(FetchPickWithProductsEvent(
+                event.productsSeparate.first.batchId ?? 0));
+          }
           emit(SubMuelleEditSusses(
               '(${event.productsSeparate.length}) productos agregados al submuelle:\n'
               '${event.muelle.completeName}\n'
@@ -777,14 +810,14 @@ class PickScanBloc extends Bloc<PickScanEvent, PickScanState>
     try {
       emit(CreateBackOrderOrNotLoading());
 
-      add(StartOrStopTimeTransfer(event.idPick, 'end_time_transfer'));
-      add(ValidateFieldsEvent(field: "locationDest", isOk: true));
-      add(ChangeLocationDestIsOkEvent(true, currentProduct.idProduct ?? 0,
-          pickWithProducts.pick?.id ?? 0, currentProduct.idMove ?? 0));
       isSearch = true;
-
-      add(PickingOkEvent(
-          pickWithProducts.pick?.id ?? 0, currentProduct.idProduct ?? 0));
+      if (!isClosing) {
+        add(ValidateFieldsEvent(field: "locationDest", isOk: true));
+        add(ChangeLocationDestIsOkEvent(true, currentProduct.idProduct ?? 0,
+            pickWithProducts.pick?.id ?? 0, currentProduct.idMove ?? 0));
+      }
+      // Tiempo de fin y marca de separado antes de borrar el pick local.
+      await _cerrarPickLocal(event.idPick);
       // Sacamos el pick cerrado de la BD local para que no siga apareciendo
       // en el listado (pick o componentes) al volver.
       await DataBaseSqlite().pickRepository.deletePickById(event.idPick);
