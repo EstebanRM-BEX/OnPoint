@@ -212,7 +212,10 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
     _scopeRefs--;
     if (_scopeRefs > 0) return;
     Future<void>.delayed(const Duration(milliseconds: 500), () {
-      if (_scopeRefs <= 0 && !isClosed) close();
+      // isClosing (no isClosed): en bloc 9.2.0 isClosed sigue en false
+      // mientras close() termina, y un segundo close() volvería a hacer
+      // dispose de los controllers.
+      if (_scopeRefs <= 0 && !isClosing) close();
     });
   }
 
@@ -265,7 +268,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
         // Los terceros ya no se precargan al iniciar sesión: la primera vez
         // que se entra a Devoluciones la BD está vacía, así que se descargan
         // aquí (una sola vez; después se leen de SQLite).
-        add(DownloadAllTercerosEvent());
+        if (!isClosing) add(DownloadAllTercerosEvent());
       } else {
         // 2. Actualización en memoria
         terceros.clear();
@@ -455,8 +458,14 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
       );
 
       if (response.result?.code == 200) {
+        // La devolución ya existe en Odoo: la tabla local se vacía acá y no
+        // solo en ClearValueEvent. Si el operario salió durante el envío, el
+        // add() se descarta con el bloc cerrándose y los productos quedaban
+        // en SQLite: al volver a entrar aparecían de nuevo y se podían
+        // enviar dos veces.
+        await db.devolucionRepository.deleteAllProductosDevoluciones();
         //limpiamos los campos
-        add(ClearValueEvent());
+        if (!isClosing) add(ClearValueEvent());
         emit(SendDevolucionSuccess(response));
       } else {
         if (response.result?.code == 403) {
@@ -971,7 +980,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
           quantitySegundaUnidad: qSegunda,
         );
       }
-      add(GetProductsList());
+      if (!isClosing) add(GetProductsList());
 
       emit(UpdateProductInfoState());
     } catch (e, s) {
