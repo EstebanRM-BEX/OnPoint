@@ -22,11 +22,13 @@ import 'package:wms_app/src/presentation/providers/db/models/response_products_m
 import 'package:wms_app/src/presentation/views/transferencias/data/transferencias_repository.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/request_create_trasnfer_model.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/response_create_transfer_mode.dart';
+import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
 
 part 'info_rapida_event.dart';
 part 'info_rapida_state.dart';
 
-class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState> {
+class InfoRapidaBloc extends Bloc<InfoRapidaEvent, InfoRapidaState>
+    with SafeBlocMixin<InfoRapidaEvent, InfoRapidaState> {
   final InfoRapidaRepository _infoRapidaRepository = InfoRapidaRepository();
   //*repositorio
   final TransferenciasRepository _transferenciasRepository =

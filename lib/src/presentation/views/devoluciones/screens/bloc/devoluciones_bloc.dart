@@ -23,11 +23,13 @@ import 'package:wms_app/src/presentation/views/devoluciones/models/response_devo
 import 'package:wms_app/src/presentation/views/devoluciones/models/response_terceros_model.dart';
 import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
+import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
 
 part 'devoluciones_event.dart';
 part 'devoluciones_state.dart';
 
-class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState> {
+class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
+    with SafeBlocMixin<DevolucionesEvent, DevolucionesState> {
   //controller
   TextEditingController searchControllerLocation = TextEditingController();
   TextEditingController searchControllerProducts = TextEditingController();

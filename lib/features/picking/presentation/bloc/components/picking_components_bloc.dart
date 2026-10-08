@@ -5,12 +5,14 @@ import 'package:wms_app/features/picking/domain/entities/pick.dart';
 import 'package:wms_app/features/picking/domain/usecases/fetch_components_from_db_usecase.dart';
 import 'package:wms_app/features/picking/domain/usecases/fetch_components_history_usecase.dart';
 import 'package:wms_app/features/picking/domain/usecases/fetch_components_usecase.dart';
+import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
 
 part 'picking_components_event.dart';
 part 'picking_components_state.dart';
 
 class PickingComponentsBloc
-    extends Bloc<PickingComponentsEvent, PickingComponentsState> {
+    extends Bloc<PickingComponentsEvent, PickingComponentsState>
+    with SafeBlocMixin<PickingComponentsEvent, PickingComponentsState> {
   final FetchComponentsUseCase fetchComponentsUseCase;
   final FetchComponentsFromDbUseCase fetchComponentsFromDbUseCase;
   final FetchComponentsHistoryUseCase fetchComponentsHistoryUseCase;

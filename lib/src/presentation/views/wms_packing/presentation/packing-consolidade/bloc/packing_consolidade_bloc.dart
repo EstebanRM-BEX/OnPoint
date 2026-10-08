@@ -24,12 +24,14 @@ import 'package:wms_app/src/presentation/views/wms_packing/models/sen_packing_re
 import 'package:wms_app/src/presentation/views/wms_packing/models/un_packing_request.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/BatchWithProducts_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
+import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
 
 part 'packing_consolidade_event.dart';
 part 'packing_consolidade_state.dart';
 
 class PackingConsolidateBloc
-    extends Bloc<PackingConsolidateEvent, PackingConsolidateState> {
+    extends Bloc<PackingConsolidateEvent, PackingConsolidateState>
+    with SafeBlocMixin<PackingConsolidateEvent, PackingConsolidateState> {
   // ── Ciclo de vida ────────────────────────────────────────────────────────
   // El bloc vive escopeado a las rutas del flujo de Packing Consolidado
   // (PackingConsolidateScope): una sola instancia a la vez, que comparten sus
