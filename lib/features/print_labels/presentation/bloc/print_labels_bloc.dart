@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/features/print_labels/data/models/product_label.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
@@ -12,7 +13,8 @@ import 'package:wms_app/injection_container.dart';
 part 'print_labels_event.dart';
 part 'print_labels_state.dart';
 
-class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
+class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState>
+    with SafeBlocMixin<PrintLabelsEvent, PrintLabelsState> {
   List<ResultUbicaciones> ubicaciones = [];
   List<ResultUbicaciones> ubicacionesFilters = [];
   List<ProductLabel> productos = [];
@@ -85,7 +87,10 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState> {
     _scopeRefs--;
     if (_scopeRefs > 0) return;
     Future<void>.delayed(const Duration(milliseconds: 500), () {
-      if (_scopeRefs <= 0 && !isClosed) close();
+      // isClosing (no isClosed): en bloc 9.2.0 isClosed sigue en false
+      // mientras close() termina, y un segundo close() volvería a hacer
+      // dispose de los controllers.
+      if (_scopeRefs <= 0 && !isClosing) close();
     });
   }
 
