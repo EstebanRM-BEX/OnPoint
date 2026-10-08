@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/core/services/productos_cache_service.dart';
 import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
@@ -23,6 +24,7 @@ class _MockDb extends Mock implements DataBaseSqlite {}
 class _MockUbicacionesRepo extends Mock implements UbicacionesRepository {}
 
 void main() {
+  late _MockEntorno entorno;
   late _MockUbicaciones ubicacionesCache;
   late _MockUbicacionesRepo ubicacionesRepo;
   late InfoRapidaLocalDataSourceImpl dataSource;
@@ -38,8 +40,10 @@ void main() {
         .thenAnswer((_) async {});
     when(() => ubicacionesCache.refresh()).thenAnswer((_) async => []);
 
+    entorno = _MockEntorno();
+    when(() => entorno.databaseName()).thenReturn('empresa');
     dataSource = InfoRapidaLocalDataSourceImpl.test(
-      _MockEntorno(),
+      entorno,
       _MockProductos(),
       ubicacionesCache,
       _MockConfiguracion(),
@@ -92,6 +96,45 @@ void main() {
       );
 
       verify(() => ubicacionesCache.refresh()).called(1);
+    });
+  });
+
+  group('historial legacy (fase 7)', () {
+    const legacyKey = 'info_rapida_recent_empresa';
+    const nuevaKey = 'info_rapida_v2_recent_empresa';
+    const legacyJson =
+        '[{"query":"770001","isManual":false,"isProduct":true,"type":"product",'
+        '"title":"REF-1","subtitle":"Tornillo","badge":"5 un.",'
+        '"date":"2026-10-01T10:00:00.000"}]';
+
+    test('trae el historial del módulo viejo y borra la clave vieja', () async {
+      SharedPreferences.setMockInitialValues({legacyKey: legacyJson});
+
+      final items = await dataSource.getRecentQueries();
+
+      expect(items.single.title, 'REF-1');
+      expect(items.single.badge, '5 un.');
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(legacyKey), isNull);
+      expect(prefs.getString(nuevaKey), isNotNull);
+    });
+
+    test('limpiar el historial nuevo no vuelve a traer el viejo', () async {
+      SharedPreferences.setMockInitialValues({legacyKey: legacyJson});
+
+      await dataSource.getRecentQueries();
+      await dataSource.clearRecentQueries();
+
+      expect(await dataSource.getRecentQueries(), isEmpty);
+    });
+
+    test('si ya hay historial nuevo no lo pisa', () async {
+      SharedPreferences.setMockInitialValues({
+        legacyKey: legacyJson,
+        nuevaKey: '[]',
+      });
+
+      expect(await dataSource.getRecentQueries(), isEmpty);
     });
   });
 }

@@ -74,10 +74,27 @@ class InfoRapidaLocalDataSourceImpl implements InfoRapidaLocalDataSource {
   String get _recentKey =>
       'info_rapida_v2_recent_${_entorno.databaseName()}';
 
+  /// Clave del historial del módulo legacy (`RecentQueriesStore`).
+  String get _legacyRecentKey =>
+      'info_rapida_recent_${_entorno.databaseName()}';
+
+  /// Pasa una sola vez el historial del módulo legacy a la clave nueva (mismo
+  /// formato JSON) y borra la vieja, para que limpiar el historial nuevo no
+  /// lo vuelva a traer.
+  Future<void> _migrarHistorialLegacy(SharedPreferences prefs) async {
+    final legacy = prefs.getString(_legacyRecentKey);
+    if (legacy == null) return;
+    if (prefs.getString(_recentKey) == null) {
+      await prefs.setString(_recentKey, legacy);
+    }
+    await prefs.remove(_legacyRecentKey);
+  }
+
   @override
   Future<List<RecentQuery>> getRecentQueries() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      await _migrarHistorialLegacy(prefs);
       final raw = prefs.getString(_recentKey);
       if (raw == null) return const [];
 
