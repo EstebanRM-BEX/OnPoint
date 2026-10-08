@@ -6,9 +6,11 @@ import '../../domain/usecases/get_recent_urls.dart';
 import '../../domain/usecases/search_enterprise.dart';
 import 'enterprise_event.dart';
 import 'enterprise_state.dart';
+import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
 
 @injectable
-class EnterpriseBloc extends Bloc<EnterpriseEvent, EnterpriseState> {
+class EnterpriseBloc extends Bloc<EnterpriseEvent, EnterpriseState>
+    with SafeBlocMixin<EnterpriseEvent, EnterpriseState> {
   final SearchEnterprise searchEnterpriseUseCase;
   final GetRecentUrls getRecentUrlsUseCase;
   final DeleteRecentUrl deleteRecentUrlUseCase;

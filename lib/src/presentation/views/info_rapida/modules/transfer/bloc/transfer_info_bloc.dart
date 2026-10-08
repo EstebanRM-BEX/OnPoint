@@ -8,11 +8,13 @@ import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart'
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/data/info_rapida_repository.dart';
 import 'package:wms_app/src/presentation/views/info_rapida/models/transfer_info_request.dart';
+import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
 
 part 'transfer_info_event.dart';
 part 'transfer_info_state.dart';
 
-class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
+class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState>
+    with SafeBlocMixin<TransferInfoEvent, TransferInfoState> {
   bool isLocationDestOk = true;
   bool locationDestIsOk = false;
 

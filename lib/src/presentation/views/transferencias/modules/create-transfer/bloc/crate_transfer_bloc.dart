@@ -20,12 +20,14 @@ import 'package:wms_app/src/presentation/views/transferencias/data/transferencia
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/request_create_trasnfer_model.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/response_create_transfer_mode.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/models/response_validate_stock_model.dart';
+import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
 
 part 'crate_transfer_event.dart';
 part 'crate_transfer_state.dart';
 
 class CreateTransferBloc
-    extends Bloc<CreateTransferEvent, CreateTransferState> {
+    extends Bloc<CreateTransferEvent, CreateTransferState>
+    with SafeBlocMixin<CreateTransferEvent, CreateTransferState> {
   // Este bloc vive escopeado a las rutas de "Crear transferencia" (no se
   // provee en main.dart), así que Flutter lo descarta cada vez que el
   // usuario sale del módulo (ej: flecha atrás a Home). Sin este holder, esa

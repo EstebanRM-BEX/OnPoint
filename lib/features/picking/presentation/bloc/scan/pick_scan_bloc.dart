@@ -31,6 +31,7 @@ import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_
 import 'package:wms_app/src/presentation/views/wms_picking/models/submeuelle_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/PickhWithProducts_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/response_pick_model.dart';
+import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
 
 part 'pick_scan_event.dart';
 part 'pick_scan_state.dart';
@@ -45,7 +46,8 @@ part 'pick_scan_state.dart';
 /// The existing PickingPickBloc is kept as-is; the screen can be migrated
 /// to this new bloc progressively.
 @injectable
-class PickScanBloc extends Bloc<PickScanEvent, PickScanState> {
+class PickScanBloc extends Bloc<PickScanEvent, PickScanState>
+    with SafeBlocMixin<PickScanEvent, PickScanState> {
   // ── Use cases ─────────────────────────────────────────────────────────────
   final MarkLocationOkUseCase markLocationOkUseCase;
   final MarkLocationDestOkUseCase markLocationDestOkUseCase;

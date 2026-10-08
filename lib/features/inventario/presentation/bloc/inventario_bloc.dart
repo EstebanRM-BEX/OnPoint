@@ -20,12 +20,14 @@ import 'package:wms_app/features/inventario/domain/usecases/get_productos_local.
 import 'package:wms_app/features/inventario/domain/usecases/get_ubicaciones_local.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/injection_container.dart';
+import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
 
 part 'inventario_event.dart';
 part 'inventario_state.dart';
 
 @injectable
-class InventarioBloc extends Bloc<InventarioEvent, InventarioState> {
+class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
+    with SafeBlocMixin<InventarioEvent, InventarioState> {
   // ─── Ciclo de vida ────────────────────────────────────────────────────────────
   // El bloc vive escopeado a las rutas del módulo (InventarioScope): se crea al
   // entrar y viaja como argumento entre sus pantallas. Al salir del módulo sin

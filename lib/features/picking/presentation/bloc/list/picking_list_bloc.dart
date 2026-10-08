@@ -14,11 +14,13 @@ import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/data/picking_pick_repository.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/PickhWithProducts_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/models/response_pick_model.dart';
+import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
 
 part 'picking_list_event.dart';
 part 'picking_list_state.dart';
 
-class PickingListBloc extends Bloc<PickingListEvent, PickingListState> {
+class PickingListBloc extends Bloc<PickingListEvent, PickingListState>
+    with SafeBlocMixin<PickingListEvent, PickingListState> {
   final PickingPickRepository _pickingRepository = PickingPickRepository();
   final TransferenciasRepository _transferRepository = TransferenciasRepository();
   final DataBaseSqlite _db = DataBaseSqlite();
