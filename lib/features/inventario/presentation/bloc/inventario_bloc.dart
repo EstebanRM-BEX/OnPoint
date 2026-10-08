@@ -56,7 +56,7 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
 
   /// Recarga las listas si la entrada al módulo lo pidió (una sola vez).
   void reloadIfPending() {
-    if (!_reloadPending || isClosed) return;
+    if (!_reloadPending || isClosing) return;
     _reloadPending = false;
     reload();
   }
@@ -86,7 +86,10 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
     _scopeRefs--;
     if (_scopeRefs > 0) return;
     Future<void>.delayed(const Duration(milliseconds: 500), () {
-      if (_scopeRefs > 0 || isClosed || hasDraftWork) return;
+      // isClosing (no isClosed): en bloc 9.2.0 isClosed sigue en false
+      // mientras close() termina, y un segundo close() volvería a hacer
+      // dispose de los controllers.
+      if (_scopeRefs > 0 || isClosing || hasDraftWork) return;
       close();
     });
   }
@@ -565,7 +568,8 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
           loteIsOk = true;
           dateLoteController.clear();
           newLoteController.clear();
-          add(SelectecLoteEvent(currentProductLote!));
+          // Solo refresca la UI (el lote ya quedó asignado arriba).
+          if (!isClosing) add(SelectecLoteEvent(currentProductLote!));
           emit(CreateLoteProductSuccess());
         } else {
           emit(
