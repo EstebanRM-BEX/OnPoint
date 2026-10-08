@@ -54,6 +54,12 @@ class ConsultaRecienteSeleccionada extends InfoRapidaScanEvent {
   List<Object?> get props => [query];
 }
 
+/// Vuelve a leer "Últimas consultas". Las listas y los detalles consultan con
+/// su propio bloc, así que al volver a la pantalla principal hay que recargar.
+class RecargarConsultasRecientesEvent extends InfoRapidaScanEvent {
+  const RecargarConsultasRecientesEvent();
+}
+
 /// Borra todas las consultas recientes del almacenamiento local.
 class BorrarHistorialConsultasEvent extends InfoRapidaScanEvent {
   const BorrarHistorialConsultasEvent();

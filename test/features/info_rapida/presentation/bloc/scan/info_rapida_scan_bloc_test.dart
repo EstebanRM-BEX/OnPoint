@@ -440,5 +440,18 @@ void main() {
         verifyNever(() => mockGetConsultasRecientes(any()));
       },
     );
+
+    blocTest<InfoRapidaScanBloc, InfoRapidaScanState>(
+      'RecargarConsultasRecientesEvent trae lo guardado por otras pantallas',
+      setUp: () {
+        when(() => mockGetConsultasRecientes(any()))
+            .thenAnswer((_) async => Right([tRecentQueryBarcode]));
+      },
+      build: buildBloc,
+      act: (bloc) => bloc.add(const RecargarConsultasRecientesEvent()),
+      expect: () => [
+        InfoRapidaScanState(consultasRecientes: [tRecentQueryBarcode]),
+      ],
+    );
   });
 }

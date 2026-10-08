@@ -68,6 +68,16 @@ class _InfoRapidaViewState extends State<_InfoRapidaView> {
     _reenfocarEscaner();
   }
 
+  /// Al volver de otra pantalla del módulo: recarga "Últimas consultas" (las
+  /// listas y los detalles guardan con su propio bloc) y reactiva el lector.
+  void _alVolver() {
+    if (!mounted) return;
+    context
+        .read<InfoRapidaScanBloc>()
+        .add(const RecargarConsultasRecientesEvent());
+    _reenfocarEscaner();
+  }
+
   void _reenfocarEscaner() {
     _scanController.clear();
     Future.microtask(() {
@@ -105,7 +115,7 @@ class _InfoRapidaViewState extends State<_InfoRapidaView> {
           ConsultarPorBarcodeEvent(nombre),
         );
     }
-    _reenfocarEscaner();
+    _alVolver();
   }
 
   @override
@@ -116,7 +126,7 @@ class _InfoRapidaViewState extends State<_InfoRapidaView> {
         if (!didPop) _volverAlHome();
       },
       child: InfoRapidaConsultaListener(
-        onRetorno: _reenfocarEscaner,
+        onRetorno: _alVolver,
         child: Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
           floatingActionButton: FloatingActionButton.extended(

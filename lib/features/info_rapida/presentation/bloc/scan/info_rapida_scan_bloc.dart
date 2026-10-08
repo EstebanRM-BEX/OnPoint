@@ -51,6 +51,10 @@ class InfoRapidaScanBloc
       _onConsultaRecienteSeleccionada,
       transformer: restartable(),
     );
+    on<RecargarConsultasRecientesEvent>(
+      _onRecargarRecientes,
+      transformer: restartable(),
+    );
     on<BorrarHistorialConsultasEvent>(_onBorrarHistorial);
     on<LimpiarResultadoScanEvent>(_onLimpiarResultado);
   }
@@ -210,6 +214,15 @@ class InfoRapidaScanBloc
         ));
       },
     );
+  }
+
+  Future<void> _onRecargarRecientes(
+    RecargarConsultasRecientesEvent event,
+    Emitter<InfoRapidaScanState> emit,
+  ) async {
+    emit(state.copyWith(
+      consultasRecientes: await _obtenerRecientesActualizados(),
+    ));
   }
 
   Future<void> _onBorrarHistorial(
