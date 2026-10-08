@@ -1,4 +1,5 @@
 import 'package:bloc_concurrency/bloc_concurrency.dart';
+import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
@@ -16,7 +17,8 @@ part 'transfer_info_event.dart';
 part 'transfer_info_state.dart';
 
 @injectable
-class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
+class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState>
+    with SafeBlocMixin<TransferInfoEvent, TransferInfoState> {
   final CrearTransferenciaIndividualUseCase crearTransferencia;
   final GetCatalogoUbicacionesUseCase getCatalogoUbicaciones;
 

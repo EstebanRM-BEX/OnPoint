@@ -1,4 +1,5 @@
 import 'package:bloc_concurrency/bloc_concurrency.dart';
+import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
@@ -18,7 +19,8 @@ part 'mass_transfer_event.dart';
 part 'mass_transfer_state.dart';
 
 @injectable
-class MassTransferBloc extends Bloc<MassTransferEvent, MassTransferState> {
+class MassTransferBloc extends Bloc<MassTransferEvent, MassTransferState>
+    with SafeBlocMixin<MassTransferEvent, MassTransferState> {
   final CrearTransferenciaMasivaUseCase crearTransferenciaMasiva;
   final GetCatalogoUbicacionesUseCase getCatalogoUbicaciones;
 

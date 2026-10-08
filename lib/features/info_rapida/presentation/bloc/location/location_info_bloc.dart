@@ -1,4 +1,5 @@
 import 'package:bloc_concurrency/bloc_concurrency.dart';
+import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
@@ -17,7 +18,8 @@ bool esDisponibleParaMasiva(ProductoUbicacion p) =>
     p.packing != true && p.cantidadMano > 0;
 
 @injectable
-class LocationInfoBloc extends Bloc<LocationInfoEvent, LocationInfoState> {
+class LocationInfoBloc extends Bloc<LocationInfoEvent, LocationInfoState>
+    with SafeBlocMixin<LocationInfoEvent, LocationInfoState> {
   final ActualizarUbicacionUseCase actualizarUbicacion;
 
   LocationInfoBloc({

@@ -1,4 +1,5 @@
 import 'package:bloc_concurrency/bloc_concurrency.dart';
+import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
@@ -12,7 +13,8 @@ part 'product_info_event.dart';
 part 'product_info_state.dart';
 
 @injectable
-class ProductInfoBloc extends Bloc<ProductInfoEvent, ProductInfoState> {
+class ProductInfoBloc extends Bloc<ProductInfoEvent, ProductInfoState>
+    with SafeBlocMixin<ProductInfoEvent, ProductInfoState> {
   final ActualizarProductoUseCase actualizarProducto;
   final GetUrlImagenProducto getUrlImagenProducto;
 
