@@ -278,8 +278,12 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
     ));
 
     final userId = await PrefUtils.getUserId();
-    final nowFormatted =
-        DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+    final now = DateTime.now();
+    final nowFormatted = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
+
+    // Igual que el legacy: segundos desde que se abrió la pantalla.
+    final inicio = DateTime.tryParse(state.dateStart ?? '');
+    final timeLine = inicio == null ? 0 : now.difference(inicio).inSeconds;
 
     final params = CrearTransferenciaIndividualParams(
       idAlmacen: state.idAlmacen,
@@ -291,7 +295,9 @@ class TransferInfoBloc extends Bloc<TransferInfoEvent, TransferInfoState> {
       cantidadEnviada: state.cantidadATransferir,
       idOperario: userId,
       fechaTransaccion: nowFormatted,
-      observacion: state.observacion,
+      timeLine: timeLine,
+      observacion:
+          state.observacion.trim().isEmpty ? 'Sin novedad' : state.observacion,
       idPropietario: state.idPropietario ?? 0,
       dateStart: state.dateStart,
       dateEnd: nowFormatted,

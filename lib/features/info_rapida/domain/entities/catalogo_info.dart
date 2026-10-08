@@ -12,6 +12,8 @@ class ProductoCatalogo extends Equatable {
   final int? locationId;
   final double? quantity;
   final List<String> otherBarcodes;
+  final String? propietario;
+  final bool manejoPropietario;
 
   const ProductoCatalogo({
     required this.id,
@@ -24,6 +26,8 @@ class ProductoCatalogo extends Equatable {
     this.locationId,
     this.quantity,
     this.otherBarcodes = const [],
+    this.propietario,
+    this.manejoPropietario = false,
   });
 
   @override
@@ -38,6 +42,8 @@ class ProductoCatalogo extends Equatable {
         locationId,
         quantity,
         otherBarcodes,
+        propietario,
+        manejoPropietario,
       ];
 }
 

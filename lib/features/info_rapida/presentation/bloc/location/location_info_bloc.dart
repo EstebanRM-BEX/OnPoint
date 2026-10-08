@@ -12,6 +12,10 @@ import 'package:wms_app/features/info_rapida/domain/usecases/actualizar_ubicacio
 part 'location_info_event.dart';
 part 'location_info_state.dart';
 
+/// Producto que puede entrar en una transferencia masiva.
+bool esDisponibleParaMasiva(ProductoUbicacion p) =>
+    p.packing != true && p.cantidadMano > 0;
+
 @injectable
 class LocationInfoBloc extends Bloc<LocationInfoEvent, LocationInfoState> {
   final ActualizarUbicacionUseCase actualizarUbicacion;
@@ -228,13 +232,19 @@ class LocationInfoBloc extends Bloc<LocationInfoEvent, LocationInfoState> {
     Emitter<LocationInfoState> emit,
   ) {
     final ubicacion = state.ubicacion;
-    if (ubicacion == null || ubicacion.productos.isEmpty) return;
+    if (ubicacion == null) return;
+
+    // Igual que el legacy: solo se pueden transferir los que no están en un
+    // paquete y tienen cantidad a la mano.
+    final disponibles =
+        ubicacion.productos.where(esDisponibleParaMasiva).toList();
+    if (disponibles.isEmpty) return;
 
     final String? keyObjetivo;
     if (state.productosSeleccionados.isNotEmpty) {
       keyObjetivo = state.propietarioActivoKey;
     } else {
-      final primer = ubicacion.productos.first;
+      final primer = disponibles.first;
       keyObjetivo = PropietarioRules.normalizeKey(
         tieneManejoPropietario: primer.manejoPropietario,
         propietario: primer.propietario,
@@ -244,7 +254,7 @@ class LocationInfoBloc extends Bloc<LocationInfoEvent, LocationInfoState> {
     final seleccionados = <ProductoUbicacion>[];
     int omitidosPorPropietario = 0;
 
-    for (final prod in ubicacion.productos) {
+    for (final prod in disponibles) {
       final prodKey = PropietarioRules.normalizeKey(
         tieneManejoPropietario: prod.manejoPropietario,
         propietario: prod.propietario,

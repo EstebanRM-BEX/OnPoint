@@ -92,6 +92,16 @@ class ActualizarCantidadItemMassEvent extends MassTransferEvent {
   List<Object?> get props => [productoId, loteId, cantidad];
 }
 
+/// Agrega un producto de la ubicación origen escaneando su código de barras.
+class AgregarItemMassEvent extends MassTransferEvent {
+  final ProductoUbicacion producto;
+
+  const AgregarItemMassEvent(this.producto);
+
+  @override
+  List<Object?> get props => [producto];
+}
+
 /// Remueve un ítem de la lista de ítems a transferir.
 class RemoverItemMassEvent extends MassTransferEvent {
   final int productoId;

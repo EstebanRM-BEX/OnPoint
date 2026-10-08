@@ -28,7 +28,8 @@ class BuscarUbicacionesProductoEvent extends ProductInfoEvent {
 }
 
 /// Ordena las ubicaciones del producto por un criterio específico:
-/// 'location' (alfabético), 'lote', 'date', 'cantidad'.
+/// 'location' (alfabético), 'lote', 'date' (caducidad), 'entrada'
+/// (fecha de entrada), 'cantidad'.
 class OrdenarUbicacionesProductoEvent extends ProductInfoEvent {
   final String criterio;
   final bool ascendente;

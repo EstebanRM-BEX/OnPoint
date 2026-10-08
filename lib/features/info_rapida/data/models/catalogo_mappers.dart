@@ -26,6 +26,7 @@ class CatalogoMappers {
     final code = OdooParse.str(p.code).trim();
     final barcode = OdooParse.str(p.barcode).trim();
     final lotName = OdooParse.str(p.lotName).trim();
+    final propietario = OdooParse.str(p.propietario).trim();
 
     return ProductoCatalogo(
       id: id,
@@ -38,6 +39,9 @@ class CatalogoMappers {
       locationId: p.locationId,
       quantity: p.quantity != null ? OdooParse.dbl(p.quantity) : null,
       otherBarcodes: List.unmodifiable(otherBarcodes),
+      propietario: propietario.isEmpty ? null : propietario,
+      manejoPropietario:
+          p.manejoPropietario == 1 || p.manejoPropietario == true,
     );
   }
 

@@ -94,6 +94,7 @@ class InfoRapidaScanBloc
     await _ejecutarConsultaPorId(
       id: event.id,
       isProduct: event.isProduct,
+      guardarEnRecientes: event.guardarEnRecientes,
       emit: emit,
     );
   }
@@ -165,6 +166,7 @@ class InfoRapidaScanBloc
     required int id,
     required bool isProduct,
     required Emitter<InfoRapidaScanState> emit,
+    bool guardarEnRecientes = true,
   }) async {
     emit(state.copyWith(
       status: InfoRapidaScanStatus.loading,
@@ -185,13 +187,17 @@ class InfoRapidaScanBloc
         ));
       },
       (info) async {
-        await _guardarEnRecientes(
-          info,
-          query: id.toString(),
-          isManual: true,
-          isProduct: isProduct,
-        );
-        final recientesActualizados = await _obtenerRecientesActualizados();
+        if (guardarEnRecientes) {
+          await _guardarEnRecientes(
+            info,
+            query: id.toString(),
+            isManual: true,
+            isProduct: isProduct,
+          );
+        }
+        final recientesActualizados = guardarEnRecientes
+            ? await _obtenerRecientesActualizados()
+            : state.consultasRecientes;
 
         emit(state.copyWith(
           status: InfoRapidaScanStatus.success,

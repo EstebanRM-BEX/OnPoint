@@ -7,7 +7,7 @@ class ProductInfoState extends Equatable {
   final ProductoInfo? producto;
   final List<UbicacionProducto> ubicacionesFiltradas;
   final String queryFiltro;
-  final String criterioOrden; // 'location', 'lote', 'date', 'cantidad'
+  final String criterioOrden; // 'location', 'lote', 'date', 'entrada', 'cantidad'
   final bool ordenAscendente;
   final bool isEditing;
   final bool isSaving;

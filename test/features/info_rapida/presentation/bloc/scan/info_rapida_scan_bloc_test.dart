@@ -414,5 +414,31 @@ void main() {
         ),
       ],
     );
+
+    blocTest<InfoRapidaScanBloc, InfoRapidaScanState>(
+      'ConsultarPorIdEvent con guardarEnRecientes false no toca el historial',
+      setUp: () {
+        when(
+          () => mockConsultarPorId(any()),
+        ).thenAnswer((_) async => Right(tProducto));
+      },
+      build: buildBloc,
+      act: (bloc) => bloc.add(const ConsultarPorIdEvent(
+        id: 1,
+        isProduct: true,
+        guardarEnRecientes: false,
+      )),
+      expect: () => [
+        const InfoRapidaScanState(status: InfoRapidaScanStatus.loading),
+        InfoRapidaScanState(
+          status: InfoRapidaScanStatus.success,
+          resultado: tProducto,
+        ),
+      ],
+      verify: (_) {
+        verifyNever(() => mockGuardarConsultaReciente(any()));
+        verifyNever(() => mockGetConsultasRecientes(any()));
+      },
+    );
   });
 }

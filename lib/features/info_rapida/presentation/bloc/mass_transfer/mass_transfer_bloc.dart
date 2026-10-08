@@ -36,6 +36,7 @@ class MassTransferBloc extends Bloc<MassTransferEvent, MassTransferState> {
     on<SeleccionarUbicacionDestinoMassEvent>(_onSeleccionarUbicacionDestino);
     on<EscanearUbicacionDestinoMassEvent>(_onEscanearUbicacionDestino);
     on<ActualizarCantidadItemMassEvent>(_onActualizarCantidadItem);
+    on<AgregarItemMassEvent>(_onAgregarItem);
     on<RemoverItemMassEvent>(_onRemoverItem);
     on<ConfirmarTransferenciaMasivaEvent>(
       _onConfirmarTransferenciaMasiva,
@@ -52,7 +53,8 @@ class MassTransferBloc extends Bloc<MassTransferEvent, MassTransferState> {
         DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
     final lineas = event.productosSeleccionados.map((p) {
-      final disp = p.cantidad > 0 ? p.cantidad : p.cantidadMano;
+      // Igual que el legacy: se transfiere la cantidad a la mano.
+      final disp = p.cantidadMano;
       return ItemTransferenciaLinea(
         producto: p,
         cantidadATransferir: disp,
@@ -232,9 +234,7 @@ class MassTransferBloc extends Bloc<MassTransferEvent, MassTransferState> {
     final nuevasLineas = state.items.map((linea) {
       if (linea.producto.id == event.productoId &&
           linea.producto.loteId == event.loteId) {
-        final disp = linea.producto.cantidad > 0
-            ? linea.producto.cantidad
-            : linea.producto.cantidadMano;
+        final disp = linea.producto.cantidadMano;
         final valida = event.cantidad > 0 && event.cantidad <= disp;
         return linea.copyWith(
           cantidadATransferir: event.cantidad,
@@ -245,6 +245,53 @@ class MassTransferBloc extends Bloc<MassTransferEvent, MassTransferState> {
     }).toList();
 
     emit(state.copyWith(items: nuevasLineas));
+  }
+
+  void _onAgregarItem(
+    AgregarItemMassEvent event,
+    Emitter<MassTransferState> emit,
+  ) {
+    final p = event.producto;
+    final yaExiste = state.items.any(
+      (i) => i.producto.id == p.id && i.producto.loteId == p.loteId,
+    );
+    if (yaExiste) {
+      const msg =
+          'El producto ya se encuentra en la lista de transferencia masiva';
+      emit(state.copyWith(
+        mensajeError: () => msg,
+        failure: () => const InfoRapidaValidationFailure(msg),
+      ));
+      return;
+    }
+
+    if (state.items.isNotEmpty) {
+      final errorMsg = PropietarioRules.validarCompatibilidad(
+        keyExistente: state.propietarioKeyComun,
+        keyNuevo: PropietarioRules.normalizeKey(
+          tieneManejoPropietario: p.manejoPropietario,
+          propietario: p.propietario,
+        ),
+      );
+      if (errorMsg != null) {
+        emit(state.copyWith(
+          mensajeError: () => errorMsg,
+          failure: () => PropietarioMismatchFailure(errorMsg),
+        ));
+        return;
+      }
+    }
+
+    final linea = ItemTransferenciaLinea(
+      producto: p,
+      cantidadATransferir: p.cantidadMano,
+      cantidadValida: p.cantidadMano > 0,
+    );
+    emit(state.copyWith(
+      items: [...state.items, linea],
+      mensajeError: () => null,
+      failure: () => null,
+    ));
   }
 
   void _onRemoverItem(
@@ -333,7 +380,7 @@ class MassTransferBloc extends Bloc<MassTransferEvent, MassTransferState> {
         idProducto: it.producto.id,
         cantidadEnviada: it.cantidadATransferir,
         idLote: it.producto.loteId ?? 0,
-        timeLine: 0,
+        timeLine: 2,
         idPropietario: it.producto.idPropietario ?? 0,
       );
     }).toList();
@@ -341,7 +388,8 @@ class MassTransferBloc extends Bloc<MassTransferEvent, MassTransferState> {
     final params = CrearTransferenciaMasivaParams(
       dateStart: state.dateStart ?? nowFormatted,
       dateEnd: nowFormatted,
-      idAlmacen: state.idAlmacen,
+      // El legacy manda el almacén de la ubicación destino.
+      idAlmacen: state.ubicacionDestino!.idWarehouse ?? state.idAlmacen,
       idUbicacionOrigen: state.idUbicacionOrigen,
       idUbicacionDestino: state.ubicacionDestino!.id,
       idOperario: userId,

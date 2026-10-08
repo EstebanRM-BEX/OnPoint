@@ -30,13 +30,18 @@ class ConsultarPorIdEvent extends InfoRapidaScanEvent {
   final int id;
   final bool isProduct;
 
+  /// `false` en las consultas internas (refrescar tras una transferencia):
+  /// no deben aparecer en "Últimas consultas".
+  final bool guardarEnRecientes;
+
   const ConsultarPorIdEvent({
     required this.id,
     required this.isProduct,
+    this.guardarEnRecientes = true,
   });
 
   @override
-  List<Object?> get props => [id, isProduct];
+  List<Object?> get props => [id, isProduct, guardarEnRecientes];
 }
 
 /// Re-ejecuta una consulta almacenada en el historial de recientes.

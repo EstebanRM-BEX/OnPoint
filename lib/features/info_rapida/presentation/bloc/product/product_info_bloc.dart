@@ -234,7 +234,10 @@ class ProductInfoBloc extends Bloc<ProductInfoEvent, ProductInfoState> {
           comparison = a.ubicacion.toLowerCase().compareTo(b.ubicacion.toLowerCase());
         case 'lote':
           comparison = (a.lote ?? '').toLowerCase().compareTo((b.lote ?? '').toLowerCase());
-        case 'date':
+        case 'date': // fecha de caducidad
+          comparison =
+              (a.fechaCaducidad ?? '').compareTo(b.fechaCaducidad ?? '');
+        case 'entrada':
           comparison = (a.fechaEntrada ?? '').compareTo(b.fechaEntrada ?? '');
         case 'cantidad':
           comparison = a.cantidad.compareTo(b.cantidad);
