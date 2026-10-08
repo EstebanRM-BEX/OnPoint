@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/features/info_rapida/data/services/info_rapida_ws_listener.dart';
 import 'package:wms_app/features/info_rapida/domain/entities/catalogo_info.dart';
 import 'package:wms_app/features/info_rapida/domain/entities/config_info_rapida_usuario.dart';
 import 'package:wms_app/features/info_rapida/presentation/bloc/catalog/catalog_search_bloc.dart';
@@ -57,8 +58,31 @@ class _ListProductsViewState extends State<_ListProductsView> {
   // Debounce del buscador: no filtra toda la lista en cada tecla.
   Timer? _searchDebounce;
 
+  // Productos actualizados por WebSocket: se recarga el catálogo (desde
+  // memoria) para que la lista abierta muestre el cambio.
+  StreamSubscription<int>? _wsSubscription;
+  Timer? _wsDebounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _wsSubscription =
+        getIt<InfoRapidaWsListener>().productosActualizados.listen((_) {
+      _wsDebounce?.cancel();
+      _wsDebounce = Timer(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          context
+              .read<CatalogSearchBloc>()
+              .add(const CargarCatalogoProductosEvent());
+        }
+      });
+    });
+  }
+
   @override
   void dispose() {
+    _wsSubscription?.cancel();
+    _wsDebounce?.cancel();
     _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
@@ -198,7 +222,7 @@ class _ListProductsViewState extends State<_ListProductsView> {
                 ],
               ),
             ),
-            if (state.isLoadingProductos)
+            if (state.isLoadingProductos && state.productos.isEmpty)
               const Positioned.fill(
                 child: AbsorbPointer(
                   child: DialogLoading(message: 'Cargando productos...'),

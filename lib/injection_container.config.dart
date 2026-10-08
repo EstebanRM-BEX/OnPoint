@@ -115,6 +115,7 @@ import 'features/info_rapida/data/datasources/info_rapida_remote_data_source.dar
 import 'features/info_rapida/data/repositories/info_rapida_repository_impl.dart'
     as _i696;
 import 'features/info_rapida/data/services/info_rapida_entorno.dart' as _i611;
+import 'features/info_rapida/data/services/info_rapida_ws_listener.dart' as _i2;
 import 'features/info_rapida/domain/repositories/info_rapida_repository.dart'
     as _i447;
 import 'features/info_rapida/domain/usecases/actualizar_producto_usecase.dart'
@@ -860,6 +861,12 @@ extension GetItInjectableX on _i174.GetIt {
         remoteDataSource: gh<_i106.RecepcionMultiusuarioRemoteDataSource>(),
         localDataSource: gh<_i330.RecepcionMultiusuarioLocalDataSource>(),
         networkInfo: gh<_i75.NetworkInfo>(),
+      ),
+    );
+    gh.lazySingleton<_i2.InfoRapidaWsListener>(
+      () => _i2.InfoRapidaWsListener(
+        gh<_i1062.IWebSocketService>(),
+        gh<_i450.ProductosCacheService>(),
       ),
     );
     gh.lazySingleton<_i719.ClaimTransferenciaProductUseCase>(

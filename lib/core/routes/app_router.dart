@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/features/expedition/domain/entities/item_suelto_expedicion.dart';
 import 'package:wms_app/features/packing_pedido/presentation/pages/packing_pedido_list_page.dart';
+import 'package:wms_app/features/info_rapida/presentation/pages/info_rapida_page.dart';
 import 'package:wms_app/features/expedition/domain/entities/paquete_expedicion.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/assignment/expedicion_assignment_bloc.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/confirm/expedicion_confirm_bloc.dart';
@@ -250,6 +251,10 @@ class AppRoutes {
   static const String propietarioDevoluciones = 'propietario-devoluciones';
   static const String almacenesDevoluciones = 'almacenes-devoluciones';
   static const String ubicacionesDevoluciones = 'ubicaciones-devoluciones';
+
+  // Información Rápida migrada (features/info_rapida). Solo esta ruta de
+  // entrada: las pantallas internas navegan con Navigator.push.
+  static const String infoRapidaV2 = 'info-rapida-v2';
 
   //todas las pantallas de info rapida
   static const String infoRapida = 'info-rapida';
@@ -877,6 +882,8 @@ class AppRoutes {
       // interno, envueltos con BlocProvider.value para no perder los datos
       // ya cargados (ubicaciones/productos, resultado de la última
       // búsqueda) en cada paso.
+      infoRapidaV2: (_) => const InfoRapidaPage(),
+
       infoRapida: (context) {
         final args = _args(context);
         final bloc = _arg<InfoRapidaBloc>(args, 0);

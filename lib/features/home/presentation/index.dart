@@ -226,6 +226,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       context,
       AppRoutes.listExpedition,
     ),
+    HomeModuleId.infoRapidaV2 => () => Navigator.pushReplacementNamed(
+      context,
+      AppRoutes.infoRapidaV2,
+    ),
   };
 
   /// Módulos visibles en el orden configurado, en páginas de 9.

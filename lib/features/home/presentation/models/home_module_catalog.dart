@@ -23,10 +23,13 @@ enum HomeModuleId {
   ),
   infoRapida('Info Rápida', 'Consulta directa', Icons.qr_code_scanner),
   etiquetas('Etiquetas', 'Impresión', Icons.print_outlined),
-  expedicion('Expedición', 'Despachos', Icons.local_shipping_outlined);
+  expedicion('Expedición', 'Despachos', Icons.local_shipping_outlined),
+
+  /// Información Rápida migrada (features/info_rapida), en pruebas.
+  infoRapidaV2('Info Rápida (nuevo)', 'Consulta directa', Icons.qr_code_2);
 
   /// Módulos que aparecen ocultos hasta que alguien los habilite.
-  static const Set<HomeModuleId> hiddenByDefault = {};
+  static const Set<HomeModuleId> hiddenByDefault = {infoRapidaV2};
 
   final String title;
   final String subtitle;

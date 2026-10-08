@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/features/info_rapida/data/services/info_rapida_ws_listener.dart';
 import 'package:wms_app/features/info_rapida/presentation/bloc/scan/info_rapida_scan_bloc.dart';
 import 'package:wms_app/features/info_rapida/presentation/pages/list_locations_page.dart';
 import 'package:wms_app/features/info_rapida/presentation/pages/list_products_page.dart';
@@ -39,9 +40,19 @@ class _InfoRapidaView extends StatefulWidget {
 class _InfoRapidaViewState extends State<_InfoRapidaView> {
   final TextEditingController _scanController = TextEditingController();
   final FocusNode _scanFocusNode = FocusNode();
+  // Vive mientras el módulo está abierto: el resto de pantallas se apilan
+  // encima de esta.
+  final InfoRapidaWsListener _wsListener = getIt<InfoRapidaWsListener>();
+
+  @override
+  void initState() {
+    super.initState();
+    _wsListener.start();
+  }
 
   @override
   void dispose() {
+    _wsListener.stop();
     _scanFocusNode.dispose();
     _scanController.dispose();
     super.dispose();
