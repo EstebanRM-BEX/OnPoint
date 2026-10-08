@@ -7,6 +7,7 @@ import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/features/info_rapida/data/datasources/info_rapida_local_data_source.dart';
 import 'package:wms_app/features/info_rapida/data/services/info_rapida_entorno.dart';
 import 'package:wms_app/features/info_rapida/domain/entities/info_rapida_params.dart';
+import 'package:wms_app/features/info_rapida/domain/entities/recent_query.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/ubicaciones_repository.dart';
@@ -135,6 +136,39 @@ void main() {
       });
 
       expect(await dataSource.getRecentQueries(), isEmpty);
+    });
+  });
+
+  group('saveRecentQuery', () {
+    RecentQuery q(String title) => RecentQuery(
+          query: title,
+          isManual: false,
+          isProduct: true,
+          type: 'product',
+          title: title,
+          subtitle: '',
+          date: DateTime(2026, 10, 8),
+        );
+
+    test('guarda la primera consulta con el historial vacío', () async {
+      SharedPreferences.setMockInitialValues({});
+
+      await dataSource.saveRecentQuery(q('REF-1'));
+
+      expect((await dataSource.getRecentQueries()).single.title, 'REF-1');
+    });
+
+    test('desduplica y deja la última primero', () async {
+      SharedPreferences.setMockInitialValues({});
+
+      await dataSource.saveRecentQuery(q('REF-1'));
+      await dataSource.saveRecentQuery(q('REF-2'));
+      await dataSource.saveRecentQuery(q('REF-1'));
+
+      expect(
+        (await dataSource.getRecentQueries()).map((e) => e.title),
+        ['REF-1', 'REF-2'],
+      );
     });
   });
 }

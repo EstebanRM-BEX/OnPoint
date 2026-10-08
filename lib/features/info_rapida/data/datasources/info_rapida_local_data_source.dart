@@ -118,7 +118,10 @@ class InfoRapidaLocalDataSourceImpl implements InfoRapidaLocalDataSource {
   @override
   Future<void> saveRecentQuery(RecentQuery query) async {
     try {
-      final items = await getRecentQueries()
+      // Copia modificable: getRecentQueries devuelve `const []` cuando no hay
+      // historial y removeWhere sobre esa lista lanzaba, así que la primera
+      // consulta nunca se guardaba.
+      final items = List<RecentQuery>.of(await getRecentQueries())
         ..removeWhere((q) => q.dedupeKey == query.dedupeKey)
         ..insert(0, query);
 
