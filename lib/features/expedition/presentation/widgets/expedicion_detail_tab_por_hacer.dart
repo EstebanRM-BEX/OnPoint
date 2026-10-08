@@ -169,14 +169,14 @@ class _ExpedicionDetailTabPorHacerState
     // entrar a Escanear y se reconstruye de cero al volver.
     Navigator.pushReplacementNamed(
         context, AppRoutes.scanProductExpedition,
-        arguments: [paquete, null, context.read<ExpedicionScanBloc>()]);
+        arguments: [paquete, null]);
   }
 
   void _navigateToItemSuelto(BuildContext context, ItemSueltoExpedicion item) {
     _limpiarSeleccion();
     Navigator.pushReplacementNamed(
         context, AppRoutes.scanProductExpedition,
-        arguments: [null, item, context.read<ExpedicionScanBloc>()]);
+        arguments: [null, item]);
   }
 
   void _refreshDetail(BuildContext context) {

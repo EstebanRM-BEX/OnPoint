@@ -358,11 +358,12 @@ class AppRoutes {
       },
 
       //todo expedición
-      // ExpedicionListBloc y ExpedicionScanBloc se comparten entre rutas
-      // (Detail necesita seguir usando el mismo ListBloc de List para
-      // refrescarlo al confirmar; Scan necesita el mismo ScanBloc que ya
-      // usan las pestañas de Detail) — por eso viajan como argumento extra
-      // de la ruta en vez de crearse de cero ahí.
+      // ExpedicionListBloc viaja como argumento de List a Detail (Detail lo usa
+      // para refrescar al confirmar, comprobando isClosed). El ScanBloc NO se
+      // comparte: Detail entra a Escanear con pushReplacementNamed, su ruta se
+      // destruye y el BlocProvider de Detail cerraba el bloc que Escanear
+      // había recibido → "Cannot add new events after calling close" al
+      // validar. Cada ruta crea el suyo.
       packingPedidoV2: (_) => const PackingPedidoListPage(),
 
       listExpedition: (_) => MultiBlocProvider(
@@ -376,10 +377,8 @@ class AppRoutes {
         final args = _args(context);
         final paquete = _arg<PaqueteExpedicion>(args, 0);
         final itemSuelto = _arg<ItemSueltoExpedicion>(args, 1);
-        final scanBloc =
-            _arg<ExpedicionScanBloc>(args, 2) ?? getIt<ExpedicionScanBloc>();
-        return BlocProvider.value(
-          value: scanBloc,
+        return BlocProvider(
+          create: (_) => getIt<ExpedicionScanBloc>(),
           child: ScanProductExpeditionScreen(
             paquete: paquete,
             itemSuelto: itemSuelto,
