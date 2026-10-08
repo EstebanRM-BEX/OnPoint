@@ -42,9 +42,6 @@ abstract class InfoRapidaLocalDataSource {
 
   /// Sincroniza la actualización de una ubicación en la base SQLite y caché en memoria.
   Future<void> syncLocalLocationUpdated(ActualizarUbicacionParams params);
-
-  /// Limpia los borradores de productos para transferencia masiva en SQLite.
-  Future<void> clearLocalDraftTransfers();
 }
 
 /// Implementación del origen de datos local con SQLite, cachés en memoria y SharedPreferences.
@@ -222,11 +219,5 @@ class InfoRapidaLocalDataSourceImpl implements InfoRapidaLocalDataSource {
 
     // 2. Refrescar el caché en memoria de ubicaciones
     await _ubicacionesCache.refresh();
-  }
-
-  @override
-  Future<void> clearLocalDraftTransfers() async {
-    await _database.productCreateTransferRepository
-        .deleteAllProductsCreateTransfer();
   }
 }

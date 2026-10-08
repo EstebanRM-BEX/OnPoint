@@ -474,7 +474,7 @@ void main() {
       verify(() => remote.crearTransferenciaIndividual(params)).called(1);
     });
 
-    test('crearTransferenciaMasiva valida red, ejecuta remoto y limpia borradores locales', () async {
+    test('crearTransferenciaMasiva ejecuta remoto sin tocar el borrador de Crear Transferencia', () async {
       const params = CrearTransferenciaMasivaParams(
         dateStart: '2026-10-08 08:00',
         dateEnd: '2026-10-08 08:30',
@@ -492,13 +492,13 @@ void main() {
       );
       when(() => remote.crearTransferenciaMasiva(params))
           .thenAnswer((_) async => masivaRes);
-      when(() => local.clearLocalDraftTransfers()).thenAnswer((_) async {});
 
       final result = await repository.crearTransferenciaMasiva(params);
 
       expect(result.getRight().toNullable(), masivaRes);
       verify(() => remote.crearTransferenciaMasiva(params)).called(1);
-      verify(() => local.clearLocalDraftTransfers()).called(1);
+      // Bug 2: no se toca la tabla de Crear Transferencia ni nada local.
+      verifyZeroInteractions(local);
     });
   });
 }

@@ -239,8 +239,9 @@ class InfoRapidaRepositoryImpl implements InfoRapidaRepository {
     }
 
     try {
+      // El legacy vaciaba aquí la tabla de Crear Transferencia y borraba el
+      // borrador de otro módulo (bug 2 del plan): no se toca.
       final result = await _remoteDataSource.crearTransferenciaMasiva(params);
-      await _localDataSource.clearLocalDraftTransfers();
       return Right(result);
     } catch (e) {
       return Left(_mapException(e));
