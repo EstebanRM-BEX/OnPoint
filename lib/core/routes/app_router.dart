@@ -240,8 +240,7 @@ class AppRoutes {
   static const String ubicacionesDevoluciones = 'ubicaciones-devoluciones';
 
   // Información Rápida (features/info_rapida). Solo la ruta de entrada: las
-  // pantallas internas navegan con Navigator.push. El módulo legacy
-  // (views/info_rapida) queda como backup sin rutas.
+  // pantallas internas navegan con Navigator.push.
   static const String infoRapida = 'info-rapida';
 
   //todas las pantallas de asistente ia
