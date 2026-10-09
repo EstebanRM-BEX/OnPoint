@@ -124,6 +124,8 @@ import 'features/info_rapida/domain/usecases/actualizar_ubicacion_usecase.dart'
     as _i292;
 import 'features/info_rapida/domain/usecases/borrar_consultas_recientes_usecase.dart'
     as _i520;
+import 'features/info_rapida/domain/usecases/buscar_catalogo_productos_usecase.dart'
+    as _i937;
 import 'features/info_rapida/domain/usecases/consultar_por_barcode_usecase.dart'
     as _i219;
 import 'features/info_rapida/domain/usecases/consultar_por_id_usecase.dart'
@@ -132,16 +134,18 @@ import 'features/info_rapida/domain/usecases/crear_transferencia_individual_usec
     as _i101;
 import 'features/info_rapida/domain/usecases/crear_transferencia_masiva_usecase.dart'
     as _i1018;
-import 'features/info_rapida/domain/usecases/get_catalogo_productos_usecase.dart'
-    as _i968;
 import 'features/info_rapida/domain/usecases/get_catalogo_ubicaciones_usecase.dart'
     as _i235;
 import 'features/info_rapida/domain/usecases/get_configuracion_usuario_usecase.dart'
     as _i460;
 import 'features/info_rapida/domain/usecases/get_consultas_recientes_usecase.dart'
     as _i120;
+import 'features/info_rapida/domain/usecases/get_propietarios_catalogo_usecase.dart'
+    as _i789;
 import 'features/info_rapida/domain/usecases/guardar_consulta_reciente_usecase.dart'
     as _i701;
+import 'features/info_rapida/domain/usecases/precargar_catalogos_usecase.dart'
+    as _i875;
 import 'features/info_rapida/presentation/bloc/catalog/catalog_search_bloc.dart'
     as _i942;
 import 'features/info_rapida/presentation/bloc/location/location_info_bloc.dart'
@@ -1531,6 +1535,11 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i447.InfoRapidaRepository>(),
       ),
     );
+    gh.lazySingleton<_i937.BuscarCatalogoProductosUseCase>(
+      () => _i937.BuscarCatalogoProductosUseCase(
+        gh<_i447.InfoRapidaRepository>(),
+      ),
+    );
     gh.lazySingleton<_i219.ConsultarPorBarcodeUseCase>(
       () => _i219.ConsultarPorBarcodeUseCase(gh<_i447.InfoRapidaRepository>()),
     );
@@ -1547,9 +1556,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i447.InfoRapidaRepository>(),
       ),
     );
-    gh.lazySingleton<_i968.GetCatalogoProductosUseCase>(
-      () => _i968.GetCatalogoProductosUseCase(gh<_i447.InfoRapidaRepository>()),
-    );
     gh.lazySingleton<_i235.GetCatalogoUbicacionesUseCase>(
       () =>
           _i235.GetCatalogoUbicacionesUseCase(gh<_i447.InfoRapidaRepository>()),
@@ -1563,10 +1569,18 @@ extension GetItInjectableX on _i174.GetIt {
       () =>
           _i120.GetConsultasRecientesUseCase(gh<_i447.InfoRapidaRepository>()),
     );
+    gh.lazySingleton<_i789.GetPropietariosCatalogoUseCase>(
+      () => _i789.GetPropietariosCatalogoUseCase(
+        gh<_i447.InfoRapidaRepository>(),
+      ),
+    );
     gh.lazySingleton<_i701.GuardarConsultaRecienteUseCase>(
       () => _i701.GuardarConsultaRecienteUseCase(
         gh<_i447.InfoRapidaRepository>(),
       ),
+    );
+    gh.lazySingleton<_i875.PrecargarCatalogosUseCase>(
+      () => _i875.PrecargarCatalogosUseCase(gh<_i447.InfoRapidaRepository>()),
     );
     gh.factory<_i545.ClusterPickingBloc>(
       () => _i545.ClusterPickingBloc(
@@ -1620,11 +1634,13 @@ extension GetItInjectableX on _i174.GetIt {
         guardarConsultaReciente: gh<_i701.GuardarConsultaRecienteUseCase>(),
         borrarConsultasRecientes: gh<_i520.BorrarConsultasRecientesUseCase>(),
         getConfiguracionUsuario: gh<_i460.GetConfiguracionUsuarioUseCase>(),
+        precargarCatalogos: gh<_i875.PrecargarCatalogosUseCase>(),
       ),
     );
     gh.factory<_i942.CatalogSearchBloc>(
       () => _i942.CatalogSearchBloc(
-        getCatalogoProductos: gh<_i968.GetCatalogoProductosUseCase>(),
+        buscarCatalogoProductos: gh<_i937.BuscarCatalogoProductosUseCase>(),
+        getPropietariosCatalogo: gh<_i789.GetPropietariosCatalogoUseCase>(),
         getCatalogoUbicaciones: gh<_i235.GetCatalogoUbicacionesUseCase>(),
       ),
     );

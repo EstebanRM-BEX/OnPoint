@@ -138,14 +138,29 @@ class InfoRapidaRepositoryImpl implements InfoRapidaRepository {
   }
 
   @override
-  Future<Either<Failure, List<ProductoCatalogo>>> getCatalogoProductos({
-    bool forceRefresh = false,
+  Future<Either<Failure, List<ProductoCatalogo>>> buscarCatalogoProductos({
+    required String query,
+    String? propietario,
+    required int limit,
+    required int offset,
   }) async {
     try {
-      final items = await _localDataSource.getCatalogoProductos(
-        forceRefresh: forceRefresh,
+      final items = await _localDataSource.buscarCatalogoProductos(
+        query: query,
+        propietario: propietario,
+        limit: limit,
+        offset: offset,
       );
       return Right(items);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<String>>> getPropietariosCatalogo() async {
+    try {
+      return Right(await _localDataSource.getPropietariosCatalogo());
     } catch (e) {
       return Left(CacheFailure(e.toString()));
     }
@@ -160,6 +175,16 @@ class InfoRapidaRepositoryImpl implements InfoRapidaRepository {
         forceRefresh: forceRefresh,
       );
       return Right(items);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> precargarCatalogos() async {
+    try {
+      await _localDataSource.precargarCatalogos();
+      return const Right(unit);
     } catch (e) {
       return Left(CacheFailure(e.toString()));
     }

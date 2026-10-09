@@ -63,6 +63,13 @@ class ProductosCacheService {
     return UnmodifiableListView(_cacheAll!);
   }
 
+  int _uniqueVersion = 0;
+
+  /// Cambia cada vez que el contenido de [getAllUnique] cambia (carga,
+  /// invalidación o upsert por WebSocket). Para quien guarda una conversión
+  /// de la lista y necesita saber si quedó vieja.
+  int get uniqueVersion => _uniqueVersion;
+
   /// true si [getAllUnique] ya tiene datos en memoria (acceso síncrono).
   bool get isUniqueLoaded => _cacheUnique?.isNotEmpty ?? false;
 
@@ -70,12 +77,36 @@ class ProductosCacheService {
   List<Product> get currentUnique =>
       _cacheUnique == null ? const [] : UnmodifiableListView(_cacheUnique!);
 
-  Future<List<Product>> getAllUnique({bool forceRefresh = false}) async {
-    if (_cacheUnique == null || _cacheUnique!.isEmpty || forceRefresh) {
-      _cacheUnique = await DataBaseSqlite().productoInventarioRepository
-          .getAllUniqueProducts();
+  // Carga en curso de [getAllUnique]: quien llega mientras la precarga de
+  // Información Rápida todavía lee SQLite espera esa misma lectura en vez de
+  // lanzar otra igual (doble consulta y dos copias de la lista en RAM).
+  Future<List<Product>>? _uniqueEnCurso;
+  // Sube con [invalidate]/forceRefresh: una carga vieja que termina después
+  // no pisa el caché.
+  int _uniqueGeneracion = 0;
+
+  Future<List<Product>> getAllUnique({bool forceRefresh = false}) {
+    if (!forceRefresh && (_cacheUnique?.isNotEmpty ?? false)) {
+      return Future.value(UnmodifiableListView(_cacheUnique!));
     }
-    return UnmodifiableListView(_cacheUnique!);
+    if (!forceRefresh && _uniqueEnCurso != null) return _uniqueEnCurso!;
+
+    final generacion = ++_uniqueGeneracion;
+    final carga = _cargarUnique(generacion);
+    _uniqueEnCurso = carga;
+    return carga.whenComplete(() {
+      if (identical(_uniqueEnCurso, carga)) _uniqueEnCurso = null;
+    });
+  }
+
+  Future<List<Product>> _cargarUnique(int generacion) async {
+    final productos = await DataBaseSqlite().productoInventarioRepository
+        .getAllUniqueProducts();
+    if (generacion == _uniqueGeneracion) {
+      _cacheUnique = productos;
+      _uniqueVersion++;
+    }
+    return UnmodifiableListView(productos);
   }
 
   /// Recarga ambas variantes desde SQLite — usar tras una sincronización
@@ -90,6 +121,9 @@ class ProductosCacheService {
   void invalidate() {
     _cacheAll = null;
     _cacheUnique = null;
+    _uniqueEnCurso = null;
+    _uniqueGeneracion++;
+    _uniqueVersion++;
   }
 
   /// Aplica en memoria un evento de producto recibido por WebSocket — UPSERT:
@@ -185,6 +219,7 @@ class ProductosCacheService {
       } else {
         _cacheUnique!.add(Product.fromMap(data));
       }
+      _uniqueVersion++;
       touched = true;
     }
 

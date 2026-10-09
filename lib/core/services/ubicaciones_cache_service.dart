@@ -27,12 +27,25 @@ class UbicacionesCacheService {
   /// útil para blocs que hoy exponen la lista como campo público síncrono.
   bool get isLoaded => _cache != null && _cache!.isNotEmpty;
 
+  int _version = 0;
+
+  /// Cambia cada vez que el contenido del caché cambia (carga o
+  /// invalidación). Para quien guarda una conversión de la lista.
+  int get version => _version;
+
   /// Última copia cargada, o vacía si [getAll] todavía no se llamó ninguna
   /// vez. Acceso síncrono para el mismo patrón que ya usan los blocs
   /// existentes (leer `bloc.ubicaciones` directo, sin await).
   List<ResultUbicaciones> get current => _cache ?? const [];
 
-  Future<List<ResultUbicaciones>> getAll({bool forceRefresh = false}) async {
+  // Carga en curso de [getAll]: quien llega mientras otra lectura de SQLite
+  // no terminó (ej. la precarga de Información Rápida) espera esa misma.
+  Future<List<ResultUbicaciones>>? _enCurso;
+  // Sube con [invalidate]/forceRefresh: una carga vieja que termina después
+  // no pisa el caché.
+  int _generacion = 0;
+
+  Future<List<ResultUbicaciones>> getAll({bool forceRefresh = false}) {
     // No memoizar un resultado vacío: la sincronización de ubicaciones en
     // background (post-login, fire-and-forget) puede no haber terminado
     // todavía cuando llega la primera consulta, o el repositorio puede
@@ -40,8 +53,25 @@ class UbicacionesCacheService {
     // eso lo deja "vacío para siempre" aunque el catálogo real ya esté
     // disponible en la siguiente consulta (bug real visto en
     // ProductosCacheService: "Crear Devolución" quedaba sin productos).
-    if (_cache == null || _cache!.isEmpty || forceRefresh) {
-      _cache = await DataBaseSqlite().ubicacionesRepository.getAllUbicaciones();
+    if (!forceRefresh && isLoaded) {
+      return Future.value(UnmodifiableListView(_cache!));
+    }
+    if (!forceRefresh && _enCurso != null) return _enCurso!;
+
+    final generacion = ++_generacion;
+    final carga = _cargar(generacion);
+    _enCurso = carga;
+    return carga.whenComplete(() {
+      if (identical(_enCurso, carga)) _enCurso = null;
+    });
+  }
+
+  Future<List<ResultUbicaciones>> _cargar(int generacion) async {
+    final ubicaciones =
+        await DataBaseSqlite().ubicacionesRepository.getAllUbicaciones();
+    if (generacion == _generacion) {
+      _cache = ubicaciones;
+      _version++;
     }
     // Una sola lista para toda la app: se auditó cada consumidor y se quitó
     // el idioma `campo.clear(); if(...) campo = response;` que antes hacía
@@ -54,7 +84,7 @@ class UbicacionesCacheService {
     // interno: sigue siendo LA MISMA lista para todos), y convierte
     // cualquier intento futuro de `.clear()/.sort()/.add()` en un
     // UnsupportedError inmediato en vez de corromper el cache en silencio.
-    return UnmodifiableListView(_cache!);
+    return UnmodifiableListView(ubicaciones);
   }
 
   /// Fuerza una recarga inmediata desde SQLite y actualiza el cache — usar
@@ -66,5 +96,10 @@ class UbicacionesCacheService {
   /// SQLite. Útil al cerrar sesión (evita que la próxima sesión arranque
   /// mostrando ubicaciones de otro usuario/almacén si algún día esto deja de
   /// ser un catálogo global).
-  void invalidate() => _cache = null;
+  void invalidate() {
+    _cache = null;
+    _enCurso = null;
+    _generacion++;
+    _version++;
+  }
 }

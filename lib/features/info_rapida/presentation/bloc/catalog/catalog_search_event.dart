@@ -7,17 +7,13 @@ sealed class CatalogSearchEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Carga el catálogo de productos desde la caché local o repositorio.
+/// Carga la primera página de productos (con la búsqueda y el propietario
+/// actuales) y la lista de propietarios. También refresca la lista abierta.
 class CargarCatalogoProductosEvent extends CatalogSearchEvent {
-  final bool forceRefresh;
-
-  const CargarCatalogoProductosEvent({this.forceRefresh = false});
-
-  @override
-  List<Object?> get props => [forceRefresh];
+  const CargarCatalogoProductosEvent();
 }
 
-/// Busca productos dentro del catálogo por nombre, código interno o códigos de barras.
+/// Busca productos por nombre, código interno o códigos de barras.
 class BuscarProductosCatalogoEvent extends CatalogSearchEvent {
   final String query;
 
@@ -25,6 +21,31 @@ class BuscarProductosCatalogoEvent extends CatalogSearchEvent {
 
   @override
   List<Object?> get props => [query];
+}
+
+/// Filtra los productos por propietario (null = todos).
+class FiltrarProductosPorPropietarioEvent extends CatalogSearchEvent {
+  final String? propietario;
+
+  const FiltrarProductosPorPropietarioEvent(this.propietario);
+
+  @override
+  List<Object?> get props => [propietario];
+}
+
+/// Siguiente página de productos para la búsqueda actual.
+class CargarMasProductosCatalogoEvent extends CatalogSearchEvent {
+  const CargarMasProductosCatalogoEvent();
+}
+
+/// Interno: consulta la primera página con el estado actual.
+class _ConsultaProductosEvent extends CatalogSearchEvent {
+  final bool cargarPropietarios;
+
+  const _ConsultaProductosEvent({this.cargarPropietarios = false});
+
+  @override
+  List<Object?> get props => [cargarPropietarios];
 }
 
 /// Carga el catálogo de ubicaciones desde la caché local o repositorio.

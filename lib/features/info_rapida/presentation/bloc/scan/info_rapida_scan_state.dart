@@ -11,6 +11,9 @@ class InfoRapidaScanState extends Equatable {
   final Failure? failure;
   final String? ultimoBarcodeConsultado;
 
+  /// Carga inicial de productos y ubicaciones al entrar al módulo.
+  final bool cargandoCatalogos;
+
   const InfoRapidaScanState({
     this.status = InfoRapidaScanStatus.initial,
     this.resultado,
@@ -19,6 +22,7 @@ class InfoRapidaScanState extends Equatable {
     this.mensajeError,
     this.failure,
     this.ultimoBarcodeConsultado,
+    this.cargandoCatalogos = false,
   });
 
   bool get isLoading => status == InfoRapidaScanStatus.loading;
@@ -40,6 +44,7 @@ class InfoRapidaScanState extends Equatable {
     String? Function()? mensajeError,
     Failure? Function()? failure,
     String? Function()? ultimoBarcodeConsultado,
+    bool? cargandoCatalogos,
   }) {
     return InfoRapidaScanState(
       status: status ?? this.status,
@@ -51,6 +56,7 @@ class InfoRapidaScanState extends Equatable {
       ultimoBarcodeConsultado: ultimoBarcodeConsultado != null
           ? ultimoBarcodeConsultado()
           : this.ultimoBarcodeConsultado,
+      cargandoCatalogos: cargandoCatalogos ?? this.cargandoCatalogos,
     );
   }
 
@@ -63,5 +69,6 @@ class InfoRapidaScanState extends Equatable {
         mensajeError,
         failure,
         ultimoBarcodeConsultado,
+        cargandoCatalogos,
       ];
 }

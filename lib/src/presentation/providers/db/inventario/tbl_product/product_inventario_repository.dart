@@ -83,6 +83,11 @@ List<Map<String, dynamic>> _processProductsRawArgs(
   return queries;
 }
 
+/// Hasta este número de filas se arma la lista en el hilo principal: crear el
+/// isolate de `compute` costó ~5 s en PDA, y armar 1.400 productos toma
+/// unos pocos ms. Con catálogos más grandes sí conviene el isolate.
+const int _umbralCompute = 5000;
+
 List<Product> _parseProductsMap(List<Map<String, dynamic>> maps) {
   return maps.map((m) => Product.fromMap(m)).toList();
 }
@@ -169,6 +174,7 @@ class ProductInventarioRepository {
       ''');
 
       if (maps.isNotEmpty) {
+        if (maps.length <= _umbralCompute) return _parseProductsMap(maps);
         // Optimización Isolate
         return await compute(_parseProductsMap, maps);
       } else {

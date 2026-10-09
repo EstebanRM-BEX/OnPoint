@@ -5,8 +5,11 @@ enum CatalogStatus { initial, loading, success, failure }
 class CatalogSearchState extends Equatable {
   final CatalogStatus statusProductos;
   final CatalogStatus statusUbicaciones;
-  final List<ProductoCatalogo> productos;
+  /// Páginas de productos traídas de SQLite para la búsqueda actual.
   final List<ProductoCatalogo> productosFiltrados;
+  final bool hayMasProductos;
+  final String? propietarioProducto;
+  final List<String> propietarios;
   final List<UbicacionCatalogo> ubicaciones;
   final List<UbicacionCatalogo> ubicacionesFiltradas;
   final String queryProducto;
@@ -21,8 +24,10 @@ class CatalogSearchState extends Equatable {
   const CatalogSearchState({
     this.statusProductos = CatalogStatus.initial,
     this.statusUbicaciones = CatalogStatus.initial,
-    this.productos = const [],
     this.productosFiltrados = const [],
+    this.hayMasProductos = false,
+    this.propietarioProducto,
+    this.propietarios = const [],
     this.ubicaciones = const [],
     this.ubicacionesFiltradas = const [],
     this.queryProducto = '',
@@ -41,8 +46,10 @@ class CatalogSearchState extends Equatable {
   CatalogSearchState copyWith({
     CatalogStatus? statusProductos,
     CatalogStatus? statusUbicaciones,
-    List<ProductoCatalogo>? productos,
     List<ProductoCatalogo>? productosFiltrados,
+    bool? hayMasProductos,
+    String? Function()? propietarioProducto,
+    List<String>? propietarios,
     List<UbicacionCatalogo>? ubicaciones,
     List<UbicacionCatalogo>? ubicacionesFiltradas,
     String? queryProducto,
@@ -57,8 +64,12 @@ class CatalogSearchState extends Equatable {
     return CatalogSearchState(
       statusProductos: statusProductos ?? this.statusProductos,
       statusUbicaciones: statusUbicaciones ?? this.statusUbicaciones,
-      productos: productos ?? this.productos,
       productosFiltrados: productosFiltrados ?? this.productosFiltrados,
+      hayMasProductos: hayMasProductos ?? this.hayMasProductos,
+      propietarioProducto: propietarioProducto != null
+          ? propietarioProducto()
+          : this.propietarioProducto,
+      propietarios: propietarios ?? this.propietarios,
       ubicaciones: ubicaciones ?? this.ubicaciones,
       ubicacionesFiltradas: ubicacionesFiltradas ?? this.ubicacionesFiltradas,
       queryProducto: queryProducto ?? this.queryProducto,
@@ -86,8 +97,10 @@ class CatalogSearchState extends Equatable {
   List<Object?> get props => [
         statusProductos,
         statusUbicaciones,
-        productos,
         productosFiltrados,
+        hayMasProductos,
+        propietarioProducto,
+        propietarios,
         ubicaciones,
         ubicacionesFiltradas,
         queryProducto,

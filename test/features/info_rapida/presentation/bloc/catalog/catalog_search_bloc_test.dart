@@ -4,18 +4,24 @@ import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wms_app/features/info_rapida/domain/entities/catalogo_info.dart';
 import 'package:wms_app/features/info_rapida/domain/failures/info_rapida_failures.dart';
-import 'package:wms_app/features/info_rapida/domain/usecases/get_catalogo_productos_usecase.dart';
+import 'package:wms_app/core/usecases/usecase.dart';
+import 'package:wms_app/features/info_rapida/domain/usecases/buscar_catalogo_productos_usecase.dart';
 import 'package:wms_app/features/info_rapida/domain/usecases/get_catalogo_ubicaciones_usecase.dart';
+import 'package:wms_app/features/info_rapida/domain/usecases/get_propietarios_catalogo_usecase.dart';
 import 'package:wms_app/features/info_rapida/presentation/bloc/catalog/catalog_search_bloc.dart';
 
-class MockGetCatalogoProductosUseCase extends Mock
-    implements GetCatalogoProductosUseCase {}
+class MockBuscarCatalogoProductosUseCase extends Mock
+    implements BuscarCatalogoProductosUseCase {}
+
+class MockGetPropietariosCatalogoUseCase extends Mock
+    implements GetPropietariosCatalogoUseCase {}
 
 class MockGetCatalogoUbicacionesUseCase extends Mock
     implements GetCatalogoUbicacionesUseCase {}
 
 void main() {
-  late MockGetCatalogoProductosUseCase mockGetCatalogoProductos;
+  late MockBuscarCatalogoProductosUseCase mockBuscarProductos;
+  late MockGetPropietariosCatalogoUseCase mockGetPropietarios;
   late MockGetCatalogoUbicacionesUseCase mockGetCatalogoUbicaciones;
 
   final tProducto1 = const ProductoCatalogo(
@@ -73,21 +79,24 @@ void main() {
   );
 
   setUpAll(() {
-    registerFallbackValue(
-      const GetCatalogoProductosParams(),
-    );
+    registerFallbackValue(const BuscarCatalogoProductosParams(limit: 1));
+    registerFallbackValue(NoParams());
     registerFallbackValue(
       const GetCatalogoUbicacionesParams(),
     );
   });
 
   setUp(() {
-    mockGetCatalogoProductos = MockGetCatalogoProductosUseCase();
+    mockBuscarProductos = MockBuscarCatalogoProductosUseCase();
+    mockGetPropietarios = MockGetPropietariosCatalogoUseCase();
+    when(() => mockGetPropietarios(any()))
+        .thenAnswer((_) async => const Right(['ACME', 'Otro']));
     mockGetCatalogoUbicaciones = MockGetCatalogoUbicacionesUseCase();
   });
 
   CatalogSearchBloc buildBloc() => CatalogSearchBloc(
-        getCatalogoProductos: mockGetCatalogoProductos,
+        buscarCatalogoProductos: mockBuscarProductos,
+        getPropietariosCatalogo: mockGetPropietarios,
         getCatalogoUbicaciones: mockGetCatalogoUbicaciones,
       );
 
@@ -96,7 +105,8 @@ void main() {
       final bloc = buildBloc();
       expect(bloc.state.statusProductos, equals(CatalogStatus.initial));
       expect(bloc.state.statusUbicaciones, equals(CatalogStatus.initial));
-      expect(bloc.state.productos, isEmpty);
+      expect(bloc.state.hayMasProductos, isFalse);
+      expect(bloc.state.propietarioProducto, isNull);
       expect(bloc.state.productosFiltrados, isEmpty);
       expect(bloc.state.ubicaciones, isEmpty);
       expect(bloc.state.ubicacionesFiltradas, isEmpty);
@@ -106,154 +116,169 @@ void main() {
       expect(bloc.state.almacenesDisponibles, isEmpty);
     });
 
-    group('CargarCatalogoProductosEvent', () {
+    group('productos (consulta paginada)', () {
+      const pagina = CatalogSearchBloc.paginaProductos;
+      final paginaLlena = List.generate(
+        pagina,
+        (i) => ProductoCatalogo(id: i + 1, name: 'P${i + 1}'),
+      );
+
+      BuscarCatalogoProductosParams params(int n) =>
+          verify(() => mockBuscarProductos(captureAny())).captured[n]
+              as BuscarCatalogoProductosParams;
+
       blocTest<CatalogSearchBloc, CatalogSearchState>(
-        'carga productos exitosamente y aplica filtro actual si existe',
+        'cargar trae la primera página y los propietarios',
         build: () {
-          when(() => mockGetCatalogoProductos(any())).thenAnswer(
-            (_) async => Right([tProducto1, tProducto2, tProducto3]),
+          when(() => mockBuscarProductos(any())).thenAnswer(
+            (_) async => Right([tProducto1, tProducto2]),
           );
           return buildBloc();
         },
         act: (bloc) => bloc.add(const CargarCatalogoProductosEvent()),
         expect: () => [
-          const CatalogSearchState(statusProductos: CatalogStatus.loading),
           CatalogSearchState(
             statusProductos: CatalogStatus.success,
-            productos: [tProducto1, tProducto2, tProducto3],
-            productosFiltrados: [tProducto1, tProducto2, tProducto3],
+            productosFiltrados: [tProducto1, tProducto2],
+          ),
+          CatalogSearchState(
+            statusProductos: CatalogStatus.success,
+            productosFiltrados: [tProducto1, tProducto2],
+            propietarios: const ['ACME', 'Otro'],
           ),
         ],
         verify: (_) {
-          verify(
-            () => mockGetCatalogoProductos(
-              const GetCatalogoProductosParams(forceRefresh: false),
-            ),
-          ).called(1);
+          final p = params(0);
+          expect(p.query, '');
+          expect(p.offset, 0);
+          expect(p.limit, pagina);
         },
       );
 
       blocTest<CatalogSearchBloc, CatalogSearchState>(
-        'con forceRefresh delega parámetro al caso de uso',
+        'buscar consulta SQLite con el texto (no filtra en memoria)',
         build: () {
-          when(() => mockGetCatalogoProductos(any())).thenAnswer(
-            (_) async => Right([tProducto1]),
-          );
+          when(() => mockBuscarProductos(any()))
+              .thenAnswer((_) async => Right([tProducto1]));
           return buildBloc();
         },
-        act: (bloc) => bloc.add(const CargarCatalogoProductosEvent(forceRefresh: true)),
+        act: (bloc) => bloc.add(const BuscarProductosCatalogoEvent('tornillo')),
         expect: () => [
-          const CatalogSearchState(statusProductos: CatalogStatus.loading),
+          const CatalogSearchState(queryProducto: 'tornillo'),
           CatalogSearchState(
             statusProductos: CatalogStatus.success,
-            productos: [tProducto1],
+            queryProducto: 'tornillo',
             productosFiltrados: [tProducto1],
           ),
         ],
-        verify: (_) {
-          verify(
-            () => mockGetCatalogoProductos(
-              const GetCatalogoProductosParams(forceRefresh: true),
-            ),
-          ).called(1);
+        verify: (_) => expect(params(0).query, 'tornillo'),
+      );
+
+      blocTest<CatalogSearchBloc, CatalogSearchState>(
+        'filtrar por propietario consulta con ese propietario',
+        build: () {
+          when(() => mockBuscarProductos(any()))
+              .thenAnswer((_) async => Right([tProducto2]));
+          return buildBloc();
+        },
+        act: (bloc) =>
+            bloc.add(const FiltrarProductosPorPropietarioEvent('ACME')),
+        verify: (bloc) {
+          expect(params(0).propietario, 'ACME');
+          expect(bloc.state.propietarioProducto, 'ACME');
+          expect(bloc.state.productosFiltrados, [tProducto2]);
         },
       );
 
       blocTest<CatalogSearchBloc, CatalogSearchState>(
-        'emite fallo cuando getCatalogoProductos retorna Failure',
+        'página llena habilita cargar más; la siguiente se agrega al final',
         build: () {
-          when(() => mockGetCatalogoProductos(any())).thenAnswer(
-            (_) async => const Left(SinConexionFailure('Sin conexión')),
+          var llamada = 0;
+          when(() => mockBuscarProductos(any())).thenAnswer((_) async {
+            llamada++;
+            return Right(llamada == 1 ? paginaLlena : [tProducto3]);
+          });
+          return buildBloc();
+        },
+        act: (bloc) async {
+          bloc.add(const BuscarProductosCatalogoEvent('p'));
+          await Future<void>.delayed(Duration.zero);
+          bloc.add(const CargarMasProductosCatalogoEvent());
+        },
+        verify: (bloc) {
+          expect(params(1).offset, pagina);
+          expect(bloc.state.productosFiltrados, [...paginaLlena, tProducto3]);
+          expect(bloc.state.hayMasProductos, isFalse);
+        },
+      );
+
+      blocTest<CatalogSearchBloc, CatalogSearchState>(
+        'sin más resultados no vuelve a consultar',
+        build: buildBloc,
+        seed: () => CatalogSearchState(productosFiltrados: [tProducto1]),
+        act: (bloc) => bloc.add(const CargarMasProductosCatalogoEvent()),
+        expect: () => const <CatalogSearchState>[],
+        verify: (_) => verifyNever(() => mockBuscarProductos(any())),
+      );
+
+      blocTest<CatalogSearchBloc, CatalogSearchState>(
+        'emite fallo cuando la consulta falla',
+        build: () {
+          when(() => mockBuscarProductos(any())).thenAnswer(
+            (_) async => const Left(SinConexionFailure('Error de base local')),
           );
           return buildBloc();
         },
-        act: (bloc) => bloc.add(const CargarCatalogoProductosEvent()),
+        act: (bloc) => bloc.add(const BuscarProductosCatalogoEvent('x')),
+        verify: (bloc) {
+          expect(bloc.state.statusProductos, CatalogStatus.failure);
+          expect(bloc.state.mensajeErrorProductos, 'Error de base local');
+        },
+      );
+
+      blocTest<CatalogSearchBloc, CatalogSearchState>(
+        'emite loading si la consulta supera el umbral',
+        build: () {
+          when(() => mockBuscarProductos(any())).thenAnswer((_) async {
+            await Future<void>.delayed(const Duration(milliseconds: 300));
+            return Right([tProducto1]);
+          });
+          return buildBloc();
+        },
+        act: (bloc) => bloc.add(const BuscarProductosCatalogoEvent('t')),
+        wait: const Duration(milliseconds: 400),
         expect: () => [
-          const CatalogSearchState(statusProductos: CatalogStatus.loading),
+          const CatalogSearchState(queryProducto: 't'),
           const CatalogSearchState(
-            statusProductos: CatalogStatus.failure,
-            mensajeErrorProductos: 'Sin conexión',
-            failureProductos: SinConexionFailure('Sin conexión'),
+            queryProducto: 't',
+            statusProductos: CatalogStatus.loading,
+          ),
+          CatalogSearchState(
+            queryProducto: 't',
+            statusProductos: CatalogStatus.success,
+            productosFiltrados: [tProducto1],
           ),
         ],
       );
     });
 
-    group('BuscarProductosCatalogoEvent', () {
+    group('indicador de carga', () {
       blocTest<CatalogSearchBloc, CatalogSearchState>(
-        'filtra productos por nombre',
-        build: buildBloc,
-        seed: () => CatalogSearchState(
-          statusProductos: CatalogStatus.success,
-          productos: [tProducto1, tProducto2, tProducto3],
-          productosFiltrados: [tProducto1, tProducto2, tProducto3],
-        ),
-        act: (bloc) => bloc.add(const BuscarProductosCatalogoEvent('tornillo')),
+        'ubicaciones: emite loading si la carga supera el umbral',
+        build: () {
+          when(() => mockGetCatalogoUbicaciones(any())).thenAnswer((_) async {
+            await Future<void>.delayed(const Duration(milliseconds: 300));
+            return Right([tUbicacion1]);
+          });
+          return buildBloc();
+        },
+        act: (bloc) => bloc.add(const CargarCatalogoUbicacionesEvent()),
+        wait: const Duration(milliseconds: 400),
         expect: () => [
-          CatalogSearchState(
-            statusProductos: CatalogStatus.success,
-            productos: [tProducto1, tProducto2, tProducto3],
-            productosFiltrados: [tProducto1],
-            queryProducto: 'tornillo',
-          ),
-        ],
-      );
-
-      blocTest<CatalogSearchBloc, CatalogSearchState>(
-        'filtra productos por código interno',
-        build: buildBloc,
-        seed: () => CatalogSearchState(
-          statusProductos: CatalogStatus.success,
-          productos: [tProducto1, tProducto2, tProducto3],
-          productosFiltrados: [tProducto1, tProducto2, tProducto3],
-        ),
-        act: (bloc) => bloc.add(const BuscarProductosCatalogoEvent('TUE-002')),
-        expect: () => [
-          CatalogSearchState(
-            statusProductos: CatalogStatus.success,
-            productos: [tProducto1, tProducto2, tProducto3],
-            productosFiltrados: [tProducto2],
-            queryProducto: 'TUE-002',
-          ),
-        ],
-      );
-
-      blocTest<CatalogSearchBloc, CatalogSearchState>(
-        'filtra productos por código de barras alternativo (otherBarcodes)',
-        build: buildBloc,
-        seed: () => CatalogSearchState(
-          statusProductos: CatalogStatus.success,
-          productos: [tProducto1, tProducto2, tProducto3],
-          productosFiltrados: [tProducto1, tProducto2, tProducto3],
-        ),
-        act: (bloc) => bloc.add(const BuscarProductosCatalogoEvent('EXTRA-999')),
-        expect: () => [
-          CatalogSearchState(
-            statusProductos: CatalogStatus.success,
-            productos: [tProducto1, tProducto2, tProducto3],
-            productosFiltrados: [tProducto3],
-            queryProducto: 'EXTRA-999',
-          ),
-        ],
-      );
-
-      blocTest<CatalogSearchBloc, CatalogSearchState>(
-        'query vacío restaura todos los productos',
-        build: buildBloc,
-        seed: () => CatalogSearchState(
-          statusProductos: CatalogStatus.success,
-          productos: [tProducto1, tProducto2, tProducto3],
-          productosFiltrados: [tProducto1],
-          queryProducto: 'tornillo',
-        ),
-        act: (bloc) => bloc.add(const BuscarProductosCatalogoEvent('')),
-        expect: () => [
-          CatalogSearchState(
-            statusProductos: CatalogStatus.success,
-            productos: [tProducto1, tProducto2, tProducto3],
-            productosFiltrados: [tProducto1, tProducto2, tProducto3],
-            queryProducto: '',
-          ),
+          const CatalogSearchState(statusUbicaciones: CatalogStatus.loading),
+          isA<CatalogSearchState>()
+              .having((s) => s.statusUbicaciones, 'status', CatalogStatus.success)
+              .having((s) => s.ubicaciones, 'ubicaciones', [tUbicacion1]),
         ],
       );
     });
@@ -269,7 +294,6 @@ void main() {
         },
         act: (bloc) => bloc.add(const CargarCatalogoUbicacionesEvent()),
         expect: () => [
-          const CatalogSearchState(statusUbicaciones: CatalogStatus.loading),
           CatalogSearchState(
             statusUbicaciones: CatalogStatus.success,
             ubicaciones: [tUbicacion3, tUbicacion1, tUbicacion2],
@@ -289,7 +313,6 @@ void main() {
         },
         act: (bloc) => bloc.add(const CargarCatalogoUbicacionesEvent()),
         expect: () => [
-          const CatalogSearchState(statusUbicaciones: CatalogStatus.loading),
           const CatalogSearchState(
             statusUbicaciones: CatalogStatus.failure,
             mensajeErrorUbicaciones: 'Fallo de red',

@@ -15,6 +15,9 @@ import 'package:wms_app/features/info_rapida/domain/entities/info_rapida_params.
 import 'package:wms_app/features/info_rapida/domain/entities/recent_query.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
+import 'package:wms_app/src/presentation/providers/db/inventario/tbl_barcode/barcodes_inventario_table.dart';
+import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/product_inventario_table.dart';
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/update_product_request.dart';
 
 /// Contrato del origen de datos local para Información Rápida.
@@ -28,11 +31,26 @@ abstract class InfoRapidaLocalDataSource {
   /// Borra todas las consultas recientes de la empresa actual.
   Future<void> clearRecentQueries();
 
-  /// Obtiene el catálogo de productos únicos para búsqueda predictiva.
-  Future<List<ProductoCatalogo>> getCatalogoProductos({bool forceRefresh = false});
+  /// Página de productos (uno por producto) cuyo nombre, código, barcode o
+  /// barcode alterno contiene [query]; con [propietario] solo los de ese
+  /// propietario. Consulta SQLite directo: el catálogo no se carga en memoria.
+  Future<List<ProductoCatalogo>> buscarCatalogoProductos({
+    required String query,
+    String? propietario,
+    required int limit,
+    required int offset,
+  });
+
+  /// Propietarios distintos de los productos que manejan propietario.
+  Future<List<String>> getPropietariosCatalogo();
 
   /// Obtiene el catálogo de ubicaciones para búsqueda predictiva.
   Future<List<UbicacionCatalogo>> getCatalogoUbicaciones({bool forceRefresh = false});
+
+  /// Deja el catálogo de ubicaciones cargado en memoria, sin convertirlo:
+  /// así la primera lista que se abra ya no espera a SQLite. Los productos no
+  /// se precargan: se consultan en SQLite al buscar.
+  Future<void> precargarCatalogos();
 
   /// Obtiene los permisos del usuario activo para Información Rápida.
   Future<ConfigInfoRapidaUsuario> getConfiguracionUsuario({int? userId});
@@ -147,21 +165,77 @@ class InfoRapidaLocalDataSourceImpl implements InfoRapidaLocalDataSource {
   }
 
   @override
-  Future<List<ProductoCatalogo>> getCatalogoProductos({
-    bool forceRefresh = false,
+  Future<List<ProductoCatalogo>> buscarCatalogoProductos({
+    required String query,
+    String? propietario,
+    required int limit,
+    required int offset,
   }) async {
-    final products = await _productosCache.getAllUnique(
-      forceRefresh: forceRefresh,
+    const p = ProductInventarioTable.tableName;
+    const b = BarcodesInventarioTable.tableName;
+    final condiciones = <String>[];
+    final args = <Object?>[];
+
+    final q = query.trim();
+    if (q.isNotEmpty) {
+      // LIKE de SQLite ya ignora mayúsculas (ASCII); se escapan % y _ para
+      // que se busquen literales.
+      final like =
+          '%${q.replaceAll('!', '!!').replaceAll('%', '!%').replaceAll('_', '!_')}%';
+      condiciones.add("""(
+          p.${ProductInventarioTable.columnProductName} LIKE ? ESCAPE '!'
+          OR p.${ProductInventarioTable.columnProductCode} LIKE ? ESCAPE '!'
+          OR p.${ProductInventarioTable.columnBarcode} LIKE ? ESCAPE '!'
+          OR p.${ProductInventarioTable.columnProductId} IN (
+            SELECT ${BarcodesInventarioTable.columnIdProduct} FROM $b
+            WHERE ${BarcodesInventarioTable.columnBarcode} LIKE ? ESCAPE '!'
+          ))""");
+      args.addAll(List.filled(4, like));
+    }
+    if (propietario != null) {
+      condiciones.add(
+        'p.${ProductInventarioTable.columnManejoPropietario} = 1 '
+        'AND p.${ProductInventarioTable.columnPropietario} = ?',
+      );
+      args.add(propietario);
+    }
+    final where =
+        condiciones.isEmpty ? '' : 'WHERE ${condiciones.join(' AND ')}';
+
+    final db = await _database.getDatabaseInstance();
+    // Una fila por producto, igual que getAllUniqueProducts.
+    final rows = await db.rawQuery(
+      """
+      SELECT p.* FROM $p p
+      $where
+      GROUP BY p.${ProductInventarioTable.columnProductId}
+      ORDER BY p.${ProductInventarioTable.columnProductId}
+      LIMIT ? OFFSET ?
+      """,
+      [...args, limit, offset],
     );
 
     final result = <ProductoCatalogo>[];
-    for (final p in products) {
-      final cat = CatalogoMappers.toProductoCatalogo(p);
-      if (cat != null) {
-        result.add(cat);
-      }
+    for (final row in rows) {
+      final cat = CatalogoMappers.toProductoCatalogo(Product.fromMap(row));
+      if (cat != null) result.add(cat);
     }
     return List.unmodifiable(result);
+  }
+
+  @override
+  Future<List<String>> getPropietariosCatalogo() async {
+    const p = ProductInventarioTable.tableName;
+    final db = await _database.getDatabaseInstance();
+    final rows = await db.rawQuery("""
+      SELECT DISTINCT ${ProductInventarioTable.columnPropietario} AS propietario
+      FROM $p
+      WHERE ${ProductInventarioTable.columnManejoPropietario} = 1
+        AND IFNULL(${ProductInventarioTable.columnPropietario}, '')
+            NOT IN ('', 'false', '0')
+      ORDER BY ${ProductInventarioTable.columnPropietario}
+      """);
+    return [for (final r in rows) r['propietario'].toString()];
   }
 
   @override
@@ -180,6 +254,11 @@ class InfoRapidaLocalDataSourceImpl implements InfoRapidaLocalDataSource {
       }
     }
     return List.unmodifiable(result);
+  }
+
+  @override
+  Future<void> precargarCatalogos() async {
+    await _ubicacionesCache.getAll();
   }
 
   @override

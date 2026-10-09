@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/info_rapida/data/services/info_rapida_ws_listener.dart';
-import 'package:wms_app/features/info_rapida/domain/entities/catalogo_info.dart';
 import 'package:wms_app/features/info_rapida/domain/entities/config_info_rapida_usuario.dart';
 import 'package:wms_app/features/info_rapida/presentation/bloc/catalog/catalog_search_bloc.dart';
 import 'package:wms_app/features/info_rapida/presentation/bloc/scan/info_rapida_scan_bloc.dart';
@@ -17,8 +16,8 @@ import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
 
-/// Búsqueda manual de productos en el catálogo local. Al seleccionar uno se
-/// consulta por id y se abre su detalle.
+/// Búsqueda manual de productos en el catálogo local (páginas consultadas en
+/// SQLite). Al seleccionar uno se consulta por id y se abre su detalle.
 class ListProductsPage extends StatelessWidget {
   final ConfigInfoRapidaUsuario config;
 
@@ -53,13 +52,12 @@ class _ListProductsView extends StatefulWidget {
 class _ListProductsViewState extends State<_ListProductsView> {
   final TextEditingController _searchController = TextEditingController();
   int? _selectedId;
-  String? _selectedPropietario;
 
   // Debounce del buscador: no filtra toda la lista en cada tecla.
   Timer? _searchDebounce;
 
-  // Productos actualizados por WebSocket: se recarga el catálogo (desde
-  // memoria) para que la lista abierta muestre el cambio.
+  // Productos actualizados por WebSocket: se vuelve a consultar la página
+  // abierta para que muestre el cambio.
   StreamSubscription<int>? _wsSubscription;
   Timer? _wsDebounce;
 
@@ -88,26 +86,17 @@ class _ListProductsViewState extends State<_ListProductsView> {
     super.dispose();
   }
 
-  List<String> _propietarios(List<ProductoCatalogo> productos) {
-    return productos
-        .where((p) => p.manejoPropietario && (p.propietario ?? '').isNotEmpty)
-        .map((p) => p.propietario!)
-        .toSet()
-        .toList()
-      ..sort();
-  }
-
-  Future<void> _filtrarPropietario(List<ProductoCatalogo> productos) async {
+  Future<void> _filtrarPropietario(CatalogSearchState state) async {
     final seleccion = await showPropietarioFilterSheet(
       context,
-      propietarios: _propietarios(productos),
-      seleccionado: _selectedPropietario,
+      propietarios: state.propietarios,
+      seleccionado: state.propietarioProducto,
     );
     if (seleccion == null || !mounted) return;
-    setState(() {
-      _selectedPropietario = seleccion.propietario;
-      _selectedId = null;
-    });
+    setState(() => _selectedId = null);
+    context.read<CatalogSearchBloc>().add(
+      FiltrarProductosPorPropietarioEvent(seleccion.propietario),
+    );
   }
 
   void _seleccionar() {
@@ -123,11 +112,8 @@ class _ListProductsViewState extends State<_ListProductsView> {
   Widget build(BuildContext context) {
     return BlocBuilder<CatalogSearchBloc, CatalogSearchState>(
       builder: (context, state) {
-        final filtrados = _selectedPropietario == null
-            ? state.productosFiltrados
-            : state.productosFiltrados
-                  .where((p) => p.propietario == _selectedPropietario)
-                  .toList();
+        final filtrados = state.productosFiltrados;
+        final hayMas = state.hayMasProductos;
 
         return Stack(
           children: [
@@ -140,8 +126,8 @@ class _ListProductsViewState extends State<_ListProductsView> {
                     onBack: () => Navigator.pop(context),
                     trailing: HeaderFilterButton(
                       icon: Icons.person_search_outlined,
-                      active: _selectedPropietario != null,
-                      onTap: () => _filtrarPropietario(state.productos),
+                      active: state.propietarioProducto != null,
+                      onTap: () => _filtrarPropietario(state),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -178,13 +164,33 @@ class _ListProductsViewState extends State<_ListProductsView> {
                   ),
                   Expanded(
                     child: filtrados.isEmpty
-                        ? const EmptyListMessage(
-                            title: 'No hay productos',
-                            subtitle: 'No tiene productos en la base de datos',
-                          )
+                        // Antes del primer resultado no se muestra "No hay
+                        // productos": el "Cargando…" aparece si tarda.
+                        ? state.statusProductos == CatalogStatus.initial
+                              ? const SizedBox.shrink()
+                              : const EmptyListMessage(
+                                  title: 'No hay productos',
+                                  subtitle:
+                                      'No tiene productos en la base de datos',
+                                )
                         : ListView.builder(
-                            itemCount: filtrados.length,
+                            itemCount: filtrados.length + (hayMas ? 1 : 0),
                             itemBuilder: (_, index) {
+                              // Cerca del final se pide la siguiente página
+                              // (el bloc descarta pedidos repetidos).
+                              if (hayMas && index >= filtrados.length - 10) {
+                                context.read<CatalogSearchBloc>().add(
+                                  const CargarMasProductosCatalogoEvent(),
+                                );
+                              }
+                              if (index == filtrados.length) {
+                                return const Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                );
+                              }
                               final product = filtrados[index];
                               return ProductListTile(
                                 product: product,
@@ -222,10 +228,10 @@ class _ListProductsViewState extends State<_ListProductsView> {
                 ],
               ),
             ),
-            if (state.isLoadingProductos && state.productos.isEmpty)
+            if (state.isLoadingProductos && filtrados.isEmpty)
               const Positioned.fill(
                 child: AbsorbPointer(
-                  child: DialogLoading(message: 'Cargando productos...'),
+                  child: DialogLoading(message: 'Cargando productos…'),
                 ),
               ),
           ],

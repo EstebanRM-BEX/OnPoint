@@ -123,11 +123,15 @@ class _LocationDestViewState extends State<_LocationDestView> {
                   ),
                   Expanded(
                     child: ubicaciones.isEmpty
-                        ? const EmptyListMessage(
-                            title: 'No hay ubicaciones',
-                            subtitle:
-                                'No tiene ubicaciones en la base de datos',
-                          )
+                        // Antes del primer resultado no se muestra "No hay
+                        // ubicaciones": el "Cargando…" aparece si tarda.
+                        ? state.statusUbicaciones == CatalogStatus.initial
+                              ? const SizedBox.shrink()
+                              : const EmptyListMessage(
+                                  title: 'No hay ubicaciones',
+                                  subtitle:
+                                      'No tiene ubicaciones en la base de datos',
+                                )
                         : ListView.builder(
                             itemCount: ubicaciones.length,
                             itemBuilder: (_, index) {
@@ -174,7 +178,7 @@ class _LocationDestViewState extends State<_LocationDestView> {
             if (state.isLoadingUbicaciones)
               const Positioned.fill(
                 child: AbsorbPointer(
-                  child: DialogLoading(message: 'Cargando ubicaciones...'),
+                  child: DialogLoading(message: 'Cargando ubicaciones…'),
                 ),
               ),
           ],

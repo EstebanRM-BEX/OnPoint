@@ -5,6 +5,11 @@ import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart'
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/ubicaciones_table.dart';
 
+/// Hasta este número de filas se arma la lista en el hilo principal: crear el
+/// isolate de `compute` costó ~5 s en PDA, y armar 2.400 ubicaciones toma
+/// unos pocos ms. Con catálogos más grandes sí conviene el isolate.
+const int _umbralCompute = 5000;
+
 List<ResultUbicaciones> _parseUbicacionesMap(List<Map<String, dynamic>> maps) {
   return maps.map((map) => ResultUbicaciones(
         id: map[UbicacionesTable.columnId],
@@ -159,6 +164,7 @@ class UbicacionesRepository {
       final List<Map<String, dynamic>> maps =
           await db.query(UbicacionesTable.tableName);
       if (maps.isEmpty) return [];
+      if (maps.length <= _umbralCompute) return _parseUbicacionesMap(maps);
       return await compute(_parseUbicacionesMap, maps);
     } catch (e) {
       debugPrint("Error getAllUbicaciones: $e");

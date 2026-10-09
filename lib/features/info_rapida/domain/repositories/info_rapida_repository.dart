@@ -32,15 +32,26 @@ abstract class InfoRapidaRepository {
   /// Borra todo el historial de consultas recientes de la empresa actual.
   Future<Either<Failure, Unit>> borrarConsultasRecientes();
 
-  /// Obtiene el catálogo de productos únicos para búsqueda predictiva en Información Rápida.
-  Future<Either<Failure, List<ProductoCatalogo>>> getCatalogoProductos({
-    bool forceRefresh = false,
+  /// Página de productos únicos que coinciden con [query] (y [propietario],
+  /// si viene), consultada en la base local.
+  Future<Either<Failure, List<ProductoCatalogo>>> buscarCatalogoProductos({
+    required String query,
+    String? propietario,
+    required int limit,
+    required int offset,
   });
+
+  /// Propietarios distintos del catálogo local (para el filtro).
+  Future<Either<Failure, List<String>>> getPropietariosCatalogo();
 
   /// Obtiene el catálogo de ubicaciones para búsqueda predictiva y selección en Información Rápida.
   Future<Either<Failure, List<UbicacionCatalogo>>> getCatalogoUbicaciones({
     bool forceRefresh = false,
   });
+
+  /// Carga en memoria el catálogo de ubicaciones para que la lista abra sin
+  /// esperar a la base local (los productos se consultan al buscar).
+  Future<Either<Failure, Unit>> precargarCatalogos();
 
   /// Obtiene las configuraciones del usuario para visualización/edición de información rápida.
   Future<Either<Failure, ConfigInfoRapidaUsuario>> getConfiguracionUsuario({

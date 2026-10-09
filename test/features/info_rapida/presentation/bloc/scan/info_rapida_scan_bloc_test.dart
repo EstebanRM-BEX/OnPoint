@@ -13,6 +13,7 @@ import 'package:wms_app/features/info_rapida/domain/usecases/consultar_por_id_us
 import 'package:wms_app/features/info_rapida/domain/usecases/get_configuracion_usuario_usecase.dart';
 import 'package:wms_app/features/info_rapida/domain/usecases/get_consultas_recientes_usecase.dart';
 import 'package:wms_app/features/info_rapida/domain/usecases/guardar_consulta_reciente_usecase.dart';
+import 'package:wms_app/features/info_rapida/domain/usecases/precargar_catalogos_usecase.dart';
 import 'package:wms_app/features/info_rapida/presentation/bloc/scan/info_rapida_scan_bloc.dart';
 
 class MockConsultarPorBarcodeUseCase extends Mock
@@ -32,12 +33,16 @@ class MockBorrarConsultasRecientesUseCase extends Mock
 class MockGetConfiguracionUsuarioUseCase extends Mock
     implements GetConfiguracionUsuarioUseCase {}
 
+class MockPrecargarCatalogosUseCase extends Mock
+    implements PrecargarCatalogosUseCase {}
+
 void main() {
   late MockConsultarPorBarcodeUseCase mockConsultarPorBarcode;
   late MockConsultarPorIdUseCase mockConsultarPorId;
   late MockGetConsultasRecientesUseCase mockGetConsultasRecientes;
   late MockGuardarConsultaRecienteUseCase mockGuardarConsultaReciente;
   late MockBorrarConsultasRecientesUseCase mockBorrarConsultasRecientes;
+  late MockPrecargarCatalogosUseCase mockPrecargarCatalogos;
   late MockGetConfiguracionUsuarioUseCase mockGetConfiguracionUsuario;
 
   final tProducto = const ProductoInfo(
@@ -111,6 +116,10 @@ void main() {
     mockGuardarConsultaReciente = MockGuardarConsultaRecienteUseCase();
     mockBorrarConsultasRecientes = MockBorrarConsultasRecientesUseCase();
     mockGetConfiguracionUsuario = MockGetConfiguracionUsuarioUseCase();
+    mockPrecargarCatalogos = MockPrecargarCatalogosUseCase();
+    when(() => mockPrecargarCatalogos(any())).thenAnswer(
+      (_) async => const Right(unit),
+    );
   });
 
   InfoRapidaScanBloc buildBloc() {
@@ -121,6 +130,7 @@ void main() {
       guardarConsultaReciente: mockGuardarConsultaReciente,
       borrarConsultasRecientes: mockBorrarConsultasRecientes,
       getConfiguracionUsuario: mockGetConfiguracionUsuario,
+      precargarCatalogos: mockPrecargarCatalogos,
     );
   }
 
@@ -158,7 +168,34 @@ void main() {
       verify: (_) {
         verify(() => mockGetConfiguracionUsuario(any())).called(1);
         verify(() => mockGetConsultasRecientes(any())).called(1);
+        verify(() => mockPrecargarCatalogos(any())).called(1);
       },
+    );
+
+    blocTest<InfoRapidaScanBloc, InfoRapidaScanState>(
+      'InfoRapidaScanIniciado muestra cargandoCatalogos si la precarga tarda',
+      setUp: () {
+        when(() => mockGetConfiguracionUsuario(any())).thenAnswer(
+          (_) async => const Right(ConfigInfoRapidaUsuario()),
+        );
+        when(() => mockGetConsultasRecientes(any())).thenAnswer(
+          (_) async => const Right([]),
+        );
+        when(() => mockPrecargarCatalogos(any())).thenAnswer((_) async {
+          await Future<void>.delayed(const Duration(milliseconds: 300));
+          return const Right(unit);
+        });
+      },
+      build: buildBloc,
+      act: (bloc) => bloc.add(const InfoRapidaScanIniciado()),
+      wait: const Duration(milliseconds: 400),
+      expect: () => [
+        // config y recientes (bloc emite aunque sea igual al inicial: es la
+        // primera emisión).
+        const InfoRapidaScanState(),
+        const InfoRapidaScanState(cargandoCatalogos: true),
+        const InfoRapidaScanState(),
+      ],
     );
 
     blocTest<InfoRapidaScanBloc, InfoRapidaScanState>(

@@ -44,8 +44,9 @@ class InfoRapidaWsListener {
     for (final update in parseProductUpdates(data)) {
       final productId = update['product_id'];
       if (productId is! int) continue;
-      final touched = _productosCache.applyWsProductUpsert(productId, update);
-      if (!touched) continue;
+      // El caché en memoria lo siguen usando otros módulos; las listas de
+      // Información Rápida consultan SQLite, así que se avisa siempre.
+      _productosCache.applyWsProductUpsert(productId, update);
       debugPrint('🔄 InfoRapida v2: producto id=$productId actualizado vía WS.');
       _actualizados.add(productId);
     }

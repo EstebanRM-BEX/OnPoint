@@ -95,7 +95,8 @@ void main() {
       await sub.cancel();
     });
 
-    test('no avisa si el cache no tenía el producto', () async {
+    test('avisa aunque el cache no tuviera el producto (listas en SQLite)',
+        () async {
       when(() => cache.applyWsProductUpsert(any(), any())).thenReturn(false);
       final ids = <int>[];
       final sub = listener.productosActualizados.listen(ids.add);
@@ -104,7 +105,7 @@ void main() {
       socket.add(_mensaje('notification', 'update', {'product_id': 7}));
       await Future<void>.delayed(Duration.zero);
 
-      expect(ids, isEmpty);
+      expect(ids, [7]);
       await sub.cancel();
     });
 

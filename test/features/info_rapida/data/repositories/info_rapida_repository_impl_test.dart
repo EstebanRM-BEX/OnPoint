@@ -372,17 +372,40 @@ void main() {
   });
 
   group('catálogos y configuración', () {
-    test('getCatalogoProductos obtiene catálogo desde localDataSource', () async {
+    test('buscarCatalogoProductos consulta el localDataSource', () async {
       final prods = <ProductoCatalogo>[
         const ProductoCatalogo(id: 1, name: 'P1', code: '001')
       ];
-      when(() => local.getCatalogoProductos(forceRefresh: any(named: 'forceRefresh')))
-          .thenAnswer((_) async => prods);
+      when(() => local.buscarCatalogoProductos(
+            query: any(named: 'query'),
+            propietario: any(named: 'propietario'),
+            limit: any(named: 'limit'),
+            offset: any(named: 'offset'),
+          )).thenAnswer((_) async => prods);
 
-      final result = await repository.getCatalogoProductos(forceRefresh: true);
+      final result = await repository.buscarCatalogoProductos(
+        query: 'p1',
+        propietario: 'ACME',
+        limit: 50,
+        offset: 100,
+      );
 
       expect(result.getRight().toNullable(), prods);
-      verify(() => local.getCatalogoProductos(forceRefresh: true)).called(1);
+      verify(() => local.buscarCatalogoProductos(
+            query: 'p1',
+            propietario: 'ACME',
+            limit: 50,
+            offset: 100,
+          )).called(1);
+    });
+
+    test('getPropietariosCatalogo consulta el localDataSource', () async {
+      when(() => local.getPropietariosCatalogo())
+          .thenAnswer((_) async => ['ACME']);
+
+      final result = await repository.getPropietariosCatalogo();
+
+      expect(result.getRight().toNullable(), ['ACME']);
     });
 
     test('getCatalogoUbicaciones obtiene catálogo desde localDataSource', () async {

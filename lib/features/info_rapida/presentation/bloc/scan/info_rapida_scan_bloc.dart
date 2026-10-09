@@ -15,6 +15,7 @@ import 'package:wms_app/features/info_rapida/domain/usecases/consultar_por_id_us
 import 'package:wms_app/features/info_rapida/domain/usecases/get_configuracion_usuario_usecase.dart';
 import 'package:wms_app/features/info_rapida/domain/usecases/get_consultas_recientes_usecase.dart';
 import 'package:wms_app/features/info_rapida/domain/usecases/guardar_consulta_reciente_usecase.dart';
+import 'package:wms_app/features/info_rapida/domain/usecases/precargar_catalogos_usecase.dart';
 
 part 'info_rapida_scan_event.dart';
 part 'info_rapida_scan_state.dart';
@@ -29,6 +30,7 @@ class InfoRapidaScanBloc
   final GuardarConsultaRecienteUseCase guardarConsultaReciente;
   final BorrarConsultasRecientesUseCase borrarConsultasRecientes;
   final GetConfiguracionUsuarioUseCase getConfiguracionUsuario;
+  final PrecargarCatalogosUseCase precargarCatalogos;
 
   InfoRapidaScanBloc({
     required this.consultarPorBarcode,
@@ -37,6 +39,7 @@ class InfoRapidaScanBloc
     required this.guardarConsultaReciente,
     required this.borrarConsultasRecientes,
     required this.getConfiguracionUsuario,
+    required this.precargarCatalogos,
   }) : super(const InfoRapidaScanState()) {
     on<InfoRapidaScanIniciado>(_onIniciado);
     on<ConsultarPorBarcodeEvent>(
@@ -81,6 +84,20 @@ class InfoRapidaScanBloc
       configuracion: config,
       consultasRecientes: recientes,
     ));
+
+    // Al entrar se cargan las ubicaciones en memoria (los productos se
+    // consultan en SQLite al buscar). Si ya estaban responde al instante y no
+    // se muestra el "Cargando…".
+    final precarga = precargarCatalogos(NoParams());
+    final rapida = await Future.any([
+      precarga.then((_) => true),
+      Future.delayed(const Duration(milliseconds: 150), () => false),
+    ]);
+    if (rapida) return;
+
+    emit(state.copyWith(cargandoCatalogos: true));
+    await precarga;
+    emit(state.copyWith(cargandoCatalogos: false));
   }
 
   Future<void> _onConsultarPorBarcode(

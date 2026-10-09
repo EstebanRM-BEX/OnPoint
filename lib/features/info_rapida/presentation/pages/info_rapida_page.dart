@@ -14,6 +14,8 @@ import 'package:wms_app/features/info_rapida/presentation/widgets/dialogs/busque
 import 'package:wms_app/features/info_rapida/presentation/widgets/dialogs/search_package_dialog.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 
 /// Pantalla principal de Información Rápida: escaneo continuo, búsqueda
 /// manual (productos, ubicaciones, paquetes) y últimas consultas.
@@ -85,7 +87,7 @@ class _InfoRapidaViewState extends State<_InfoRapidaView> {
     });
   }
 
-  void _volverAlHome() => Navigator.pushReplacementNamed(context, '/home');
+  void _volverAlHome() => goHome(context);
 
   Future<void> _busquedaManual() async {
     final opcion = await showDialog<BusquedaManualOpcion>(
@@ -127,65 +129,82 @@ class _InfoRapidaViewState extends State<_InfoRapidaView> {
       },
       child: InfoRapidaConsultaListener(
         onRetorno: _alVolver,
-        child: Scaffold(
-          backgroundColor: const Color(0xFFF8FAFC),
-          floatingActionButton: FloatingActionButton.extended(
-            backgroundColor: primaryColorApp,
-            foregroundColor: white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            onPressed: _busquedaManual,
-            icon: const Icon(Icons.search),
-            label: const Text(
-              'Buscar',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
-          ),
-          body: Column(
-            children: [
-              InfoRapidaHeader(onBack: _volverAlHome),
-              Expanded(
-                // SingleChildScrollView (no ListView): el campo invisible del
-                // escáner debe seguir montado aunque quede fuera de pantalla,
-                // o perdería el foco y el lector dejaría de responder.
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 96),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ScannerStatusPill(
-                        focusNode: _scanFocusNode,
-                        onActivate: _scanFocusNode.requestFocus,
-                      ),
-                      const SizedBox(height: 16),
-                      const ScanHeroCard(),
-                      BlocBuilder<InfoRapidaScanBloc, InfoRapidaScanState>(
-                        buildWhen: (previous, current) =>
-                            previous.consultasRecientes !=
-                            current.consultasRecientes,
-                        builder: (context, state) => RecentQueriesCard(
-                          items: state.consultasRecientes,
-                          onSelect: (q) => context
-                              .read<InfoRapidaScanBloc>()
-                              .add(ConsultaRecienteSeleccionada(q)),
-                          onClear: () => context.read<InfoRapidaScanBloc>().add(
-                            const BorrarHistorialConsultasEvent(),
-                          ),
-                        ),
-                      ),
-                      BarcodeScannerField(
-                        controller: _scanController,
-                        focusNode: _scanFocusNode,
-                        clearOnScan: true,
-                        onBarcodeScanned: (value, _) => _onScan(value),
-                      ),
-                    ],
-                  ),
+        child: Stack(
+          children: [
+            Scaffold(
+              backgroundColor: const Color(0xFFF8FAFC),
+              floatingActionButton: FloatingActionButton.extended(
+                backgroundColor: primaryColorApp,
+                foregroundColor: white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                onPressed: _busquedaManual,
+                icon: const Icon(Icons.search),
+                label: const Text(
+                  'Buscar',
+                  style: TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
-            ],
-          ),
+              body: Column(
+                children: [
+                  InfoRapidaHeader(onBack: _volverAlHome),
+                  Expanded(
+                    // SingleChildScrollView (no ListView): el campo invisible del
+                    // escáner debe seguir montado aunque quede fuera de pantalla,
+                    // o perdería el foco y el lector dejaría de responder.
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 96),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ScannerStatusPill(
+                            focusNode: _scanFocusNode,
+                            onActivate: _scanFocusNode.requestFocus,
+                          ),
+                          const SizedBox(height: 16),
+                          const ScanHeroCard(),
+                          BlocBuilder<InfoRapidaScanBloc, InfoRapidaScanState>(
+                            buildWhen: (previous, current) =>
+                                previous.consultasRecientes !=
+                                current.consultasRecientes,
+                            builder: (context, state) => RecentQueriesCard(
+                              items: state.consultasRecientes,
+                              onSelect: (q) => context
+                                  .read<InfoRapidaScanBloc>()
+                                  .add(ConsultaRecienteSeleccionada(q)),
+                              onClear: () => context
+                                  .read<InfoRapidaScanBloc>()
+                                  .add(const BorrarHistorialConsultasEvent()),
+                            ),
+                          ),
+                          BarcodeScannerField(
+                            controller: _scanController,
+                            focusNode: _scanFocusNode,
+                            clearOnScan: true,
+                            onBarcodeScanned: (value, _) => _onScan(value),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            BlocBuilder<InfoRapidaScanBloc, InfoRapidaScanState>(
+              buildWhen: (previous, current) =>
+                  previous.cargandoCatalogos != current.cargandoCatalogos,
+              builder: (context, state) => state.cargandoCatalogos
+                  ? const Positioned.fill(
+                      child: AbsorbPointer(
+                        child: DialogLoading(
+                          message: 'Cargando productos y ubicaciones…',
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
         ),
       ),
     );
