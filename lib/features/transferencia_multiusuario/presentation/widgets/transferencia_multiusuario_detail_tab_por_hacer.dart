@@ -4,7 +4,6 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/routes/app_router.dart';
-import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_claim.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_pool_item.dart';
 import 'package:wms_app/features/transferencia_multiusuario/domain/entities/transferencia_session.dart';
@@ -14,7 +13,6 @@ import 'package:wms_app/features/transferencia_multiusuario/presentation/widgets
 import 'package:wms_app/features/transferencia_multiusuario/presentation/widgets/transferencia_pool_item_card_widget.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
-import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/shared/widgets/shimmer_list_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
@@ -55,26 +53,6 @@ class _TransferenciaMultiusuarioDetailTabPorHacerState
 
   bool _isSearchVisible = false;
   String _searchQuery = '';
-
-  // null mientras carga: el permiso vive en tbl_configurations, no queremos
-  // mostrar cantidades como si estuviera activo por falta de datos.
-  bool? _hideExpectedQty;
-
-  @override
-  void initState() {
-    super.initState();
-    _cargarConfiguracion();
-  }
-
-  Future<void> _cargarConfiguracion() async {
-    final userId = await PrefUtils.getUserId();
-    final config = await getIt<ConfiguracionCacheService>()
-        .getConfiguration(userId);
-    if (!mounted) return;
-    setState(() {
-      _hideExpectedQty = config?.result?.result?.hideExpectedQty == true;
-    });
-  }
 
   @override
   void didChangeDependencies() {
@@ -350,7 +328,6 @@ class _TransferenciaMultiusuarioDetailTabPorHacerState
                           child: TransferenciaPoolItemCardWidget(
                             item: item,
                             companyId: widget.session.warehouseId,
-                            mostrarCantidad: _hideExpectedQty == false,
                           ),
                         );
                       },

@@ -127,7 +127,6 @@ class _TransferenciaMultiusuarioScanProductScreenState
   ResultUbicaciones? _selectedUbicacionDest;
   double _quantitySelected = 0;
   bool _viewQuantity = false;
-  bool? _hideExpectedQty;
   // access_stock_info_transfer: ícono de ubicaciones (stock_info). false
   // mientras carga — el ícono aparece solo cuando se confirma el permiso.
   bool _accessStockInfo = false;
@@ -255,13 +254,13 @@ class _TransferenciaMultiusuarioScanProductScreenState
 
   Future<void> _cargarConfiguracion() async {
     final userId = await PrefUtils.getUserId();
-    final config = await getIt<ConfiguracionCacheService>()
-        .getConfiguration(userId);
+    final config = await getIt<ConfiguracionCacheService>().getConfiguration(
+      userId,
+    );
     if (!mounted) return;
     setState(() {
       _scanDestinationLocationReception =
           config?.result?.result?.scanDestinationLocationReception == true;
-      _hideExpectedQty = config?.result?.result?.hideExpectedQty == true;
       _manualSourceLocationTransfer =
           config?.result?.result?.manualSourceLocationTransfer == true;
       _accessStockInfo =
@@ -737,7 +736,6 @@ class _TransferenciaMultiusuarioScanProductScreenState
         cantidad: cantidad,
         pendiente: _pendiente,
         novedades: novedades,
-        mostrarCantidadPendiente: _hideExpectedQty == false,
       ),
     );
   }
@@ -903,8 +901,9 @@ class _TransferenciaMultiusuarioScanProductScreenState
                         size: size,
                         onValidateProduct: _validateProduct,
                         onViewImgProduct: _handleViewImage,
-                        stockProductId:
-                            _accessStockInfo ? claim.productId : null,
+                        stockProductId: _accessStockInfo
+                            ? claim.productId
+                            : null,
                         focusNode: _focusProduct,
                         controller: _controllerProduct,
                         productDropdown: TransferenciaProductDropdownWidget(
@@ -1198,34 +1197,28 @@ class _TransferenciaMultiusuarioScanProductScreenState
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Row(
                     children: [
-                      if (_hideExpectedQty == false)
-                        Row(
-                          children: [
-                            const Text(
-                              'Recoger:',
-                              style: TextStyle(color: black, fontSize: 14),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                              child: Text(
-                                _pendiente.toString(),
-                                style: TextStyle(
-                                  color: primaryColorApp,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              widget.claim.uom ?? '',
-                              style: const TextStyle(
-                                color: black,
+                      Row(
+                        children: [
+                          const Text(
+                            'Recoger:',
+                            style: TextStyle(color: black, fontSize: 14),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: Text(
+                              _pendiente.toString(),
+                              style: TextStyle(
+                                color: primaryColorApp,
                                 fontSize: 14,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                          Text(
+                            widget.claim.uom ?? '',
+                            style: const TextStyle(color: black, fontSize: 14),
+                          ),
+                        ],
+                      ),
                       const Spacer(),
                       Expanded(
                         child: Container(

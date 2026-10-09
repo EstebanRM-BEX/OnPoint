@@ -20,17 +20,11 @@ class TransferenciaSelectNovedadDialog extends StatefulWidget {
     required this.cantidad,
     required this.pendiente,
     required this.novedades,
-    required this.mostrarCantidadPendiente,
   });
 
   final double cantidad;
   final double pendiente;
   final List<Novedad> novedades;
-
-  /// Espejo del permiso hideExpectedQty (tbl_configurations): si está
-  /// desactivado, no se debe mostrar cuánto era lo pendiente — solo la
-  /// cantidad que se va a registrar.
-  final bool mostrarCantidadPendiente;
 
   @override
   State<TransferenciaSelectNovedadDialog> createState() =>
@@ -64,55 +58,36 @@ class _TransferenciaSelectNovedadDialogState
               RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
-                  children: widget.mostrarCantidadPendiente
-                      ? [
-                          const TextSpan(
-                            text: 'La cantidad a registrar ',
-                            style: TextStyle(color: black, fontSize: 12),
-                          ),
-                          TextSpan(
-                            text: '${widget.cantidad} ',
-                            style: TextStyle(
-                              color: primaryColorApp,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const TextSpan(
-                            text: 'es menor a lo pendiente ',
-                            style: TextStyle(color: black, fontSize: 12),
-                          ),
-                          TextSpan(
-                            text: '${widget.pendiente}',
-                            style: TextStyle(
-                              color: green,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const TextSpan(
-                            text: '.',
-                            style: TextStyle(color: black, fontSize: 12),
-                          ),
-                        ]
-                      : [
-                          const TextSpan(
-                            text: 'Vas a registrar ',
-                            style: TextStyle(color: black, fontSize: 12),
-                          ),
-                          TextSpan(
-                            text: '${widget.cantidad}',
-                            style: TextStyle(
-                              color: primaryColorApp,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const TextSpan(
-                            text: ' unidades.',
-                            style: TextStyle(color: black, fontSize: 12),
-                          ),
-                        ],
+                  children: [
+                    const TextSpan(
+                      text: 'La cantidad a registrar ',
+                      style: TextStyle(color: black, fontSize: 12),
+                    ),
+                    TextSpan(
+                      text: '${widget.cantidad} ',
+                      style: TextStyle(
+                        color: primaryColorApp,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: 'es menor a lo pendiente ',
+                      style: TextStyle(color: black, fontSize: 12),
+                    ),
+                    TextSpan(
+                      text: '${widget.pendiente}',
+                      style: TextStyle(
+                        color: green,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: '.',
+                      style: TextStyle(color: black, fontSize: 12),
+                    ),
+                  ],
                 ),
               ),
               const Text(

@@ -11,17 +11,12 @@ class TransferenciaPoolItemCardWidget extends StatelessWidget {
     super.key,
     required this.item,
     required this.companyId,
-    required this.mostrarCantidad,
   });
 
   final TransferenciaPoolItem item;
 
   /// Almacén de la sesión (warehouse_id); se usa como company_id al imprimir.
   final dynamic companyId;
-
-  /// Espejo del permiso hideExpectedQty (tbl_configurations): si está
-  /// desactivado, no se muestran las cantidades.
-  final bool mostrarCantidad;
 
   @override
   Widget build(BuildContext context) {
@@ -85,25 +80,23 @@ class TransferenciaPoolItemCardWidget extends StatelessWidget {
                   ),
                 ],
               ),
-              if (mostrarCantidad) ...[
-                Text(
-                  'Disponible: ${item.qtyAvailable ?? 0} ${item.uom ?? ''}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: (item.qtyAvailable ?? 0) > 0 ? green : red,
-                  ),
+              Text(
+                'Disponible: ${item.qtyAvailable ?? 0} ${item.uom ?? ''}',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: (item.qtyAvailable ?? 0) > 0 ? green : red,
                 ),
+              ),
+              Text(
+                'Solicitado: ${item.qtyDemanded ?? 0} ${item.uom ?? ''}',
+                style: const TextStyle(fontSize: 12, color: black),
+              ),
+              if ((item.qtyAlmacenada ?? 0) > 0)
                 Text(
-                  'Solicitado: ${item.qtyDemanded ?? 0} ${item.uom ?? ''}',
+                  'Almacenado: ${item.qtyAlmacenada} ${item.uom ?? ''}',
                   style: const TextStyle(fontSize: 12, color: black),
                 ),
-                if ((item.qtyAlmacenada ?? 0) > 0)
-                  Text(
-                    'Almacenado: ${item.qtyAlmacenada} ${item.uom ?? ''}',
-                    style: const TextStyle(fontSize: 12, color: black),
-                  ),
-              ],
               if ((item.asignacionesActivas ?? 0) > 0) ...[
                 const SizedBox(height: 4),
                 Row(
