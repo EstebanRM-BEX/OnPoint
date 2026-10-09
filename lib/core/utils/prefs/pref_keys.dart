@@ -21,4 +21,12 @@ class PrefKeys {
   static const String homeModulesOrder = "homeModulesOrder";
   static const String homeModulesHidden = "homeModulesHidden";
   static const String homeSummaryExpanded = "homeSummaryExpanded";
+
+  // Catálogo de productos: sobrevive al cierre de sesión (no se borra en
+  // clearPrefs). Empresa (URL + BD) dueña del catálogo guardado en SQLite.
+  static const String catalogEnterprise = "catalogEnterprise";
+  // `server_time` y `scope` de la última sincronización exitosa del catálogo
+  // (próximos `since`/`scope` de product_quants).
+  static const String catalogLastSync = "catalogLastSync";
+  static const String catalogScope = "catalogScope";
 }

@@ -15,79 +15,117 @@ import 'package:wms_app/src/api/api_request_service.dart';
 
 // ─── Clases de resultado ────────────────────────────────────────────────────
 
-/// Agrupa los resultados del parse en el isolate (productos + barcodes).
+/// Respuesta de `product_quants` ya parseada.
+///
+/// [full] = `data` es el catálogo completo (reemplazar todo). Con `false`,
+/// `data` trae solo los productos cambiados, cada uno con TODAS sus filas.
+/// Backend sin sincronización incremental: no manda `server_time`, se trata
+/// como completa y [serverTime]/[scope] quedan en null.
 class ProductosSyncResult {
   final List<ProductoInventarioModel> productos;
   final List<BarcodeProductoModel> barcodes;
+  final bool full;
+  final String? serverTime;
+  final String? scope;
+  final List<int> deletedProductIds;
+
+  /// Todos los productos activos (solo en incremental): los locales que no
+  /// estén acá se borran. null = no vino, no se depura.
+  final List<int>? activeProductIds;
 
   const ProductosSyncResult({
     required this.productos,
     required this.barcodes,
+    this.full = true,
+    this.serverTime,
+    this.scope,
+    this.deletedProductIds = const [],
+    this.activeProductIds,
   });
 }
 
 // ─── Función top-level para compute() ───────────────────────────────────────
 // Debe ser top-level (no método de clase) para poder pasarse a compute().
-// Las excepciones NO cruzan isolates: si error.code == 100, se retorna
-// 'sessionExpired: true' como marcador; el datasource lo detecta y lanza
-// SessionExpiredException fuera del isolate.
+// Las excepciones NO cruzan isolates: los errores vuelven como marcadores
+// ('sessionExpired' / 'error') y el datasource lanza la excepción afuera.
+
+List<int> _ids(dynamic v) => v is List
+    ? [for (final e in v) if (e is num) e.toInt()]
+    : const <int>[];
+
+String? _texto(dynamic v) => v is String && v.isNotEmpty ? v : null;
 
 Map<String, dynamic> _parseProductosIsolate(String responseBody) {
   final json = jsonDecode(responseBody) as Map<String, dynamic>;
 
   if (json.containsKey('error')) {
-    final errorCode =
-        (json['error'] as Map<String, dynamic>?)?['code'];
+    final error = json['error'] as Map<String, dynamic>?;
     return {
-      'sessionExpired': errorCode == 100,
-      'productos': <ProductoInventarioModel>[],
-      'barcodes': <BarcodeProductoModel>[],
+      'sessionExpired': error?['code'] == 100,
+      'error': '${error?['message'] ?? 'Error en la respuesta del servidor'}',
     };
   }
 
-  if (json.containsKey('result')) {
-    final resultMap = json['result'] as Map<String, dynamic>?;
-    final data = (resultMap?['data'] as List<dynamic>?) ?? [];
-    final productos = <ProductoInventarioModel>[];
-    final barcodes = <BarcodeProductoModel>[];
+  final resultMap = json['result'];
+  if (resultMap is! Map<String, dynamic>) {
+    return {'error': 'Respuesta sin resultado'};
+  }
 
-    for (final item in data) {
-      final producto =
-          ProductoInventarioModel.fromMap(item as Map<String, dynamic>);
-      productos.add(producto);
-
-      // Extracción inmediata de barcodes — mismo pase, sin loop extra
-      if (producto.otherBarcodes != null) {
-        for (final b in producto.otherBarcodes!) {
-          if (b is BarcodeProductoModel) barcodes.add(b);
-        }
-      }
-      if (producto.productPacking != null) {
-        for (final b in producto.productPacking!) {
-          if (b is BarcodeProductoModel) barcodes.add(b);
-        }
-      }
-    }
-
+  // Error de negocio: no se toca el catálogo local.
+  final code = resultMap['code'];
+  if (resultMap['status'] == 'error' ||
+      (code != null && code != 200 && code != '200' && code != 'success')) {
     return {
-      'sessionExpired': false,
-      'productos': productos,
-      'barcodes': barcodes,
+      'error': '${resultMap['msg'] ?? resultMap['message'] ?? 'Error del servidor ($code)'}',
     };
   }
 
+  final data = (resultMap['data'] as List<dynamic>?) ?? [];
+  final productos = <ProductoInventarioModel>[];
+  final barcodes = <BarcodeProductoModel>[];
+  // Cada fila (ubicación/lote) repite los barcodes de su producto.
+  final vistos = <String>{};
+
+  void agregar(dynamic b) {
+    if (b is! BarcodeProductoModel) return;
+    if (vistos.add('${b.idProduct}|${b.barcode}')) barcodes.add(b);
+  }
+
+  for (final item in data) {
+    final producto =
+        ProductoInventarioModel.fromMap(item as Map<String, dynamic>);
+    productos.add(producto);
+    producto.otherBarcodes?.forEach(agregar);
+    producto.productPacking?.forEach(agregar);
+  }
+
+  final serverTime = _texto(resultMap['server_time']);
   return {
-    'sessionExpired': false,
-    'productos': <ProductoInventarioModel>[],
-    'barcodes': <BarcodeProductoModel>[],
+    'productos': productos,
+    'barcodes': barcodes,
+    'serverTime': serverTime,
+    'scope': _texto(resultMap['scope']),
+    // Sin server_time es el backend anterior: siempre completo.
+    'full': serverTime == null || resultMap['full'] != false,
+    'deleted': _ids(resultMap['deleted_product_ids']),
+    'active': resultMap['active_product_ids'] is List
+        ? _ids(resultMap['active_product_ids'])
+        : null,
   };
 }
+
+/// Solo para tests.
+@visibleForTesting
+Map<String, dynamic> parseProductosForTest(String body) =>
+    _parseProductosIsolate(body);
 
 // ─── Interfaz ────────────────────────────────────────────────────────────────
 
 abstract class InventarioRemoteDataSource {
-  /// GET product_quants — parsea productos y barcodes en un solo isolate.
-  Future<ProductosSyncResult> syncProductos();
+  /// product_quants — parsea productos y barcodes en un solo isolate.
+  /// Con [since] y [scope] pide solo lo cambiado (el servidor puede igual
+  /// responder completo: ver [ProductosSyncResult.full]).
+  Future<ProductosSyncResult> syncProductos({String? since, String? scope});
 
   /// GET lotes/$productId
   Future<List<LoteProductoInventarioModel>> getLotes(int productId);
@@ -121,12 +159,18 @@ class InventarioRemoteDataSourceImpl implements InventarioRemoteDataSource {
   InventarioRemoteDataSourceImpl(this.apiService);
 
   @override
-  Future<ProductosSyncResult> syncProductos() async {
+  Future<ProductosSyncResult> syncProductos({
+    String? since,
+    String? scope,
+  }) async {
     try {
       final response = await apiService.getInventario(
         endpoint: 'product_quants',
         isunecodePath: true,
         isLoadinDialog: false,
+        params: since != null && scope != null
+            ? {'since': since, 'scope': scope}
+            : const {},
       );
 
       if (response.statusCode >= 400) {
@@ -139,12 +183,23 @@ class InventarioRemoteDataSourceImpl implements InventarioRemoteDataSource {
       if (result['sessionExpired'] == true) {
         throw const SessionExpiredException('Sesión expirada');
       }
+      if (result['error'] != null) {
+        throw ServerException(result['error'] as String);
+      }
 
       return ProductosSyncResult(
         productos: (result['productos'] as List).cast<ProductoInventarioModel>(),
         barcodes: (result['barcodes'] as List).cast<BarcodeProductoModel>(),
+        // Si no se pidió incremental, la respuesta es completa sí o sí.
+        full: since == null || result['full'] as bool,
+        serverTime: result['serverTime'] as String?,
+        scope: result['scope'] as String?,
+        deletedProductIds: result['deleted'] as List<int>,
+        activeProductIds: result['active'] as List<int>?,
       );
     } on SessionExpiredException {
+      rethrow;
+    } on ServerException {
       rethrow;
     } catch (e) {
       throw ServerException('Error al sincronizar productos: $e');

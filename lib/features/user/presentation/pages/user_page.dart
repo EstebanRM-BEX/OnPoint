@@ -363,7 +363,7 @@ class _UserPageState extends State<UserPage> {
     if (!confirmed || !mounted) return;
 
     try {
-      await DataBaseSqlite().deleteBDCloseSession();
+      await DataBaseSqlite().deleteBDCloseSession(borrarCatalogo: true);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

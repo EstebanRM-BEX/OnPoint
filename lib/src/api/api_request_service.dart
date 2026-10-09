@@ -898,10 +898,13 @@ class ApiRequestService {
     }
   }
 
+  /// [params]: van en `params` del body JSON-RPC (p. ej. `since`/`scope` de
+  /// `product_quants`). Vacío = comportamiento de siempre.
   Future<http.Response> getInventario({
     required String endpoint,
     required bool isLoadinDialog,
     required bool isunecodePath,
+    Map<String, dynamic> params = const {},
   }) async {
     if (!await _isConnected()) {
       debugPrint('🔴 [getInventario] Sin conexión');
@@ -927,8 +930,14 @@ class ApiRequestService {
     try {
       if (isLoadinDialog) closeLoading = _openLoadingDialog(endpoint);
 
+      // Sigue en GET hasta confirmar que el backend en producción acepta
+      // POST en product_quants (el nuevo acepta ambos).
       final request = http.Request('GET', Uri.parse(url));
-      request.body = json.encode({"params": {}});
+      request.body = json.encode({
+        "jsonrpc": "2.0",
+        "method": "call",
+        "params": params,
+      });
       request.headers.addAll(headers);
 
       final response = await http.Response.fromStream(

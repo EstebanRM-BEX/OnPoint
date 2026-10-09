@@ -2112,13 +2112,19 @@ class DataBaseSqlite {
   /// sus barcodes). Se usa en cierres de sesión automáticos (expiración), donde
   /// el operario puede tener productos en estado "Preparado" sin empacar que
   /// no deben perderse; ver `PackingPreservation`.
-  Future<void> deleteBDCloseSession({bool keepPacking = false}) async {
+  /// [borrarCatalogo]: el catálogo de productos (inventario + sus barcodes)
+  /// sobrevive al cierre de sesión; solo "Eliminar base de datos" lo borra.
+  /// Si se entra a otra empresa, lo reemplaza el sync de productos.
+  Future<void> deleteBDCloseSession({
+    bool keepPacking = false,
+    bool borrarCatalogo = false,
+  }) async {
     await deleAllPicking();
     await delePickAll();
     if (!keepPacking) await delePackingAll();
     await deleAllRecepcion();
     await deleAllTrasnferencia();
-    await deleInventario();
+    if (borrarCatalogo) await deleInventario();
     await deleOthers();
     await deleReceptionBatch();
     await deleAllBarcodes(keepPacking: keepPacking);

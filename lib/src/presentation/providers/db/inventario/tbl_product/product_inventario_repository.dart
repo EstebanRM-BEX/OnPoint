@@ -88,6 +88,13 @@ List<Product> _parseProductsMap(List<Map<String, dynamic>> maps) {
 }
 
 class ProductInventarioRepository {
+  /// Sentencias INSERT en tandas (respetan el límite de variables de SQLite)
+  /// para [productosList], sin ejecutarlas: el reemplazo atómico del catálogo
+  /// las corre dentro de su propia transacción.
+  Future<List<Map<String, dynamic>>> construirInserts(
+    List<Product> productosList,
+  ) => compute(_processProductsRawArgs, productosList);
+
   /// --------------------------------------------------------------------------
   /// METODO OPTIMIZADO: insertProductosInventario (Mark & Sweep)
   /// --------------------------------------------------------------------------

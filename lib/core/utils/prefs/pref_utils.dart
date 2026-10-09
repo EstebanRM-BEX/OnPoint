@@ -184,6 +184,42 @@ class PrefUtils {
     await preferences.remove(PrefKeys.networkOverlayVisible);
   }
 
+  /// Empresa (URL + BD) a la que pertenece el catálogo local de productos.
+  /// No se borra al cerrar sesión: el catálogo se conserva entre sesiones.
+  static Future<String?> getCatalogEnterprise() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(PrefKeys.catalogEnterprise);
+  }
+
+  static Future<void> setCatalogEnterprise(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(PrefKeys.catalogEnterprise, value);
+  }
+
+  /// `server_time` y `scope` de la última sincronización exitosa del
+  /// catálogo; null si no hay (se pide la descarga completa).
+  static Future<({String since, String scope})?> getCatalogSync() async {
+    final prefs = await SharedPreferences.getInstance();
+    final since = prefs.getString(PrefKeys.catalogLastSync);
+    final scope = prefs.getString(PrefKeys.catalogScope);
+    if (since == null || since.isEmpty || scope == null || scope.isEmpty) {
+      return null;
+    }
+    return (since: since, scope: scope);
+  }
+
+  static Future<void> setCatalogSync(String since, String scope) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(PrefKeys.catalogLastSync, since);
+    await prefs.setString(PrefKeys.catalogScope, scope);
+  }
+
+  static Future<void> clearCatalogSync() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(PrefKeys.catalogLastSync);
+    await prefs.remove(PrefKeys.catalogScope);
+  }
+
   static Future<void> setNetworkOverlayVisible(bool visible) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(PrefKeys.networkOverlayVisible, visible);

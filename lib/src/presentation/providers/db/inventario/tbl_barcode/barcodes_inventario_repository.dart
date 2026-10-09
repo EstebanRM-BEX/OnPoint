@@ -5,6 +5,40 @@ import 'package:wms_app/src/presentation/providers/db/inventario/tbl_barcode/bar
 import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 
 class BarcodesInventarioRepository {
+  /// Sentencias INSERT en tandas de 100 para [barcodesList], sin ejecutarlas:
+  /// el reemplazo atómico del catálogo las corre dentro de su transacción.
+  List<Map<String, dynamic>> construirInserts(
+      List<BarcodeInventario> barcodesList) {
+    const int itemsPerQuery = 100;
+    final queries = <Map<String, dynamic>>[];
+
+    for (var i = 0; i < barcodesList.length; i += itemsPerQuery) {
+      final end = (i + itemsPerQuery < barcodesList.length)
+          ? i + itemsPerQuery
+          : barcodesList.length;
+      final chunk = barcodesList.sublist(i, end);
+
+      final StringBuffer queryBuffer = StringBuffer();
+      queryBuffer.write('INSERT INTO ${BarcodesInventarioTable.tableName} (');
+      queryBuffer.write('${BarcodesInventarioTable.columnIdProduct}, ${BarcodesInventarioTable.columnBarcode}, ${BarcodesInventarioTable.columnCantidad}, ${BarcodesInventarioTable.columnIsSynced}) VALUES ');
+
+      final List<dynamic> args = [];
+      for (var j = 0; j < chunk.length; j++) {
+        if (j > 0) queryBuffer.write(', ');
+        queryBuffer.write('(?,?,?,?)');
+        var barcode = chunk[j];
+        args.addAll([
+          barcode.idProduct,
+          barcode.barcode,
+          barcode.cantidad ?? 1,
+          1
+        ]);
+      }
+      queries.add({'sql': queryBuffer.toString(), 'args': args});
+    }
+    return queries;
+  }
+
   Future<void> insertOrUpdateBarcodes(
       List<BarcodeInventario> barcodesList) async {
     if (barcodesList.isEmpty) return;
@@ -13,32 +47,9 @@ class BarcodesInventarioRepository {
       Database db = await DataBaseSqlite().getDatabaseInstance();
 
       await db.transaction((txn) async {
-        const int itemsPerQuery = 100;
         final Batch batch = txn.batch();
-
-        for (var i = 0; i < barcodesList.length; i += itemsPerQuery) {
-          final end = (i + itemsPerQuery < barcodesList.length)
-              ? i + itemsPerQuery
-              : barcodesList.length;
-          final chunk = barcodesList.sublist(i, end);
-
-          final StringBuffer queryBuffer = StringBuffer();
-          queryBuffer.write('INSERT INTO ${BarcodesInventarioTable.tableName} (');
-          queryBuffer.write('${BarcodesInventarioTable.columnIdProduct}, ${BarcodesInventarioTable.columnBarcode}, ${BarcodesInventarioTable.columnCantidad}, ${BarcodesInventarioTable.columnIsSynced}) VALUES ');
-
-          final List<dynamic> args = [];
-          for (var j = 0; j < chunk.length; j++) {
-            if (j > 0) queryBuffer.write(', ');
-            queryBuffer.write('(?,?,?,?)');
-            var barcode = chunk[j];
-            args.addAll([
-              barcode.idProduct,
-              barcode.barcode,
-              barcode.cantidad ?? 1,
-              1
-            ]);
-          }
-          batch.rawInsert(queryBuffer.toString(), args);
+        for (final q in construirInserts(barcodesList)) {
+          batch.rawInsert(q['sql'] as String, q['args'] as List<dynamic>);
         }
         await batch.commit(noResult: true);
         debugPrint("📦 Inventario Barcodes: Insertados ${barcodesList.length}");

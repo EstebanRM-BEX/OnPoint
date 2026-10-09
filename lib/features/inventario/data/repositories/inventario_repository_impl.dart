@@ -28,7 +28,7 @@ class InventarioRepositoryImpl implements InventarioRepository {
     required this.networkInfo,
   });
 
-  // ─── Sync (borra local + fetch remoto en paralelo) ─────────────────────────
+  // ─── Sync (descarga y reemplaza el catálogo de una vez) ─────────────────────
 
   @override
   Future<Either<Failure, void>> syncProductosInventario(
@@ -40,23 +40,67 @@ class InventarioRepositoryImpl implements InventarioRepository {
     }
 
     try {
-      onProgress?.call('Descargando productos de WMS...', 0, 0);
+      // El catálogo sobrevive al cierre de sesión: si es de otra empresa (o
+      // no se sabe de cuál, p. ej. tras actualizar la app) se borra antes de
+      // descargar, para no operar con productos ajenos si la descarga falla.
+      final empresa = await localDataSource.empresaActual();
+      if (await localDataSource.empresaCatalogo() != empresa) {
+        await localDataSource.deleteInventario();
+        await localDataSource.borrarMarcaSyncCatalogo();
+      }
 
-      // Future.wait propaga la excepción original sin envolverla en
-      // ParallelWaitError (a diferencia del record .wait de Dart 3).
-      final results = await Future.wait([
-        localDataSource.deleteInventario(),
-        remoteDataSource.syncProductos(),
-      ]);
-      final syncResult = results[1] as ProductosSyncResult;
+      // Incremental solo si hay marca y catálogo local al que aplicarla.
+      var marca = await localDataSource.marcaSyncCatalogo();
+      if (marca != null && await localDataSource.getProductosCount() == 0) {
+        marca = null;
+      }
+
+      onProgress?.call(
+        marca == null
+            ? 'Descargando productos de WMS...'
+            : 'Actualizando productos de WMS...',
+        0,
+        0,
+      );
+
+      // Antes se borraba el catálogo en paralelo con la descarga: si la red
+      // fallaba, la PDA quedaba sin productos. Ahora se escribe solo con la
+      // respuesta en la mano.
+      final syncResult = await remoteDataSource.syncProductos(
+        since: marca?.since,
+        scope: marca?.scope,
+      );
 
       final total = syncResult.productos.length;
-      onProgress?.call('Guardando $total productos en base de datos...', 0, total);
+      if (syncResult.full) {
+        if (total == 0) {
+          return const Left(ServerFailure('El servidor no devolvió productos'));
+        }
+        onProgress?.call('Guardando $total productos en base de datos...', 0, total);
+        await localDataSource.reemplazarCatalogo(
+          syncResult.productos,
+          syncResult.barcodes,
+        );
+      } else {
+        onProgress?.call('Actualizando $total productos en base de datos...', 0, total);
+        await localDataSource.aplicarCambiosCatalogo(
+          productos: syncResult.productos,
+          barcodes: syncResult.barcodes,
+          eliminados: syncResult.deletedProductIds,
+          activos: syncResult.activeProductIds,
+        );
+      }
+      await localDataSource.guardarEmpresaCatalogo(empresa);
 
-      await localDataSource.saveProductosYBarcodes(
-        syncResult.productos,
-        syncResult.barcodes,
-      );
+      // La marca se guarda solo con todo aplicado; sin server_time (backend
+      // anterior) no hay marca y la próxima vez se pide completo.
+      final serverTime = syncResult.serverTime;
+      final scope = syncResult.scope;
+      if (serverTime != null && scope != null) {
+        await localDataSource.guardarMarcaSyncCatalogo(serverTime, scope);
+      } else {
+        await localDataSource.borrarMarcaSyncCatalogo();
+      }
 
       onProgress?.call('Sincronización completada', total, total);
       return const Right(null);
