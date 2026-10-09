@@ -79,7 +79,7 @@ class _PaquetesTabState extends State<PaquetesTab> with WidgetsBindingObserver {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       if (widget.activo && _modoScanner && !_searchFocus.hasFocus) {
-        _enfocarLector();
+        _reconectarLector();
       }
     }
   }
@@ -113,13 +113,31 @@ class _PaquetesTabState extends State<PaquetesTab> with WidgetsBindingObserver {
 
   void _onScanFocusChanged() {
     if (!mounted) return;
-    if (_modoScanner &&
+    if (_appActiva &&
+        _modoScanner &&
         !_scanFocus.hasFocus &&
         !_searchFocus.hasFocus &&
         widget.activo &&
         (ModalRoute.of(context)?.isCurrent ?? true)) {
       _enfocarLector();
     }
+  }
+
+  /// Con la pantalla apagada o la app en segundo plano no se pide el foco:
+  /// Android cierra la conexión del lector y abrirla en ese estado no sirve.
+  /// Al volver, [didChangeAppLifecycleState] la reconecta.
+  bool get _appActiva {
+    final s = WidgetsBinding.instance.lifecycleState;
+    return s == null || s == AppLifecycleState.resumed;
+  }
+
+  /// En Android Flutter no toca el foco al bloquear el equipo: el nodo del
+  /// lector sigue "enfocado" pero la conexión de entrada quedó muerta, y
+  /// `requestFocus()` sobre un nodo que ya tiene el foco no hace nada. Se
+  /// suelta y se vuelve a pedir para que el campo abra una conexión nueva.
+  void _reconectarLector() {
+    if (_scanFocus.hasFocus) _scanFocus.unfocus();
+    _enfocarLector();
   }
 
   void _enfocarLector() {
@@ -137,6 +155,7 @@ class _PaquetesTabState extends State<PaquetesTab> with WidgetsBindingObserver {
     _focusRetryTimer?.cancel();
     _focusRetryTimer = Timer(const Duration(milliseconds: 150), () {
       if (mounted &&
+          _appActiva &&
           _modoScanner &&
           !_searchFocus.hasFocus &&
           !_scanFocus.hasFocus &&
