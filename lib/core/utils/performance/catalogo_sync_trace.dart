@@ -42,11 +42,14 @@ class CatalogoSyncTrace {
 
   void metrica(String nombre, int valor) => _trace?.setMetric(nombre, valor);
 
-  /// Guarda en [nombre] los ms desde la marca anterior (o el inicio).
-  void tramo(String nombre) {
+  /// Guarda en [nombre] los ms desde la marca anterior (o el inicio) y los
+  /// devuelve (para el log de debug).
+  int tramo(String nombre) {
     final ahora = _reloj.elapsedMilliseconds;
-    metrica(nombre, ahora - _desdeMs);
+    final ms = ahora - _desdeMs;
+    metrica(nombre, ms);
     _desdeMs = ahora;
+    return ms;
   }
 
   void terminar(String resultado) {

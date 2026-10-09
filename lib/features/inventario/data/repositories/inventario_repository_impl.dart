@@ -1,5 +1,6 @@
 // lib/features/inventario/data/repositories/inventario_repository_impl.dart
 
+import 'package:flutter/foundation.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/error/exceptions.dart';
@@ -78,22 +79,27 @@ class InventarioRepositoryImpl implements InventarioRepository {
         since: marca?.since,
         scope: marca?.scope,
       );
-      trace.tramo('ms_descarga');
+      final msDescarga = trace.tramo('ms_descarga');
 
       final total = syncResult.productos.length;
+      final tipo = syncResult.full ? 'completa' : 'incremental';
+      final motivo = syncResult.full
+          ? motivoDescargaCompleta(
+              motivoLocal: marca == null ? motivoLocal : null,
+              scopeEnviado: marca?.scope,
+              serverTime: syncResult.serverTime,
+              scopeRecibido: syncResult.scope,
+            )
+          : 'incremental';
+      debugPrint(
+        '📦 [Catálogo] $tipo ($motivo) · since=${marca?.since ?? '-'} · '
+        '$total filas, ${syncResult.deletedProductIds.length} eliminados, '
+        '${syncResult.activeProductIds?.length ?? '-'} activos · '
+        'descarga ${msDescarga}ms',
+      );
       trace
-        ..atributo('tipo', syncResult.full ? 'completa' : 'incremental')
-        ..atributo(
-          'motivo',
-          syncResult.full
-              ? motivoDescargaCompleta(
-                  motivoLocal: marca == null ? motivoLocal : null,
-                  scopeEnviado: marca?.scope,
-                  serverTime: syncResult.serverTime,
-                  scopeRecibido: syncResult.scope,
-                )
-              : 'incremental',
-        )
+        ..atributo('tipo', tipo)
+        ..atributo('motivo', motivo)
         ..metrica('filas', total)
         ..metrica('barcodes', syncResult.barcodes.length)
         ..metrica('eliminados', syncResult.deletedProductIds.length);
@@ -128,7 +134,11 @@ class InventarioRepositoryImpl implements InventarioRepository {
       } else {
         await localDataSource.borrarMarcaSyncCatalogo();
       }
-      trace.tramo('ms_guardado');
+      final msGuardado = trace.tramo('ms_guardado');
+      debugPrint(
+        '📦 [Catálogo] guardado en ${msGuardado}ms · '
+        'próximo since=${serverTime ?? '-'} scope=${scope ?? '-'}',
+      );
 
       onProgress?.call('Sincronización completada', total, total);
       resultado = 'ok';
