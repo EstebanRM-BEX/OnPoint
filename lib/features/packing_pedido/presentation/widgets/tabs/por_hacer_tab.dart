@@ -47,6 +47,9 @@ class _PorHacerTabState extends State<PorHacerTab> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    // TabBarView destruye la pestaña al salir de ella, pero el filtro vive en
+    // el bloc: sin esto el campo vuelve vacío y la lista sigue filtrada.
+    _searchController.text = widget.state.query;
     WidgetsBinding.instance.addObserver(this);
     _searchFocus.addListener(_onSearchFocusChanged);
     _scanFocus.addListener(_onScanFocusChanged);
