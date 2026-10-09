@@ -24,6 +24,9 @@ class RecepcionMultiusuarioListBloc
   List<RecepcionSession> _todasLasSesiones = [];
   List<RecepcionSession> _sesionesFiltradas = [];
 
+  /// Lista completa (sin el filtro del buscador), para resolver escaneos.
+  List<RecepcionSession> get todasLasSesiones => _todasLasSesiones;
+
   RecepcionMultiusuarioListBloc({
     required this.fetchRecepcionSessionsUseCase,
     required this.getRecepcionSessionsFromDbUseCase,

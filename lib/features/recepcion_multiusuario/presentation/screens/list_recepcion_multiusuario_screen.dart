@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
+import 'package:wms_app/core/interfaces/i_audio_service.dart';
+import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/core/routes/app_router.dart';
+import 'package:wms_app/features/expedition/presentation/widgets/expedicion_list_header_widget.dart';
+import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/cluster_search_dock.dart';
+import 'package:wms_app/features/picking_cluster/presentation/widgets/cluster_palette.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/list/recepcion_multiusuario_list_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/recepcion_session_card_widget.dart';
+import 'package:wms_app/injection_container.dart';
+import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
-import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
-import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 
 /// Listado de sesiones de recepción multiusuario (fase 1: solo lectura).
 /// A diferencia de recepción individual, no maneja asignación de responsable
@@ -27,6 +33,11 @@ class _ListRecepcionMultiusuarioScreenState
     with LoadingDialogMixin {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  // Campo invisible del lector PDA (keyboard-wedge), igual que Pick Cluster.
+  final TextEditingController _scanController = TextEditingController();
+  final FocusNode _scanFocusNode = FocusNode();
+  final IAudioService _audioService = getIt<IAudioService>();
+  final IVibrationService _vibrationService = getIt<IVibrationService>();
 
   @override
   void initState() {
@@ -42,6 +53,8 @@ class _ListRecepcionMultiusuarioScreenState
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _scanController.dispose();
+    _scanFocusNode.dispose();
     super.dispose();
   }
 
@@ -53,161 +66,142 @@ class _ListRecepcionMultiusuarioScreenState
     );
   }
 
-  void _refresh() {
+  /// Escanear el nombre de la sesión, de la recepción o del documento origen
+  /// entra directo al detalle. Matchea contra la lista completa, no la
+  /// filtrada por el buscador.
+  void _handleScan(String value) {
+    final scan = value.trim().toLowerCase();
+    if (scan.isEmpty) return;
+
+    final sessions =
+        context.read<RecepcionMultiusuarioListBloc>().todasLasSesiones;
+    for (final session in sessions) {
+      final codes = [
+        session.name,
+        session.pickingName,
+        session.origin,
+      ].map((c) => (c ?? '').trim().toLowerCase());
+      if (codes.contains(scan)) {
+        _handleSessionTap(session);
+        return;
+      }
+    }
+
+    _audioService.playErrorSound();
+    _vibrationService.vibrate();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Recepción no encontrada en la lista')),
+    );
+  }
+
+  void _clearSearch() {
     _searchController.clear();
     context.read<RecepcionMultiusuarioListBloc>().add(
       const SearchRecepcionSessionEvent(''),
     );
-    context.read<RecepcionMultiusuarioListBloc>().add(
-      const FetchRecepcionSessionsEvent(isLoadinDialog: false),
-    );
+    // Al limpiar, el foco vuelve al lector para seguir escaneando.
+    _scanFocusNode.requestFocus();
+  }
+
+  void _refresh() {
+    final bloc = context.read<RecepcionMultiusuarioListBloc>();
+    if (bloc.state is RecepcionMultiusuarioListLoading) return;
+    _searchController.clear();
+    bloc.add(const SearchRecepcionSessionEvent(''));
+    bloc.add(const FetchRecepcionSessionsEvent(isLoadinDialog: false));
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: primaryColorApp,
-        body: SafeArea(
-          child: Container(
-            color: Colors.white,
-            width: size.width,
-            height: size.height,
-            child: Column(
-              children: [
-                _Header(size: size, onRefresh: _refresh),
-                DynamicSearchBar(
-                  controller: _searchController,
-                  focusNode: _searchFocusNode,
-                  hintText: 'Buscar recepción',
-                  // watchdog: reabre el teclado si el IME del PDA
-                  // (Zebra/Urovo/Chainway) lo cierra solo.
-                  persistentKeyboard: true,
-                  onSearchChanged: (value) => context
-                      .read<RecepcionMultiusuarioListBloc>()
-                      .add(SearchRecepcionSessionEvent(value)),
-                  onSearchCleared: () => context
-                      .read<RecepcionMultiusuarioListBloc>()
-                      .add(const SearchRecepcionSessionEvent('')),
-                  onTap: () {},
-                ),
-                Expanded(
-                  child:
-                      BlocConsumer<
-                        RecepcionMultiusuarioListBloc,
-                        RecepcionMultiusuarioListState
-                      >(
-                        listener: (context, state) {
-                          if (state is RecepcionMultiusuarioListLoading) {
-                            showLoadingDialog('Cargando recepciones...');
-                          } else {
-                            hideLoadingDialog();
-                          }
-                          if (state is RecepcionMultiusuarioListError) {
-                            showScrollableErrorDialog(state.message);
-                          }
-                        },
-                        builder: (context, state) {
-                          if (state is RecepcionMultiusuarioListDbLoading) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          }
+        backgroundColor: ClusterPalette.surface,
+        body: Column(
+          children: [
+            ExpedicionListHeaderWidget(
+              title: 'RECEPCIÓN MULTIUSUARIO',
+              onBack: () => goHome(context),
+              onRefresh: _refresh,
+            ),
+            ClusterSearchDock(
+              controller: _searchController,
+              searchFocusNode: _searchFocusNode,
+              scannerFocusNode: _scanFocusNode,
+              hintText: 'Escanear o buscar recepción...',
+              scanner: BarcodeScannerField(
+                controller: _scanController,
+                focusNode: _scanFocusNode,
+                clearOnScan: true,
+                refocusOnScan: true,
+                onBarcodeScanned: (value, _) => _handleScan(value),
+              ),
+              onChanged: (value) => context
+                  .read<RecepcionMultiusuarioListBloc>()
+                  .add(SearchRecepcionSessionEvent(value)),
+              onCleared: _clearSearch,
+              onActivateScanner: () => _scanFocusNode.requestFocus(),
+            ),
+            Expanded(
+              child:
+                  BlocConsumer<
+                    RecepcionMultiusuarioListBloc,
+                    RecepcionMultiusuarioListState
+                  >(
+                    listener: (context, state) {
+                      if (state is RecepcionMultiusuarioListLoading) {
+                        showLoadingDialog('Cargando recepciones...');
+                      } else {
+                        hideLoadingDialog();
+                      }
+                      if (state is RecepcionMultiusuarioListError) {
+                        showScrollableErrorDialog(state.message);
+                      }
+                    },
+                    builder: (context, state) {
+                      if (state is RecepcionMultiusuarioListDbLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-                          final sessions = state is RecepcionSessionsLoaded
-                              ? state.sessions
-                              : const [];
+                      final sessions = state is RecepcionSessionsLoaded
+                          ? state.sessions
+                          : const <RecepcionSession>[];
 
-                          if (sessions.isEmpty) {
-                            return Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.max,
-                              children: const [
-                                Text(
-                                  'No hay recepciones',
-                                  style: TextStyle(fontSize: 14, color: grey),
-                                ),
-                                Text(
-                                  'Intente buscar otra recepción',
-                                  style: TextStyle(fontSize: 12, color: grey),
-                                ),
-                              ],
-                            );
-                          }
+                      if (sessions.isEmpty) {
+                        return const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            Text(
+                              'No hay recepciones',
+                              style: TextStyle(fontSize: 14, color: grey),
+                            ),
+                            Text(
+                              'Intente buscar otra recepción',
+                              style: TextStyle(fontSize: 12, color: grey),
+                            ),
+                          ],
+                        );
+                      }
 
-                          return ListView.builder(
-                            padding: const EdgeInsets.only(top: 2),
-                            itemCount: sessions.length,
-                            itemBuilder: (context, index) {
-                              final session = sessions[index];
-                              return InkWell(
-                                onTap: () => _handleSessionTap(session),
-                                child: RecepcionSessionCardWidget(
-                                  session: session,
-                                ),
-                              );
-                            },
+                      return ListView.builder(
+                        padding: const EdgeInsets.only(top: 2),
+                        itemCount: sessions.length,
+                        itemBuilder: (context, index) {
+                          final session = sessions[index];
+                          return InkWell(
+                            onTap: () => _handleSessionTap(session),
+                            child: RecepcionSessionCardWidget(
+                              session: session,
+                            ),
                           );
                         },
-                      ),
-                ),
-              ],
+                      );
+                    },
+                  ),
             ),
-          ),
+          ],
         ),
-      ),
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.size, required this.onRefresh});
-
-  final Size size;
-  final VoidCallback onRefresh;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: primaryColorApp,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(20),
-          bottomRight: Radius.circular(20),
-        ),
-      ),
-      width: double.infinity,
-      child: Column(
-        children: [
-          const WarningWidgetCubit(),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back, color: white),
-                onPressed: () =>
-                    Navigator.pushReplacementNamed(context, '/home'),
-              ),
-              GestureDetector(
-                onTap: onRefresh,
-                child: const Row(
-                  children: [
-                    Text(
-                      'RECEPCIÓN MULTIUSUARIO',
-                      style: TextStyle(color: white, fontSize: 16),
-                    ),
-                    SizedBox(width: 5),
-                    Icon(Icons.refresh, color: white, size: 20),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 48),
-            ],
-          ),
-        ],
       ),
     );
   }

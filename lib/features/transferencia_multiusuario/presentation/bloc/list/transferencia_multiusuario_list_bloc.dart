@@ -28,6 +28,9 @@ class TransferenciaMultiusuarioListBloc
   List<TransferenciaSession> _todasLasSesiones = [];
   List<TransferenciaSession> _sesionesFiltradas = [];
 
+  /// Lista completa (sin el filtro del buscador), para resolver escaneos.
+  List<TransferenciaSession> get todasLasSesiones => _todasLasSesiones;
+
   TransferenciaMultiusuarioListBloc({
     required this.fetchTransferenciaSessionsUseCase,
     required this.getTransferenciaSessionsFromDbUseCase,
