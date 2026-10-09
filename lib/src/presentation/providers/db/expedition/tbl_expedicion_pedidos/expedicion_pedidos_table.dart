@@ -56,8 +56,13 @@ class ExpedicionPedidosTable {
         $columnBackorderId INTEGER DEFAULT 0,
         $columnBackorderName TEXT
       );
-
-      CREATE INDEX idx_expedicion_pedidos_fecha ON $tableName ($columnFecha);
-    ''';
+  ''';
   }
+
+  /// Índices de la tabla, una sentencia por elemento: en Android `execute`
+  /// corre solo la primera sentencia de un texto con varias, así que no
+  /// pueden ir dentro de [createTable].
+  static List<String> get indices => [
+        'CREATE INDEX IF NOT EXISTS idx_expedicion_pedidos_fecha ON $tableName ($columnFecha)',
+      ];
 }

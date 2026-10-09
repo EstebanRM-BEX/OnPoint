@@ -19,7 +19,10 @@ class BarcodesInventarioRepository {
       final chunk = barcodesList.sublist(i, end);
 
       final StringBuffer queryBuffer = StringBuffer();
-      queryBuffer.write('INSERT INTO ${BarcodesInventarioTable.tableName} (');
+      // OR REPLACE: con el índice único (producto, barcode) un repetido en el
+      // payload no aborta la transacción del catálogo.
+      queryBuffer.write(
+          'INSERT OR REPLACE INTO ${BarcodesInventarioTable.tableName} (');
       queryBuffer.write('${BarcodesInventarioTable.columnIdProduct}, ${BarcodesInventarioTable.columnBarcode}, ${BarcodesInventarioTable.columnCantidad}, ${BarcodesInventarioTable.columnIsSynced}) VALUES ');
 
       final List<dynamic> args = [];

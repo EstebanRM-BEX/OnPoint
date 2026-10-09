@@ -27,8 +27,14 @@ class UbicacionesTable {
       $columnIsADock INTEGER DEFAULT 0,
       $columnIsSynced INTEGER DEFAULT 0 
     );
-    CREATE INDEX idx_${tableName}_barcode ON $tableName ($columnBarcode);
-    CREATE INDEX idx_${tableName}_name ON $tableName ($columnName);
   ''';
   }
+
+  /// Índices de la tabla, una sentencia por elemento: en Android `execute`
+  /// corre solo la primera sentencia de un texto con varias, así que no
+  /// pueden ir dentro de [createTable].
+  static List<String> get indices => [
+        'CREATE INDEX IF NOT EXISTS idx_${tableName}_barcode ON $tableName ($columnBarcode)',
+        'CREATE INDEX IF NOT EXISTS idx_${tableName}_name ON $tableName ($columnName)',
+      ];
 }

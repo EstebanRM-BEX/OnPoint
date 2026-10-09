@@ -32,9 +32,14 @@ class ExpedicionItemsTable {
         $columnQuantity REAL,
         $columnUom TEXT
       );
-
-      CREATE INDEX idx_expedicion_items_packing_id ON $tableName ($columnPackingId);
-      CREATE INDEX idx_expedicion_items_expedition_id ON $tableName ($columnExpeditionId);
-    ''';
+  ''';
   }
+
+  /// Índices de la tabla, una sentencia por elemento: en Android `execute`
+  /// corre solo la primera sentencia de un texto con varias, así que no
+  /// pueden ir dentro de [createTable].
+  static List<String> get indices => [
+        'CREATE INDEX IF NOT EXISTS idx_expedicion_items_packing_id ON $tableName ($columnPackingId)',
+        'CREATE INDEX IF NOT EXISTS idx_expedicion_items_expedition_id ON $tableName ($columnExpeditionId)',
+      ];
 }

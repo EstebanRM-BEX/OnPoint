@@ -25,15 +25,17 @@ class BarcodesPackagesTable {
       $columnIsSynced INTEGER DEFAULT 0, -- Por defecto no sincronizado
       FOREIGN KEY ($columnBatchId) REFERENCES tblbatchs (id)
     );
-
-    -- ✅ ÍNDICE ÚNICO: Reemplaza la lógica manual de "buscar si existe".
-    -- Define qué combinación de campos hace que un registro sea único.
-    CREATE UNIQUE INDEX idx_unique_barcode_entry ON $tableName 
-    ($columnBatchId, $columnIdMove, $columnIdProduct, $columnBarcode, $columnBarcodeType);
-
-    -- ✅ ÍNDICE DE LECTURA: Acelera getBarcodesProduct y similares
-    CREATE INDEX idx_barcodes_search ON $tableName 
-    ($columnBatchId, $columnIdProduct, $columnBarcodeType);
   ''';
   }
+
+  /// Índices de la tabla, una sentencia por elemento: en Android `execute`
+  /// corre solo la primera sentencia de un texto con varias, así que no
+  /// pueden ir dentro de [createTable].
+  static List<String> get indices => [
+        // ÍNDICE ÚNICO: Reemplaza la lógica manual de "buscar si existe".
+        // Define qué combinación de campos hace que un registro sea único.
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_barcode_entry ON $tableName ($columnBatchId, $columnIdMove, $columnIdProduct, $columnBarcode, $columnBarcodeType)',
+        // ÍNDICE DE LECTURA: Acelera getBarcodesProduct y similares
+        'CREATE INDEX IF NOT EXISTS idx_barcodes_search ON $tableName ($columnBatchId, $columnIdProduct, $columnBarcodeType)',
+      ];
 }

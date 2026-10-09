@@ -59,15 +59,18 @@ class ProductInventarioTable {
         $columnManejaSegundaUnidad INTEGER DEFAULT 0,
         $columnUomSegundaUnidad TEXT DEFAULT ''
       );
-
-      -- ✅ ÍNDICES DE RENDIMIENTO
-      
-      -- Índice Único para Upsert (Reemplaza duplicados de stock)
-      CREATE UNIQUE INDEX idx_unique_inventory_stock ON $tableName ($columnProductId, $columnLotId, $columnLocationId);
-
-      -- Índices de Búsqueda Rápida
-      CREATE INDEX idx_inv_barcode ON $tableName ($columnBarcode);
-      CREATE INDEX idx_inv_product_id ON $tableName ($columnProductId);
-    ''';
+  ''';
   }
+
+  /// Índices de la tabla, una sentencia por elemento: en Android `execute`
+  /// corre solo la primera sentencia de un texto con varias, así que no
+  /// pueden ir dentro de [createTable].
+  static List<String> get indices => [
+        // No es UNIQUE: Odoo manda varios quants del mismo producto,
+        // lote y ubicación (uno por caja); la app no guarda el paquete.
+        'CREATE INDEX IF NOT EXISTS idx_inv_stock ON $tableName ($columnProductId, $columnLotId, $columnLocationId)',
+        // Índices de Búsqueda Rápida
+        'CREATE INDEX IF NOT EXISTS idx_inv_barcode ON $tableName ($columnBarcode)',
+        'CREATE INDEX IF NOT EXISTS idx_inv_product_id ON $tableName ($columnProductId)',
+      ];
 }

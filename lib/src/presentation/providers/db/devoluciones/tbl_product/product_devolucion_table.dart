@@ -52,14 +52,17 @@ class ProductDevolucionTable {
         $columnUomSegundaUnidad TEXT DEFAULT '',
         $columnQuantitySegundaUnidad REAL DEFAULT 0
       );
-
-      -- ✅ ÍNDICES DE RENDIMIENTO
-      
-      -- Índice Único para Upsert (Reemplaza duplicados Producto + Lote)
-      CREATE UNIQUE INDEX idx_unique_devolucion ON $tableName ($columnProductId, $columnLotId);
-
-      -- Índice para buscar rápido por código de barras
-      CREATE INDEX idx_dev_barcode ON $tableName ($columnBarcode);
-    ''';
+  ''';
   }
+
+  /// Índices de la tabla, una sentencia por elemento: en Android `execute`
+  /// corre solo la primera sentencia de un texto con varias, así que no
+  /// pueden ir dentro de [createTable].
+  static List<String> get indices => [
+        // ÍNDICES DE RENDIMIENTO
+        // Índice Único para Upsert (Reemplaza duplicados Producto + Lote)
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_devolucion ON $tableName ($columnProductId, $columnLotId)',
+        // Índice para buscar rápido por código de barras
+        'CREATE INDEX IF NOT EXISTS idx_dev_barcode ON $tableName ($columnBarcode)',
+      ];
 }

@@ -18,14 +18,17 @@ class BarcodesInventarioTable {
       $columnCantidad DECIMAL(10,2),
       $columnIsSynced INTEGER DEFAULT 0
     );
-
-    -- ✅ ÍNDICES DE RENDIMIENTO (Creados al inicio)
-    
-    -- Para que el Upsert funcione automático (Reemplaza lógica manual)
-    CREATE UNIQUE INDEX idx_unique_barcode_inv ON $tableName ($columnIdProduct, $columnBarcode);
-
-    -- Para que getBarcodesProduct sea instantáneo
-    CREATE INDEX idx_search_inv_product ON $tableName ($columnIdProduct);
   ''';
   }
+
+  /// Índices de la tabla, una sentencia por elemento: en Android `execute`
+  /// corre solo la primera sentencia de un texto con varias, así que no
+  /// pueden ir dentro de [createTable].
+  static List<String> get indices => [
+        // ÍNDICES DE RENDIMIENTO (Creados al inicio)
+        // Para que el Upsert funcione automático (Reemplaza lógica manual)
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_barcode_inv ON $tableName ($columnIdProduct, $columnBarcode)',
+        // Para que getBarcodesProduct sea instantáneo
+        'CREATE INDEX IF NOT EXISTS idx_search_inv_product ON $tableName ($columnIdProduct)',
+      ];
 }

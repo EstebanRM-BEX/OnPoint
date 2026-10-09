@@ -110,7 +110,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 67,
+      version: 68,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -310,6 +310,109 @@ class DataBaseSqlite {
         transportista TEXT
       )
     ''');
+
+    await crearIndices(db);
+  }
+
+  /// Tablas legacy con índices y, para las que tienen índice único, las
+  /// columnas que lo forman (para limpiar duplicados antes de crearlo).
+  @visibleForTesting
+  static List<({String tabla, List<String> indices, List<String> unico})>
+  get tablasConIndices => [
+    (
+      tabla: UbicacionesTable.tableName,
+      indices: UbicacionesTable.indices,
+      unico: const [],
+    ),
+    (
+      tabla: BarcodesInventarioTable.tableName,
+      indices: BarcodesInventarioTable.indices,
+      unico: const [
+        BarcodesInventarioTable.columnIdProduct,
+        BarcodesInventarioTable.columnBarcode,
+      ],
+    ),
+    (
+      tabla: ProductInventarioTable.tableName,
+      indices: ProductInventarioTable.indices,
+      unico: const [],
+    ),
+    (
+      tabla: BarcodesPackagesTable.tableName,
+      indices: BarcodesPackagesTable.indices,
+      unico: const [
+        BarcodesPackagesTable.columnBatchId,
+        BarcodesPackagesTable.columnIdMove,
+        BarcodesPackagesTable.columnIdProduct,
+        BarcodesPackagesTable.columnBarcode,
+        BarcodesPackagesTable.columnBarcodeType,
+      ],
+    ),
+    (
+      tabla: ProductDevolucionTable.tableName,
+      indices: ProductDevolucionTable.indices,
+      unico: const [
+        ProductDevolucionTable.columnProductId,
+        ProductDevolucionTable.columnLotId,
+      ],
+    ),
+    (
+      tabla: ExpedicionPedidosTable.tableName,
+      indices: ExpedicionPedidosTable.indices,
+      unico: const [],
+    ),
+    (
+      tabla: ExpedicionPaquetesTable.tableName,
+      indices: ExpedicionPaquetesTable.indices,
+      unico: const [],
+    ),
+    (
+      tabla: ExpedicionItemsTable.tableName,
+      indices: ExpedicionItemsTable.indices,
+      unico: const [],
+    ),
+    (
+      tabla: ExpedicionItemsSueltosTable.tableName,
+      indices: ExpedicionItemsSueltosTable.indices,
+      unico: const [],
+    ),
+    (
+      tabla: RecepcionSessionPoolTable.tableName,
+      indices: RecepcionSessionPoolTable.indices,
+      unico: const [],
+    ),
+  ];
+
+  /// Crea los índices de las tablas legacy, uno por `execute` (en Android un
+  /// `execute` con varias sentencias corre solo la primera: por eso hasta la
+  /// v67 ningún índice llegó a crearse). Con [limpiarDuplicados] antes de cada
+  /// índice único se borran las filas repetidas (queda la más reciente), que
+  /// se acumularon mientras el índice no existía. Un índice que falle no
+  /// impide crear los demás.
+  @visibleForTesting
+  static Future<void> crearIndices(
+    DatabaseExecutor db, {
+    bool limpiarDuplicados = false,
+  }) async {
+    for (final t in tablasConIndices) {
+      try {
+        if (limpiarDuplicados && t.unico.isNotEmpty) {
+          final cols = t.unico.join(', ');
+          final borradas = await db.rawDelete(
+            'DELETE FROM ${t.tabla} WHERE rowid NOT IN '
+            '(SELECT MAX(rowid) FROM ${t.tabla} GROUP BY $cols)',
+          );
+          if (borradas > 0) {
+            debugPrint('🧹 ${t.tabla}: $borradas filas duplicadas borradas');
+          }
+        }
+        for (final sql in t.indices) {
+          await db.execute(sql);
+        }
+      } catch (e) {
+        debugPrint('Error creando índices de ${t.tabla}: $e');
+      }
+    }
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
@@ -1273,6 +1376,12 @@ class DataBaseSqlite {
         debugPrint("Error actualizando a v67 (pending_phase): $e");
       }
     }
+
+    if (oldVersion < 68) {
+      // Los índices nunca se habían creado (ver crearIndices). Va al final:
+      // las tablas creadas en migraciones anteriores también los reciben.
+      await crearIndices(db, limpiarDuplicados: true);
+    }
   }
 
   //todo repositorios de las tablas
@@ -1961,10 +2070,16 @@ class DataBaseSqlite {
         'DROP TABLE IF EXISTS ${ProductInventarioTable.tableName}',
       );
       await txn.execute(ProductInventarioTable.createTable());
+      for (final sql in ProductInventarioTable.indices) {
+        await txn.execute(sql);
+      }
       await txn.execute(
         'DROP TABLE IF EXISTS ${BarcodesInventarioTable.tableName}',
       );
       await txn.execute(BarcodesInventarioTable.createTable());
+      for (final sql in BarcodesInventarioTable.indices) {
+        await txn.execute(sql);
+      }
     });
   }
 

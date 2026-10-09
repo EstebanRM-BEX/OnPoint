@@ -26,9 +26,14 @@ class ExpedicionPaquetesTable {
         $columnIsValidate INTEGER DEFAULT 0,
         $columnSyncPending INTEGER DEFAULT 0
       );
-
-      CREATE INDEX idx_expedicion_paquetes_expedition_id ON $tableName ($columnExpeditionId);
-      CREATE INDEX idx_expedicion_paquetes_packing_id ON $tableName ($columnPackingId);
-    ''';
+  ''';
   }
+
+  /// Índices de la tabla, una sentencia por elemento: en Android `execute`
+  /// corre solo la primera sentencia de un texto con varias, así que no
+  /// pueden ir dentro de [createTable].
+  static List<String> get indices => [
+        'CREATE INDEX IF NOT EXISTS idx_expedicion_paquetes_expedition_id ON $tableName ($columnExpeditionId)',
+        'CREATE INDEX IF NOT EXISTS idx_expedicion_paquetes_packing_id ON $tableName ($columnPackingId)',
+      ];
 }

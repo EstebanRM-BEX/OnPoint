@@ -55,8 +55,13 @@ class RecepcionSessionPoolTable {
         $columnQtyDone REAL,
         ${_extraColumnsDdl.join(',\n        ')}
       );
-
-      CREATE INDEX idx_recepcion_session_pool_session_id ON $tableName ($columnSessionId);
-    ''';
+  ''';
   }
+
+  /// Índices de la tabla, una sentencia por elemento: en Android `execute`
+  /// corre solo la primera sentencia de un texto con varias, así que no
+  /// pueden ir dentro de [createTable].
+  static List<String> get indices => [
+        'CREATE INDEX IF NOT EXISTS idx_recepcion_session_pool_session_id ON $tableName ($columnSessionId)',
+      ];
 }
