@@ -2,22 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/packing_pedido/presentation/bloc/list/packing_pedido_list_bloc.dart';
 
-/// Menú "⋮" de la lista: orden y filtro por propietario.
+/// Menú "⋮" de la lista: orden y filtros por responsable y propietario.
 class OrdenPedidosPackMenu extends StatelessWidget {
   final OrdenPedidosPack orden;
   final bool ascendente;
   final String? propietario;
+  final bool soloMios;
   final void Function(OrdenPedidosPack orden, bool ascendente) onOrden;
   final VoidCallback onFiltrarPropietario;
+  final VoidCallback onSoloMios;
 
   const OrdenPedidosPackMenu({
     super.key,
     required this.orden,
     required this.ascendente,
     required this.propietario,
+    required this.soloMios,
     required this.onOrden,
     required this.onFiltrarPropietario,
+    required this.onSoloMios,
   });
+
+  static const _valorPropietario = -1;
+  static const _valorSoloMios = -2;
 
   static const _opciones = <(String, OrdenPedidosPack, bool, String, IconData)>[
     (
@@ -65,7 +72,8 @@ class OrdenPedidosPackMenu extends StatelessWidget {
     return PopupMenuButton<int>(
       icon: const Icon(Icons.more_vert, color: white),
       onSelected: (i) {
-        if (i < 0) return onFiltrarPropietario();
+        if (i == _valorSoloMios) return onSoloMios();
+        if (i == _valorPropietario) return onFiltrarPropietario();
         final o = _opciones[i];
         onOrden(o.$2, o.$3);
       },
@@ -109,10 +117,42 @@ class OrdenPedidosPackMenu extends StatelessWidget {
         }
         items
           ..add(const PopupMenuDivider())
+          ..add(_titulo('RESPONSABLE'))
+          ..add(
+            PopupMenuItem<int>(
+              value: _valorSoloMios,
+              height: 40,
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.person_outline,
+                    size: 16,
+                    color: soloMios ? primaryColorApp : Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Mis pedidos',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: soloMios
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: soloMios ? primaryColorApp : black,
+                    ),
+                  ),
+                  if (soloMios) ...[
+                    const Spacer(),
+                    Icon(Icons.check, size: 15, color: primaryColorApp),
+                  ],
+                ],
+              ),
+            ),
+          )
+          ..add(const PopupMenuDivider())
           ..add(_titulo('PROPIETARIO'))
           ..add(
             PopupMenuItem<int>(
-              value: -1,
+              value: _valorPropietario,
               height: 40,
               child: Row(
                 children: [

@@ -11,6 +11,9 @@ class PackingPedidoListState extends Equatable {
 
   /// Filtro por propietario (null = todos).
   final String? propietario;
+
+  /// Solo los pedidos cuyo responsable es el usuario de la sesión.
+  final bool soloMios;
   final OrdenPedidosPack orden;
   final bool ascendente;
   final bool sincronizando;
@@ -27,6 +30,7 @@ class PackingPedidoListState extends Equatable {
     this.pedidos = const [],
     this.query = '',
     this.propietario,
+    this.soloMios = false,
     this.orden = OrdenPedidosPack.prioridad,
     this.ascendente = false,
     this.sincronizando = false,
@@ -41,7 +45,8 @@ class PackingPedidoListState extends Equatable {
     final q = normalizar(query);
     final base = pedidos
         .where((p) => !p.isTerminate)
-        .where((p) => propietario == null || p.propietario == propietario);
+        .where((p) => propietario == null || p.propietario == propietario)
+        .where((p) => !soloMios || p.responsableId == config.userId);
     final filtrados = q.isEmpty
         ? base.toList()
         : base.where((p) {
@@ -94,6 +99,7 @@ class PackingPedidoListState extends Equatable {
     String? query,
     String? propietario,
     bool limpiarPropietario = false,
+    bool? soloMios,
     OrdenPedidosPack? orden,
     bool? ascendente,
     bool? sincronizando,
@@ -109,6 +115,7 @@ class PackingPedidoListState extends Equatable {
       propietario: limpiarPropietario
           ? null
           : (propietario ?? this.propietario),
+      soloMios: soloMios ?? this.soloMios,
       orden: orden ?? this.orden,
       ascendente: ascendente ?? this.ascendente,
       sincronizando: sincronizando ?? this.sincronizando,
@@ -125,6 +132,7 @@ class PackingPedidoListState extends Equatable {
     pedidos,
     query,
     propietario,
+    soloMios,
     orden,
     ascendente,
     sincronizando,

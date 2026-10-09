@@ -57,6 +57,15 @@ class InicioPedidoPackRegistrado extends PackingPedidoListEvent {
   List<Object?> get props => [pedido];
 }
 
+/// Activa o quita el filtro "Mis pedidos" (responsable = usuario actual).
+class SoloMisPedidosPackCambiado extends PackingPedidoListEvent {
+  final bool soloMios;
+  const SoloMisPedidosPackCambiado(this.soloMios);
+
+  @override
+  List<Object?> get props => [soloMios];
+}
+
 class PropietarioPackFiltrado extends PackingPedidoListEvent {
   /// null = todos.
   final String? propietario;

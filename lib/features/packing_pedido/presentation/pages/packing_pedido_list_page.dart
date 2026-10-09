@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/core/interfaces/i_vibration_service.dart';
 import 'package:wms_app/features/expedition/presentation/widgets/expedicion_list_header_widget.dart';
@@ -17,6 +16,7 @@ import 'package:wms_app/features/packing_pedido/presentation/widgets/list/pedido
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/cluster_search_dock.dart';
 import 'package:wms_app/features/picking_cluster/presentation/widgets/cluster_palette.dart';
 import 'package:wms_app/injection_container.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_start_picking_widget.dart';
@@ -129,13 +129,11 @@ class _PackingPedidoListViewState extends State<_PackingPedidoListView> {
     _scanFocus.requestFocus();
   }
 
-  void _volver() {
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-    } else {
-      Navigator.of(context).pushReplacementNamed(AppRoutes.home);
-    }
-  }
+  /// Siempre a Home limpiando el stack: a esta lista se entra con
+  /// `pushReplacementNamed` desde Home, así que lo que haya debajo no es
+  /// Home sino lo que sobró de antes (p. ej. 'enterprice' del login), y un
+  /// `pop()` lo dejaba a la vista con la sesión todavía abierta.
+  void _volver() => goHome(context);
 
   @override
   Widget build(BuildContext context) {
@@ -188,10 +186,14 @@ class _PackingPedidoListViewState extends State<_PackingPedidoListView> {
                       orden: state.orden,
                       ascendente: state.ascendente,
                       propietario: state.propietario,
+                      soloMios: state.soloMios,
                       onOrden: (o, asc) => _bloc.add(
                         OrdenPedidosPackCambiado(o, ascendente: asc),
                       ),
                       onFiltrarPropietario: () => _filtrarPropietario(state),
+                      onSoloMios: () => _bloc.add(
+                        SoloMisPedidosPackCambiado(!state.soloMios),
+                      ),
                     ),
                   ),
                   ClusterSearchDock(

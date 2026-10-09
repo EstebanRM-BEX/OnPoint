@@ -48,6 +48,9 @@ class PackingPedidoListBloc
         ),
       ),
     );
+    on<SoloMisPedidosPackCambiado>(
+      (e, emit) => emit(state.copyWith(soloMios: e.soloMios)),
+    );
     on<ResponsablePackAsignado>(_onAsignar, transformer: droppable());
     on<InicioPedidoPackRegistrado>(_onInicio, transformer: droppable());
   }

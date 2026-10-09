@@ -53,8 +53,9 @@ class PackingEntorno {
     final c = (await configuracionCache.getConfiguration(
       userId,
     ))?.result?.result;
-    if (c == null) return const ConfigPackingUsuario();
+    if (c == null) return ConfigPackingUsuario(userId: userId);
     return ConfigPackingUsuario(
+      userId: userId,
       manualQuantityPack: c.manualQuantityPack ?? false,
       manualProductSelectionPack: c.manualProductSelectionPack ?? false,
       locationPackManual: c.locationPackManual ?? false,

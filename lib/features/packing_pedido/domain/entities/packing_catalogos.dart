@@ -57,6 +57,9 @@ class ConfigPackingUsuario extends Equatable {
   /// Ocultar el botón de validar pedido.
   final bool hideValidatePacking;
 
+  /// Usuario de la sesión (0 = desconocido): filtro "Mis pedidos".
+  final int userId;
+
   const ConfigPackingUsuario({
     this.manualQuantityPack = false,
     this.manualProductSelectionPack = false,
@@ -64,6 +67,7 @@ class ConfigPackingUsuario extends Equatable {
     this.scanProduct = true,
     this.showPhotoTemperature = false,
     this.hideValidatePacking = false,
+    this.userId = 0,
   });
 
   @override
@@ -74,6 +78,7 @@ class ConfigPackingUsuario extends Equatable {
     scanProduct,
     showPhotoTemperature,
     hideValidatePacking,
+    userId,
   ];
 }
 
