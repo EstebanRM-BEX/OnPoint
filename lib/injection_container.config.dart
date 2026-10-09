@@ -162,19 +162,20 @@ import 'features/inventario/data/repositories/inventario_repository_impl.dart'
     as _i426;
 import 'features/inventario/domain/repositories/inventario_repository.dart'
     as _i925;
+import 'features/inventario/domain/usecases/buscar_producto_por_codigo.dart'
+    as _i906;
+import 'features/inventario/domain/usecases/buscar_productos_inventario.dart'
+    as _i152;
 import 'features/inventario/domain/usecases/crear_lote_inventario.dart'
     as _i589;
 import 'features/inventario/domain/usecases/enviar_producto_inventario.dart'
     as _i46;
-import 'features/inventario/domain/usecases/get_all_barcodes_inventario.dart'
-    as _i377;
 import 'features/inventario/domain/usecases/get_barcodes_producto.dart'
     as _i125;
 import 'features/inventario/domain/usecases/get_configuracion_usuario_inventario.dart'
     as _i476;
 import 'features/inventario/domain/usecases/get_lotes_producto.dart' as _i704;
 import 'features/inventario/domain/usecases/get_productos_count.dart' as _i892;
-import 'features/inventario/domain/usecases/get_productos_local.dart' as _i627;
 import 'features/inventario/domain/usecases/get_ubicaciones_local.dart'
     as _i970;
 import 'features/inventario/domain/usecases/get_url_imagen_producto.dart'
@@ -1280,14 +1281,17 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i782.PackingConfirmBloc>(
       () => _i782.PackingConfirmBloc(gh<_i7.ValidarPedidoPackUseCase>()),
     );
+    gh.lazySingleton<_i906.BuscarProductoPorCodigo>(
+      () => _i906.BuscarProductoPorCodigo(gh<_i925.InventarioRepository>()),
+    );
+    gh.lazySingleton<_i152.BuscarProductosInventario>(
+      () => _i152.BuscarProductosInventario(gh<_i925.InventarioRepository>()),
+    );
     gh.lazySingleton<_i589.CrearLoteInventario>(
       () => _i589.CrearLoteInventario(gh<_i925.InventarioRepository>()),
     );
     gh.lazySingleton<_i46.EnviarProductoInventario>(
       () => _i46.EnviarProductoInventario(gh<_i925.InventarioRepository>()),
-    );
-    gh.lazySingleton<_i377.GetAllBarcodesInventario>(
-      () => _i377.GetAllBarcodesInventario(gh<_i925.InventarioRepository>()),
     );
     gh.lazySingleton<_i125.GetBarcodesProducto>(
       () => _i125.GetBarcodesProducto(gh<_i925.InventarioRepository>()),
@@ -1302,9 +1306,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i892.GetProductosCount>(
       () => _i892.GetProductosCount(gh<_i925.InventarioRepository>()),
-    );
-    gh.lazySingleton<_i627.GetProductosLocal>(
-      () => _i627.GetProductosLocal(gh<_i925.InventarioRepository>()),
     );
     gh.lazySingleton<_i970.GetUbicacionesLocal>(
       () => _i970.GetUbicacionesLocal(gh<_i925.InventarioRepository>()),
@@ -1384,19 +1385,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i997.LeerTemperaturaIaUseCase>(),
         gh<_i529.EnviarTemperaturaPackUseCase>(),
         gh<_i245.EnviarImagenNovedadPackUseCase>(),
-      ),
-    );
-    gh.factory<_i731.InventarioBloc>(
-      () => _i731.InventarioBloc(
-        getProductosLocal: gh<_i627.GetProductosLocal>(),
-        getUbicacionesLocal: gh<_i970.GetUbicacionesLocal>(),
-        getLotesProducto: gh<_i704.GetLotesProducto>(),
-        enviarProductoInventario: gh<_i46.EnviarProductoInventario>(),
-        crearLoteInventario: gh<_i589.CrearLoteInventario>(),
-        getBarcodesProducto: gh<_i125.GetBarcodesProducto>(),
-        getAllBarcodesInventario: gh<_i377.GetAllBarcodesInventario>(),
-        getConfiguracionUsuarioInventario:
-            gh<_i476.GetConfiguracionUsuarioInventario>(),
       ),
     );
     gh.lazySingleton<_i598.AsignarResponsableUseCase>(
@@ -1509,6 +1497,20 @@ extension GetItInjectableX on _i174.GetIt {
         deshacerPaqueteUseCase: gh<_i502.DeshacerPaqueteUseCase>(),
         deshacerItemSueltoUseCase: gh<_i888.DeshacerItemSueltoUseCase>(),
         syncCoordinator: gh<_i169.ExpeditionSyncCoordinator>(),
+      ),
+    );
+    gh.factory<_i731.InventarioBloc>(
+      () => _i731.InventarioBloc(
+        buscarProductos: gh<_i152.BuscarProductosInventario>(),
+        buscarProductoPorCodigoUseCase: gh<_i906.BuscarProductoPorCodigo>(),
+        getProductosCount: gh<_i892.GetProductosCount>(),
+        getUbicacionesLocal: gh<_i970.GetUbicacionesLocal>(),
+        getLotesProducto: gh<_i704.GetLotesProducto>(),
+        enviarProductoInventario: gh<_i46.EnviarProductoInventario>(),
+        crearLoteInventario: gh<_i589.CrearLoteInventario>(),
+        getBarcodesProducto: gh<_i125.GetBarcodesProducto>(),
+        getConfiguracionUsuarioInventario:
+            gh<_i476.GetConfiguracionUsuarioInventario>(),
       ),
     );
     gh.factory<_i475.PackagingTypeBloc>(

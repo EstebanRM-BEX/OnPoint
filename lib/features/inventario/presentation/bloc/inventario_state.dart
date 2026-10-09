@@ -98,11 +98,10 @@ class CleanFieldsState extends InventarioState {}
 
 // ─── Productos ────────────────────────────────────────────────────────────────
 
-class GetProductsLoadingBD extends InventarioState {}
-
+/// Hay catálogo local; [total] = filas de productos en SQLite.
 class GetProductsSuccessBD extends InventarioState {
-  final List<ProductoInventario> products;
-  GetProductsSuccessBD(this.products);
+  final int total;
+  GetProductsSuccessBD(this.total);
 }
 
 class GetProductsSuccessByLocation extends InventarioState {
@@ -156,16 +155,6 @@ class ChangeQuantitySeparateStateError extends InventarioState {
 class BarcodesProductLoadedState extends InventarioState {
   final List<BarcodeProducto> listOfBarcodes;
   BarcodesProductLoadedState({required this.listOfBarcodes});
-}
-
-class FetchAllBarcodesSuccess extends InventarioState {
-  final List<BarcodeProducto> allBarcodes;
-  FetchAllBarcodesSuccess(this.allBarcodes);
-}
-
-class FetchAllBarcodesFailure extends InventarioState {
-  final String message;
-  FetchAllBarcodesFailure(this.message);
 }
 
 // ─── Envío ────────────────────────────────────────────────────────────────────

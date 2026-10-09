@@ -6,7 +6,6 @@ import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/error/exceptions.dart';
 import 'package:wms_app/core/services/barcodes_inventario_cache_service.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
-import 'package:wms_app/core/services/productos_cache_service.dart';
 import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/injection_container.dart';
@@ -16,6 +15,8 @@ import 'package:wms_app/features/inventario/data/models/ubicacion_inventario_mod
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart'
+    as legacy;
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_barcode/barcodes_inventario_table.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/product_inventario_table.dart';
 
@@ -56,15 +57,26 @@ abstract class InventarioLocalDataSource {
 
   Future<void> guardarEmpresaCatalogo(String empresa);
 
-  Future<List<ProductoInventarioModel>> getProductos();
+  /// Página de productos (filas producto × lote × ubicación) que contienen
+  /// [query] en nombre, código, barcode, lote, ubicación o un barcode alterno.
+  /// Ordena primero los de [ubicacionId], luego los de ubicación 0 y luego el
+  /// resto. Consulta SQLite directo: no se carga el catálogo en memoria.
+  Future<List<ProductoInventarioModel>> buscarProductos({
+    required String query,
+    int? ubicacionId,
+    required int limit,
+    required int offset,
+  });
+
+  /// Producto cuyo barcode o código es [codigo]; si no hay, el dueño de un
+  /// barcode alterno o de empaque igual a [codigo]. Sin distinguir mayúsculas.
+  Future<ProductoInventarioModel?> buscarProductoPorCodigo(String codigo);
 
   Future<int> getProductosCount();
 
   Future<List<UbicacionInventarioModel>> getUbicaciones();
 
   Future<List<BarcodeProductoModel>> getBarcodesProducto(int productId);
-
-  Future<List<BarcodeProductoModel>> getAllBarcodes();
 
   Future<UserConfiguration> getConfiguracion();
 }
@@ -227,18 +239,100 @@ class InventarioLocalDataSourceImpl implements InventarioLocalDataSource {
       PrefUtils.setCatalogEnterprise(empresa);
 
   @override
-  Future<List<ProductoInventarioModel>> getProductos() async {
+  Future<List<ProductoInventarioModel>> buscarProductos({
+    required String query,
+    int? ubicacionId,
+    required int limit,
+    required int offset,
+  }) async {
     try {
-      // retain:false — el bloc de inventario guarda su propio modelo; no dejar
-      // además 72 mil `Product` retenidos en el caché compartido.
-      final legacyList = await getIt<ProductosCacheService>().getAll(
-        retain: false,
+      const p = ProductInventarioTable.tableName;
+      const b = BarcodesInventarioTable.tableName;
+      final q = query.trim();
+      final args = <Object?>[];
+      var where = '';
+      if (q.isNotEmpty) {
+        // LIKE de SQLite ya ignora mayúsculas (ASCII); se escapan % y _ para
+        // que se busquen literales.
+        final like =
+            '%${q.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_')}%';
+        where =
+            """
+          WHERE p.${ProductInventarioTable.columnProductName} LIKE ? ESCAPE '\\'
+             OR p.${ProductInventarioTable.columnProductCode} LIKE ? ESCAPE '\\'
+             OR p.${ProductInventarioTable.columnBarcode} LIKE ? ESCAPE '\\'
+             OR p.${ProductInventarioTable.columnLotName} LIKE ? ESCAPE '\\'
+             OR p.${ProductInventarioTable.columnLocationName} LIKE ? ESCAPE '\\'
+             OR EXISTS (
+               SELECT 1 FROM $b x
+               WHERE x.${BarcodesInventarioTable.columnIdProduct} =
+                     p.${ProductInventarioTable.columnProductId}
+                 AND x.${BarcodesInventarioTable.columnBarcode} LIKE ? ESCAPE '\\'
+             )""";
+        args.addAll(List.filled(6, like));
+      }
+      final db = await database.getDatabaseInstance();
+      final rows = await db.rawQuery(
+        """
+        SELECT p.* FROM $p p
+        $where
+        ORDER BY CASE
+          WHEN p.${ProductInventarioTable.columnLocationId} = ? THEN 0
+          WHEN p.${ProductInventarioTable.columnLocationId} = 0 THEN 1
+          ELSE 2
+        END, p.${ProductInventarioTable.columnId}
+        LIMIT ? OFFSET ?
+        """,
+        [...args, ubicacionId ?? -1, limit, offset],
       );
-      return legacyList
-          .map(ProductoInventarioModel.fromLegacy)
+      return rows
+          .map(
+            (r) =>
+                ProductoInventarioModel.fromLegacy(legacy.Product.fromMap(r)),
+          )
           .toList();
     } catch (e) {
-      throw CacheException('Error al obtener productos locales: $e');
+      throw CacheException('Error al buscar productos: $e');
+    }
+  }
+
+  @override
+  Future<ProductoInventarioModel?> buscarProductoPorCodigo(
+    String codigo,
+  ) async {
+    try {
+      const p = ProductInventarioTable.tableName;
+      const b = BarcodesInventarioTable.tableName;
+      final c = codigo.trim();
+      if (c.isEmpty) return null;
+      final db = await database.getDatabaseInstance();
+      var rows = await db.rawQuery(
+        """
+        SELECT * FROM $p
+        WHERE ${ProductInventarioTable.columnBarcode} = ? COLLATE NOCASE
+           OR ${ProductInventarioTable.columnProductCode} = ? COLLATE NOCASE
+        LIMIT 1
+        """,
+        [c, c],
+      );
+      if (rows.isEmpty) {
+        rows = await db.rawQuery(
+          """
+          SELECT p.* FROM $b x
+          JOIN $p p ON p.${ProductInventarioTable.columnProductId} =
+                       x.${BarcodesInventarioTable.columnIdProduct}
+          WHERE x.${BarcodesInventarioTable.columnBarcode} = ? COLLATE NOCASE
+          LIMIT 1
+          """,
+          [c],
+        );
+      }
+      if (rows.isEmpty) return null;
+      return ProductoInventarioModel.fromLegacy(
+        legacy.Product.fromMap(rows.first),
+      );
+    } catch (e) {
+      throw CacheException('Error al buscar el producto: $e');
     }
   }
 
@@ -255,37 +349,20 @@ class InventarioLocalDataSourceImpl implements InventarioLocalDataSource {
   Future<List<UbicacionInventarioModel>> getUbicaciones() async {
     try {
       final legacyList = await getIt<UbicacionesCacheService>().getAll();
-      return legacyList
-          .map(UbicacionInventarioModel.fromLegacy)
-          .toList();
+      return legacyList.map(UbicacionInventarioModel.fromLegacy).toList();
     } catch (e) {
       throw CacheException('Error al obtener ubicaciones: $e');
     }
   }
 
   @override
-  Future<List<BarcodeProductoModel>> getBarcodesProducto(
-      int productId) async {
+  Future<List<BarcodeProductoModel>> getBarcodesProducto(int productId) async {
     try {
       final legacyList = await database.barcodesInventarioRepository
           .getBarcodesProduct(productId);
-      return legacyList
-          .map(BarcodeProductoModel.fromLegacy)
-          .toList();
+      return legacyList.map(BarcodeProductoModel.fromLegacy).toList();
     } catch (e) {
       throw CacheException('Error al obtener barcodes del producto: $e');
-    }
-  }
-
-  @override
-  Future<List<BarcodeProductoModel>> getAllBarcodes() async {
-    try {
-      final legacyList = await getIt<BarcodesInventarioCacheService>().getAll();
-      return legacyList
-          .map(BarcodeProductoModel.fromLegacy)
-          .toList();
-    } catch (e) {
-      throw CacheException('Error al obtener todos los barcodes: $e');
     }
   }
 
@@ -293,11 +370,13 @@ class InventarioLocalDataSourceImpl implements InventarioLocalDataSource {
   Future<UserConfiguration> getConfiguracion() async {
     try {
       final userId = await PrefUtils.getUserId();
-      final config =
-          await getIt<ConfiguracionCacheService>().getConfiguration(userId);
+      final config = await getIt<ConfiguracionCacheService>().getConfiguration(
+        userId,
+      );
       if (config == null) {
         throw const CacheException(
-            'No se encontraron configuraciones del usuario');
+          'No se encontraron configuraciones del usuario',
+        );
       }
       return config;
     } on CacheException {

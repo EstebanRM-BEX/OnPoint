@@ -12,11 +12,12 @@ import 'package:wms_app/features/inventario/domain/entities/producto_inventario.
 import 'package:wms_app/features/inventario/domain/entities/ubicacion_inventario.dart';
 import 'package:wms_app/features/inventario/domain/usecases/crear_lote_inventario.dart';
 import 'package:wms_app/features/inventario/domain/usecases/enviar_producto_inventario.dart';
-import 'package:wms_app/features/inventario/domain/usecases/get_all_barcodes_inventario.dart';
+import 'package:wms_app/features/inventario/domain/usecases/buscar_producto_por_codigo.dart';
+import 'package:wms_app/features/inventario/domain/usecases/buscar_productos_inventario.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_barcodes_producto.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_configuracion_usuario_inventario.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_lotes_producto.dart';
-import 'package:wms_app/features/inventario/domain/usecases/get_productos_local.dart';
+import 'package:wms_app/features/inventario/domain/usecases/get_productos_count.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_ubicaciones_local.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/injection_container.dart';
@@ -37,9 +38,8 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
 
   /// Entrada al módulo desde el Home: retoma el borrador si existe (o crea uno)
   /// y marca que las listas se recarguen de SQLite. La recarga no arranca acá:
-  /// leer ~72 mil productos bloquea el hilo de UI y dejaba la pantalla a medio
-  /// pintar durante la transición; InventarioScope la dispara cuando la
-  /// pantalla ya terminó de aparecer ([reloadIfPending]).
+  /// InventarioScope la dispara cuando la pantalla ya terminó de aparecer
+  /// ([reloadIfPending]).
   static InventarioBloc open() {
     final bloc = resumeOrCreate();
     bloc._reloadPending = true;
@@ -61,11 +61,12 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
     reload();
   }
 
-  /// Carga ubicaciones, productos, barcodes y configuración del módulo.
+  /// Carga ubicaciones y configuración del módulo y verifica que haya
+  /// catálogo. Los productos no se cargan: se consultan en SQLite al buscar
+  /// o escanear.
   void reload() {
     add(GetLocationsEvent());
     add(GetProductsForDB());
-    add(FetchAllBarcodesInventarioEvent());
     add(LoadConfigurationsUserInventory());
   }
 
@@ -96,13 +97,14 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
 
   // ─── Usecases ────────────────────────────────────────────────────────────────
 
-  final GetProductosLocal getProductosLocal;
+  final BuscarProductosInventario buscarProductos;
+  final BuscarProductoPorCodigo buscarProductoPorCodigoUseCase;
+  final GetProductosCount getProductosCount;
   final GetUbicacionesLocal getUbicacionesLocal;
   final GetLotesProducto getLotesProducto;
   final EnviarProductoInventario enviarProductoInventario;
   final CrearLoteInventario crearLoteInventario;
   final GetBarcodesProducto getBarcodesProducto;
-  final GetAllBarcodesInventario getAllBarcodesInventario;
   final GetConfiguracionUsuarioInventario getConfiguracionUsuarioInventario;
 
   // ─── TextEditingControllers ───────────────────────────────────────────────────
@@ -131,12 +133,22 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
 
   List<UbicacionInventario> ubicaciones = [];
   List<UbicacionInventario> ubicacionesFilters = [];
-  List<ProductoInventario> productos = [];
+
+  /// Resultados cargados del buscador de productos (páginas de
+  /// [paginaProductos]); el catálogo completo nunca está en memoria.
   List<ProductoInventario> productosFilters = [];
+
+  /// Hay más resultados en SQLite para la búsqueda actual.
+  bool hayMasProductos = false;
+
+  /// El catálogo local tiene al menos un producto.
+  bool hayProductos = false;
+
+  static const int paginaProductos = 50;
+  String _queryProductos = '';
   List<LoteProductoInventario> listLotesProduct = [];
   List<LoteProductoInventario> listLotesProductFilters = [];
   List<BarcodeProducto> barcodeInventario = [];
-  List<BarcodeProducto> allBarcodeInventario = [];
 
   // ─── Selecciones actuales ─────────────────────────────────────────────────────
 
@@ -164,23 +176,27 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
   String? selectedAlmacen;
   int quantitySelected = 1;
 
-
   // ─── Constructor ──────────────────────────────────────────────────────────────
 
   InventarioBloc({
-    required this.getProductosLocal,
+    required this.buscarProductos,
+    required this.buscarProductoPorCodigoUseCase,
+    required this.getProductosCount,
     required this.getUbicacionesLocal,
     required this.getLotesProducto,
     required this.enviarProductoInventario,
     required this.crearLoteInventario,
     required this.getBarcodesProducto,
-    required this.getAllBarcodesInventario,
     required this.getConfiguracionUsuarioInventario,
   }) : super(InventarioInitial()) {
     on<GetLocationsEvent>(_onLoadLocations, transformer: restartable());
     on<SearchLocationEvent>(_onSearchLocationEvent, transformer: droppable());
     on<SearchLotevent>(_onSearchLoteEvent, transformer: droppable());
-    on<SearchProductEvent>(_onSearchProductEvent, transformer: droppable());
+    on<SearchProductEvent>(_onSearchProductEvent, transformer: restartable());
+    on<CargarMasProductosEvent>(
+      _onCargarMasProductos,
+      transformer: droppable(),
+    );
     on<ValidateFieldsEvent>(_onValidateFieldsEvent);
     on<ChangeLocationIsOkEvent>(_onChangeLocationIsOkEvent);
     on<ChangeProductIsOkEvent>(_onChangeProductIsOkEvent);
@@ -201,10 +217,6 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
       transformer: droppable(),
     );
     on<SetUbicacionFijaEvent>(_onSetUbicacionFijaEvent);
-    on<FetchAllBarcodesInventarioEvent>(
-      _onFetchAllBarcodesInventarioEvent,
-      transformer: droppable(),
-    );
   }
 
   // ─── Limpieza de campos (typo preservado del legacy) ─────────────────────────
@@ -292,39 +304,51 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
     SearchProductEvent event,
     Emitter<InventarioState> emit,
   ) async {
-    emit(SearchLoading());
-    final query = event.query.trim().toLowerCase();
-
-    if (query.isEmpty) {
-      productosFilters = List.from(productos);
+    final query = event.query.trim();
+    _queryProductos = query;
+    final result = await buscarProductos(
+      BuscarProductosParams(
+        query: query,
+        ubicacionId: currentUbication?.id,
+        limit: paginaProductos,
+      ),
+    );
+    result.fold((failure) => emit(SearchFailure(failure.message)), (pagina) {
+      productosFilters = pagina;
+      hayMasProductos = pagina.length == paginaProductos;
       emit(SearchProductSuccess(productosFilters));
-      return;
-    }
+    });
+  }
 
-    // Normaliza cualquier campo a texto en minúsculas para que la coincidencia
-    // sea exacta también con valores alfanuméricos (referencias, barcodes).
-    String norm(dynamic v) => (v ?? '').toString().toLowerCase();
+  Future<void> _onCargarMasProductos(
+    CargarMasProductosEvent event,
+    Emitter<InventarioState> emit,
+  ) async {
+    if (!hayMasProductos) return;
+    final query = _queryProductos;
+    final offset = productosFilters.length;
+    final result = await buscarProductos(
+      BuscarProductosParams(
+        query: query,
+        ubicacionId: currentUbication?.id,
+        limit: paginaProductos,
+        offset: offset,
+      ),
+    );
+    // Si mientras tanto cambió la búsqueda, esta página ya no corresponde.
+    if (query != _queryProductos || offset != productosFilters.length) return;
+    result.fold((failure) => emit(SearchFailure(failure.message)), (pagina) {
+      productosFilters = [...productosFilters, ...pagina];
+      hayMasProductos = pagina.length == paginaProductos;
+      emit(SearchProductSuccess(productosFilters));
+    });
+  }
 
-    final filtrados = productos.where((product) {
-      final campos = <String>[
-        norm(product.name), // nombre
-        norm(product.code), // referencia / código de producto
-        norm(product.barcode), // barcode principal
-        norm(product.lotName), // lote
-        norm(product.locationName), // ubicación
-      ];
-      // Barcodes alternos y de empaque (pueden ser alfanuméricos).
-      for (final b in (product.otherBarcodes ?? const [])) {
-        campos.add(norm(b.barcode));
-      }
-      for (final b in (product.productPacking ?? const [])) {
-        campos.add(norm(b.barcode));
-      }
-      return campos.any((campo) => campo.contains(query));
-    }).toList();
-
-    productosFilters = filtrados;
-    emit(SearchProductSuccess(filtrados));
+  /// Producto escaneado (barcode, código o barcode alterno); null si no
+  /// existe en el catálogo local.
+  Future<ProductoInventario?> buscarProductoPorCodigo(String codigo) async {
+    final result = await buscarProductoPorCodigoUseCase(codigo);
+    return result.fold((_) => null, (producto) => producto);
   }
 
   Future<void> _onValidateFieldsEvent(
@@ -397,21 +421,23 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
     emit(ChangeQuantityIsOkState(event.isQuantity));
   }
 
+  /// Verifica que haya catálogo local (sin cargarlo) y refresca la búsqueda
+  /// abierta, por si el catálogo cambió (p. ej. tras descargarlo).
   Future<void> _onGetProductsBD(
     GetProductsForDB event,
     Emitter<InventarioState> emit,
   ) async {
-    emit(GetProductsLoadingBD());
-    final result = await getProductosLocal(NoParams());
+    final result = await getProductosCount(NoParams());
     result.fold(
       (failure) {
+        hayProductos = false;
         emit(GetProductsFailureInventory(failure.message));
       },
-      (productList) {
-        productos = productList;
-        productosFilters = productList;
-        if (productList.isNotEmpty) {
-          emit(GetProductsSuccessBD(productList));
+      (total) {
+        hayProductos = total > 0;
+        if (hayProductos) {
+          emit(GetProductsSuccessBD(total));
+          add(SearchProductEvent(_queryProductos));
         } else {
           emit(GetProductsFailureInventory('No se encontraron productos'));
         }
@@ -491,7 +517,9 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
     Emitter<InventarioState> emit,
   ) async {
     try {
-      quantitySelected = quantitySelected + (num.tryParse(event.quantity.toString()) ?? 0).toInt();
+      quantitySelected =
+          quantitySelected +
+          (num.tryParse(event.quantity.toString()) ?? 0).toInt();
       emit(ChangeQuantitySeparateStateSuccess(quantitySelected));
     } catch (e, s) {
       emit(ChangeQuantitySeparateStateError('Error al aumentar cantidad'));
@@ -636,23 +664,6 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
       debugPrint("❌ Error en SetUbicacionFijaEvent: $e, $s");
       emit(ChangeLocationIsOkState(false));
     }
-  }
-
-  Future<void> _onFetchAllBarcodesInventarioEvent(
-    FetchAllBarcodesInventarioEvent event,
-    Emitter<InventarioState> emit,
-  ) async {
-    final result = await getAllBarcodesInventario(NoParams());
-    result.fold((failure) => emit(FetchAllBarcodesFailure(failure.message)), (
-      barcodes,
-    ) {
-      allBarcodeInventario = barcodes;
-      if (barcodes.isNotEmpty) {
-        emit(FetchAllBarcodesSuccess(barcodes));
-      } else {
-        emit(FetchAllBarcodesFailure('No se encontraron códigos de barras'));
-      }
-    });
   }
 
   // ─── Dispose ──────────────────────────────────────────────────────────────────

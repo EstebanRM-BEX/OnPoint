@@ -207,58 +207,32 @@ class _InventarioScreenState extends State<InventarioScreen>
     }
   }
 
-  void validateProduct(String value) {
+  /// Busca el producto escaneado en SQLite (barcode, código o barcode
+  /// alterno); el catálogo no está en memoria.
+  Future<void> validateProduct(String value) async {
     final bloc = context.read<InventarioBloc>();
 
-    final scan = value.trim().toLowerCase();
+    final scan = value.trim();
     bloc.controllerProduct.clear();
     debugPrint('🔎 Scan product: $scan');
 
-    final matchedProduct = bloc.productos.firstWhere(
-      (p) => p.barcode?.toLowerCase() == scan || p.code?.toLowerCase() == scan,
-      orElse: () => const ProductoInventario(),
-    );
+    final producto = await bloc.buscarProductoPorCodigo(scan);
+    if (!mounted) return;
 
-    if (matchedProduct.barcode != null) {
-      debugPrint('✅ Producto encontrado directo: ${matchedProduct.name}');
+    if (producto != null) {
+      debugPrint('✅ Producto encontrado: ${producto.name}');
       bloc
         ..add(ValidateFieldsEvent(field: "product", isOk: true))
-        ..add(ChangeProductIsOkEvent(matchedProduct));
+        ..add(ChangeProductIsOkEvent(producto));
       Future.microtask(() => focusNode2.requestFocus());
       return;
     }
 
-    final matchedBarcode = bloc.allBarcodeInventario.firstWhere(
-      (b) => b.barcode?.toLowerCase() == scan,
-      orElse: () => const BarcodeProducto(),
-    );
-
-    if (matchedBarcode.barcode == null) {
-      _audioService.playErrorSound();
-      _vibrationService.vibrate();
-      debugPrint('❌ Producto no encontrado en barcodes');
-      bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
-      Future.microtask(() => focusNode2.requestFocus());
-      return;
-    }
-
-    final matchedById = bloc.productos.firstWhere(
-      (p) => p.productId == matchedBarcode.idProduct,
-      orElse: () => const ProductoInventario(),
-    );
-
-    if (matchedById.productId != null) {
-      debugPrint('✅ Producto encontrado por ID: ${matchedById.name}');
-      bloc
-        ..add(ValidateFieldsEvent(field: "product", isOk: true))
-        ..add(ChangeProductIsOkEvent(matchedById));
-    } else {
-      debugPrint('❌ Producto no encontrado por ID');
-      _audioService.playErrorSound();
-      _vibrationService.vibrate();
-      bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
-      Future.microtask(() => focusNode2.requestFocus());
-    }
+    debugPrint('❌ Producto no encontrado');
+    _audioService.playErrorSound();
+    _vibrationService.vibrate();
+    bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
+    Future.microtask(() => focusNode2.requestFocus());
   }
 
   void validateQuantity(String value) {
@@ -430,25 +404,7 @@ class _InventarioScreenState extends State<InventarioScreen>
           SessionExpiredHelper.showDialog();
         }
 
-        if (state is GetProductsLoadingBD) {
-          showDialog(
-            context: context,
-            builder: (context) {
-              return const DialogLoading(message: "Cargando informacion...");
-            },
-          );
-        }
-
-        if (state is GetProductsSuccessBD) {
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context);
-          }
-        }
-
         if (state is GetProductsFailureInventory) {
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context);
-          }
           showScrollableErrorDialog(state.message);
         }
 
@@ -738,9 +694,7 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                       !bloc.productIsOk &&
                                                       !bloc.quantityIsOk)
                                                   ? () {
-                                                      if (bloc
-                                                          .productos
-                                                          .isEmpty) {
+                                                      if (!bloc.hayProductos) {
                                                         Get.defaultDialog(
                                                           title:
                                                               '360 Software Informa',
@@ -787,10 +741,15 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                         );
                                                       } else {
                                                         Navigator.pushReplacementNamed(
- context,
- 'search-product',
- arguments: [context.read<InventarioBloc>()],
- );
+                                                          context,
+                                                          'search-product',
+                                                          arguments: [
+                                                            context
+                                                                .read<
+                                                                  InventarioBloc
+                                                                >(),
+                                                          ],
+                                                        );
                                                       }
                                                     }
                                                   : null,
@@ -830,11 +789,8 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                   bloc.controllerProduct,
                                               focusNode: focusNode2,
                                               onBarcodeScanned:
-                                                  (value, context) {
-                                                    return validateProduct(
-                                                      value,
-                                                    );
-                                                  },
+                                                  (value, _) =>
+                                                      validateProduct(value),
                                             ),
                                             Align(
                                               alignment: Alignment.centerLeft,
@@ -1062,7 +1018,10 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                     Navigator.pushReplacementNamed(
                                                       context,
                                                       'new-lote-inventario',
-                                                      arguments: [bloc.currentProduct, bloc],
+                                                      arguments: [
+                                                        bloc.currentProduct,
+                                                        bloc,
+                                                      ],
                                                     );
                                                   },
                                                   icon: Icon(

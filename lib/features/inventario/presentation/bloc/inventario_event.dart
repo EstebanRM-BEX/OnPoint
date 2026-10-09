@@ -45,7 +45,11 @@ class ChangeIsOkQuantity extends InventarioEvent {
   ChangeIsOkQuantity(this.isQuantity);
 }
 
+/// Verifica que haya catálogo local (no lo carga en memoria).
 class GetProductsForDB extends InventarioEvent {}
+
+/// Siguiente página de resultados del buscador de productos.
+class CargarMasProductosEvent extends InventarioEvent {}
 
 // Typo preservado del legacy
 class CleanFieldsEent extends InventarioEvent {}
@@ -89,7 +93,11 @@ class CreateLoteProduct extends InventarioEvent {
   final String nameLote;
   final String fechaCaducidad;
   final bool priorityExpiration;
-  CreateLoteProduct(this.nameLote, this.fechaCaducidad, this.priorityExpiration);
+  CreateLoteProduct(
+    this.nameLote,
+    this.fechaCaducidad,
+    this.priorityExpiration,
+  );
 }
 
 class LoadConfigurationsUserInventory extends InventarioEvent {}
@@ -103,6 +111,3 @@ class SetUbicacionFijaEvent extends InventarioEvent {
   final bool ubicacionFija;
   SetUbicacionFijaEvent(this.ubicacionFija);
 }
-
-class FetchAllBarcodesInventarioEvent extends InventarioEvent {}
-

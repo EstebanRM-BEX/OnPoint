@@ -109,13 +109,21 @@ class InventarioRepositoryImpl implements InventarioRepository {
           resultado = 'sin_productos';
           return const Left(ServerFailure('El servidor no devolvió productos'));
         }
-        onProgress?.call('Guardando $total productos en base de datos...', 0, total);
+        onProgress?.call(
+          'Guardando $total productos en base de datos...',
+          0,
+          total,
+        );
         await localDataSource.reemplazarCatalogo(
           syncResult.productos,
           syncResult.barcodes,
         );
       } else {
-        onProgress?.call('Actualizando $total productos en base de datos...', 0, total);
+        onProgress?.call(
+          'Actualizando $total productos en base de datos...',
+          0,
+          total,
+        );
         await localDataSource.aplicarCambiosCatalogo(
           productos: syncResult.productos,
           barcodes: syncResult.barcodes,
@@ -160,14 +168,37 @@ class InventarioRepositoryImpl implements InventarioRepository {
   // ─── Local ──────────────────────────────────────────────────────────────────
 
   @override
-  Future<Either<Failure, List<ProductoInventario>>> getProductosLocal() async {
+  Future<Either<Failure, List<ProductoInventario>>> buscarProductos({
+    required String query,
+    int? ubicacionId,
+    required int limit,
+    required int offset,
+  }) async {
     try {
-      final productos = await localDataSource.getProductos();
+      final productos = await localDataSource.buscarProductos(
+        query: query,
+        ubicacionId: ubicacionId,
+        limit: limit,
+        offset: offset,
+      );
       return Right(productos.cast<ProductoInventario>());
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
-      return Left(CacheFailure('Error al leer productos locales: $e'));
+      return Left(CacheFailure('Error al buscar productos: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ProductoInventario?>> buscarProductoPorCodigo(
+    String codigo,
+  ) async {
+    try {
+      return Right(await localDataSource.buscarProductoPorCodigo(codigo));
+    } on CacheException catch (e) {
+      return Left(CacheFailure(e.message));
+    } catch (e) {
+      return Left(CacheFailure('Error al buscar el producto: $e'));
     }
   }
 
@@ -185,7 +216,7 @@ class InventarioRepositoryImpl implements InventarioRepository {
 
   @override
   Future<Either<Failure, List<UbicacionInventario>>>
-      getUbicacionesLocal() async {
+  getUbicacionesLocal() async {
     try {
       final ubicaciones = await localDataSource.getUbicaciones();
       return Right(ubicaciones.cast<UbicacionInventario>());
@@ -198,7 +229,8 @@ class InventarioRepositoryImpl implements InventarioRepository {
 
   @override
   Future<Either<Failure, List<BarcodeProducto>>> getBarcodesProducto(
-      int productId) async {
+    int productId,
+  ) async {
     try {
       final barcodes = await localDataSource.getBarcodesProducto(productId);
       return Right(barcodes.cast<BarcodeProducto>());
@@ -210,21 +242,8 @@ class InventarioRepositoryImpl implements InventarioRepository {
   }
 
   @override
-  Future<Either<Failure, List<BarcodeProducto>>>
-      getAllBarcodesInventario() async {
-    try {
-      final barcodes = await localDataSource.getAllBarcodes();
-      return Right(barcodes.cast<BarcodeProducto>());
-    } on CacheException catch (e) {
-      return Left(CacheFailure(e.message));
-    } catch (e) {
-      return Left(CacheFailure('Error al leer todos los barcodes: $e'));
-    }
-  }
-
-  @override
   Future<Either<Failure, UserConfiguration>>
-      getConfiguracionUsuarioInventario() async {
+  getConfiguracionUsuarioInventario() async {
     try {
       final config = await localDataSource.getConfiguracion();
       return Right(config);
@@ -239,7 +258,8 @@ class InventarioRepositoryImpl implements InventarioRepository {
 
   @override
   Future<Either<Failure, List<LoteProductoInventario>>> getLotesProducto(
-      int productId) async {
+    int productId,
+  ) async {
     if (!await networkInfo.isConnected) {
       return const Left(NetworkFailure('No hay conexión a Internet'));
     }

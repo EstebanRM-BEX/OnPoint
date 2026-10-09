@@ -16,14 +16,27 @@ abstract class InventarioRepository {
     void Function(String phase, int processed, int total)? onProgress,
   });
 
-  Future<Either<Failure, List<ProductoInventario>>> getProductosLocal();
+  /// Página de productos que coinciden con [query] (ver
+  /// `InventarioLocalDataSource.buscarProductos`).
+  Future<Either<Failure, List<ProductoInventario>>> buscarProductos({
+    required String query,
+    int? ubicacionId,
+    required int limit,
+    required int offset,
+  });
+
+  /// Producto por barcode, código o barcode alterno; null si no existe.
+  Future<Either<Failure, ProductoInventario?>> buscarProductoPorCodigo(
+    String codigo,
+  );
 
   Future<Either<Failure, int>> getProductosCount();
 
   Future<Either<Failure, List<UbicacionInventario>>> getUbicacionesLocal();
 
   Future<Either<Failure, List<LoteProductoInventario>>> getLotesProducto(
-      int productId);
+    int productId,
+  );
 
   Future<Either<Failure, ResultadoEnvioInventario>> enviarProductoInventario({
     required dynamic locationId,
@@ -40,11 +53,11 @@ abstract class InventarioRepository {
   });
 
   Future<Either<Failure, List<BarcodeProducto>>> getBarcodesProducto(
-      int productId);
+    int productId,
+  );
 
-  Future<Either<Failure, List<BarcodeProducto>>> getAllBarcodesInventario();
-
-  Future<Either<Failure, UserConfiguration>> getConfiguracionUsuarioInventario();
+  Future<Either<Failure, UserConfiguration>>
+  getConfiguracionUsuarioInventario();
 
   /// URL de la imagen de un producto (usada también por otros módulos:
   /// picking, recepción, conteo, packing, transferencias e info rápida).
