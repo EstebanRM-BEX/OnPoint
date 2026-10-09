@@ -29,4 +29,8 @@ class PrefKeys {
   // (próximos `since`/`scope` de product_quants).
   static const String catalogLastSync = "catalogLastSync";
   static const String catalogScope = "catalogScope";
+  // Lo mismo para las ubicaciones (/api/ubicaciones), con su propia marca.
+  static const String ubicacionesEnterprise = "ubicacionesEnterprise";
+  static const String ubicacionesLastSync = "ubicacionesLastSync";
+  static const String ubicacionesScope = "ubicacionesScope";
 }

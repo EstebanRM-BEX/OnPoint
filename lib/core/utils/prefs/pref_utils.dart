@@ -220,6 +220,41 @@ class PrefUtils {
     await prefs.remove(PrefKeys.catalogScope);
   }
 
+  /// Empresa (URL + BD) de las ubicaciones guardadas en SQLite; sobrevive al
+  /// cierre de sesión, igual que [getCatalogEnterprise].
+  static Future<String?> getUbicacionesEnterprise() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(PrefKeys.ubicacionesEnterprise);
+  }
+
+  static Future<void> setUbicacionesEnterprise(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(PrefKeys.ubicacionesEnterprise, value);
+  }
+
+  /// `server_time`/`scope` de la última sync exitosa de ubicaciones.
+  static Future<({String since, String scope})?> getUbicacionesSync() async {
+    final prefs = await SharedPreferences.getInstance();
+    final since = prefs.getString(PrefKeys.ubicacionesLastSync);
+    final scope = prefs.getString(PrefKeys.ubicacionesScope);
+    if (since == null || since.isEmpty || scope == null || scope.isEmpty) {
+      return null;
+    }
+    return (since: since, scope: scope);
+  }
+
+  static Future<void> setUbicacionesSync(String since, String scope) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(PrefKeys.ubicacionesLastSync, since);
+    await prefs.setString(PrefKeys.ubicacionesScope, scope);
+  }
+
+  static Future<void> clearUbicacionesSync() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(PrefKeys.ubicacionesLastSync);
+    await prefs.remove(PrefKeys.ubicacionesScope);
+  }
+
   static Future<void> setNetworkOverlayVisible(bool visible) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(PrefKeys.networkOverlayVisible, visible);

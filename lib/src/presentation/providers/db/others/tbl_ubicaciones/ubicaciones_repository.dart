@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
@@ -63,21 +65,7 @@ class UbicacionesRepository {
 
             batch.insert(
               UbicacionesTable.tableName,
-              {
-                UbicacionesTable.columnId: item.id,
-                UbicacionesTable.columnName: item.name,
-                UbicacionesTable.columnBarcode: item.barcode,
-                UbicacionesTable.columnLocationId: item.locationId,
-                UbicacionesTable.columnLocationName: item.locationName,
-                UbicacionesTable.columnIdWarehouse: item.idWarehouse,
-                UbicacionesTable.columnWarehouseName: item.warehouseName,
-                // is_a_dock_alter
-                UbicacionesTable.columnIsADock:
-                    item.isADockAlter == true ? 1 : 0,
-
-                // ✅ IMPORTANTE: Marcamos este registro como actualizado
-                UbicacionesTable.columnIsSynced: 1,
-              },
+              _fila(item),
               // ✅ LA CLAVE: REPLACE actúa como "Insertar si no existe, Actualizar si existe"
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
@@ -101,9 +89,88 @@ class UbicacionesRepository {
       });
     } catch (e, s) {
       debugPrint("❌ Error crítico en syncUbicaciones: $e => $s");
-      // Opcional: Relanzar error si necesitas manejarlo en la UI
-      // throw e;
+      // Se relanza: el sync incremental no debe guardar su marca
+      // (since/scope) si la escritura falló.
+      rethrow;
     }
+  }
+
+  /// Fila de [item] marcada como sincronizada.
+  Map<String, Object?> _fila(ResultUbicaciones item) => {
+        UbicacionesTable.columnId: item.id,
+        UbicacionesTable.columnName: item.name,
+        UbicacionesTable.columnBarcode: item.barcode,
+        UbicacionesTable.columnLocationId: item.locationId,
+        UbicacionesTable.columnLocationName: item.locationName,
+        UbicacionesTable.columnIdWarehouse: item.idWarehouse,
+        UbicacionesTable.columnWarehouseName: item.warehouseName,
+        // is_a_dock_alter
+        UbicacionesTable.columnIsADock: item.isADockAlter == true ? 1 : 0,
+        // ✅ IMPORTANTE: Marcamos este registro como actualizado
+        UbicacionesTable.columnIsSynced: 1,
+      };
+
+  /// SQLite admite 999 variables por sentencia en las versiones viejas.
+  static const int _tandaIds = 500;
+
+  /// Sync INCREMENTAL, en una transacción: reemplaza las ubicaciones de
+  /// [cambios] (las que llegan sin barcode quedan borradas, como en el sync
+  /// completo) y, si viene [activos], borra las que no estén en esa lista
+  /// (archivadas o eliminadas).
+  ///
+  /// [db] solo para tests (por defecto, la base de la app).
+  Future<void> aplicarCambios(
+    List<ResultUbicaciones> cambios,
+    List<int>? activos, {
+    @visibleForTesting Database? db,
+  }) async {
+    db ??= await DataBaseSqlite().getDatabaseInstance();
+    const tabla = UbicacionesTable.tableName;
+    const id = UbicacionesTable.columnId;
+
+    await db.transaction((txn) async {
+      final ids = [for (final u in cambios) if (u.id != null) u.id!];
+      for (var i = 0; i < ids.length; i += _tandaIds) {
+        final tanda = ids.sublist(i, min(i + _tandaIds, ids.length));
+        await txn.delete(
+          tabla,
+          where: '$id IN (${List.filled(tanda.length, '?').join(',')})',
+          whereArgs: tanda,
+        );
+      }
+
+      final batch = txn.batch();
+      for (final item in cambios) {
+        if (item.barcode == null || item.barcode!.isEmpty) continue;
+        batch.insert(tabla, _fila(item),
+            conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      await batch.commit(noResult: true);
+
+      if (activos != null) {
+        // Un NOT IN con miles de parámetros no entra: tabla temporal.
+        await txn.execute(
+          'CREATE TEMP TABLE IF NOT EXISTS tmp_ubicaciones_activas '
+          '(id INTEGER PRIMARY KEY)',
+        );
+        await txn.delete('tmp_ubicaciones_activas');
+        for (var i = 0; i < activos.length; i += _tandaIds) {
+          final tanda = activos.sublist(i, min(i + _tandaIds, activos.length));
+          await txn.rawInsert(
+            'INSERT OR IGNORE INTO tmp_ubicaciones_activas (id) VALUES '
+            '${List.filled(tanda.length, '(?)').join(',')}',
+            tanda,
+          );
+        }
+        final borradas = await txn.rawDelete(
+          'DELETE FROM $tabla WHERE $id NOT IN '
+          '(SELECT id FROM tmp_ubicaciones_activas)',
+        );
+        await txn.execute('DROP TABLE IF EXISTS tmp_ubicaciones_activas');
+        debugPrint('⚡ Sync incremental ubicaciones: ${cambios.length} '
+            'cambiadas | $borradas eliminadas');
+      }
+    });
   }
 
   /// --------------------------------------------------------------------------

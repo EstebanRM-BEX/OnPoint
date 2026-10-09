@@ -1,5 +1,6 @@
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
+import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
 import 'package:wms_app/core/services/novedades_cache_service.dart';
 import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
@@ -15,7 +16,29 @@ import '../models/user_novelty_model.dart';
 abstract class UserLocalDataSource {
   Future<void> cacheUserConfiguration(UserConfigurationModel config);
   Future<UserConfigurationModel?> getCachedUserConfiguration();
+  /// Sync completo: reemplaza todas las ubicaciones (en una transacción).
   Future<void> cacheUserLocations(List<UserLocationModel> locations);
+
+  /// Sync incremental: reemplaza [cambios] y borra lo que no esté en
+  /// [activos] (si viene), en una transacción.
+  Future<void> aplicarCambiosUbicaciones(
+    List<UserLocationModel> cambios,
+    List<int>? activos,
+  );
+
+  Future<List<UserLocationModel>> getUbicacionesLocales();
+  Future<int> contarUbicaciones();
+  Future<void> borrarUbicaciones();
+
+  /// Empresa (URL + BD) de la sesión actual y la de las ubicaciones locales.
+  Future<String> empresaActual();
+  Future<String?> empresaUbicaciones();
+  Future<void> guardarEmpresaUbicaciones(String empresa);
+
+  /// `since`/`scope` de la última sync exitosa de ubicaciones.
+  Future<({String since, String scope})?> marcaSyncUbicaciones();
+  Future<void> guardarMarcaSyncUbicaciones(String since, String scope);
+  Future<void> borrarMarcaSyncUbicaciones();
   Future<List<AllowedWarehouse>> getCachedWarehouses();
   Future<void> cacheUserNovelties(List<UserNoveltyModel> novelties);
   Future<List<UserNoveltyModel>?> getCachedUserNovelties();
@@ -60,10 +83,7 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
     return null;
   }
 
-  @override
-  Future<void> cacheUserLocations(List<UserLocationModel> locations) async {
-    final List<ResultUbicaciones> legacyLocations = locations.map((e) {
-      return ResultUbicaciones(
+  static ResultUbicaciones _aLegacy(UserLocationModel e) => ResultUbicaciones(
         id: e.id,
         name: e.name,
         barcode: e.barcode,
@@ -73,13 +93,71 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
         warehouseName: e.warehouseName,
         isADockAlter: e.isADockAlter,
       );
-    }).toList();
 
-    await db.ubicacionesRepository.syncUbicaciones(legacyLocations);
+  @override
+  Future<void> cacheUserLocations(List<UserLocationModel> locations) async {
+    await db.ubicacionesRepository
+        .syncUbicaciones(locations.map(_aLegacy).toList());
     // Igual que novedades: el sync escribió ubicaciones frescas en SQLite,
     // el cache compartido en memoria debe volver a leerlas.
     getIt<UbicacionesCacheService>().invalidate();
   }
+
+  @override
+  Future<void> aplicarCambiosUbicaciones(
+    List<UserLocationModel> cambios,
+    List<int>? activos,
+  ) async {
+    await db.ubicacionesRepository
+        .aplicarCambios(cambios.map(_aLegacy).toList(), activos);
+    getIt<UbicacionesCacheService>().invalidate();
+  }
+
+  @override
+  Future<List<UserLocationModel>> getUbicacionesLocales() async => [
+        for (final u in await db.ubicacionesRepository.getAllUbicaciones())
+          UserLocationModel(
+            id: u.id ?? 0,
+            name: u.name ?? '',
+            idWarehouse: u.idWarehouse ?? 0,
+            barcode: u.barcode,
+            locationId: u.locationId,
+            locationName: u.locationName,
+            warehouseName: u.warehouseName,
+            isADockAlter: u.isADockAlter,
+          ),
+      ];
+
+  @override
+  Future<int> contarUbicaciones() => db.getUbicacionesCount();
+
+  @override
+  Future<void> borrarUbicaciones() async {
+    await db.ubicacionesRepository.deleteAll();
+    getIt<UbicacionesCacheService>().invalidate();
+  }
+
+  @override
+  Future<String> empresaActual() async =>
+      '${await PrefUtils.getEnterprise()}|${getIt<IStorageService>().nameDatabase}';
+
+  @override
+  Future<String?> empresaUbicaciones() => PrefUtils.getUbicacionesEnterprise();
+
+  @override
+  Future<void> guardarEmpresaUbicaciones(String empresa) =>
+      PrefUtils.setUbicacionesEnterprise(empresa);
+
+  @override
+  Future<({String since, String scope})?> marcaSyncUbicaciones() =>
+      PrefUtils.getUbicacionesSync();
+
+  @override
+  Future<void> guardarMarcaSyncUbicaciones(String since, String scope) =>
+      PrefUtils.setUbicacionesSync(since, scope);
+
+  @override
+  Future<void> borrarMarcaSyncUbicaciones() => PrefUtils.clearUbicacionesSync();
 
   @override
   Future<List<AllowedWarehouse>> getCachedWarehouses() async {

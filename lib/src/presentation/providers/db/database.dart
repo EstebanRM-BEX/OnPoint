@@ -2111,7 +2111,8 @@ class DataBaseSqlite {
     final db = await getDatabaseInstance();
     await db.delete(ConfigurationsTable.tableName);
     await db.delete(NovedadesTable.tableName);
-    await db.delete(UbicacionesTable.tableName);
+    // Las ubicaciones sobreviven al cierre de sesión (sync incremental, ver
+    // getUserLocations); solo 'Eliminar base de datos' las borra.
     await db.delete(WarehouseTable.tableName);
   }
 
@@ -2228,8 +2229,8 @@ class DataBaseSqlite {
   /// el operario puede tener productos en estado "Preparado" sin empacar que
   /// no deben perderse; ver `PackingPreservation`.
   /// [borrarCatalogo]: el catálogo de productos (inventario + sus barcodes)
-  /// sobrevive al cierre de sesión; solo "Eliminar base de datos" lo borra.
-  /// Si se entra a otra empresa, lo reemplaza el sync de productos.
+  /// y las ubicaciones sobreviven al cierre de sesión; solo "Eliminar base de
+  /// datos" los borra. Si se entra a otra empresa, los reemplazan sus syncs.
   Future<void> deleteBDCloseSession({
     bool keepPacking = false,
     bool borrarCatalogo = false,
@@ -2239,7 +2240,11 @@ class DataBaseSqlite {
     if (!keepPacking) await delePackingAll();
     await deleAllRecepcion();
     await deleAllTrasnferencia();
-    if (borrarCatalogo) await deleInventario();
+    if (borrarCatalogo) {
+      await deleInventario();
+      final db = await getDatabaseInstance();
+      await db.delete(UbicacionesTable.tableName);
+    }
     await deleOthers();
     await deleReceptionBatch();
     await deleAllBarcodes(keepPacking: keepPacking);

@@ -3,8 +3,9 @@ import 'dart:async';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/foundation.dart';
 
-/// Traza `catalogo_sync` de Firebase Performance: una por sincronización del
-/// catálogo de productos (`product_quants`).
+/// Traza de Firebase Performance por sincronización incremental de un
+/// catálogo: `catalogo_sync` (productos, `product_quants`) o
+/// `ubicaciones_sync` (`/api/ubicaciones`).
 ///
 /// Atributos (filtrables en la consola, Personalizado → `catalogo_sync`):
 /// - `tipo`: `completa` | `incremental`.
@@ -26,10 +27,10 @@ class CatalogoSyncTrace {
 
   /// En debug (y en tests) no se envía nada: igual que el resto de
   /// Performance, los tiempos con JIT no son representativos.
-  static CatalogoSyncTrace iniciar() {
+  static CatalogoSyncTrace iniciar([String nombre = 'catalogo_sync']) {
     if (kDebugMode) return CatalogoSyncTrace._(null);
     try {
-      final trace = FirebasePerformance.instance.newTrace('catalogo_sync');
+      final trace = FirebasePerformance.instance.newTrace(nombre);
       unawaited(trace.start());
       return CatalogoSyncTrace._(trace);
     } catch (_) {

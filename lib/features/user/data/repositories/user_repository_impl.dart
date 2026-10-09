@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/core/utils/performance/catalogo_sync_trace.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/device_info.dart';
@@ -70,18 +71,101 @@ class UserRepositoryImpl implements UserRepository {
     }
   }
 
+  /// Sync de ubicaciones: incremental (`since`/`scope`) si hay marca y
+  /// ubicaciones locales, completo si no. Devuelve la lista COMPLETA leída de
+  /// SQLite: con el incremental la respuesta trae solo lo cambiado.
   @override
   Future<Either<Failure, List<UserLocation>>> getUserLocations() async {
-    if (await _isConnected()) {
-      try {
-        final remoteLocations = await remoteDataSource.getUserLocations();
-        await localDataSource.cacheUserLocations(remoteLocations);
-        return Right(remoteLocations);
-      } catch (e) {
-        return Left(ServerFailure(e.toString()));
-      }
-    } else {
+    if (!await _isConnected()) {
       return const Left(NetworkFailure('No internet connection'));
+    }
+
+    final trace = CatalogoSyncTrace.iniciar('ubicaciones_sync');
+    var resultado = 'error';
+    try {
+      // Sobreviven al cierre de sesión: si son de otra empresa (o no se sabe
+      // de cuál, p. ej. tras actualizar la app) se borran antes de descargar.
+      String? motivoLocal;
+      final empresa = await localDataSource.empresaActual();
+      if (await localDataSource.empresaUbicaciones() != empresa) {
+        await localDataSource.borrarUbicaciones();
+        await localDataSource.borrarMarcaSyncUbicaciones();
+        motivoLocal = 'empresa_distinta';
+      }
+
+      var marca = await localDataSource.marcaSyncUbicaciones();
+      if (marca == null) {
+        motivoLocal ??= 'sin_marca';
+      } else if (await localDataSource.contarUbicaciones() == 0) {
+        marca = null;
+        motivoLocal ??= 'catalogo_vacio';
+      }
+
+      final r = await remoteDataSource.getUserLocations(
+        since: marca?.since,
+        scope: marca?.scope,
+      );
+      final msDescarga = trace.tramo('ms_descarga');
+
+      final tipo = r.full ? 'completa' : 'incremental';
+      final motivo = r.full
+          ? motivoDescargaCompleta(
+              motivoLocal: marca == null ? motivoLocal : null,
+              scopeEnviado: marca?.scope,
+              serverTime: r.serverTime,
+              scopeRecibido: r.scope,
+            )
+          : 'incremental';
+      debugPrint(
+        '📍 [Ubicaciones] $tipo ($motivo) · since=${marca?.since ?? '-'} · '
+        '${r.ubicaciones.length} filas, ${r.activos?.length ?? '-'} activas · '
+        'descarga ${msDescarga}ms',
+      );
+      trace
+        ..atributo('tipo', tipo)
+        ..atributo('motivo', motivo)
+        ..metrica('filas', r.ubicaciones.length);
+
+      if (r.full) {
+        if (r.ubicaciones.isEmpty) {
+          resultado = 'sin_productos';
+          return const Left(
+            ServerFailure('El servidor no devolvió ubicaciones'),
+          );
+        }
+        await localDataSource.cacheUserLocations(r.ubicaciones);
+      } else {
+        await localDataSource.aplicarCambiosUbicaciones(r.ubicaciones, r.activos);
+      }
+      await localDataSource.guardarEmpresaUbicaciones(empresa);
+
+      // La marca se guarda solo con todo aplicado; sin server_time (servidor
+      // anterior) no hay marca y la próxima vez se pide completo.
+      final serverTime = r.serverTime;
+      final scope = r.scope;
+      if (serverTime != null && scope != null) {
+        await localDataSource.guardarMarcaSyncUbicaciones(serverTime, scope);
+      } else {
+        await localDataSource.borrarMarcaSyncUbicaciones();
+      }
+      final msGuardado = trace.tramo('ms_guardado');
+      debugPrint(
+        '📍 [Ubicaciones] guardado en ${msGuardado}ms · '
+        'próximo since=${serverTime ?? '-'} scope=${scope ?? '-'}',
+      );
+
+      final locales = await localDataSource.getUbicacionesLocales();
+      resultado = 'ok';
+      return Right(locales);
+    } on SessionExpiredException catch (e) {
+      resultado = 'sesion_expirada';
+      return Left(SessionExpiredFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    } finally {
+      trace.terminar(resultado);
     }
   }
 
