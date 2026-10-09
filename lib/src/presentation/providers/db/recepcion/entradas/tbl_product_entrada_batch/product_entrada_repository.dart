@@ -100,21 +100,21 @@ class ProductsEntradaBatchRepository {
             ProductRecepcionBatchTable.columnDateEnd: "",
             ProductRecepcionBatchTable.columnTime: product.time,
             ProductRecepcionBatchTable.columnIsDoneItem:
-                product.isDoneItem == true ? 1 : 0,
+                _flag(product.isDoneItem),
             ProductRecepcionBatchTable.columnDateTransaction:
                 product.dateTransaction ?? '',
             ProductRecepcionBatchTable.columnCantidadFaltante:
                 product.cantidadFaltante ?? 0,
             //temperatura
             ProductRecepcionBatchTable.columnManejoTemperature:
-                product.manejaTemperatura ?? 0,
+                _flag(product.manejaTemperatura),
             ProductRecepcionBatchTable.columnTemperature:
                 product.temperatura ?? 0.0,
             ProductRecepcionBatchTable.columnImage: product.image ?? '',
             ProductRecepcionBatchTable.columnUseExpirationDate:
-                product.useExpirationDate ?? 0,
+                _flag(product.useExpirationDate),
             ProductRecepcionBatchTable.columnManejaSegundaUnidad:
-                product.manejaSegundaUnidad ?? 0,
+                _flag(product.manejaSegundaUnidad),
             ProductRecepcionBatchTable.columnUomSegundaUnidad:
                 product.uomSegundaUnidad ?? '',
             ProductRecepcionBatchTable.columnQuantitySegundaUnidad:
@@ -211,14 +211,14 @@ class ProductsEntradaBatchRepository {
             producto.quantityDone ?? 0,
         //temperatura
         ProductRecepcionBatchTable.columnManejoTemperature:
-            producto.manejaTemperatura ?? 0,
+            _flag(producto.manejaTemperatura),
         ProductRecepcionBatchTable.columnTemperature:
             producto.temperatura ?? 0.0,
         ProductRecepcionBatchTable.columnImage: producto.image ?? '',
         ProductRecepcionBatchTable.columnUseExpirationDate:
-            producto.useExpirationDate ?? 0,
+            _flag(producto.useExpirationDate),
         ProductRecepcionBatchTable.columnManejaSegundaUnidad:
-            producto.manejaSegundaUnidad ?? 0,
+            _flag(producto.manejaSegundaUnidad),
         ProductRecepcionBatchTable.columnUomSegundaUnidad:
             producto.uomSegundaUnidad ?? '',
         ProductRecepcionBatchTable.columnQuantitySegundaUnidad:
@@ -380,4 +380,8 @@ class ProductsEntradaBatchRepository {
     debugPrint("updateNovedad: $resUpdate");
     return resUpdate;
   }
+
+  /// Odoo manda estas banderas como bool y sqflite solo acepta num/String:
+  /// se guardan como 1/0 (los lectores ya aceptan `true` o `1`).
+  static int _flag(dynamic v) => (v == true || v == 1) ? 1 : 0;
 }

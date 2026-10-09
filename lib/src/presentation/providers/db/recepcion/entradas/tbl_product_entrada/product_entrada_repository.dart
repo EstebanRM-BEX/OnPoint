@@ -92,22 +92,22 @@ class ProductsEntradaRepository {
             ProductRecepcionTable.columnDateStart: "",
             ProductRecepcionTable.columnDateEnd: "",
             ProductRecepcionTable.columnTime: product.time,
-            ProductRecepcionTable.columnIsDoneItem: product.isDoneItem ?? 0,
+            ProductRecepcionTable.columnIsDoneItem: _flag(product.isDoneItem),
             ProductRecepcionTable.columnDateTransaction:
                 product.dateTransaction ?? '',
             ProductRecepcionTable.columnCantidadFaltante:
                 product.cantidadFaltante ?? 0,
             ProductRecepcionTable.columnType: type,
             ProductRecepcionTable.columnManejoTemperature:
-                product.manejaTemperatura ?? 0,
+                _flag(product.manejaTemperatura),
             ProductRecepcionTable.columnTemperature: product.temperatura ?? 0,
             ProductRecepcionTable.columnImage: product.image ?? '',
             ProductRecepcionTable.columnImageNovedad:
                 product.imageNovedad ?? '',
             ProductRecepcionTable.columnUseExpirationDate:
-                product.useExpirationDate ?? 0,
+                _flag(product.useExpirationDate),
             ProductRecepcionTable.columnManejaSegundaUnidad:
-                product.manejaSegundaUnidad ?? 0,
+                _flag(product.manejaSegundaUnidad),
             ProductRecepcionTable.columnUomSegundaUnidad:
                 product.uomSegundaUnidad ?? '',
             ProductRecepcionTable.columnQuantitySegundaUnidad:
@@ -199,14 +199,14 @@ class ProductsEntradaRepository {
         ProductRecepcionTable.columnCantidadFaltante: cantidad,
         ProductRecepcionTable.columnType: type,
         ProductRecepcionTable.columnManejoTemperature:
-            producto.manejaTemperatura ?? 0,
+            _flag(producto.manejaTemperatura),
         ProductRecepcionTable.columnTemperature: 0.0,
         ProductRecepcionTable.columnImage: '',
         ProductRecepcionTable.columnImageNovedad: '',
         ProductRecepcionTable.columnUseExpirationDate:
-            producto.useExpirationDate ?? 0,
+            _flag(producto.useExpirationDate),
         ProductRecepcionTable.columnManejaSegundaUnidad:
-            producto.manejaSegundaUnidad ?? 0,
+            _flag(producto.manejaSegundaUnidad),
         ProductRecepcionTable.columnUomSegundaUnidad:
             producto.uomSegundaUnidad ?? '',
         ProductRecepcionTable.columnQuantitySegundaUnidad:
@@ -549,4 +549,8 @@ class ProductsEntradaRepository {
     debugPrint("updateNovedad: $resUpdate");
     return resUpdate;
   }
+
+  /// Odoo manda estas banderas como bool y sqflite solo acepta num/String:
+  /// se guardan como 1/0 (los lectores ya aceptan `true` o `1`).
+  static int _flag(dynamic v) => (v == true || v == 1) ? 1 : 0;
 }
