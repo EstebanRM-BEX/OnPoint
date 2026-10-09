@@ -29,3 +29,11 @@ Future<T?> goToScreen<T extends Object?>(
     arguments: arguments,
   );
 }
+
+/// Vuelve a Home dejando solo Home en el stack.
+///
+/// Con `pushReplacementNamed('/home')`, si había un diálogo arriba se
+/// reemplazaba al diálogo y la pantalla del módulo seguía viva debajo de Home
+/// (suscrita a su bloc y lista para reaparecer con un "atrás").
+Future<void> goHome(BuildContext context) =>
+    goToScreen<void>(context, '/home');

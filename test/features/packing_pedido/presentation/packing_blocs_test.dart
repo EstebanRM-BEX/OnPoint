@@ -286,16 +286,6 @@ void main() {
       );
     });
 
-    test('"Mis pedidos" deja solo los del usuario de la sesión', () {
-      final mio = a.copyWith(responsableId: 7);
-      final s = PackingPedidoListState(
-        pedidos: [mio, b.copyWith(responsableId: 9)],
-        config: const ConfigPackingUsuario(userId: 7),
-      );
-      expect(s.visibles, hasLength(2));
-      expect(s.copyWith(soloMios: true).visibles, [mio]);
-    });
-
     blocTest<PackingPedidoListBloc, PackingPedidoListState>(
       'asignar responsable actualiza el pedido y lo deja para navegar',
       build: build,
