@@ -53,6 +53,7 @@ class _PorHacerTabState extends State<PorHacerTab> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _searchFocus.addListener(_onSearchFocusChanged);
     _scanFocus.addListener(_onScanFocusChanged);
+    FocusManager.instance.addListener(_onFocoGlobalCambiado);
     if (widget.activo) {
       _enfocarLector();
     }
@@ -84,6 +85,7 @@ class _PorHacerTabState extends State<PorHacerTab> with WidgetsBindingObserver {
     _focusRetryTimer?.cancel();
     _searchFocus.removeListener(_onSearchFocusChanged);
     _scanFocus.removeListener(_onScanFocusChanged);
+    FocusManager.instance.removeListener(_onFocoGlobalCambiado);
     _scanController.dispose();
     _scanFocus.dispose();
     _searchController.dispose();
@@ -116,6 +118,22 @@ class _PorHacerTabState extends State<PorHacerTab> with WidgetsBindingObserver {
         !_scanFocus.hasFocus &&
         !_searchFocus.hasFocus &&
         widget.activo &&
+        (ModalRoute.of(context)?.isCurrent ?? true)) {
+      _enfocarLector();
+    }
+  }
+
+  /// El foco cayó fuera del lector y del buscador (p. ej. se cerró un
+  /// diálogo o una página y la ruta lo devolvió al scope vacío): se retoma.
+  /// No depende de que el bloc emita para pasar por [didUpdateWidget].
+  void _onFocoGlobalCambiado() {
+    if (!mounted) return;
+    final primary = FocusManager.instance.primaryFocus;
+    if (primary == _scanFocus || primary == _searchFocus) return;
+    if (_appActiva &&
+        _modoScanner &&
+        widget.activo &&
+        !_searchFocus.hasFocus &&
         (ModalRoute.of(context)?.isCurrent ?? true)) {
       _enfocarLector();
     }
@@ -171,7 +189,12 @@ class _PorHacerTabState extends State<PorHacerTab> with WidgetsBindingObserver {
     if (!_modoScanner) {
       setState(() => _modoScanner = true);
     }
-    _enfocarLector();
+    // El unfocus del buscador se aplica en un microtask (hasta entonces
+    // sigue con el foco); después se reconecta el lector aunque ya tuviera
+    // el foco, para que el botón recupere una conexión muerta.
+    Future.microtask(() {
+      if (mounted) _reconectarLector();
+    });
   }
 
   void _limpiarBusqueda() {
