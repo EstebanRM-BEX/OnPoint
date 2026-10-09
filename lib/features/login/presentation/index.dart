@@ -78,7 +78,13 @@ class _LoginPageState extends State<LoginPage> with LoadingDialogMixin {
                 arguments: result.appVersion,
               );
             } else {
-              Navigator.pushReplacementNamed(context, '/home');
+              // Remove-all: con replace, 'enterprice'/'auth' (o un diálogo)
+              // podían quedar debajo de Home y reaparecer con un "atrás".
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/home',
+                (_) => false,
+              );
             }
           }
 

@@ -76,7 +76,13 @@ class _CheckAuthPageState extends State<CheckAuthPage> {
             }
             if (state is UserLoaded) {
               _yaNavego = true;
-              Navigator.pushReplacementNamed(context, '/home');
+              // Remove-all, no replace: si hay un diálogo arriba, el replace
+              // lo sustituye a él y este gate queda vivo debajo de Home.
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/home',
+                (_) => false,
+              );
             }
           },
           child: const Scaffold(
