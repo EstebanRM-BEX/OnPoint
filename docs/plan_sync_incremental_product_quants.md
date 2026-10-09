@@ -85,7 +85,19 @@ Tests (con respuestas JSON de ejemplo):
 - error a mitad (rollback y metadata sin cambios);
 - más de 999 ids.
 
-## Fase 3 — Varios catálogos por `scope` (máximo 3)
+## Estado (2026-10-09)
+
+- Fase 1 y Fase 2: hechas (commit `f04a45b8`). Traza `catalogo_sync`: commit `1a4134d2`.
+- Fase 3: **descartada**. En la operación cada PDA la usan siempre los mismos
+  usuarios con los mismos almacenes, así que el `scope` no cambia y un solo
+  catálogo basta. Se retoma solo si la traza muestra muchas descargas completas
+  con `motivo = scope_distinto`.
+- Fase 4: la sincronización en segundo plano ya existía
+  (`PostLoginCoordinator._runPreloads`); la medición es la traza `catalogo_sync`.
+- Pendiente del backend: que producción acepte `POST`, el formato de `result` y
+  los valores de `code`, y si `expiration_date` viaja en la fila.
+
+## Fase 3 — Varios catálogos por `scope` (máximo 3) — DESCARTADA
 
 Diseño: el catálogo **activo** vive en las tablas actuales (los lectores no cambian).
 Los inactivos se guardan en archivos SQLite aparte, `catalog_<scope>.db`.
