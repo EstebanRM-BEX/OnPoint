@@ -130,6 +130,7 @@ import 'package:wms_app/src/presentation/views/wms_picking/modules/history/scree
 import 'package:wms_app/src/presentation/views/wms_picking/modules/history/screens/list_batchs_history_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/picking_componentes/batch/index_list_picking_componentes_batchs_screen.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/picking_componentes/index_list_picking_componentes_screen.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 
 class AppRoutes {
   //todas las pantallas de Print Labels
@@ -322,7 +323,7 @@ class AppRoutes {
   static Widget _invalidArgs(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (context.mounted) {
-        Navigator.pushReplacementNamed(context, AppRoutes.home);
+        goHome(context);
       }
     });
     return const Scaffold(body: SizedBox.shrink());

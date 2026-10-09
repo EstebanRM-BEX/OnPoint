@@ -23,6 +23,7 @@ import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/cluster_search_dock.dart';
 import 'package:wms_app/features/picking_cluster/presentation/widgets/cluster_palette.dart';
 import 'package:wms_app/features/expedition/presentation/widgets/expedicion_list_header_widget.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 
 class ListExpeditionScreen extends StatefulWidget {
   const ListExpeditionScreen({super.key});
@@ -185,7 +186,7 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen>
                       : <ExpedicionPedido>[];
                   return ExpedicionListHeaderWidget(
                     onBack: () =>
-                        Navigator.pushReplacementNamed(context, '/home'),
+                        goHome(context),
                     onRefresh: () => bloc.add(
                       const FetchExpedicionesEvent(isLoadinDialog: true),
                     ),

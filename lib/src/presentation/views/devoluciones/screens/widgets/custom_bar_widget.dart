@@ -9,6 +9,7 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/screens/bloc/devoluciones_bloc.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 
 class CustomAppBar extends StatelessWidget {
   const CustomAppBar({super.key});
@@ -35,7 +36,7 @@ class CustomAppBar extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: white),
                     onPressed: () =>
-                        Navigator.pushReplacementNamed(context, '/home'),
+                        goHome(context),
                   ),
                   Padding(
                     padding: EdgeInsets.only(left: size.width * 0.15),

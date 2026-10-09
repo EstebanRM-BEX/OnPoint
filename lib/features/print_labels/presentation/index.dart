@@ -6,6 +6,7 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/print_labels/presentation/bloc/print_labels_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 
 class PrintLabelsScreen extends StatefulWidget {
   const PrintLabelsScreen({super.key});
@@ -207,7 +208,7 @@ class CustomAppBar extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: white),
                     onPressed: () =>
-                        Navigator.pushReplacementNamed(context, '/home'),
+                        goHome(context),
                   ),
                   const Spacer(),
                   const Text(

@@ -20,6 +20,7 @@ import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
+import 'package:wms_app/shared/utils/app_navigation.dart';
 
 class WmsPackingScreen extends StatefulWidget {
   const WmsPackingScreen({super.key});
@@ -196,7 +197,7 @@ class _WmsPackingScreenState extends State<WmsPackingScreen> {
                   CustomHeaderWidget(
                     title: 'PACKING',
                     onBack: () {
-                      Navigator.pushReplacementNamed(context, '/home');
+                      goHome(context);
                     },
                     onRefresh: () async {
                       if (_isProcessing ||
