@@ -5,6 +5,7 @@ import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/error/exceptions.dart';
 import 'package:wms_app/core/error/failures.dart';
 import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/core/utils/performance/catalogo_sync_trace.dart';
 import 'package:wms_app/features/inventario/data/datasources/inventario_local_data_source.dart';
 import 'package:wms_app/features/inventario/data/datasources/inventario_remote_data_source.dart';
 import 'package:wms_app/features/inventario/domain/entities/barcode_producto.dart';
@@ -39,20 +40,27 @@ class InventarioRepositoryImpl implements InventarioRepository {
       return const Left(NetworkFailure('No hay conexión a Internet'));
     }
 
+    final trace = CatalogoSyncTrace.iniciar();
+    var resultado = 'error';
     try {
       // El catálogo sobrevive al cierre de sesión: si es de otra empresa (o
       // no se sabe de cuál, p. ej. tras actualizar la app) se borra antes de
       // descargar, para no operar con productos ajenos si la descarga falla.
+      String? motivoLocal;
       final empresa = await localDataSource.empresaActual();
       if (await localDataSource.empresaCatalogo() != empresa) {
         await localDataSource.deleteInventario();
         await localDataSource.borrarMarcaSyncCatalogo();
+        motivoLocal = 'empresa_distinta';
       }
 
       // Incremental solo si hay marca y catálogo local al que aplicarla.
       var marca = await localDataSource.marcaSyncCatalogo();
-      if (marca != null && await localDataSource.getProductosCount() == 0) {
+      if (marca == null) {
+        motivoLocal ??= 'sin_marca';
+      } else if (await localDataSource.getProductosCount() == 0) {
         marca = null;
+        motivoLocal ??= 'catalogo_vacio';
       }
 
       onProgress?.call(
@@ -70,10 +78,29 @@ class InventarioRepositoryImpl implements InventarioRepository {
         since: marca?.since,
         scope: marca?.scope,
       );
+      trace.tramo('ms_descarga');
 
       final total = syncResult.productos.length;
+      trace
+        ..atributo('tipo', syncResult.full ? 'completa' : 'incremental')
+        ..atributo(
+          'motivo',
+          syncResult.full
+              ? motivoDescargaCompleta(
+                  motivoLocal: marca == null ? motivoLocal : null,
+                  scopeEnviado: marca?.scope,
+                  serverTime: syncResult.serverTime,
+                  scopeRecibido: syncResult.scope,
+                )
+              : 'incremental',
+        )
+        ..metrica('filas', total)
+        ..metrica('barcodes', syncResult.barcodes.length)
+        ..metrica('eliminados', syncResult.deletedProductIds.length);
+
       if (syncResult.full) {
         if (total == 0) {
+          resultado = 'sin_productos';
           return const Left(ServerFailure('El servidor no devolvió productos'));
         }
         onProgress?.call('Guardando $total productos en base de datos...', 0, total);
@@ -101,10 +128,13 @@ class InventarioRepositoryImpl implements InventarioRepository {
       } else {
         await localDataSource.borrarMarcaSyncCatalogo();
       }
+      trace.tramo('ms_guardado');
 
       onProgress?.call('Sincronización completada', total, total);
+      resultado = 'ok';
       return const Right(null);
     } on SessionExpiredException catch (e) {
+      resultado = 'sesion_expirada';
       return Left(SessionExpiredFailure(e.message));
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -112,6 +142,8 @@ class InventarioRepositoryImpl implements InventarioRepository {
       return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(ServerFailure('Error al sincronizar productos: $e'));
+    } finally {
+      trace.terminar(resultado);
     }
   }
 
