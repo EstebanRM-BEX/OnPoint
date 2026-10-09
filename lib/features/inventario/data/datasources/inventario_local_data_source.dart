@@ -263,11 +263,9 @@ class InventarioLocalDataSourceImpl implements InventarioLocalDataSource {
              OR p.${ProductInventarioTable.columnBarcode} LIKE ? ESCAPE '\\'
              OR p.${ProductInventarioTable.columnLotName} LIKE ? ESCAPE '\\'
              OR p.${ProductInventarioTable.columnLocationName} LIKE ? ESCAPE '\\'
-             OR EXISTS (
-               SELECT 1 FROM $b x
-               WHERE x.${BarcodesInventarioTable.columnIdProduct} =
-                     p.${ProductInventarioTable.columnProductId}
-                 AND x.${BarcodesInventarioTable.columnBarcode} LIKE ? ESCAPE '\\'
+             OR p.${ProductInventarioTable.columnProductId} IN (
+               SELECT ${BarcodesInventarioTable.columnIdProduct} FROM $b
+               WHERE ${BarcodesInventarioTable.columnBarcode} LIKE ? ESCAPE '\\'
              )""";
         args.addAll(List.filled(6, like));
       }
@@ -318,10 +316,11 @@ class InventarioLocalDataSourceImpl implements InventarioLocalDataSource {
       if (rows.isEmpty) {
         rows = await db.rawQuery(
           """
-          SELECT p.* FROM $b x
-          JOIN $p p ON p.${ProductInventarioTable.columnProductId} =
-                       x.${BarcodesInventarioTable.columnIdProduct}
-          WHERE x.${BarcodesInventarioTable.columnBarcode} = ? COLLATE NOCASE
+          SELECT * FROM $p
+          WHERE ${ProductInventarioTable.columnProductId} IN (
+            SELECT ${BarcodesInventarioTable.columnIdProduct} FROM $b
+            WHERE ${BarcodesInventarioTable.columnBarcode} = ? COLLATE NOCASE
+          )
           LIMIT 1
           """,
           [c],
