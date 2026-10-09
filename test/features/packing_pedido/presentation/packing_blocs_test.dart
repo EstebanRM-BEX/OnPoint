@@ -13,6 +13,7 @@ import 'package:wms_app/features/packing_pedido/domain/entities/producto_packing
 import 'package:wms_app/features/packing_pedido/domain/failures/packing_failures.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/actualizar_cantidad_separada_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/asignar_responsable_pack_usecase.dart';
+import 'package:wms_app/features/packing_pedido/domain/usecases/editar_peso_paquete_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/asignar_ubicacion_paquetes_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/crear_paquete_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/desempacar_producto_usecase.dart';
@@ -55,7 +56,8 @@ class MockConfig extends Mock implements GetConfigPackingUseCase {}
 
 class MockDetalle extends Mock implements GetPedidoPackDetalleUseCase {}
 
-class MockRefrescarDetalle extends Mock implements RefrescarDetallePackUseCase {}
+class MockRefrescarDetalle extends Mock
+    implements RefrescarDetallePackUseCase {}
 
 class MockCrear extends Mock implements CrearPaqueteUseCase {}
 
@@ -88,6 +90,8 @@ class MockEliminar extends Mock implements EliminarPaqueteUseCase {}
 class MockUbicaciones extends Mock implements GetUbicacionesMuelleUseCase {}
 
 class MockAsignarUbic extends Mock implements AsignarUbicacionPaquetesUseCase {}
+
+class MockEditarPeso extends Mock implements EditarPesoPaqueteUseCase {}
 
 class MockValidar extends Mock implements ValidarPedidoPackUseCase {}
 
@@ -141,6 +145,13 @@ void main() {
         pedidoId: 0,
         paquetes: [],
         ubicacion: UbicacionMuelle(id: 0),
+      ),
+    );
+    registerFallbackValue(
+      EditarPesoPaqueteParams(
+        pedido: pedidoTest,
+        paquete: paqueteTest(),
+        peso: 0,
       ),
     );
     registerFallbackValue(
@@ -273,6 +284,16 @@ void main() {
         s.copyWith(orden: OrdenPedidosPack.nombre, ascendente: true).visibles,
         [a, b],
       );
+    });
+
+    test('"Mis pedidos" deja solo los del usuario de la sesión', () {
+      final mio = a.copyWith(responsableId: 7);
+      final s = PackingPedidoListState(
+        pedidos: [mio, b.copyWith(responsableId: 9)],
+        config: const ConfigPackingUsuario(userId: 7),
+      );
+      expect(s.visibles, hasLength(2));
+      expect(s.copyWith(soloMios: true).visibles, [mio]);
     });
 
     blocTest<PackingPedidoListBloc, PackingPedidoListState>(
@@ -436,8 +457,9 @@ void main() {
       verify: (bloc) {
         expect(bloc.state.cargandoRemoto, isFalse);
         expect(bloc.state.detalle, detalle);
-        verify(() => refrescar(const RefrescarDetallePackParams(pedidoId: 10)))
-            .called(1);
+        verify(
+          () => refrescar(const RefrescarDetallePackParams(pedidoId: 10)),
+        ).called(1);
       },
     );
 
@@ -894,6 +916,7 @@ void main() {
     late MockEliminar eliminar;
     late MockUbicaciones ubicaciones;
     late MockAsignarUbic asignar;
+    late MockEditarPeso editarPeso;
 
     final p1 = paqueteTest(id: 1, packingBarcode: 'PK1');
     final p2 = paqueteTest(id: 2, packingBarcode: 'PK2');
@@ -903,10 +926,49 @@ void main() {
       eliminar = MockEliminar();
       ubicaciones = MockUbicaciones();
       asignar = MockAsignarUbic();
+      editarPeso = MockEditarPeso();
     });
 
-    PackingPackagesBloc build() =>
-        PackingPackagesBloc(desempacar, eliminar, ubicaciones, asignar);
+    PackingPackagesBloc build() => PackingPackagesBloc(
+      desempacar,
+      eliminar,
+      ubicaciones,
+      asignar,
+      editarPeso,
+    );
+
+    blocTest<PackingPackagesBloc, PackingPackagesState>(
+      'editar peso exitoso manda el peso y sube cambios',
+      build: build,
+      seed: () => PackingPackagesState(pedido: pedidoTest, paquetes: [p1]),
+      setUp: () => when(
+        () => editarPeso(any()),
+      ).thenAnswer((_) async => const Right('ok')),
+      act: (bloc) => bloc.add(PesoPaquetePackEditado(p1, 3.5)),
+      verify: (bloc) {
+        final params =
+            verify(() => editarPeso(captureAny())).captured.single
+                as EditarPesoPaqueteParams;
+        expect(params.paquete, p1);
+        expect(params.peso, 3.5);
+        expect(bloc.state.cambios, 1);
+        expect(bloc.state.operacion.tipo, TipoOperacion.exito);
+      },
+    );
+
+    blocTest<PackingPackagesBloc, PackingPackagesState>(
+      'editar peso fallido informa el error sin subir cambios',
+      build: build,
+      seed: () => PackingPackagesState(pedido: pedidoTest, paquetes: [p1]),
+      setUp: () => when(
+        () => editarPeso(any()),
+      ).thenAnswer((_) async => const Left(PackingValidationFailure('no'))),
+      act: (bloc) => bloc.add(PesoPaquetePackEditado(p1, 3.5)),
+      verify: (bloc) {
+        expect(bloc.state.cambios, 0);
+        expect(bloc.state.operacion.esError, isTrue);
+      },
+    );
 
     blocTest<PackingPackagesBloc, PackingPackagesState>(
       'escanear una caja la selecciona; una desconocida da error',

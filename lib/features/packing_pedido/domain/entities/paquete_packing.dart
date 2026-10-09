@@ -90,6 +90,7 @@ class PaquetePacking extends Equatable {
     id,
     consecutivo,
     cantidadProductos,
+    peso,
     locationDestId,
     productos,
   ];

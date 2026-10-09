@@ -4,10 +4,11 @@ import 'package:wms_app/features/packing_pedido/domain/entities/paquete_packing.
 import 'package:wms_app/features/packing_pedido/domain/entities/producto_packing.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/common/pack_formatos.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/dialogs/qr_paquete_dialog.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/packages/paquete_acciones_menu.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/packages/producto_en_paquete_tile.dart';
 
-/// Caja del pedido con el diseño del módulo anterior: nombre con imprimir y
-/// eliminar, consecutivo (y peso en cluster), cantidad de productos,
+/// Caja del pedido con el diseño del módulo anterior: nombre con menú ⋮
+/// (imprimir, editar peso y eliminar), consecutivo (y peso en cluster), cantidad de productos,
 /// unidades totales y QR; en cluster, ubicación de destino y empaque. Al
 /// abrirla muestra sus productos.
 class PaquetePackCard extends StatelessWidget {
@@ -20,6 +21,7 @@ class PaquetePackCard extends StatelessWidget {
   final VoidCallback onExpandir;
   final VoidCallback onImprimir;
   final VoidCallback onEliminar;
+  final VoidCallback onEditarPeso;
   final VoidCallback onAsignarUbicacion;
   final ValueChanged<ProductoPacking> onDesempacar;
 
@@ -34,6 +36,7 @@ class PaquetePackCard extends StatelessWidget {
     required this.onExpandir,
     required this.onImprimir,
     required this.onEliminar,
+    required this.onEditarPeso,
     required this.onAsignarUbicacion,
     required this.onDesempacar,
   });
@@ -80,24 +83,16 @@ class PaquetePackCard extends StatelessWidget {
                               ),
                             ),
                             const Spacer(),
-                            GestureDetector(
-                              onTap: onImprimir,
-                              child: Icon(
-                                Icons.print,
-                                color: primaryColorApp,
-                                size: 25,
+                            SizedBox(
+                              width: 32,
+                              height: 25,
+                              child: PaqueteAccionesMenu(
+                                editable: editable,
+                                onImprimir: onImprimir,
+                                onEditarPeso: onEditarPeso,
+                                onEliminar: onEliminar,
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            if (editable)
-                              GestureDetector(
-                                onTap: onEliminar,
-                                child: const Icon(
-                                  Icons.delete_forever,
-                                  color: Colors.red,
-                                  size: 25,
-                                ),
-                              ),
                           ],
                         ),
                         Row(

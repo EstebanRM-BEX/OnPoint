@@ -72,6 +72,8 @@ abstract class PackingPedidoLocalDataSource {
     List<int> paqueteIds,
     UbicacionMuelle ubicacion,
   );
+
+  Future<void> actualizarPesoPaquete(int paqueteId, double peso);
 }
 
 @LazySingleton(as: PackingPedidoLocalDataSource)
@@ -536,6 +538,18 @@ class PackingPedidoLocalDataSourceImpl implements PackingPedidoLocalDataSource {
     }
     await batch.commit(noResult: true);
   });
+
+  @override
+  Future<void> actualizarPesoPaquete(int paqueteId, double peso) =>
+      _guard('actualizarPesoPaquete', () async {
+        final db = await _db;
+        await db.update(
+          _tPaquetes,
+          {'peso': peso},
+          where: 'id = ?',
+          whereArgs: [paqueteId],
+        );
+      });
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 

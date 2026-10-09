@@ -421,6 +421,26 @@ class PackingPedidoRepositoryImpl implements PackingPedidoRepository {
       }, requiereRed: true);
 
   @override
+  Future<Either<Failure, String>> editarPesoPaquete({
+    required PaquetePacking paquete,
+    required double peso,
+  }) => _run('editarPesoPaquete', () async {
+    final respuesta = await remote.editarPesoPaquete(
+      paqueteId: paquete.id,
+      peso: peso,
+    );
+    try {
+      await local.actualizarPesoPaquete(paquete.id, respuesta.peso);
+    } on CacheException {
+      throw const ServerException(
+        'El peso se actualizó en el servidor, pero no se pudo reflejar '
+        'en el dispositivo. Actualice el pedido.',
+      );
+    }
+    return respuesta.mensaje;
+  }, requiereRed: true);
+
+  @override
   Future<Either<Failure, List<UbicacionMuelle>>> getUbicacionesMuelle() =>
       _run('getUbicacionesMuelle', entorno.ubicacionesMuelle);
 

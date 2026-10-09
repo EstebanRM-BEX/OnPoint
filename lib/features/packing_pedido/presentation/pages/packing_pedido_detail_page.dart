@@ -14,6 +14,7 @@ import 'package:wms_app/features/packing_pedido/presentation/widgets/detail/deta
 import 'package:wms_app/features/packing_pedido/presentation/widgets/dialogs/backorder_pack_dialog.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/dialogs/confirmar_accion_pack_dialog.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/dialogs/confirmar_paquete_dialog.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/dialogs/editar_peso_paquete_dialog.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/dialogs/ubicacion_muelle_sheet.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/detalle_pedido_tab.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/empacados_tab.dart';
@@ -62,9 +63,11 @@ class _DetailView extends StatefulWidget {
 
 class _DetailViewState extends State<_DetailView>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabs =
-      TabController(length: 5, vsync: this, initialIndex: widget.tabInicial)
-        ..addListener(_onTabChanged);
+  late final TabController _tabs = TabController(
+    length: 5,
+    vsync: this,
+    initialIndex: widget.tabInicial,
+  )..addListener(_onTabChanged);
 
   static const _tabPorHacer = 1;
   static const _tabPreparado = 2;
@@ -204,6 +207,11 @@ class _DetailViewState extends State<_DetailView>
       destructiva: true,
     );
     if (ok && mounted) _packages.add(PaquetePackEliminado(p));
+  }
+
+  Future<void> _editarPesoPaquete(PaquetePacking p) async {
+    final peso = await showEditarPesoPaqueteDialog(context, p);
+    if (peso != null && mounted) _packages.add(PesoPaquetePackEditado(p, peso));
   }
 
   Future<void> _desempacar(PaquetePacking paquete, ProductoPacking p) async {
@@ -427,6 +435,7 @@ class _DetailViewState extends State<_DetailView>
                         esCluster: detalle.pedido.esCluster,
                         onImprimir: _imprimir,
                         onEliminar: _eliminarPaquete,
+                        onEditarPeso: _editarPesoPaquete,
                         onDesempacar: _desempacar,
                         onAsignarUbicacion: _asignarUbicacion,
                       ),

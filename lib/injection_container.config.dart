@@ -228,6 +228,8 @@ import 'features/packing_pedido/domain/usecases/deshacer_separacion_usecase.dart
     as _i425;
 import 'features/packing_pedido/domain/usecases/dividir_producto_usecase.dart'
     as _i124;
+import 'features/packing_pedido/domain/usecases/editar_peso_paquete_usecase.dart'
+    as _i618;
 import 'features/packing_pedido/domain/usecases/eliminar_paquete_usecase.dart'
     as _i295;
 import 'features/packing_pedido/domain/usecases/enviar_imagen_novedad_pack_usecase.dart'
@@ -1008,6 +1010,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i124.DividirProductoUseCase>(
       () => _i124.DividirProductoUseCase(gh<_i820.PackingPedidoRepository>()),
     );
+    gh.lazySingleton<_i618.EditarPesoPaqueteUseCase>(
+      () => _i618.EditarPesoPaqueteUseCase(gh<_i820.PackingPedidoRepository>()),
+    );
     gh.lazySingleton<_i295.EliminarPaqueteUseCase>(
       () => _i295.EliminarPaqueteUseCase(gh<_i820.PackingPedidoRepository>()),
     );
@@ -1135,14 +1140,6 @@ extension GetItInjectableX on _i174.GetIt {
         localDataSource: gh<_i486.ExpeditionLocalDataSource>(),
         networkInfo: gh<_i75.NetworkInfo>(),
         transferRepository: gh<_i895.TransferenciasRepository>(),
-      ),
-    );
-    gh.factory<_i1072.PackingPackagesBloc>(
-      () => _i1072.PackingPackagesBloc(
-        gh<_i545.DesempacarProductoUseCase>(),
-        gh<_i295.EliminarPaqueteUseCase>(),
-        gh<_i312.GetUbicacionesMuelleUseCase>(),
-        gh<_i744.AsignarUbicacionPaquetesUseCase>(),
       ),
     );
     gh.lazySingleton<_i601.FetchComponentsFromDbUseCase>(
@@ -1346,6 +1343,15 @@ extension GetItInjectableX on _i174.GetIt {
             gh<_i744.FetchTransferenciaLotesProductoUseCase>(),
         createTransferenciaLoteUseCase:
             gh<_i833.CreateTransferenciaLoteUseCase>(),
+      ),
+    );
+    gh.factory<_i1072.PackingPackagesBloc>(
+      () => _i1072.PackingPackagesBloc(
+        gh<_i545.DesempacarProductoUseCase>(),
+        gh<_i295.EliminarPaqueteUseCase>(),
+        gh<_i312.GetUbicacionesMuelleUseCase>(),
+        gh<_i744.AsignarUbicacionPaquetesUseCase>(),
+        gh<_i618.EditarPesoPaqueteUseCase>(),
       ),
     );
     gh.factory<_i663.PackingPedidoListBloc>(

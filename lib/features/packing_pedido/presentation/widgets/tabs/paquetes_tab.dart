@@ -24,6 +24,7 @@ class PaquetesTab extends StatefulWidget {
   final bool esCluster;
   final ValueChanged<List<int>> onImprimir;
   final ValueChanged<PaquetePacking> onEliminar;
+  final ValueChanged<PaquetePacking> onEditarPeso;
   final void Function(PaquetePacking paquete, ProductoPacking producto)
   onDesempacar;
   final ValueChanged<UbicacionMuelle?> onAsignarUbicacion;
@@ -35,6 +36,7 @@ class PaquetesTab extends StatefulWidget {
     required this.esCluster,
     required this.onImprimir,
     required this.onEliminar,
+    required this.onEditarPeso,
     required this.onDesempacar,
     required this.onAsignarUbicacion,
   });
@@ -70,7 +72,9 @@ class _PaquetesTabState extends State<PaquetesTab> with WidgetsBindingObserver {
   @override
   void didUpdateWidget(covariant PaquetesTab old) {
     super.didUpdateWidget(old);
-    if (widget.activo && (!old.activo || _modoScanner) && !_searchFocus.hasFocus) {
+    if (widget.activo &&
+        (!old.activo || _modoScanner) &&
+        !_searchFocus.hasFocus) {
       _enfocarLector();
     }
   }
@@ -263,7 +267,8 @@ class _PaquetesTabState extends State<PaquetesTab> with WidgetsBindingObserver {
             .toList();
         final seleccion = state.seleccionados;
         final listaSeleccion = _filtro.isEmpty ? paquetes : paquetesFiltrados;
-        final todos = listaSeleccion.isNotEmpty &&
+        final todos =
+            listaSeleccion.isNotEmpty &&
             listaSeleccion.every((p) => seleccion.contains(p.id));
         final hayDestino = state.paquetesDestino.isNotEmpty;
 
@@ -373,35 +378,36 @@ class _PaquetesTabState extends State<PaquetesTab> with WidgetsBindingObserver {
                         subtitulo: 'Empaque productos para crear cajas',
                       )
                     : paquetesFiltrados.isEmpty
-                        ? const ListaVaciaPack(
-                            titulo: 'No se encontraron paquetes',
-                            subtitulo: 'Intenta con otro término o código',
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.only(top: 4, bottom: 90),
-                            itemCount: paquetesFiltrados.length,
-                            itemBuilder: (_, i) {
-                              final p = paquetesFiltrados[i];
-                              return PaquetePackCard(
-                                paquete: p,
-                                esCluster: widget.esCluster,
-                                onAsignarUbicacion: () =>
-                                    widget.onAsignarUbicacion(null),
-                                seleccionado: seleccion.contains(p.id),
-                                expandido: state.expandido == p.id,
-                                editable: widget.editable,
-                                onSeleccionar: (v) => bloc.add(
-                                  PaquetePackSeleccionado(p.id, seleccionado: v),
-                                ),
-                                onExpandir: () =>
-                                    bloc.add(PaquetePackExpandido(p.id)),
-                                onImprimir: () => widget.onImprimir([p.id]),
-                                onEliminar: () => widget.onEliminar(p),
-                                onDesempacar: (prod) =>
-                                    widget.onDesempacar(p, prod),
-                              );
-                            },
-                          ),
+                    ? const ListaVaciaPack(
+                        titulo: 'No se encontraron paquetes',
+                        subtitulo: 'Intenta con otro término o código',
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(top: 4, bottom: 90),
+                        itemCount: paquetesFiltrados.length,
+                        itemBuilder: (_, i) {
+                          final p = paquetesFiltrados[i];
+                          return PaquetePackCard(
+                            paquete: p,
+                            esCluster: widget.esCluster,
+                            onAsignarUbicacion: () =>
+                                widget.onAsignarUbicacion(null),
+                            seleccionado: seleccion.contains(p.id),
+                            expandido: state.expandido == p.id,
+                            editable: widget.editable,
+                            onSeleccionar: (v) => bloc.add(
+                              PaquetePackSeleccionado(p.id, seleccionado: v),
+                            ),
+                            onExpandir: () =>
+                                bloc.add(PaquetePackExpandido(p.id)),
+                            onImprimir: () => widget.onImprimir([p.id]),
+                            onEliminar: () => widget.onEliminar(p),
+                            onEditarPeso: () => widget.onEditarPeso(p),
+                            onDesempacar: (prod) =>
+                                widget.onDesempacar(p, prod),
+                          );
+                        },
+                      ),
               ),
             ],
           ),

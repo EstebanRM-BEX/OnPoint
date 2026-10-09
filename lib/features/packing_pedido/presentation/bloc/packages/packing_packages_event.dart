@@ -69,6 +69,15 @@ class PaquetePackEliminado extends PackingPackagesEvent {
   List<Object?> get props => [paquete];
 }
 
+class PesoPaquetePackEditado extends PackingPackagesEvent {
+  final PaquetePacking paquete;
+  final double peso;
+  const PesoPaquetePackEditado(this.paquete, this.peso);
+
+  @override
+  List<Object?> get props => [paquete, peso];
+}
+
 class UbicacionesMuellePackCargadas extends PackingPackagesEvent {
   const UbicacionesMuellePackCargadas();
 }

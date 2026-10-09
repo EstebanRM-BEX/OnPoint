@@ -11,6 +11,16 @@ import 'package:wms_app/features/packing_pedido/domain/entities/paquete_packing.
 import 'package:wms_app/features/packing_pedido/domain/entities/pedido_pack.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
 
+/// Resultado de `transferencias/pack/update_weight`.
+class PesoPaqueteApi {
+  final String mensaje;
+
+  /// Peso que quedó guardado en Odoo.
+  final double peso;
+
+  const PesoPaqueteApi({required this.mensaje, required this.peso});
+}
+
 /// Resultado de `transferencias/pack`.
 class PedidosPackApiResult {
   final List<PedidoPackApi> pedidos;
@@ -167,6 +177,11 @@ abstract class PackingPedidoRemoteDataSource {
   Future<MovesDevueltosApi> eliminarPaquete({
     required int pedidoId,
     required int paqueteId,
+  });
+
+  Future<PesoPaqueteApi> editarPesoPaquete({
+    required int paqueteId,
+    required double peso,
   });
 
   Future<String> asignarUbicacion({
@@ -522,6 +537,26 @@ class PackingPedidoRemoteDataSourceImpl
           : OdooParse.str(r['mensaje'] ?? r['msg']),
       moves: data is Map ? OdooParse.maps(data['items']) : const [],
       paqueteEliminado: true,
+    );
+  }
+
+  @override
+  Future<PesoPaqueteApi> editarPesoPaquete({
+    required int paqueteId,
+    required double peso,
+  }) async {
+    final response = await _post('transferencias/pack/update_weight', {
+      'id_paquete': paqueteId,
+      'peso': peso,
+    });
+    final r = result(decode(response));
+    final data = r['result'];
+    final msg = OdooParse.str(r['msg']);
+    return PesoPaqueteApi(
+      mensaje: msg.isEmpty ? 'Peso del paquete actualizado correctamente' : msg,
+      peso: data is Map && data['peso'] != null
+          ? OdooParse.dbl(data['peso'])
+          : peso,
     );
   }
 

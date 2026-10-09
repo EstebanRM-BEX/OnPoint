@@ -9,6 +9,7 @@ import 'package:wms_app/features/packing_pedido/domain/entities/pedido_pack.dart
 import 'package:wms_app/features/packing_pedido/domain/entities/producto_packing.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/asignar_ubicacion_paquetes_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/desempacar_producto_usecase.dart';
+import 'package:wms_app/features/packing_pedido/domain/usecases/editar_peso_paquete_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/eliminar_paquete_usecase.dart';
 import 'package:wms_app/features/packing_pedido/domain/usecases/get_ubicaciones_muelle_usecase.dart';
 import 'package:wms_app/features/packing_pedido/presentation/bloc/common/packing_operacion.dart';
@@ -16,7 +17,7 @@ import 'package:wms_app/features/packing_pedido/presentation/bloc/common/packing
 part 'packing_packages_event.dart';
 part 'packing_packages_state.dart';
 
-/// Paquetes de un pedido: selección, desempacar, eliminar y ubicación de
+/// Paquetes de un pedido: selección, desempacar, eliminar, peso y ubicación de
 /// muelle. Los datos los pone la página con [PaquetesPackActualizados]
 /// (salen del detalle); tras cada cambio [PackingPackagesState.cambios]
 /// sube y la página recarga el detalle.
@@ -27,12 +28,14 @@ class PackingPackagesBloc
   final EliminarPaqueteUseCase eliminarPaquete;
   final GetUbicacionesMuelleUseCase getUbicaciones;
   final AsignarUbicacionPaquetesUseCase asignarUbicacion;
+  final EditarPesoPaqueteUseCase editarPeso;
 
   PackingPackagesBloc(
     this.desempacar,
     this.eliminarPaquete,
     this.getUbicaciones,
     this.asignarUbicacion,
+    this.editarPeso,
   ) : super(const PackingPackagesState()) {
     on<PaquetesPackActualizados>(_onActualizados);
     on<PaquetePackSeleccionado>(_onSeleccionado);
@@ -41,6 +44,7 @@ class PackingPackagesBloc
     on<PaquetePackExpandido>(_onExpandido);
     on<ProductoPackDesempacado>(_onDesempacar, transformer: droppable());
     on<PaquetePackEliminado>(_onEliminar, transformer: droppable());
+    on<PesoPaquetePackEditado>(_onEditarPeso, transformer: droppable());
     on<UbicacionesMuellePackCargadas>(
       _onCargarUbicaciones,
       transformer: droppable(),
@@ -173,6 +177,35 @@ class PackingPackagesBloc
           cambios: state.cambios + 1,
           seleccionados: {...state.seleccionados}..remove(event.paquete.id),
           operacion: state.operacion.exito('eliminar', msg),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onEditarPeso(
+    PesoPaquetePackEditado event,
+    Emitter<PackingPackagesState> emit,
+  ) async {
+    final pedido = state.pedido;
+    if (pedido == null) return;
+    emit(
+      state.copyWith(
+        operacion: state.operacion.procesar('peso', 'Actualizando peso...'),
+      ),
+    );
+    final r = await editarPeso(
+      EditarPesoPaqueteParams(
+        pedido: pedido,
+        paquete: event.paquete,
+        peso: event.peso,
+      ),
+    );
+    r.fold(
+      (f) => emit(state.copyWith(operacion: state.operacion.fallo('peso', f))),
+      (msg) => emit(
+        state.copyWith(
+          cambios: state.cambios + 1,
+          operacion: state.operacion.exito('peso', msg),
         ),
       ),
     );

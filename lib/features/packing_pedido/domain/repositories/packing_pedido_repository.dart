@@ -38,7 +38,9 @@ abstract class PackingPedidoRepository {
 
   /// Consulta el detalle del pedido en el servidor (`transferencias/pack/detail`),
   /// sincroniza sus productos y paquetes localmente y devuelve el [PedidoPackDetalle] actualizado.
-  Future<Either<Failure, PedidoPackDetalle>> refrescarDetalleRemoto(int pedidoId);
+  Future<Either<Failure, PedidoPackDetalle>> refrescarDetalleRemoto(
+    int pedidoId,
+  );
 
   // ── Escaneo y separación ──────────────────────────────────────────────────
 
@@ -106,6 +108,12 @@ abstract class PackingPedidoRepository {
 
   /// Elimina la caja completa; sus líneas vuelven a "Por hacer".
   Future<Either<Failure, String>> eliminarPaquete(PaquetePacking paquete);
+
+  /// Cambia el peso de la caja. Devuelve el mensaje de Odoo.
+  Future<Either<Failure, String>> editarPesoPaquete({
+    required PaquetePacking paquete,
+    required double peso,
+  });
 
   Future<Either<Failure, List<UbicacionMuelle>>> getUbicacionesMuelle();
 

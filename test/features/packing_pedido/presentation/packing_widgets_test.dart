@@ -13,6 +13,7 @@ import 'package:wms_app/features/packing_pedido/domain/entities/producto_packing
 import 'package:wms_app/features/packing_pedido/presentation/bloc/detail/packing_pedido_detail_bloc.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/common/pack_formatos.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/dialogs/backorder_pack_dialog.dart';
+import 'package:wms_app/features/packing_pedido/presentation/widgets/packages/paquete_acciones_menu.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/packages/producto_en_paquete_tile.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/producto_empacado_card.dart';
 import 'package:wms_app/features/packing_pedido/presentation/widgets/tabs/producto_preparado_card.dart';
@@ -170,6 +171,39 @@ void main() {
     expect(find.byIcon(Icons.delete), findsNothing);
   });
 
+  testWidgets('PaqueteAccionesMenu: opciones según editable', (t) async {
+    final llamadas = <String>[];
+    Future<void> montar(bool editable) => t.pumpWidget(
+      app(
+        PaqueteAccionesMenu(
+          key: ValueKey(editable),
+          editable: editable,
+          onImprimir: () => llamadas.add('imprimir'),
+          onEditarPeso: () => llamadas.add('editar'),
+          onEliminar: () => llamadas.add('eliminar'),
+        ),
+      ),
+    );
+
+    await montar(true);
+    await t.tap(find.byIcon(Icons.more_vert));
+    await t.pumpAndSettle();
+    expect(find.text('Imprimir'), findsOneWidget);
+    expect(find.text('Eliminar'), findsOneWidget);
+    await t.tap(find.text('Editar peso'));
+    await t.pumpAndSettle();
+    expect(llamadas, ['editar']);
+
+    await montar(false);
+    await t.tap(find.byIcon(Icons.more_vert));
+    await t.pumpAndSettle();
+    expect(find.text('Editar peso'), findsNothing);
+    expect(find.text('Eliminar'), findsNothing);
+    await t.tap(find.text('Imprimir'));
+    await t.pumpAndSettle();
+    expect(llamadas, ['editar', 'imprimir']);
+  });
+
   test('PackFormatos', () {
     expect(PackFormatos.cantidad(10), '10');
     expect(PackFormatos.cantidad(2.5), '2.50');
@@ -323,9 +357,7 @@ void main() {
       expect(clearBtn, findsOneWidget);
       await t.tap(clearBtn);
       await t.pump();
-      verify(
-        () => bloc.add(const BusquedaProductoPackCambiada('')),
-      ).called(1);
+      verify(() => bloc.add(const BusquedaProductoPackCambiada(''))).called(1);
     });
 
     testWidgets('botón de lector activa el foco del escáner', (t) async {
@@ -665,10 +697,7 @@ void main() {
       final state = PackingPedidoDetailState(
         pedidoId: 1,
         status: DetallePackStatus.listo,
-        detalle: PedidoPackDetalle(
-          pedido: pedidoTest,
-          listos: [listo, listo2],
-        ),
+        detalle: PedidoPackDetalle(pedido: pedidoTest, listos: [listo, listo2]),
       );
 
       t.view.physicalSize = const Size(800, 1600);
@@ -720,10 +749,7 @@ void main() {
       Set<int> seleccionados = const {},
     }) async {
       when(() => packagesBloc.state).thenReturn(
-        PackingPackagesState(
-          paquetes: paquetes,
-          seleccionados: seleccionados,
-        ),
+        PackingPackagesState(paquetes: paquetes, seleccionados: seleccionados),
       );
       await t.pumpWidget(
         MaterialApp(
@@ -736,6 +762,7 @@ void main() {
                 esCluster: true,
                 onImprimir: (_) {},
                 onEliminar: (_) {},
+                onEditarPeso: (_) {},
                 onDesempacar: (_, __) {},
                 onAsignarUbicacion: (_) {},
               ),
@@ -750,8 +777,16 @@ void main() {
       'filtra paquetes por nombre o código de barras y permite limpiar',
       experimentalLeakTesting: LeakTesting.settings.withIgnoredAll(),
       (t) async {
-        final p1 = paqueteTest(id: 1, consecutivo: 'Caja 1', packingBarcode: 'PACK-001');
-        final p2 = paqueteTest(id: 2, consecutivo: 'Caja 2', packingBarcode: 'PACK-002');
+        final p1 = paqueteTest(
+          id: 1,
+          consecutivo: 'Caja 1',
+          packingBarcode: 'PACK-001',
+        );
+        final p2 = paqueteTest(
+          id: 2,
+          consecutivo: 'Caja 2',
+          packingBarcode: 'PACK-002',
+        );
 
         await montar(t, paquetes: [p1, p2]);
         await t.pump(const Duration(milliseconds: 200));
@@ -787,7 +822,11 @@ void main() {
       'muestra estado vacío cuando la búsqueda no coincide',
       experimentalLeakTesting: LeakTesting.settings.withIgnoredAll(),
       (t) async {
-        final p1 = paqueteTest(id: 1, consecutivo: 'Caja 1', packingBarcode: 'PACK-001');
+        final p1 = paqueteTest(
+          id: 1,
+          consecutivo: 'Caja 1',
+          packingBarcode: 'PACK-001',
+        );
 
         await montar(t, paquetes: [p1]);
         await t.pump(const Duration(milliseconds: 200));
@@ -808,4 +847,3 @@ void main() {
     );
   });
 }
-
