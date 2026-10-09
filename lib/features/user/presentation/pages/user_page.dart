@@ -238,7 +238,8 @@ class _UserPageState extends State<UserPage> {
         ),
       ),
     );
-    final outcome = await service.download();
+    // Manual: siempre completa, para recuperar datos desincronizados.
+    final outcome = await service.download(completa: true);
     if (navigator.canPop()) navigator.pop();
 
     switch (outcome) {
@@ -320,7 +321,7 @@ class _UserPageState extends State<UserPage> {
           label: 'Descargar ubicaciones',
           icon: Icons.place_outlined,
           onPressed: () =>
-              context.read<UserBloc>().add(DownloadLocationsEvent()),
+              context.read<UserBloc>().add(DownloadLocationsEvent(completa: true)),
         ),
         SyncAction(
           label: 'Descargar novedades',

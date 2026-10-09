@@ -212,6 +212,16 @@ void main() {
       verifyNever(() => local.cacheUserLocations(any()));
     });
 
+    test('completa: true ignora la marca (botón manual)', () async {
+      when(() => local.marcaSyncUbicaciones()).thenAnswer((_) async => marca);
+      respuesta(UbicacionesSyncResult(ubicaciones: [_u(1)]));
+
+      await repo.getUserLocations(completa: true);
+
+      verify(() => remote.getUserLocations(since: null, scope: null)).called(1);
+      verify(() => local.cacheUserLocations([_u(1)])).called(1);
+    });
+
     test('si la descarga falla no toca lo local ni la marca', () async {
       when(() => local.marcaSyncUbicaciones()).thenAnswer((_) async => marca);
       when(

@@ -103,7 +103,12 @@ class ProductosSyncService extends ChangeNotifier {
 
   /// Descarga todos los productos, reemplaza los de SQLite e invalida el caché
   /// compartido para que Conteo, Devoluciones, Info Rápida, etc. lean lo nuevo.
-  Future<ProductosSyncOutcome> download({bool isLoadingDialog = false}) async {
+  /// [completa]: descarga todo ignorando la marca del sync incremental (botón
+  /// manual del perfil).
+  Future<ProductosSyncOutcome> download({
+    bool isLoadingDialog = false,
+    bool completa = false,
+  }) async {
     if (_isLoading) return const ProductosSyncAlreadyRunning();
     _isLoading = true;
     _error = null;
@@ -114,6 +119,7 @@ class ProductosSyncService extends ChangeNotifier {
       final syncResult = await _syncProductos(
         SyncProductosParams(
           isLoadingDialog: isLoadingDialog,
+          completa: completa,
           onProgress: (phase, processed, total) {
             _progress = ProductosSyncProgress(
               phase: phase,

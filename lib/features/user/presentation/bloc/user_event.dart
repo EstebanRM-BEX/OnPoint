@@ -34,6 +34,13 @@ class LoadWarehousesCountEvent extends UserEvent {}
 
 /// Descargas bajo demanda (botones). Antes se disparaban solas al entrar a la
 /// pantalla de usuario (GET ubicaciones y GET picking_novelties).
-class DownloadLocationsEvent extends UserEvent {}
+class DownloadLocationsEvent extends UserEvent {
+  /// Ignora la marca del sync incremental y descarga todo (botón manual).
+  final bool completa;
+  DownloadLocationsEvent({this.completa = false});
+
+  @override
+  List<Object?> get props => [completa];
+}
 
 class DownloadNoveltiesEvent extends UserEvent {}

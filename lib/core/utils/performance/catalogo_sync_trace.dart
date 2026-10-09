@@ -63,7 +63,8 @@ class CatalogoSyncTrace {
 /// Motivo de una descarga completa, para el atributo `motivo`.
 ///
 /// [motivoLocal]: por qué la app no pidió incremental (`empresa_distinta`,
-/// `sin_marca`, `catalogo_vacio`), o null si sí lo pidió con [scopeEnviado].
+/// `sin_marca`, `catalogo_vacio`, `manual`), o null si sí lo pidió con
+/// [scopeEnviado].
 String motivoDescargaCompleta({
   required String? motivoLocal,
   required String? scopeEnviado,

@@ -17,6 +17,7 @@ class SyncProductosInventario implements UseCase<void, SyncProductosParams> {
     return repository.syncProductosInventario(
       params.isLoadingDialog,
       onProgress: params.onProgress,
+      completa: params.completa,
     );
   }
 }
@@ -25,8 +26,13 @@ class SyncProductosParams {
   final bool isLoadingDialog;
   final void Function(String phase, int processed, int total)? onProgress;
 
+  /// Ignora la marca de la última sync y descarga todo (botón manual del
+  /// perfil: el incremental no arregla datos locales desincronizados).
+  final bool completa;
+
   const SyncProductosParams({
     required this.isLoadingDialog,
     this.onProgress,
+    this.completa = false,
   });
 }

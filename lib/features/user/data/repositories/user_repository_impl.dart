@@ -75,7 +75,9 @@ class UserRepositoryImpl implements UserRepository {
   /// ubicaciones locales, completo si no. Devuelve la lista COMPLETA leída de
   /// SQLite: con el incremental la respuesta trae solo lo cambiado.
   @override
-  Future<Either<Failure, List<UserLocation>>> getUserLocations() async {
+  Future<Either<Failure, List<UserLocation>>> getUserLocations({
+    bool completa = false,
+  }) async {
     if (!await _isConnected()) {
       return const Left(NetworkFailure('No internet connection'));
     }
@@ -94,7 +96,10 @@ class UserRepositoryImpl implements UserRepository {
       }
 
       var marca = await localDataSource.marcaSyncUbicaciones();
-      if (marca == null) {
+      if (completa) {
+        marca = null;
+        motivoLocal ??= 'manual';
+      } else if (marca == null) {
         motivoLocal ??= 'sin_marca';
       } else if (await localDataSource.contarUbicaciones() == 0) {
         marca = null;

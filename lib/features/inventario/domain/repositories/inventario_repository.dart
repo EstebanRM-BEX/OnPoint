@@ -11,9 +11,11 @@ import 'package:wms_app/features/inventario/domain/entities/ubicacion_inventario
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 
 abstract class InventarioRepository {
+  /// [completa]: descarga todo aunque haya marca de la última sync.
   Future<Either<Failure, void>> syncProductosInventario(
     bool isLoadingDialog, {
     void Function(String phase, int processed, int total)? onProgress,
+    bool completa = false,
   });
 
   /// Página de productos que coinciden con [query] (ver

@@ -36,6 +36,7 @@ class InventarioRepositoryImpl implements InventarioRepository {
   Future<Either<Failure, void>> syncProductosInventario(
     bool isLoadingDialog, {
     void Function(String phase, int processed, int total)? onProgress,
+    bool completa = false,
   }) async {
     if (!await networkInfo.isConnected) {
       return const Left(NetworkFailure('No hay conexión a Internet'));
@@ -57,7 +58,10 @@ class InventarioRepositoryImpl implements InventarioRepository {
 
       // Incremental solo si hay marca y catálogo local al que aplicarla.
       var marca = await localDataSource.marcaSyncCatalogo();
-      if (marca == null) {
+      if (completa) {
+        marca = null;
+        motivoLocal ??= 'manual';
+      } else if (marca == null) {
         motivoLocal ??= 'sin_marca';
       } else if (await localDataSource.getProductosCount() == 0) {
         marca = null;

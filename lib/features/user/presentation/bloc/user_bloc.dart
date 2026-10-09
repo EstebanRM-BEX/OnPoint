@@ -83,7 +83,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     isLoadingLocations = true;
     emit(const DownloadUserDataLoading('Descargando ubicaciones...'));
     try {
-      final result = await getUserLocations(NoParams());
+      final result = await getUserLocations(
+        GetUserLocationsParams(completa: event.completa),
+      );
       String? error;
       result.fold(
         (failure) => error = failure.message,
@@ -347,7 +349,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     isLoadingLocations = true;
     try {
       emit(UserLocationsLoading());
-      final result = await getUserLocations(NoParams());
+      final result = await getUserLocations(const GetUserLocationsParams());
       bool success = false;
       result.fold((failure) => emit(UserLocationsError(failure.message)), (
         locations,

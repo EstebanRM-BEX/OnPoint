@@ -145,6 +145,16 @@ void main() {
     expect((await repo.syncProductosInventario(false)).isRight(), isTrue);
   });
 
+  test('completa: true ignora la marca (botón manual)', () async {
+    when(() => local.marcaSyncCatalogo()).thenAnswer((_) async => marca);
+    respuesta(const ProductosSyncResult(productos: [producto], barcodes: []));
+
+    await repo.syncProductosInventario(false, completa: true);
+
+    verify(() => remote.syncProductos(since: null, scope: null)).called(1);
+    verify(() => local.reemplazarCatalogo([producto], [])).called(1);
+  });
+
   test('catálogo local vacío ignora la marca y pide completo', () async {
     when(() => local.marcaSyncCatalogo()).thenAnswer((_) async => marca);
     when(() => local.getProductosCount()).thenAnswer((_) async => 0);
