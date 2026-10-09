@@ -930,9 +930,9 @@ class ApiRequestService {
     try {
       if (isLoadinDialog) closeLoading = _openLoadingDialog(endpoint);
 
-      // Sigue en GET hasta confirmar que el backend en producción acepta
-      // POST en product_quants (el nuevo acepta ambos).
-      final request = http.Request('GET', Uri.parse(url));
+      // POST con body JSON-RPC: algunos proxies descartan el body de los GET
+      // (y con él since/scope). Todos los servidores ya aceptan POST.
+      final request = http.Request('POST', Uri.parse(url));
       request.body = json.encode({
         "jsonrpc": "2.0",
         "method": "call",
@@ -945,7 +945,7 @@ class ApiRequestService {
       );
 
       closeLoading?.call();
-      debugPrint('✅ GET INVENTARIO $endpoint → ${response.statusCode}');
+      debugPrint('✅ POST INVENTARIO $endpoint → ${response.statusCode}');
       return response;
     } on SocketException catch (e) {
       debugPrint('🔴 [getInventario] SocketException: $e');

@@ -94,8 +94,9 @@ Tests (con respuestas JSON de ejemplo):
   con `motivo = scope_distinto`.
 - Fase 4: la sincronización en segundo plano ya existía
   (`PostLoginCoordinator._runPreloads`); la medición es la traza `catalogo_sync`.
-- Pendiente del backend: que producción acepte `POST`, el formato de `result` y
-  los valores de `code`, y si `expiration_date` viaja en la fila.
+- Backend publicado y `product_quants` ya va por `POST` (todos los servidores lo
+  aceptan). Pendiente: confirmar el formato de `result`/`code` y si
+  `expiration_date` viaja en la fila.
 
 ## Fase 3 — Varios catálogos por `scope` (máximo 3) — DESCARTADA
 
