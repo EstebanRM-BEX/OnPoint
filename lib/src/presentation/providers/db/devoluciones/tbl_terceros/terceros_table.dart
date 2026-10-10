@@ -18,4 +18,11 @@ class TercerosTable {
       )
     ''';
   }
+
+  /// Índices de la tabla, una sentencia por elemento (en Android `execute`
+  /// corre solo la primera sentencia de un texto con varias). El escaneo de
+  /// contacto/propietario busca por documento sin distinguir mayúsculas.
+  static List<String> get indices => [
+        'CREATE INDEX IF NOT EXISTS idx_terceros_document_nocase ON $tableName ($columnDocument COLLATE NOCASE)',
+      ];
 }

@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/devoluciones/tbl_product/product_devolucion_table.dart';
+import 'package:wms_app/src/presentation/providers/db/devoluciones/tbl_terceros/terceros_table.dart';
 import 'package:wms_app/src/presentation/providers/db/expedition/tbl_expedicion_items/expedicion_items_table.dart';
 import 'package:wms_app/src/presentation/providers/db/expedition/tbl_expedicion_items_sueltos/expedicion_items_sueltos_table.dart';
 import 'package:wms_app/src/presentation/providers/db/expedition/tbl_expedicion_paquetes/expedicion_paquetes_table.dart';
@@ -28,6 +29,7 @@ void main() {
     ExpedicionItemsTable.createTable(),
     ExpedicionItemsSueltosTable.createTable(),
     RecepcionSessionPoolTable.createTable(),
+    TercerosTable.createTable(),
   ];
 
   setUpAll(() {

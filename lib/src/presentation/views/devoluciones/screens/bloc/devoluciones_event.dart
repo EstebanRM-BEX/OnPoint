@@ -52,7 +52,8 @@ class UpdateProductInfoEvent extends DevolucionesEvent {
       {required this.isIncrement, required this.quantityManual});
 }
 
-class LoadTercerosEvent extends DevolucionesEvent {}
+/// Siguiente página de la búsqueda de terceros (contacto o propietario).
+class LoadMoreTercerosEvent extends DevolucionesEvent {}
 
 class SelectTerceroEvent extends DevolucionesEvent {
   final Terceros tercero;

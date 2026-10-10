@@ -86,8 +86,19 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
   bool viewQuantity = false;
   bool isDialogVisible = false;
 
-  List<Terceros> terceros = [];
+  //*terceros (contacto y propietario): páginas de una consulta a SQLite.
+  //Son ~322 mil filas: ya no se cargan completas en memoria.
   List<Terceros> tercerosFilters = [];
+  bool hayMasTerceros = false;
+  static const _paginaTerceros = 50;
+  String _queryTerceros = '';
+  // Sube con cada búsqueda nueva: una página que llega tarde no se mezcla
+  // con los resultados de otra búsqueda.
+  int _busquedaTerceros = 0;
+
+  /// Hay terceros descargados en SQLite (lo confirma
+  /// [LoadTercerosFromDBEvent] o la descarga).
+  bool hayTercerosLocales = false;
 
   bool isKeyboardVisible = false;
 
@@ -104,6 +115,13 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
   // resumen operativo del Home no dependa de en qué momento exacto se
   // suscribe su BlocBuilder — mismo patrón que InventarioBloc.isLoading.
   bool isLoadingTerceros = false;
+
+  /// [InitializeDevolucionesData] ya cargó los datos de este flujo. Las
+  /// sub-pantallas (almacén, contacto, propietario, ubicación) vuelven con
+  /// pushReplacementNamed, que recrea index.dart y vuelve a disparar el
+  /// evento en su initState: sin esta bandera se recargaba todo y salía
+  /// "Cargando terceros..." en cada regreso.
+  bool _datosInicializados = false;
 
   DevolucionesRepository devolucionesRepository = DevolucionesRepository();
   final TercerosDownloadService _tercerosDownload = TercerosDownloadService();
@@ -129,12 +147,20 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
     //evento para actualizar el producto
     on<UpdateProductInfoEvent>(_onUpdateProductInfoEvent);
     //evento para cargar todos los terceros
-    on<LoadTercerosEvent>(_onLoadTercerosEvent);
     //*activar el teclado
     //evento para seleccionar un tercero
     on<SelectTerceroEvent>(_onSelectTerceroEvent);
     //evento para buscar un tercero
-    on<SearchTerceroEvent>(_onSearchTerceroEvent);
+    // restartable: cada tecla cancela la búsqueda anterior (debounce en el
+    // handler).
+    on<SearchTerceroEvent>(
+      _onSearchTerceroEvent,
+      transformer: restartable(),
+    );
+    on<LoadMoreTercerosEvent>(
+      _onLoadMoreTercerosEvent,
+      transformer: droppable(),
+    );
     // evento para filtrar los terceros
     // on<FilterTercerosEvent>(_onFilterTercerosEvent);
 
@@ -237,10 +263,8 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
     segundaUnidadController.dispose();
     searchControllerAlmacen.dispose();
 
-    // Listas grandes (terceros, barcodes) fuera de memoria al salir del
-    // módulo. Ubicaciones NO se invalidan: es un caché compartido (Info
-    // Rápida, Conteo, etc.).
-    terceros = [];
+    // Listas fuera de memoria al salir del módulo. Ubicaciones NO se
+    // invalidan: es un caché compartido (Info Rápida, Conteo, etc.).
     tercerosFilters = [];
     productosFilters = [];
     ubicaciones = [];
@@ -251,41 +275,29 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
     return super.close();
   }
 
+  /// Revisa que haya terceros descargados en SQLite; si no hay, los
+  /// descarga (una sola vez; después se consultan por página). Ya no se
+  /// cargan en memoria: son ~322 mil filas.
   void _onLoadTercerosFromDBEvent(
     LoadTercerosFromDBEvent event,
     Emitter<DevolucionesState> emit,
   ) async {
     isLoadingTerceros = true;
     try {
-      emit(LoadTercerosFromDBLoading());
-
-      // 1. Carga desde la base de datos local
-      final dbTerceros = await db.tercerosRepository.getAllTerceros();
-
-      if (dbTerceros.isEmpty) {
-        emit(
-          LoadTercerosFromDBFailure(
-            'No se encontraron terceros en la base de datos',
-          ),
-        );
-        // Los terceros ya no se precargan al iniciar sesión: la primera vez
-        // que se entra a Devoluciones la BD está vacía, así que se descargan
-        // aquí (una sola vez; después se leen de SQLite).
-        if (!isClosing) add(DownloadAllTercerosEvent());
-      } else {
-        // 2. Actualización en memoria
-        terceros.clear();
-        terceros = List.from(dbTerceros);
-        tercerosFilters.clear();
-        tercerosFilters = List.from(dbTerceros);
-        tercerosCount = dbTerceros.length;
-
-        debugPrint(
-          '📦 TERCEROS - Datos cargados desde BD: ${dbTerceros.length}',
-        );
-
-        emit(LoadTercerosFromDBSuccess(dbTerceros));
+      hayTercerosLocales = await db.tercerosRepository.hayTerceros();
+      if (hayTercerosLocales) {
+        emit(LoadTercerosFromDBSuccess(const []));
+        return;
       }
+      emit(
+        LoadTercerosFromDBFailure(
+          'No se encontraron terceros en la base de datos',
+        ),
+      );
+      // Los terceros ya no se precargan al iniciar sesión: la primera vez
+      // que se entra a Devoluciones la BD está vacía, así que se descargan
+      // aquí (una sola vez; después se leen de SQLite).
+      if (!isClosing) add(DownloadAllTercerosEvent());
     } catch (e, s) {
       debugPrint("❌ Error en _onLoadTercerosFromDBEvent: $e, $s");
       emit(
@@ -306,16 +318,13 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
     try {
       emit(DownloadAllTercerosLoading());
 
+      // La lista descargada solo se usa para guardarla en SQLite: no se
+      // retiene (ni en el bloc ni en el estado).
       final apiTerceros = await _tercerosDownload.download();
-
-      // Actualización en memoria
-      terceros.clear();
-      terceros = List.from(apiTerceros);
-      tercerosFilters.clear();
-      tercerosFilters = List.from(apiTerceros);
       tercerosCount = apiTerceros.length;
+      hayTercerosLocales = true;
 
-      emit(DownloadAllTercerosSuccess(apiTerceros));
+      emit(DownloadAllTercerosSuccess(const []));
     } on TercerosDownloadException catch (e) {
       emit(DownloadAllTercerosFailure(e.message));
     } catch (e, s) {
@@ -342,6 +351,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
     InitializeDevolucionesData event,
     Emitter<DevolucionesState> emit,
   ) async {
+    // El bloc vive todo el flujo: los datos ya están cargados.
+    if (_datosInicializados) return;
+    _datosInicializados = true;
     try {
       // 1. Cargamos configuración
       add(LoadConfigurationsUser());
@@ -353,11 +365,10 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
       // en SQLite al buscar o escanear, no se carga en memoria).
       add(GetProductsList());
 
+      // 4. Terceros: solo se revisa que estén en SQLite (si no, se
+      // descargan); se consultan por página al buscar o escanear.
       add(LoadTercerosFromDBEvent());
       add(LoadAllowedWarehousesEvent());
-
-      // 5. LÓGICA SMART PARA TERCEROS:
-      // Intentamos cargar de BD primero. Solo si está vacío, vamos a la nube.
     } catch (e, s) {
       debugPrint("❌ Error en _onInitializeDevolucionesData: $e, $s");
     }
@@ -555,7 +566,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
       hayMasProductos = false;
       listLotesProductFilters = listLotesProduct;
       ubicacionesFilters = ubicaciones;
-      tercerosFilters = terceros;
+      _busquedaTerceros++;
+      tercerosFilters = [];
+      hayMasTerceros = false;
       isDialogVisible = false;
 
       //limpiamos la tbla de productos devoluciones
@@ -773,28 +786,62 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
   }
 
   //*metodo para buscar un tercero
+  /// Tercero (contacto o propietario) por documento escaneado: consulta
+  /// indexada en SQLite. `null` si no existe.
+  Future<Terceros?> buscarTerceroPorDocumento(String documento) =>
+      db.tercerosRepository.getByDocumento(documento);
+
+  Future<List<Terceros>> _paginaDeTerceros(String query, int offset) =>
+      db.tercerosRepository.buscar(
+        query: query,
+        limit: _paginaTerceros,
+        offset: offset,
+      );
+
   void _onSearchTerceroEvent(
     SearchTerceroEvent event,
     Emitter<DevolucionesState> emit,
-  ) {
+  ) async {
     try {
+      final busqueda = ++_busquedaTerceros;
       emit(SearchLoading());
-      tercerosFilters = [];
-      tercerosFilters = terceros;
-      final query = event.query.toLowerCase();
       selectedAlmacen = '';
-      if (query.isEmpty) {
-        tercerosFilters = terceros;
-      } else {
-        tercerosFilters = terceros.where((tercero) {
-          return (tercero.name?.toLowerCase().contains(query) ?? false) ||
-              (tercero.document?.toLowerCase().contains(query) ?? false);
-        }).toList();
+      // Debounce: si llega otra tecla, restartable cierra este emitter.
+      if (event.query.isNotEmpty) {
+        await Future.delayed(const Duration(milliseconds: 250));
+        if (emit.isDone) return;
       }
+
+      final pagina = await _paginaDeTerceros(event.query, 0);
+      if (emit.isDone || busqueda != _busquedaTerceros) return;
+
+      _queryTerceros = event.query;
+      tercerosFilters = pagina;
+      hayMasTerceros = pagina.length == _paginaTerceros;
       emit(SearchTerceroSuccess(tercerosFilters));
     } catch (e, s) {
-      debugPrint('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchTerceroEvent: $e, $s');
       emit(SearchFailure(e.toString()));
+    }
+  }
+
+  void _onLoadMoreTercerosEvent(
+    LoadMoreTercerosEvent event,
+    Emitter<DevolucionesState> emit,
+  ) async {
+    if (!hayMasTerceros) return;
+    final busqueda = _busquedaTerceros;
+    try {
+      final pagina = await _paginaDeTerceros(
+        _queryTerceros,
+        tercerosFilters.length,
+      );
+      if (busqueda != _busquedaTerceros) return;
+      tercerosFilters = [...tercerosFilters, ...pagina];
+      hayMasTerceros = pagina.length == _paginaTerceros;
+      emit(SearchTerceroSuccess(tercerosFilters));
+    } catch (e, s) {
+      debugPrint('Error en LoadMoreTercerosEvent: $e, $s');
     }
   }
 
@@ -879,45 +926,6 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
       emit(ResetPropietarioState());
     } catch (e, s) {
       debugPrint("❌ Error en _onResetPropietarioEvent: $e, $s");
-    }
-  }
-
-  void _onLoadTercerosEvent(
-    LoadTercerosEvent event,
-    Emitter<DevolucionesState> emit,
-  ) async {
-    final stopwatch = Stopwatch()..start();
-    try {
-      emit(LoadingLocationsState()); // O una estado de carga genérico
-
-      // 1. Limpieza de tabla local (Tabula Rasa)
-      await db.tercerosRepository.deleTerceros();
-
-      // 2. Fetch con Isolate (Optimizado en el Repositorio)
-      final response = await devolucionesRepository.fetAllTerceros(true);
-
-      if (response.isNotEmpty) {
-        // 3. Inserción Raw SQL Masiva
-        await db.tercerosRepository.insertTerceros(response);
-
-        // 4. Actualización inmediata des de memoria
-        terceros.clear();
-        terceros = List.from(response);
-        tercerosFilters.clear();
-        tercerosFilters = List.from(response);
-
-        emit(LoadTercerosSuccess(response));
-
-        stopwatch.stop();
-        debugPrint(
-          '✅ ⏱️ TERCEROS - TIEMPO TOTAL OPTIMIZADO: ${stopwatch.elapsedMilliseconds} ms (${(stopwatch.elapsedMilliseconds / 1000).toStringAsFixed(2)} s)',
-        );
-      } else {
-        emit(LoadTercerosFailure('No se encontraron terceros'));
-      }
-    } catch (e, s) {
-      debugPrint("❌ Error en _onLoadTercerosEvent: $e, $s");
-      emit(LoadTercerosFailure('Error al cargar los terceros'));
     }
   }
 

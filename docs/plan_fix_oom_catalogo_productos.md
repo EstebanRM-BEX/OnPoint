@@ -162,6 +162,15 @@ Lo que cambió respecto a este plan al implementarlo:
 - **Impresión de etiquetas** (`getProductLabelRows`) también leía el catálogo completo en una consulta: ahora lee en tandas de 5.000.
 - **Regla automática:** `test/architecture/catalogo_sin_lecturas_completas_test.dart` (exige `LIMIT`/`limit:`/`COUNT(` o `// lectura-acotada: <motivo>`). Verificado contra el código original: detecta las 3 lecturas completas.
 
+### Fase 6 — Terceros de Devoluciones
+
+- `tbl_terceros` (~322 mil filas) se leía completa con `db.query` sin `LIMIT` en **cada** regreso a la pantalla principal de devolución: las sub-pantallas (almacén, contacto, propietario, ubicación) vuelven con `pushReplacementNamed`, que recrea `index.dart`, y su `initState` volvía a disparar `InitializeDevolucionesData` (diálogo "Cargando terceros..." en cada regreso y el mismo riesgo de OOM que el catálogo).
+- `InitializeDevolucionesData` corre una sola vez por vida del bloc (también aplicado en `desarrollo` como contención).
+- Terceros paginados en SQLite (`TercerosRepository.buscar`, `getByDocumento`, `hayTerceros`), índice `idx_terceros_document_nocase` (BD v70). Las pantallas de contacto y propietario piden páginas de 50 con debounce y scroll infinito; el escaneo por documento usa el índice.
+- La descarga ya no deja las 322 mil filas en el bloc ni en el estado; se quita `LoadTercerosEvent` (no se disparaba).
+- La regla de arquitectura cubre también `tbl_terceros`.
+- Medido con 322 mil filas: primera página 5 ms, búsqueda sin coincidencias (peor caso) 17 ms, documento < 1 ms; la lectura completa de antes, 265 ms y 322 mil objetos.
+
 ### Pendiente
 
 - Auditar con datos de un cliente grande las otras lecturas completas que siguen en memoria: `UbicacionesCacheService` (`getAllUbicaciones`), `BarcodesInventarioCacheService`, `productTransferenciaRepository.getAllProducts` (`transferencia_bloc.dart:1591`) y `pick_products_repository:153`. Con pocas miles de filas no son riesgo; decidir por cada una.

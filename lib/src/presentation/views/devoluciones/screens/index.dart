@@ -205,20 +205,17 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
     }
   }
 
-  void validateContacto(String value) {
+  Future<void> validateContacto(String value) async {
     final bloc = context.read<DevolucionesBloc>();
     final scan = value.trim().toLowerCase();
 
     debugPrint('scan contacto: $scan');
     _controllerContacto.text = ''; // Limpia el campo de texto del producto
-    //buscamos si hay un producto con ese código de barras
 
-    Terceros? matchedTercero = bloc.terceros.firstWhere(
-      (tercero) => tercero.document?.toLowerCase() == scan,
-      orElse: () =>
-          Terceros(), // Si no se encuentra ningún match, devuelve null
-    );
-    if (matchedTercero.document != null) {
+    // Consulta indexada en SQLite (los terceros no se cargan en memoria).
+    final matchedTercero = await bloc.buscarTerceroPorDocumento(scan);
+    if (!mounted) return;
+    if (matchedTercero != null) {
       debugPrint('contacto encontrado: ${matchedTercero.name}');
       bloc.add(SelectTerceroEvent(matchedTercero));
       Future.microtask(() => focusNode3.requestFocus());
@@ -230,18 +227,17 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
     }
   }
 
-  void validatePropietario(String value) {
+  Future<void> validatePropietario(String value) async {
     final bloc = context.read<DevolucionesBloc>();
     final scan = value.trim().toLowerCase();
 
     debugPrint('scan propietario: $scan');
     _controllerPropietario.text = '';
 
-    Terceros? matchedPropietario = bloc.terceros.firstWhere(
-      (tercero) => tercero.document?.toLowerCase() == scan,
-      orElse: () => Terceros(),
-    );
-    if (matchedPropietario.document != null) {
+    // Consulta indexada en SQLite (los terceros no se cargan en memoria).
+    final matchedPropietario = await bloc.buscarTerceroPorDocumento(scan);
+    if (!mounted) return;
+    if (matchedPropietario != null) {
       debugPrint('Propietario encontrado: ${matchedPropietario.name}');
       bloc.add(SelectPropietarioEvent(matchedPropietario));
       Future.microtask(() => focusNodePropietario.requestFocus());
@@ -1113,9 +1109,13 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                               case 'location':
                                 return validateLocation(value);
                               case 'contacto':
-                                return validateContacto(value);
+                                // Consulta SQLite: se resuelve de forma
+                                // asíncrona, el campo no espera el resultado.
+                                validateContacto(value);
+                                return;
                               case 'propietario':
-                                return validatePropietario(value);
+                                validatePropietario(value);
+                                return;
                               case 'product':
                                 return validateProducto(value);
                               default:
@@ -1321,15 +1321,15 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                 padding: const EdgeInsets.only(left: 8.0, right: 8.0),
                 child: GestureDetector(
                   onTap: () {
-                    if (devolucionesBloc.terceros.isNotEmpty) {
+                    if (devolucionesBloc.hayTercerosLocales) {
                       Navigator.pushReplacementNamed(
  context,
  'terceros',
  arguments: [context.read<DevolucionesBloc>()],
  );
                     } else if (!devolucionesBloc.isLoadingTerceros) {
-                      // Memoria vacía (se libera al salir del módulo): leer de
-                      // SQLite; solo descarga si la BD también está vacía.
+                      // Aún no se confirmó que haya terceros en SQLite: se
+                      // revisa y solo se descargan si la BD está vacía.
                       devolucionesBloc.add(LoadTercerosFromDBEvent());
                     }
                   },

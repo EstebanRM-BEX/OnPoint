@@ -17,6 +17,39 @@ class Terceroscreen extends StatefulWidget {
 
 class _TerceroscreenState extends State<Terceroscreen> {
   int? selectedIndex;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    // Primera página: los terceros se consultan en SQLite, no hay lista
+    // precargada.
+    final bloc = context.read<DevolucionesBloc>();
+    bloc.add(SearchTerceroEvent(bloc.searchControllerTerceros.text));
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// Pide la página siguiente al acercarse al final de la lista.
+  void _onScroll() {
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 300) {
+      final bloc = context.read<DevolucionesBloc>();
+      if (bloc.hayMasTerceros) bloc.add(LoadMoreTercerosEvent());
+    }
+  }
+
+  /// La selección es por índice: al cambiar la búsqueda se descarta.
+  void _buscar(DevolucionesBloc bloc, String query) {
+    setState(() => selectedIndex = null);
+    bloc.add(SearchTerceroEvent(query));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -132,9 +165,7 @@ class _TerceroscreenState extends State<Terceroscreen> {
                                             onPressed: () {
                                               bloc.searchControllerTerceros
                                                   .clear();
-                                              bloc.add(SearchTerceroEvent(
-                                                '',
-                                              ));
+                                              _buscar(bloc, '');
                                               FocusScope.of(context).unfocus();
                                             },
                                             icon: const Icon(
@@ -150,9 +181,7 @@ class _TerceroscreenState extends State<Terceroscreen> {
                                         border: InputBorder.none,
                                       ),
                                       onChanged: (value) {
-                                        bloc.add(SearchTerceroEvent(
-                                          value,
-                                        ));
+                                        _buscar(bloc, value);
                                       },
                                     ),
                                   ),
@@ -162,8 +191,16 @@ class _TerceroscreenState extends State<Terceroscreen> {
                           )),
                       Expanded(
                           child: ListView.builder(
-                              itemCount: bloc.tercerosFilters.length,
+                              controller: _scrollController,
+                              itemCount: bloc.tercerosFilters.length +
+                                  (bloc.hayMasTerceros ? 1 : 0),
                               itemBuilder: (context, index) {
+                                if (index >= bloc.tercerosFilters.length) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Center(child: CircularProgressIndicator()),
+                                  );
+                                }
                                 bool isSelected = selectedIndex == index;
 
                                 return Padding(

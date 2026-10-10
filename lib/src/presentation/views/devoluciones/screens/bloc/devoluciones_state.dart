@@ -78,16 +78,6 @@ class LoadCurrentProductState extends DevolucionesState {
 
 class UpdateProductInfoState extends DevolucionesState {}
 
-class LoadTercerosFailure extends DevolucionesState {
-  final String error;
-  LoadTercerosFailure(this.error);
-}
-
-class LoadTercerosSuccess extends DevolucionesState {
-  final List<Terceros> terceros;
-  LoadTercerosSuccess(this.terceros);
-}
-
 class DownloadAllTercerosLoading extends DevolucionesState {}
 
 class DownloadAllTercerosSuccess extends DevolucionesState {

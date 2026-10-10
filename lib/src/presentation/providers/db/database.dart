@@ -110,7 +110,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 69,
+      version: 70,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -379,6 +379,11 @@ class DataBaseSqlite {
     (
       tabla: RecepcionSessionPoolTable.tableName,
       indices: RecepcionSessionPoolTable.indices,
+      unico: const [],
+    ),
+    (
+      tabla: TercerosTable.tableName,
+      indices: TercerosTable.indices,
       unico: const [],
     ),
   ];
@@ -1387,6 +1392,13 @@ class DataBaseSqlite {
       // Índices de las consultas acotadas del catálogo (barcode y code sin
       // distinguir mayúsculas, category y barcode alterno). IF NOT EXISTS:
       // los existentes no se tocan.
+      await crearIndices(db);
+    }
+
+    if (oldVersion < 70) {
+      // Índice por documento de tbl_terceros: contacto y propietario de
+      // Devoluciones se consultan en SQLite (322 mil filas) en vez de
+      // cargarse completos en memoria.
       await crearIndices(db);
     }
   }

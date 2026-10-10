@@ -2,19 +2,20 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// Regla: ninguna consulta a `tblproductos_inventario` puede traer el
-/// catálogo completo en una sola llamada a sqflite.
+/// Regla: ninguna consulta a las tablas grandes (catálogo
+/// `tblproductos_inventario`, ~72 mil filas, y `tbl_terceros`, ~322 mil)
+/// puede traerlas completas en una sola llamada a sqflite.
 ///
 /// sqflite pasa todo el resultado en un solo buffer del heap Java: con el
-/// catálogo entero (~72 mil filas, 33 MB) la app moría por OutOfMemoryError
-/// en PDAs con heap de 128 MB (docs/plan_fix_oom_catalogo_productos.md).
+/// catálogo entero (33 MB) la app moría por OutOfMemoryError en PDAs con heap
+/// de 128 MB (docs/plan_fix_oom_catalogo_productos.md).
 ///
-/// Toda llamada `query(...)`/`rawQuery(...)` sobre la tabla debe tener
+/// Toda llamada `query(...)`/`rawQuery(...)` sobre esas tablas debe tener
 /// `LIMIT`, `limit:` o `COUNT(`. Si está acotada por otro motivo (p. ej.
 /// `SELECT DISTINCT` de propietarios), se marca con un comentario
 /// `// lectura-acotada: <motivo>` justo antes de la llamada.
 void main() {
-  test('ninguna consulta del catálogo sin LIMIT en lib/', () {
+  test('ninguna consulta a tablas grandes sin LIMIT en lib/', () {
     final infracciones = <String>[];
     final archivos = Directory('lib')
         .listSync(recursive: true)
@@ -31,7 +32,7 @@ void main() {
     expect(
       infracciones,
       isEmpty,
-      reason: 'Consultas a tblproductos_inventario sin LIMIT (riesgo de '
+      reason: 'Consultas a tablas grandes sin LIMIT (riesgo de '
           'OutOfMemoryError). Paginar con LIMIT/OFFSET o por clave, o marcar '
           'con "// lectura-acotada: <motivo>" si está acotada por otro motivo.',
     );
@@ -63,12 +64,29 @@ void main() {
         isEmpty,
       );
     });
+
+    test('también cubre tbl_terceros', () {
+      expect(
+        consultasDelCatalogoSinLimite('''
+          await db.query(TercerosTable.tableName);
+          await db.rawQuery('SELECT 1 FROM \${TercerosTable.tableName} LIMIT 1');
+        '''),
+        [1],
+      );
+    });
   });
 }
 
 final _llamada = RegExp(r'\b(?:rawQuery|query)\(');
+/// Tablas grandes: la clase `*Table` y el nombre literal de la tabla.
+const _tablas = {
+  'ProductInventarioTable': 'tblproductos_inventario',
+  'TercerosTable': 'tbl_terceros',
+};
+
 final _alias = RegExp(
-  r'(?:const|final|var)\s+(\w+)\s*=\s*ProductInventarioTable\.tableName',
+  '(?:const|final|var)\\s+(\\w+)\\s*=\\s*'
+  '(?:${_tablas.keys.join('|')})\\.tableName',
 );
 final _acotada = RegExp(r'\bLIMIT\b|\blimit\s*:|COUNT\(', caseSensitive: false);
 
@@ -76,8 +94,8 @@ final _acotada = RegExp(r'\bLIMIT\b|\blimit\s*:|COUNT\(', caseSensitive: false);
 List<int> consultasDelCatalogoSinLimite(String fuente) {
   final alias = _alias.allMatches(fuente).map((m) => m.group(1)!).toList();
   final referenciaTabla = RegExp([
-    r'ProductInventarioTable\.tableName',
-    'tblproductos_inventario',
+    for (final clase in _tablas.keys) '$clase\\.tableName',
+    for (final nombre in _tablas.values) '\\b$nombre\\b',
     for (final a in alias) '\\\$\\{?$a\\b',
   ].join('|'));
 

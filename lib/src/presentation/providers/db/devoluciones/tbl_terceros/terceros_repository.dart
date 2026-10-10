@@ -45,6 +45,11 @@ List<Map<String, dynamic>> _processTercerosRawArgs(List<Terceros> tercerosList) 
 }
 
 class TercerosRepository {
+  TercerosRepository({DataBaseSqlite? database})
+      : _database = database ?? DataBaseSqlite();
+
+  final DataBaseSqlite _database;
+
   /// Inserción masiva usando Raw SQL Multi-Values y Extrema Optimización
   Future<void> insertTerceros(List<Terceros> tercerosList) async {
     if (tercerosList.isEmpty) return;
@@ -83,25 +88,84 @@ class TercerosRepository {
     }
   }
 
-  Future<List<Terceros>> getAllTerceros() async {
-    try {
-      Database db = await DataBaseSqlite().getDatabaseInstance();
-      final List<Map<String, dynamic>> maps = await db.query(TercerosTable.tableName);
+  // Consultas acotadas: la tabla tiene ~322 mil terceros. Leerla completa en
+  // una sola consulta arma un buffer enorme en el heap Java (el mismo
+  // OutOfMemoryError del catálogo de productos, ver
+  // docs/plan_fix_oom_catalogo_productos.md).
 
-      return maps.map((map) {
-        return Terceros(
-          id: map[TercerosTable.columnId],
-          document: map[TercerosTable.columnDocument],
-          sucursal: map[TercerosTable.columnSucursal],
-          name: map[TercerosTable.columnName],
-          almacen: map[TercerosTable.columnAlmacen],
-        );
-      }).toList();
+  /// Una página de terceros (orden de la tabla). [query] busca, sin
+  /// distinguir mayúsculas, en nombre y documento.
+  Future<List<Terceros>> buscar({
+    String query = '',
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    try {
+      final db = await _database.getDatabaseInstance();
+      final q = query.trim();
+      final args = <Object?>[];
+      var where = '';
+      if (q.isNotEmpty) {
+        // LIKE de SQLite ya ignora mayúsculas (ASCII); se escapan % y _ para
+        // que se busquen literales.
+        final like =
+            '%${q.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_')}%';
+        where = "WHERE ${TercerosTable.columnName} LIKE ? ESCAPE '\\' "
+            "OR ${TercerosTable.columnDocument} LIKE ? ESCAPE '\\' ";
+        args.addAll([like, like]);
+      }
+      final rows = await db.rawQuery(
+        'SELECT * FROM ${TercerosTable.tableName} $where'
+        'ORDER BY rowid LIMIT ? OFFSET ?',
+        [...args, limit, offset],
+      );
+      return rows.map(_fromRow).toList();
     } catch (e) {
-      debugPrint("Error al obtener terceros de SQLite: $e");
+      debugPrint("Error al buscar terceros en SQLite: $e");
       return [];
     }
   }
+
+  /// Tercero por documento escaneado (sin distinguir mayúsculas); `null` si
+  /// no existe.
+  Future<Terceros?> getByDocumento(String documento) async {
+    final d = documento.trim();
+    if (d.isEmpty) return null;
+    try {
+      final db = await _database.getDatabaseInstance();
+      final rows = await db.rawQuery(
+        'SELECT * FROM ${TercerosTable.tableName} '
+        'WHERE ${TercerosTable.columnDocument} = ? COLLATE NOCASE LIMIT 1',
+        [d],
+      );
+      return rows.isEmpty ? null : _fromRow(rows.first);
+    } catch (e) {
+      debugPrint("Error al buscar tercero por documento: $e");
+      return null;
+    }
+  }
+
+  /// Hay terceros descargados en SQLite.
+  Future<bool> hayTerceros() async {
+    try {
+      final db = await _database.getDatabaseInstance();
+      final rows = await db.rawQuery(
+        'SELECT 1 FROM ${TercerosTable.tableName} LIMIT 1',
+      );
+      return rows.isNotEmpty;
+    } catch (e) {
+      debugPrint("Error al revisar terceros en SQLite: $e");
+      return false;
+    }
+  }
+
+  Terceros _fromRow(Map<String, Object?> map) => Terceros(
+        id: map[TercerosTable.columnId] as int?,
+        document: map[TercerosTable.columnDocument] as String?,
+        sucursal: map[TercerosTable.columnSucursal] as String?,
+        name: map[TercerosTable.columnName],
+        almacen: map[TercerosTable.columnAlmacen] as String?,
+      );
 
   Future<void> deleTerceros() async {
     try {
