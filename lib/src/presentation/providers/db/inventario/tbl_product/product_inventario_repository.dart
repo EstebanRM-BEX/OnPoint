@@ -3,6 +3,7 @@
 import 'package:flutter/foundation.dart'; // Import para compute
 import 'package:sqflite/sqflite.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
+import 'package:wms_app/src/presentation/providers/db/inventario/tbl_barcode/barcodes_inventario_table.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/product_inventario_table.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/update_product_request.dart';
 import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
@@ -83,16 +84,23 @@ List<Map<String, dynamic>> _processProductsRawArgs(
   return queries;
 }
 
-/// Hasta este número de filas se arma la lista en el hilo principal: crear el
-/// isolate de `compute` costó ~5 s en PDA, y armar 1.400 productos toma
-/// unos pocos ms. Con catálogos más grandes sí conviene el isolate.
-const int _umbralCompute = 5000;
-
 List<Product> _parseProductsMap(List<Map<String, dynamic>> maps) {
   return maps.map((m) => Product.fromMap(m)).toList();
 }
 
 class ProductInventarioRepository {
+  ProductInventarioRepository({DataBaseSqlite? database})
+    : _database = database ?? DataBaseSqlite();
+
+  final DataBaseSqlite _database;
+
+  /// Filas por llamada a sqflite al leer el catálogo completo. sqflite pasa
+  /// todo el resultado de una consulta en un solo buffer del heap Java: con
+  /// el catálogo entero (~72 mil filas) eran 33 MB y la app moría por
+  /// OutOfMemoryError en equipos con heap de 128 MB (Urovo DT50). 2.000
+  /// filas son ~1 MB.
+  static const tandaLectura = 2000;
+
   /// Sentencias INSERT en tandas (respetan el límite de variables de SQLite)
   /// para [productosList], sin ejecutarlas: el reemplazo atómico del catálogo
   /// las corre dentro de su propia transacción.
@@ -143,47 +151,211 @@ class ProductInventarioRepository {
   // MÉTODOS DE LECTURA (Optimizados por Índices)
   // --------------------------------------------------------------------------
 
+  /// Todo el stock (varias filas por producto), leído en tandas de
+  /// [tandaLectura].
+  @Deprecated(
+    'Carga el catálogo completo en memoria (OOM en PDAs). Usar buscar(), '
+    'contar() o getByCodigo().',
+  )
   Future<List<Product>> getAllProducts() async {
     try {
-      Database db = await DataBaseSqlite().getDatabaseInstance();
-      // Si la lista es gigante, considera poner un LIMIT aqui
-      List<Map<String, dynamic>> maps =
-          await db.query(ProductInventarioTable.tableName);
-
-      if (maps.isNotEmpty) {
-        // Uso de isolados para evitar jank en el thread principal
-        return await compute(_parseProductsMap, maps);
-      } else {
-        return [];
-      }
+      final db = await _database.getDatabaseInstance();
+      return await _leerEnTandas(
+        db,
+        columnaClave: ProductInventarioTable.columnId,
+        agrupar: false,
+      );
     } catch (e, s) {
       debugPrint("Error al obtener productos: $e ==> $s");
       return [];
     }
   }
 
+  /// Una fila por producto, leída en tandas de [tandaLectura].
+  @Deprecated(
+    'Carga el catálogo completo en memoria (OOM en PDAs). Usar buscar(), '
+    'contar() o getByCodigo().',
+  )
   Future<List<Product>> getAllUniqueProducts() async {
     try {
-      final db = await DataBaseSqlite().getDatabaseInstance();
-
-      // Consulta optimizada para agrupar por productId
-      // Gracias al índice en product_id, el GROUP BY es más rápido.
-      final maps = await db.rawQuery('''
-        SELECT * FROM ${ProductInventarioTable.tableName}
-        GROUP BY ${ProductInventarioTable.columnProductId}
-      ''');
-
-      if (maps.isNotEmpty) {
-        if (maps.length <= _umbralCompute) return _parseProductsMap(maps);
-        // Optimización Isolate
-        return await compute(_parseProductsMap, maps);
-      } else {
-        return [];
-      }
+      final db = await _database.getDatabaseInstance();
+      return await _leerEnTandas(
+        db,
+        columnaClave: ProductInventarioTable.columnProductId,
+        agrupar: true,
+      );
     } catch (e, s) {
       debugPrint("Error al obtener productos únicos por ID: $e ==> $s");
       return [];
     }
+  }
+
+  /// Paginación por clave (`WHERE clave > última`), no por OFFSET: cada
+  /// tanda usa el índice y no vuelve a recorrer las filas ya leídas. Cada
+  /// tanda se arma en el hilo principal (~2.000 filas, pocos ms) y entre
+  /// tandas la UI sigue respondiendo.
+  Future<List<Product>> _leerEnTandas(
+    DatabaseExecutor db, {
+    required String columnaClave,
+    required bool agrupar,
+  }) async {
+    const t = ProductInventarioTable.tableName;
+    final productos = <Product>[];
+    Object? ultima;
+    while (true) {
+      final rows = await db.rawQuery(
+        'SELECT * FROM $t '
+        '${ultima == null ? '' : 'WHERE $columnaClave > ? '}'
+        '${agrupar ? 'GROUP BY $columnaClave ' : ''}'
+        'ORDER BY $columnaClave LIMIT ?',
+        [if (ultima != null) ultima, tandaLectura],
+      );
+      if (rows.isEmpty) break;
+      productos.addAll(_parseProductsMap(rows));
+      if (rows.length < tandaLectura) break;
+      ultima = rows.last[columnaClave];
+    }
+    return productos;
+  }
+
+  // --------------------------------------------------------------------------
+  // CONSULTAS ACOTADAS: nunca devuelven el catálogo completo
+  // --------------------------------------------------------------------------
+
+  /// Producto por código escaneado: `barcode` o `code` exactos y, si no,
+  /// un código alterno de `tblbarcodes_inventario`. Usa índices; `null` si
+  /// no existe.
+  Future<Product?> getByCodigo(String codigo) async {
+    final c = codigo.trim();
+    if (c.isEmpty) return null;
+    try {
+      const p = ProductInventarioTable.tableName;
+      const b = BarcodesInventarioTable.tableName;
+      final db = await _database.getDatabaseInstance();
+      var rows = await db.rawQuery(
+        'SELECT * FROM $p '
+        'WHERE ${ProductInventarioTable.columnBarcode} = ? '
+        'OR ${ProductInventarioTable.columnProductCode} = ? '
+        'LIMIT 1',
+        [c, c],
+      );
+      if (rows.isEmpty) {
+        rows = await db.rawQuery(
+          'SELECT * FROM $p WHERE ${ProductInventarioTable.columnProductId} = '
+          '(SELECT ${BarcodesInventarioTable.columnIdProduct} FROM $b '
+          'WHERE ${BarcodesInventarioTable.columnBarcode} = ? LIMIT 1) '
+          'LIMIT 1',
+          [c],
+        );
+      }
+      return rows.isEmpty ? null : Product.fromMap(rows.first);
+    } catch (e, s) {
+      debugPrint("Error al buscar producto por código: $e ==> $s");
+      return null;
+    }
+  }
+
+  /// Una página del catálogo, una fila por producto, ordenada por
+  /// `product_id` (el orden del índice: SQLite corta al llegar a [limit] sin
+  /// ordenar todo el catálogo).
+  ///
+  /// [query] busca (sin distinguir mayúsculas) en nombre, código, barcode y
+  /// códigos alternos. [filtro] restringe a productos y/o categorías.
+  Future<List<Product>> buscar({
+    String query = '',
+    FiltroCatalogo filtro = FiltroCatalogo.todos,
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    if (filtro.vacio) return [];
+    try {
+      final w = _where(query, filtro);
+      final db = await _database.getDatabaseInstance();
+      final rows = await db.rawQuery(
+        'SELECT * FROM ${ProductInventarioTable.tableName} '
+        '${w.sql} '
+        'GROUP BY ${ProductInventarioTable.columnProductId} '
+        'ORDER BY ${ProductInventarioTable.columnProductId} '
+        'LIMIT ? OFFSET ?',
+        [...w.args, limit, offset],
+      );
+      return _parseProductsMap(rows);
+    } catch (e, s) {
+      debugPrint("Error al buscar productos: $e ==> $s");
+      return [];
+    }
+  }
+
+  /// Cantidad de productos (no de filas de stock) que devuelve [buscar] con
+  /// los mismos parámetros.
+  Future<int> contar({
+    String query = '',
+    FiltroCatalogo filtro = FiltroCatalogo.todos,
+  }) async {
+    if (filtro.vacio) return 0;
+    try {
+      final w = _where(query, filtro);
+      final db = await _database.getDatabaseInstance();
+      final rows = await db.rawQuery(
+        'SELECT COUNT(DISTINCT ${ProductInventarioTable.columnProductId}) '
+        'AS total FROM ${ProductInventarioTable.tableName} ${w.sql}',
+        w.args,
+      );
+      return (rows.first['total'] as int?) ?? 0;
+    } catch (e, s) {
+      debugPrint("Error al contar productos: $e ==> $s");
+      return 0;
+    }
+  }
+
+  ({String sql, List<Object?> args}) _where(
+    String query,
+    FiltroCatalogo filtro,
+  ) {
+    final condiciones = <String>[];
+    final args = <Object?>[];
+
+    final filtroSql = <String>[];
+    if (filtro.productIds != null) {
+      // Enteros en línea: no cuentan para el límite de 999 variables de
+      // SQLite (una orden de conteo puede traer miles de productos).
+      filtroSql.add(
+        '${ProductInventarioTable.columnProductId} IN '
+        '(${filtro.productIds!.map((id) => id.toString()).join(',')})',
+      );
+    }
+    if (filtro.categorias != null && filtro.categorias!.isNotEmpty) {
+      filtroSql.add(
+        '${ProductInventarioTable.columnCategory} IN '
+        '(${List.filled(filtro.categorias!.length, '?').join(',')})',
+      );
+      args.addAll(filtro.categorias!);
+    }
+    // Productos y categorías a la vez = unión (conteo "combined").
+    if (filtroSql.isNotEmpty) condiciones.add('(${filtroSql.join(' OR ')})');
+
+    final q = query.trim();
+    if (q.isNotEmpty) {
+      // LIKE de SQLite ya ignora mayúsculas (ASCII); se escapan % y _ para
+      // que se busquen literales.
+      final like =
+          '%${q.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_')}%';
+      condiciones.add(
+        "(${ProductInventarioTable.columnProductName} LIKE ? ESCAPE '\\' "
+        "OR ${ProductInventarioTable.columnProductCode} LIKE ? ESCAPE '\\' "
+        "OR ${ProductInventarioTable.columnBarcode} LIKE ? ESCAPE '\\' "
+        "OR ${ProductInventarioTable.columnProductId} IN ("
+        "SELECT ${BarcodesInventarioTable.columnIdProduct} "
+        "FROM ${BarcodesInventarioTable.tableName} "
+        "WHERE ${BarcodesInventarioTable.columnBarcode} LIKE ? ESCAPE '\\'))",
+      );
+      args.addAll(List.filled(4, like));
+    }
+
+    return (
+      sql: condiciones.isEmpty ? '' : 'WHERE ${condiciones.join(' AND ')}',
+      args: args,
+    );
   }
 
   /// Proyección liviana (id/name/code/barcode) para pantallas que NO necesitan
@@ -211,7 +383,7 @@ class ProductInventarioRepository {
 
   Future<Product?> getProductById(int productId) async {
     try {
-      Database db = await DataBaseSqlite().getDatabaseInstance();
+      Database db = await _database.getDatabaseInstance();
       // Esta consulta ahora es INSTANTÁNEA gracias al índice idx_inv_product_id
       List<Map<String, dynamic>> maps = await db.query(
           ProductInventarioTable.tableName,
@@ -268,5 +440,29 @@ class ProductInventarioRepository {
     } catch (e, s) {
       debugPrint("Error al actualizar campos del producto $productId: $e ==> $s");
     }
+  }
+}
+
+/// Restricción de [ProductInventarioRepository.buscar] y
+/// [ProductInventarioRepository.contar]. `null` = sin restricción; un set
+/// vacío = no coincide nada (p. ej. una orden de conteo sin productos).
+/// Con [productIds] y [categorias] a la vez se toma la unión.
+class FiltroCatalogo {
+  const FiltroCatalogo({this.productIds, this.categorias});
+
+  static const todos = FiltroCatalogo();
+
+  final Set<int>? productIds;
+  final Set<String>? categorias;
+
+  /// Ningún producto puede cumplirlo: se evita ir a la base.
+  bool get vacio {
+    final sinIds = productIds != null && productIds!.isEmpty;
+    final sinCategorias = categorias != null && categorias!.isEmpty;
+    // Con ambos es una unión: vacía solo si los dos lo están.
+    if (productIds != null && categorias != null) {
+      return sinIds && sinCategorias;
+    }
+    return sinIds || sinCategorias;
   }
 }

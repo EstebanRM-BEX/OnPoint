@@ -110,7 +110,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 68,
+      version: 69,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -1381,6 +1381,12 @@ class DataBaseSqlite {
       // Los índices nunca se habían creado (ver crearIndices). Va al final:
       // las tablas creadas en migraciones anteriores también los reciben.
       await crearIndices(db, limpiarDuplicados: true);
+    }
+
+    if (oldVersion < 69) {
+      // Índices de las consultas acotadas del catálogo (code, category y
+      // barcode alterno). IF NOT EXISTS: los existentes no se tocan.
+      await crearIndices(db);
     }
   }
 
