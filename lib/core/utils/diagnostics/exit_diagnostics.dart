@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wms_app/core/utils/diagnostics/exit_classifier.dart';
 import 'package:wms_app/core/utils/diagnostics/route_stack_tracker.dart';
 import 'package:wms_app/core/utils/performance/jank_monitor.dart';
 
@@ -22,6 +24,12 @@ import 'package:wms_app/core/utils/performance/jank_monitor.dart';
 /// 2. **Cierre en primer plano (todas las versiones)**: se persiste el estado
 ///    del ciclo de vida. Si la sesión anterior terminó en `resumed`/`inactive`
 ///    el proceso murió con la app a la vista, sin pasar por segundo plano.
+///    Si Android registró el motivo de esa muerte, se une a esta señal.
+///
+/// Cada motivo va a su propio issue (`ExitDiagnostics.cierre_CRASH`,
+/// `cierre_equipo_apagado`, `salida_LOW_MEMORY`…), ver [clasificarCierrePrevio]
+/// y [pilaDeGrupo]. Las salidas intencionales (`exit(0)`) se marcan con
+/// [markIntentionalExit] y no se reportan.
 ///
 /// Además, cada minuto actualiza las custom keys `rss_mb` y `screen` para que
 /// cualquier crash llegue con la memoria y la pantalla del momento.
@@ -39,16 +47,6 @@ class ExitDiagnostics {
   static const _kLastTs = 'diag_last_ts';
   static const _kLastExitTs = 'diag_last_exit_reported_ts';
 
-  /// Motivos de salida normales: no se reportan.
-  static const _benignReasons = {
-    'EXIT_SELF',
-    'USER_REQUESTED',
-    'USER_STOPPED',
-    'PACKAGE_UPDATED',
-    'PACKAGE_STATE_CHANGE',
-    'FREEZER',
-  };
-
   static Timer? _heartbeat;
   static AppLifecycleListener? _lifecycle;
   static SharedPreferences? _prefs;
@@ -59,8 +57,17 @@ class ExitDiagnostics {
     _started = true;
     try {
       _prefs = await SharedPreferences.getInstance();
-      await _reportPreviousSession();
-      await _reportAndroidExitReasons();
+      final salidas = await _leerSalidasAndroid();
+      // Solo si la sesión murió a la vista: esa salida se reporta junto al
+      // cierre (señal 2). Si murió en segundo plano va por la señal 1.
+      final previa = terminoEnPrimerPlano(_prefs!.getString(_kLastState))
+          ? salidaDeSesionPrevia(salidas, _prefs!.getInt(_kLastTs))
+          : null;
+      await _reportPreviousSession(
+        previa,
+        soReportaSalidas: await _soReportaSalidas(),
+      );
+      await _reportAndroidExitReasons(salidas, excluir: previa);
     } catch (e, s) {
       debugPrint('ExitDiagnostics: error al revisar la sesión previa: $e\n$s');
     }
@@ -120,12 +127,49 @@ class ExitDiagnostics {
     await prefs.setInt(_kLastTs, DateTime.now().millisecondsSinceEpoch);
   }
 
-  /// Señal 2: la sesión anterior terminó con la app en primer plano.
-  static Future<void> _reportPreviousSession() async {
+  /// Salidas de Android 11+ aún no reportadas (más nuevas que la última
+  /// reportada). Vacía en Android < 11.
+  static Future<List<SalidaAndroid>> _leerSalidasAndroid() async {
+    final List<dynamic>? raw;
+    try {
+      raw = await _channel.invokeMethod<List<dynamic>>('getExitInfo');
+    } catch (e) {
+      // Sin motivos del SO igual se reporta el cierre en primer plano.
+      debugPrint('ExitDiagnostics: getExitInfo falló: $e');
+      return const [];
+    }
+    if (raw == null || raw.isEmpty) return const [];
+    final lastReported = _prefs!.getInt(_kLastExitTs) ?? 0;
+    return raw
+        .map((e) => SalidaAndroid.fromMap(Map<String, dynamic>.from(e as Map)))
+        .where((s) => s.timestamp > lastReported)
+        .toList();
+  }
+
+  static Future<bool> _soReportaSalidas() async {
+    try {
+      final info = await DeviceInfoPlugin().androidInfo;
+      return info.version.sdkInt >= 30; // ApplicationExitInfo: Android 11
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Señal 2: la sesión anterior terminó con la app en primer plano. Si
+  /// Android registró el motivo, va en el issue de ese motivo
+  /// ([clasificarCierrePrevio]).
+  static Future<void> _reportPreviousSession(
+    SalidaAndroid? salida, {
+    required bool soReportaSalidas,
+  }) async {
     final prefs = _prefs!;
     final lastState = prefs.getString(_kLastState);
-    if (lastState == null) return; // primera ejecución
-    if (lastState != 'resumed' && lastState != 'inactive') return;
+    final cierre = clasificarCierrePrevio(
+      ultimoEstado: lastState,
+      salida: salida,
+      soReportaSalidas: soReportaSalidas,
+    );
+    if (cierre == null) return;
 
     final screen = prefs.getString(_kLastScreen) ?? '?';
     final rss = prefs.getInt(_kLastRssMb) ?? -1;
@@ -134,65 +178,67 @@ class ExitDiagnostics {
     final when = lastTs == null
         ? '?'
         : DateTime.fromMillisecondsSinceEpoch(lastTs).toIso8601String();
+    final gapMin = lastTs == null
+        ? '?'
+        : DateTime.now()
+              .difference(DateTime.fromMillisecondsSinceEpoch(lastTs))
+              .inMinutes
+              .toString();
 
     await FirebaseCrashlytics.instance.recordError(
-      Exception(
-        'Cierre en primer plano: la sesión anterior terminó en "$lastState"',
-      ),
-      StackTrace.current,
-      reason:
-          'screen=$screen rss_mb=$rss ui=[$ui] ultimo_latido=$when',
+      Exception(cierre.titulo),
+      pilaDeGrupo(cierre.grupo),
+      reason: 'screen=$screen rss_mb=$rss ui=[$ui] ultimo_latido=$when',
       information: [
         'screen: $screen',
         'rss_mb: $rss',
         'ui: $ui',
         'ultimo_latido: $when',
+        'minutos_hasta_relanzar: $gapMin',
+        ...?salida?.informacion,
       ],
       fatal: false,
     );
   }
 
-  /// Señal 1: motivo de salida que reporta Android 11+ (ApplicationExitInfo).
-  static Future<void> _reportAndroidExitReasons() async {
+  /// Señal 1: salidas anómalas que reporta Android 11+ (ApplicationExitInfo)
+  /// y que no son la de la sesión previa (esa ya va en la señal 2). Un issue
+  /// por motivo.
+  static Future<void> _reportAndroidExitReasons(
+    List<SalidaAndroid> salidas, {
+    SalidaAndroid? excluir,
+  }) async {
+    if (salidas.isEmpty) return;
     final prefs = _prefs!;
-    final raw = await _channel.invokeMethod<List<dynamic>>('getExitInfo');
-    if (raw == null || raw.isEmpty) return;
+    var newest = prefs.getInt(_kLastExitTs) ?? 0;
 
-    final lastReported = prefs.getInt(_kLastExitTs) ?? 0;
-    var newest = lastReported;
+    for (final salida in salidas) {
+      if (salida.timestamp > newest) newest = salida.timestamp;
+      if (identical(salida, excluir) || salida.esBenigna) continue;
 
-    for (final item in raw) {
-      final info = Map<String, dynamic>.from(item as Map);
-      final ts = (info['timestamp'] as num?)?.toInt() ?? 0;
-      if (ts <= lastReported) continue;
-      if (ts > newest) newest = ts;
-
-      final reason = '${info['reason']}';
-      if (_benignReasons.contains(reason)) continue;
-      // `OTHER` + "empty for too long": Android liberó un proceso en caché que
-      // llevaba mucho tiempo en segundo plano. Es la limpieza normal del
-      // sistema, no un cierre anómalo.
-      final description = '${info['description']}';
-      if (reason == 'OTHER' && description.contains('empty for')) continue;
-
-      final when = DateTime.fromMillisecondsSinceEpoch(ts).toIso8601String();
       await FirebaseCrashlytics.instance.recordError(
-        Exception('Android process exit: $reason'),
-        StackTrace.current,
-        reason: '${info['description']}',
-        information: [
-          'reason: $reason',
-          'description: ${info['description']}',
-          'importance: ${info['importance']} (100 = primer plano)',
-          'rss_kb: ${info['rss']}',
-          'pss_kb: ${info['pss']}',
-          'cuando: $when',
-        ],
+        Exception('Android process exit: ${salida.reason}'),
+        pilaDeGrupo(grupoDeSalida(salida)),
+        reason: salida.description,
+        information: salida.informacion,
         fatal: false,
       );
     }
 
-    if (newest > lastReported) await prefs.setInt(_kLastExitTs, newest);
+    await prefs.setInt(_kLastExitTs, newest);
+  }
+
+  /// Marca una salida intencional (`exit(0)`) para que el próximo arranque
+  /// no la reporte como cierre anómalo. Funciona aunque [start] no haya
+  /// corrido (p. ej. error antes de terminar la inicialización).
+  static Future<void> markIntentionalExit() async {
+    _stopHeartbeat();
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      await prefs.setString(_kLastState, estadoSalidaIntencional);
+    } catch (_) {
+      // Sin preferencias el peor caso es un falso "cierre en primer plano".
+    }
   }
 
   static void dispose() {

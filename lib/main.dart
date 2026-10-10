@@ -119,7 +119,8 @@ void main() {
         title: 'Algo salió mal',
         message: 'No se pudo cargar la información...',
         buttonText: 'Cerrar la app',
-        onPressed: () {
+        onPressed: () async {
+          await ExitDiagnostics.markIntentionalExit();
           exit(0);
         },
       );
