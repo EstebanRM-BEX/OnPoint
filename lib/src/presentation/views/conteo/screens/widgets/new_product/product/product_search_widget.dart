@@ -23,8 +23,13 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
   @override
   void initState() {
     super.initState();
+    _productListScrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      // Primera página: los productos se consultan en SQLite, no hay lista
+      // precargada.
+      final bloc = context.read<ConteoBloc>();
+      bloc.add(SearchProductEvent(bloc.searchControllerProducts.text));
       final route = ModalRoute.of(context);
       if (route?.animation?.isCompleted ?? true) {
         _searchFocusNode.requestFocus();
@@ -43,8 +48,18 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
     }
   }
 
+  /// Pide la página siguiente al acercarse al final de la lista.
+  void _onScroll() {
+    final position = _productListScrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 300) {
+      final bloc = context.read<ConteoBloc>();
+      if (bloc.hayMasProductos) bloc.add(LoadMoreProductsConteoEvent());
+    }
+  }
+
   @override
   void dispose() {
+    _productListScrollController.removeListener(_onScroll);
     _searchFocusNode.dispose();
     _productListScrollController.dispose();
     super.dispose();
@@ -104,52 +119,18 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
   }
 
   Widget _buildProductList(BuildContext context, ConteoBloc bloc) {
-    final productos = bloc.productosFiltersSearch;
-    final ubicacionId = bloc.currentUbication?.id;
-
-    final enUbicacionActual =
-        productos.where((p) => p.locationId == ubicacionId).toList();
-
-    final enUbicacionCero = productos.where((p) => p.locationId == 0).toList();
-
-    final restantes = productos
-        .where((p) => p.locationId != ubicacionId && p.locationId != 0)
-        .toList();
-
-    final List<Widget> items = [];
-
-    // 🟢 Primero: productos en ubicación actual
-    for (final product in enUbicacionActual) {
-      items.add(_buildProductCard(
-        context,
-        bloc,
-        product,
-        product.productId,
-        product.lotId,
-      ));
-    }
-
-    // 🔵 Luego: productos en locationId == 0
-    for (final product in enUbicacionCero) {
-      items.add(_buildProductCard(
-        context,
-        bloc,
-        product,
-        product.productId,
-        product.lotId,
-      ));
-    }
-
-    // ⚪ Por último: productos restantes
-    for (final product in restantes) {
-      items.add(_buildProductCard(
-        context,
-        bloc,
-        product,
-        product.productId,
-        product.lotId,
-      ));
-    }
+    // Ya vienen ordenados de SQLite: ubicación actual, luego ubicación 0 y
+    // el resto.
+    final List<Widget> items = [
+      for (final product in bloc.productosFiltersSearch)
+        _buildProductCard(
+          context,
+          bloc,
+          product,
+          product.productId,
+          product.lotId,
+        ),
+    ];
 
     if (items.isEmpty) {
       return const Center(
@@ -170,8 +151,13 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
       thumbVisibility: true,
       child: ListView.builder(
         controller: _productListScrollController,
-        itemCount: items.length,
-        itemBuilder: (context, index) => items[index],
+        itemCount: items.length + (bloc.hayMasProductos ? 1 : 0),
+        itemBuilder: (context, index) => index < items.length
+            ? items[index]
+            : const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              ),
       ),
     );
   }

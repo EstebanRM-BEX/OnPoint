@@ -32,6 +32,6 @@ class BarcodesInventarioTable {
         'CREATE INDEX IF NOT EXISTS idx_search_inv_product ON $tableName ($columnIdProduct)',
         // Escaneo por código alterno: el único (id_product, barcode) no
         // sirve para buscar solo por barcode.
-        'CREATE INDEX IF NOT EXISTS idx_search_inv_barcode ON $tableName ($columnBarcode)',
+        'CREATE INDEX IF NOT EXISTS idx_search_inv_barcode_nocase ON $tableName ($columnBarcode COLLATE NOCASE)',
       ];
 }

@@ -232,13 +232,6 @@ class SearchProductSuccess extends ConteoState {
   SearchProductSuccess(this.products);
 }
 
-class GetProductsLoadingBD extends ConteoState {}
-
-class GetProductsSuccessBD extends ConteoState {
-  final List<Product> products;
-  GetProductsSuccessBD(this.products);
-}
-
 class GetProductsFailure extends ConteoState {
   final String error;
   GetProductsFailure(this.error);

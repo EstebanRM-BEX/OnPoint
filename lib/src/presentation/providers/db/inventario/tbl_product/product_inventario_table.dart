@@ -72,9 +72,11 @@ class ProductInventarioTable {
         // Índices de Búsqueda Rápida
         'CREATE INDEX IF NOT EXISTS idx_inv_barcode ON $tableName ($columnBarcode)',
         'CREATE INDEX IF NOT EXISTS idx_inv_product_id ON $tableName ($columnProductId)',
-        // Escaneo por código interno y filtro de conteo por categoría
-        // (consultas acotadas en vez de cargar el catálogo en memoria).
-        'CREATE INDEX IF NOT EXISTS idx_inv_code ON $tableName ($columnProductCode)',
+        // Escaneo sin distinguir mayúsculas (getByCodigo) y filtro de conteo
+        // por categoría: consultas acotadas en vez del catálogo en memoria.
+        // El índice de barcode de arriba es BINARY y no sirve con NOCASE.
+        'CREATE INDEX IF NOT EXISTS idx_inv_barcode_nocase ON $tableName ($columnBarcode COLLATE NOCASE)',
+        'CREATE INDEX IF NOT EXISTS idx_inv_code_nocase ON $tableName ($columnProductCode COLLATE NOCASE)',
         'CREATE INDEX IF NOT EXISTS idx_inv_category ON $tableName ($columnCategory)',
       ];
 }

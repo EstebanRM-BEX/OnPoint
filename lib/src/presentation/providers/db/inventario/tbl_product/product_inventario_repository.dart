@@ -222,30 +222,38 @@ class ProductInventarioRepository {
   // CONSULTAS ACOTADAS: nunca devuelven el catálogo completo
   // --------------------------------------------------------------------------
 
-  /// Producto por código escaneado: `barcode` o `code` exactos y, si no,
-  /// un código alterno de `tblbarcodes_inventario`. Usa índices; `null` si
-  /// no existe.
-  Future<Product?> getByCodigo(String codigo) async {
+  /// Producto por código escaneado: `barcode` o `code` y, si no, un código
+  /// alterno de `tblbarcodes_inventario`. Sin distinguir mayúsculas (los
+  /// lectores y las pantallas comparan en minúsculas). Usa índices; `null`
+  /// si no existe.
+  ///
+  /// El producto puede tener varias filas de stock (lote/ubicación): con
+  /// [ubicacionPreferida] se devuelve la de esa ubicación si existe.
+  Future<Product?> getByCodigo(String codigo, {int? ubicacionPreferida}) async {
     final c = codigo.trim();
     if (c.isEmpty) return null;
     try {
       const p = ProductInventarioTable.tableName;
       const b = BarcodesInventarioTable.tableName;
+      const loc = ProductInventarioTable.columnLocationId;
       final db = await _database.getDatabaseInstance();
       var rows = await db.rawQuery(
         'SELECT * FROM $p '
-        'WHERE ${ProductInventarioTable.columnBarcode} = ? '
-        'OR ${ProductInventarioTable.columnProductCode} = ? '
+        'WHERE ${ProductInventarioTable.columnBarcode} = ? COLLATE NOCASE '
+        'OR ${ProductInventarioTable.columnProductCode} = ? COLLATE NOCASE '
+        'ORDER BY ($loc = ?) DESC '
         'LIMIT 1',
-        [c, c],
+        [c, c, ubicacionPreferida ?? -1],
       );
       if (rows.isEmpty) {
         rows = await db.rawQuery(
           'SELECT * FROM $p WHERE ${ProductInventarioTable.columnProductId} = '
           '(SELECT ${BarcodesInventarioTable.columnIdProduct} FROM $b '
-          'WHERE ${BarcodesInventarioTable.columnBarcode} = ? LIMIT 1) '
+          'WHERE ${BarcodesInventarioTable.columnBarcode} = ? COLLATE NOCASE '
+          'LIMIT 1) '
+          'ORDER BY ($loc = ?) DESC '
           'LIMIT 1',
-          [c],
+          [c, ubicacionPreferida ?? -1],
         );
       }
       return rows.isEmpty ? null : Product.fromMap(rows.first);
@@ -255,29 +263,47 @@ class ProductInventarioRepository {
     }
   }
 
-  /// Una página del catálogo, una fila por producto, ordenada por
-  /// `product_id` (el orden del índice: SQLite corta al llegar a [limit] sin
-  /// ordenar todo el catálogo).
+  /// Una página del catálogo.
+  ///
+  /// - [porProducto] `true`: una fila por producto, ordenada por
+  ///   `product_id` (el orden del índice: SQLite corta al llegar a [limit]
+  ///   sin ordenar todo el catálogo).
+  /// - [porProducto] `false`: filas de stock (producto + lote + ubicación),
+  ///   para pantallas que eligen un lote. Con [ubicacionPrimero] van primero
+  ///   las filas de esa ubicación, luego las de ubicación 0 y el resto.
   ///
   /// [query] busca (sin distinguir mayúsculas) en nombre, código, barcode y
   /// códigos alternos. [filtro] restringe a productos y/o categorías.
   Future<List<Product>> buscar({
     String query = '',
     FiltroCatalogo filtro = FiltroCatalogo.todos,
+    bool porProducto = true,
+    int? ubicacionPrimero,
     int limit = 50,
     int offset = 0,
   }) async {
     if (filtro.vacio) return [];
     try {
+      const pid = ProductInventarioTable.columnProductId;
+      const loc = ProductInventarioTable.columnLocationId;
       final w = _where(query, filtro);
+      final args = [...w.args];
+      final String orden;
+      if (porProducto) {
+        orden = 'GROUP BY $pid ORDER BY $pid';
+      } else if (ubicacionPrimero != null) {
+        orden =
+            'ORDER BY CASE WHEN $loc = ? THEN 0 WHEN $loc = 0 THEN 1 ELSE 2 END, '
+            '${ProductInventarioTable.columnId}';
+        args.add(ubicacionPrimero);
+      } else {
+        orden = 'ORDER BY ${ProductInventarioTable.columnId}';
+      }
       final db = await _database.getDatabaseInstance();
       final rows = await db.rawQuery(
         'SELECT * FROM ${ProductInventarioTable.tableName} '
-        '${w.sql} '
-        'GROUP BY ${ProductInventarioTable.columnProductId} '
-        'ORDER BY ${ProductInventarioTable.columnProductId} '
-        'LIMIT ? OFFSET ?',
-        [...w.args, limit, offset],
+        '${w.sql} $orden LIMIT ? OFFSET ?',
+        [...args, limit, offset],
       );
       return _parseProductsMap(rows);
     } catch (e, s) {
@@ -454,6 +480,15 @@ class FiltroCatalogo {
 
   final Set<int>? productIds;
   final Set<String>? categorias;
+
+  /// Si un producto ya leído (p. ej. escaneado) cumple el filtro: misma
+  /// regla que el WHERE de [ProductInventarioRepository.buscar].
+  bool incluye(Product producto) {
+    if (productIds == null && categorias == null) return true;
+    if (productIds?.contains(producto.productId) ?? false) return true;
+    if (categorias?.contains(producto.category) ?? false) return true;
+    return false;
+  }
 
   /// Ningún producto puede cumplirlo: se evita ir a la base.
   bool get vacio {

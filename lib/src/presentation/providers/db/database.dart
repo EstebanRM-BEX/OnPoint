@@ -1384,8 +1384,9 @@ class DataBaseSqlite {
     }
 
     if (oldVersion < 69) {
-      // Índices de las consultas acotadas del catálogo (code, category y
-      // barcode alterno). IF NOT EXISTS: los existentes no se tocan.
+      // Índices de las consultas acotadas del catálogo (barcode y code sin
+      // distinguir mayúsculas, category y barcode alterno). IF NOT EXISTS:
+      // los existentes no se tocan.
       await crearIndices(db);
     }
   }

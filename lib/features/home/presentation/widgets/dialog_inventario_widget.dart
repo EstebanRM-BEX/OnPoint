@@ -39,7 +39,8 @@ class DialogInventario extends StatelessWidget {
   void _goToConteo(BuildContext context) {
     final bloc = context.read<ConteoBloc>();
     bloc.add(GetLocationsConteoEvent()); // ubicaciones
-    bloc.add(GetProductsFromDBEvent()); // productos
+    // Productos: se consultan en SQLite al buscar o escanear, no se cargan
+    // en memoria (OOM en PDAs).
     bloc.add(GetConteosFromDBEvent()); // conteos
     bloc.add(LoadConfigurationsUserConteo()); // configuración
     Navigator.pop(context);

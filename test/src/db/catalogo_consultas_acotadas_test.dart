@@ -5,6 +5,7 @@ import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_barcode/barcodes_inventario_table.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/product_inventario_repository.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/product_inventario_table.dart';
+import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
 
 class _Db extends Mock implements DataBaseSqlite {}
 
@@ -98,6 +99,24 @@ void main() {
       expect((await repo.getByCodigo(' EMP-CAFE '))?.productId, 4);
     });
 
+    test('sin distinguir mayúsculas (las pantallas comparan en minúsculas)',
+        () async {
+      expect((await repo.getByCodigo('ref-2'))?.productId, 2);
+      expect((await repo.getByCodigo('caf'))?.productId, 4);
+      expect((await repo.getByCodigo('emp-cafe'))?.productId, 4);
+    });
+
+    test('prefiere la fila de stock de la ubicación indicada', () async {
+      expect(
+        (await repo.getByCodigo('7701', ubicacionPreferida: 9))?.locationId,
+        9,
+      );
+      expect(
+        (await repo.getByCodigo('7701', ubicacionPreferida: 4))?.locationId,
+        4,
+      );
+    });
+
     test('inexistente o vacío → null', () async {
       expect(await repo.getByCodigo('NO-EXISTE'), isNull);
       expect(await repo.getByCodigo('  '), isNull);
@@ -177,6 +196,48 @@ void main() {
         );
       },
     );
+  });
+
+  group('buscar filas de stock (porProducto: false)', () {
+    test('una fila por lote/ubicación, ubicación actual primero y luego 0',
+        () async {
+      final r = await repo.buscar(porProducto: false, ubicacionPrimero: 9);
+      expect(
+        r.map((p) => '${p.productId}@${p.locationId}').toList(),
+        ['1@9', '2@0', '3@0', '4@0', '1@4'],
+      );
+    });
+
+    test('con texto y filtro', () async {
+      final r = await repo.buscar(
+        query: 'leche',
+        porProducto: false,
+        filtro: const FiltroCatalogo(productIds: {1}),
+      );
+      expect(r.map((p) => p.locationId).toList(), [4, 9]);
+    });
+  });
+
+  group('FiltroCatalogo.incluye (validación de un escaneo)', () {
+    Future<Product> p(String codigo) async => (await repo.getByCodigo(codigo))!;
+
+    test('sin filtro acepta todo', () async {
+      expect(FiltroCatalogo.todos.incluye(await p('7702')), isTrue);
+    });
+
+    test('por productos, por categorías y unión', () async {
+      const ids = FiltroCatalogo(productIds: {2});
+      const cats = FiltroCatalogo(categorias: {'Lácteos'});
+      const union = FiltroCatalogo(productIds: {2}, categorias: {'Lácteos'});
+
+      expect(ids.incluye(await p('7702')), isTrue);
+      expect(ids.incluye(await p('7703')), isFalse);
+      expect(cats.incluye(await p('7703')), isTrue);
+      expect(cats.incluye(await p('7702')), isFalse);
+      expect(union.incluye(await p('7702')), isTrue);
+      expect(union.incluye(await p('7703')), isTrue);
+      expect(union.incluye(await p('CAF')), isFalse);
+    });
   });
 
   group('contar', () {

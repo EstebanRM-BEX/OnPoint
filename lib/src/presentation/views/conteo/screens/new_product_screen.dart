@@ -73,10 +73,6 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final bloc = context.read<ConteoBloc>();
-      if (bloc.productos.isEmpty) {
-        bloc.add(GetProductsFromDBEvent());
-      }
       _handleDependencies();
     });
   }
@@ -197,7 +193,7 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
     Future.microtask(() => focusNode1.requestFocus());
   }
 
-  void validateProduct(String value) {
+  Future<void> validateProduct(String value) async {
     final bloc = context.read<ConteoBloc>();
     final scan = bloc.scannedValue2.trim().toLowerCase() == ""
         ? value.trim().toLowerCase()
@@ -206,55 +202,24 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
     _controllerProduct.clear();
     debugPrint('🔎 Scan barcode: $scan');
 
-    Product? matchedProducts = bloc.productosFilters.firstWhere(
-      (productoUbi) =>
-          productoUbi.barcode?.toLowerCase() == scan.trim() ||
-          productoUbi.code?.toLowerCase() == scan.trim(),
-      orElse: () => Product(), // Si no se encuentra ningún match, devuelve null
-    );
+    // Consulta indexada en SQLite (barcode, código, código alterno o códigos
+    // de la orden) validada contra el filtro de la orden.
+    final producto = await bloc.buscarProductoEscaneado(scan);
+    if (!mounted) return;
 
-    if (matchedProducts.barcode != null) {
-      debugPrint('producto encontrado: ${matchedProducts.name}');
-      bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
-      bloc.add(ChangeProductIsOkEvent(true, matchedProducts, 0, true, 0, 0, 0));
-      return;
-    }
-
-    // Buscar en barcodes adicionales
-    final matchedBarcode = bloc.listAllOfBarcodes.firstWhere(
-      (b) => b.barcode?.toLowerCase() == scan,
-      orElse: () => Barcodes(),
-    );
-
-    if (matchedBarcode.barcode == null) {
-      debugPrint('❌ Producto no encontrado en barcodes');
-      _audioService.playErrorSound();
-      _vibrationService.vibrate();
-      bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
-      Future.microtask(() => focusNode2.requestFocus());
-      return;
-    }
-
-    // Buscar producto por id relacionado al barcode encontrado
-    final matchedById = bloc.productos.firstWhere(
-      (p) => p.productId == matchedBarcode.idProduct,
-      orElse: () => Product(),
-    );
-
-    if (matchedById.productId != null) {
-      debugPrint('✅ Producto encontrado por ID: ${matchedById.name}');
+    if (producto != null) {
+      debugPrint('✅ Producto encontrado: ${producto.name}');
       bloc
         ..add(ValidateFieldsEvent(field: "product", isOk: true))
-        ..add(ChangeProductIsOkEvent(true, matchedById, 0, true, 0, 0, 0));
-      return;
-    } else {
-      debugPrint('❌ Producto no encontrado por ID');
-      _audioService.playErrorSound();
-      _vibrationService.vibrate();
-      bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
-      Future.microtask(() => focusNode2.requestFocus());
+        ..add(ChangeProductIsOkEvent(true, producto, 0, true, 0, 0, 0));
       return;
     }
+
+    debugPrint('❌ Producto no encontrado o no permitido por la orden');
+    _audioService.playErrorSound();
+    _vibrationService.vibrate();
+    bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
+    Future.microtask(() => focusNode2.requestFocus());
   }
 
   void validateQuantity(String value) {

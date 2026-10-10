@@ -170,7 +170,8 @@ class SearchProductEvent extends ConteoEvent {
   );
 }
 
-class GetProductsFromDBEvent extends ConteoEvent {}
+/// Siguiente página de la búsqueda de productos de "nuevo producto".
+class LoadMoreProductsConteoEvent extends ConteoEvent {}
 
 class UpdateProductConteoEvent extends ConteoEvent {
   final CountedLine product; //producto que voy a enviar
