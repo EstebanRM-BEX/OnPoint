@@ -19,6 +19,33 @@ class SearchProductDevScreen extends StatefulWidget {
 
 class _SearchProductDevScreenState extends State<SearchProductDevScreen> {
   int? selectedIndex;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    // Primera página: los productos se consultan en SQLite, no hay lista
+    // precargada.
+    final bloc = context.read<DevolucionesBloc>();
+    bloc.add(SearchProductEvent(bloc.searchControllerProducts.text));
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// Pide la página siguiente al acercarse al final de la lista.
+  void _onScroll() {
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 300) {
+      final bloc = context.read<DevolucionesBloc>();
+      if (bloc.hayMasProductos) bloc.add(LoadMoreProductsDevolucionEvent());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,17 +70,32 @@ class _SearchProductDevScreenState extends State<SearchProductDevScreen> {
                       hintText: 'Buscar producto',
                       closeKeyboardOnClear: false,
                       persistentKeyboard: true,
-                      onSearchChanged: (value) =>
-                          bloc.add(SearchProductEvent(value)),
-                      onSearchCleared: () =>
-                          bloc.add(SearchProductEvent('')),
+                      onSearchChanged: (value) {
+                        // La selección es por índice: cambia la lista.
+                        setState(() => selectedIndex = null);
+                        bloc.add(SearchProductEvent(value));
+                      },
+                      onSearchCleared: () {
+                        setState(() => selectedIndex = null);
+                        bloc.add(SearchProductEvent(''));
+                      },
                     ),
                     Expanded(
                       child: bloc.productosFilters.isEmpty
                           ? const _NoProductsMessage()
                           : ListView.builder(
-                              itemCount: bloc.productosFilters.length,
+                              controller: _scrollController,
+                              itemCount: bloc.productosFilters.length +
+                                  (bloc.hayMasProductos ? 1 : 0),
                               itemBuilder: (_, index) {
+                                if (index >= bloc.productosFilters.length) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  );
+                                }
                                 return ProductListTile(
                                   index: index,
                                   isSelected: selectedIndex == index,

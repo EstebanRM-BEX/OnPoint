@@ -139,9 +139,8 @@ class LoadConfigurationsUser extends DevolucionesEvent {
   LoadConfigurationsUser();
 }
 
-class FetchAllBarcodesInventarioEvent extends DevolucionesEvent {
-  FetchAllBarcodesInventarioEvent();
-}
+/// Siguiente página de la búsqueda de productos.
+class LoadMoreProductsDevolucionEvent extends DevolucionesEvent {}
 
 class InitializeDevolucionesData extends DevolucionesEvent {}
 

@@ -6,11 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/core/utils/formats_utils.dart';
-import 'package:wms_app/core/utils/interable_extension_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/core/services/barcodes_inventario_cache_service.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
-import 'package:wms_app/core/services/productos_cache_service.dart';
 import 'package:wms_app/core/services/terceros_download_service.dart';
 import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/injection_container.dart';
@@ -55,9 +52,17 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
   //configuracion del usuario //permisos
   UserConfigurationModel configurations = UserConfigurationModel();
 
-  //*lista de productos
-  List<Product> productos = [];
+  //*productos para elegir: páginas de una consulta a SQLite (una fila por
+  //producto). El catálogo completo ya no se carga en memoria: con él la app
+  //moría por OutOfMemoryError en PDAs (ver
+  //docs/plan_fix_oom_catalogo_productos.md).
   List<Product> productosFilters = [];
+  bool hayMasProductos = false;
+  static const _paginaProductos = 50;
+  String _queryProductos = '';
+  // Sube con cada búsqueda nueva: una página que llega tarde no se mezcla
+  // con los resultados de otra búsqueda.
+  int _busquedaProductos = 0;
 
   List<ProductDevolucion> productosDevolucion = [];
 
@@ -94,8 +99,6 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
   List<LotesProduct> listLotesProduct = [];
   List<LotesProduct> listLotesProductFilters = [];
 
-  List<BarcodeInventario> allBarcodeInventario = [];
-
   int tercerosCount = 0;
   // Propiedad persistente (no solo el estado transitorio) para que el
   // resumen operativo del Home no dependa de en qué momento exacto se
@@ -108,7 +111,8 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
   DevolucionesBloc() : super(DevolucionesInitial()) {
     on<DevolucionesEvent>((event, emit) {});
 
-    on<GetProductEvent>(_onGetProductEvent);
+    // sequential: cada escaneo consulta SQLite; se resuelven en orden.
+    on<GetProductEvent>(_onGetProductEvent, transformer: sequential());
     on<GetProductsList>(_onGetProductsBD);
     //evento para añadir un producto a la lista de devoluciones
     on<Addproduct>(_onAddProductEvent);
@@ -158,8 +162,13 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
     //evento para limpiar los campos
     on<ClearValueEvent>(_onClearValueEvent);
 
-    //*metodo para bucar un producto
-    on<SearchProductEvent>(_onSearchProductEvent);
+    //*metodo para bucar un producto. restartable: cada tecla cancela la
+    //búsqueda anterior (debounce en el handler).
+    on<SearchProductEvent>(_onSearchProductEvent, transformer: restartable());
+    on<LoadMoreProductsDevolucionEvent>(
+      _onLoadMoreProductsEvent,
+      transformer: droppable(),
+    );
 
     //evento apra evniar la devolucion
     on<SendDevolucionEvent>(_onSendDevolucionEvent);
@@ -167,9 +176,6 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
     on<ChangeStateIsDialogVisibleEvent>(_onChangeStateIsDialogVisibleEvent);
 
     on<LoadConfigurationsUser>(_onLoadConfigurationsUserEvent);
-
-    //meotod para obtener todos los other barcodes y product_packing de inventario
-    on<FetchAllBarcodesInventarioEvent>(_onFetchAllBarcodesInventarioEvent);
 
     on<InitializeDevolucionesData>(_onInitializeDevolucionesData);
 
@@ -231,19 +237,16 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
     segundaUnidadController.dispose();
     searchControllerAlmacen.dispose();
 
-    // Listas grandes (terceros, productos, barcodes) fuera de memoria al
-    // salir del módulo. Productos y ubicaciones NO se invalidan: son cachés
-    // compartidos (Info Rápida, Conteo, etc.).
+    // Listas grandes (terceros, barcodes) fuera de memoria al salir del
+    // módulo. Ubicaciones NO se invalidan: es un caché compartido (Info
+    // Rápida, Conteo, etc.).
     terceros = [];
     tercerosFilters = [];
-    productos = [];
     productosFilters = [];
     ubicaciones = [];
     ubicacionesFilters = [];
-    allBarcodeInventario = [];
     listLotesProduct = [];
     listLotesProductFilters = [];
-    getIt<BarcodesInventarioCacheService>().invalidate();
 
     return super.close();
   }
@@ -346,10 +349,8 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
       // 2. Cargamos Ubicaciones desde BD
       add(LoadLocationsEvent());
 
-      // 3. Cargamos Barcodes Inventario desde BD
-      add(FetchAllBarcodesInventarioEvent());
-
-      // 4. Cargamos Productos desde BD
+      // 3. Productos ya agregados a la devolución (el catálogo se consulta
+      // en SQLite al buscar o escanear, no se carga en memoria).
       add(GetProductsList());
 
       add(LoadTercerosFromDBEvent());
@@ -359,27 +360,6 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
       // Intentamos cargar de BD primero. Solo si está vacío, vamos a la nube.
     } catch (e, s) {
       debugPrint("❌ Error en _onInitializeDevolucionesData: $e, $s");
-    }
-  }
-
-  void _onFetchAllBarcodesInventarioEvent(
-    FetchAllBarcodesInventarioEvent event,
-    Emitter<DevolucionesState> emit,
-  ) async {
-    try {
-      final response = await getIt<BarcodesInventarioCacheService>().getAll();
-      allBarcodeInventario = response;
-      if (response.isNotEmpty) {
-        debugPrint(
-          'Total de códigos de barras: ${allBarcodeInventario.length}',
-        );
-        emit(FetchAllBarcodesSuccess(allBarcodeInventario));
-      } else {
-        emit(FetchAllBarcodesFailure('No se encontraron códigos de barras'));
-      }
-    } catch (e, s) {
-      debugPrint("❌ Error en _onFetchAllBarcodesInventarioEvent: $e, $s");
-      emit(FetchAllBarcodesFailure('Error al obtener los códigos de barras'));
     }
   }
 
@@ -486,27 +466,56 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
     }
   }
 
+  Future<List<Product>> _paginaDeProductos(String query, int offset) =>
+      db.productoInventarioRepository.buscar(
+        query: query,
+        limit: _paginaProductos,
+        offset: offset,
+      );
+
   void _onSearchProductEvent(
     SearchProductEvent event,
     Emitter<DevolucionesState> emit,
   ) async {
     try {
+      final busqueda = ++_busquedaProductos;
       emit(SearchLoading());
-      productosFilters = [];
-      productosFilters = productos;
-      final query = event.query.toLowerCase();
-      if (query.isEmpty) {
-        productosFilters = productos;
-      } else {
-        productosFilters = productos.where((product) {
-          return (product.name?.toLowerCase().contains(query) ?? false) ||
-              (product.code?.toLowerCase().contains(query) ?? false);
-        }).toList();
+      // Debounce: si llega otra tecla, restartable cierra este emitter.
+      if (event.query.isNotEmpty) {
+        await Future.delayed(const Duration(milliseconds: 250));
+        if (emit.isDone) return;
       }
+
+      final pagina = await _paginaDeProductos(event.query, 0);
+      if (emit.isDone || busqueda != _busquedaProductos) return;
+
+      _queryProductos = event.query;
+      productosFilters = pagina;
+      hayMasProductos = pagina.length == _paginaProductos;
       emit(SearchProductSuccess(productosFilters));
     } catch (e, s) {
-      debugPrint('Error en el SearchLocationEvent: $e, $s');
+      debugPrint('Error en el SearchProductEvent: $e, $s');
       emit(SearchFailure(e.toString()));
+    }
+  }
+
+  void _onLoadMoreProductsEvent(
+    LoadMoreProductsDevolucionEvent event,
+    Emitter<DevolucionesState> emit,
+  ) async {
+    if (!hayMasProductos) return;
+    final busqueda = _busquedaProductos;
+    try {
+      final pagina = await _paginaDeProductos(
+        _queryProductos,
+        productosFilters.length,
+      );
+      if (busqueda != _busquedaProductos) return;
+      productosFilters = [...productosFilters, ...pagina];
+      hayMasProductos = pagina.length == _paginaProductos;
+      emit(SearchProductSuccess(productosFilters));
+    } catch (e, s) {
+      debugPrint('Error en LoadMoreProductsDevolucionEvent: $e, $s');
     }
   }
 
@@ -541,7 +550,9 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
       lotesProductCurrent = LotesProduct();
       quantitySelected = 0;
       productosDevolucion.clear();
-      productosFilters = productos;
+      _busquedaProductos++;
+      productosFilters = [];
+      hayMasProductos = false;
       listLotesProductFilters = listLotesProduct;
       ubicacionesFilters = ubicaciones;
       tercerosFilters = terceros;
@@ -1085,10 +1096,12 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
     }
   }
 
+  /// Producto elegido en la lista (por id) o escaneado (barcode, código o
+  /// código alterno): consulta indexada en SQLite, sin catálogo en memoria.
   void _onGetProductEvent(
     GetProductEvent event,
     Emitter<DevolucionesState> emit,
-  ) {
+  ) async {
     if (isDialogVisible) {
       debugPrint('Dialogo ya visible, no se puede buscar otro producto');
       return;
@@ -1097,152 +1110,60 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
     emit(GetProductLoading());
 
     lotesProductCurrent = LotesProduct();
-    if (event.isManual) {
-      // Buscar el producto por código de barras
-      final product = productos.firstWhereOrNull(
-        (p) => p.productId == event.idProduct,
-      );
+    final repo = db.productoInventarioRepository;
+    final product = event.isManual
+        ? await repo.getProductById(event.idProduct)
+        : await repo.getByCodigo(event.barcode);
 
-      if (product == null) {
-        emit(GetProductFailure('Producto no encontrado'));
-        scannedValue1 = '';
-        return;
-      }
-
-      debugPrint('Producto encontrado: ${product.toMap()}');
-
-      // Obtener todos los productos en devolución con el mismo productId
-      final productosRelacionados = productosDevolucion
-          .where((p) => p.productId == product.productId)
-          .toList();
-      if (productosRelacionados.isNotEmpty) {
-        emit(
-          GetProductExists(productosRelacionados.first, productosRelacionados),
-        );
-        return;
-      }
-
-      // Verificar si requiere lotes
-      if (product.tracking == 'lot') {
-        add(GetLotesProduct());
-      }
-
-      // Actualizar el producto actual
-      currentProduct = product;
-      viewQuantity = false;
-      quantitySelected = 0;
-    } else {
-      //1349
-      // Buscar coincidencia directa por barcode o code
-      print("escaneo....");
-      final scannedCode = event.barcode.toLowerCase();
-      final matchedProduct = productos.firstWhere(
-        (p) =>
-            p.barcode?.toLowerCase() == scannedCode ||
-            p.code?.toLowerCase() == scannedCode,
-        orElse: () => Product(),
-      );
-
-      debugPrint('Producto encontrado:: ${matchedProduct.toMap()}');
-
-      if (matchedProduct.barcode == null) {
-        debugPrint('❌ Producto no encontrado por codigo principal');
-        // Buscar en barcodes adicionales
-        final matchedBarcode = allBarcodeInventario.firstWhere(
-          (b) => b.barcode?.toLowerCase() == scannedCode,
-          orElse: () => BarcodeInventario(),
-        );
-
-        if (matchedBarcode.barcode == null) {
-          debugPrint('❌ Producto no encontrado en barcodes');
-          emit(GetProductFailure('Producto no encontrado'));
-          return;
-        }
-        debugPrint(
-          '✅ Producto encontrado en barcodes: ${matchedBarcode.toMap()}',
-        );
-        //se encontro un producto con los demas barcodes
-        // Buscar producto por id relacionado al barcode encontrado
-        final matchedById = productos.firstWhere(
-          (p) => p.productId == matchedBarcode.idProduct,
-          orElse: () => Product(),
-        );
-
-        if (matchedById.productId != null) {
-          debugPrint('✅ Producto encontrado por ID: ${matchedById.name}');
-
-          final productosRelacionados = productosDevolucion
-              .where((p) => p.productId == matchedById.productId)
-              .toList();
-
-          if (productosRelacionados.isNotEmpty) {
-            emit(
-              GetProductExists(
-                productosRelacionados.first,
-                productosRelacionados,
-              ),
-            );
-            return;
-          }
-          if (matchedById.tracking == 'lot') {
-            add(GetLotesProduct());
-          }
-          // Actualizar el producto actual
-          currentProduct = matchedById;
-          viewQuantity = false;
-          quantitySelected = 0;
-          emit(GetProductSuccess(currentProduct, true));
-          return;
-        } else {
-          debugPrint('❌ Producto no encontrado por ID');
-          debugPrint('❌ Producto no encontrado en barcodes');
-          emit(GetProductFailure('Producto no encontrado'));
-          return;
-        }
-      }
-
-      debugPrint('Producto encontrado: ${matchedProduct.toMap()}');
-      // Obtener todos los productos en devolución con el mismo productId
-      final productosRelacionados = productosDevolucion
-          .where((p) => p.productId == matchedProduct.productId)
-          .toList();
-
-      if (productosRelacionados.isNotEmpty) {
-        emit(
-          GetProductExists(productosRelacionados.first, productosRelacionados),
-        );
-        return;
-      }
-      if (matchedProduct.tracking == 'lot') {
-        add(GetLotesProduct());
-      }
-      // Actualizar el producto actual
-      currentProduct = matchedProduct;
-      viewQuantity = false;
-      quantitySelected = 0;
+    if (product == null) {
+      debugPrint('❌ Producto no encontrado: ${event.barcode}');
+      emit(GetProductFailure('Producto no encontrado'));
+      if (event.isManual) scannedValue1 = '';
+      return;
     }
+
+    debugPrint('Producto encontrado: ${product.toMap()}');
+
+    // Obtener todos los productos en devolución con el mismo productId
+    final productosRelacionados = productosDevolucion
+        .where((p) => p.productId == product.productId)
+        .toList();
+    if (productosRelacionados.isNotEmpty) {
+      emit(
+        GetProductExists(productosRelacionados.first, productosRelacionados),
+      );
+      return;
+    }
+
+    // Verificar si requiere lotes
+    if (product.tracking == 'lot') {
+      add(GetLotesProduct());
+    }
+
+    // Actualizar el producto actual
+    currentProduct = product;
+    viewQuantity = false;
+    quantitySelected = 0;
 
     emit(GetProductSuccess(currentProduct, true));
   }
 
+  /// Recarga los productos ya agregados a la devolución y avisa si no hay
+  /// catálogo descargado. El catálogo ya no se carga en memoria: se consulta
+  /// en SQLite al buscar o escanear.
   void _onGetProductsBD(
     GetProductsList event,
     Emitter<DevolucionesState> emit,
   ) async {
     try {
       emit(GetProductsLoading());
-      final response = await getIt<ProductosCacheService>().getAllUnique();
-      productos = response;
-      productosFilters = response;
-      debugPrint('productos: ${response.length}');
-      if (response.isNotEmpty) {
-        //mandamos a traer los producto que tenemos listo para la devolucion guardados en la base de datos
-        productosDevolucion = await db.devolucionRepository
-            .getAllProductosDevoluciones();
+      productosDevolucion = await db.devolucionRepository
+          .getAllProductosDevoluciones();
+      debugPrint('productosDevolucion: ${productosDevolucion.length}');
 
-        debugPrint('productosDevolucion: ${productosDevolucion.length}');
-
-        emit(GetProductsSuccessDevo(response));
+      final catalogo = await db.productoInventarioRepository.buscar(limit: 1);
+      if (catalogo.isNotEmpty) {
+        emit(GetProductsSuccessDevo(const []));
       } else {
         emit(GetProductsFailure('No se encontraron productos'));
       }
