@@ -32,7 +32,9 @@ import 'package:wms_app/core/utils/performance/jank_monitor.dart';
 /// [markIntentionalExit] y no se reportan.
 ///
 /// Además, cada minuto actualiza las custom keys `rss_mb` y `screen` para que
-/// cualquier crash llegue con la memoria y la pantalla del momento.
+/// cualquier crash llegue con la memoria y la pantalla del momento, y avisa
+/// una vez por sesión si la memoria pasa de [umbralMemoriaAltaMb]
+/// (`ExitDiagnostics.memoria_alta`), antes de que el sistema mate la app.
 ///
 /// No corre en debug: cada stop desde el IDE parecería un cierre anómalo.
 class ExitDiagnostics {
@@ -51,6 +53,12 @@ class ExitDiagnostics {
   static AppLifecycleListener? _lifecycle;
   static SharedPreferences? _prefs;
   static bool _started = false;
+
+  /// RSS a partir de la cual se avisa (una vez por sesión) antes de que el
+  /// sistema mate la app: los cierres por OOM de Conteo llegaron con 250–340
+  /// MB (docs/plan_fix_oom_catalogo_productos.md).
+  static const umbralMemoriaAltaMb = 300;
+  static bool _memoriaAltaReportada = false;
 
   static Future<void> start() async {
     if (kDebugMode || _started || !Platform.isAndroid) return;
@@ -115,6 +123,18 @@ class ExitDiagnostics {
       ..setCustomKey('rss_mb', rss)
       ..setCustomKey('screen', screen);
     final ui = RouteStackTracker.instance.snapshot();
+    if (rss >= umbralMemoriaAltaMb && !_memoriaAltaReportada) {
+      _memoriaAltaReportada = true;
+      unawaited(
+        FirebaseCrashlytics.instance.recordError(
+          Exception('Memoria alta: $rss MB (umbral $umbralMemoriaAltaMb MB)'),
+          pilaDeGrupo('memoria_alta'),
+          reason: 'screen=$screen rss_mb=$rss ui=[$ui]',
+          information: ['screen: $screen', 'rss_mb: $rss', 'ui: $ui'],
+          fatal: false,
+        ),
+      );
+    }
     FirebaseCrashlytics.instance
       ..setCustomKey('nav_pages', ui.pages)
       ..setCustomKey('nav_overlays', ui.overlays)

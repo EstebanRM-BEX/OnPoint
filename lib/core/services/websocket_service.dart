@@ -270,11 +270,9 @@ class WebSocketService implements IWebSocketService {
       }
       if (toInsertNew.isNotEmpty) {
         await BarcodesInventarioRepository().insertOrUpdateBarcodes(toInsertNew);
-        // Recién se escribieron barcodes nuevos en SQLite — a diferencia de
-        // los productos (que ProductosCacheService mantiene en memoria en
-        // paralelo, vía InfoRapidaBloc), acá no hay ningún mecanismo que
-        // actualice el cache de barcodes en memoria, así que se invalida
-        // para que el próximo getAll() los traiga frescos.
+        // Recién se escribieron barcodes nuevos en SQLite: se invalida el
+        // cache de barcodes en memoria para que el próximo getAll() los
+        // traiga frescos.
         getIt<BarcodesInventarioCacheService>().invalidate();
       }
       return;
@@ -386,11 +384,9 @@ class WebSocketService implements IWebSocketService {
     }
 
     if (barcodesChanged) {
-      // Recién se escribieron barcodes en SQLite — a diferencia de los
-      // productos (que ProductosCacheService mantiene en memoria en
-      // paralelo, vía InfoRapidaBloc), acá no hay ningún mecanismo que
-      // actualice el cache de barcodes en memoria, así que se invalida
-      // para que el próximo getAll() los traiga frescos.
+      // Recién se escribieron barcodes en SQLite: se invalida el cache de
+      // barcodes en memoria para que el próximo getAll() los traiga
+      // frescos.
       getIt<BarcodesInventarioCacheService>().invalidate();
     }
   }

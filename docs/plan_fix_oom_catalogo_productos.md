@@ -147,3 +147,23 @@ Además, `ProductosCacheService` **retiene** el resultado (`_cacheAll`, `_cacheU
 3. **1.7.9:** fase 5.
 
 Cada fase en un commit separado, validado en un worktree limpio antes del push (en `desarrollo` hay trabajo ajeno sin commitear).
+
+---
+
+## 6. Notas de implementación (2026-10-10)
+
+Lo que cambió respecto a este plan al implementarlo:
+
+- **Fase 0:** el "apagado" no se decide por la diferencia de latidos (> 5 min), sino por la ausencia de registro de salida en Android 11+. Una app que se cae y se reabre 10 minutos después no debe contarse como apagado. Cada causa lleva una pila sintética propia porque Crashlytics agrupa por pila, no por mensaje.
+- **Fase 1/2:** `getByCodigo` no distingue mayúsculas (índices `COLLATE NOCASE`): Conteo y Devoluciones comparan o mandan el código cambiado de mayúsculas. `buscar` también devuelve **filas de stock** (`porProducto: false`) porque Conteo y Crear Transferencia preseleccionan el lote de la fila elegida.
+- **Fase 2:** el escaneo por código alterno ahora también valida el filtro de la orden (antes solo el barcode principal lo validaba).
+- **Fase 4:** `GetProductEvent` pasa a `sequential()`: al ser asíncrono, dos escaneos rápidos podían resolverse desordenados.
+- **Fase 5:** **no se hizo el LRU.** Con el escaneo por índice en 1–5 ms no aporta y agrega riesgo de datos viejos. `ProductosCacheService` se eliminó completo; Info Rápida ya leía de SQLite y solo lo mantenía al día por WebSocket.
+- **Impresión de etiquetas** (`getProductLabelRows`) también leía el catálogo completo en una consulta: ahora lee en tandas de 5.000.
+- **Regla automática:** `test/architecture/catalogo_sin_lecturas_completas_test.dart` (exige `LIMIT`/`limit:`/`COUNT(` o `// lectura-acotada: <motivo>`). Verificado contra el código original: detecta las 3 lecturas completas.
+
+### Pendiente
+
+- Auditar con datos de un cliente grande las otras lecturas completas que siguen en memoria: `UbicacionesCacheService` (`getAllUbicaciones`), `BarcodesInventarioCacheService`, `productTransferenciaRepository.getAllProducts` (`transferencia_bloc.dart:1591`) y `pick_products_repository:153`. Con pocas miles de filas no son riesgo; decidir por cada una.
+- Impresión de etiquetas sigue teniendo la lista completa en memoria de Dart (sin riesgo de OOM del canal, pero conviene paginarla).
+- Prueba en PDA (sección 4) antes de publicar.

@@ -250,27 +250,4 @@ void main() {
       );
     });
   });
-
-  group('lectura completa en tandas (obsoleta)', () {
-    test('mismo resultado que leer todo de una vez', () async {
-      // Más filas que una tanda para recorrer varias páginas.
-      for (
-        var i = 10;
-        i < 10 + ProductInventarioRepository.tandaLectura + 5;
-        i++
-      ) {
-        await stock(i, name: 'P$i');
-      }
-      final total = 5 + ProductInventarioRepository.tandaLectura + 5;
-
-      // ignore: deprecated_member_use_from_same_package
-      final todos = await repo.getAllProducts();
-      // ignore: deprecated_member_use_from_same_package
-      final unicos = await repo.getAllUniqueProducts();
-
-      expect(todos, hasLength(total));
-      expect(unicos, hasLength(total - 1)); // el producto 1 tiene dos filas
-      expect(unicos.map((p) => p.productId).toSet(), hasLength(total - 1));
-    });
-  });
 }

@@ -4,28 +4,26 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
-import 'package:wms_app/core/services/productos_cache_service.dart';
 
-/// Aplica en memoria las actualizaciones de productos que llegan por
-/// WebSocket (`notification/update`) mientras Información Rápida está
-/// abierta. Reemplaza la suscripción que tenía `InfoRapidaBloc` en el legacy.
+/// Avisa qué productos se actualizaron por WebSocket (`notification/update`)
+/// mientras Información Rápida está abierta, para recargar sus listas desde
+/// SQLite (el `WebSocketService` ya escribió el cambio). Reemplaza la
+/// suscripción que tenía `InfoRapidaBloc` en el legacy.
 ///
 /// Lo arranca la pantalla principal del módulo con [start] y lo detiene al
-/// salir con [stop]. Mientras convivan los dos módulos, ambos aplican el
-/// mismo upsert: es idempotente.
+/// salir con [stop].
 @lazySingleton
 class InfoRapidaWsListener {
   final IWebSocketService _webSocket;
-  final ProductosCacheService _productosCache;
 
-  InfoRapidaWsListener(this._webSocket, this._productosCache);
+  InfoRapidaWsListener(this._webSocket);
 
   StreamSubscription<dynamic>? _subscription;
   int _usuarios = 0;
   final StreamController<int> _actualizados =
       StreamController<int>.broadcast();
 
-  /// Ids de productos actualizados en el cache (para recargar listas).
+  /// Ids de productos actualizados (para recargar listas).
   Stream<int> get productosActualizados => _actualizados.stream;
 
   void start() {
@@ -44,9 +42,6 @@ class InfoRapidaWsListener {
     for (final update in parseProductUpdates(data)) {
       final productId = update['product_id'];
       if (productId is! int) continue;
-      // El caché en memoria lo siguen usando otros módulos; las listas de
-      // Información Rápida consultan SQLite, así que se avisa siempre.
-      _productosCache.applyWsProductUpsert(productId, update);
       debugPrint('🔄 InfoRapida v2: producto id=$productId actualizado vía WS.');
       _actualizados.add(productId);
     }

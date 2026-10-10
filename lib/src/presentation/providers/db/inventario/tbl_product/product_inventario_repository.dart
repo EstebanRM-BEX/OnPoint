@@ -94,13 +94,6 @@ class ProductInventarioRepository {
 
   final DataBaseSqlite _database;
 
-  /// Filas por llamada a sqflite al leer el catálogo completo. sqflite pasa
-  /// todo el resultado de una consulta en un solo buffer del heap Java: con
-  /// el catálogo entero (~72 mil filas) eran 33 MB y la app moría por
-  /// OutOfMemoryError en equipos con heap de 128 MB (Urovo DT50). 2.000
-  /// filas son ~1 MB.
-  static const tandaLectura = 2000;
-
   /// Sentencias INSERT en tandas (respetan el límite de variables de SQLite)
   /// para [productosList], sin ejecutarlas: el reemplazo atómico del catálogo
   /// las corre dentro de su propia transacción.
@@ -148,78 +141,12 @@ class ProductInventarioRepository {
   }
 
   // --------------------------------------------------------------------------
-  // MÉTODOS DE LECTURA (Optimizados por Índices)
-  // --------------------------------------------------------------------------
-
-  /// Todo el stock (varias filas por producto), leído en tandas de
-  /// [tandaLectura].
-  @Deprecated(
-    'Carga el catálogo completo en memoria (OOM en PDAs). Usar buscar(), '
-    'contar() o getByCodigo().',
-  )
-  Future<List<Product>> getAllProducts() async {
-    try {
-      final db = await _database.getDatabaseInstance();
-      return await _leerEnTandas(
-        db,
-        columnaClave: ProductInventarioTable.columnId,
-        agrupar: false,
-      );
-    } catch (e, s) {
-      debugPrint("Error al obtener productos: $e ==> $s");
-      return [];
-    }
-  }
-
-  /// Una fila por producto, leída en tandas de [tandaLectura].
-  @Deprecated(
-    'Carga el catálogo completo en memoria (OOM en PDAs). Usar buscar(), '
-    'contar() o getByCodigo().',
-  )
-  Future<List<Product>> getAllUniqueProducts() async {
-    try {
-      final db = await _database.getDatabaseInstance();
-      return await _leerEnTandas(
-        db,
-        columnaClave: ProductInventarioTable.columnProductId,
-        agrupar: true,
-      );
-    } catch (e, s) {
-      debugPrint("Error al obtener productos únicos por ID: $e ==> $s");
-      return [];
-    }
-  }
-
-  /// Paginación por clave (`WHERE clave > última`), no por OFFSET: cada
-  /// tanda usa el índice y no vuelve a recorrer las filas ya leídas. Cada
-  /// tanda se arma en el hilo principal (~2.000 filas, pocos ms) y entre
-  /// tandas la UI sigue respondiendo.
-  Future<List<Product>> _leerEnTandas(
-    DatabaseExecutor db, {
-    required String columnaClave,
-    required bool agrupar,
-  }) async {
-    const t = ProductInventarioTable.tableName;
-    final productos = <Product>[];
-    Object? ultima;
-    while (true) {
-      final rows = await db.rawQuery(
-        'SELECT * FROM $t '
-        '${ultima == null ? '' : 'WHERE $columnaClave > ? '}'
-        '${agrupar ? 'GROUP BY $columnaClave ' : ''}'
-        'ORDER BY $columnaClave LIMIT ?',
-        [if (ultima != null) ultima, tandaLectura],
-      );
-      if (rows.isEmpty) break;
-      productos.addAll(_parseProductsMap(rows));
-      if (rows.length < tandaLectura) break;
-      ultima = rows.last[columnaClave];
-    }
-    return productos;
-  }
-
-  // --------------------------------------------------------------------------
-  // CONSULTAS ACOTADAS: nunca devuelven el catálogo completo
+  // MÉTODOS DE LECTURA: consultas acotadas e indexadas, nunca el catálogo
+  // completo. sqflite pasa todo el resultado de una consulta en un solo
+  // buffer del heap Java: con el catálogo entero (~72 mil filas) eran 33 MB
+  // y la app moría por OutOfMemoryError en equipos con heap de 128 MB
+  // (Urovo DT50). El test test/architecture/catalogo_sin_lecturas_completas
+  // impide volver a agregar lecturas sin LIMIT.
   // --------------------------------------------------------------------------
 
   /// Producto por código escaneado: `barcode` o `code` y, si no, un código
@@ -322,6 +249,7 @@ class ProductInventarioRepository {
       const t = ProductInventarioTable.tableName;
       const col = ProductInventarioTable.columnPropietario;
       final db = await _database.getDatabaseInstance();
+      // lectura-acotada: una fila por propietario, no por producto.
       final rows = await db.rawQuery(
         'SELECT DISTINCT $col FROM $t '
         'WHERE ${ProductInventarioTable.columnManejoPropietario} = 1 '
@@ -413,28 +341,44 @@ class ProductInventarioRepository {
     );
   }
 
-  /// Proyección liviana (id/name/code/barcode) para pantallas que NO necesitan
-  /// las ~35 columnas del producto, p.ej. impresión de etiquetas. Reduce el I/O
-  /// de SQLite, el parseo y la memoria frente a `getAllUniqueProducts`
-  /// (que hace `SELECT *`). Devuelve filas crudas; el caller las mapea a su
+  /// Proyección liviana (id/name/code/barcode), una fila por producto, para
+  /// pantallas que NO necesitan las ~25 columnas del producto, p.ej.
+  /// impresión de etiquetas. Devuelve filas crudas; el caller las mapea a su
   /// propio modelo liviano para no acoplar la capa DB a un feature.
+  ///
+  /// Lee en tandas de [_tandaEtiquetas] por `product_id` (paginación por
+  /// clave): una sola consulta del catálogo entero arma un buffer enorme en el
+  /// heap Java (ver la nota de MÉTODOS DE LECTURA).
   Future<List<Map<String, Object?>>> getProductLabelRows() async {
     try {
-      final db = await DataBaseSqlite().getDatabaseInstance();
-      final maps = await db.rawQuery('''
-        SELECT ${ProductInventarioTable.columnProductId},
-               ${ProductInventarioTable.columnProductName},
-               ${ProductInventarioTable.columnProductCode},
-               ${ProductInventarioTable.columnBarcode}
-        FROM ${ProductInventarioTable.tableName}
-        GROUP BY ${ProductInventarioTable.columnProductId}
-      ''');
-      return maps;
+      const pid = ProductInventarioTable.columnProductId;
+      final db = await _database.getDatabaseInstance();
+      final filas = <Map<String, Object?>>[];
+      int? ultimo;
+      while (true) {
+        final tanda = await db.rawQuery(
+          'SELECT $pid, '
+          '${ProductInventarioTable.columnProductName}, '
+          '${ProductInventarioTable.columnProductCode}, '
+          '${ProductInventarioTable.columnBarcode} '
+          'FROM ${ProductInventarioTable.tableName} '
+          '${ultimo == null ? '' : 'WHERE $pid > ? '}'
+          'GROUP BY $pid ORDER BY $pid LIMIT ?',
+          [if (ultimo != null) ultimo, _tandaEtiquetas],
+        );
+        filas.addAll(tanda);
+        if (tanda.length < _tandaEtiquetas) break;
+        ultimo = tanda.last[pid] as int?;
+        if (ultimo == null) break;
+      }
+      return filas;
     } catch (e, s) {
       debugPrint("Error al obtener filas de etiquetas: $e ==> $s");
       return [];
     }
   }
+
+  static const _tandaEtiquetas = 5000;
 
   Future<Product?> getProductById(int productId) async {
     try {

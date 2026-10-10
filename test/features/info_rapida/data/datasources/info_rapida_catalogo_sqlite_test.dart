@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
-import 'package:wms_app/core/services/productos_cache_service.dart';
 import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/features/info_rapida/data/datasources/info_rapida_local_data_source.dart';
 import 'package:wms_app/features/info_rapida/data/services/info_rapida_entorno.dart';
@@ -12,7 +11,6 @@ import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/pro
 
 class _MockEntorno extends Mock implements InfoRapidaEntorno {}
 
-class _MockProductos extends Mock implements ProductosCacheService {}
 
 class _MockUbicaciones extends Mock implements UbicacionesCacheService {}
 
@@ -75,7 +73,6 @@ void main() {
     when(() => dbMock.getDatabaseInstance()).thenAnswer((_) async => db);
     dataSource = InfoRapidaLocalDataSourceImpl.test(
       _MockEntorno(),
-      _MockProductos(),
       _MockUbicaciones(),
       _MockConfiguracion(),
       dbMock,

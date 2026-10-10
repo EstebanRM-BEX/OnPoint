@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wms_app/core/error/failures.dart';
-import 'package:wms_app/core/services/productos_cache_service.dart';
 import 'package:wms_app/core/services/productos_sync_service.dart';
 import 'package:wms_app/core/usecases/usecase.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_productos_count.dart';
@@ -12,7 +11,6 @@ class _MockSync extends Mock implements SyncProductosInventario {}
 
 class _MockCount extends Mock implements GetProductosCount {}
 
-class _MockCache extends Mock implements ProductosCacheService {}
 
 class _FakeSyncParams extends Fake implements SyncProductosParams {}
 
@@ -21,7 +19,6 @@ class _FakeNoParams extends Fake implements NoParams {}
 void main() {
   late _MockSync sync;
   late _MockCount count;
-  late _MockCache cache;
   late ProductosSyncService service;
 
   setUpAll(() {
@@ -32,11 +29,9 @@ void main() {
   setUp(() {
     sync = _MockSync();
     count = _MockCount();
-    cache = _MockCache();
     service = ProductosSyncService(
       syncProductos: sync,
       getProductosCount: count,
-      cache: cache,
     );
   });
 
@@ -45,7 +40,7 @@ void main() {
 
   group('download', () {
     test(
-      'éxito: invalida el caché, actualiza el conteo y limpia el estado',
+      'éxito: actualiza el conteo y limpia el estado',
       () async {
         syncOk();
         when(() => count(any())).thenAnswer((_) async => const Right(120));
@@ -58,12 +53,11 @@ void main() {
         expect(service.error, isNull);
         expect(service.isLoading, isFalse);
         expect(service.progress, isNull);
-        verify(() => cache.invalidate()).called(1);
       },
     );
 
     test(
-      'fallo de red: devuelve Failure, guarda el error y no toca el caché',
+      'fallo de red: devuelve Failure, guarda el error y no lee el conteo',
       () async {
         when(
           () => sync(any()),
@@ -75,7 +69,6 @@ void main() {
         expect((outcome as ProductosSyncFailure).message, 'sin red');
         expect(service.error, 'sin red');
         expect(service.isLoading, isFalse);
-        verifyNever(() => cache.invalidate());
         verifyNever(() => count(any()));
       },
     );
@@ -113,7 +106,6 @@ void main() {
 
       expect(outcome, isA<ProductosSyncFailure>());
       expect(service.error, 'db rota');
-      verify(() => cache.invalidate()).called(1);
     });
 
     test('una excepción no deja el servicio cargando para siempre', () async {

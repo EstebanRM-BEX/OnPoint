@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
-import 'package:wms_app/core/services/productos_cache_service.dart';
 import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/features/info_rapida/data/datasources/info_rapida_local_data_source.dart';
 import 'package:wms_app/features/info_rapida/data/services/info_rapida_entorno.dart';
@@ -14,7 +13,6 @@ import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/ubi
 
 class _MockEntorno extends Mock implements InfoRapidaEntorno {}
 
-class _MockProductos extends Mock implements ProductosCacheService {}
 
 class _MockUbicaciones extends Mock implements UbicacionesCacheService {}
 
@@ -45,7 +43,6 @@ void main() {
     when(() => entorno.databaseName()).thenReturn('empresa');
     dataSource = InfoRapidaLocalDataSourceImpl.test(
       entorno,
-      _MockProductos(),
       ubicacionesCache,
       _MockConfiguracion(),
       db,

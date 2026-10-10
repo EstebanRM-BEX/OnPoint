@@ -4,12 +4,10 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
-import 'package:wms_app/core/services/productos_cache_service.dart';
 import 'package:wms_app/features/info_rapida/data/services/info_rapida_ws_listener.dart';
 
 class _MockWebSocket extends Mock implements IWebSocketService {}
 
-class _MockProductosCache extends Mock implements ProductosCacheService {}
 
 String _mensaje(String type, String action, Map<String, dynamic> data) =>
     jsonEncode([
@@ -68,36 +66,18 @@ void main() {
   group('InfoRapidaWsListener', () {
     late StreamController<dynamic> socket;
     late _MockWebSocket webSocket;
-    late _MockProductosCache cache;
     late InfoRapidaWsListener listener;
 
     setUp(() {
       socket = StreamController<dynamic>.broadcast();
       webSocket = _MockWebSocket();
-      cache = _MockProductosCache();
       when(() => webSocket.messages).thenAnswer((_) => socket.stream);
-      when(() => cache.applyWsProductUpsert(any(), any())).thenReturn(true);
-      listener = InfoRapidaWsListener(webSocket, cache);
+      listener = InfoRapidaWsListener(webSocket);
     });
 
     tearDown(() => socket.close());
 
-    test('aplica el upsert y avisa el id mientras está activo', () async {
-      final ids = <int>[];
-      final sub = listener.productosActualizados.listen(ids.add);
-      listener.start();
-
-      socket.add(_mensaje('notification', 'update', {'product_id': 7}));
-      await Future<void>.delayed(Duration.zero);
-
-      verify(() => cache.applyWsProductUpsert(7, any())).called(1);
-      expect(ids, [7]);
-      await sub.cancel();
-    });
-
-    test('avisa aunque el cache no tuviera el producto (listas en SQLite)',
-        () async {
-      when(() => cache.applyWsProductUpsert(any(), any())).thenReturn(false);
+    test('avisa el id actualizado mientras está activo', () async {
       final ids = <int>[];
       final sub = listener.productosActualizados.listen(ids.add);
       listener.start();
@@ -110,16 +90,21 @@ void main() {
     });
 
     test('deja de escuchar al detenerse', () async {
+      final ids = <int>[];
+      final sub = listener.productosActualizados.listen(ids.add);
       listener.start();
       listener.stop();
 
       socket.add(_mensaje('notification', 'update', {'product_id': 7}));
       await Future<void>.delayed(Duration.zero);
 
-      verifyNever(() => cache.applyWsProductUpsert(any(), any()));
+      expect(ids, isEmpty);
+      await sub.cancel();
     });
 
     test('sigue escuchando mientras quede alguien que lo arrancó', () async {
+      final ids = <int>[];
+      final sub = listener.productosActualizados.listen(ids.add);
       listener.start();
       listener.start();
       listener.stop();
@@ -127,7 +112,8 @@ void main() {
       socket.add(_mensaje('notification', 'update', {'product_id': 7}));
       await Future<void>.delayed(Duration.zero);
 
-      verify(() => cache.applyWsProductUpsert(7, any())).called(1);
+      expect(ids, [7]);
+      await sub.cancel();
     });
   });
 }

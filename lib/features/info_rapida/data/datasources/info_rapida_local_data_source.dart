@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
-import 'package:wms_app/core/services/productos_cache_service.dart';
 import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/features/info_rapida/data/models/catalogo_mappers.dart';
 import 'package:wms_app/features/info_rapida/data/models/recent_query_model.dart';
@@ -55,7 +54,8 @@ abstract class InfoRapidaLocalDataSource {
   /// Obtiene los permisos del usuario activo para Información Rápida.
   Future<ConfigInfoRapidaUsuario> getConfiguracionUsuario({int? userId});
 
-  /// Sincroniza la actualización de un producto en la base SQLite y caché en memoria.
+  /// Sincroniza la actualización de un producto en la base SQLite (las listas
+  /// consultan SQLite: no hay copia del catálogo en memoria).
   Future<void> syncLocalProductUpdated(ActualizarProductoParams params);
 
   /// Sincroniza la actualización de una ubicación en la base SQLite y caché en memoria.
@@ -68,14 +68,12 @@ class InfoRapidaLocalDataSourceImpl implements InfoRapidaLocalDataSource {
   static const int maxRecentItems = 5;
 
   final InfoRapidaEntorno _entorno;
-  final ProductosCacheService _productosCache;
   final UbicacionesCacheService _ubicacionesCache;
   final ConfiguracionCacheService _configuracionCache;
   final DataBaseSqlite _database;
 
   InfoRapidaLocalDataSourceImpl(
     this._entorno,
-    this._productosCache,
     this._ubicacionesCache,
     this._configuracionCache,
   ) : _database = DataBaseSqlite();
@@ -83,7 +81,6 @@ class InfoRapidaLocalDataSourceImpl implements InfoRapidaLocalDataSource {
   @visibleForTesting
   InfoRapidaLocalDataSourceImpl.test(
     this._entorno,
-    this._productosCache,
     this._ubicacionesCache,
     this._configuracionCache,
     this._database,
@@ -203,7 +200,7 @@ class InfoRapidaLocalDataSourceImpl implements InfoRapidaLocalDataSource {
         condiciones.isEmpty ? '' : 'WHERE ${condiciones.join(' AND ')}';
 
     final db = await _database.getDatabaseInstance();
-    // Una fila por producto, igual que getAllUniqueProducts.
+    // Una fila por producto.
     final rows = await db.rawQuery(
       """
       SELECT p.* FROM $p p
@@ -227,6 +224,7 @@ class InfoRapidaLocalDataSourceImpl implements InfoRapidaLocalDataSource {
   Future<List<String>> getPropietariosCatalogo() async {
     const p = ProductInventarioTable.tableName;
     final db = await _database.getDatabaseInstance();
+    // lectura-acotada: una fila por propietario, no por producto.
     final rows = await db.rawQuery("""
       SELECT DISTINCT ${ProductInventarioTable.columnPropietario} AS propietario
       FROM $p
@@ -279,7 +277,6 @@ class InfoRapidaLocalDataSourceImpl implements InfoRapidaLocalDataSource {
 
   @override
   Future<void> syncLocalProductUpdated(ActualizarProductoParams params) async {
-    // 1. Actualizar en la base de datos SQLite local
     await _database.productoInventarioRepository.updateProduct(
       UpdateProductRequest(
         productId: params.productId,
@@ -290,18 +287,6 @@ class InfoRapidaLocalDataSourceImpl implements InfoRapidaLocalDataSource {
         weight: params.weight,
         volume: params.volume,
       ),
-    );
-
-    // 2. Actualizar en la memoria compartida de productos
-    _productosCache.applyWsProductUpsert(
-      params.productId,
-      {
-        'name': params.name,
-        'barcode': params.barcode,
-        'code': params.defaultCode,
-        'weight': double.tryParse(params.weight),
-        'volume': double.tryParse(params.volume),
-      },
     );
   }
 

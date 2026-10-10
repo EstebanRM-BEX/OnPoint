@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:wms_app/core/error/failures.dart';
-import 'package:wms_app/core/services/productos_cache_service.dart';
 import 'package:wms_app/core/usecases/usecase.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_productos_count.dart';
 import 'package:wms_app/features/inventario/domain/usecases/sync_productos_inventario.dart';
@@ -61,14 +60,11 @@ class ProductosSyncService extends ChangeNotifier {
   ProductosSyncService({
     required SyncProductosInventario syncProductos,
     required GetProductosCount getProductosCount,
-    required ProductosCacheService cache,
   }) : _syncProductos = syncProductos,
-       _getProductosCount = getProductosCount,
-       _cache = cache;
+       _getProductosCount = getProductosCount;
 
   final SyncProductosInventario _syncProductos;
   final GetProductosCount _getProductosCount;
-  final ProductosCacheService _cache;
 
   static ProductosSyncService? _instance;
 
@@ -78,7 +74,6 @@ class ProductosSyncService extends ChangeNotifier {
       _instance ??= ProductosSyncService(
         syncProductos: getIt<SyncProductosInventario>(),
         getProductosCount: getIt<GetProductosCount>(),
-        cache: getIt<ProductosCacheService>(),
       );
 
   @visibleForTesting
@@ -138,10 +133,6 @@ class ProductosSyncService extends ChangeNotifier {
             ? ProductosSyncSessionExpired(failure.message)
             : ProductosSyncFailure(failure.message);
       }
-
-      // El sync acaba de escribir productos frescos: el caché en memoria quedó
-      // viejo.
-      _cache.invalidate();
 
       final countResult = await _getProductosCount(NoParams());
       return countResult.fold<ProductosSyncOutcome>(
