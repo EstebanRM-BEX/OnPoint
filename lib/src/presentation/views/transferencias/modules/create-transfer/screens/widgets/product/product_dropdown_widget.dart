@@ -21,7 +21,6 @@ class ProductDropdownCreateTransferWidget extends StatelessWidget {
                   !context.read<CreateTransferBloc>().quantityIsOk)
               ? () {
                   final bloc = context.read<CreateTransferBloc>();
-                  bloc.add(GetProductsFromDBEvent());
                   goToScreen(
                     context,
                     'search-product-create-transfer',

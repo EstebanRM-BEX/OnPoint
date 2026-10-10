@@ -1,11 +1,10 @@
 import 'package:bloc/bloc.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
-import 'package:wms_app/core/services/barcodes_inventario_cache_service.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
-import 'package:wms_app/core/services/productos_cache_service.dart';
 import 'package:wms_app/core/services/productos_sync_service.dart';
 import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
@@ -123,16 +122,24 @@ class CreateTransferBloc
   List<ResultUbicaciones> ubicaciones = [];
   List<ResultUbicaciones> ubicacionesFilters = [];
 
-  //*lista de productos
-  List<Product> productos = [];
+  //*productos para elegir: páginas de una consulta a SQLite. El catálogo
+  //completo (~72 mil filas) ya no se carga en memoria: con él la app moría
+  //por OutOfMemoryError en PDAs (ver docs/plan_fix_oom_catalogo_productos.md).
   List<Product> productosFilters = [];
+  bool hayMasProductos = false;
+  static const _paginaProductos = 50;
+  String _queryProductos = '';
+
+  /// Filtro de propietario de la búsqueda (`null` = todos).
+  String? propietarioProductos;
+  // Sube con cada búsqueda nueva: una página que llega tarde no se mezcla
+  // con los resultados de otra búsqueda.
+  int _busquedaProductos = 0;
 
   //lista de prodcutos ya agregados a la transferencia
   List<Product> productosCreateTransfer = [];
 
   List<BarcodeInventario> listOfBarcodes = [];
-
-  List<BarcodeInventario> allBarcodeInventario = [];
 
   //lista de lotes de un producto
   List<LotesProduct> listLotesProduct = [];
@@ -177,13 +184,21 @@ class CreateTransferBloc
 
     //*metodo para cargar las ubicaciones
     on<GetLocationsEvent>(_onLoadLocations);
-    //*metodo para obtener los productos de la bd
-    on<GetProductsFromDBEvent>(_onGetProductsFromDBEvent);
+    //*metodo para avisar si no hay catálogo de productos descargado
+    on<GetProductsFromDBEvent>(
+      _onGetProductsFromDBEvent,
+      transformer: droppable(),
+    );
 
     //metodo para buscar una ubicacion
     on<SearchLocationEvent>(_onSearchLocationEvent);
-    //*metodo para bucar un producto
-    on<SearchProductEvent>(_onSearchProductEvent);
+    //*metodo para bucar un producto. restartable: cada tecla cancela la
+    //búsqueda anterior (debounce en el handler).
+    on<SearchProductEvent>(_onSearchProductEvent, transformer: restartable());
+    on<LoadMoreProductsCreateTransferEvent>(
+      _onLoadMoreProductsEvent,
+      transformer: droppable(),
+    );
     //*metodo para validar la ubicacion
     on<ChangeLocationIsOkEvent>(_onChangeLocationIsOkEvent);
     //*metodo para validar el producto
@@ -210,8 +225,6 @@ class CreateTransferBloc
 
     //*evento para obtener los barcodes de un producto por paquete
     on<FetchBarcodesProductEvent>(_onFetchBarcodesProductEvent);
-    //meotod para obtener todos los other barcodes y product_packing de inventario
-    on<FetchAllBarcodesInventarioEvent>(_onFetchAllBarcodesInventarioEvent);
 
     //*evento para agregar los productos a la lista de transferencia
     on<AddProductCreateTransferEvent>(_onAddProductCreateTransferEvent);
@@ -432,24 +445,6 @@ class CreateTransferBloc
       debugPrint("❌ Error en _onAddProductCreateTransferEvent: $e, $s");
       emit(ProductAddToTransferErrorState(
           'Error al agregar el producto a la transferencia'));
-    }
-  }
-
-  void _onFetchAllBarcodesInventarioEvent(FetchAllBarcodesInventarioEvent event,
-      Emitter<CreateTransferState> emit) async {
-    try {
-      final response = await getIt<BarcodesInventarioCacheService>().getAll();
-      allBarcodeInventario = response;
-      if (response.isNotEmpty) {
-        debugPrint(
-            'Total de códigos de barras: ${allBarcodeInventario.length}');
-        emit(FetchAllBarcodesSuccess(allBarcodeInventario));
-      } else {
-        emit(FetchAllBarcodesFailure('No se encontraron códigos de barras'));
-      }
-    } catch (e, s) {
-      debugPrint("❌ Error en _onFetchAllBarcodesInventarioEvent: $e, $s");
-      emit(FetchAllBarcodesFailure('Error al obtener los códigos de barras'));
     }
   }
 
@@ -799,31 +794,49 @@ class CreateTransferBloc
     }
   }
 
+  /// Producto escaneado: consulta indexada por barcode, código o código
+  /// alterno (prefiere la fila de la ubicación de origen). `null` si no
+  /// existe.
+  Future<Product?> buscarProductoEscaneado(String codigo) =>
+      db.productoInventarioRepository.getByCodigo(
+        codigo,
+        ubicacionPreferida: currentUbication?.id,
+      );
+
+  /// Propietarios disponibles para el filtro de la búsqueda.
+  Future<List<String>> propietariosProductos() =>
+      db.productoInventarioRepository.propietarios();
+
+  Future<List<Product>> _paginaDeProductos(String query, int offset) =>
+      db.productoInventarioRepository.buscar(
+        query: query,
+        propietario: propietarioProductos,
+        // Filas de stock: el lote de la fila elegida se usa al agregarlo.
+        porProducto: false,
+        ubicacionPrimero: currentUbication?.id,
+        limit: _paginaProductos,
+        offset: offset,
+      );
+
   void _onSearchProductEvent(
     SearchProductEvent event,
     Emitter<CreateTransferState> emit,
   ) async {
     try {
-      debugPrint('🔍 Buscando productos con query: "${event.query}"');
+      final busqueda = ++_busquedaProductos;
       emit(SearchLoading());
-
-      productosFilters = [];
-      productosFilters = productos;
-      final query = event.query.toLowerCase();
-      if (query.isEmpty) {
-        productosFilters = productos;
-      } else {
-        final List<Product> filtrados = productos.where((product) {
-          final name = (product.name ?? '').toLowerCase();
-          final code = (product.code ?? '').toString().trim();
-          final barcode = (product.barcode ?? '').toString().trim();
-
-          return name.contains(query.toLowerCase()) ||
-              code.contains(query) ||
-              barcode.contains(query);
-        }).toList();
-        productosFilters = filtrados;
+      // Debounce: si llega otra tecla, restartable cierra este emitter.
+      if (event.query.isNotEmpty) {
+        await Future.delayed(const Duration(milliseconds: 250));
+        if (emit.isDone) return;
       }
+
+      final pagina = await _paginaDeProductos(event.query, 0);
+      if (emit.isDone || busqueda != _busquedaProductos) return;
+
+      _queryProductos = event.query;
+      productosFilters = pagina;
+      hayMasProductos = pagina.length == _paginaProductos;
       emit(SearchProductSuccess(productosFilters));
     } catch (e, s) {
       debugPrint('❌ Error en SearchProductEvent: $e\n$s');
@@ -831,42 +844,52 @@ class CreateTransferBloc
     }
   }
 
+  void _onLoadMoreProductsEvent(
+    LoadMoreProductsCreateTransferEvent event,
+    Emitter<CreateTransferState> emit,
+  ) async {
+    if (!hayMasProductos) return;
+    final busqueda = _busquedaProductos;
+    try {
+      final pagina = await _paginaDeProductos(
+        _queryProductos,
+        productosFilters.length,
+      );
+      if (busqueda != _busquedaProductos) return;
+      productosFilters = [...productosFilters, ...pagina];
+      hayMasProductos = pagina.length == _paginaProductos;
+      emit(SearchProductSuccess(productosFilters));
+    } catch (e, s) {
+      debugPrint('❌ Error en LoadMoreProductsCreateTransferEvent: $e\n$s');
+    }
+  }
+
+  /// Solo avisa si no hay catálogo descargado: los productos se consultan
+  /// en SQLite al buscar o escanear.
   void _onGetProductsFromDBEvent(
       GetProductsFromDBEvent event, Emitter<CreateTransferState> emit) async {
     try {
-      emit(GetProductsLoadingBD());
-      var response = await getIt<ProductosCacheService>().getAll();
-      if (response.isEmpty) {
+      final repo = db.productoInventarioRepository;
+      var hayCatalogo = (await repo.buscar(limit: 1)).isNotEmpty;
+      if (!hayCatalogo) {
         // Puede ser que la sincronización de productos en background
         // (post-login, fire-and-forget vía ProductosSyncService.download)
-        // todavía esté en curso — en vez de adivinar un tiempo fijo de
-        // espera, se consulta el estado real de esa sincronización y se
-        // espera solo mientras siga activa (con un tope de 15s por si algo
-        // se cuelga). Si no hay sync en curso y sigue vacío, sí es que
-        // realmente no hay productos en la BD.
+        // todavía esté en curso: se espera solo mientras siga activa (tope
+        // de 15 s por si algo se cuelga).
         final productosSync = ProductosSyncService.instance;
         var esperas = 0;
         while (productosSync.isLoading && esperas < 30) {
           await Future.delayed(const Duration(milliseconds: 500));
           esperas++;
         }
-        response = await getIt<ProductosCacheService>().getAll(
-          forceRefresh: true,
-        );
+        hayCatalogo = (await repo.buscar(limit: 1)).isNotEmpty;
       }
-      productos = [];
-      productosFilters = [];
-      if (response.isNotEmpty) {
-        productos = response;
-        productosFilters = response;
-        debugPrint('productos de la bd::::: ${productos.length}');
-        emit(GetProductsSuccessBD(response));
-      } else {
+      if (!hayCatalogo) {
         emit(GetProductsFailure('No se encontraron productos'));
       }
     } catch (e, s) {
       emit(GetProductsFailure('Error al cargar los productos'));
-      debugPrint('Error en el fetch de productos: $e=>$s');
+      debugPrint('Error al revisar el catálogo de productos: $e=>$s');
     }
   }
 

@@ -111,9 +111,8 @@ class AddQuantitySeparate extends CreateTransferEvent {
 
 class FetchBarcodesProductEvent extends CreateTransferEvent {}
 
-class FetchAllBarcodesInventarioEvent extends CreateTransferEvent {
-  FetchAllBarcodesInventarioEvent();
-}
+/// Siguiente página de la búsqueda de productos.
+class LoadMoreProductsCreateTransferEvent extends CreateTransferEvent {}
 
 class AddProductCreateTransferEvent extends CreateTransferEvent {
   final dynamic quantity;

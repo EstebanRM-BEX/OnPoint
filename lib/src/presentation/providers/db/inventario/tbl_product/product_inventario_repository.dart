@@ -273,10 +273,12 @@ class ProductInventarioRepository {
   ///   las filas de esa ubicación, luego las de ubicación 0 y el resto.
   ///
   /// [query] busca (sin distinguir mayúsculas) en nombre, código, barcode y
-  /// códigos alternos. [filtro] restringe a productos y/o categorías.
+  /// códigos alternos. [filtro] restringe a productos y/o categorías y
+  /// [propietario] a los productos de ese propietario.
   Future<List<Product>> buscar({
     String query = '',
     FiltroCatalogo filtro = FiltroCatalogo.todos,
+    String? propietario,
     bool porProducto = true,
     int? ubicacionPrimero,
     int limit = 50,
@@ -286,7 +288,7 @@ class ProductInventarioRepository {
     try {
       const pid = ProductInventarioTable.columnProductId;
       const loc = ProductInventarioTable.columnLocationId;
-      final w = _where(query, filtro);
+      final w = _where(query, filtro, propietario: propietario);
       final args = [...w.args];
       final String orden;
       if (porProducto) {
@@ -308,6 +310,27 @@ class ProductInventarioRepository {
       return _parseProductsMap(rows);
     } catch (e, s) {
       debugPrint("Error al buscar productos: $e ==> $s");
+      return [];
+    }
+  }
+
+  /// Propietarios de los productos que manejan propietario, ordenados, para
+  /// el filtro de Crear Transferencia (antes se calculaban recorriendo el
+  /// catálogo completo en memoria).
+  Future<List<String>> propietarios() async {
+    try {
+      const t = ProductInventarioTable.tableName;
+      const col = ProductInventarioTable.columnPropietario;
+      final db = await _database.getDatabaseInstance();
+      final rows = await db.rawQuery(
+        'SELECT DISTINCT $col FROM $t '
+        'WHERE ${ProductInventarioTable.columnManejoPropietario} = 1 '
+        "AND $col IS NOT NULL AND $col != '' "
+        'ORDER BY $col',
+      );
+      return [for (final r in rows) r[col].toString()];
+    } catch (e, s) {
+      debugPrint("Error al obtener propietarios: $e ==> $s");
       return [];
     }
   }
@@ -336,8 +359,9 @@ class ProductInventarioRepository {
 
   ({String sql, List<Object?> args}) _where(
     String query,
-    FiltroCatalogo filtro,
-  ) {
+    FiltroCatalogo filtro, {
+    String? propietario,
+  }) {
     final condiciones = <String>[];
     final args = <Object?>[];
 
@@ -359,6 +383,11 @@ class ProductInventarioRepository {
     }
     // Productos y categorías a la vez = unión (conteo "combined").
     if (filtroSql.isNotEmpty) condiciones.add('(${filtroSql.join(' OR ')})');
+
+    if (propietario != null) {
+      condiciones.add('${ProductInventarioTable.columnPropietario} = ?');
+      args.add(propietario);
+    }
 
     final q = query.trim();
     if (q.isNotEmpty) {

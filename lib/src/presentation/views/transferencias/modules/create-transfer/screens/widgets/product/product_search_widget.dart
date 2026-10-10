@@ -7,7 +7,6 @@ import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/transferencias/modules/create-transfer/bloc/crate_transfer_bloc.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 
 class SearchProductCreateTransferScreen extends StatefulWidget {
   const SearchProductCreateTransferScreen({super.key});
@@ -22,36 +21,49 @@ class _SearchProductScreenState
   String? selectedProductKey;
   String? _selectedPropietario;
 
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
-    // El FAB de "crear transferencia" ya dispara GetProductsFromDBEvent al
-    // entrar, pero es fire-and-forget: si el operario llega a esta pantalla
-    // antes de que termine, la lista se ve vacía sin ningún aviso — parece
-    // que "no cargan" hasta que se sale y se vuelve a entrar (para entonces
-    // el fetch original ya terminó). Si acá todavía no hay nada, se pide de
-    // nuevo en vez de depender de esa carrera.
+    _scrollController.addListener(_onScroll);
+    // Primera página: los productos se consultan en SQLite, no hay lista
+    // precargada. Se parte del propietario que ya tenía el bloc.
     final bloc = context.read<CreateTransferBloc>();
-    if (bloc.productos.isEmpty) {
-      bloc.add(GetProductsFromDBEvent());
+    _selectedPropietario = bloc.propietarioProductos;
+    bloc.add(SearchProductEvent(bloc.searchControllerProducts.text));
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// Pide la página siguiente al acercarse al final de la lista.
+  void _onScroll() {
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 300) {
+      final bloc = context.read<CreateTransferBloc>();
+      if (bloc.hayMasProductos) {
+        bloc.add(LoadMoreProductsCreateTransferEvent());
+      }
     }
   }
 
-  List<String> _getPropietarios(CreateTransferBloc bloc) {
-    return bloc.productos
-        .where((p) =>
-            p.manejoPropietario == 1 &&
-            p.propietario != null &&
-            p.propietario != false &&
-            p.propietario.toString().isNotEmpty)
-        .map((p) => p.propietario.toString())
-        .toSet()
-        .toList()
-      ..sort();
+  void _filtrarPorPropietario(CreateTransferBloc bloc, String? propietario) {
+    setState(() => _selectedPropietario = propietario);
+    bloc.propietarioProductos = propietario;
+    bloc.add(SearchProductEvent(bloc.searchControllerProducts.text));
   }
 
-  void _showPropietarioFilter(BuildContext context, CreateTransferBloc bloc) {
-    final propietarios = _getPropietarios(bloc);
+  Future<void> _showPropietarioFilter(
+    BuildContext context,
+    CreateTransferBloc bloc,
+  ) async {
+    final propietarios = await bloc.propietariosProductos();
+    if (!context.mounted) return;
 
     if (propietarios.isEmpty) {
       Get.snackbar(
@@ -111,7 +123,7 @@ class _SearchProductScreenState
                 ),
                 title: const Text('Todos los propietarios'),
                 onTap: () {
-                  setState(() => _selectedPropietario = null);
+                  _filtrarPorPropietario(bloc, null);
                   Navigator.pop(context);
                 },
               ),
@@ -124,7 +136,7 @@ class _SearchProductScreenState
                     ),
                     title: Text(p),
                     onTap: () {
-                      setState(() => _selectedPropietario = p);
+                      _filtrarPorPropietario(bloc, p);
                       Navigator.pop(context);
                     },
                   )),
@@ -140,21 +152,9 @@ class _SearchProductScreenState
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
 
-    return BlocListener<CreateTransferBloc, CreateTransferState>(
-      listener: (context, state) {
-        if (state is GetProductsLoadingBD) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) =>
-                const DialogLoading(message: 'Cargando productos...'),
-          );
-        } else if (state is GetProductsSuccessBD ||
-            state is GetProductsFailure) {
-          if (Navigator.canPop(context)) Navigator.pop(context);
-        }
-      },
-      child: BlocBuilder<CreateTransferBloc, CreateTransferState>(
+    // Sin diálogo de "Cargando productos": ya no se carga el catálogo, cada
+    // búsqueda es una consulta de una página.
+    return BlocBuilder<CreateTransferBloc, CreateTransferState>(
         builder: (context, state) {
           final bloc = context.read<CreateTransferBloc>();
 
@@ -185,7 +185,6 @@ class _SearchProductScreenState
           ),
         );
         },
-      ),
     );
   }
 
@@ -231,63 +230,24 @@ class _SearchProductScreenState
     CreateTransferBloc bloc,
     CreateTransferState state,
   ) {
-    // Mientras carga, el diálogo del BlocListener ya lo cubre — acá solo
-    // evita el flash de "No se encontraron productos" antes de que llegue
+    // Evita el flash de "No se encontraron productos" antes de que llegue
     // el primer resultado.
-    if (state is GetProductsLoadingBD && bloc.productosFilters.isEmpty) {
+    if (state is SearchLoading && bloc.productosFilters.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    var productos = bloc.productosFilters;
-
-    if (_selectedPropietario != null) {
-      productos = productos
-          .where((p) => p.propietario == _selectedPropietario)
-          .toList();
-    }
-
-    final ubicacionId = bloc.currentUbication?.id;
-
-    final enUbicacionActual =
-        productos.where((p) => p.locationId == ubicacionId).toList();
-
-    final enUbicacionCero = productos.where((p) => p.locationId == 0).toList();
-
-    final restantes = productos
-        .where((p) => p.locationId != ubicacionId && p.locationId != 0)
-        .toList();
-
-    final List<Widget> items = [];
-
-    for (final product in enUbicacionActual) {
-      items.add(_buildProductCard(
-        context,
-        bloc,
-        product,
-        product.productId,
-        product.lotId,
-      ));
-    }
-
-    for (final product in enUbicacionCero) {
-      items.add(_buildProductCard(
-        context,
-        bloc,
-        product,
-        product.productId,
-        product.lotId,
-      ));
-    }
-
-    for (final product in restantes) {
-      items.add(_buildProductCard(
-        context,
-        bloc,
-        product,
-        product.productId,
-        product.lotId,
-      ));
-    }
+    // Ya vienen filtrados (propietario) y ordenados de SQLite: ubicación
+    // actual, luego ubicación 0 y el resto.
+    final List<Widget> items = [
+      for (final product in bloc.productosFilters)
+        _buildProductCard(
+          context,
+          bloc,
+          product,
+          product.productId,
+          product.lotId,
+        ),
+    ];
 
     if (items.isEmpty) {
       return const Center(
@@ -304,8 +264,14 @@ class _SearchProductScreenState
     }
 
     return ListView.builder(
-      itemCount: items.length,
-      itemBuilder: (context, index) => items[index],
+      controller: _scrollController,
+      itemCount: items.length + (bloc.hayMasProductos ? 1 : 0),
+      itemBuilder: (context, index) => index < items.length
+          ? items[index]
+          : const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            ),
     );
   }
 

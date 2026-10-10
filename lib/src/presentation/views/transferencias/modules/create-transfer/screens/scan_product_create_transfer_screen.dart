@@ -96,8 +96,9 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
       if (bloc.ubicaciones.isEmpty) {
         bloc
           ..add(GetLocationsEvent())
-          ..add(FetchAllBarcodesInventarioEvent())
           ..add(GetProductsCreateTransferEvent())
+          // Solo avisa si no hay catálogo: los productos se consultan en
+          // SQLite al buscar o escanear (no se cargan en memoria).
           ..add(GetProductsFromDBEvent());
       }
     });
@@ -267,7 +268,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     Future.microtask(() => focusNode6.requestFocus());
   }
 
-  void validateProduct(String value) {
+  Future<void> validateProduct(String value) async {
     final bloc = context.read<CreateTransferBloc>();
 
     final scan = value.trim().toLowerCase();
@@ -275,54 +276,22 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     _controllerProduct.clear();
     debugPrint('🔎 Scan barcode: $scan');
 
-    // Buscar coincidencia directa por barcode o code
-    final matchedProduct = bloc.productos.firstWhere(
-      (p) => p.barcode?.toLowerCase() == scan || p.code?.toLowerCase() == scan,
-      orElse: () => Product(),
-    );
+    // Consulta indexada en SQLite: barcode, código o código alterno.
+    final producto = await bloc.buscarProductoEscaneado(scan);
+    if (!mounted) return;
 
-    if (matchedProduct.barcode != null) {
-      debugPrint('✅ producto encontrado directo: ${matchedProduct.name}');
+    if (producto != null) {
+      debugPrint('✅ Producto encontrado: ${producto.name}');
       bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
-      bloc.add(ChangeProductIsOkEvent(matchedProduct, true));
+      bloc.add(ChangeProductIsOkEvent(producto, true));
       return;
     }
 
-    // Buscar en barcodes adicionales
-    final matchedBarcode = bloc.allBarcodeInventario.firstWhere(
-      (b) => b.barcode?.toLowerCase() == scan,
-      orElse: () => BarcodeInventario(),
-    );
-
-    if (matchedBarcode.barcode == null) {
-      debugPrint('❌ Producto no encontrado en barcodes');
-      _audioService.playErrorSound();
-      _vibrationService.vibrate();
-      bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
-      Future.microtask(() => focusNode2.requestFocus());
-      return;
-    }
-
-    // Buscar producto por id relacionado al barcode encontrado
-    final matchedById = bloc.productos.firstWhere(
-      (p) => p.productId == matchedBarcode.idProduct,
-      orElse: () => Product(),
-    );
-
-    if (matchedById.productId != null) {
-      debugPrint('✅ Producto encontrado por ID: ${matchedById.name}');
-      bloc.add(ValidateFieldsEvent(field: "product", isOk: true));
-      bloc.add(ChangeProductIsOkEvent(matchedById, true));
-
-      return;
-    } else {
-      debugPrint('❌ Producto no encontrado por ID');
-      _audioService.playErrorSound();
-      _vibrationService.vibrate();
-      bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
-      Future.microtask(() => focusNode2.requestFocus());
-      return;
-    }
+    debugPrint('❌ Producto no encontrado');
+    _audioService.playErrorSound();
+    _vibrationService.vibrate();
+    bloc.add(ValidateFieldsEvent(field: "product", isOk: false));
+    Future.microtask(() => focusNode2.requestFocus());
   }
 
   // Función auxiliar para eliminar caracteres especiales que causan problemas

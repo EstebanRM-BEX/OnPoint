@@ -157,16 +157,6 @@ class BarcodesProductLoadedState extends CreateTransferState {
   BarcodesProductLoadedState({required this.listOfBarcodes});
 }
 
-class FetchAllBarcodesSuccess extends CreateTransferState {
-  final List<BarcodeInventario> allBarcodes;
-  FetchAllBarcodesSuccess(this.allBarcodes);
-}
-
-class FetchAllBarcodesFailure extends CreateTransferState {
-  final String error;
-  FetchAllBarcodesFailure(this.error);
-}
-
 class ProductAddingToTransferLoadingState extends CreateTransferState {}
 
 class ProductAddedToTransferState extends CreateTransferState {}
