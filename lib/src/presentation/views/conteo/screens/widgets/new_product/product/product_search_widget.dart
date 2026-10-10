@@ -121,18 +121,9 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
   Widget _buildProductList(BuildContext context, ConteoBloc bloc) {
     // Ya vienen ordenados de SQLite: ubicación actual, luego ubicación 0 y
     // el resto.
-    final List<Widget> items = [
-      for (final product in bloc.productosFiltersSearch)
-        _buildProductCard(
-          context,
-          bloc,
-          product,
-          product.productId,
-          product.lotId,
-        ),
-    ];
+    final productos = bloc.productosFiltersSearch;
 
-    if (items.isEmpty) {
+    if (productos.isEmpty) {
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -151,9 +142,17 @@ class _SearchProductScreenState extends State<SearchProductConteoScreen> {
       thumbVisibility: true,
       child: ListView.builder(
         controller: _productListScrollController,
-        itemCount: items.length + (bloc.hayMasProductos ? 1 : 0),
-        itemBuilder: (context, index) => index < items.length
-            ? items[index]
+        itemCount: productos.length + (bloc.hayMasProductos ? 1 : 0),
+        // Perezoso: solo se arman las tarjetas visibles. Antes se armaba una
+        // por producto en cada setState (al tocar uno), y eso congelaba la UI.
+        itemBuilder: (context, index) => index < productos.length
+            ? _buildProductCard(
+                context,
+                bloc,
+                productos[index],
+                productos[index].productId,
+                productos[index].lotId,
+              )
             : const Padding(
                 padding: EdgeInsets.all(16),
                 child: Center(child: CircularProgressIndicator()),
