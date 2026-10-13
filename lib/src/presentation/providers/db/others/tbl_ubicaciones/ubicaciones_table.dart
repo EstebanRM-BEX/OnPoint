@@ -36,5 +36,10 @@ class UbicacionesTable {
   static List<String> get indices => [
         'CREATE INDEX IF NOT EXISTS idx_${tableName}_barcode ON $tableName ($columnBarcode)',
         'CREATE INDEX IF NOT EXISTS idx_${tableName}_name ON $tableName ($columnName)',
+        // Consultas acotadas (docs/plan_ubicaciones_sqlite.md): escaneo sin
+        // distinguir mayúsculas y filtros por almacén.
+        'CREATE INDEX IF NOT EXISTS idx_${tableName}_barcode_nocase ON $tableName ($columnBarcode COLLATE NOCASE)',
+        'CREATE INDEX IF NOT EXISTS idx_${tableName}_id_warehouse ON $tableName ($columnIdWarehouse)',
+        'CREATE INDEX IF NOT EXISTS idx_${tableName}_warehouse_name ON $tableName ($columnWarehouseName)',
       ];
 }

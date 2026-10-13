@@ -26,6 +26,11 @@ List<ResultUbicaciones> _parseUbicacionesMap(List<Map<String, dynamic>> maps) {
 }
 
 class UbicacionesRepository {
+  UbicacionesRepository({DataBaseSqlite? database})
+      : _database = database ?? DataBaseSqlite();
+
+  final DataBaseSqlite _database;
+
   // Tamaño del bloque para procesar. 500 es un balance seguro entre velocidad y consumo de RAM.
   static const int _batchSize = 500;
 
@@ -225,6 +230,155 @@ class UbicacionesRepository {
     }
   }
 
+  // --------------------------------------------------------------------------
+  // CONSULTAS ACOTADAS: nunca devuelven la tabla completa (hasta ~19 mil
+  // ubicaciones por cliente). Ver docs/plan_ubicaciones_sqlite.md.
+  // --------------------------------------------------------------------------
+
+  /// Ubicación por código escaneado, sin distinguir mayúsculas (las pantallas
+  /// comparan en minúsculas). `null` si no existe.
+  Future<ResultUbicaciones?> getByBarcode(String codigo) async {
+    final c = codigo.trim();
+    if (c.isEmpty) return null;
+    try {
+      final db = await _database.getDatabaseInstance();
+      final rows = await db.rawQuery(
+        'SELECT * FROM ${UbicacionesTable.tableName} '
+        'WHERE ${UbicacionesTable.columnBarcode} = ? COLLATE NOCASE LIMIT 1',
+        [c],
+      );
+      return rows.isEmpty ? null : _mapToModel(rows.first);
+    } catch (e) {
+      debugPrint("Error getByBarcode: $e");
+      return null;
+    }
+  }
+
+  /// Una página de ubicaciones ordenada por nombre. [query] busca (sin
+  /// distinguir mayúsculas) en nombre y barcode.
+  Future<List<ResultUbicaciones>> buscar({
+    String query = '',
+    FiltroUbicaciones filtro = FiltroUbicaciones.todas,
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    if (filtro.vacio) return [];
+    try {
+      final w = _where(query, filtro);
+      final db = await _database.getDatabaseInstance();
+      final rows = await db.rawQuery(
+        'SELECT * FROM ${UbicacionesTable.tableName} ${w.sql} '
+        'ORDER BY ${UbicacionesTable.columnName} LIMIT ? OFFSET ?',
+        [...w.args, limit, offset],
+      );
+      return rows.map(_mapToModel).toList();
+    } catch (e) {
+      debugPrint("Error buscar ubicaciones: $e");
+      return [];
+    }
+  }
+
+  /// Cantidad de ubicaciones que devuelve [buscar] con los mismos filtros.
+  Future<int> contar({
+    String query = '',
+    FiltroUbicaciones filtro = FiltroUbicaciones.todas,
+  }) async {
+    if (filtro.vacio) return 0;
+    try {
+      final w = _where(query, filtro);
+      final db = await _database.getDatabaseInstance();
+      final rows = await db.rawQuery(
+        'SELECT COUNT(*) AS total FROM ${UbicacionesTable.tableName} ${w.sql}',
+        w.args,
+      );
+      return (rows.first['total'] as int?) ?? 0;
+    } catch (e) {
+      debugPrint("Error contar ubicaciones: $e");
+      return 0;
+    }
+  }
+
+  /// Ubicaciones por rango de nombre (impresión de etiquetas), ordenadas por
+  /// nombre y sin distinguir mayúsculas: sin [hasta], las que empiezan con
+  /// [desde]; con [hasta], las que están entre ambos (inclusive). Acotado a
+  /// [limit]; quien llama avisa si se llegó al tope.
+  Future<List<ResultUbicaciones>> rango({
+    required String desde,
+    String hasta = '',
+    int limit = 1000,
+  }) async {
+    final d = desde.trim();
+    if (d.isEmpty) return [];
+    try {
+      const n = UbicacionesTable.columnName;
+      final h = hasta.trim();
+      final String where;
+      final List<Object?> args;
+      if (h.isEmpty) {
+        where = "$n LIKE ? ESCAPE '\\'";
+        args = ['${_escaparLike(d)}%'];
+      } else {
+        where = '$n >= ? COLLATE NOCASE AND $n <= ? COLLATE NOCASE';
+        args = [d, h];
+      }
+      final db = await _database.getDatabaseInstance();
+      final rows = await db.rawQuery(
+        'SELECT * FROM ${UbicacionesTable.tableName} WHERE $where '
+        'ORDER BY $n COLLATE NOCASE LIMIT ?',
+        [...args, limit],
+      );
+      return rows.map(_mapToModel).toList();
+    } catch (e) {
+      debugPrint("Error rango de ubicaciones: $e");
+      return [];
+    }
+  }
+
+  ({String sql, List<Object?> args}) _where(
+    String query,
+    FiltroUbicaciones filtro,
+  ) {
+    final condiciones = <String>[];
+    final args = <Object?>[];
+    if (filtro.warehouseId != null) {
+      condiciones.add('${UbicacionesTable.columnIdWarehouse} = ?');
+      args.add(filtro.warehouseId);
+    }
+    if (filtro.warehouseName != null) {
+      condiciones.add('${UbicacionesTable.columnWarehouseName} = ?');
+      args.add(filtro.warehouseName);
+    }
+    if (filtro.ids != null) {
+      // Enteros en línea: no cuentan para el límite de 999 variables.
+      condiciones.add(
+        '${UbicacionesTable.columnId} IN (${filtro.ids!.join(',')})',
+      );
+    }
+    if (filtro.soloMuelles) {
+      condiciones.add('${UbicacionesTable.columnIsADock} = 1');
+    }
+    final q = query.trim();
+    if (q.isNotEmpty) {
+      // LIKE de SQLite ya ignora mayúsculas (ASCII).
+      final like = '%${_escaparLike(q)}%';
+      condiciones.add(
+        "(${UbicacionesTable.columnName} LIKE ? ESCAPE '\\' "
+        "OR ${UbicacionesTable.columnBarcode} LIKE ? ESCAPE '\\')",
+      );
+      args.addAll([like, like]);
+    }
+    return (
+      sql: condiciones.isEmpty ? '' : 'WHERE ${condiciones.join(' AND ')}',
+      args: args,
+    );
+  }
+
+  /// Escapa \, % y _ para que LIKE los busque literales.
+  static String _escaparLike(String texto) => texto
+      .replaceAll(r'\', r'\\')
+      .replaceAll('%', r'\%')
+      .replaceAll('_', r'\_');
+
   Future<List<ResultUbicaciones>> getAllUbicaciones() async {
     try {
       final db = await DataBaseSqlite().getDatabaseInstance();
@@ -275,4 +429,33 @@ class UbicacionesRepository {
     final db = await DataBaseSqlite().getDatabaseInstance();
     await db.delete(UbicacionesTable.tableName);
   }
+}
+
+/// Restricción de [UbicacionesRepository.buscar]/[UbicacionesRepository.contar].
+/// `null` = sin restricción; [ids] vacío = no coincide nada (p. ej. una orden
+/// sin ubicaciones). Los filtros se combinan con AND.
+class FiltroUbicaciones {
+  const FiltroUbicaciones({
+    this.warehouseId,
+    this.warehouseName,
+    this.ids,
+    this.soloMuelles = false,
+  });
+
+  static const todas = FiltroUbicaciones();
+
+  final int? warehouseId;
+  final String? warehouseName;
+  final Set<int>? ids;
+  final bool soloMuelles;
+
+  bool get vacio => ids != null && ids!.isEmpty;
+
+  /// Misma regla que el WHERE, para validar una ubicación ya leída (p. ej.
+  /// escaneada).
+  bool incluye(ResultUbicaciones u) =>
+      (warehouseId == null || u.idWarehouse == warehouseId) &&
+      (warehouseName == null || u.warehouseName == warehouseName) &&
+      (ids == null || ids!.contains(u.id)) &&
+      (!soloMuelles || u.isADockAlter == true);
 }
