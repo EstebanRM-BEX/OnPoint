@@ -19,6 +19,9 @@ class SearchProductEvent extends PrintLabelsEvent {
   SearchProductEvent(this.query);
 }
 
+/// Siguiente página del listado de productos.
+class LoadMoreProductsEvent extends PrintLabelsEvent {}
+
 class SearchRangeLocationEvent extends PrintLabelsEvent {
   final String start;
   final String end;

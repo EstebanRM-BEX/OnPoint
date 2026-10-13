@@ -341,44 +341,35 @@ class ProductInventarioRepository {
     );
   }
 
-  /// Proyección liviana (id/name/code/barcode), una fila por producto, para
-  /// pantallas que NO necesitan las ~25 columnas del producto, p.ej.
-  /// impresión de etiquetas. Devuelve filas crudas; el caller las mapea a su
-  /// propio modelo liviano para no acoplar la capa DB a un feature.
-  ///
-  /// Lee en tandas de [_tandaEtiquetas] por `product_id` (paginación por
-  /// clave): una sola consulta del catálogo entero arma un buffer enorme en el
-  /// heap Java (ver la nota de MÉTODOS DE LECTURA).
-  Future<List<Map<String, Object?>>> getProductLabelRows() async {
+  /// Una página de la proyección liviana (id/name/code/barcode), una fila por
+  /// producto, para pantallas que NO necesitan las ~25 columnas del
+  /// producto, p.ej. impresión de etiquetas. Misma búsqueda que [buscar]
+  /// (nombre, código, barcode y códigos alternos, sin distinguir mayúsculas),
+  /// ordenada por `product_id`. Devuelve filas crudas; el caller las mapea a
+  /// su propio modelo liviano para no acoplar la capa DB a un feature.
+  Future<List<Map<String, Object?>>> buscarEtiquetas({
+    String query = '',
+    int limit = 50,
+    int offset = 0,
+  }) async {
     try {
       const pid = ProductInventarioTable.columnProductId;
+      final w = _where(query, FiltroCatalogo.todos);
       final db = await _database.getDatabaseInstance();
-      final filas = <Map<String, Object?>>[];
-      int? ultimo;
-      while (true) {
-        final tanda = await db.rawQuery(
-          'SELECT $pid, '
-          '${ProductInventarioTable.columnProductName}, '
-          '${ProductInventarioTable.columnProductCode}, '
-          '${ProductInventarioTable.columnBarcode} '
-          'FROM ${ProductInventarioTable.tableName} '
-          '${ultimo == null ? '' : 'WHERE $pid > ? '}'
-          'GROUP BY $pid ORDER BY $pid LIMIT ?',
-          [if (ultimo != null) ultimo, _tandaEtiquetas],
-        );
-        filas.addAll(tanda);
-        if (tanda.length < _tandaEtiquetas) break;
-        ultimo = tanda.last[pid] as int?;
-        if (ultimo == null) break;
-      }
-      return filas;
+      return await db.rawQuery(
+        'SELECT $pid, '
+        '${ProductInventarioTable.columnProductName}, '
+        '${ProductInventarioTable.columnProductCode}, '
+        '${ProductInventarioTable.columnBarcode} '
+        'FROM ${ProductInventarioTable.tableName} ${w.sql} '
+        'GROUP BY $pid ORDER BY $pid LIMIT ? OFFSET ?',
+        [...w.args, limit, offset],
+      );
     } catch (e, s) {
-      debugPrint("Error al obtener filas de etiquetas: $e ==> $s");
+      debugPrint("Error al buscar etiquetas de productos: $e ==> $s");
       return [];
     }
   }
-
-  static const _tandaEtiquetas = 5000;
 
   Future<Product?> getProductById(int productId) async {
     try {

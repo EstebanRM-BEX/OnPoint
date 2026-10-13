@@ -240,6 +240,26 @@ void main() {
     });
   });
 
+  group('buscarEtiquetas', () {
+    test('proyección de 4 columnas, una fila por producto, paginada', () async {
+      final p1 = await repo.buscarEtiquetas(limit: 2);
+      final p2 = await repo.buscarEtiquetas(limit: 2, offset: 2);
+      expect(p1.map((r) => r[ProductInventarioTable.columnProductId]), [1, 2]);
+      expect(p2.map((r) => r[ProductInventarioTable.columnProductId]), [3, 4]);
+      expect(p1.first.keys.toSet(), {
+        ProductInventarioTable.columnProductId,
+        ProductInventarioTable.columnProductName,
+        ProductInventarioTable.columnProductCode,
+        ProductInventarioTable.columnBarcode,
+      });
+    });
+
+    test('misma búsqueda que buscar (incluye códigos alternos)', () async {
+      final r = await repo.buscarEtiquetas(query: 'emp-caf');
+      expect(r.map((e) => e[ProductInventarioTable.columnProductId]), [4]);
+    });
+  });
+
   group('contar', () {
     test('cuenta productos, no filas de stock', () async {
       expect(await repo.contar(), 4);

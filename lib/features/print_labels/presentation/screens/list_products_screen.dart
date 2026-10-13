@@ -24,11 +24,29 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
   // Debounce del buscador: evita filtrar toda la lista en cada tecla; solo
   // dispara la búsqueda 200ms después de la última pulsación.
   Timer? _searchDebounce;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
 
   @override
   void dispose() {
     _searchDebounce?.cancel();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Pide la página siguiente al acercarse al final de la lista.
+  void _onScroll() {
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 300) {
+      final bloc = context.read<PrintLabelsBloc>();
+      if (bloc.hayMasProductos) bloc.add(LoadMoreProductsEvent());
+    }
   }
 
   @override
@@ -81,8 +99,8 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
                           ? const _NoProductsMessage()
                           : Builder(
                               builder: (_) {
-                                // Los seleccionados van primero para no tener
-                                // que buscarlos; el resto conserva su orden.
+                                // Los seleccionados (de las páginas cargadas)
+                                // van primero; el resto conserva su orden.
                                 final selected = bloc.selectedProducts;
                                 final ordered = <ProductLabel>[
                                   ...bloc.productosFilters.where(
@@ -91,8 +109,18 @@ class _PrintLabelsProductsScreenState extends State<PrintLabelsProductsScreen> {
                                       (p) => !selected.containsKey(p.productId)),
                                 ];
                                 return ListView.builder(
-                                  itemCount: ordered.length,
+                                  controller: _scrollController,
+                                  itemCount: ordered.length +
+                                      (bloc.hayMasProductos ? 1 : 0),
                                   itemBuilder: (_, index) {
+                                    if (index >= ordered.length) {
+                                      return const Padding(
+                                        padding: EdgeInsets.all(16),
+                                        child: Center(
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      );
+                                    }
                                     final product = ordered[index];
                                     final alreadyAdded = selected
                                         .containsKey(product.productId);

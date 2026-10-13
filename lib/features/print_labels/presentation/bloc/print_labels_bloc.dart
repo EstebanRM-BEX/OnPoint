@@ -1,4 +1,5 @@
 import 'package:bloc/bloc.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter/material.dart';
 import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
@@ -17,8 +18,19 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState>
     with SafeBlocMixin<PrintLabelsEvent, PrintLabelsState> {
   List<ResultUbicaciones> ubicaciones = [];
   List<ResultUbicaciones> ubicacionesFilters = [];
-  List<ProductLabel> productos = [];
+  /// Productos visibles: páginas de una consulta a SQLite. El catálogo
+  /// completo (~24 mil productos) ya no se carga en memoria (ver
+  /// docs/plan_fix_oom_catalogo_productos.md).
   List<ProductLabel> productosFilters = [];
+  bool hayMasProductos = false;
+
+  /// Hay catálogo descargado (lo confirma [GetProductsList]).
+  bool hayCatalogo = false;
+  static const _paginaProductos = 50;
+  String _queryProductos = '';
+  // Sube con cada búsqueda nueva: una página que llega tarde no se mezcla
+  // con los resultados de otra búsqueda.
+  int _busquedaProductos = 0;
   UserConfigurationModel configurations = UserConfigurationModel();
 
   TextEditingController searchControllerLocation = TextEditingController();
@@ -59,7 +71,12 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState>
     on<GetProductsList>(_onGetProductsBD);
     on<LoadConfigurationsUserInfo>(_onLoadConfigurationsUserEvent);
     on<SearchLocationEvent>(_onSearchLocationEvent);
-    on<SearchProductEvent>(_onSearchProductEvent);
+    // restartable: si llega otra búsqueda, se descarta la anterior.
+    on<SearchProductEvent>(_onSearchProductEvent, transformer: restartable());
+    on<LoadMoreProductsEvent>(
+      _onLoadMoreProductsEvent,
+      transformer: droppable(),
+    );
     on<SearchRangeLocationEvent>(_onSearchRangeLocationEvent);
     on<RemoveRangeLocationEvent>(_onRemoveRangeLocationEvent);
     on<AddRangeLocationEvent>(_onAddRangeLocationEvent);
@@ -129,20 +146,30 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState>
     }
   }
 
+  Future<List<ProductLabel>> _paginaDeProductos(String query, int offset) async {
+    final rows = await db.productoInventarioRepository.buscarEtiquetas(
+      query: query,
+      limit: _paginaProductos,
+      offset: offset,
+    );
+    return rows.map(ProductLabel.fromMap).toList();
+  }
+
+  /// Primera página del listado (sin búsqueda). Si viene vacía, no hay
+  /// catálogo descargado.
   Future<void> _onGetProductsBD(
       GetProductsList event, Emitter<PrintLabelsState> emit) async {
     try {
       emit(GetProductsLoading());
-      // Proyección liviana (id/name/code/barcode) en vez de SELECT * + parseo
-      // de las ~35 columnas del modelo Product.
-      final rows = await db.productoInventarioRepository.getProductLabelRows();
-      productos.clear();
-      productosFilters.clear();
-      if (rows.isNotEmpty) {
-        productos = rows.map(ProductLabel.fromMap).toList();
-        productosFilters = List.from(productos);
-        debugPrint('####################>>>>>productos ${productos.length}');
-        emit(GetProductsSuccess(productos));
+      final busqueda = ++_busquedaProductos;
+      final pagina = await _paginaDeProductos('', 0);
+      if (busqueda != _busquedaProductos) return;
+      _queryProductos = '';
+      productosFilters = pagina;
+      hayMasProductos = pagina.length == _paginaProductos;
+      hayCatalogo = pagina.isNotEmpty;
+      if (hayCatalogo) {
+        emit(GetProductsSuccess(productosFilters));
       } else {
         emit(GetProductsFailure('No se encontraron productos'));
       }
@@ -185,20 +212,38 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState>
     emit(SearchLocationSuccess(ubicacionesFilters));
   }
 
-  void _onSearchProductEvent(
-      SearchProductEvent event, Emitter<PrintLabelsState> emit) {
-    productosFilters = [];
-    final query = event.query.toLowerCase();
-    if (query.isEmpty) {
-      productosFilters = List.from(productos);
-    } else {
-      productosFilters = productos.where((product) {
-        return product.name.toLowerCase().contains(query) ||
-            product.code.toLowerCase().contains(query) ||
-            product.barcode.toLowerCase().contains(query);
-      }).toList();
+  Future<void> _onSearchProductEvent(
+      SearchProductEvent event, Emitter<PrintLabelsState> emit) async {
+    // La pantalla ya espera 200 ms tras la última tecla antes de buscar.
+    final busqueda = ++_busquedaProductos;
+    try {
+      final pagina = await _paginaDeProductos(event.query, 0);
+      if (emit.isDone || busqueda != _busquedaProductos) return;
+      _queryProductos = event.query;
+      productosFilters = pagina;
+      hayMasProductos = pagina.length == _paginaProductos;
+      emit(SearchProductSuccess(productosFilters));
+    } catch (e, s) {
+      debugPrint('Error en SearchProductEvent: $e=>$s');
     }
-    emit(SearchProductSuccess(productosFilters));
+  }
+
+  Future<void> _onLoadMoreProductsEvent(
+      LoadMoreProductsEvent event, Emitter<PrintLabelsState> emit) async {
+    if (!hayMasProductos) return;
+    final busqueda = _busquedaProductos;
+    try {
+      final pagina = await _paginaDeProductos(
+        _queryProductos,
+        productosFilters.length,
+      );
+      if (busqueda != _busquedaProductos) return;
+      productosFilters = [...productosFilters, ...pagina];
+      hayMasProductos = pagina.length == _paginaProductos;
+      emit(SearchProductSuccess(productosFilters));
+    } catch (e, s) {
+      debugPrint('Error en LoadMoreProductsEvent: $e=>$s');
+    }
   }
 
   void _onSearchRangeLocationEvent(

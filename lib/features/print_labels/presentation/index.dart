@@ -27,7 +27,7 @@ class _PrintLabelsScreenState extends State<PrintLabelsScreen> {
 
       // Si el BLoC ya tiene datos cargados, no volvemos a cargar
       final alreadyLoaded = bloc.ubicaciones.isNotEmpty &&
-          bloc.productos.isNotEmpty &&
+          bloc.hayCatalogo &&
           bloc.configurations.result != null;
 
       if (alreadyLoaded) return;
