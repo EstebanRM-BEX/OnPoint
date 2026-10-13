@@ -3,10 +3,10 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:wms_app/core/network/network_guard.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/core/services/novedades_cache_service.dart';
-import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/packing_catalogos.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
+import 'package:wms_app/src/presentation/providers/db/database.dart';
 
 /// Lo que el repositorio necesita del resto de la app (sesión, red, reloj y
 /// catálogos compartidos), en un solo punto que los tests pueden mockear.
@@ -15,13 +15,8 @@ import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 class PackingEntorno {
   final ConfiguracionCacheService configuracionCache;
   final NovedadesCacheService novedadesCache;
-  final UbicacionesCacheService ubicacionesCache;
 
-  PackingEntorno(
-    this.configuracionCache,
-    this.novedadesCache,
-    this.ubicacionesCache,
-  );
+  PackingEntorno(this.configuracionCache, this.novedadesCache);
 
   Future<bool> hayRed() => hasNetwork();
 
@@ -67,12 +62,13 @@ class PackingEntorno {
 
   Future<List<Novedad>> novedades() => novedadesCache.getAll();
 
-  /// Ubicaciones de muelle (is_a_dock) del catálogo compartido.
+  /// Ubicaciones de muelle (is_a_dock), consultadas en SQLite (sin cargar
+  /// todo el catálogo de ubicaciones).
   Future<List<UbicacionMuelle>> ubicacionesMuelle() async {
-    final todas = await ubicacionesCache.getAll();
+    final muelles = await DataBaseSqlite().ubicacionesRepository.muelles();
     return [
-      for (final u in todas)
-        if (u.isADockAlter == true && u.id != null)
+      for (final u in muelles)
+        if (u.id != null)
           UbicacionMuelle(
             id: u.id!,
             name: u.name ?? '',

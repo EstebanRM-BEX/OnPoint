@@ -24,11 +24,29 @@ class _PrintLabelsLocationsScreenState
   ResultUbicaciones? selectedLocation;
   bool _isSearching = false;
   final FocusNode _searchFocusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
 
   @override
   void dispose() {
     _searchFocusNode.dispose();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Pide la página siguiente al acercarse al final de la lista.
+  void _onScroll() {
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 300) {
+      final bloc = context.read<PrintLabelsBloc>();
+      if (bloc.hayMasUbicaciones) bloc.add(LoadMoreLocationsEvent());
+    }
   }
 
   void _enterSearchMode() {
@@ -95,11 +113,21 @@ class _PrintLabelsLocationsScreenState
                       ),
                       Expanded(
                         child: Builder(builder: (context) {
-                          // Ya viene ordenada desde el bloc (P-04): no re-ordenar en build.
+                          // Ya viene ordenada por nombre desde SQLite.
                           final sorted = bloc.ubicacionesFilters;
                           return ListView.builder(
-                            itemCount: sorted.length,
+                            controller: _scrollController,
+                            itemCount: sorted.length +
+                                (bloc.hayMasUbicaciones ? 1 : 0),
                             itemBuilder: (context, index) {
+                              if (index >= sorted.length) {
+                                return const Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                );
+                              }
                               final location = sorted[index];
                               final alreadyAdded = bloc.ubicacionesRange
                                   .any((l) => l.id == location.id);
@@ -487,6 +515,15 @@ class _RangeSearchSection extends StatelessWidget {
                     color: primaryColorApp),
               ),
             ),
+            if (bloc.rangoEnTope)
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Se muestran las primeras ${PrintLabelsBloc.topeRango}: '
+                  'acote el rango para ver el resto',
+                  style: TextStyle(fontSize: 10, color: Colors.orange),
+                ),
+              ),
             const SizedBox(height: 5),
             Container(
               height: 280,

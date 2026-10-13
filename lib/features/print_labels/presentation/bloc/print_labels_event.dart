@@ -22,6 +22,9 @@ class SearchProductEvent extends PrintLabelsEvent {
 /// Siguiente página del listado de productos.
 class LoadMoreProductsEvent extends PrintLabelsEvent {}
 
+/// Siguiente página del listado de ubicaciones.
+class LoadMoreLocationsEvent extends PrintLabelsEvent {}
+
 class SearchRangeLocationEvent extends PrintLabelsEvent {
   final String start;
   final String end;

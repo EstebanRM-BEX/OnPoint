@@ -26,7 +26,7 @@ class _PrintLabelsScreenState extends State<PrintLabelsScreen> {
       final bloc = context.read<PrintLabelsBloc>();
 
       // Si el BLoC ya tiene datos cargados, no volvemos a cargar
-      final alreadyLoaded = bloc.ubicaciones.isNotEmpty &&
+      final alreadyLoaded = bloc.hayUbicaciones &&
           bloc.hayCatalogo &&
           bloc.configurations.result != null;
 

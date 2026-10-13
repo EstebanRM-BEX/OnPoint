@@ -6,8 +6,8 @@ import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart'
 import 'package:wms_app/features/print_labels/data/models/product_label.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
+import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/paginador_ubicaciones.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
-import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/injection_container.dart';
 
@@ -16,8 +16,23 @@ part 'print_labels_state.dart';
 
 class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState>
     with SafeBlocMixin<PrintLabelsEvent, PrintLabelsState> {
-  List<ResultUbicaciones> ubicaciones = [];
-  List<ResultUbicaciones> ubicacionesFilters = [];
+  /// Ubicaciones de la búsqueda: páginas de una consulta a SQLite ordenadas
+  /// por nombre (hasta ~19 mil por cliente; ya no se cargan completas en
+  /// memoria). Ver docs/plan_ubicaciones_sqlite.md.
+  late final PaginadorUbicaciones paginadorUbicaciones =
+      PaginadorUbicaciones(() => db.ubicacionesRepository);
+  List<ResultUbicaciones> get ubicacionesFilters => paginadorUbicaciones.items;
+  bool get hayMasUbicaciones => paginadorUbicaciones.hayMas;
+
+  /// Hay ubicaciones descargadas (lo confirma [GetListLocationsEvent]).
+  bool hayUbicaciones = false;
+
+  /// Tope del rango de etiquetas: un rango amplio puede abarcar miles de
+  /// ubicaciones.
+  static const topeRango = 1000;
+
+  /// El último rango llegó al tope: hay más ubicaciones que no se muestran.
+  bool rangoEnTope = false;
   /// Productos visibles: páginas de una consulta a SQLite. El catálogo
   /// completo (~24 mil productos) ya no se carga en memoria (ver
   /// docs/plan_fix_oom_catalogo_productos.md).
@@ -70,14 +85,26 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState>
     on<GetListLocationsEvent>(_onLoadLocations);
     on<GetProductsList>(_onGetProductsBD);
     on<LoadConfigurationsUserInfo>(_onLoadConfigurationsUserEvent);
-    on<SearchLocationEvent>(_onSearchLocationEvent);
+    // restartable: cada tecla cancela la búsqueda anterior (debounce en el
+    // handler).
+    on<SearchLocationEvent>(
+      _onSearchLocationEvent,
+      transformer: restartable(),
+    );
+    on<LoadMoreLocationsEvent>(
+      _onLoadMoreLocations,
+      transformer: droppable(),
+    );
     // restartable: si llega otra búsqueda, se descarta la anterior.
     on<SearchProductEvent>(_onSearchProductEvent, transformer: restartable());
     on<LoadMoreProductsEvent>(
       _onLoadMoreProductsEvent,
       transformer: droppable(),
     );
-    on<SearchRangeLocationEvent>(_onSearchRangeLocationEvent);
+    on<SearchRangeLocationEvent>(
+      _onSearchRangeLocationEvent,
+      transformer: restartable(),
+    );
     on<RemoveRangeLocationEvent>(_onRemoveRangeLocationEvent);
     on<AddRangeLocationEvent>(_onAddRangeLocationEvent);
     on<AddSelectedProductEvent>(_onAddSelectedProductEvent);
@@ -120,29 +147,33 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState>
     return super.close();
   }
 
+  /// Primera página de ubicaciones (ordenadas por nombre). Vacía = no hay
+  /// ubicaciones descargadas.
   Future<void> _onLoadLocations(
       GetListLocationsEvent event, Emitter<PrintLabelsState> emit) async {
     try {
       emit(LoadLocationsLoading());
-      final response = await getIt<UbicacionesCacheService>().getAll();
-      if (response.isNotEmpty) {
-        // Ordenar por nombre una sola vez aquí; el filtro de búsqueda preserva
-        // el orden, evitando re-ordenar en cada build de la pantalla (P-04).
-        // Ordena sobre una copia propia — response es la lista única
-        // compartida del cache, nunca se ordena/muta in-place.
-        ubicaciones = List.of(response)
-          ..sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
-        ubicacionesFilters = List.of(ubicaciones);
-        debugPrint('####################>>>>>ubicaciones ${ubicaciones.length}');
-        emit(LoadLocationsSuccess(ubicaciones));
+      await paginadorUbicaciones.buscar();
+      hayUbicaciones = ubicacionesFilters.isNotEmpty;
+      if (hayUbicaciones) {
+        emit(LoadLocationsSuccess(ubicacionesFilters));
       } else {
-        ubicaciones = response;
-        ubicacionesFilters = response;
         emit(LoadLocationsFailure('No se encontraron ubicaciones'));
       }
     } catch (e, s) {
       emit(LoadLocationsFailure('Error al cargar las ubicaciones'));
       debugPrint('Error en el fetch de ubicaciones: $e=>$s');
+    }
+  }
+
+  Future<void> _onLoadMoreLocations(
+      LoadMoreLocationsEvent event, Emitter<PrintLabelsState> emit) async {
+    try {
+      if (await paginadorUbicaciones.cargarMas()) {
+        emit(SearchLocationSuccess(ubicacionesFilters));
+      }
+    } catch (e, s) {
+      debugPrint('Error en LoadMoreLocationsEvent: $e=>$s');
     }
   }
 
@@ -198,18 +229,17 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState>
     }
   }
 
-  void _onSearchLocationEvent(
-      SearchLocationEvent event, Emitter<PrintLabelsState> emit) {
-    ubicacionesFilters = [];
-    final query = event.query.toLowerCase();
-    if (query.isEmpty) {
-      ubicacionesFilters = List.from(ubicaciones);
-    } else {
-      ubicacionesFilters = ubicaciones.where((location) {
-        return location.name?.toLowerCase().contains(query) ?? false;
-      }).toList();
+  Future<void> _onSearchLocationEvent(
+      SearchLocationEvent event, Emitter<PrintLabelsState> emit) async {
+    // Debounce: si llega otra tecla, restartable cierra este emitter.
+    if (event.query.isNotEmpty) {
+      await Future.delayed(const Duration(milliseconds: 250));
+      if (emit.isDone) return;
     }
-    emit(SearchLocationSuccess(ubicacionesFilters));
+    if (await paginadorUbicaciones.buscar(query: event.query) &&
+        !emit.isDone) {
+      emit(SearchLocationSuccess(ubicacionesFilters));
+    }
   }
 
   Future<void> _onSearchProductEvent(
@@ -246,30 +276,21 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState>
     }
   }
 
-  void _onSearchRangeLocationEvent(
-      SearchRangeLocationEvent event, Emitter<PrintLabelsState> emit) {
-    ubicacionesRange = [];
+  /// Rango por nombre en SQLite, sin distinguir mayúsculas: sin fin, las
+  /// que empiezan con el inicio; con fin, las que están entre ambos. Acotado
+  /// a [topeRango] ([rangoEnTope] avisa que hay más).
+  Future<void> _onSearchRangeLocationEvent(
+      SearchRangeLocationEvent event, Emitter<PrintLabelsState> emit) async {
     //nueva búsqueda de rango reemplaza la lista: limpiamos cantidades previas
     locationQuantities.clear();
-    final start = event.start.toLowerCase();
-    final end = event.end.toLowerCase();
-
-    if (start.isEmpty) {
-      ubicacionesRange = [];
-    } else if (end.isEmpty) {
-      // Búsqueda por prefijo: todas las ubicaciones que inicien con el valor de inicio
-      ubicacionesRange = ubicaciones.where((location) {
-        final name = location.name?.toLowerCase() ?? '';
-        return name.startsWith(start);
-      }).toList();
-      ubicacionesRange.sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
-    } else {
-      ubicacionesRange = ubicaciones.where((location) {
-        final name = location.name?.toLowerCase() ?? '';
-        return name.compareTo(start) >= 0 && name.compareTo(end) <= 0;
-      }).toList();
-      ubicacionesRange.sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
-    }
+    final rango = await db.ubicacionesRepository.rango(
+      desde: event.start,
+      hasta: event.end,
+      limit: topeRango,
+    );
+    if (emit.isDone) return;
+    ubicacionesRange = rango;
+    rangoEnTope = rango.length == topeRango;
     emit(SearchRangeLocationSuccess(ubicacionesRange));
   }
 
@@ -349,6 +370,7 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState>
   void _onClearRangeLocations(
       ClearRangeLocationsEvent event, Emitter<PrintLabelsState> emit) {
     ubicacionesRange = [];
+    rangoEnTope = false;
     locationQuantities.clear();
     emit(SearchRangeLocationSuccess(ubicacionesRange));
   }

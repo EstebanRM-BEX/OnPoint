@@ -400,19 +400,19 @@ class UbicacionesRepository {
     }
   }
 
-  Future<List<ResultUbicaciones>> getAllUbicacionesByParams(
-      String params) async {
+  /// Ubicaciones de muelle (`is_a_dock_alter`), ordenadas por nombre.
+  Future<List<ResultUbicaciones>> muelles() async {
     try {
-      final db = await DataBaseSqlite().getDatabaseInstance();
-      final List<Map<String, dynamic>> maps = await db.query(
-        UbicacionesTable.tableName,
-        where: '${UbicacionesTable.columnIsADock} = ?',
-        whereArgs: [1], // 1 representa 'true' en SQLite
+      final db = await _database.getDatabaseInstance();
+      // lectura-acotada: solo muelles (unas pocas por almacén).
+      final rows = await db.rawQuery(
+        'SELECT * FROM ${UbicacionesTable.tableName} '
+        'WHERE ${UbicacionesTable.columnIsADock} = 1 '
+        'ORDER BY ${UbicacionesTable.columnName}',
       );
-
-      return maps.map((map) => _mapToModel(map)).toList();
+      return rows.map(_mapToModel).toList();
     } catch (e) {
-      debugPrint("Error getAllUbicacionesByParams: $e");
+      debugPrint("Error muelles: $e");
       return [];
     }
   }

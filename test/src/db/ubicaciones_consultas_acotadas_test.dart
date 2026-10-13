@@ -153,6 +153,10 @@ void main() {
     });
   });
 
+  test('muelles: solo is_a_dock_alter', () async {
+    expect(ids(await repo.muelles()), [5]);
+  });
+
   test('FiltroUbicaciones.incluye usa la misma regla', () async {
     final u = (await repo.getByBarcode('LOC4'))!;
     expect(const FiltroUbicaciones(warehouseId: 2).incluye(u), isTrue);

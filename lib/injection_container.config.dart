@@ -672,13 +672,6 @@ extension GetItInjectableX on _i174.GetIt {
       ),
     );
     gh.lazySingleton<_i1062.IWebSocketService>(() => _i1020.WebSocketService());
-    gh.lazySingleton<_i251.PackingEntorno>(
-      () => _i251.PackingEntorno(
-        gh<_i208.ConfiguracionCacheService>(),
-        gh<_i268.NovedadesCacheService>(),
-        gh<_i456.UbicacionesCacheService>(),
-      ),
-    );
     gh.lazySingleton<_i854.EnterpriseLocalDataSource>(
       () => _i854.EnterpriseLocalDataSourceImpl(gh<_i552.DataBaseSqlite>()),
     );
@@ -702,6 +695,12 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i422.SendMessage>(
       () => _i422.SendMessage(gh<_i453.ChatRepository>()),
+    );
+    gh.lazySingleton<_i251.PackingEntorno>(
+      () => _i251.PackingEntorno(
+        gh<_i208.ConfiguracionCacheService>(),
+        gh<_i268.NovedadesCacheService>(),
+      ),
     );
     gh.lazySingleton<_i875.ProductStockRepository>(
       () => _i374.ProductStockRepositoryImpl(
