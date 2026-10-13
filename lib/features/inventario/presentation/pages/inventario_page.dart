@@ -114,7 +114,22 @@ class _InventarioScreenState extends State<InventarioScreen>
     }
   }
 
+  /// La página es la ruta visible. Las búsquedas de producto, ubicación y
+  /// lote se abren encima con push (esta página queda viva debajo): mientras
+  /// estén abiertas no se pide foco aquí, o se le quitaría al buscador.
+  bool get _esVisible =>
+      mounted && (ModalRoute.of(context)?.isCurrent ?? true);
+
+  /// Pide el foco tras la pausa de los diálogos, solo si la página sigue
+  /// visible.
+  void _focoDiferido(FocusNode node) {
+    Future.delayed(const Duration(seconds: 1), () {
+      if (_esVisible) FocusScope.of(context).requestFocus(node);
+    });
+  }
+
   void _handleDependencies() {
+    if (!_esVisible) return;
     final bloc = context.read<InventarioBloc>();
     final hasLote = bloc.currentProduct?.tracking == "lot";
 
@@ -397,6 +412,9 @@ class _InventarioScreenState extends State<InventarioScreen>
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     return BlocConsumer<InventarioBloc, InventarioState>(
+      // Las búsquedas (producto, ubicación, lote) emiten sus resultados con
+      // la página viva debajo: no hace falta redibujarla con cada tecla.
+      buildWhen: (_, curr) => inventarioPageRedibuja(curr),
       listener: (context, state) {
         debugPrint("state ❤️‍🔥:: $state");
 
@@ -409,9 +427,7 @@ class _InventarioScreenState extends State<InventarioScreen>
         }
 
         if (state is ChangeLocationIsOkState) {
-          Future.delayed(const Duration(seconds: 1), () {
-            FocusScope.of(context).requestFocus(focusNode2);
-          });
+          _focoDiferido(focusNode2);
           _handleDependencies();
         }
 
@@ -429,21 +445,14 @@ class _InventarioScreenState extends State<InventarioScreen>
         }
 
         if (state is ChangeProductIsOkState) {
-          Future.delayed(const Duration(seconds: 1), () {
-            if (context.read<InventarioBloc>().currentProduct?.tracking ==
-                "lot") {
-              FocusScope.of(context).requestFocus(focusNode5);
-            } else {
-              FocusScope.of(context).requestFocus(focusNode3);
-            }
-          });
+          final conLote =
+              context.read<InventarioBloc>().currentProduct?.tracking == "lot";
+          _focoDiferido(conLote ? focusNode5 : focusNode3);
           _handleDependencies();
         }
 
         if (state is ChangeLoteIsOkState) {
-          Future.delayed(const Duration(seconds: 1), () {
-            FocusScope.of(context).requestFocus(focusNode3);
-          });
+          _focoDiferido(focusNode3);
           _handleDependencies();
         }
 
@@ -740,7 +749,7 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                           ],
                                                         );
                                                       } else {
-                                                        Navigator.pushReplacementNamed(
+                                                        Navigator.pushNamed(
                                                           context,
                                                           'search-product',
                                                           arguments: [
@@ -1015,7 +1024,7 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                 ),
                                                 IconButton(
                                                   onPressed: () {
-                                                    Navigator.pushReplacementNamed(
+                                                    Navigator.pushNamed(
                                                       context,
                                                       'new-lote-inventario',
                                                       arguments: [
@@ -1344,3 +1353,17 @@ class _InventarioScreenState extends State<InventarioScreen>
     );
   }
 }
+
+/// Estados que cambian lo que muestra la página de inventario. Los de las
+/// búsquedas y filtros solo alimentan las listas de las pantallas de
+/// búsqueda, que se abren encima.
+@visibleForTesting
+bool inventarioPageRedibuja(InventarioState state) =>
+    state is! SearchLoading &&
+    state is! SearchProductSuccess &&
+    state is! SearchLocationSuccess &&
+    state is! SearchLoteSuccess &&
+    state is! SearchFailure &&
+    state is! FilterUbicacionesLoading &&
+    state is! FilterUbicacionesSuccess &&
+    state is! FilterUbicacionesFailure;

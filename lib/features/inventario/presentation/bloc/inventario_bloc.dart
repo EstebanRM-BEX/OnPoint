@@ -80,7 +80,8 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
       currentProduct != null ||
       currentProductLote != null;
 
-  /// Se llama al descartarse una pantalla del módulo. La navegación interna es
+  /// Se llama al descartarse una pantalla del módulo. Las búsquedas se abren
+  /// encima de la página con push/pop; la entrada y la salida del módulo son
   /// por pushReplacementNamed (la siguiente pantalla se monta mientras la
   /// anterior se descarta), de ahí el margen antes de decidir.
   void detachScope() {

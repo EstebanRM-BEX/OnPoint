@@ -239,11 +239,7 @@ class _SearchProductScreenState extends State<SearchProductScreen> {
 
           setState(() => _seleccionado = null);
 
-          Navigator.pushReplacementNamed(
-            context,
-            'inventario',
-            arguments: [context.read<InventarioBloc>()],
-          );
+          Navigator.pop(context);
 
           Get.snackbar(
             'Producto Seleccionado',
@@ -292,11 +288,7 @@ class _AppBarInfo extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: white),
                     onPressed: () {
-                      Navigator.pushReplacementNamed(
-                        context,
-                        'inventario',
-                        arguments: [context.read<InventarioBloc>()],
-                      );
+                      Navigator.pop(context);
                     },
                   ),
                   Padding(
