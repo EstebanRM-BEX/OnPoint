@@ -5,7 +5,8 @@ import 'package:wms_app/src/presentation/providers/db/database.dart';
 /// Cache en memoria de la configuración/permisos del usuario
 /// (tbl_configurations), compartido por toda la app. A diferencia de
 /// ubicaciones/productos/novedades, acá no hay riesgo de aliasing (el bug
-/// de "clear() vacía el cache" de Productos/UbicacionesCacheService):
+/// de "clear() vacía el cache" de los antiguos caches de productos y
+/// ubicaciones):
 /// [UserConfigurationModel]/[UserConfiguration]/[UserProfile] son clases
 /// inmutables (`final`, `const`), nadie puede mutarlas en el sitio.
 ///

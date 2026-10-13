@@ -7,24 +7,6 @@ import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart'
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/ubicaciones_table.dart';
 
-/// Hasta este número de filas se arma la lista en el hilo principal: crear el
-/// isolate de `compute` costó ~5 s en PDA, y armar 2.400 ubicaciones toma
-/// unos pocos ms. Con catálogos más grandes sí conviene el isolate.
-const int _umbralCompute = 5000;
-
-List<ResultUbicaciones> _parseUbicacionesMap(List<Map<String, dynamic>> maps) {
-  return maps.map((map) => ResultUbicaciones(
-        id: map[UbicacionesTable.columnId],
-        name: map[UbicacionesTable.columnName],
-        barcode: map[UbicacionesTable.columnBarcode],
-        locationId: map[UbicacionesTable.columnLocationId],
-        locationName: map[UbicacionesTable.columnLocationName],
-        idWarehouse: map[UbicacionesTable.columnIdWarehouse],
-        warehouseName: map[UbicacionesTable.columnWarehouseName],
-        isADockAlter: map[UbicacionesTable.columnIsADock] == 1,
-      )).toList();
-}
-
 class UbicacionesRepository {
   UbicacionesRepository({DataBaseSqlite? database})
       : _database = database ?? DataBaseSqlite();
@@ -420,20 +402,6 @@ class UbicacionesRepository {
       .replaceAll(r'\', r'\\')
       .replaceAll('%', r'\%')
       .replaceAll('_', r'\_');
-
-  Future<List<ResultUbicaciones>> getAllUbicaciones() async {
-    try {
-      final db = await DataBaseSqlite().getDatabaseInstance();
-      final List<Map<String, dynamic>> maps =
-          await db.query(UbicacionesTable.tableName);
-      if (maps.isEmpty) return [];
-      if (maps.length <= _umbralCompute) return _parseUbicacionesMap(maps);
-      return await compute(_parseUbicacionesMap, maps);
-    } catch (e) {
-      debugPrint("Error getAllUbicaciones: $e");
-      return [];
-    }
-  }
 
   /// Ubicaciones de muelle (`is_a_dock_alter`), ordenadas por nombre.
   Future<List<ResultUbicaciones>> muelles() async {

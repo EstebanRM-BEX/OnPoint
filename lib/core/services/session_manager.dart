@@ -6,7 +6,6 @@ import 'package:wms_app/core/services/interfaces/i_websocket_service.dart';
 import 'package:wms_app/core/services/novedades_cache_service.dart';
 import 'package:wms_app/core/services/packing_preservation.dart';
 import 'package:wms_app/core/services/productos_sync_service.dart';
-import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/core/utils/widgets/app_restart_widget.dart';
 import 'package:wms_app/injection_container.dart';
@@ -51,7 +50,6 @@ class SessionManager {
   /// botón "Eliminar base de datos" del perfil dejaba estos caches con datos
   /// que ya no existían en SQLite.
   static void invalidateMemoryCaches() {
-    getIt<UbicacionesCacheService>().invalidate();
     getIt<NovedadesCacheService>().invalidate();
     getIt<BarcodesInventarioCacheService>().invalidate();
     getIt<ConfiguracionCacheService>().invalidate();

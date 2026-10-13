@@ -11,7 +11,7 @@ import 'package:wms_app/src/presentation/providers/db/models/response_products_m
 /// tabla SÍ es un catálogo estático descargado una vez por sync y leído sin
 /// cambios por varios blocs (CreateTransferBloc, DevolucionesBloc,
 /// InventarioLocalDataSource) — mismo patrón que
-/// [UbicacionesCacheService]/[NovedadesCacheService].
+/// [NovedadesCacheService].
 /// tblbarcodes_packages en cambio se consulta por (batchId, idMove,
 /// idProduct, barcodeType) — una key específica del batch/pedido en curso
 /// de cada bloc, no una lista global compartida — por eso queda fuera de

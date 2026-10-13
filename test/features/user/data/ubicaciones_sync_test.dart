@@ -165,8 +165,6 @@ void main() {
       when(() => local.guardarMarcaSyncUbicaciones(any(), any()))
           .thenAnswer((_) async {});
       when(() => local.borrarMarcaSyncUbicaciones()).thenAnswer((_) async {});
-      when(() => local.getUbicacionesLocales())
-          .thenAnswer((_) async => [_u(1), _u(2)]);
       repo = UserRepositoryImpl(
         remoteDataSource: remote,
         localDataSource: local,
@@ -174,7 +172,7 @@ void main() {
       );
     });
 
-    test('sin marca: completa, guarda marca y devuelve lo local', () async {
+    test('sin marca: completa, guarda marca y devuelve el total local', () async {
       respuesta(UbicacionesSyncResult(
         ubicaciones: [_u(1)],
         serverTime: '2026-10-09 16:00:00',
@@ -183,7 +181,7 @@ void main() {
 
       final r = await repo.getUserLocations();
 
-      expect(r.getRight().toNullable(), hasLength(2));
+      expect(r.getRight().toNullable(), 5);
       verify(() => remote.getUserLocations(since: null, scope: null)).called(1);
       verify(() => local.cacheUserLocations([_u(1)])).called(1);
       verify(() => local.guardarMarcaSyncUbicaciones(

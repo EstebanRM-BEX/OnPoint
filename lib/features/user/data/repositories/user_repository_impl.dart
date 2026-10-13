@@ -10,7 +10,6 @@ import '../../../../core/error/failures.dart';
 import '../../domain/entities/device_info.dart';
 import '../../domain/entities/device_registration.dart';
 import '../../domain/entities/user_configuration.dart';
-import '../../domain/entities/user_location.dart';
 import '../../domain/entities/user_novelty.dart';
 import '../../domain/repositories/user_repository.dart';
 import '../datasources/user_local_data_source.dart';
@@ -72,10 +71,10 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   /// Sync de ubicaciones: incremental (`since`/`scope`) si hay marca y
-  /// ubicaciones locales, completo si no. Devuelve la lista COMPLETA leída de
-  /// SQLite: con el incremental la respuesta trae solo lo cambiado.
+  /// ubicaciones locales, completo si no. Devuelve el total en SQLite (no la
+  /// lista: las pantallas consultan la tabla paginada).
   @override
-  Future<Either<Failure, List<UserLocation>>> getUserLocations({
+  Future<Either<Failure, int>> getUserLocations({
     bool completa = false,
   }) async {
     if (!await _isConnected()) {
@@ -159,9 +158,9 @@ class UserRepositoryImpl implements UserRepository {
         'próximo since=${serverTime ?? '-'} scope=${scope ?? '-'}',
       );
 
-      final locales = await localDataSource.getUbicacionesLocales();
+      final total = await localDataSource.contarUbicaciones();
       resultado = 'ok';
-      return Right(locales);
+      return Right(total);
     } on SessionExpiredException catch (e) {
       resultado = 'sesion_expirada';
       return Left(SessionExpiredFailure(e.message));

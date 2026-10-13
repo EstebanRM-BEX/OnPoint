@@ -76,12 +76,13 @@ class DeviceRegistrationFailure extends UserState {
 class DeviceRegistrationLoading extends UserState {}
 
 class UserLocationsLoaded extends UserState {
-  final List<UserLocation> locations;
+  /// Ubicaciones guardadas en SQLite tras la sincronización.
+  final int total;
 
-  const UserLocationsLoaded({required this.locations});
+  const UserLocationsLoaded({required this.total});
 
   @override
-  List<Object?> get props => [locations];
+  List<Object?> get props => [total];
 }
 
 class UserLocationsLoading extends UserState {}

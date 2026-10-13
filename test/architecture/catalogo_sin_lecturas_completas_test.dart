@@ -82,6 +82,7 @@ final _llamada = RegExp(r'\b(?:rawQuery|query)\(');
 const _tablas = {
   'ProductInventarioTable': 'tblproductos_inventario',
   'TercerosTable': 'tbl_terceros',
+  'UbicacionesTable': 'tblUbicaciones',
 };
 
 final _alias = RegExp(

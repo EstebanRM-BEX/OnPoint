@@ -35,7 +35,6 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   final RegisterDevice registerDevice;
   final SaveUserSession saveUserSession;
 
-  List<UserLocation> locations = [];
   List<Novedad> novelties = [];
 
   int locationsCount = 0;
@@ -89,13 +88,12 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       String? error;
       result.fold(
         (failure) => error = failure.message,
-        (data) => locations = data,
+        (total) => locationsCount = total,
       );
       if (error != null) {
         emit(DownloadUserDataError(error!));
         return;
       }
-      locationsCount = await DataBaseSqlite().getUbicacionesCount();
       emit(
         DownloadUserDataSuccess('Se descargaron $locationsCount ubicaciones'),
       );
@@ -350,23 +348,13 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     try {
       emit(UserLocationsLoading());
       final result = await getUserLocations(const GetUserLocationsParams());
-      bool success = false;
       result.fold((failure) => emit(UserLocationsError(failure.message)), (
-        locations,
+        total,
       ) {
-        this.locations = locations;
-        debugPrint('Locations loaded from API: ${locations.length}');
-        success = true;
-        emit(UserLocationsLoaded(locations: locations));
+        locationsCount = total;
+        debugPrint('Locations saved in DB: $total');
+        emit(UserLocationsLoaded(total: total));
       });
-      if (success) {
-        try {
-          locationsCount = await DataBaseSqlite().getUbicacionesCount();
-          debugPrint('Locations saved in DB: $locationsCount');
-        } catch (e) {
-          debugPrint("❌ Error getting locations count from DB: $e");
-        }
-      }
     } finally {
       isLoadingLocations = false;
     }
@@ -447,18 +435,6 @@ extension UserBlocHelpers on UserBloc {
               ?.result
               ?.allowedWarehouses ??
           [];
-    }
-    return [];
-  }
-
-  List<UserLocation> get ubicaciones {
-    // Verificar si el estado es UserLocationsLoaded (cuando se cargan solo ubicaciones)
-    if (state is UserLocationsLoaded) {
-      return (state as UserLocationsLoaded).locations;
-    }
-    // Verificar si el estado es UserLoaded (cuando se carga toda la info del usuario)
-    if (state is UserLoaded) {
-      return (state as UserLoaded).locations;
     }
     return [];
   }

@@ -2,7 +2,6 @@ import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
 import 'package:wms_app/core/services/novedades_cache_service.dart';
-import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
@@ -26,7 +25,6 @@ abstract class UserLocalDataSource {
     List<int>? activos,
   );
 
-  Future<List<UserLocationModel>> getUbicacionesLocales();
   Future<int> contarUbicaciones();
   Future<void> borrarUbicaciones();
 
@@ -98,9 +96,6 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
   Future<void> cacheUserLocations(List<UserLocationModel> locations) async {
     await db.ubicacionesRepository
         .syncUbicaciones(locations.map(_aLegacy).toList());
-    // Igual que novedades: el sync escribió ubicaciones frescas en SQLite,
-    // el cache compartido en memoria debe volver a leerlas.
-    getIt<UbicacionesCacheService>().invalidate();
   }
 
   @override
@@ -110,23 +105,7 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
   ) async {
     await db.ubicacionesRepository
         .aplicarCambios(cambios.map(_aLegacy).toList(), activos);
-    getIt<UbicacionesCacheService>().invalidate();
   }
-
-  @override
-  Future<List<UserLocationModel>> getUbicacionesLocales() async => [
-        for (final u in await db.ubicacionesRepository.getAllUbicaciones())
-          UserLocationModel(
-            id: u.id ?? 0,
-            name: u.name ?? '',
-            idWarehouse: u.idWarehouse ?? 0,
-            barcode: u.barcode,
-            locationId: u.locationId,
-            locationName: u.locationName,
-            warehouseName: u.warehouseName,
-            isADockAlter: u.isADockAlter,
-          ),
-      ];
 
   @override
   Future<int> contarUbicaciones() => db.getUbicacionesCount();
@@ -134,7 +113,6 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
   @override
   Future<void> borrarUbicaciones() async {
     await db.ubicacionesRepository.deleteAll();
-    getIt<UbicacionesCacheService>().invalidate();
   }
 
   @override

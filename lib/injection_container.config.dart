@@ -29,7 +29,6 @@ import 'core/services/interfaces/i_websocket_service.dart' as _i1062;
 import 'core/services/notification_service.dart' as _i1011;
 import 'core/services/novedades_cache_service.dart' as _i268;
 import 'core/services/storage_service.dart' as _i243;
-import 'core/services/ubicaciones_cache_service.dart' as _i456;
 import 'core/services/vibration_service_impl.dart' as _i869;
 import 'core/services/websocket_service.dart' as _i1020;
 import 'features/auth/data/datasources/auth_local_data_source.dart' as _i791;
@@ -552,9 +551,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i268.NovedadesCacheService>(
       () => _i268.NovedadesCacheService(),
-    );
-    gh.lazySingleton<_i456.UbicacionesCacheService>(
-      () => _i456.UbicacionesCacheService(),
     );
     gh.lazySingleton<_i879.PackingPedidoDatabase>(
       () => _i879.PackingPedidoDatabase(),
