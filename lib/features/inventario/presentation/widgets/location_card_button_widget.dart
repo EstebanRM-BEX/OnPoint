@@ -41,7 +41,7 @@ class LocationCardButton extends StatelessWidget {
           child: GestureDetector(
             onTap: !bloc.locationIsOk && !bloc.productIsOk && !bloc.quantityIsOk
                 ? () {
-                    if (bloc.ubicacionesFilters.isEmpty) {
+                    if (!bloc.hayUbicaciones) {
                       Get.defaultDialog(
                         title: dialogTitle,
                         titleStyle: TextStyle(

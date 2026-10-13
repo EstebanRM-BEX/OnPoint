@@ -34,7 +34,20 @@ abstract class InventarioRepository {
 
   Future<Either<Failure, int>> getProductosCount();
 
-  Future<Either<Failure, List<UbicacionInventario>>> getUbicacionesLocal();
+  /// Página de ubicaciones ordenada por nombre: [query] en nombre o
+  /// barcode y, opcionalmente, solo las de un almacén que contiene
+  /// [almacenContiene].
+  Future<Either<Failure, List<UbicacionInventario>>> buscarUbicaciones({
+    String query = '',
+    String? almacenContiene,
+    required int limit,
+    int offset = 0,
+  });
+
+  /// Ubicación por barcode (sin distinguir mayúsculas); null si no existe.
+  Future<Either<Failure, UbicacionInventario?>> getUbicacionPorBarcode(
+    String barcode,
+  );
 
   Future<Either<Failure, List<LoteProductoInventario>>> getLotesProducto(
     int productId,

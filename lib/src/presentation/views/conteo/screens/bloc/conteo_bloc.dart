@@ -7,10 +7,11 @@ import 'package:intl/intl.dart';
 import 'package:wms_app/features/user/data/models/user_configuration_model.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
-import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/product_inventario_repository.dart';
+import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/paginador_ubicaciones.dart';
+import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/ubicaciones_repository.dart';
 import 'package:wms_app/src/presentation/views/conteo/data/conteo_repository.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/request_send_product_model.dart';
@@ -93,10 +94,61 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   List<String> listOfProductsName = [];
 
   LotesProduct? currentProductLote;
-  //*lista de ubicaciones maestra
-  List<ResultUbicaciones> ubicaciones = [];
-  List<ResultUbicaciones> ubicacionesFilters = [];
-  List<ResultUbicaciones> ubicacionesFiltersSearch = [];
+  //*ubicaciones de "nuevo producto". Según el filterType de la orden salen
+  //de dos fuentes:
+  //- location / combined: las ubicaciones de la orden (pocas, en memoria).
+  //- category / product / general: la maestra (hasta ~19 mil por cliente),
+  //  consultada en SQLite por página. Ver docs/plan_ubicaciones_sqlite.md.
+  late final PaginadorUbicaciones paginadorUbicaciones =
+      PaginadorUbicaciones(() => db.ubicacionesRepository);
+  List<ResultUbicaciones> _ubicacionesOrden = [];
+  List<ResultUbicaciones> _ubicacionesOrdenBusqueda = [];
+  int _versionOrden = 0;
+
+  /// La maestra de ubicaciones tiene datos (lo confirma
+  /// [GetLocationsConteoEvent]).
+  bool maestraUbicacionesLista = false;
+
+  /// La orden restringe las ubicaciones a las suyas.
+  bool get _ubicacionesDeOrden =>
+      ordenConteo.filterType == 'combined' ||
+      ordenConteo.filterType == 'location';
+
+  /// Ubicaciones válidas de la orden en memoria (solo location/combined).
+  List<ResultUbicaciones> get ubicacionesFilters =>
+      _ubicacionesDeOrden ? _ubicacionesOrden : paginadorUbicaciones.items;
+
+  /// Resultado de la búsqueda vigente (lo que muestra la lista).
+  List<ResultUbicaciones> get ubicacionesFiltersSearch => _ubicacionesDeOrden
+      ? _ubicacionesOrdenBusqueda
+      : paginadorUbicaciones.items;
+  bool get hayMasUbicaciones =>
+      !_ubicacionesDeOrden && paginadorUbicaciones.hayMas;
+  int get versionUbicaciones => paginadorUbicaciones.version + _versionOrden;
+
+  /// Restricción de la maestra según el filterType (category/product: todas;
+  /// general: las del almacén de la orden; otro valor: ninguna).
+  FiltroUbicaciones get _filtroMaestra {
+    switch (ordenConteo.filterType) {
+      case 'category':
+      case 'product':
+        return FiltroUbicaciones.todas;
+      case 'general':
+        final warehouseId = ordenConteo.warehouseId ?? 0;
+        return warehouseId == 0
+            ? FiltroUbicaciones.todas
+            : FiltroUbicaciones(warehouseId: warehouseId);
+      default:
+        return const FiltroUbicaciones(ids: {});
+    }
+  }
+
+  void _resetUbicaciones() {
+    _ubicacionesOrden = [];
+    _ubicacionesOrdenBusqueda = [];
+    _versionOrden++;
+    paginadorUbicaciones.reset();
+  }
 
   //productos de "nuevo producto": páginas de una consulta a SQLite. El
   //catálogo completo (~72 mil filas) ya no se carga en memoria: con él la
@@ -184,7 +236,16 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     //Metodo para cargar informacion pa crear un nuevo producto
     on<LoadNewProductEvent>(_onLoadNewProductEvent, transformer: restartable());
     //metodo para buscar una ubicacion
-    on<SearchLocationEvent>(_onSearchLocationEvent, transformer: droppable());
+    // restartable: una búsqueda nueva descarta la anterior (la pantalla ya
+    // espera 300 ms tras la última tecla).
+    on<SearchLocationEvent>(
+      _onSearchLocationEvent,
+      transformer: restartable(),
+    );
+    on<LoadMoreUbicacionesConteoEvent>(
+      _onLoadMoreUbicaciones,
+      transformer: droppable(),
+    );
     //*metodo para bucar un producto
     // restartable: cada tecla cancela la búsqueda anterior (debounce en el
     // handler).
@@ -557,25 +618,61 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
   ) async {
     try {
       emit(SearchLoading());
-
-      // ubicacionesFilters ya contiene las ubicaciones válidas para la orden.
-      final listaFuente = ubicacionesFilters;
-
-      final query = event.query.toLowerCase();
-      if (query.isEmpty) {
-        ubicacionesFiltersSearch = List.of(listaFuente);
+      if (_ubicacionesDeOrden) {
+        // Ubicaciones de la orden: pocas, se filtran en memoria.
+        final query = event.query.toLowerCase();
+        _ubicacionesOrdenBusqueda = query.isEmpty
+            ? List.of(_ubicacionesOrden)
+            : _ubicacionesOrden.where((location) {
+                final name = (location.name ?? '').toLowerCase();
+                final barcode = (location.barcode ?? '').toLowerCase();
+                return name.contains(query) || barcode.contains(query);
+              }).toList();
+        _versionOrden++;
       } else {
-        ubicacionesFiltersSearch = listaFuente.where((location) {
-          final name = (location.name ?? '').toLowerCase();
-          final barcode = (location.barcode ?? '').toLowerCase();
-          return name.contains(query) || barcode.contains(query);
-        }).toList();
+        final vigente = await paginadorUbicaciones.buscar(
+          query: event.query,
+          filtro: _filtroMaestra,
+        );
+        if (!vigente || emit.isDone) return;
       }
       emit(SearchLocationSuccess(ubicacionesFiltersSearch));
     } catch (e, s) {
       debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
+  }
+
+  void _onLoadMoreUbicaciones(
+    LoadMoreUbicacionesConteoEvent event,
+    Emitter<ConteoState> emit,
+  ) async {
+    try {
+      if (!_ubicacionesDeOrden && await paginadorUbicaciones.cargarMas()) {
+        emit(SearchLocationSuccess(ubicacionesFiltersSearch));
+      }
+    } catch (e, s) {
+      debugPrint('Error en LoadMoreUbicacionesConteoEvent: $e, $s');
+    }
+  }
+
+  /// Ubicación escaneada en "nuevo producto". Con ubicaciones de la orden se
+  /// busca entre ellas; con la maestra, consulta indexada validada contra
+  /// el almacén de la orden (filterType general). `null` si no existe o no
+  /// está permitida.
+  Future<ResultUbicaciones?> buscarUbicacionEscaneada(String codigo) async {
+    final scan = codigo.trim().toLowerCase();
+    if (scan.isEmpty) return null;
+    if (_ubicacionesDeOrden) {
+      return _ubicacionesOrden.firstWhereOrNull(
+        (u) => u.barcode?.toLowerCase() == scan,
+      );
+    }
+    final filtro = _filtroMaestra;
+    if (filtro.vacio) return null;
+    final ubicacion = await paginadorUbicaciones.porBarcode(scan);
+    if (ubicacion == null || !filtro.incluye(ubicacion)) return null;
+    return ubicacion;
   }
 
   void _onLoadNewProductEvent(
@@ -625,35 +722,15 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     }
   }
 
-  /// Calcula las ubicaciones disponibles para agregar un producto nuevo
-  /// según el `filterType` de la orden actual (los productos se filtran en
-  /// SQLite, ver [filtroProductosNuevo]):
-  /// - combined, location: ubicaciones de la orden.
-  /// - category, product: maestra de ubicaciones.
-  /// - general: maestra de ubicaciones del almacén.
-  ///
-  /// Se llama al abrir "nuevo producto" y cada vez que termina de cargar la
-  /// maestra de ubicaciones. Siempre asigna listas nuevas (nunca referencias
-  /// a la maestra) para que limpiar un filtro no la vacíe ni arrastre datos
-  /// de otra orden.
+  /// Prepara las ubicaciones de "nuevo producto" para la orden actual: las
+  /// de la orden (location/combined) quedan en memoria; la maestra
+  /// (category/product/general) se consulta en SQLite al buscar.
   void _aplicarFiltrosUbicaciones() {
-    final filterType = ordenConteo.filterType;
-
-    List<ResultUbicaciones> nuevasUbicaciones = [];
-
-    if (filterType == 'combined' || filterType == 'location') {
-      nuevasUbicaciones = _ubicacionesDeLaOrden();
-    } else if (filterType == 'category' || filterType == 'product') {
-      nuevasUbicaciones = List.of(ubicaciones);
-    } else if (filterType == 'general') {
-      final warehouseId = ordenConteo.warehouseId ?? 0;
-      nuevasUbicaciones = warehouseId == 0
-          ? List.of(ubicaciones)
-          : ubicaciones.where((u) => u.idWarehouse == warehouseId).toList();
+    _resetUbicaciones();
+    if (_ubicacionesDeOrden) {
+      _ubicacionesOrden = _ubicacionesDeLaOrden();
+      _ubicacionesOrdenBusqueda = List.of(_ubicacionesOrden);
     }
-
-    ubicacionesFilters = nuevasUbicaciones;
-    ubicacionesFiltersSearch = List.of(nuevasUbicaciones);
   }
 
   List<ResultUbicaciones> _ubicacionesDeLaOrden() {
@@ -670,23 +747,25 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     }).toList();
   }
 
+  /// Primera página de la maestra de ubicaciones (solo para los filterType
+  /// que la usan). Falla solo si no hay ninguna ubicación descargada.
   void _onLoadLocations(
     GetLocationsConteoEvent event,
     Emitter<ConteoState> emit,
   ) async {
     try {
       emit(LoadLocationsLoading());
-      final response = await getIt<UbicacionesCacheService>().getAll();
-      ubicaciones.clear();
-      if (response.isNotEmpty) {
-        ubicaciones.addAll(response);
-        // La maestra ya está lista: recalculamos las listas de la orden actual.
-        _aplicarFiltrosUbicaciones();
-        debugPrint("ubicaciones bd ::: ${ubicaciones.length}");
-        emit(LoadLocationsSuccess(ubicaciones));
-      } else {
+      final hayUbicaciones =
+          (await db.ubicacionesRepository.buscar(limit: 1)).isNotEmpty;
+      maestraUbicacionesLista = hayUbicaciones;
+      if (!hayUbicaciones) {
         emit(LoadLocationsFailure('No se encontraron ubicaciones'));
+        return;
       }
+      if (!_ubicacionesDeOrden) {
+        await paginadorUbicaciones.buscar(filtro: _filtroMaestra);
+      }
+      emit(LoadLocationsSuccess(ubicacionesFiltersSearch));
     } catch (e, s) {
       emit(LoadLocationsFailure('Error al cargar las ubicaciones'));
       debugPrint('Error en el fetch de ubicaciones: $e=>$s');
@@ -1275,8 +1354,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
     currentNewProduct = null;
 
     if (event.resetAll == true) {
-      ubicacionesFiltersSearch = [];
-      ubicacionesFilters = [];
+      _resetUbicaciones();
       productosFiltersSearch = [];
       hayMasProductos = false;
     }
@@ -1612,8 +1690,7 @@ class ConteoBloc extends Bloc<ConteoEvent, ConteoState> {
       // Si cambiamos de orden, descartamos las listas de "nuevo producto"
       // de la orden anterior.
       if (ordenConteo.id != event.ordenConteoId) {
-        ubicacionesFilters = [];
-        ubicacionesFiltersSearch = [];
+        _resetUbicaciones();
         productosFiltersSearch = [];
         hayMasProductos = false;
         currentUbication = null;

@@ -18,7 +18,8 @@ import 'package:wms_app/features/inventario/domain/usecases/get_barcodes_product
 import 'package:wms_app/features/inventario/domain/usecases/get_configuracion_usuario_inventario.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_lotes_producto.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_productos_count.dart';
-import 'package:wms_app/features/inventario/domain/usecases/get_ubicaciones_local.dart';
+import 'package:wms_app/features/inventario/domain/usecases/buscar_ubicaciones_inventario.dart';
+import 'package:wms_app/features/inventario/domain/usecases/get_ubicacion_por_barcode.dart';
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/core/bloc/safe_bloc_mixin.dart';
@@ -100,7 +101,8 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
   final BuscarProductosInventario buscarProductos;
   final BuscarProductoPorCodigo buscarProductoPorCodigoUseCase;
   final GetProductosCount getProductosCount;
-  final GetUbicacionesLocal getUbicacionesLocal;
+  final BuscarUbicacionesInventario buscarUbicaciones;
+  final GetUbicacionPorBarcode getUbicacionPorBarcode;
   final GetLotesProducto getLotesProducto;
   final EnviarProductoInventario enviarProductoInventario;
   final CrearLoteInventario crearLoteInventario;
@@ -131,8 +133,21 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
 
   // ─── Listas ───────────────────────────────────────────────────────────────────
 
-  List<UbicacionInventario> ubicaciones = [];
+  /// Ubicaciones visibles en la búsqueda: páginas de [paginaUbicaciones]
+  /// consultadas en SQLite (las ~19 mil ubicaciones nunca están en memoria).
   List<UbicacionInventario> ubicacionesFilters = [];
+  bool hayMasUbicaciones = false;
+
+  /// Hay ubicaciones descargadas (lo confirma [GetLocationsEvent]).
+  bool hayUbicaciones = false;
+  static const paginaUbicaciones = 50;
+  String _queryUbicaciones = '';
+  String? _almacenUbicaciones;
+  int _busquedaUbicaciones = 0;
+
+  /// Sube con cada búsqueda o filtro nuevo (no al cargar más): la pantalla
+  /// descarta la selección por índice cuando cambia.
+  int versionUbicaciones = 0;
 
   /// Resultados cargados del buscador de productos (páginas de
   /// [paginaProductos]); el catálogo completo nunca está en memoria.
@@ -182,7 +197,8 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
     required this.buscarProductos,
     required this.buscarProductoPorCodigoUseCase,
     required this.getProductosCount,
-    required this.getUbicacionesLocal,
+    required this.buscarUbicaciones,
+    required this.getUbicacionPorBarcode,
     required this.getLotesProducto,
     required this.enviarProductoInventario,
     required this.crearLoteInventario,
@@ -190,7 +206,12 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
     required this.getConfiguracionUsuarioInventario,
   }) : super(InventarioInitial()) {
     on<GetLocationsEvent>(_onLoadLocations, transformer: restartable());
-    on<SearchLocationEvent>(_onSearchLocationEvent, transformer: droppable());
+    // restartable: una búsqueda nueva descarta la anterior.
+    on<SearchLocationEvent>(_onSearchLocationEvent, transformer: restartable());
+    on<CargarMasUbicacionesEvent>(
+      _onCargarMasUbicaciones,
+      transformer: droppable(),
+    );
     on<SearchLotevent>(_onSearchLoteEvent, transformer: droppable());
     on<SearchProductEvent>(_onSearchProductEvent, transformer: restartable());
     on<CargarMasProductosEvent>(
@@ -253,38 +274,98 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
 
   // ─── Handlers ────────────────────────────────────────────────────────────────
 
+  /// Primera página (vigente o una búsqueda/filtro nuevo). `false` si otra
+  /// búsqueda empezó mientras consultaba.
+  Future<bool> _buscarUbicaciones(
+    Emitter<InventarioState> emit, {
+    required String query,
+    String? almacen,
+  }) async {
+    final busqueda = ++_busquedaUbicaciones;
+    final result = await buscarUbicaciones(
+      BuscarUbicacionesParams(
+        query: query,
+        almacenContiene: almacen,
+        limit: paginaUbicaciones,
+      ),
+    );
+    if (busqueda != _busquedaUbicaciones || emit.isDone) return false;
+    return result.fold(
+      (failure) {
+        emit(SearchFailure(failure.message));
+        return false;
+      },
+      (pagina) {
+        _queryUbicaciones = query;
+        _almacenUbicaciones = almacen;
+        ubicacionesFilters = pagina;
+        hayMasUbicaciones = pagina.length == paginaUbicaciones;
+        versionUbicaciones++;
+        return true;
+      },
+    );
+  }
+
   Future<void> _onLoadLocations(
     GetLocationsEvent event,
     Emitter<InventarioState> emit,
   ) async {
     emit(LoadLocationsLoading());
-    final result = await getUbicacionesLocal(NoParams());
-    result.fold((failure) => emit(LoadLocationsFailure(failure.message)), (
-      ubics,
-    ) {
-      ubicaciones = ubics;
-      ubicacionesFilters = ubics;
-      if (ubics.isNotEmpty) {
-        emit(LoadLocationsSuccess(ubics));
-      } else {
-        emit(LoadLocationsFailure('No se encontraron ubicaciones'));
-      }
-    });
+    selectedAlmacen = null;
+    if (!await _buscarUbicaciones(emit, query: '')) return;
+    hayUbicaciones = ubicacionesFilters.isNotEmpty;
+    if (hayUbicaciones) {
+      emit(LoadLocationsSuccess(ubicacionesFilters));
+    } else {
+      emit(LoadLocationsFailure('No se encontraron ubicaciones'));
+    }
   }
 
+  /// Búsqueda por nombre o barcode dentro del almacén elegido (si hay).
   Future<void> _onSearchLocationEvent(
     SearchLocationEvent event,
     Emitter<InventarioState> emit,
   ) async {
     emit(SearchLoading());
-    final query = event.query.toLowerCase();
-    final filtrados = ubicaciones.where((location) {
-      final name = (location.name ?? '').toLowerCase();
-      final barcode = (location.barcode ?? '').toString().trim();
-      return name.contains(query) || barcode.contains(query);
-    }).toList();
-    ubicacionesFilters = filtrados;
-    emit(SearchLocationSuccess(filtrados));
+    final query = event.query.trim();
+    // Debounce: si llega otra tecla, restartable cierra este emitter.
+    if (query.isNotEmpty) {
+      await Future.delayed(const Duration(milliseconds: 250));
+      if (emit.isDone) return;
+    }
+    if (await _buscarUbicaciones(emit, query: query, almacen: selectedAlmacen)) {
+      emit(SearchLocationSuccess(ubicacionesFilters));
+    }
+  }
+
+  Future<void> _onCargarMasUbicaciones(
+    CargarMasUbicacionesEvent event,
+    Emitter<InventarioState> emit,
+  ) async {
+    if (!hayMasUbicaciones) return;
+    final busqueda = _busquedaUbicaciones;
+    final result = await buscarUbicaciones(
+      BuscarUbicacionesParams(
+        query: _queryUbicaciones,
+        almacenContiene: _almacenUbicaciones,
+        limit: paginaUbicaciones,
+        offset: ubicacionesFilters.length,
+      ),
+    );
+    // Si mientras tanto cambió la búsqueda, esta página ya no corresponde.
+    if (busqueda != _busquedaUbicaciones) return;
+    result.fold((failure) => emit(SearchFailure(failure.message)), (pagina) {
+      ubicacionesFilters = [...ubicacionesFilters, ...pagina];
+      hayMasUbicaciones = pagina.length == paginaUbicaciones;
+      emit(SearchLocationSuccess(ubicacionesFilters));
+    });
+  }
+
+  /// Ubicación escaneada (consulta indexada, sin distinguir mayúsculas);
+  /// null si no existe.
+  Future<UbicacionInventario?> buscarUbicacionPorBarcode(String codigo) async {
+    final result = await getUbicacionPorBarcode(codigo.trim());
+    return result.fold((_) => null, (u) => u);
   }
 
   Future<void> _onSearchLoteEvent(
@@ -626,24 +707,24 @@ class InventarioBloc extends Bloc<InventarioEvent, InventarioState>
     );
   }
 
+  /// Filtro del menú: ubicaciones cuyo almacén contiene el texto (vacío =
+  /// todas). Respeta lo escrito en el buscador.
   Future<void> _onFilterUbicacionesEvent(
     FilterUbicacionesAlmacenEvent event,
     Emitter<InventarioState> emit,
   ) async {
     emit(FilterUbicacionesLoading());
-    final query = event.almacen.toLowerCase();
-    if (query.isEmpty) {
-      ubicacionesFilters = ubicaciones;
-      emit(FilterUbicacionesSuccess(ubicaciones));
+    final almacen = event.almacen.trim();
+    selectedAlmacen = almacen.isEmpty ? null : event.almacen;
+    if (!await _buscarUbicaciones(
+      emit,
+      query: searchControllerLocation.text.trim(),
+      almacen: selectedAlmacen,
+    )) {
       return;
     }
-    final filtradas = ubicaciones.where((location) {
-      return location.warehouseName?.toLowerCase().contains(query) ?? false;
-    }).toList();
-    selectedAlmacen = event.almacen;
-    ubicacionesFilters = filtradas;
-    if (filtradas.isNotEmpty) {
-      emit(FilterUbicacionesSuccess(filtradas));
+    if (ubicacionesFilters.isNotEmpty || selectedAlmacen == null) {
+      emit(FilterUbicacionesSuccess(ubicacionesFilters));
     } else {
       emit(
         FilterUbicacionesFailure(

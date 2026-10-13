@@ -13,7 +13,6 @@ import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
-import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/models/product_devolucion_model.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/models/response_terceros_model.dart';
 // Asegúrate de que las rutas de tus imports sean correctas
@@ -180,20 +179,17 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
     Future.microtask(() => focusNode1.requestFocus());
   }
 
-  void validateLocation(String value) {
+  Future<void> validateLocation(String value) async {
     final bloc = context.read<DevolucionesBloc>();
     final scan = value.trim().toLowerCase();
 
     debugPrint('scan location: $scan');
     _controllerLocation.text = ''; // Limpia el campo de texto del producto
-    //buscamos si hay un producto con ese código de barras
 
-    ResultUbicaciones? matchedUbicacion = bloc.ubicaciones.firstWhere(
-      (ubicacion) => ubicacion.barcode?.toLowerCase() == scan,
-      orElse: () =>
-          ResultUbicaciones(), // Si no se encuentra ningún match, devuelve null
-    );
-    if (matchedUbicacion.barcode != null) {
+    // Consulta indexada en SQLite (las ubicaciones no se cargan en memoria).
+    final matchedUbicacion = await bloc.buscarUbicacionPorBarcode(scan);
+    if (!mounted) return;
+    if (matchedUbicacion != null) {
       debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
       bloc.add(SelectLocationEvent(matchedUbicacion));
       Future.microtask(() => focusNode2.requestFocus());
@@ -1107,7 +1103,8 @@ class _DevolucionesScreenState extends State<DevolucionesScreen>
                           functionValidate: (value) {
                             switch (currentStep) {
                               case 'location':
-                                return validateLocation(value);
+                                validateLocation(value);
+                                return;
                               case 'contacto':
                                 // Consulta SQLite: se resuelve de forma
                                 // asíncrona, el campo no espera el resultado.

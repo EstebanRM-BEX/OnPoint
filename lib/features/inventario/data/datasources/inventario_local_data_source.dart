@@ -6,7 +6,6 @@ import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/error/exceptions.dart';
 import 'package:wms_app/core/services/barcodes_inventario_cache_service.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
-import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/features/inventario/data/models/barcode_producto_model.dart';
@@ -15,6 +14,7 @@ import 'package:wms_app/features/inventario/data/models/ubicacion_inventario_mod
 import 'package:wms_app/features/user/domain/entities/user_configuration.dart';
 import 'package:wms_app/core/services/interfaces/i_storage_service.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
+import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/ubicaciones_repository.dart';
 import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart'
     as legacy;
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_barcode/barcodes_inventario_table.dart';
@@ -74,7 +74,17 @@ abstract class InventarioLocalDataSource {
 
   Future<int> getProductosCount();
 
-  Future<List<UbicacionInventarioModel>> getUbicaciones();
+  /// Página de ubicaciones de tbl_ubicaciones (consulta acotada, ver
+  /// docs/plan_ubicaciones_sqlite.md).
+  Future<List<UbicacionInventarioModel>> buscarUbicaciones({
+    String query = '',
+    String? almacenContiene,
+    required int limit,
+    int offset = 0,
+  });
+
+  /// Ubicación por barcode, sin distinguir mayúsculas.
+  Future<UbicacionInventarioModel?> getUbicacionPorBarcode(String barcode);
 
   Future<List<BarcodeProductoModel>> getBarcodesProducto(int productId);
 
@@ -345,12 +355,34 @@ class InventarioLocalDataSourceImpl implements InventarioLocalDataSource {
   }
 
   @override
-  Future<List<UbicacionInventarioModel>> getUbicaciones() async {
+  Future<List<UbicacionInventarioModel>> buscarUbicaciones({
+    String query = '',
+    String? almacenContiene,
+    required int limit,
+    int offset = 0,
+  }) async {
     try {
-      final legacyList = await getIt<UbicacionesCacheService>().getAll();
+      final legacyList = await database.ubicacionesRepository.buscar(
+        query: query,
+        filtro: FiltroUbicaciones(almacenContiene: almacenContiene),
+        limit: limit,
+        offset: offset,
+      );
       return legacyList.map(UbicacionInventarioModel.fromLegacy).toList();
     } catch (e) {
-      throw CacheException('Error al obtener ubicaciones: $e');
+      throw CacheException('Error al buscar ubicaciones: $e');
+    }
+  }
+
+  @override
+  Future<UbicacionInventarioModel?> getUbicacionPorBarcode(
+    String barcode,
+  ) async {
+    try {
+      final legacy = await database.ubicacionesRepository.getByBarcode(barcode);
+      return legacy == null ? null : UbicacionInventarioModel.fromLegacy(legacy);
+    } catch (e) {
+      throw CacheException('Error al buscar la ubicación: $e');
     }
   }
 

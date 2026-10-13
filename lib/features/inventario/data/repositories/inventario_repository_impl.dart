@@ -219,15 +219,37 @@ class InventarioRepositoryImpl implements InventarioRepository {
   }
 
   @override
-  Future<Either<Failure, List<UbicacionInventario>>>
-  getUbicacionesLocal() async {
+  Future<Either<Failure, List<UbicacionInventario>>> buscarUbicaciones({
+    String query = '',
+    String? almacenContiene,
+    required int limit,
+    int offset = 0,
+  }) async {
     try {
-      final ubicaciones = await localDataSource.getUbicaciones();
+      final ubicaciones = await localDataSource.buscarUbicaciones(
+        query: query,
+        almacenContiene: almacenContiene,
+        limit: limit,
+        offset: offset,
+      );
       return Right(ubicaciones.cast<UbicacionInventario>());
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
       return Left(CacheFailure('Error al leer ubicaciones: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, UbicacionInventario?>> getUbicacionPorBarcode(
+    String barcode,
+  ) async {
+    try {
+      return Right(await localDataSource.getUbicacionPorBarcode(barcode));
+    } on CacheException catch (e) {
+      return Left(CacheFailure(e.message));
+    } catch (e) {
+      return Left(CacheFailure('Error al buscar la ubicación: $e'));
     }
   }
 

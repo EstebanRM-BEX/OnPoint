@@ -82,6 +82,9 @@ class FilterUbicacionesEvent extends DevolucionesEvent {
 
 class LoadLocationsEvent extends DevolucionesEvent {}
 
+/// Siguiente página de la búsqueda de ubicaciones.
+class LoadMoreUbicacionesDevolucionEvent extends DevolucionesEvent {}
+
 class SearchLocationEvent extends DevolucionesEvent {
   final String query;
 

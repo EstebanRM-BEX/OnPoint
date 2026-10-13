@@ -7,6 +7,9 @@ sealed class InventarioEvent {}
 
 class GetLocationsEvent extends InventarioEvent {}
 
+/// Siguiente página de la búsqueda de ubicaciones.
+class CargarMasUbicacionesEvent extends InventarioEvent {}
+
 class SearchLocationEvent extends InventarioEvent {
   final String query;
   SearchLocationEvent(this.query);

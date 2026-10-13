@@ -28,9 +28,14 @@ class _SearchLocationScreenState extends State<SearchLocationConteoScreen> {
   Timer? _debounce;
   bool _isLoadingDialogShowing = false;
 
+  /// Versión de la búsqueda mostrada: la selección es por índice, así que se
+  /// descarta cuando llega otra búsqueda.
+  int? _versionVista;
+
   @override
   void initState() {
     super.initState();
+    _locationListScrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final route = ModalRoute.of(context);
@@ -57,7 +62,7 @@ class _SearchLocationScreenState extends State<SearchLocationConteoScreen> {
     final needsLoad = (bloc.ordenConteo.filterType == 'category' ||
             bloc.ordenConteo.filterType == 'product' ||
             bloc.ordenConteo.filterType == 'general') &&
-        bloc.ubicaciones.isEmpty;
+        !bloc.maestraUbicacionesLista;
     if (needsLoad) {
       _showLoadingDialog();
     } else {
@@ -85,9 +90,19 @@ class _SearchLocationScreenState extends State<SearchLocationConteoScreen> {
     Navigator.of(context, rootNavigator: true).pop();
   }
 
+  /// Pide la página siguiente de la maestra al acercarse al final.
+  void _onScroll() {
+    final position = _locationListScrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 300) {
+      final bloc = context.read<ConteoBloc>();
+      if (bloc.hayMasUbicaciones) bloc.add(LoadMoreUbicacionesConteoEvent());
+    }
+  }
+
   @override
   void dispose() {
     _searchFocusNode.dispose();
+    _locationListScrollController.removeListener(_onScroll);
     _locationListScrollController.dispose();
     _debounce?.cancel();
     super.dispose();
@@ -183,6 +198,10 @@ class _SearchLocationScreenState extends State<SearchLocationConteoScreen> {
   Widget _buildLocationList(
       BuildContext context, ConteoBloc bloc, Size size) {
     final ubicaciones = bloc.ubicacionesFiltersSearch;
+    if (bloc.versionUbicaciones != _versionVista) {
+      _versionVista = bloc.versionUbicaciones;
+      selectedIndex = null;
+    }
 
     if (ubicaciones.isEmpty) {
       return const Center(
@@ -196,8 +215,14 @@ class _SearchLocationScreenState extends State<SearchLocationConteoScreen> {
       thumbVisibility: true,
       child: ListView.builder(
         controller: _locationListScrollController,
-        itemCount: ubicaciones.length,
+        itemCount: ubicaciones.length + (bloc.hayMasUbicaciones ? 1 : 0),
         itemBuilder: (context, index) {
+          if (index >= ubicaciones.length) {
+            return const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
         final ubicacion = ubicaciones[index];
         final isSelected = selectedIndex == index;
         final barcode = ubicacion.barcode;

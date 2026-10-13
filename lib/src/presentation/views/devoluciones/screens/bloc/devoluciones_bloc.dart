@@ -9,10 +9,11 @@ import 'package:wms_app/core/utils/formats_utils.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/core/services/terceros_download_service.dart';
-import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
+import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/paginador_ubicaciones.dart';
+import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/ubicaciones_repository.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/data/devoluciones_repository.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/models/product_devolucion_model.dart';
 import 'package:wms_app/src/presentation/views/devoluciones/models/request_send_devolucion_model.dart';
@@ -103,8 +104,14 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
   bool isKeyboardVisible = false;
 
   //*lista de ubicaciones
-  List<ResultUbicaciones> ubicaciones = [];
-  List<ResultUbicaciones> ubicacionesFilters = [];
+  //*ubicaciones destino: páginas de una consulta a SQLite (hasta ~19 mil
+  //por cliente; ya no se cargan completas en memoria). Ver
+  //docs/plan_ubicaciones_sqlite.md.
+  late final PaginadorUbicaciones paginadorUbicaciones =
+      PaginadorUbicaciones(() => db.ubicacionesRepository);
+  List<ResultUbicaciones> get ubicacionesFilters => paginadorUbicaciones.items;
+  bool get hayMasUbicaciones => paginadorUbicaciones.hayMas;
+  int get versionUbicaciones => paginadorUbicaciones.version;
 
   //lista de lotes de un producto
   List<LotesProduct> listLotesProduct = [];
@@ -168,9 +175,21 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
     on<LoadLocationsEvent>(_onLoadLocations);
 
     //*metodo para buscar una ubicacion
-    on<SearchLocationEvent>(_onSearchLocationEvent);
+    // restartable: cada tecla cancela la búsqueda anterior (debounce en el
+    // handler).
+    on<SearchLocationEvent>(
+      _onSearchLocationEvent,
+      transformer: restartable(),
+    );
+    on<LoadMoreUbicacionesDevolucionEvent>(
+      _onLoadMoreUbicaciones,
+      transformer: droppable(),
+    );
 
-    on<FilterUbicacionesEvent>(_onFilterUbicacionesEvent);
+    on<FilterUbicacionesEvent>(
+      _onFilterUbicacionesEvent,
+      transformer: restartable(),
+    );
 
     //evento para seleccionar una ubicacion
     on<SelectLocationEvent>(_onSelectLocationEvent);
@@ -267,8 +286,7 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
     // invalidan: es un caché compartido (Info Rápida, Conteo, etc.).
     tercerosFilters = [];
     productosFilters = [];
-    ubicaciones = [];
-    ubicacionesFilters = [];
+    paginadorUbicaciones.reset();
     listLotesProduct = [];
     listLotesProductFilters = [];
 
@@ -565,7 +583,6 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
       productosFilters = [];
       hayMasProductos = false;
       listLotesProductFilters = listLotesProduct;
-      ubicacionesFilters = ubicaciones;
       _busquedaTerceros++;
       tercerosFilters = [];
       hayMasTerceros = false;
@@ -714,25 +731,20 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
     }
   }
 
-  //*metodo para filtrar las ubicaciones
+  //*metodo para filtrar las ubicaciones: todas las del almacén que contiene
+  //el texto (sin búsqueda por nombre, como antes).
   void _onFilterUbicacionesEvent(
     FilterUbicacionesEvent event,
     Emitter<DevolucionesState> emit,
-  ) {
+  ) async {
     try {
       debugPrint('Filtrando ubicaciones por almacen: ${event.almacen}');
       emit(FilterLocationsLoading());
       selectedAlmacen = '';
-      ubicacionesFilters = [];
-      ubicacionesFilters = ubicaciones;
-      final query = event.almacen.toLowerCase();
-      if (query.isEmpty) {
-        ubicacionesFilters = ubicaciones;
-      } else {
-        ubicacionesFilters = ubicaciones.where((location) {
-          return location.warehouseName?.toLowerCase().contains(query) ?? false;
-        }).toList();
-      }
+      final vigente = await paginadorUbicaciones.buscar(
+        filtro: FiltroUbicaciones(almacenContiene: event.almacen),
+      );
+      if (!vigente || emit.isDone) return;
       emit(FilterLocationsSuccess(ubicacionesFilters));
     } catch (e, s) {
       debugPrint('Error en el FilterUbicacionesEvent: $e, $s');
@@ -740,23 +752,21 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
     }
   }
 
+  /// Búsqueda por nombre o barcode en todas las ubicaciones.
   void _onSearchLocationEvent(
     SearchLocationEvent event,
     Emitter<DevolucionesState> emit,
   ) async {
     try {
       emit(SearchLoading());
-      ubicacionesFilters = [];
-      ubicacionesFilters = ubicaciones;
-      final query = event.query.toLowerCase();
       selectedAlmacen = '';
-      if (query.isEmpty) {
-        ubicacionesFilters = ubicaciones;
-      } else {
-        ubicacionesFilters = ubicaciones.where((location) {
-          return location.name?.toLowerCase().contains(query) ?? false;
-        }).toList();
+      // Debounce: si llega otra tecla, restartable cierra este emitter.
+      if (event.query.isNotEmpty) {
+        await Future.delayed(const Duration(milliseconds: 250));
+        if (emit.isDone) return;
       }
+      final vigente = await paginadorUbicaciones.buscar(query: event.query);
+      if (!vigente || emit.isDone) return;
       emit(SearchLocationSuccess(ubicacionesFilters));
     } catch (e, s) {
       debugPrint('Error en el SearchLocationEvent: $e, $s');
@@ -764,18 +774,29 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
     }
   }
 
+  void _onLoadMoreUbicaciones(
+    LoadMoreUbicacionesDevolucionEvent event,
+    Emitter<DevolucionesState> emit,
+  ) async {
+    try {
+      if (await paginadorUbicaciones.cargarMas()) {
+        emit(SearchLocationSuccess(ubicacionesFilters));
+      }
+    } catch (e, s) {
+      debugPrint('Error en LoadMoreUbicacionesDevolucionEvent: $e, $s');
+    }
+  }
+
+  /// Primera página de ubicaciones. Vacía = no hay ubicaciones descargadas.
   void _onLoadLocations(
     LoadLocationsEvent event,
     Emitter<DevolucionesState> emit,
   ) async {
     try {
       emit(LoadingLocationsState());
-      final response = await getIt<UbicacionesCacheService>().getAll();
-      ubicaciones = response;
-      ubicacionesFilters = response;
-      if (response.isNotEmpty) {
-        debugPrint('ubicaciones length: ${ubicaciones.length}');
-        emit(LoadLocationsSuccessState(ubicaciones));
+      await paginadorUbicaciones.buscar();
+      if (ubicacionesFilters.isNotEmpty) {
+        emit(LoadLocationsSuccessState(ubicacionesFilters));
       } else {
         emit(LoadLocationsFailureState('No se encontraron ubicaciones'));
       }
@@ -784,6 +805,10 @@ class DevolucionesBloc extends Bloc<DevolucionesEvent, DevolucionesState>
       debugPrint('Error en el fetch de ubicaciones: $e=>$s');
     }
   }
+
+  /// Escaneo de ubicación: consulta indexada (sin distinguir mayúsculas).
+  Future<ResultUbicaciones?> buscarUbicacionPorBarcode(String codigo) =>
+      paginadorUbicaciones.porBarcode(codigo);
 
   //*metodo para buscar un tercero
   /// Tercero (contacto o propietario) por documento escaneado: consulta

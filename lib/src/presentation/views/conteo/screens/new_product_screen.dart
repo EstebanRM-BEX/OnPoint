@@ -11,7 +11,6 @@ import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
-import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/conteo/models/conteo_response_model.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/bloc/conteo_bloc.dart';
@@ -167,20 +166,19 @@ class _NewProductConteoScreenState extends State<NewProductConteoScreen>
     setState(() {}); // Si necesitas un rebuild explícito
   }
 
-  void validateLocation(String value) {
+  Future<void> validateLocation(String value) async {
     final bloc = context.read<ConteoBloc>();
     final scan = value.trim().toLowerCase();
 
     debugPrint('scan location: $scan');
     _controllerLocation.clear();
 
-    ResultUbicaciones? matchedUbicacion = bloc.ubicacionesFilters.firstWhere(
-      (ubicacion) => ubicacion.barcode?.toLowerCase() == scan.trim(),
-      orElse: () =>
-          ResultUbicaciones(), // Si no se encuentra ningún match, devuelve null
-    );
+    // Ubicaciones de la orden (en memoria) o maestra (consulta indexada,
+    // validada contra el almacén de la orden).
+    final matchedUbicacion = await bloc.buscarUbicacionEscaneada(scan);
+    if (!mounted) return;
 
-    if (matchedUbicacion.barcode != null) {
+    if (matchedUbicacion != null) {
       debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
       bloc.add(ValidateFieldsEvent(field: "location", isOk: true));
       bloc.add(ChangeLocationIsOkEvent(true, matchedUbicacion, 0, 0, 0));

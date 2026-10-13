@@ -19,7 +19,6 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/inventario/domain/entities/producto_inventario.dart';
-import 'package:wms_app/features/inventario/domain/entities/ubicacion_inventario.dart';
 import 'package:wms_app/features/inventario/domain/entities/lote_producto_inventario.dart';
 import 'package:wms_app/features/inventario/domain/entities/barcode_producto.dart';
 import 'package:wms_app/features/inventario/presentation/bloc/inventario_bloc.dart';
@@ -155,19 +154,18 @@ class _InventarioScreenState extends State<InventarioScreen>
     setState(() {});
   }
 
-  void validateLocation(String value) {
+  Future<void> validateLocation(String value) async {
     final bloc = context.read<InventarioBloc>();
     final scan = value.trim().toLowerCase();
     debugPrint('scan location: $scan');
 
     bloc.controllerLocation.clear();
 
-    UbicacionInventario? matchedUbicacion = bloc.ubicaciones.firstWhere(
-      (ubicacion) => ubicacion.barcode?.toLowerCase() == scan.trim(),
-      orElse: () => const UbicacionInventario(),
-    );
+    // Consulta indexada en SQLite (las ubicaciones no se cargan en memoria).
+    final matchedUbicacion = await bloc.buscarUbicacionPorBarcode(scan);
+    if (!mounted) return;
 
-    if (matchedUbicacion.barcode != null) {
+    if (matchedUbicacion != null) {
       debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
       bloc.add(ValidateFieldsEvent(field: "location", isOk: true));
       bloc.add(ChangeLocationIsOkEvent(matchedUbicacion));
@@ -613,9 +611,7 @@ class _InventarioScreenState extends State<InventarioScreen>
                                                   focusNode: focusNode1,
                                                   onBarcodeScanned:
                                                       (value, context) {
-                                                        return validateLocation(
-                                                          value,
-                                                        );
+                                                        validateLocation(value);
                                                       },
                                                 ),
                                                 Align(

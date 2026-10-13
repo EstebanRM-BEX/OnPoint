@@ -169,6 +169,8 @@ import 'features/inventario/domain/usecases/buscar_producto_por_codigo.dart'
     as _i906;
 import 'features/inventario/domain/usecases/buscar_productos_inventario.dart'
     as _i152;
+import 'features/inventario/domain/usecases/buscar_ubicaciones_inventario.dart'
+    as _i947;
 import 'features/inventario/domain/usecases/crear_lote_inventario.dart'
     as _i589;
 import 'features/inventario/domain/usecases/enviar_producto_inventario.dart'
@@ -179,8 +181,8 @@ import 'features/inventario/domain/usecases/get_configuracion_usuario_inventario
     as _i476;
 import 'features/inventario/domain/usecases/get_lotes_producto.dart' as _i704;
 import 'features/inventario/domain/usecases/get_productos_count.dart' as _i892;
-import 'features/inventario/domain/usecases/get_ubicaciones_local.dart'
-    as _i970;
+import 'features/inventario/domain/usecases/get_ubicacion_por_barcode.dart'
+    as _i232;
 import 'features/inventario/domain/usecases/get_url_imagen_producto.dart'
     as _i616;
 import 'features/inventario/domain/usecases/sync_productos_inventario.dart'
@@ -1348,6 +1350,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i152.BuscarProductosInventario>(
       () => _i152.BuscarProductosInventario(gh<_i925.InventarioRepository>()),
     );
+    gh.lazySingleton<_i947.BuscarUbicacionesInventario>(
+      () => _i947.BuscarUbicacionesInventario(gh<_i925.InventarioRepository>()),
+    );
     gh.lazySingleton<_i589.CrearLoteInventario>(
       () => _i589.CrearLoteInventario(gh<_i925.InventarioRepository>()),
     );
@@ -1368,8 +1373,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i892.GetProductosCount>(
       () => _i892.GetProductosCount(gh<_i925.InventarioRepository>()),
     );
-    gh.lazySingleton<_i970.GetUbicacionesLocal>(
-      () => _i970.GetUbicacionesLocal(gh<_i925.InventarioRepository>()),
+    gh.lazySingleton<_i232.GetUbicacionPorBarcode>(
+      () => _i232.GetUbicacionPorBarcode(gh<_i925.InventarioRepository>()),
     );
     gh.lazySingleton<_i616.GetUrlImagenProducto>(
       () => _i616.GetUrlImagenProducto(gh<_i925.InventarioRepository>()),
@@ -1594,20 +1599,6 @@ extension GetItInjectableX on _i174.GetIt {
         syncCoordinator: gh<_i169.ExpeditionSyncCoordinator>(),
       ),
     );
-    gh.factory<_i731.InventarioBloc>(
-      () => _i731.InventarioBloc(
-        buscarProductos: gh<_i152.BuscarProductosInventario>(),
-        buscarProductoPorCodigoUseCase: gh<_i906.BuscarProductoPorCodigo>(),
-        getProductosCount: gh<_i892.GetProductosCount>(),
-        getUbicacionesLocal: gh<_i970.GetUbicacionesLocal>(),
-        getLotesProducto: gh<_i704.GetLotesProducto>(),
-        enviarProductoInventario: gh<_i46.EnviarProductoInventario>(),
-        crearLoteInventario: gh<_i589.CrearLoteInventario>(),
-        getBarcodesProducto: gh<_i125.GetBarcodesProducto>(),
-        getConfiguracionUsuarioInventario:
-            gh<_i476.GetConfiguracionUsuarioInventario>(),
-      ),
-    );
     gh.factory<_i475.PackagingTypeBloc>(
       () => _i475.PackagingTypeBloc(
         getPackagingTypesUseCase: gh<_i658.GetPackagingTypesUseCase>(),
@@ -1637,6 +1628,21 @@ extension GetItInjectableX on _i174.GetIt {
         getPendingSendProductsUseCase:
             gh<_i542.GetPendingSendProductsUseCase>(),
         networkInfo: gh<_i75.NetworkInfo>(),
+      ),
+    );
+    gh.factory<_i731.InventarioBloc>(
+      () => _i731.InventarioBloc(
+        buscarProductos: gh<_i152.BuscarProductosInventario>(),
+        buscarProductoPorCodigoUseCase: gh<_i906.BuscarProductoPorCodigo>(),
+        getProductosCount: gh<_i892.GetProductosCount>(),
+        buscarUbicaciones: gh<_i947.BuscarUbicacionesInventario>(),
+        getUbicacionPorBarcode: gh<_i232.GetUbicacionPorBarcode>(),
+        getLotesProducto: gh<_i704.GetLotesProducto>(),
+        enviarProductoInventario: gh<_i46.EnviarProductoInventario>(),
+        crearLoteInventario: gh<_i589.CrearLoteInventario>(),
+        getBarcodesProducto: gh<_i125.GetBarcodesProducto>(),
+        getConfiguracionUsuarioInventario:
+            gh<_i476.GetConfiguracionUsuarioInventario>(),
       ),
     );
     gh.factory<_i239.ExpedicionListBloc>(

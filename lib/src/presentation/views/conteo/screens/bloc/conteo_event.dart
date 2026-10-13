@@ -173,6 +173,9 @@ class SearchProductEvent extends ConteoEvent {
 /// Siguiente página de la búsqueda de productos de "nuevo producto".
 class LoadMoreProductsConteoEvent extends ConteoEvent {}
 
+/// Siguiente página de la búsqueda de ubicaciones de "nuevo producto".
+class LoadMoreUbicacionesConteoEvent extends ConteoEvent {}
+
 class UpdateProductConteoEvent extends ConteoEvent {
   final CountedLine product; //producto que voy a enviar
   final CountedLine productExist; //producto que ya existe
