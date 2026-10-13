@@ -33,6 +33,9 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState>
 
   /// El último rango llegó al tope: hay más ubicaciones que no se muestran.
   bool rangoEnTope = false;
+
+  /// Se buscó un rango (para el aviso "no se encontraron" aun sin fin).
+  bool rangoBuscado = false;
   /// Productos visibles: páginas de una consulta a SQLite. El catálogo
   /// completo (~24 mil productos) ya no se carga en memoria (ver
   /// docs/plan_fix_oom_catalogo_productos.md).
@@ -105,6 +108,8 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState>
       _onSearchRangeLocationEvent,
       transformer: restartable(),
     );
+    // Consulta SQLite: un escaneo a la vez, en orden.
+    on<ScanLocationLabelEvent>(_onScanLocation, transformer: sequential());
     on<RemoveRangeLocationEvent>(_onRemoveRangeLocationEvent);
     on<AddRangeLocationEvent>(_onAddRangeLocationEvent);
     on<AddSelectedProductEvent>(_onAddSelectedProductEvent);
@@ -291,7 +296,28 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState>
     if (emit.isDone) return;
     ubicacionesRange = rango;
     rangoEnTope = rango.length == topeRango;
+    rangoBuscado = event.start.trim().isNotEmpty;
     emit(SearchRangeLocationSuccess(ubicacionesRange));
+  }
+
+  /// Escaneo en "Agregar ubicaciones": la agrega a la lista a imprimir.
+  Future<void> _onScanLocation(
+      ScanLocationLabelEvent event, Emitter<PrintLabelsState> emit) async {
+    final codigo = event.barcode.trim();
+    if (codigo.isEmpty) return;
+    final ubicacion = await db.ubicacionesRepository.getByBarcode(codigo);
+    if (ubicacion == null) {
+      emit(ScanLocationNotFound(codigo));
+      return;
+    }
+    _agregarAlRango(ubicacion);
+    emit(ScanLocationAdded(ubicacion));
+  }
+
+  void _agregarAlRango(ResultUbicaciones location) {
+    if (ubicacionesRange.any((l) => l.id == location.id)) return;
+    ubicacionesRange = [...ubicacionesRange, location]
+      ..sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
   }
 
   void _onRemoveRangeLocationEvent(
@@ -321,11 +347,7 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState>
 
   void _onAddRangeLocationEvent(
       AddRangeLocationEvent event, Emitter<PrintLabelsState> emit) {
-    final alreadyAdded = ubicacionesRange.any((l) => l.id == event.location.id);
-    if (!alreadyAdded) {
-      ubicacionesRange = [...ubicacionesRange, event.location];
-      ubicacionesRange.sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
-    }
+    _agregarAlRango(event.location);
     emit(SearchRangeLocationSuccess(ubicacionesRange));
   }
 
@@ -371,7 +393,10 @@ class PrintLabelsBloc extends Bloc<PrintLabelsEvent, PrintLabelsState>
       ClearRangeLocationsEvent event, Emitter<PrintLabelsState> emit) {
     ubicacionesRange = [];
     rangoEnTope = false;
+    rangoBuscado = false;
     locationQuantities.clear();
+    rangeStartController.clear();
+    rangeEndController.clear();
     emit(SearchRangeLocationSuccess(ubicacionesRange));
   }
 }

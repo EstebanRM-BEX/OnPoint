@@ -147,6 +147,17 @@ void main() {
       expect(ids(await repo.rango(desde: 'A-01-02', hasta: 'a-02-01')), [2, 3]);
     });
 
+    test('también por barcode (código corto; el nombre es la ruta)',
+        () async {
+      await ubicacion(7, 'EN/Existencias/A0101', barcode: 'A0101');
+      await ubicacion(8, 'EN/Existencias/B0101', barcode: 'B0101');
+      await ubicacion(9, 'EN/Existencias/C0101', barcode: 'C0101');
+      // 4 (B-01-01) entra por nombre: 'b-' < 'b0'.
+      expect(ids(await repo.rango(desde: 'a0101', hasta: 'B0101')), [4, 7, 8]);
+      expect(ids(await repo.rango(desde: 'b01')), [8]);
+      expect(ids(await repo.rango(desde: 'en/existencias/b')), [8]);
+    });
+
     test('acotado por limit', () async {
       expect(await repo.rango(desde: 'a', limit: 2), hasLength(2));
       expect(await repo.rango(desde: ''), isEmpty);

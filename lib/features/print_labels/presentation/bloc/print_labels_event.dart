@@ -31,6 +31,12 @@ class SearchRangeLocationEvent extends PrintLabelsEvent {
   SearchRangeLocationEvent(this.start, this.end);
 }
 
+/// Ubicación escaneada en "Agregar ubicaciones".
+class ScanLocationLabelEvent extends PrintLabelsEvent {
+  final String barcode;
+  ScanLocationLabelEvent(this.barcode);
+}
+
 class RemoveRangeLocationEvent extends PrintLabelsEvent {
   final int locationId;
   RemoveRangeLocationEvent(this.locationId);
@@ -78,5 +84,6 @@ class DecrementLocationQtyEvent extends PrintLabelsEvent {
 /// Limpia toda la selección de productos (tras una impresión exitosa).
 class ClearSelectedProductsEvent extends PrintLabelsEvent {}
 
-/// Limpia el rango de ubicaciones seleccionadas (tras una impresión exitosa).
+/// Limpia el rango de ubicaciones seleccionadas y los campos inicio/fin
+/// (botón "Limpiar búsqueda" o tras una impresión exitosa).
 class ClearRangeLocationsEvent extends PrintLabelsEvent {}

@@ -82,4 +82,40 @@ void main() {
     expect(bloc.ubicacionesRange, hasLength(PrintLabelsBloc.topeRango));
     expect(bloc.rangoEnTope, isTrue);
   });
+
+  test('limpiar búsqueda vacía la lista y los campos inicio/fin', () async {
+    await crear(20);
+    bloc.rangeStartController.text = 'A-0001';
+    bloc.rangeEndController.text = 'A-0003';
+    bloc.add(SearchRangeLocationEvent('A-0001', 'A-0003'));
+    await bloc.stream.firstWhere((s) => s is SearchRangeLocationSuccess);
+    expect(bloc.ubicacionesRange, hasLength(3));
+    expect(bloc.rangoBuscado, isTrue);
+
+    bloc.add(ClearRangeLocationsEvent());
+    await bloc.stream.firstWhere((s) => s is SearchRangeLocationSuccess);
+    expect(bloc.ubicacionesRange, isEmpty);
+    expect(bloc.rangoBuscado, isFalse);
+    expect(bloc.rangeStartController.text, isEmpty);
+    expect(bloc.rangeEndController.text, isEmpty);
+  });
+
+  test('escanear agrega la ubicación (sin duplicar) o avisa si no existe',
+      () async {
+    await crear(20);
+    bloc.add(ScanLocationLabelEvent('loc3'));
+    final agregada = await bloc.stream.firstWhere((s) => s is ScanLocationAdded)
+        as ScanLocationAdded;
+    expect(agregada.location.id, 3);
+    expect(bloc.ubicacionesRange.map((u) => u.id), [3]);
+
+    bloc.add(ScanLocationLabelEvent('LOC3'));
+    await bloc.stream.firstWhere((s) => s is ScanLocationAdded);
+    expect(bloc.ubicacionesRange, hasLength(1));
+
+    bloc.add(ScanLocationLabelEvent('NO-EXISTE'));
+    final noEncontrada = await bloc.stream
+        .firstWhere((s) => s is ScanLocationNotFound) as ScanLocationNotFound;
+    expect(noEncontrada.barcode, 'NO-EXISTE');
+  });
 }

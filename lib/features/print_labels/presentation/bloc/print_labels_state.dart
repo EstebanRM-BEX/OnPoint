@@ -49,6 +49,16 @@ class SearchProductSuccess extends PrintLabelsState {
   SearchProductSuccess(this.products);
 }
 
+class ScanLocationNotFound extends PrintLabelsState {
+  final String barcode;
+  ScanLocationNotFound(this.barcode);
+}
+
+class ScanLocationAdded extends PrintLabelsState {
+  final ResultUbicaciones location;
+  ScanLocationAdded(this.location);
+}
+
 class SearchRangeLocationSuccess extends PrintLabelsState {
   final List<ResultUbicaciones> locations;
   SearchRangeLocationSuccess(this.locations);

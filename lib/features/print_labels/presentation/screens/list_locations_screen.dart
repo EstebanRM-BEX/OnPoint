@@ -3,12 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
+import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/cluster_search_dock.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/features/print_labels/presentation/bloc/print_labels_bloc.dart';
-import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/new_lote_widget.dart';
-import 'package:wms_app/src/presentation/widgets/dynamic_SearchBar_widget.dart';
+import 'package:wms_app/features/print_labels/presentation/widgets/rango_ubicaciones_inputs.dart';
+import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 
 class PrintLabelsLocationsScreen extends StatefulWidget {
@@ -24,6 +25,9 @@ class _PrintLabelsLocationsScreenState
   ResultUbicaciones? selectedLocation;
   bool _isSearching = false;
   final FocusNode _searchFocusNode = FocusNode();
+  // Lector PDA (campo invisible detrás del buscador, como en Cluster).
+  final FocusNode _scannerFocusNode = FocusNode();
+  final TextEditingController _scannerController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -35,6 +39,8 @@ class _PrintLabelsLocationsScreenState
   @override
   void dispose() {
     _searchFocusNode.dispose();
+    _scannerFocusNode.dispose();
+    _scannerController.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
@@ -49,9 +55,17 @@ class _PrintLabelsLocationsScreenState
     }
   }
 
+  /// Entra con el lector activo: escanear agrega la ubicación; tocar el
+  /// buscador pasa a búsqueda manual (el botón del lector se apaga).
   void _enterSearchMode() {
     setState(() => _isSearching = true);
-    Future.microtask(() => _searchFocusNode.requestFocus());
+    Future.microtask(() => _scannerFocusNode.requestFocus());
+  }
+
+  void _clearSearch(PrintLabelsBloc bloc) {
+    bloc.searchControllerLocation.clear();
+    bloc.add(SearchLocationEvent(''));
+    _scannerFocusNode.requestFocus();
   }
 
   void _exitSearchMode(PrintLabelsBloc bloc) {
@@ -64,7 +78,27 @@ class _PrintLabelsLocationsScreenState
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<PrintLabelsBloc, PrintLabelsState>(
-      listener: (context, state) {},
+      listener: (context, state) {
+        if (state is ScanLocationAdded) {
+          Get.snackbar(
+            'Ubicación agregada',
+            state.location.name ?? '',
+            backgroundColor: white,
+            colorText: primaryColorApp,
+            icon: const Icon(Icons.check_circle, color: Colors.green),
+            duration: const Duration(seconds: 2),
+          );
+        } else if (state is ScanLocationNotFound) {
+          Get.snackbar(
+            'Ubicación no encontrada',
+            'Código: ${state.barcode}',
+            backgroundColor: white,
+            colorText: primaryColorApp,
+            icon: const Icon(Icons.error, color: Colors.red),
+            duration: const Duration(seconds: 2),
+          );
+        }
+      },
       builder: (context, state) {
         final size = MediaQuery.sizeOf(context);
         final bloc = context.read<PrintLabelsBloc>();
@@ -98,18 +132,24 @@ class _PrintLabelsLocationsScreenState
                           ],
                         ),
                       ),
-                      DynamicSearchBar(
+                      ClusterSearchDock(
                         controller: bloc.searchControllerLocation,
-                        focusNode: _searchFocusNode,
-                        hintText: "Buscar ubicación",
-                        onSearchChanged: (value) =>
+                        searchFocusNode: _searchFocusNode,
+                        scannerFocusNode: _scannerFocusNode,
+                        hintText: 'Escanear o buscar ubicación...',
+                        scanner: BarcodeScannerField(
+                          controller: _scannerController,
+                          focusNode: _scannerFocusNode,
+                          clearOnScan: true,
+                          refocusOnScan: true,
+                          onBarcodeScanned: (value, _) =>
+                              bloc.add(ScanLocationLabelEvent(value)),
+                        ),
+                        onChanged: (value) =>
                             bloc.add(SearchLocationEvent(value)),
-                        onSearchCleared: () {
-                          bloc.searchControllerLocation.clear();
-                          bloc.add(SearchLocationEvent(''));
-                          FocusScope.of(context).unfocus();
-                        },
-                        onTap: () {},
+                        onCleared: () => _clearSearch(bloc),
+                        onActivateScanner: () =>
+                            _scannerFocusNode.requestFocus(),
                       ),
                       Expanded(
                         child: Builder(builder: (context) {
@@ -360,71 +400,13 @@ class _RangeSearchSection extends StatelessWidget {
           Text("Rango de ubicaciones a imprimir",
               style: TextStyle(fontSize: 14)),
           const SizedBox(height: 5),
-          SizedBox(
-            height: 40,
-            child: TextField(
-              controller: bloc.rangeStartController,
-              inputFormatters: [
-                UpperCaseTextFormatter(),
-              ],
-              style: TextStyle(
-                color: black,
-                fontSize: 10,
-              ),
-              decoration: InputDecoration(
-                disabledBorder: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  onPressed: () {
-                    bloc.rangeStartController.clear();
-                  },
-                  icon: const Icon(Icons.close, color: grey),
-                ),
-                hintText: "Inicio",
-                hintStyle: const TextStyle(color: Colors.grey, fontSize: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                contentPadding: const EdgeInsets.all(10),
-                errorStyle: const TextStyle(color: Colors.red, fontSize: 10),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 40,
-            child: TextField(
-              controller: bloc.rangeEndController,
-              inputFormatters: [
-                UpperCaseTextFormatter(),
-              ],
-              style: TextStyle(
-                color: black,
-                fontSize: 10,
-              ),
-              decoration: InputDecoration(
-                disabledBorder: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  onPressed: () {
-                    bloc.rangeStartController.clear();
-                  },
-                  icon: const Icon(Icons.close, color: grey),
-                ),
-                hintText: "Inicio",
-                hintStyle: const TextStyle(color: Colors.grey, fontSize: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                contentPadding: const EdgeInsets.all(10),
-                errorStyle: const TextStyle(color: Colors.red, fontSize: 10),
-              ),
-            ),
-          ),
+          const RangoUbicacionesInputs(),
           const SizedBox(height: 5),
           ElevatedButton(
             onPressed: () {
+              // "Limpiar búsqueda": vacía la lista y los campos inicio/fin.
               if (bloc.ubicacionesRange.isNotEmpty) {
-                bloc.ubicacionesRange = [];
-                bloc.add(SearchRangeLocationEvent('', ''));
+                bloc.add(ClearRangeLocationsEvent());
                 return;
               }
 
@@ -449,17 +431,11 @@ class _RangeSearchSection extends StatelessWidget {
               //   return;
               // }
 
-              if (bloc.ubicacionesRange.isNotEmpty) {
-                bloc.rangeStartController.clear();
-                bloc.rangeEndController.clear();
-                bloc.add(SearchRangeLocationEvent('', ''));
-              } else {
-                FocusScope.of(context).unfocus();
-                bloc.add(SearchRangeLocationEvent(
-                  bloc.rangeStartController.text,
-                  bloc.rangeEndController.text,
-                ));
-              }
+              FocusScope.of(context).unfocus();
+              bloc.add(SearchRangeLocationEvent(
+                bloc.rangeStartController.text,
+                bloc.rangeEndController.text,
+              ));
             },
             style: ElevatedButton.styleFrom(
               backgroundColor:
@@ -648,8 +624,7 @@ class _RangeSearchSection extends StatelessWidget {
                 },
               ),
             ),
-          ] else if (bloc.rangeStartController.text.isNotEmpty &&
-              bloc.rangeEndController.text.isNotEmpty)
+          ] else if (bloc.rangoBuscado)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 10),
               child: Text('No se encontraron ubicaciones en este rango',

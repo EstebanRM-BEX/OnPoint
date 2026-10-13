@@ -313,10 +313,12 @@ class UbicacionesRepository {
     }
   }
 
-  /// Ubicaciones por rango de nombre (impresión de etiquetas), ordenadas por
-  /// nombre y sin distinguir mayúsculas: sin [hasta], las que empiezan con
-  /// [desde]; con [hasta], las que están entre ambos (inclusive). Acotado a
-  /// [limit]; quien llama avisa si se llegó al tope.
+  /// Ubicaciones por rango (impresión de etiquetas), ordenadas por nombre y
+  /// sin distinguir mayúsculas: sin [hasta], las que empiezan con [desde];
+  /// con [hasta], las que están entre ambos (inclusive). Compara el nombre
+  /// **o** el barcode: el nombre es la ruta completa (`EN/Existencias/A0101`)
+  /// y el operario suele escribir el código corto (`A0101`, el barcode).
+  /// Acotado a [limit]; quien llama avisa si se llegó al tope.
   Future<List<ResultUbicaciones>> rango({
     required String desde,
     String hasta = '',
@@ -326,15 +328,18 @@ class UbicacionesRepository {
     if (d.isEmpty) return [];
     try {
       const n = UbicacionesTable.columnName;
+      const b = UbicacionesTable.columnBarcode;
       final h = hasta.trim();
       final String where;
       final List<Object?> args;
       if (h.isEmpty) {
-        where = "$n LIKE ? ESCAPE '\\'";
-        args = ['${_escaparLike(d)}%'];
+        final prefijo = '${_escaparLike(d)}%';
+        where = "$n LIKE ? ESCAPE '\\' OR $b LIKE ? ESCAPE '\\'";
+        args = [prefijo, prefijo];
       } else {
-        where = '$n >= ? COLLATE NOCASE AND $n <= ? COLLATE NOCASE';
-        args = [d, h];
+        where = '($n >= ? COLLATE NOCASE AND $n <= ? COLLATE NOCASE) OR '
+            '($b >= ? COLLATE NOCASE AND $b <= ? COLLATE NOCASE)';
+        args = [d, h, d, h];
       }
       final db = await _database.getDatabaseInstance();
       final rows = await db.rawQuery(
