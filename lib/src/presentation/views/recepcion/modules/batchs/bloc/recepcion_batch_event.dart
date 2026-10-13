@@ -135,6 +135,9 @@ class SearchLocationEvent extends RecepcionBatchEvent {
 
 class GetLocationsDestReceptionBatchEvent extends RecepcionBatchEvent {}
 
+/// Siguiente página de la búsqueda de ubicaciones.
+class LoadMoreUbicacionesBatchEvent extends RecepcionBatchEvent {}
+
 class LoadConfigurationsUserReception extends RecepcionBatchEvent {}
 
 class CleanFieldsEvent extends RecepcionBatchEvent {}

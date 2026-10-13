@@ -26,7 +26,7 @@ import 'package:wms_app/shared/widgets/segunda_unidad_input_widget.dart';
 import 'package:wms_app/shared/utils/keyboard_watchdog.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
-import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
+import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_view_img_temp_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_barcodes_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
@@ -117,7 +117,6 @@ class _RecepcionMultiusuarioScanProductScreenState
   // cualquier código que matchee alguna ubicación de esta lista es válido
   // (mismo criterio que la búsqueda manual en
   // RecepcionMultiusuarioLocationDestScreen).
-  List<ResultUbicaciones> _ubicacionesDisponibles = [];
   // null mientras carga: el permiso vive en tbl_configurations, no queremos
   // leerlo como "false" (modo fijo, sin gate) por falta de datos.
   bool? _scanDestinationLocationReception;
@@ -201,7 +200,6 @@ class _RecepcionMultiusuarioScanProductScreenState
     }
     _cargarConfiguracion();
     _cargarLotesProducto();
-    _cargarUbicaciones();
     // No es parte de la cadena de foco secuencial (producto → lote →
     // destino → cantidad): el operario la llena cuando quiera, y al perder
     // foco solo se reevalúa a dónde sigue el flujo.
@@ -257,19 +255,6 @@ class _RecepcionMultiusuarioScanProductScreenState
       (failure) {},
       (lotes) => setState(() => _lotesDisponibles = lotes),
     );
-  }
-
-  /// Catálogo maestro de ubicaciones (tbl_ubicaciones), ya sincronizado
-  /// localmente — mismo repositorio que usa la pantalla de búsqueda manual
-  /// (RecepcionMultiusuarioLocationDestBloc). Falla en silencio: si no
-  /// llega a cargar, el operario igual puede confirmar por
-  /// RecepcionMultiusuarioLocationDestScreen (búsqueda manual).
-  Future<void> _cargarUbicaciones() async {
-    try {
-      final ubicaciones = await getIt<UbicacionesCacheService>().getAll();
-      if (!mounted) return;
-      setState(() => _ubicacionesDisponibles = ubicaciones);
-    } catch (_) {}
   }
 
   @override
@@ -480,22 +465,20 @@ class _RecepcionMultiusuarioScanProductScreenState
   }
 
   /// No valida contra una ubicación destino preasignada: acepta cualquier
-  /// código que matchee alguna ubicación del catálogo maestro
-  /// (_ubicacionesDisponibles), igual que la búsqueda manual — la
-  /// ubicación destino real del claim no restringe qué se puede escanear
-  /// acá, solo se usa como valor informativo hasta que se confirma una.
-  void _validateLocationDest(String value) {
+  /// código que matchee alguna ubicación del catálogo maestro, igual que la
+  /// búsqueda manual — la ubicación destino real del claim no restringe qué
+  /// se puede escanear acá, solo se usa como valor informativo hasta que se
+  /// confirma una. Consulta indexada en SQLite (el catálogo ya no se carga
+  /// en memoria).
+  Future<void> _validateLocationDest(String value) async {
     final scan = value.trim().toLowerCase();
     _controllerLocationDest.clear();
     if (scan.isEmpty) return;
 
-    ResultUbicaciones? match;
-    for (final ubicacion in _ubicacionesDisponibles) {
-      if ((ubicacion.barcode ?? '').toLowerCase() == scan) {
-        match = ubicacion;
-        break;
-      }
-    }
+    final match = await DataBaseSqlite().ubicacionesRepository.getByBarcode(
+      scan,
+    );
+    if (!mounted) return;
 
     if (match != null) {
       setState(() {

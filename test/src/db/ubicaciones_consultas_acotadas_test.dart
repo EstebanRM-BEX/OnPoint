@@ -107,6 +107,23 @@ void main() {
       );
     });
 
+    test('almacén contiene (menú de Recepción), sin distinguir mayúsculas',
+        () async {
+      expect(
+        ids(await repo.buscar(
+          filtro: const FiltroUbicaciones(almacenContiene: 'bod2'),
+        )),
+        [4],
+      );
+      expect(
+        ids(await repo.buscar(
+          filtro: const FiltroUbicaciones(almacenContiene: 'BOD'),
+          limit: 2,
+        )),
+        [1, 2],
+      );
+    });
+
     test('ids vacío (orden sin ubicaciones) → nada', () async {
       expect(
         await repo.buscar(filtro: const FiltroUbicaciones(ids: {})),

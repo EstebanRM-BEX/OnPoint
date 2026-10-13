@@ -12,9 +12,10 @@ import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/user/domain/entities/user_novelty.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/core/services/novedades_cache_service.dart';
-import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
+import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/paginador_ubicaciones.dart';
+import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/ubicaciones_repository.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/src/presentation/views/recepcion/data/recepcion_repository.dart';
@@ -113,9 +114,14 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
   bool isExpanded = false;
 
   String selectedAlmacen = '';
-  //*lista de ubicaciones
-  List<ResultUbicaciones> ubicaciones = [];
-  List<ResultUbicaciones> ubicacionesFilters = [];
+  //*ubicaciones destino: páginas de una consulta a SQLite (hasta ~19 mil
+  //ubicaciones por cliente; ya no se cargan completas en memoria). Ver
+  //docs/plan_ubicaciones_sqlite.md.
+  late final PaginadorUbicaciones paginadorUbicaciones =
+      PaginadorUbicaciones(() => db.ubicacionesRepository);
+  List<ResultUbicaciones> get ubicacionesFilters => paginadorUbicaciones.items;
+  bool get hayMasUbicaciones => paginadorUbicaciones.hayMas;
+  int get versionUbicaciones => paginadorUbicaciones.version;
 
   ResultUbicaciones? currentUbicationDest;
 
@@ -208,14 +214,26 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     on<GetLocationsDestEvent>(_onLoadLocations);
 
     //metodo para buscar una ubicacion
-    on<SearchLocationEvent>(_onSearchLocationEvent);
+    // restartable: cada tecla cancela la búsqueda anterior (debounce en el
+    // handler).
+    on<SearchLocationEvent>(
+      _onSearchLocationEvent,
+      transformer: restartable(),
+    );
+    on<LoadMoreUbicacionesEvent>(
+      _onLoadMoreUbicaciones,
+      transformer: droppable(),
+    );
 
     ///filtrar transferenica por el type
     on<FilterReceptionByTypeEvent>(_onFilterTransferByTypeEvent);
 
     on<CleanFieldsEvent>(_onCleanFieldsEvent);
 
-    on<FilterUbicacionesAlmacenEvent>(_onFilterUbicacionesEvent);
+    on<FilterUbicacionesAlmacenEvent>(
+      _onFilterUbicacionesEvent,
+      transformer: restartable(),
+    );
 
     //enviar temperatura
     on<SendTemperatureEvent>(_onSendTemperatureEvent, transformer: droppable());
@@ -663,30 +681,27 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     }
   }
 
+  /// Filtro del menú: todas las ubicaciones cuyo almacén contiene el texto
+  /// (sin búsqueda por nombre, como antes).
   void _onFilterUbicacionesEvent(
     FilterUbicacionesAlmacenEvent event,
     Emitter<RecepcionState> emit,
-  ) {
+  ) async {
     try {
       emit(FilterUbicacionesLoading());
-      selectedAlmacen = '';
-      ubicacionesFilters = [];
-      ubicacionesFilters = ubicaciones;
-      final query = event.almacen.toLowerCase();
-      if (query.isEmpty) {
-        ubicacionesFilters = ubicaciones;
-      } else {
-        selectedAlmacen = event.almacen;
-        ubicacionesFilters = ubicaciones.where((location) {
-          return location.warehouseName?.toLowerCase().contains(query) ?? false;
-        }).toList();
-      }
+      final almacen = event.almacen.trim();
+      selectedAlmacen = almacen.isEmpty ? '' : event.almacen;
+      final vigente = await paginadorUbicaciones.buscar(
+        filtro: FiltroUbicaciones(almacenContiene: almacen),
+      );
+      if (!vigente || emit.isDone) return;
       emit(FilterUbicacionesSuccess(ubicacionesFilters));
     } catch (e, s) {
       debugPrint('Error en el FilterUbicacionesEvent: $e, $s');
       emit(FilterUbicacionesFailure(e.toString()));
     }
   }
+
 
   void _onCleanFieldsEvent(
     CleanFieldsEvent event,
@@ -773,23 +788,22 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     }
   }
 
+  /// Búsqueda por nombre o barcode en todas las ubicaciones (quita el filtro
+  /// de almacén, como antes).
   void _onSearchLocationEvent(
     SearchLocationEvent event,
     Emitter<RecepcionState> emit,
   ) async {
     try {
       emit(SearchLoading());
-      ubicacionesFilters = [];
-      ubicacionesFilters = ubicaciones;
-      final query = event.query.toLowerCase();
       selectedAlmacen = '';
-      if (query.isEmpty) {
-        ubicacionesFilters = ubicaciones;
-      } else {
-        ubicacionesFilters = ubicaciones.where((location) {
-          return location.name?.toLowerCase().contains(query) ?? false;
-        }).toList();
+      // Debounce: si llega otra tecla, restartable cierra este emitter.
+      if (event.query.isNotEmpty) {
+        await Future.delayed(const Duration(milliseconds: 250));
+        if (emit.isDone) return;
       }
+      final vigente = await paginadorUbicaciones.buscar(query: event.query);
+      if (!vigente || emit.isDone) return;
       emit(SearchLocationSuccess(ubicacionesFilters));
     } catch (e, s) {
       debugPrint('Error en el SearchLocationEvent: $e, $s');
@@ -797,18 +811,31 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
     }
   }
 
+  void _onLoadMoreUbicaciones(
+    LoadMoreUbicacionesEvent event,
+    Emitter<RecepcionState> emit,
+  ) async {
+    try {
+      if (await paginadorUbicaciones.cargarMas()) {
+        emit(SearchLocationSuccess(ubicacionesFilters));
+      }
+    } catch (e, s) {
+      debugPrint('Error en LoadMoreUbicacionesEvent: $e, $s');
+    }
+  }
+
+  /// Primera página de ubicaciones destino. Vacía = no hay ubicaciones
+  /// descargadas.
   void _onLoadLocations(
     GetLocationsDestEvent event,
     Emitter<RecepcionState> emit,
   ) async {
     try {
       emit(LoadLocationsLoading());
-      final response = await getIt<UbicacionesCacheService>().getAll();
-      ubicaciones = response;
-      ubicacionesFilters = response;
-      if (response.isNotEmpty) {
-        debugPrint('ubicaciones length: ${ubicaciones.length}');
-        emit(LoadLocationsSuccess(ubicaciones));
+      selectedAlmacen = '';
+      await paginadorUbicaciones.buscar();
+      if (ubicacionesFilters.isNotEmpty) {
+        emit(LoadLocationsSuccess(ubicacionesFilters));
       } else {
         debugPrint('No se encontraron ubicaciones');
         emit(LoadLocationsFailure('No se encontraron ubicaciones'));
@@ -818,6 +845,11 @@ class RecepcionBloc extends Bloc<RecepcionEvent, RecepcionState> {
       debugPrint('Error en el fetch de ubicaciones: $e=>$s');
     }
   }
+
+  /// Escaneo de ubicación destino: consulta indexada (sin distinguir
+  /// mayúsculas).
+  Future<ResultUbicaciones?> buscarUbicacionPorBarcode(String codigo) =>
+      paginadorUbicaciones.porBarcode(codigo);
 
   void _onSearchLoteEvent(
     SearchLotevent event,

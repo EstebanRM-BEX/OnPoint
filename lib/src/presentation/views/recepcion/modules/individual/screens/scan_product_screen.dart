@@ -17,7 +17,6 @@ import 'package:wms_app/presentation/global/blocs/network/connection_status_cubi
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
 import 'package:wms_app/shared/widgets/disposable_controllers_mixin.dart';
 import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
-import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/recepcion_response_model.dart';
 import 'package:wms_app/src/presentation/views/recepcion/models/response_lotes_product_model.dart';
@@ -324,18 +323,16 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
     }
   }
 
-  void validateLocationDest(String value) {
+  Future<void> validateLocationDest(String value) async {
     final bloc = context.read<RecepcionBloc>();
     final currentProduct = bloc.currentProduct;
     final scan = value.trim().toLowerCase();
     debugPrint('scan location: $scan');
     bloc.locationDestController.clear();
-    ResultUbicaciones? matchedUbicacion = bloc.ubicaciones.firstWhere(
-        (ubicacion) => ubicacion.barcode?.toLowerCase() == scan.trim(),
-        orElse: () =>
-            ResultUbicaciones() // Si no se encuentra ningún match, devuelve null
-        );
-    if (matchedUbicacion.barcode != null) {
+    // Consulta indexada en SQLite (las ubicaciones no se cargan en memoria).
+    final matchedUbicacion = await bloc.buscarUbicacionPorBarcode(scan);
+    if (!mounted) return;
+    if (matchedUbicacion != null) {
       debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
       bloc.add(ValidateFieldsOrderEvent(field: "locationDest", isOk: true));
       bloc.add(ChangeLocationDestIsOkEvent(
@@ -993,9 +990,7 @@ class _ScanProductOrderScreenState extends State<ScanProductOrderScreen>
                                                   focusNode: focusNode5,
                                                   onBarcodeScanned:
                                                       (value, context) {
-                                                    return validateLocationDest(
-                                                      value,
-                                                    );
+                                                    validateLocationDest(value);
                                                   },
                                                 ),
                                                 Align(

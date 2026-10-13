@@ -348,6 +348,13 @@ class UbicacionesRepository {
       condiciones.add('${UbicacionesTable.columnWarehouseName} = ?');
       args.add(filtro.warehouseName);
     }
+    final almacen = filtro.almacenContiene?.trim() ?? '';
+    if (almacen.isNotEmpty) {
+      condiciones.add(
+        "${UbicacionesTable.columnWarehouseName} LIKE ? ESCAPE '\\'",
+      );
+      args.add('%${_escaparLike(almacen)}%');
+    }
     if (filtro.ids != null) {
       // Enteros en línea: no cuentan para el límite de 999 variables.
       condiciones.add(
@@ -438,6 +445,7 @@ class FiltroUbicaciones {
   const FiltroUbicaciones({
     this.warehouseId,
     this.warehouseName,
+    this.almacenContiene,
     this.ids,
     this.soloMuelles = false,
   });
@@ -446,6 +454,10 @@ class FiltroUbicaciones {
 
   final int? warehouseId;
   final String? warehouseName;
+
+  /// El nombre del almacén contiene este texto (sin distinguir mayúsculas):
+  /// el filtro "por almacén" del menú de Recepción y Transferencias.
+  final String? almacenContiene;
   final Set<int>? ids;
   final bool soloMuelles;
 
@@ -456,6 +468,10 @@ class FiltroUbicaciones {
   bool incluye(ResultUbicaciones u) =>
       (warehouseId == null || u.idWarehouse == warehouseId) &&
       (warehouseName == null || u.warehouseName == warehouseName) &&
+      ((almacenContiene ?? '').trim().isEmpty ||
+          (u.warehouseName ?? '')
+              .toLowerCase()
+              .contains(almacenContiene!.trim().toLowerCase())) &&
       (ids == null || ids!.contains(u.id)) &&
       (!soloMuelles || u.isADockAlter == true);
 }

@@ -1,19 +1,21 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
-import 'package:wms_app/injection_container.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
+import 'package:flutter/foundation.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
+import 'package:wms_app/src/presentation/providers/db/database.dart';
+import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/paginador_ubicaciones.dart';
+import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/ubicaciones_repository.dart';
 
 part 'recepcion_multiusuario_location_dest_event.dart';
 part 'recepcion_multiusuario_location_dest_state.dart';
 
 /// Bloc de la pantalla "buscar ubicación destino"
-/// (RecepcionMultiusuarioLocationDestScreen). Las ubicaciones son una tabla
-/// local genérica ya sincronizada (tbl_ubicaciones), compartida por varios
-/// módulos de la app — no hay endpoint nuevo, se lee directo de
-/// DataBaseSqlite().ubicacionesRepository, igual que hace RecepcionBloc
-/// (recepción individual) para la misma pantalla de referencia.
+/// (RecepcionMultiusuarioLocationDestScreen). Las ubicaciones (tbl_ubicaciones,
+/// hasta ~19 mil por cliente) se consultan en SQLite por página: filtro por
+/// almacén y búsqueda por texto se aplican a la vez. Ver
+/// docs/plan_ubicaciones_sqlite.md.
 @injectable
 class RecepcionMultiusuarioLocationDestBloc
     extends
@@ -21,7 +23,14 @@ class RecepcionMultiusuarioLocationDestBloc
           RecepcionMultiusuarioLocationDestEvent,
           RecepcionMultiusuarioLocationDestState
         > {
-  List<ResultUbicaciones> _todasLasUbicaciones = [];
+  /// Repositorio de ubicaciones (los tests lo reemplazan).
+  @visibleForTesting
+  UbicacionesRepository Function() repositorio = () =>
+      DataBaseSqlite().ubicacionesRepository;
+
+  late final PaginadorUbicaciones _paginador = PaginadorUbicaciones(
+    () => repositorio(),
+  );
   String _query = '';
 
   // null = todos los almacenes. Se expone como getter (no como parte del
@@ -33,30 +42,43 @@ class RecepcionMultiusuarioLocationDestBloc
   RecepcionMultiusuarioLocationDestBloc()
     : super(const RecepcionMultiusuarioLocationDestInitial()) {
     on<FetchUbicacionesDestEvent>(_onFetchUbicaciones);
-    on<SearchUbicacionDestEvent>(_onSearchUbicacion);
-    on<FilterUbicacionesAlmacenEvent>(_onFilterAlmacen);
+    // restartable: cada tecla o filtro cancela la búsqueda anterior.
+    on<SearchUbicacionDestEvent>(
+      _onSearchUbicacion,
+      transformer: restartable(),
+    );
+    on<FilterUbicacionesAlmacenEvent>(
+      _onFilterAlmacen,
+      transformer: restartable(),
+    );
+    on<LoadMoreUbicacionesDestEvent>(
+      _onLoadMore,
+      transformer: droppable(),
+    );
   }
+
+  FiltroUbicaciones get _filtro {
+    final almacen = _selectedAlmacen;
+    return almacen == null || almacen.isEmpty
+        ? FiltroUbicaciones.todas
+        : FiltroUbicaciones(warehouseName: almacen);
+  }
+
+  RecepcionMultiusuarioLocationDestLoaded get _loaded =>
+      RecepcionMultiusuarioLocationDestLoaded(
+        _paginador.items,
+        hayMas: _paginador.hayMas,
+        version: _paginador.version,
+      );
 
   Future<void> _onFetchUbicaciones(
     FetchUbicacionesDestEvent event,
     Emitter<RecepcionMultiusuarioLocationDestState> emit,
   ) async {
-    // UbicacionesCacheService ya memoiza esta lista a nivel de app — antes
-    // este bloc guardaba su propia copia además de las de otros ~10 blocs
-    // que leen el mismo catálogo (RecepcionBloc, TransferenciaBloc,
-    // WMSPickingBloc, etc.), todas vivas para siempre en el
-    // MultiBlocProvider raíz. Leer del cache compartido evita esa
-    // duplicación: si ya lo cargó cualquier otro bloc, esto no vuelve a
-    // consultar SQLite.
-    if (_todasLasUbicaciones.isNotEmpty) {
-      emit(RecepcionMultiusuarioLocationDestLoaded(_filtradas()));
-      return;
-    }
-
     emit(const RecepcionMultiusuarioLocationDestLoading());
     try {
-      _todasLasUbicaciones = await getIt<UbicacionesCacheService>().getAll();
-      emit(RecepcionMultiusuarioLocationDestLoaded(_filtradas()));
+      await _paginador.buscar(query: _query, filtro: _filtro);
+      emit(_loaded);
     } catch (_) {
       emit(
         const RecepcionMultiusuarioLocationDestError(
@@ -66,40 +88,37 @@ class RecepcionMultiusuarioLocationDestBloc
     }
   }
 
-  void _onSearchUbicacion(
+  Future<void> _onSearchUbicacion(
     SearchUbicacionDestEvent event,
     Emitter<RecepcionMultiusuarioLocationDestState> emit,
-  ) {
-    _query = event.query.trim().toLowerCase();
-    emit(RecepcionMultiusuarioLocationDestLoaded(_filtradas()));
+  ) async {
+    _query = event.query.trim();
+    // Debounce: si llega otra tecla, restartable cierra este emitter.
+    if (_query.isNotEmpty) {
+      await Future.delayed(const Duration(milliseconds: 250));
+      if (emit.isDone) return;
+    }
+    if (await _paginador.buscar(query: _query, filtro: _filtro) &&
+        !emit.isDone) {
+      emit(_loaded);
+    }
   }
 
-  void _onFilterAlmacen(
+  Future<void> _onFilterAlmacen(
     FilterUbicacionesAlmacenEvent event,
     Emitter<RecepcionMultiusuarioLocationDestState> emit,
-  ) {
+  ) async {
     _selectedAlmacen = event.almacen;
-    emit(RecepcionMultiusuarioLocationDestLoaded(_filtradas()));
+    if (await _paginador.buscar(query: _query, filtro: _filtro) &&
+        !emit.isDone) {
+      emit(_loaded);
+    }
   }
 
-  /// Combina el filtro por almacén (menú del appbar) con la búsqueda por
-  /// texto — ambos aplican a la vez, igual que en recepción individual.
-  List<ResultUbicaciones> _filtradas() {
-    Iterable<ResultUbicaciones> ubicaciones = _todasLasUbicaciones;
-
-    final almacen = _selectedAlmacen;
-    if (almacen != null && almacen.isNotEmpty) {
-      ubicaciones = ubicaciones.where((u) => u.warehouseName == almacen);
-    }
-
-    if (_query.isNotEmpty) {
-      ubicaciones = ubicaciones.where(
-        (u) =>
-            (u.name ?? '').toLowerCase().contains(_query) ||
-            (u.barcode ?? '').toLowerCase().contains(_query),
-      );
-    }
-
-    return ubicaciones.toList();
+  Future<void> _onLoadMore(
+    LoadMoreUbicacionesDestEvent event,
+    Emitter<RecepcionMultiusuarioLocationDestState> emit,
+  ) async {
+    if (await _paginador.cargarMas()) emit(_loaded);
   }
 }

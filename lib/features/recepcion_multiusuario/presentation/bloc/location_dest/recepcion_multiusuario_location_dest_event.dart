@@ -31,3 +31,9 @@ class FilterUbicacionesAlmacenEvent
   @override
   List<Object?> get props => [almacen];
 }
+
+/// Siguiente página de la lista de ubicaciones.
+class LoadMoreUbicacionesDestEvent
+    extends RecepcionMultiusuarioLocationDestEvent {
+  const LoadMoreUbicacionesDestEvent();
+}

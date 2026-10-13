@@ -192,6 +192,9 @@ class SearchLotevent extends RecepcionEvent {
 
 class GetLocationsDestEvent extends RecepcionEvent {}
 
+/// Siguiente página de la búsqueda de ubicaciones destino.
+class LoadMoreUbicacionesEvent extends RecepcionEvent {}
+
 class SearchLocationEvent extends RecepcionEvent {
   final String query;
 
