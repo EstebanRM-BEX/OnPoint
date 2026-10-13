@@ -11,7 +11,7 @@ import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/core/usecases/usecase.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
-import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
+import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/core/utils/theme/input_decoration.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_url_imagen_producto.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
@@ -120,7 +120,6 @@ class _TransferenciaMultiusuarioScanProductScreenState
   // el producto maneja lote.
   List<TransferenciaLoteProducto> _lotesDisponibles = [];
   // Catálogo maestro de ubicaciones (tbl_ubicaciones) — solo para destino.
-  List<ResultUbicaciones> _ubicacionesDisponibles = [];
   bool? _scanDestinationLocationReception;
   bool _locationDestIsOk = false;
   bool _locationDestFieldOk = true;
@@ -208,7 +207,6 @@ class _TransferenciaMultiusuarioScanProductScreenState
     }
     _cargarConfiguracion();
     _cargarLotesProducto();
-    _cargarUbicaciones();
     _iniciarHeartbeat();
     // Es un paso más de la cadena de foco secuencial (origen → producto →
     // lote → destino → segunda unidad → cantidad): al perder foco (el
@@ -284,17 +282,6 @@ class _TransferenciaMultiusuarioScanProductScreenState
       (failure) {},
       (lotes) => setState(() => _lotesDisponibles = lotes),
     );
-  }
-
-  /// Catálogo maestro de ubicaciones (tbl_ubicaciones), ya sincronizado
-  /// localmente — solo se usa para validar destino (origen valida contra
-  /// claim.locationBarcode, no contra este catálogo).
-  Future<void> _cargarUbicaciones() async {
-    try {
-      final ubicaciones = await getIt<UbicacionesCacheService>().getAll();
-      if (!mounted) return;
-      setState(() => _ubicacionesDisponibles = ubicaciones);
-    } catch (_) {}
   }
 
   @override
@@ -527,19 +514,17 @@ class _TransferenciaMultiusuarioScanProductScreenState
   }
 
   /// No valida contra una ubicación destino preasignada: acepta cualquier
-  /// código que matchee alguna ubicación del catálogo maestro.
-  void _validateLocationDest(String value) {
+  /// código que matchee alguna ubicación del catálogo maestro. Consulta
+  /// indexada en SQLite (el catálogo ya no se carga en memoria).
+  Future<void> _validateLocationDest(String value) async {
     final scan = value.trim().toLowerCase();
     _controllerLocationDest.clear();
     if (scan.isEmpty) return;
 
-    ResultUbicaciones? match;
-    for (final ubicacion in _ubicacionesDisponibles) {
-      if ((ubicacion.barcode ?? '').toLowerCase() == scan) {
-        match = ubicacion;
-        break;
-      }
-    }
+    final match = await DataBaseSqlite().ubicacionesRepository.getByBarcode(
+      scan,
+    );
+    if (!mounted) return;
 
     if (match != null) {
       setState(() {

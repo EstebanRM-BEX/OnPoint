@@ -6,9 +6,9 @@ import 'package:wms_app/features/user/data/models/user_configuration_model.dart'
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
 import 'package:wms_app/core/services/productos_sync_service.dart';
-import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
+import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/paginador_ubicaciones.dart';
 import 'package:wms_app/features/inventario/domain/entities/lote_producto_inventario.dart';
 import 'package:wms_app/features/inventario/domain/usecases/crear_lote_inventario.dart';
 import 'package:wms_app/features/inventario/domain/usecases/get_lotes_producto.dart';
@@ -119,8 +119,14 @@ class CreateTransferBloc
   String dateTransferInicio = '';
 
   //*lista de ubicaciones
-  List<ResultUbicaciones> ubicaciones = [];
-  List<ResultUbicaciones> ubicacionesFilters = [];
+  //*ubicaciones (origen y destino): páginas de una consulta a SQLite (hasta
+  //~19 mil por cliente; ya no se cargan completas en memoria). Ver
+  //docs/plan_ubicaciones_sqlite.md.
+  late final PaginadorUbicaciones paginadorUbicaciones =
+      PaginadorUbicaciones(() => db.ubicacionesRepository);
+  List<ResultUbicaciones> get ubicacionesFilters => paginadorUbicaciones.items;
+  bool get hayMasUbicaciones => paginadorUbicaciones.hayMas;
+  int get versionUbicaciones => paginadorUbicaciones.version;
 
   //*productos para elegir: páginas de una consulta a SQLite. El catálogo
   //completo (~72 mil filas) ya no se carga en memoria: con él la app moría
@@ -191,7 +197,16 @@ class CreateTransferBloc
     );
 
     //metodo para buscar una ubicacion
-    on<SearchLocationEvent>(_onSearchLocationEvent);
+    // restartable: cada tecla cancela la búsqueda anterior (debounce en el
+    // handler).
+    on<SearchLocationEvent>(
+      _onSearchLocationEvent,
+      transformer: restartable(),
+    );
+    on<LoadMoreUbicacionesCreateTransferEvent>(
+      _onLoadMoreUbicaciones,
+      transformer: droppable(),
+    );
     //*metodo para bucar un producto. restartable: cada tecla cancela la
     //búsqueda anterior (debounce en el handler).
     on<SearchProductEvent>(_onSearchProductEvent, transformer: restartable());
@@ -773,26 +788,42 @@ class CreateTransferBloc
     }
   }
 
+  /// Búsqueda por nombre o barcode.
   void _onSearchLocationEvent(
       SearchLocationEvent event, Emitter<CreateTransferState> emit) async {
     try {
       emit(SearchLoading());
-      ubicacionesFilters = [];
-      ubicacionesFilters = ubicaciones;
-      final query = event.query.toLowerCase();
-      if (query.isEmpty) {
-        ubicacionesFilters = ubicaciones;
-      } else {
-        ubicacionesFilters = ubicaciones.where((location) {
-          return location.name?.toLowerCase().contains(query) ?? false;
-        }).toList();
+      // Debounce: si llega otra tecla, restartable cierra este emitter.
+      if (event.query.isNotEmpty) {
+        await Future.delayed(const Duration(milliseconds: 250));
+        if (emit.isDone) return;
       }
+      final vigente = await paginadorUbicaciones.buscar(query: event.query);
+      if (!vigente || emit.isDone) return;
       emit(SearchLocationSuccess(ubicacionesFilters));
     } catch (e, s) {
       debugPrint('Error en el SearchLocationEvent: $e, $s');
       emit(SearchFailure(e.toString()));
     }
   }
+
+  void _onLoadMoreUbicaciones(LoadMoreUbicacionesCreateTransferEvent event,
+      Emitter<CreateTransferState> emit) async {
+    try {
+      if (await paginadorUbicaciones.cargarMas()) {
+        emit(SearchLocationSuccess(ubicacionesFilters));
+      }
+    } catch (e, s) {
+      debugPrint('Error en LoadMoreUbicacionesCreateTransferEvent: $e, $s');
+    }
+  }
+
+  /// Escaneo de ubicación (origen o destino): consulta indexada, sin
+  /// distinguir mayúsculas. Antes se buscaba en la lista filtrada por la
+  /// última búsqueda, así que una ubicación fuera de ese filtro no se
+  /// encontraba.
+  Future<ResultUbicaciones?> buscarUbicacionPorBarcode(String codigo) =>
+      paginadorUbicaciones.porBarcode(codigo);
 
   /// Producto escaneado: consulta indexada por barcode, código o código
   /// alterno (prefiere la fila de la ubicación de origen). `null` si no
@@ -893,16 +924,14 @@ class CreateTransferBloc
     }
   }
 
+  /// Primera página de ubicaciones. Vacía = no hay ubicaciones descargadas.
   void _onLoadLocations(
       GetLocationsEvent event, Emitter<CreateTransferState> emit) async {
     try {
       emit(LoadLocationsLoading());
-      final response = await getIt<UbicacionesCacheService>().getAll();
-      ubicaciones = response;
-      ubicacionesFilters = response;
-      debugPrint('ubicaciones: ${response.length}');
-      if (response.isNotEmpty) {
-        emit(LoadLocationsSuccess(ubicaciones));
+      await paginadorUbicaciones.buscar();
+      if (ubicacionesFilters.isNotEmpty) {
+        emit(LoadLocationsSuccess(ubicacionesFilters));
       } else {
         emit(LoadLocationsFailure('No se encontraron ubicaciones'));
       }

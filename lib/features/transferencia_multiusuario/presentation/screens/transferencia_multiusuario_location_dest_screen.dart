@@ -45,6 +45,22 @@ class _TransferenciaMultiusuarioLocationDestScreenState
     extends State<TransferenciaMultiusuarioLocationDestScreen>
     with WidgetsBindingObserver, LoadingDialogMixin {
   int? _selectedIndex;
+
+  /// Versión de la búsqueda mostrada: la selección es por índice, así que se
+  /// descarta cuando llega otra búsqueda o filtro.
+  int? _versionVista;
+  final ScrollController _scrollController = ScrollController();
+
+  /// Pide la página siguiente al acercarse al final de la lista.
+  void _onScroll() {
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 300) {
+      final state = context.read<TransferenciaMultiusuarioLocationDestBloc>().state;
+      if (state is TransferenciaMultiusuarioLocationDestLoaded && state.hayMas) {
+        context.read<TransferenciaMultiusuarioLocationDestBloc>().add(const LoadMoreTransferenciaUbicacionesDestEvent());
+      }
+    }
+  }
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
@@ -59,6 +75,7 @@ class _TransferenciaMultiusuarioLocationDestScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _scrollController.addListener(_onScroll);
     context.read<TransferenciaMultiusuarioLocationDestBloc>().add(
       const FetchTransferenciaUbicacionesDestEvent(),
     );
@@ -85,6 +102,8 @@ class _TransferenciaMultiusuarioLocationDestScreenState
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _kbWatchdogSearch.dispose();
     _searchController.dispose();
@@ -219,6 +238,23 @@ class _TransferenciaMultiusuarioLocationDestScreenState
                               ? state.ubicaciones
                               : const <ResultUbicaciones>[];
 
+                          final version = state is TransferenciaMultiusuarioLocationDestLoaded
+
+                              ? state.version
+
+                              : null;
+
+                          if (version != _versionVista) {
+
+                            _versionVista = version;
+
+                            _selectedIndex = null;
+
+                          }
+
+                          final hayMas = state is TransferenciaMultiusuarioLocationDestLoaded && state.hayMas;
+
+
                           if (ubicaciones.isEmpty) {
                             return const Center(
                               child: Text(
@@ -229,9 +265,16 @@ class _TransferenciaMultiusuarioLocationDestScreenState
                           }
 
                           return ListView.builder(
+                            controller: _scrollController,
                             padding: const EdgeInsets.symmetric(horizontal: 10),
-                            itemCount: ubicaciones.length,
+                            itemCount: ubicaciones.length + (hayMas ? 1 : 0),
                             itemBuilder: (context, index) {
+                              if (index >= ubicaciones.length) {
+                                return const Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Center(child: CircularProgressIndicator()),
+                                );
+                              }
                               final isSelected = _selectedIndex == index;
                               final ubicacion = ubicaciones[index];
                               final sinBarcode =

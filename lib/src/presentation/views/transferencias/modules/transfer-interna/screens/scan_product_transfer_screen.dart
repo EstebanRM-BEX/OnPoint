@@ -416,7 +416,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
         bloc.currentProduct.idMove ?? 0));
   }
 
-  void validateMuelle(String value) {
+  Future<void> validateMuelle(String value) async {
     final bloc = context.read<TransferenciaBloc>();
 
     // Normalizar el valor escaneado
@@ -469,14 +469,10 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
     // 4. SEGUNDA VALIDACIÓN: Buscar en la lista de ubicaciones
     else {
       // Buscar el barcode que coincida con el valor escaneado
-      ResultUbicaciones? matchedUbicacion = bloc.ubicaciones.firstWhere(
-          // Normalizamos la búsqueda con .trim()
-          (ubicacion) => ubicacion.barcode?.toLowerCase() == scan.trim(),
-          orElse: () =>
-              ResultUbicaciones() // Devolver instancia vacía si no se encuentra
-          );
-
-      if (matchedUbicacion.barcode != null) {
+      // Consulta indexada en SQLite (las ubicaciones no se cargan en memoria).
+      final matchedUbicacion = await bloc.buscarUbicacionPorBarcode(scan);
+      if (!mounted) return;
+      if (matchedUbicacion != null) {
         debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
         bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: true));
         bloc.add(ChangeLocationDestIsOkEvent(
@@ -855,7 +851,7 @@ class _ScanProductTrasnferScreenState extends State<ScanProductTrasnferScreen>
                                             controller: _controllerLocationDest,
                                             focusNode: focusNode5,
                                             onBarcodeScanned: (value, context) {
-                                              return validateMuelle(value);
+                                              validateMuelle(value);
                                             },
                                           ),
                                           Align(

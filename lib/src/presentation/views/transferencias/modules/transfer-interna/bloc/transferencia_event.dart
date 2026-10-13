@@ -170,6 +170,9 @@ class SendProductToTransfer extends TransferenciaEvent {
 
 class LoadLocations extends TransferenciaEvent {}
 
+/// Siguiente página de la búsqueda de ubicaciones.
+class LoadMoreUbicacionesTransferEvent extends TransferenciaEvent {}
+
 class CreateBackOrderOrNot extends TransferenciaEvent {
   final int idRecepcion;
   final bool isBackOrder;

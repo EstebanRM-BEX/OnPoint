@@ -33,3 +33,9 @@ class FilterTransferenciaUbicacionesAlmacenEvent
   @override
   List<Object?> get props => [almacen];
 }
+
+/// Siguiente página de la lista de ubicaciones.
+class LoadMoreTransferenciaUbicacionesDestEvent
+    extends TransferenciaMultiusuarioLocationDestEvent {
+  const LoadMoreTransferenciaUbicacionesDestEvent();
+}

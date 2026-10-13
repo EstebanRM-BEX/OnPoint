@@ -19,12 +19,24 @@ class TransferenciaMultiusuarioLocationDestLoading
 
 class TransferenciaMultiusuarioLocationDestLoaded
     extends TransferenciaMultiusuarioLocationDestState {
-  const TransferenciaMultiusuarioLocationDestLoaded(this.ubicaciones);
+  const TransferenciaMultiusuarioLocationDestLoaded(
+    this.ubicaciones, {
+    this.hayMas = false,
+    this.version = 0,
+  });
 
+  /// Páginas cargadas de la búsqueda vigente.
   final List<ResultUbicaciones> ubicaciones;
 
+  /// Hay más páginas por cargar.
+  final bool hayMas;
+
+  /// Sube con cada búsqueda o filtro nuevo (no al cargar más): la pantalla
+  /// descarta la selección por índice cuando cambia.
+  final int version;
+
   @override
-  List<Object?> get props => [ubicaciones];
+  List<Object?> get props => [ubicaciones, hayMas, version];
 }
 
 class TransferenciaMultiusuarioLocationDestError

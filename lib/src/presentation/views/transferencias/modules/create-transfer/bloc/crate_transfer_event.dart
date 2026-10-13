@@ -114,6 +114,9 @@ class FetchBarcodesProductEvent extends CreateTransferEvent {}
 /// Siguiente página de la búsqueda de productos.
 class LoadMoreProductsCreateTransferEvent extends CreateTransferEvent {}
 
+/// Siguiente página de la búsqueda de ubicaciones.
+class LoadMoreUbicacionesCreateTransferEvent extends CreateTransferEvent {}
+
 class AddProductCreateTransferEvent extends CreateTransferEvent {
   final dynamic quantity;
   final Product product;

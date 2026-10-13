@@ -22,6 +22,39 @@ class SearchLocationCreateTransfercreen extends StatefulWidget {
 class _SearchLocationScreenState
     extends State<SearchLocationCreateTransfercreen> {
   int? selectedIndex;
+  final ScrollController _scrollController = ScrollController();
+
+  /// Versión de la búsqueda que se está mostrando: la selección es por
+  /// índice, así que se descarta cuando llega otra búsqueda o filtro.
+  int? _versionVista;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    // Las ubicaciones se consultan en SQLite por página: si todavía no hay
+    // ninguna cargada, se pide la primera.
+    final bloc = context.read<CreateTransferBloc>();
+    if (bloc.ubicacionesFilters.isEmpty) {
+      bloc.add(SearchLocationEvent(bloc.searchControllerLocation.text));
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// Pide la página siguiente al acercarse al final de la lista.
+  void _onScroll() {
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 300) {
+      final bloc = context.read<CreateTransferBloc>();
+      if (bloc.hayMasUbicaciones) bloc.add(LoadMoreUbicacionesCreateTransferEvent());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +63,10 @@ class _SearchLocationScreenState
     return BlocBuilder<CreateTransferBloc, CreateTransferState>(
       builder: (context, state) {
         final bloc = context.read<CreateTransferBloc>();
+        if (bloc.versionUbicaciones != _versionVista) {
+          _versionVista = bloc.versionUbicaciones;
+          selectedIndex = null;
+        }
         return WillPopScope(
           onWillPop: () async {
             return false;
@@ -106,8 +143,16 @@ class _SearchLocationScreenState
                           )),
                       Expanded(
                           child: ListView.builder(
-                              itemCount: bloc.ubicacionesFilters.length,
+                              controller: _scrollController,
+                              itemCount: bloc.ubicacionesFilters.length +
+                                  (bloc.hayMasUbicaciones ? 1 : 0),
                               itemBuilder: (context, index) {
+                                if (index >= bloc.ubicacionesFilters.length) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Center(child: CircularProgressIndicator()),
+                                  );
+                                }
                                 bool isSelected = selectedIndex == index;
 
                                 return Padding(

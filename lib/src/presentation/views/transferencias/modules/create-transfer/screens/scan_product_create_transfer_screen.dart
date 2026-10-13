@@ -11,7 +11,6 @@ import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
-import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/new_product/location/LocationScanner_widget.dart';
 import 'package:wms_app/src/presentation/views/conteo/screens/widgets/new_product/lote/lote_scannear_widget.dart';
@@ -93,7 +92,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final bloc = context.read<CreateTransferBloc>();
-      if (bloc.ubicaciones.isEmpty) {
+      if (bloc.ubicacionesFilters.isEmpty) {
         bloc
           ..add(GetLocationsEvent())
           ..add(GetProductsCreateTransferEvent())
@@ -214,20 +213,18 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     setState(() {}); // Si necesitas un rebuild explícito
   }
 
-  void validateLocation(String value) {
+  Future<void> validateLocation(String value) async {
     final bloc = context.read<CreateTransferBloc>();
     final scan = value.trim().toLowerCase();
 
     debugPrint('scan location: $scan');
     _controllerLocation.clear();
 
-    ResultUbicaciones? matchedUbicacion = bloc.ubicacionesFilters.firstWhere(
-      (ubicacion) => ubicacion.barcode?.toLowerCase() == scan.trim(),
-      orElse: () =>
-          ResultUbicaciones(), // Si no se encuentra ningún match, devuelve null
-    );
+    // Consulta indexada en SQLite (las ubicaciones no se cargan en memoria).
+    final matchedUbicacion = await bloc.buscarUbicacionPorBarcode(scan);
+    if (!mounted) return;
 
-    if (matchedUbicacion.barcode != null) {
+    if (matchedUbicacion != null) {
       debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
       bloc.add(ValidateFieldsEvent(field: "location", isOk: true));
       bloc.add(ChangeLocationIsOkEvent(matchedUbicacion, false));
@@ -241,20 +238,18 @@ class _CreateTransferScreenState extends State<CreateTransferScreen>
     Future.microtask(() => focusNode1.requestFocus());
   }
 
-  void validateLocationDest(String value) {
+  Future<void> validateLocationDest(String value) async {
     final bloc = context.read<CreateTransferBloc>();
     final scan = value.trim().toLowerCase();
 
     debugPrint('scan location dest: $scan');
     _controllerLocationDestino.clear();
 
-    ResultUbicaciones? matchedUbicacion = bloc.ubicacionesFilters.firstWhere(
-      (ubicacion) => ubicacion.barcode?.toLowerCase() == scan.trim(),
-      orElse: () =>
-          ResultUbicaciones(), // Si no se encuentra ningún match, devuelve null
-    );
+    // Consulta indexada en SQLite (las ubicaciones no se cargan en memoria).
+    final matchedUbicacion = await bloc.buscarUbicacionPorBarcode(scan);
+    if (!mounted) return;
 
-    if (matchedUbicacion.barcode != null) {
+    if (matchedUbicacion != null) {
       debugPrint('Ubicacion encontrada: ${matchedUbicacion.name}');
       bloc.add(ValidateFieldsEvent(field: "locationDest", isOk: true));
       bloc.add(ChangeLocationIsOkEvent(matchedUbicacion, true));
