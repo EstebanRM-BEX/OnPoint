@@ -13,7 +13,7 @@ import 'package:wms_app/features/info_rapida/domain/entities/transfer_results.da
 import 'package:wms_app/features/info_rapida/domain/failures/info_rapida_failures.dart';
 import 'package:wms_app/features/info_rapida/domain/rules/propietario_rules.dart';
 import 'package:wms_app/features/info_rapida/domain/usecases/crear_transferencia_masiva_usecase.dart';
-import 'package:wms_app/features/info_rapida/domain/usecases/get_catalogo_ubicaciones_usecase.dart';
+import 'package:wms_app/features/info_rapida/domain/usecases/get_ubicacion_catalogo_por_barcode_usecase.dart';
 
 part 'mass_transfer_event.dart';
 part 'mass_transfer_state.dart';
@@ -22,21 +22,19 @@ part 'mass_transfer_state.dart';
 class MassTransferBloc extends Bloc<MassTransferEvent, MassTransferState>
     with SafeBlocMixin<MassTransferEvent, MassTransferState> {
   final CrearTransferenciaMasivaUseCase crearTransferenciaMasiva;
-  final GetCatalogoUbicacionesUseCase getCatalogoUbicaciones;
+  final GetUbicacionCatalogoPorBarcodeUseCase getUbicacionPorBarcode;
 
   MassTransferBloc({
     required this.crearTransferenciaMasiva,
-    required this.getCatalogoUbicaciones,
+    required this.getUbicacionPorBarcode,
   }) : super(const MassTransferState()) {
     on<MassTransferInicializado>(_onInicializado);
-    on<CargarUbicacionesDestinoMassEvent>(_onCargarUbicacionesDestino);
-    on<BuscarUbicacionDestinoMassEvent>(
-      _onBuscarUbicacionDestino,
-      transformer: restartable(),
-    );
-    on<FiltrarUbicacionesDestinoMassAlmacenEvent>(_onFiltrarAlmacen);
     on<SeleccionarUbicacionDestinoMassEvent>(_onSeleccionarUbicacionDestino);
-    on<EscanearUbicacionDestinoMassEvent>(_onEscanearUbicacionDestino);
+    // Consulta SQLite: un escaneo a la vez, en orden.
+    on<EscanearUbicacionDestinoMassEvent>(
+      _onEscanearUbicacionDestino,
+      transformer: sequential(),
+    );
     on<ActualizarCantidadItemMassEvent>(_onActualizarCantidadItem);
     on<AgregarItemMassEvent>(_onAgregarItem);
     on<RemoverItemMassEvent>(_onRemoverItem);
@@ -76,89 +74,6 @@ class MassTransferBloc extends Bloc<MassTransferEvent, MassTransferState>
       mensajeError: () => null,
       failure: () => null,
     ));
-
-    await _cargarDestinos(event.idUbicacionOrigen, emit);
-  }
-
-  Future<void> _onCargarUbicacionesDestino(
-    CargarUbicacionesDestinoMassEvent event,
-    Emitter<MassTransferState> emit,
-  ) async {
-    await _cargarDestinos(state.idUbicacionOrigen, emit);
-  }
-
-  Future<void> _cargarDestinos(
-    int idOrigen,
-    Emitter<MassTransferState> emit,
-  ) async {
-    final result = await getCatalogoUbicaciones(
-      const GetCatalogoUbicacionesParams(),
-    );
-
-    result.match(
-      (failure) {
-        emit(state.copyWith(
-          mensajeError: () => failure.message,
-          failure: () => failure,
-        ));
-      },
-      (ubicaciones) {
-        final destinosValidos =
-            ubicaciones.where((u) => u.id != idOrigen).toList();
-
-        final almacenes = destinosValidos
-            .map((u) => u.warehouseName?.trim())
-            .where((w) => w != null && w.isNotEmpty)
-            .cast<String>()
-            .toSet()
-            .toList()
-          ..sort();
-
-        final filtradas = _filtrarUbicaciones(
-          destinosValidos,
-          query: state.queryUbicacionDestino,
-          almacen: state.almacenDestinoFiltro,
-        );
-
-        emit(state.copyWith(
-          ubicacionesDestino: destinosValidos,
-          ubicacionesDestinoFiltradas: filtradas,
-          almacenesDisponibles: almacenes,
-        ));
-      },
-    );
-  }
-
-  void _onBuscarUbicacionDestino(
-    BuscarUbicacionDestinoMassEvent event,
-    Emitter<MassTransferState> emit,
-  ) {
-    final filtradas = _filtrarUbicaciones(
-      state.ubicacionesDestino,
-      query: event.query,
-      almacen: state.almacenDestinoFiltro,
-    );
-
-    emit(state.copyWith(
-      queryUbicacionDestino: event.query,
-      ubicacionesDestinoFiltradas: filtradas,
-    ));
-  }
-
-  void _onFiltrarAlmacen(
-    FiltrarUbicacionesDestinoMassAlmacenEvent event,
-    Emitter<MassTransferState> emit,
-  ) {
-    final filtradas = _filtrarUbicaciones(
-      state.ubicacionesDestino,
-      query: state.queryUbicacionDestino,
-      almacen: event.almacen,
-    );
-
-    emit(state.copyWith(
-      almacenDestinoFiltro: () => event.almacen,
-      ubicacionesDestinoFiltradas: filtradas,
-    ));
   }
 
   void _onSeleccionarUbicacionDestino(
@@ -186,17 +101,17 @@ class MassTransferBloc extends Bloc<MassTransferEvent, MassTransferState>
     ));
   }
 
-  void _onEscanearUbicacionDestino(
+  /// Destino escaneado: consulta indexada en SQLite (el catálogo de
+  /// ubicaciones no se carga en memoria).
+  Future<void> _onEscanearUbicacionDestino(
     EscanearUbicacionDestinoMassEvent event,
     Emitter<MassTransferState> emit,
-  ) {
+  ) async {
     final cleanBarcode = event.barcode.trim().toLowerCase();
     if (cleanBarcode.isEmpty) return;
 
-    final encontrada = state.ubicacionesDestino.cast<UbicacionCatalogo?>().firstWhere(
-          (u) => (u?.barcode ?? '').toLowerCase() == cleanBarcode,
-          orElse: () => null,
-        );
+    final result = await getUbicacionPorBarcode(cleanBarcode);
+    final encontrada = result.match((_) => null, (u) => u);
 
     if (encontrada == null) {
       emit(state.copyWith(
@@ -431,29 +346,4 @@ class MassTransferBloc extends Bloc<MassTransferEvent, MassTransferState>
     ));
   }
 
-  List<UbicacionCatalogo> _filtrarUbicaciones(
-    List<UbicacionCatalogo> items, {
-    required String query,
-    required String? almacen,
-  }) {
-    var resultado = items;
-
-    if (almacen != null && almacen.trim().isNotEmpty) {
-      final cleanAlmacen = almacen.trim().toLowerCase();
-      resultado = resultado.where((u) {
-        return (u.warehouseName ?? '').trim().toLowerCase() == cleanAlmacen;
-      }).toList();
-    }
-
-    final cleanQuery = query.trim().toLowerCase();
-    if (cleanQuery.isNotEmpty) {
-      resultado = resultado.where((u) {
-        final matchesName = u.name.toLowerCase().contains(cleanQuery);
-        final matchesBarcode = (u.barcode ?? '').toLowerCase().contains(cleanQuery);
-        return matchesName || matchesBarcode;
-      }).toList();
-    }
-
-    return resultado;
-  }
 }

@@ -14,7 +14,7 @@ import 'package:wms_app/features/info_rapida/domain/usecases/actualizar_producto
 import 'package:wms_app/features/info_rapida/domain/usecases/actualizar_ubicacion_usecase.dart';
 import 'package:wms_app/features/info_rapida/domain/usecases/crear_transferencia_individual_usecase.dart';
 import 'package:wms_app/features/info_rapida/domain/usecases/crear_transferencia_masiva_usecase.dart';
-import 'package:wms_app/features/info_rapida/domain/usecases/get_catalogo_ubicaciones_usecase.dart';
+import 'package:wms_app/features/info_rapida/domain/usecases/get_ubicacion_catalogo_por_barcode_usecase.dart';
 import 'package:wms_app/features/info_rapida/presentation/bloc/location/location_info_bloc.dart';
 import 'package:wms_app/features/info_rapida/presentation/bloc/mass_transfer/mass_transfer_bloc.dart';
 import 'package:wms_app/features/info_rapida/presentation/bloc/product/product_info_bloc.dart';
@@ -28,7 +28,7 @@ class _MockCrearIndividual extends Mock
     implements CrearTransferenciaIndividualUseCase {}
 
 class _MockCatalogoUbicaciones extends Mock
-    implements GetCatalogoUbicacionesUseCase {}
+    implements GetUbicacionCatalogoPorBarcodeUseCase {}
 
 class _MockActualizarUbicacion extends Mock
     implements ActualizarUbicacionUseCase {}
@@ -66,7 +66,6 @@ ProductoUbicacion _prod(
 
 void main() {
   setUpAll(() {
-    registerFallbackValue(const GetCatalogoUbicacionesParams());
     registerFallbackValue(
       const CrearTransferenciaMasivaParams(
         dateStart: '',
@@ -103,12 +102,12 @@ void main() {
       catalogo = _MockCatalogoUbicaciones();
       when(
         () => catalogo(any()),
-      ).thenAnswer((_) async => const Right([_destino]));
+      ).thenAnswer((_) async => const Right(_destino));
     });
 
     MassTransferBloc build() => MassTransferBloc(
       crearTransferenciaMasiva: crear,
-      getCatalogoUbicaciones: catalogo,
+      getUbicacionPorBarcode: catalogo,
     );
 
     MassTransferState seeded(List<ProductoUbicacion> productos) =>
@@ -123,7 +122,6 @@ void main() {
                 cantidadValida: true,
               ),
           ],
-          ubicacionesDestino: const [_destino],
         );
 
     blocTest<MassTransferBloc, MassTransferState>(
@@ -210,7 +208,7 @@ void main() {
       'confirmar manda time_line en segundos y observación "Sin novedad"',
       build: () => TransferInfoBloc(
         crearTransferencia: crear,
-        getCatalogoUbicaciones: _MockCatalogoUbicaciones(),
+        getUbicacionPorBarcode: _MockCatalogoUbicaciones(),
       ),
       seed: () => TransferInfoState(
         status: TransferInfoStatus.ready,

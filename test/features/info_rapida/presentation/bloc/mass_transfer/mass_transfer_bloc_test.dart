@@ -9,18 +9,18 @@ import 'package:wms_app/features/info_rapida/domain/entities/info_rapida_params.
 import 'package:wms_app/features/info_rapida/domain/entities/transfer_results.dart';
 import 'package:wms_app/features/info_rapida/domain/failures/info_rapida_failures.dart';
 import 'package:wms_app/features/info_rapida/domain/usecases/crear_transferencia_masiva_usecase.dart';
-import 'package:wms_app/features/info_rapida/domain/usecases/get_catalogo_ubicaciones_usecase.dart';
+import 'package:wms_app/features/info_rapida/domain/usecases/get_ubicacion_catalogo_por_barcode_usecase.dart';
 import 'package:wms_app/features/info_rapida/presentation/bloc/mass_transfer/mass_transfer_bloc.dart';
 
 class MockCrearTransferenciaMasivaUseCase extends Mock
     implements CrearTransferenciaMasivaUseCase {}
 
-class MockGetCatalogoUbicacionesUseCase extends Mock
-    implements GetCatalogoUbicacionesUseCase {}
+class MockGetUbicacionCatalogoPorBarcodeUseCase extends Mock
+    implements GetUbicacionCatalogoPorBarcodeUseCase {}
 
 void main() {
   late MockCrearTransferenciaMasivaUseCase mockCrearTransferenciaMasiva;
-  late MockGetCatalogoUbicacionesUseCase mockGetCatalogoUbicaciones;
+  late MockGetUbicacionCatalogoPorBarcodeUseCase mockPorBarcode;
 
   const tUbicacionOrigen = UbicacionCatalogo(
     id: 10,
@@ -80,9 +80,6 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(
-      const GetCatalogoUbicacionesParams(),
-    );
-    registerFallbackValue(
       const CrearTransferenciaMasivaParams(
         dateStart: '2026-10-08 09:00:00',
         dateEnd: '2026-10-08 10:00:00',
@@ -99,12 +96,16 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({'userId': 42});
     mockCrearTransferenciaMasiva = MockCrearTransferenciaMasivaUseCase();
-    mockGetCatalogoUbicaciones = MockGetCatalogoUbicacionesUseCase();
+    mockPorBarcode = MockGetUbicacionCatalogoPorBarcodeUseCase();
+    when(() => mockPorBarcode(any()))
+        .thenAnswer((_) async => const Right(null));
+    when(() => mockPorBarcode('loc-b1'))
+        .thenAnswer((_) async => const Right(tUbicacionDestino));
   });
 
   MassTransferBloc buildBloc() => MassTransferBloc(
         crearTransferenciaMasiva: mockCrearTransferenciaMasiva,
-        getCatalogoUbicaciones: mockGetCatalogoUbicaciones,
+        getUbicacionPorBarcode: mockPorBarcode,
       );
 
   group('MassTransferBloc', () {
@@ -117,13 +118,8 @@ void main() {
 
     group('MassTransferInicializado', () {
       blocTest<MassTransferBloc, MassTransferState>(
-        'inicializa items con cantidades disponibles y carga ubicaciones excluyendo origen',
-        build: () {
-          when(() => mockGetCatalogoUbicaciones(any())).thenAnswer(
-            (_) async => const Right([tUbicacionOrigen, tUbicacionDestino]),
-          );
-          return buildBloc();
-        },
+        'inicializa items con cantidades disponibles sin cargar ubicaciones',
+        build: buildBloc,
         act: (bloc) => bloc.add(const MassTransferInicializado(
           idAlmacen: 1,
           idUbicacionOrigen: 10,
@@ -138,34 +134,8 @@ void main() {
               .having((s) => s.items.length, 'total items', 2)
               .having((s) => s.items[0].cantidadATransferir, 'item1 qty', 15.0)
               .having((s) => s.items[1].cantidadATransferir, 'item2 qty', 25.0),
-          isA<MassTransferState>()
-              .having((s) => s.ubicacionesDestino, 'destinos', [tUbicacionDestino])
-              .having((s) => s.almacenesDisponibles, 'almacenes', ['Almacén Central']),
         ],
-      );
-
-      blocTest<MassTransferBloc, MassTransferState>(
-        'emite fallo cuando getCatalogoUbicaciones falla',
-        build: () {
-          when(() => mockGetCatalogoUbicaciones(any())).thenAnswer(
-            (_) async => const Left(SinConexionFailure('Sin red')),
-          );
-          return buildBloc();
-        },
-        act: (bloc) => bloc.add(const MassTransferInicializado(
-          idAlmacen: 1,
-          idUbicacionOrigen: 10,
-          nombreUbicacionOrigen: 'WH/Stock/A1',
-          productosSeleccionados: [tProducto1],
-        )),
-        expect: () => [
-          isA<MassTransferState>()
-              .having((s) => s.status, 'status', MassTransferStatus.ready),
-          isA<MassTransferState>()
-              .having((s) => s.mensajeError, 'mensajeError', 'Sin red')
-              .having((s) => s.failure, 'failure',
-                  const SinConexionFailure('Sin red')),
-        ],
+        verify: (_) => verifyNever(() => mockPorBarcode(any())),
       );
     });
 
@@ -219,7 +189,6 @@ void main() {
         seed: () => const MassTransferState(
           status: MassTransferStatus.ready,
           idUbicacionOrigen: 10,
-          ubicacionesDestino: [tUbicacionDestino],
         ),
         act: (bloc) =>
             bloc.add(const EscanearUbicacionDestinoMassEvent('LOC-B1')),
@@ -227,8 +196,7 @@ void main() {
           const MassTransferState(
             status: MassTransferStatus.ready,
             idUbicacionOrigen: 10,
-            ubicacionesDestino: [tUbicacionDestino],
-            ubicacionDestino: tUbicacionDestino,
+              ubicacionDestino: tUbicacionDestino,
             ubicacionDestinoValida: true,
           ),
         ],
@@ -240,7 +208,6 @@ void main() {
         seed: () => const MassTransferState(
           status: MassTransferStatus.ready,
           idUbicacionOrigen: 10,
-          ubicacionesDestino: [tUbicacionDestino],
         ),
         act: (bloc) =>
             bloc.add(const EscanearUbicacionDestinoMassEvent('UNKNOWN')),
@@ -248,8 +215,7 @@ void main() {
           const MassTransferState(
             status: MassTransferStatus.ready,
             idUbicacionOrigen: 10,
-            ubicacionesDestino: [tUbicacionDestino],
-            mensajeError: 'Ubicación con código "unknown" no encontrada',
+              mensajeError: 'Ubicación con código "unknown" no encontrada',
             failure: InfoRapidaValidationFailure(
               'Ubicación con código "unknown" no encontrada',
             ),

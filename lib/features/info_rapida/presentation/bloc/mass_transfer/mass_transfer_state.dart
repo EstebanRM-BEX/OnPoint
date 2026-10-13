@@ -43,11 +43,6 @@ class MassTransferState extends Equatable {
   final String? dateStart;
   final String? dateEnd;
 
-  final List<UbicacionCatalogo> ubicacionesDestino;
-  final List<UbicacionCatalogo> ubicacionesDestinoFiltradas;
-  final String queryUbicacionDestino;
-  final String? almacenDestinoFiltro;
-  final List<String> almacenesDisponibles;
 
   final TransferenciaMasivaResult? resultadoTransferencia;
   final String? mensajeError;
@@ -63,11 +58,6 @@ class MassTransferState extends Equatable {
     this.ubicacionDestinoValida = false,
     this.dateStart,
     this.dateEnd,
-    this.ubicacionesDestino = const [],
-    this.ubicacionesDestinoFiltradas = const [],
-    this.queryUbicacionDestino = '',
-    this.almacenDestinoFiltro,
-    this.almacenesDisponibles = const [],
     this.resultadoTransferencia,
     this.mensajeError,
     this.failure,
@@ -108,11 +98,6 @@ class MassTransferState extends Equatable {
     bool? ubicacionDestinoValida,
     String? dateStart,
     String? dateEnd,
-    List<UbicacionCatalogo>? ubicacionesDestino,
-    List<UbicacionCatalogo>? ubicacionesDestinoFiltradas,
-    String? queryUbicacionDestino,
-    String? Function()? almacenDestinoFiltro,
-    List<String>? almacenesDisponibles,
     TransferenciaMasivaResult? Function()? resultadoTransferencia,
     String? Function()? mensajeError,
     Failure? Function()? failure,
@@ -131,16 +116,6 @@ class MassTransferState extends Equatable {
           ubicacionDestinoValida ?? this.ubicacionDestinoValida,
       dateStart: dateStart ?? this.dateStart,
       dateEnd: dateEnd ?? this.dateEnd,
-      ubicacionesDestino: ubicacionesDestino ?? this.ubicacionesDestino,
-      ubicacionesDestinoFiltradas:
-          ubicacionesDestinoFiltradas ?? this.ubicacionesDestinoFiltradas,
-      queryUbicacionDestino:
-          queryUbicacionDestino ?? this.queryUbicacionDestino,
-      almacenDestinoFiltro: almacenDestinoFiltro != null
-          ? almacenDestinoFiltro()
-          : this.almacenDestinoFiltro,
-      almacenesDisponibles:
-          almacenesDisponibles ?? this.almacenesDisponibles,
       resultadoTransferencia: resultadoTransferencia != null
           ? resultadoTransferencia()
           : this.resultadoTransferencia,
@@ -160,11 +135,6 @@ class MassTransferState extends Equatable {
         ubicacionDestinoValida,
         dateStart,
         dateEnd,
-        ubicacionesDestino,
-        ubicacionesDestinoFiltradas,
-        queryUbicacionDestino,
-        almacenDestinoFiltro,
-        almacenesDisponibles,
         resultadoTransferencia,
         mensajeError,
         failure,

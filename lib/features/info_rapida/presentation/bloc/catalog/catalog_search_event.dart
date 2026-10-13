@@ -48,14 +48,20 @@ class _ConsultaProductosEvent extends CatalogSearchEvent {
   List<Object?> get props => [cargarPropietarios];
 }
 
-/// Carga el catálogo de ubicaciones desde la caché local o repositorio.
+/// Carga la primera página de ubicaciones y la lista de almacenes.
 class CargarCatalogoUbicacionesEvent extends CatalogSearchEvent {
-  final bool forceRefresh;
+  const CargarCatalogoUbicacionesEvent();
+}
 
-  const CargarCatalogoUbicacionesEvent({this.forceRefresh = false});
+/// Siguiente página de ubicaciones con la búsqueda y el almacén actuales.
+class CargarMasUbicacionesCatalogoEvent extends CatalogSearchEvent {
+  const CargarMasUbicacionesCatalogoEvent();
+}
 
-  @override
-  List<Object?> get props => [forceRefresh];
+/// Consulta interna de la primera página de ubicaciones (la última pedida
+/// gana).
+class _ConsultaUbicacionesEvent extends CatalogSearchEvent {
+  const _ConsultaUbicacionesEvent();
 }
 
 /// Busca ubicaciones dentro del catálogo por nombre o código de barras.

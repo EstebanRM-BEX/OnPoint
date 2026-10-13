@@ -55,31 +55,6 @@ class TransferInfoInicializado extends TransferInfoEvent {
       ];
 }
 
-/// Carga el catálogo de posibles ubicaciones destino desde la caché.
-class CargarUbicacionesDestinoTransferEvent extends TransferInfoEvent {
-  const CargarUbicacionesDestinoTransferEvent();
-}
-
-/// Filtra las ubicaciones destino por texto de búsqueda.
-class BuscarUbicacionDestinoTransferEvent extends TransferInfoEvent {
-  final String query;
-
-  const BuscarUbicacionDestinoTransferEvent(this.query);
-
-  @override
-  List<Object?> get props => [query];
-}
-
-/// Filtra las ubicaciones destino por almacén.
-class FiltrarUbicacionesDestinoAlmacenEvent extends TransferInfoEvent {
-  final String? almacen;
-
-  const FiltrarUbicacionesDestinoAlmacenEvent(this.almacen);
-
-  @override
-  List<Object?> get props => [almacen];
-}
-
 /// Selecciona manualmente una ubicación destino de la lista.
 class SeleccionarUbicacionDestinoEvent extends TransferInfoEvent {
   final UbicacionCatalogo ubicacion;

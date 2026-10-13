@@ -167,24 +167,41 @@ class InfoRapidaRepositoryImpl implements InfoRapidaRepository {
   }
 
   @override
-  Future<Either<Failure, List<UbicacionCatalogo>>> getCatalogoUbicaciones({
-    bool forceRefresh = false,
+  Future<Either<Failure, List<UbicacionCatalogo>>> buscarCatalogoUbicaciones({
+    String query = '',
+    String? almacen,
+    required int limit,
+    int offset = 0,
   }) async {
     try {
-      final items = await _localDataSource.getCatalogoUbicaciones(
-        forceRefresh: forceRefresh,
-      );
-      return Right(items);
+      return Right(await _localDataSource.buscarCatalogoUbicaciones(
+        query: query,
+        almacen: almacen,
+        limit: limit,
+        offset: offset,
+      ));
     } catch (e) {
       return Left(CacheFailure(e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, Unit>> precargarCatalogos() async {
+  Future<Either<Failure, UbicacionCatalogo?>> getUbicacionCatalogoPorBarcode(
+    String barcode,
+  ) async {
     try {
-      await _localDataSource.precargarCatalogos();
-      return const Right(unit);
+      return Right(
+        await _localDataSource.getUbicacionCatalogoPorBarcode(barcode),
+      );
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<String>>> getAlmacenesUbicaciones() async {
+    try {
+      return Right(await _localDataSource.getAlmacenesUbicaciones());
     } catch (e) {
       return Left(CacheFailure(e.toString()));
     }

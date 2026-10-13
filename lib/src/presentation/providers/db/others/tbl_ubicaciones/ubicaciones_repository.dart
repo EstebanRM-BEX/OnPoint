@@ -235,6 +235,39 @@ class UbicacionesRepository {
   // ubicaciones por cliente). Ver docs/plan_ubicaciones_sqlite.md.
   // --------------------------------------------------------------------------
 
+  /// Ubicación por id; `null` si no existe.
+  Future<ResultUbicaciones?> getById(int id) async {
+    try {
+      final db = await _database.getDatabaseInstance();
+      final rows = await db.rawQuery(
+        'SELECT * FROM ${UbicacionesTable.tableName} '
+        'WHERE ${UbicacionesTable.columnId} = ? LIMIT 1',
+        [id],
+      );
+      return rows.isEmpty ? null : _mapToModel(rows.first);
+    } catch (e) {
+      debugPrint("Error getById ubicación: $e");
+      return null;
+    }
+  }
+
+  /// Nombres de almacén distintos (para el filtro por almacén), ordenados.
+  Future<List<String>> almacenes() async {
+    try {
+      const col = UbicacionesTable.columnWarehouseName;
+      final db = await _database.getDatabaseInstance();
+      // lectura-acotada: una fila por almacén, no por ubicación.
+      final rows = await db.rawQuery(
+        'SELECT DISTINCT TRIM($col) AS almacen FROM ${UbicacionesTable.tableName} '
+        "WHERE $col IS NOT NULL AND TRIM($col) != '' ORDER BY almacen",
+      );
+      return [for (final r in rows) r['almacen'].toString()];
+    } catch (e) {
+      debugPrint("Error almacenes de ubicaciones: $e");
+      return [];
+    }
+  }
+
   /// Ubicación por código escaneado, sin distinguir mayúsculas (las pantallas
   /// comparan en minúsculas). `null` si no existe.
   Future<ResultUbicaciones?> getByBarcode(String codigo) async {
@@ -345,8 +378,10 @@ class UbicacionesRepository {
       args.add(filtro.warehouseId);
     }
     if (filtro.warehouseName != null) {
-      condiciones.add('${UbicacionesTable.columnWarehouseName} = ?');
-      args.add(filtro.warehouseName);
+      condiciones.add(
+        'TRIM(${UbicacionesTable.columnWarehouseName}) = ? COLLATE NOCASE',
+      );
+      args.add(filtro.warehouseName!.trim());
     }
     final almacen = filtro.almacenContiene?.trim() ?? '';
     if (almacen.isNotEmpty) {
@@ -467,7 +502,9 @@ class FiltroUbicaciones {
   /// escaneada).
   bool incluye(ResultUbicaciones u) =>
       (warehouseId == null || u.idWarehouse == warehouseId) &&
-      (warehouseName == null || u.warehouseName == warehouseName) &&
+      (warehouseName == null ||
+          (u.warehouseName ?? '').trim().toLowerCase() ==
+              warehouseName!.trim().toLowerCase()) &&
       ((almacenContiene ?? '').trim().isEmpty ||
           (u.warehouseName ?? '')
               .toLowerCase()

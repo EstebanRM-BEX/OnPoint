@@ -14,7 +14,6 @@ import 'package:wms_app/features/info_rapida/presentation/widgets/dialogs/busque
 import 'package:wms_app/features/info_rapida/presentation/widgets/dialogs/search_package_dialog.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
-import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_loadingPorduct_widget.dart';
 import 'package:wms_app/shared/utils/app_navigation.dart';
 
 /// Pantalla principal de Información Rápida: escaneo continuo, búsqueda
@@ -190,19 +189,6 @@ class _InfoRapidaViewState extends State<_InfoRapidaView> {
                   ),
                 ],
               ),
-            ),
-            BlocBuilder<InfoRapidaScanBloc, InfoRapidaScanState>(
-              buildWhen: (previous, current) =>
-                  previous.cargandoCatalogos != current.cargandoCatalogos,
-              builder: (context, state) => state.cargandoCatalogos
-                  ? const Positioned.fill(
-                      child: AbsorbPointer(
-                        child: DialogLoading(
-                          message: 'Cargando productos y ubicaciones…',
-                        ),
-                      ),
-                    )
-                  : const SizedBox.shrink(),
             ),
           ],
         ),

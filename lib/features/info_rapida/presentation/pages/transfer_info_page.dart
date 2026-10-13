@@ -119,11 +119,6 @@ class _TransferInfoViewState extends State<_TransferInfoView>
       _reenfocarEscaner();
       return;
     }
-    if (state.ubicacionesDestino.isEmpty) {
-      _error('Las ubicaciones aún no han cargado. Intente nuevamente.');
-      _reenfocarEscaner();
-      return;
-    }
     context.read<TransferInfoBloc>().add(EscanearUbicacionDestinoEvent(value));
     _reenfocarEscaner();
   }

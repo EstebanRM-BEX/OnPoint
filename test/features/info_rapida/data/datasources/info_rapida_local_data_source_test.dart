@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
-import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/features/info_rapida/data/datasources/info_rapida_local_data_source.dart';
 import 'package:wms_app/features/info_rapida/data/services/info_rapida_entorno.dart';
 import 'package:wms_app/features/info_rapida/domain/entities/info_rapida_params.dart';
@@ -14,7 +13,6 @@ import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/ubi
 class _MockEntorno extends Mock implements InfoRapidaEntorno {}
 
 
-class _MockUbicaciones extends Mock implements UbicacionesCacheService {}
 
 class _MockConfiguracion extends Mock implements ConfiguracionCacheService {}
 
@@ -24,26 +22,22 @@ class _MockUbicacionesRepo extends Mock implements UbicacionesRepository {}
 
 void main() {
   late _MockEntorno entorno;
-  late _MockUbicaciones ubicacionesCache;
   late _MockUbicacionesRepo ubicacionesRepo;
   late InfoRapidaLocalDataSourceImpl dataSource;
 
   setUpAll(() => registerFallbackValue(ResultUbicaciones()));
 
   setUp(() {
-    ubicacionesCache = _MockUbicaciones();
     ubicacionesRepo = _MockUbicacionesRepo();
     final db = _MockDb();
     when(() => db.ubicacionesRepository).thenReturn(ubicacionesRepo);
     when(() => ubicacionesRepo.insertOrUpdateSingle(any()))
         .thenAnswer((_) async {});
-    when(() => ubicacionesCache.refresh()).thenAnswer((_) async => []);
 
     entorno = _MockEntorno();
     when(() => entorno.databaseName()).thenReturn('empresa');
     dataSource = InfoRapidaLocalDataSourceImpl.test(
       entorno,
-      ubicacionesCache,
       _MockConfiguracion(),
       db,
     );
@@ -51,9 +45,8 @@ void main() {
 
   group('syncLocalLocationUpdated (bug 3)', () {
     test('conserva almacén, ubicación padre y muelle de la existente', () async {
-      when(() => ubicacionesCache.getAll()).thenAnswer(
-        (_) async => [
-          ResultUbicaciones(
+      when(() => ubicacionesRepo.getById(10)).thenAnswer(
+        (_) async => ResultUbicaciones(
             id: 10,
             name: 'Viejo',
             barcode: 'OLD',
@@ -63,7 +56,6 @@ void main() {
             warehouseName: 'Central',
             isADockAlter: true,
           ),
-        ],
       );
 
       await dataSource.syncLocalLocationUpdated(
@@ -86,14 +78,18 @@ void main() {
       expect(guardada.isADockAlter, isTrue);
     });
 
-    test('refresca el caché en memoria', () async {
-      when(() => ubicacionesCache.getAll()).thenAnswer((_) async => []);
+    test('ubicación nueva: se inserta sin datos previos', () async {
+      when(() => ubicacionesRepo.getById(10)).thenAnswer((_) async => null);
 
       await dataSource.syncLocalLocationUpdated(
         const ActualizarUbicacionParams(locationId: 10, name: 'N', barcode: 'B'),
       );
 
-      verify(() => ubicacionesCache.refresh()).called(1);
+      final guardada = verify(
+        () => ubicacionesRepo.insertOrUpdateSingle(captureAny()),
+      ).captured.single as ResultUbicaciones;
+      expect(guardada.id, 10);
+      expect(guardada.idWarehouse, isNull);
     });
   });
 

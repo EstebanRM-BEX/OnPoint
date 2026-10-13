@@ -48,9 +48,29 @@ class _LocationDestViewState extends State<_LocationDestView> {
   final TextEditingController _searchController = TextEditingController();
   UbicacionCatalogo? _selected;
   Timer? _searchDebounce;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  /// Pide la página siguiente al acercarse al final de la lista.
+  void _onScroll() {
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 300 &&
+        context.read<CatalogSearchBloc>().state.hayMasUbicaciones) {
+      context.read<CatalogSearchBloc>().add(
+        const CargarMasUbicacionesCatalogoEvent(),
+      );
+    }
+  }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
@@ -133,8 +153,16 @@ class _LocationDestViewState extends State<_LocationDestView> {
                                       'No tiene ubicaciones en la base de datos',
                                 )
                         : ListView.builder(
-                            itemCount: ubicaciones.length,
+                            controller: _scrollController,
+                            itemCount: ubicaciones.length +
+                                (state.hayMasUbicaciones ? 1 : 0),
                             itemBuilder: (_, index) {
+                              if (index >= ubicaciones.length) {
+                                return const Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Center(child: CircularProgressIndicator()),
+                                );
+                              }
                               final ubicacion = ubicaciones[index];
                               final isSelected = _selected?.id == ubicacion.id;
                               return LocationListTile(

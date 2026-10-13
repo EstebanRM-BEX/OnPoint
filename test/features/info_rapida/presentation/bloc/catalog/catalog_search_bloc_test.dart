@@ -6,7 +6,8 @@ import 'package:wms_app/features/info_rapida/domain/entities/catalogo_info.dart'
 import 'package:wms_app/features/info_rapida/domain/failures/info_rapida_failures.dart';
 import 'package:wms_app/core/usecases/usecase.dart';
 import 'package:wms_app/features/info_rapida/domain/usecases/buscar_catalogo_productos_usecase.dart';
-import 'package:wms_app/features/info_rapida/domain/usecases/get_catalogo_ubicaciones_usecase.dart';
+import 'package:wms_app/features/info_rapida/domain/usecases/buscar_catalogo_ubicaciones_usecase.dart';
+import 'package:wms_app/features/info_rapida/domain/usecases/get_almacenes_ubicaciones_usecase.dart';
 import 'package:wms_app/features/info_rapida/domain/usecases/get_propietarios_catalogo_usecase.dart';
 import 'package:wms_app/features/info_rapida/presentation/bloc/catalog/catalog_search_bloc.dart';
 
@@ -16,13 +17,17 @@ class MockBuscarCatalogoProductosUseCase extends Mock
 class MockGetPropietariosCatalogoUseCase extends Mock
     implements GetPropietariosCatalogoUseCase {}
 
-class MockGetCatalogoUbicacionesUseCase extends Mock
-    implements GetCatalogoUbicacionesUseCase {}
+class MockBuscarCatalogoUbicacionesUseCase extends Mock
+    implements BuscarCatalogoUbicacionesUseCase {}
+
+class MockGetAlmacenesUbicacionesUseCase extends Mock
+    implements GetAlmacenesUbicacionesUseCase {}
 
 void main() {
   late MockBuscarCatalogoProductosUseCase mockBuscarProductos;
   late MockGetPropietariosCatalogoUseCase mockGetPropietarios;
-  late MockGetCatalogoUbicacionesUseCase mockGetCatalogoUbicaciones;
+  late MockBuscarCatalogoUbicacionesUseCase mockBuscarUbicaciones;
+  late MockGetAlmacenesUbicacionesUseCase mockGetAlmacenes;
 
   final tProducto1 = const ProductoCatalogo(
     id: 1,
@@ -81,9 +86,7 @@ void main() {
   setUpAll(() {
     registerFallbackValue(const BuscarCatalogoProductosParams(limit: 1));
     registerFallbackValue(NoParams());
-    registerFallbackValue(
-      const GetCatalogoUbicacionesParams(),
-    );
+    registerFallbackValue(const BuscarCatalogoUbicacionesParams(limit: 1));
   });
 
   setUp(() {
@@ -91,13 +94,18 @@ void main() {
     mockGetPropietarios = MockGetPropietariosCatalogoUseCase();
     when(() => mockGetPropietarios(any()))
         .thenAnswer((_) async => const Right(['ACME', 'Otro']));
-    mockGetCatalogoUbicaciones = MockGetCatalogoUbicacionesUseCase();
+    mockBuscarUbicaciones = MockBuscarCatalogoUbicacionesUseCase();
+    mockGetAlmacenes = MockGetAlmacenesUbicacionesUseCase();
+    when(() => mockGetAlmacenes(any())).thenAnswer(
+      (_) async => const Right(['Almacén Central', 'Almacén Repuestos']),
+    );
   });
 
   CatalogSearchBloc buildBloc() => CatalogSearchBloc(
         buscarCatalogoProductos: mockBuscarProductos,
         getPropietariosCatalogo: mockGetPropietarios,
-        getCatalogoUbicaciones: mockGetCatalogoUbicaciones,
+        buscarCatalogoUbicaciones: mockBuscarUbicaciones,
+        getAlmacenesUbicaciones: mockGetAlmacenes,
       );
 
   group('CatalogSearchBloc', () {
@@ -108,8 +116,8 @@ void main() {
       expect(bloc.state.hayMasProductos, isFalse);
       expect(bloc.state.propietarioProducto, isNull);
       expect(bloc.state.productosFiltrados, isEmpty);
-      expect(bloc.state.ubicaciones, isEmpty);
       expect(bloc.state.ubicacionesFiltradas, isEmpty);
+      expect(bloc.state.hayMasUbicaciones, isFalse);
       expect(bloc.state.queryProducto, isEmpty);
       expect(bloc.state.queryUbicacion, isEmpty);
       expect(bloc.state.almacenUbicacionesFiltro, isNull);
@@ -264,9 +272,9 @@ void main() {
 
     group('indicador de carga', () {
       blocTest<CatalogSearchBloc, CatalogSearchState>(
-        'ubicaciones: emite loading si la carga supera el umbral',
+        'ubicaciones: emite loading si la consulta supera el umbral',
         build: () {
-          when(() => mockGetCatalogoUbicaciones(any())).thenAnswer((_) async {
+          when(() => mockBuscarUbicaciones(any())).thenAnswer((_) async {
             await Future<void>.delayed(const Duration(milliseconds: 300));
             return Right([tUbicacion1]);
           });
@@ -275,104 +283,116 @@ void main() {
         act: (bloc) => bloc.add(const CargarCatalogoUbicacionesEvent()),
         wait: const Duration(milliseconds: 400),
         expect: () => [
-          const CatalogSearchState(statusUbicaciones: CatalogStatus.loading),
+          isA<CatalogSearchState>().having(
+            (s) => s.almacenesDisponibles,
+            'almacenes',
+            ['Almacén Central', 'Almacén Repuestos'],
+          ),
+          isA<CatalogSearchState>().having(
+            (s) => s.statusUbicaciones,
+            'status',
+            CatalogStatus.loading,
+          ),
           isA<CatalogSearchState>()
               .having((s) => s.statusUbicaciones, 'status', CatalogStatus.success)
-              .having((s) => s.ubicaciones, 'ubicaciones', [tUbicacion1]),
+              .having((s) => s.ubicacionesFiltradas, 'ubicaciones', [tUbicacion1]),
         ],
       );
     });
 
-    group('CargarCatalogoUbicacionesEvent', () {
+    group('ubicaciones (consulta paginada)', () {
+      const pagina = CatalogSearchBloc.paginaUbicaciones;
+
       blocTest<CatalogSearchBloc, CatalogSearchState>(
-        'carga ubicaciones, extrae y ordena almacenes disponibles',
+        'carga la primera página y los almacenes (de SQLite)',
         build: () {
-          when(() => mockGetCatalogoUbicaciones(any())).thenAnswer(
+          when(() => mockBuscarUbicaciones(any())).thenAnswer(
             (_) async => Right([tUbicacion3, tUbicacion1, tUbicacion2]),
           );
           return buildBloc();
         },
         act: (bloc) => bloc.add(const CargarCatalogoUbicacionesEvent()),
-        expect: () => [
-          CatalogSearchState(
-            statusUbicaciones: CatalogStatus.success,
-            ubicaciones: [tUbicacion3, tUbicacion1, tUbicacion2],
-            ubicacionesFiltradas: [tUbicacion3, tUbicacion1, tUbicacion2],
-            almacenesDisponibles: const ['Almacén Central', 'Almacén Repuestos'],
-          ),
-        ],
+        wait: const Duration(milliseconds: 50),
+        verify: (bloc) {
+          expect(bloc.state.statusUbicaciones, CatalogStatus.success);
+          expect(bloc.state.ubicacionesFiltradas,
+              [tUbicacion3, tUbicacion1, tUbicacion2]);
+          expect(bloc.state.hayMasUbicaciones, isFalse);
+          expect(bloc.state.almacenesDisponibles,
+              ['Almacén Central', 'Almacén Repuestos']);
+          verify(() => mockBuscarUbicaciones(
+                const BuscarCatalogoUbicacionesParams(limit: pagina),
+              )).called(1);
+        },
       );
 
       blocTest<CatalogSearchBloc, CatalogSearchState>(
-        'emite fallo cuando getCatalogoUbicaciones falla',
+        'emite fallo cuando la consulta falla',
         build: () {
-          when(() => mockGetCatalogoUbicaciones(any())).thenAnswer(
+          when(() => mockBuscarUbicaciones(any())).thenAnswer(
             (_) async => const Left(SinConexionFailure('Fallo de red')),
           );
           return buildBloc();
         },
         act: (bloc) => bloc.add(const CargarCatalogoUbicacionesEvent()),
-        expect: () => [
-          const CatalogSearchState(
-            statusUbicaciones: CatalogStatus.failure,
-            mensajeErrorUbicaciones: 'Fallo de red',
-            failureUbicaciones: SinConexionFailure('Fallo de red'),
-          ),
-        ],
-      );
-    });
-
-    group('BuscarUbicacionesCatalogoEvent y FiltrarUbicacionesPorAlmacenEvent', () {
-      blocTest<CatalogSearchBloc, CatalogSearchState>(
-        'filtra ubicaciones por código de barras',
-        build: buildBloc,
-        seed: () => CatalogSearchState(
-          statusUbicaciones: CatalogStatus.success,
-          ubicaciones: [tUbicacion1, tUbicacion2, tUbicacion3],
-          ubicacionesFiltradas: [tUbicacion1, tUbicacion2, tUbicacion3],
-          almacenesDisponibles: const ['Almacén Central', 'Almacén Repuestos'],
-        ),
-        act: (bloc) => bloc.add(const BuscarUbicacionesCatalogoEvent('LOC-B1')),
-        expect: () => [
-          CatalogSearchState(
-            statusUbicaciones: CatalogStatus.success,
-            ubicaciones: [tUbicacion1, tUbicacion2, tUbicacion3],
-            ubicacionesFiltradas: [tUbicacion2],
-            queryUbicacion: 'LOC-B1',
-            almacenesDisponibles: const ['Almacén Central', 'Almacén Repuestos'],
-          ),
-        ],
-      );
-
-      blocTest<CatalogSearchBloc, CatalogSearchState>(
-        'filtra ubicaciones por almacén y permite limpiar el filtro con null',
-        build: buildBloc,
-        seed: () => CatalogSearchState(
-          statusUbicaciones: CatalogStatus.success,
-          ubicaciones: [tUbicacion1, tUbicacion2, tUbicacion3],
-          ubicacionesFiltradas: [tUbicacion1, tUbicacion2, tUbicacion3],
-          almacenesDisponibles: const ['Almacén Central', 'Almacén Repuestos'],
-        ),
-        act: (bloc) {
-          bloc.add(const FiltrarUbicacionesPorAlmacenEvent('Almacén Repuestos'));
-          bloc.add(const FiltrarUbicacionesPorAlmacenEvent(null));
+        wait: const Duration(milliseconds: 50),
+        verify: (bloc) {
+          expect(bloc.state.statusUbicaciones, CatalogStatus.failure);
+          expect(bloc.state.mensajeErrorUbicaciones, 'Fallo de red');
         },
-        expect: () => [
-          CatalogSearchState(
-            statusUbicaciones: CatalogStatus.success,
-            ubicaciones: [tUbicacion1, tUbicacion2, tUbicacion3],
-            ubicacionesFiltradas: [tUbicacion3],
-            almacenUbicacionesFiltro: 'Almacén Repuestos',
-            almacenesDisponibles: const ['Almacén Central', 'Almacén Repuestos'],
-          ),
-          CatalogSearchState(
-            statusUbicaciones: CatalogStatus.success,
-            ubicaciones: [tUbicacion1, tUbicacion2, tUbicacion3],
-            ubicacionesFiltradas: [tUbicacion1, tUbicacion2, tUbicacion3],
-            almacenUbicacionesFiltro: null,
-            almacenesDisponibles: const ['Almacén Central', 'Almacén Repuestos'],
-          ),
-        ],
+      );
+
+      blocTest<CatalogSearchBloc, CatalogSearchState>(
+        'buscar y filtrar por almacén consultan SQLite con ambos criterios',
+        build: () {
+          when(() => mockBuscarUbicaciones(any()))
+              .thenAnswer((_) async => Right([tUbicacion3]));
+          return buildBloc();
+        },
+        act: (bloc) async {
+          bloc.add(const FiltrarUbicacionesPorAlmacenEvent('Almacén Repuestos'));
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          bloc.add(const BuscarUbicacionesCatalogoEvent('LOC-R'));
+        },
+        wait: const Duration(milliseconds: 50),
+        verify: (bloc) {
+          expect(bloc.state.queryUbicacion, 'LOC-R');
+          expect(bloc.state.almacenUbicacionesFiltro, 'Almacén Repuestos');
+          expect(bloc.state.ubicacionesFiltradas, [tUbicacion3]);
+          verify(() => mockBuscarUbicaciones(
+                const BuscarCatalogoUbicacionesParams(
+                  query: 'LOC-R',
+                  almacen: 'Almacén Repuestos',
+                  limit: pagina,
+                ),
+              )).called(1);
+        },
+      );
+
+      blocTest<CatalogSearchBloc, CatalogSearchState>(
+        'cargar más agrega la página siguiente',
+        build: () {
+          when(() => mockBuscarUbicaciones(any()))
+              .thenAnswer((_) async => Right([tUbicacion3]));
+          return buildBloc();
+        },
+        seed: () => CatalogSearchState(
+          statusUbicaciones: CatalogStatus.success,
+          ubicacionesFiltradas: List.filled(pagina, tUbicacion1),
+          hayMasUbicaciones: true,
+        ),
+        act: (bloc) =>
+            bloc.add(const CargarMasUbicacionesCatalogoEvent()),
+        verify: (bloc) {
+          expect(bloc.state.ubicacionesFiltradas, hasLength(pagina + 1));
+          expect(bloc.state.hayMasUbicaciones, isFalse);
+          verify(() => mockBuscarUbicaciones(
+                const BuscarCatalogoUbicacionesParams(
+                  limit: pagina,
+                  offset: pagina,
+                ),
+              )).called(1);
+        },
       );
     });
   });

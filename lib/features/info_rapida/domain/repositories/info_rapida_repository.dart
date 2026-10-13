@@ -44,14 +44,22 @@ abstract class InfoRapidaRepository {
   /// Propietarios distintos del catálogo local (para el filtro).
   Future<Either<Failure, List<String>>> getPropietariosCatalogo();
 
-  /// Obtiene el catálogo de ubicaciones para búsqueda predictiva y selección en Información Rápida.
-  Future<Either<Failure, List<UbicacionCatalogo>>> getCatalogoUbicaciones({
-    bool forceRefresh = false,
+  /// Página del catálogo de ubicaciones ordenada por nombre: [query] en
+  /// nombre o barcode y, opcionalmente, solo las de [almacen].
+  Future<Either<Failure, List<UbicacionCatalogo>>> buscarCatalogoUbicaciones({
+    String query = '',
+    String? almacen,
+    required int limit,
+    int offset = 0,
   });
 
-  /// Carga en memoria el catálogo de ubicaciones para que la lista abra sin
-  /// esperar a la base local (los productos se consultan al buscar).
-  Future<Either<Failure, Unit>> precargarCatalogos();
+  /// Ubicación por barcode (sin distinguir mayúsculas); null si no existe.
+  Future<Either<Failure, UbicacionCatalogo?>> getUbicacionCatalogoPorBarcode(
+    String barcode,
+  );
+
+  /// Nombres de almacén del catálogo de ubicaciones, ordenados.
+  Future<Either<Failure, List<String>>> getAlmacenesUbicaciones();
 
   /// Obtiene las configuraciones del usuario para visualización/edición de información rápida.
   Future<Either<Failure, ConfigInfoRapidaUsuario>> getConfiguracionUsuario({

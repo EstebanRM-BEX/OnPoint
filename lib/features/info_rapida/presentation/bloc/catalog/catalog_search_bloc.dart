@@ -7,7 +7,8 @@ import 'package:wms_app/core/error/failures.dart';
 import 'package:wms_app/features/info_rapida/domain/entities/catalogo_info.dart';
 import 'package:wms_app/core/usecases/usecase.dart';
 import 'package:wms_app/features/info_rapida/domain/usecases/buscar_catalogo_productos_usecase.dart';
-import 'package:wms_app/features/info_rapida/domain/usecases/get_catalogo_ubicaciones_usecase.dart';
+import 'package:wms_app/features/info_rapida/domain/usecases/buscar_catalogo_ubicaciones_usecase.dart';
+import 'package:wms_app/features/info_rapida/domain/usecases/get_almacenes_ubicaciones_usecase.dart';
 import 'package:wms_app/features/info_rapida/domain/usecases/get_propietarios_catalogo_usecase.dart';
 
 part 'catalog_search_event.dart';
@@ -19,16 +20,22 @@ class CatalogSearchBloc
     with SafeBlocMixin<CatalogSearchEvent, CatalogSearchState> {
   final BuscarCatalogoProductosUseCase buscarCatalogoProductos;
   final GetPropietariosCatalogoUseCase getPropietariosCatalogo;
-  final GetCatalogoUbicacionesUseCase getCatalogoUbicaciones;
+  final BuscarCatalogoUbicacionesUseCase buscarCatalogoUbicaciones;
+  final GetAlmacenesUbicacionesUseCase getAlmacenesUbicaciones;
 
   /// Productos por página: el catálogo (~72 mil) se consulta en SQLite de a
   /// páginas en vez de cargarse completo en memoria.
   static const int paginaProductos = 50;
 
+  /// Ubicaciones por página: el catálogo (hasta ~19 mil) se consulta en
+  /// SQLite de a páginas (docs/plan_ubicaciones_sqlite.md).
+  static const int paginaUbicaciones = 50;
+
   CatalogSearchBloc({
     required this.buscarCatalogoProductos,
     required this.getPropietariosCatalogo,
-    required this.getCatalogoUbicaciones,
+    required this.buscarCatalogoUbicaciones,
+    required this.getAlmacenesUbicaciones,
   }) : super(const CatalogSearchState()) {
     // Las tres reemplazan la primera página: la última pedida gana.
     on<_ConsultaProductosEvent>(_onConsultarProductos, transformer: restartable());
@@ -47,20 +54,28 @@ class CatalogSearchBloc
       _onCargarMasProductos,
       transformer: droppable(),
     );
-    on<CargarCatalogoUbicacionesEvent>(_onCargarUbicaciones);
-    on<BuscarUbicacionesCatalogoEvent>(
-      _onBuscarUbicaciones,
+    // Igual que productos: las tres reemplazan la primera página.
+    on<_ConsultaUbicacionesEvent>(
+      _onConsultarUbicaciones,
       transformer: restartable(),
     );
-    on<FiltrarUbicacionesPorAlmacenEvent>(
-      _onFiltrarUbicacionesPorAlmacen,
-      transformer: restartable(),
+    on<CargarCatalogoUbicacionesEvent>(_onCargarUbicaciones);
+    on<BuscarUbicacionesCatalogoEvent>((e, emit) {
+      emit(state.copyWith(queryUbicacion: e.query));
+      add(const _ConsultaUbicacionesEvent());
+    });
+    on<FiltrarUbicacionesPorAlmacenEvent>((e, emit) {
+      emit(state.copyWith(almacenUbicacionesFiltro: () => e.almacen));
+      add(const _ConsultaUbicacionesEvent());
+    });
+    on<CargarMasUbicacionesCatalogoEvent>(
+      _onCargarMasUbicaciones,
+      transformer: droppable(),
     );
   }
 
-  /// Si el catálogo ya está en memoria responde en unos milisegundos: en ese
-  /// caso no se emite `loading` para que el "Cargando…" no parpadee al abrir
-  /// la lista.
+  /// Si la consulta responde en unos milisegundos no se emite `loading`, para
+  /// que el "Cargando…" no parpadee al abrir la lista.
   static const _umbralLoading = Duration(milliseconds: 150);
 
   Future<bool> _terminaRapido(Future<Object?> carga) {
@@ -158,12 +173,30 @@ class CatalogSearchBloc
     );
   }
 
+  /// Lista de almacenes y primera página con la búsqueda y el almacén
+  /// actuales.
   Future<void> _onCargarUbicaciones(
     CargarCatalogoUbicacionesEvent event,
     Emitter<CatalogSearchState> emit,
   ) async {
-    final carga = getCatalogoUbicaciones(
-      GetCatalogoUbicacionesParams(forceRefresh: event.forceRefresh),
+    add(const _ConsultaUbicacionesEvent());
+    final almacenes = await getAlmacenesUbicaciones(NoParams());
+    almacenes.match(
+      (_) {},
+      (lista) => emit(state.copyWith(almacenesDisponibles: lista)),
+    );
+  }
+
+  Future<void> _onConsultarUbicaciones(
+    _ConsultaUbicacionesEvent event,
+    Emitter<CatalogSearchState> emit,
+  ) async {
+    final carga = buscarCatalogoUbicaciones(
+      BuscarCatalogoUbicacionesParams(
+        query: state.queryUbicacion,
+        almacen: state.almacenUbicacionesFiltro,
+        limit: paginaUbicaciones,
+      ),
     );
     if (!await _terminaRapido(carga)) {
       emit(state.copyWith(
@@ -183,25 +216,10 @@ class CatalogSearchBloc
         ));
       },
       (ubicaciones) {
-        final almacenes = ubicaciones
-            .map((u) => u.warehouseName?.trim())
-            .where((w) => w != null && w.isNotEmpty)
-            .cast<String>()
-            .toSet()
-            .toList()
-          ..sort();
-
-        final filtradas = _filtrarUbicaciones(
-          ubicaciones,
-          query: state.queryUbicacion,
-          almacen: state.almacenUbicacionesFiltro,
-        );
-
         emit(state.copyWith(
           statusUbicaciones: CatalogStatus.success,
-          ubicaciones: ubicaciones,
-          ubicacionesFiltradas: filtradas,
-          almacenesDisponibles: almacenes,
+          ubicacionesFiltradas: ubicaciones,
+          hayMasUbicaciones: ubicaciones.length == paginaUbicaciones,
           mensajeErrorUbicaciones: () => null,
           failureUbicaciones: () => null,
         ));
@@ -209,61 +227,37 @@ class CatalogSearchBloc
     );
   }
 
-  void _onBuscarUbicaciones(
-    BuscarUbicacionesCatalogoEvent event,
+  Future<void> _onCargarMasUbicaciones(
+    CargarMasUbicacionesCatalogoEvent event,
     Emitter<CatalogSearchState> emit,
-  ) {
-    final filtradas = _filtrarUbicaciones(
-      state.ubicaciones,
-      query: event.query,
-      almacen: state.almacenUbicacionesFiltro,
+  ) async {
+    if (!state.hayMasUbicaciones) return;
+    final query = state.queryUbicacion;
+    final almacen = state.almacenUbicacionesFiltro;
+    final offset = state.ubicacionesFiltradas.length;
+    final result = await buscarCatalogoUbicaciones(
+      BuscarCatalogoUbicacionesParams(
+        query: query,
+        almacen: almacen,
+        limit: paginaUbicaciones,
+        offset: offset,
+      ),
     );
-
-    emit(state.copyWith(
-      queryUbicacion: event.query,
-      ubicacionesFiltradas: filtradas,
-    ));
-  }
-
-  void _onFiltrarUbicacionesPorAlmacen(
-    FiltrarUbicacionesPorAlmacenEvent event,
-    Emitter<CatalogSearchState> emit,
-  ) {
-    final filtradas = _filtrarUbicaciones(
-      state.ubicaciones,
-      query: state.queryUbicacion,
-      almacen: event.almacen,
+    // Si mientras tanto cambió la búsqueda, esta página ya no corresponde.
+    if (query != state.queryUbicacion ||
+        almacen != state.almacenUbicacionesFiltro ||
+        offset != state.ubicacionesFiltradas.length) {
+      return;
+    }
+    result.match(
+      (failure) => emit(state.copyWith(
+        mensajeErrorUbicaciones: () => failure.message,
+        failureUbicaciones: () => failure,
+      )),
+      (pagina) => emit(state.copyWith(
+        ubicacionesFiltradas: [...state.ubicacionesFiltradas, ...pagina],
+        hayMasUbicaciones: pagina.length == paginaUbicaciones,
+      )),
     );
-
-    emit(state.copyWith(
-      almacenUbicacionesFiltro: () => event.almacen,
-      ubicacionesFiltradas: filtradas,
-    ));
-  }
-
-  List<UbicacionCatalogo> _filtrarUbicaciones(
-    List<UbicacionCatalogo> items, {
-    required String query,
-    required String? almacen,
-  }) {
-    var resultado = items;
-
-    if (almacen != null && almacen.trim().isNotEmpty) {
-      final cleanAlmacen = almacen.trim().toLowerCase();
-      resultado = resultado.where((u) {
-        return (u.warehouseName ?? '').trim().toLowerCase() == cleanAlmacen;
-      }).toList();
-    }
-
-    final cleanQuery = query.trim().toLowerCase();
-    if (cleanQuery.isNotEmpty) {
-      resultado = resultado.where((u) {
-        final matchesName = u.name.toLowerCase().contains(cleanQuery);
-        final matchesBarcode = (u.barcode ?? '').toLowerCase().contains(cleanQuery);
-        return matchesName || matchesBarcode;
-      }).toList();
-    }
-
-    return resultado;
   }
 }

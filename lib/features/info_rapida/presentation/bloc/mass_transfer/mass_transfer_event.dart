@@ -31,31 +31,6 @@ class MassTransferInicializado extends MassTransferEvent {
       ];
 }
 
-/// Carga el catálogo de posibles ubicaciones destino desde la caché.
-class CargarUbicacionesDestinoMassEvent extends MassTransferEvent {
-  const CargarUbicacionesDestinoMassEvent();
-}
-
-/// Filtra las ubicaciones destino por texto de búsqueda.
-class BuscarUbicacionDestinoMassEvent extends MassTransferEvent {
-  final String query;
-
-  const BuscarUbicacionDestinoMassEvent(this.query);
-
-  @override
-  List<Object?> get props => [query];
-}
-
-/// Filtra las ubicaciones destino por almacén.
-class FiltrarUbicacionesDestinoMassAlmacenEvent extends MassTransferEvent {
-  final String? almacen;
-
-  const FiltrarUbicacionesDestinoMassAlmacenEvent(this.almacen);
-
-  @override
-  List<Object?> get props => [almacen];
-}
-
 /// Selecciona manualmente una ubicación destino de la lista.
 class SeleccionarUbicacionDestinoMassEvent extends MassTransferEvent {
   final UbicacionCatalogo ubicacion;

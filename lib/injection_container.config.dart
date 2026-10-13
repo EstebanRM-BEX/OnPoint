@@ -125,6 +125,8 @@ import 'features/info_rapida/domain/usecases/borrar_consultas_recientes_usecase.
     as _i520;
 import 'features/info_rapida/domain/usecases/buscar_catalogo_productos_usecase.dart'
     as _i937;
+import 'features/info_rapida/domain/usecases/buscar_catalogo_ubicaciones_usecase.dart'
+    as _i225;
 import 'features/info_rapida/domain/usecases/consultar_por_barcode_usecase.dart'
     as _i219;
 import 'features/info_rapida/domain/usecases/consultar_por_id_usecase.dart'
@@ -133,18 +135,18 @@ import 'features/info_rapida/domain/usecases/crear_transferencia_individual_usec
     as _i101;
 import 'features/info_rapida/domain/usecases/crear_transferencia_masiva_usecase.dart'
     as _i1018;
-import 'features/info_rapida/domain/usecases/get_catalogo_ubicaciones_usecase.dart'
-    as _i235;
+import 'features/info_rapida/domain/usecases/get_almacenes_ubicaciones_usecase.dart'
+    as _i86;
 import 'features/info_rapida/domain/usecases/get_configuracion_usuario_usecase.dart'
     as _i460;
 import 'features/info_rapida/domain/usecases/get_consultas_recientes_usecase.dart'
     as _i120;
 import 'features/info_rapida/domain/usecases/get_propietarios_catalogo_usecase.dart'
     as _i789;
+import 'features/info_rapida/domain/usecases/get_ubicacion_catalogo_por_barcode_usecase.dart'
+    as _i624;
 import 'features/info_rapida/domain/usecases/guardar_consulta_reciente_usecase.dart'
     as _i701;
-import 'features/info_rapida/domain/usecases/precargar_catalogos_usecase.dart'
-    as _i875;
 import 'features/info_rapida/presentation/bloc/catalog/catalog_search_bloc.dart'
     as _i942;
 import 'features/info_rapida/presentation/bloc/location/location_info_bloc.dart'
@@ -843,13 +845,6 @@ extension GetItInjectableX on _i174.GetIt {
         networkInfo: gh<_i75.NetworkInfo>(),
       ),
     );
-    gh.lazySingleton<_i570.InfoRapidaLocalDataSource>(
-      () => _i570.InfoRapidaLocalDataSourceImpl(
-        gh<_i611.InfoRapidaEntorno>(),
-        gh<_i456.UbicacionesCacheService>(),
-        gh<_i208.ConfiguracionCacheService>(),
-      ),
-    );
     gh.lazySingleton<_i360.GetProductStockInfo>(
       () => _i360.GetProductStockInfo(gh<_i875.ProductStockRepository>()),
     );
@@ -862,6 +857,12 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i146.ConnectionStatusCubit>(
       () => _i146.ConnectionStatusCubit(networkInfo: gh<_i75.NetworkInfo>()),
+    );
+    gh.lazySingleton<_i570.InfoRapidaLocalDataSource>(
+      () => _i570.InfoRapidaLocalDataSourceImpl(
+        gh<_i611.InfoRapidaEntorno>(),
+        gh<_i208.ConfiguracionCacheService>(),
+      ),
     );
     gh.lazySingleton<_i925.InventarioRepository>(
       () => _i426.InventarioRepositoryImpl(
@@ -1284,6 +1285,11 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i447.InfoRapidaRepository>(),
       ),
     );
+    gh.lazySingleton<_i225.BuscarCatalogoUbicacionesUseCase>(
+      () => _i225.BuscarCatalogoUbicacionesUseCase(
+        gh<_i447.InfoRapidaRepository>(),
+      ),
+    );
     gh.lazySingleton<_i219.ConsultarPorBarcodeUseCase>(
       () => _i219.ConsultarPorBarcodeUseCase(gh<_i447.InfoRapidaRepository>()),
     );
@@ -1300,9 +1306,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i447.InfoRapidaRepository>(),
       ),
     );
-    gh.lazySingleton<_i235.GetCatalogoUbicacionesUseCase>(
+    gh.lazySingleton<_i86.GetAlmacenesUbicacionesUseCase>(
       () =>
-          _i235.GetCatalogoUbicacionesUseCase(gh<_i447.InfoRapidaRepository>()),
+          _i86.GetAlmacenesUbicacionesUseCase(gh<_i447.InfoRapidaRepository>()),
     );
     gh.lazySingleton<_i460.GetConfiguracionUsuarioUseCase>(
       () => _i460.GetConfiguracionUsuarioUseCase(
@@ -1318,13 +1324,15 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i447.InfoRapidaRepository>(),
       ),
     );
+    gh.lazySingleton<_i624.GetUbicacionCatalogoPorBarcodeUseCase>(
+      () => _i624.GetUbicacionCatalogoPorBarcodeUseCase(
+        gh<_i447.InfoRapidaRepository>(),
+      ),
+    );
     gh.lazySingleton<_i701.GuardarConsultaRecienteUseCase>(
       () => _i701.GuardarConsultaRecienteUseCase(
         gh<_i447.InfoRapidaRepository>(),
       ),
-    );
-    gh.lazySingleton<_i875.PrecargarCatalogosUseCase>(
-      () => _i875.PrecargarCatalogosUseCase(gh<_i447.InfoRapidaRepository>()),
     );
     gh.factory<_i200.TransferenciaMultiusuarioListBloc>(
       () => _i200.TransferenciaMultiusuarioListBloc(
@@ -1433,14 +1441,6 @@ extension GetItInjectableX on _i174.GetIt {
         guardarConsultaReciente: gh<_i701.GuardarConsultaRecienteUseCase>(),
         borrarConsultasRecientes: gh<_i520.BorrarConsultasRecientesUseCase>(),
         getConfiguracionUsuario: gh<_i460.GetConfiguracionUsuarioUseCase>(),
-        precargarCatalogos: gh<_i875.PrecargarCatalogosUseCase>(),
-      ),
-    );
-    gh.factory<_i942.CatalogSearchBloc>(
-      () => _i942.CatalogSearchBloc(
-        buscarCatalogoProductos: gh<_i937.BuscarCatalogoProductosUseCase>(),
-        getPropietariosCatalogo: gh<_i789.GetPropietariosCatalogoUseCase>(),
-        getCatalogoUbicaciones: gh<_i235.GetCatalogoUbicacionesUseCase>(),
       ),
     );
     gh.factory<_i663.PackingPedidoListBloc>(
@@ -1450,6 +1450,14 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i306.AsignarResponsablePackUseCase>(),
         gh<_i786.GetConfigPackingUseCase>(),
         gh<_i339.RegistrarTiempoPackUseCase>(),
+      ),
+    );
+    gh.factory<_i942.CatalogSearchBloc>(
+      () => _i942.CatalogSearchBloc(
+        buscarCatalogoProductos: gh<_i937.BuscarCatalogoProductosUseCase>(),
+        getPropietariosCatalogo: gh<_i789.GetPropietariosCatalogoUseCase>(),
+        buscarCatalogoUbicaciones: gh<_i225.BuscarCatalogoUbicacionesUseCase>(),
+        getAlmacenesUbicaciones: gh<_i86.GetAlmacenesUbicacionesUseCase>(),
       ),
     );
     gh.factory<_i996.TransferenciaMultiusuarioMyClaimsBloc>(
@@ -1509,7 +1517,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i834.MassTransferBloc>(
       () => _i834.MassTransferBloc(
         crearTransferenciaMasiva: gh<_i1018.CrearTransferenciaMasivaUseCase>(),
-        getCatalogoUbicaciones: gh<_i235.GetCatalogoUbicacionesUseCase>(),
+        getUbicacionPorBarcode:
+            gh<_i624.GetUbicacionCatalogoPorBarcodeUseCase>(),
       ),
     );
     gh.factory<_i381.RecepcionMultiusuarioScanBloc>(
@@ -1539,12 +1548,6 @@ extension GetItInjectableX on _i174.GetIt {
         fetchRecepcionPoolUseCase: gh<_i102.FetchRecepcionPoolUseCase>(),
         getRecepcionPoolFromDbUseCase:
             gh<_i280.GetRecepcionPoolFromDbUseCase>(),
-      ),
-    );
-    gh.factory<_i854.TransferInfoBloc>(
-      () => _i854.TransferInfoBloc(
-        crearTransferencia: gh<_i101.CrearTransferenciaIndividualUseCase>(),
-        getCatalogoUbicaciones: gh<_i235.GetCatalogoUbicacionesUseCase>(),
       ),
     );
     gh.lazySingleton<_i932.GetDeviceInfo>(
@@ -1603,6 +1606,13 @@ extension GetItInjectableX on _i174.GetIt {
         getPackagingTypesUseCase: gh<_i658.GetPackagingTypesUseCase>(),
         getLocalPackagingTypesUseCase:
             gh<_i762.GetLocalPackagingTypesUseCase>(),
+      ),
+    );
+    gh.factory<_i854.TransferInfoBloc>(
+      () => _i854.TransferInfoBloc(
+        crearTransferencia: gh<_i101.CrearTransferenciaIndividualUseCase>(),
+        getUbicacionPorBarcode:
+            gh<_i624.GetUbicacionCatalogoPorBarcodeUseCase>(),
       ),
     );
     gh.factory<_i545.ClusterPickingBloc>(

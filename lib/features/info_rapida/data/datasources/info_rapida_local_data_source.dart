@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wms_app/core/services/configuracion_cache_service.dart';
-import 'package:wms_app/core/services/ubicaciones_cache_service.dart';
 import 'package:wms_app/features/info_rapida/data/models/catalogo_mappers.dart';
 import 'package:wms_app/features/info_rapida/data/models/recent_query_model.dart';
 import 'package:wms_app/features/info_rapida/data/services/info_rapida_entorno.dart';
@@ -14,6 +13,7 @@ import 'package:wms_app/features/info_rapida/domain/entities/info_rapida_params.
 import 'package:wms_app/features/info_rapida/domain/entities/recent_query.dart';
 import 'package:wms_app/src/presentation/models/response_ubicaciones_model.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
+import 'package:wms_app/src/presentation/providers/db/others/tbl_ubicaciones/ubicaciones_repository.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_barcode/barcodes_inventario_table.dart';
 import 'package:wms_app/src/presentation/providers/db/inventario/tbl_product/product_inventario_table.dart';
 import 'package:wms_app/src/presentation/providers/db/models/response_products_model.dart';
@@ -43,13 +43,20 @@ abstract class InfoRapidaLocalDataSource {
   /// Propietarios distintos de los productos que manejan propietario.
   Future<List<String>> getPropietariosCatalogo();
 
-  /// Obtiene el catálogo de ubicaciones para búsqueda predictiva.
-  Future<List<UbicacionCatalogo>> getCatalogoUbicaciones({bool forceRefresh = false});
+  /// Página del catálogo de ubicaciones ordenada por nombre (consulta
+  /// acotada: ver docs/plan_ubicaciones_sqlite.md).
+  Future<List<UbicacionCatalogo>> buscarCatalogoUbicaciones({
+    String query = '',
+    String? almacen,
+    required int limit,
+    int offset = 0,
+  });
 
-  /// Deja el catálogo de ubicaciones cargado en memoria, sin convertirlo:
-  /// así la primera lista que se abra ya no espera a SQLite. Los productos no
-  /// se precargan: se consultan en SQLite al buscar.
-  Future<void> precargarCatalogos();
+  /// Ubicación por barcode, sin distinguir mayúsculas.
+  Future<UbicacionCatalogo?> getUbicacionCatalogoPorBarcode(String barcode);
+
+  /// Nombres de almacén del catálogo de ubicaciones, ordenados.
+  Future<List<String>> getAlmacenesUbicaciones();
 
   /// Obtiene los permisos del usuario activo para Información Rápida.
   Future<ConfigInfoRapidaUsuario> getConfiguracionUsuario({int? userId});
@@ -58,30 +65,27 @@ abstract class InfoRapidaLocalDataSource {
   /// consultan SQLite: no hay copia del catálogo en memoria).
   Future<void> syncLocalProductUpdated(ActualizarProductoParams params);
 
-  /// Sincroniza la actualización de una ubicación en la base SQLite y caché en memoria.
+  /// Sincroniza la actualización de una ubicación en la base SQLite.
   Future<void> syncLocalLocationUpdated(ActualizarUbicacionParams params);
 }
 
-/// Implementación del origen de datos local con SQLite, cachés en memoria y SharedPreferences.
+/// Implementación del origen de datos local con SQLite, cachés en memoria y
+/// SharedPreferences. Productos y ubicaciones se consultan en SQLite por
+/// página (no hay copia de los catálogos en memoria).
 @LazySingleton(as: InfoRapidaLocalDataSource)
 class InfoRapidaLocalDataSourceImpl implements InfoRapidaLocalDataSource {
   static const int maxRecentItems = 5;
 
   final InfoRapidaEntorno _entorno;
-  final UbicacionesCacheService _ubicacionesCache;
   final ConfiguracionCacheService _configuracionCache;
   final DataBaseSqlite _database;
 
-  InfoRapidaLocalDataSourceImpl(
-    this._entorno,
-    this._ubicacionesCache,
-    this._configuracionCache,
-  ) : _database = DataBaseSqlite();
+  InfoRapidaLocalDataSourceImpl(this._entorno, this._configuracionCache)
+    : _database = DataBaseSqlite();
 
   @visibleForTesting
   InfoRapidaLocalDataSourceImpl.test(
     this._entorno,
-    this._ubicacionesCache,
     this._configuracionCache,
     this._database,
   );
@@ -237,27 +241,36 @@ class InfoRapidaLocalDataSourceImpl implements InfoRapidaLocalDataSource {
   }
 
   @override
-  Future<List<UbicacionCatalogo>> getCatalogoUbicaciones({
-    bool forceRefresh = false,
+  Future<List<UbicacionCatalogo>> buscarCatalogoUbicaciones({
+    String query = '',
+    String? almacen,
+    required int limit,
+    int offset = 0,
   }) async {
-    final ubicaciones = await _ubicacionesCache.getAll(
-      forceRefresh: forceRefresh,
+    final ubicaciones = await _database.ubicacionesRepository.buscar(
+      query: query,
+      filtro: FiltroUbicaciones(
+        warehouseName: (almacen ?? '').trim().isEmpty ? null : almacen,
+      ),
+      limit: limit,
+      offset: offset,
     );
-
-    final result = <UbicacionCatalogo>[];
-    for (final u in ubicaciones) {
-      final cat = CatalogoMappers.toUbicacionCatalogo(u);
-      if (cat != null) {
-        result.add(cat);
-      }
-    }
-    return List.unmodifiable(result);
+    return [
+      for (final u in ubicaciones) ?CatalogoMappers.toUbicacionCatalogo(u),
+    ];
   }
 
   @override
-  Future<void> precargarCatalogos() async {
-    await _ubicacionesCache.getAll();
+  Future<UbicacionCatalogo?> getUbicacionCatalogoPorBarcode(
+    String barcode,
+  ) async {
+    final u = await _database.ubicacionesRepository.getByBarcode(barcode);
+    return u == null ? null : CatalogoMappers.toUbicacionCatalogo(u);
   }
+
+  @override
+  Future<List<String>> getAlmacenesUbicaciones() =>
+      _database.ubicacionesRepository.almacenes();
 
   @override
   Future<ConfigInfoRapidaUsuario> getConfiguracionUsuario({int? userId}) async {
@@ -295,16 +308,12 @@ class InfoRapidaLocalDataSourceImpl implements InfoRapidaLocalDataSource {
     // insertOrUpdateSingle reemplaza la fila completa: si solo se pasaban
     // id/name/barcode quedaban en null almacén, ubicación padre y muelle
     // (bug 3 del plan). Se parte de la ubicación existente.
-    final actuales = await _ubicacionesCache.getAll();
-    ResultUbicaciones? existente;
-    for (final u in actuales) {
-      if (u.id == params.locationId) {
-        existente = u;
-        break;
-      }
-    }
+    final existente = await _database.ubicacionesRepository.getById(
+      params.locationId,
+    );
 
-    // 1. Actualizar o insertar en SQLite conservando el resto de campos
+    // Actualizar o insertar en SQLite conservando el resto de campos (las
+    // listas consultan SQLite: ven el cambio sin refrescar nada).
     await _database.ubicacionesRepository.insertOrUpdateSingle(
       ResultUbicaciones(
         id: params.locationId,
@@ -317,8 +326,5 @@ class InfoRapidaLocalDataSourceImpl implements InfoRapidaLocalDataSource {
         isADockAlter: existente?.isADockAlter,
       ),
     );
-
-    // 2. Refrescar el caché en memoria para que las listas vean el cambio
-    await _ubicacionesCache.refresh();
   }
 }

@@ -8,18 +8,18 @@ import 'package:wms_app/features/info_rapida/domain/entities/info_rapida_params.
 import 'package:wms_app/features/info_rapida/domain/entities/transfer_results.dart';
 import 'package:wms_app/features/info_rapida/domain/failures/info_rapida_failures.dart';
 import 'package:wms_app/features/info_rapida/domain/usecases/crear_transferencia_individual_usecase.dart';
-import 'package:wms_app/features/info_rapida/domain/usecases/get_catalogo_ubicaciones_usecase.dart';
+import 'package:wms_app/features/info_rapida/domain/usecases/get_ubicacion_catalogo_por_barcode_usecase.dart';
 import 'package:wms_app/features/info_rapida/presentation/bloc/transfer/transfer_info_bloc.dart';
 
 class MockCrearTransferenciaIndividualUseCase extends Mock
     implements CrearTransferenciaIndividualUseCase {}
 
-class MockGetCatalogoUbicacionesUseCase extends Mock
-    implements GetCatalogoUbicacionesUseCase {}
+class MockGetUbicacionCatalogoPorBarcodeUseCase extends Mock
+    implements GetUbicacionCatalogoPorBarcodeUseCase {}
 
 void main() {
   late MockCrearTransferenciaIndividualUseCase mockCrearTransferencia;
-  late MockGetCatalogoUbicacionesUseCase mockGetCatalogoUbicaciones;
+  late MockGetUbicacionCatalogoPorBarcodeUseCase mockPorBarcode;
 
   const tUbicacionOrigen = UbicacionCatalogo(
     id: 10,
@@ -35,13 +35,6 @@ void main() {
     warehouseName: 'Almacén Central',
   );
 
-  const tUbicacionDestino2 = UbicacionCatalogo(
-    id: 30,
-    name: 'REP/Stock/R1',
-    barcode: 'LOC-R1',
-    warehouseName: 'Almacén Repuestos',
-  );
-
   const tTransferResult = TransferenciaIndividualResult(
     transferenciaId: 501,
     nombreTransferencia: 'WH/INT/00501',
@@ -49,9 +42,6 @@ void main() {
   );
 
   setUpAll(() {
-    registerFallbackValue(
-      const GetCatalogoUbicacionesParams(),
-    );
     registerFallbackValue(
       const CrearTransferenciaIndividualParams(
         idAlmacen: 1,
@@ -74,12 +64,16 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({'userId': 42});
     mockCrearTransferencia = MockCrearTransferenciaIndividualUseCase();
-    mockGetCatalogoUbicaciones = MockGetCatalogoUbicacionesUseCase();
+    mockPorBarcode = MockGetUbicacionCatalogoPorBarcodeUseCase();
+    when(() => mockPorBarcode(any()))
+        .thenAnswer((_) async => const Right(null));
+    when(() => mockPorBarcode('loc-b1'))
+        .thenAnswer((_) async => const Right(tUbicacionDestino));
   });
 
   TransferInfoBloc buildBloc() => TransferInfoBloc(
         crearTransferencia: mockCrearTransferencia,
-        getCatalogoUbicaciones: mockGetCatalogoUbicaciones,
+        getUbicacionPorBarcode: mockPorBarcode,
       );
 
   group('TransferInfoBloc', () {
@@ -88,22 +82,12 @@ void main() {
       expect(bloc.state.status, equals(TransferInfoStatus.initial));
       expect(bloc.state.puedeTransferir, isFalse);
       expect(bloc.state.ubicacionDestino, isNull);
-      expect(bloc.state.ubicacionesDestino, isEmpty);
     });
 
     group('TransferInfoInicializado', () {
       blocTest<TransferInfoBloc, TransferInfoState>(
-        'inicializa datos y carga ubicaciones excluyendo origen',
-        build: () {
-          when(() => mockGetCatalogoUbicaciones(any())).thenAnswer(
-            (_) async => const Right([
-              tUbicacionOrigen,
-              tUbicacionDestino,
-              tUbicacionDestino2,
-            ]),
-          );
-          return buildBloc();
-        },
+        'inicializa datos sin cargar el catálogo de ubicaciones',
+        build: buildBloc,
         act: (bloc) => bloc.add(const TransferInfoInicializado(
           idAlmacen: 1,
           idMove: 101,
@@ -125,41 +109,8 @@ void main() {
               .having((s) => s.nombreProducto, 'nombreProducto', 'Tornillo M6')
               .having((s) => s.cantidadDisponible, 'cantidadDisponible', 20.0)
               .having((s) => s.idUbicacionOrigen, 'idUbicacionOrigen', 10),
-          isA<TransferInfoState>()
-              .having((s) => s.ubicacionesDestino, 'ubicacionesDestino',
-                  [tUbicacionDestino, tUbicacionDestino2])
-              .having((s) => s.almacenesDisponibles, 'almacenesDisponibles',
-                  ['Almacén Central', 'Almacén Repuestos']),
         ],
-      );
-
-      blocTest<TransferInfoBloc, TransferInfoState>(
-        'cuando getCatalogoUbicaciones falla, emite mensajeError y failure',
-        build: () {
-          when(() => mockGetCatalogoUbicaciones(any())).thenAnswer(
-            (_) async => const Left(SinConexionFailure('Fallo de conexión')),
-          );
-          return buildBloc();
-        },
-        act: (bloc) => bloc.add(const TransferInfoInicializado(
-          idAlmacen: 1,
-          idMove: 101,
-          idProducto: 15,
-          nombreProducto: 'Tornillo M6',
-          idLote: 3,
-          nombreLote: 'LOT-99',
-          idUbicacionOrigen: 10,
-          nombreUbicacionOrigen: 'WH/Stock/A1',
-          cantidadDisponible: 20.0,
-        )),
-        expect: () => [
-          isA<TransferInfoState>()
-              .having((s) => s.status, 'status', TransferInfoStatus.ready),
-          isA<TransferInfoState>()
-              .having((s) => s.mensajeError, 'mensajeError', 'Fallo de conexión')
-              .having((s) => s.failure, 'failure',
-                  const SinConexionFailure('Fallo de conexión')),
-        ],
+        verify: (_) => verifyNever(() => mockPorBarcode(any())),
       );
     });
 
@@ -213,7 +164,6 @@ void main() {
         seed: () => const TransferInfoState(
           status: TransferInfoStatus.ready,
           idUbicacionOrigen: 10,
-          ubicacionesDestino: [tUbicacionDestino, tUbicacionDestino2],
         ),
         act: (bloc) =>
             bloc.add(const EscanearUbicacionDestinoEvent('LOC-B1')),
@@ -221,8 +171,7 @@ void main() {
           const TransferInfoState(
             status: TransferInfoStatus.ready,
             idUbicacionOrigen: 10,
-            ubicacionesDestino: [tUbicacionDestino, tUbicacionDestino2],
-            ubicacionDestino: tUbicacionDestino,
+              ubicacionDestino: tUbicacionDestino,
             ubicacionDestinoValida: true,
           ),
         ],
@@ -234,7 +183,6 @@ void main() {
         seed: () => const TransferInfoState(
           status: TransferInfoStatus.ready,
           idUbicacionOrigen: 10,
-          ubicacionesDestino: [tUbicacionDestino],
         ),
         act: (bloc) =>
             bloc.add(const EscanearUbicacionDestinoEvent('LOC-INEXISTENTE')),
@@ -242,8 +190,7 @@ void main() {
           const TransferInfoState(
             status: TransferInfoStatus.ready,
             idUbicacionOrigen: 10,
-            ubicacionesDestino: [tUbicacionDestino],
-            mensajeError:
+              mensajeError:
                 'Ubicación con código "loc-inexistente" no encontrada',
             failure: InfoRapidaValidationFailure(
               'Ubicación con código "loc-inexistente" no encontrada',

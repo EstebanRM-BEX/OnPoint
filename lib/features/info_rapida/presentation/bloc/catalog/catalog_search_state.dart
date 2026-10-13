@@ -10,8 +10,9 @@ class CatalogSearchState extends Equatable {
   final bool hayMasProductos;
   final String? propietarioProducto;
   final List<String> propietarios;
-  final List<UbicacionCatalogo> ubicaciones;
+  /// Páginas de ubicaciones traídas de SQLite para la búsqueda actual.
   final List<UbicacionCatalogo> ubicacionesFiltradas;
+  final bool hayMasUbicaciones;
   final String queryProducto;
   final String queryUbicacion;
   final String? almacenUbicacionesFiltro;
@@ -28,8 +29,8 @@ class CatalogSearchState extends Equatable {
     this.hayMasProductos = false,
     this.propietarioProducto,
     this.propietarios = const [],
-    this.ubicaciones = const [],
     this.ubicacionesFiltradas = const [],
+    this.hayMasUbicaciones = false,
     this.queryProducto = '',
     this.queryUbicacion = '',
     this.almacenUbicacionesFiltro,
@@ -50,8 +51,8 @@ class CatalogSearchState extends Equatable {
     bool? hayMasProductos,
     String? Function()? propietarioProducto,
     List<String>? propietarios,
-    List<UbicacionCatalogo>? ubicaciones,
     List<UbicacionCatalogo>? ubicacionesFiltradas,
+    bool? hayMasUbicaciones,
     String? queryProducto,
     String? queryUbicacion,
     String? Function()? almacenUbicacionesFiltro,
@@ -70,8 +71,8 @@ class CatalogSearchState extends Equatable {
           ? propietarioProducto()
           : this.propietarioProducto,
       propietarios: propietarios ?? this.propietarios,
-      ubicaciones: ubicaciones ?? this.ubicaciones,
       ubicacionesFiltradas: ubicacionesFiltradas ?? this.ubicacionesFiltradas,
+      hayMasUbicaciones: hayMasUbicaciones ?? this.hayMasUbicaciones,
       queryProducto: queryProducto ?? this.queryProducto,
       queryUbicacion: queryUbicacion ?? this.queryUbicacion,
       almacenUbicacionesFiltro: almacenUbicacionesFiltro != null
@@ -101,8 +102,8 @@ class CatalogSearchState extends Equatable {
         hayMasProductos,
         propietarioProducto,
         propietarios,
-        ubicaciones,
         ubicacionesFiltradas,
+        hayMasUbicaciones,
         queryProducto,
         queryUbicacion,
         almacenUbicacionesFiltro,

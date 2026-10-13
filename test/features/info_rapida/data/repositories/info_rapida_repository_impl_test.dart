@@ -408,17 +408,51 @@ void main() {
       expect(result.getRight().toNullable(), ['ACME']);
     });
 
-    test('getCatalogoUbicaciones obtiene catálogo desde localDataSource', () async {
+    test('buscarCatalogoUbicaciones delega la página al localDataSource',
+        () async {
       final locs = <UbicacionCatalogo>[
         const UbicacionCatalogo(id: 2, name: 'U1', barcode: '002')
       ];
-      when(() => local.getCatalogoUbicaciones(forceRefresh: any(named: 'forceRefresh')))
-          .thenAnswer((_) async => locs);
+      when(() => local.buscarCatalogoUbicaciones(
+            query: any(named: 'query'),
+            almacen: any(named: 'almacen'),
+            limit: any(named: 'limit'),
+            offset: any(named: 'offset'),
+          )).thenAnswer((_) async => locs);
 
-      final result = await repository.getCatalogoUbicaciones(forceRefresh: false);
+      final result = await repository.buscarCatalogoUbicaciones(
+        query: 'U',
+        almacen: 'Central',
+        limit: 50,
+        offset: 50,
+      );
 
       expect(result.getRight().toNullable(), locs);
-      verify(() => local.getCatalogoUbicaciones(forceRefresh: false)).called(1);
+      verify(() => local.buscarCatalogoUbicaciones(
+            query: 'U',
+            almacen: 'Central',
+            limit: 50,
+            offset: 50,
+          )).called(1);
+    });
+
+    test('getUbicacionCatalogoPorBarcode y getAlmacenesUbicaciones', () async {
+      const loc = UbicacionCatalogo(id: 2, name: 'U1', barcode: '002');
+      when(() => local.getUbicacionCatalogoPorBarcode('002'))
+          .thenAnswer((_) async => loc);
+      when(() => local.getAlmacenesUbicaciones())
+          .thenAnswer((_) async => ['Central']);
+
+      expect(
+        (await repository.getUbicacionCatalogoPorBarcode('002'))
+            .getRight()
+            .toNullable(),
+        loc,
+      );
+      expect(
+        (await repository.getAlmacenesUbicaciones()).getRight().toNullable(),
+        ['Central'],
+      );
     });
 
     test('getConfiguracionUsuario obtiene configuración del usuario', () async {
