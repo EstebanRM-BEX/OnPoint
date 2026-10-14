@@ -119,6 +119,17 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
     _handleDependencies();
   }
 
+  /// Vuelve a asignar el foco después del próximo frame, cuando el bloc
+  /// cambió las banderas sin pasar por didChangeDependencies (carga del pick,
+  /// cambio de producto). Sin esto, si la pantalla se construyó con las
+  /// banderas del pick anterior, el campo de ubicación quedaba deshabilitado y
+  /// sin foco: el lector sonaba pero el escaneo no llegaba a ningún campo.
+  void _handleDependenciesAfterBuild() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _handleDependencies();
+    });
+  }
+
   void _handleDependencies() {
     //mostremos que focus estan activos
 
@@ -768,6 +779,11 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
                                     backgroundColor: Colors.red[200],
                                   ),
                                 );
+                              }
+
+                              if (state is LoadDataInfoSuccess ||
+                                  state is CurrentProductChangedState) {
+                                _handleDependenciesAfterBuild();
                               }
 
                               if (state is LoadDataInfoError) {
