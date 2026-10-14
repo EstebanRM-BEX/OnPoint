@@ -105,11 +105,12 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
-    if (state == AppLifecycleState.resumed) {
-      if (mounted) {
-        // Restauramos el foco del scanner al volver del background.
-        _handleDependencies();
-      }
+    if (state == AppLifecycleState.resumed && mounted) {
+      // Restauramos el foco del scanner al volver del background asegurando que el frame esté listo.
+      _handleDependenciesAfterBuild();
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) _handleDependencies();
+      });
     }
   }
 
@@ -131,8 +132,6 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
   }
 
   void _handleDependencies() {
-    //mostremos que focus estan activos
-
     final batchBloc = context.read<PickingPickBloc>();
 
     // ⛔️ Mientras el campo de cantidad manual está abierto no re-arbitramos el
@@ -140,65 +139,32 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
     // sin este guard se hacía focusNode4.unfocus() y el teclado se cerraba solo).
     if (batchBloc.viewQuantity) return;
 
-    if (!batchBloc.locationIsOk && //false
-        !batchBloc.productIsOk && //false
-        !batchBloc.quantityIsOk && //false
-        !batchBloc.locationDestIsOk) //false
-    {
-      // debugPrint("🚼 location");
+    if (!batchBloc.locationIsOk &&
+        !batchBloc.productIsOk &&
+        !batchBloc.quantityIsOk &&
+        !batchBloc.locationDestIsOk) {
+      debugPrint("🚼 location");
       FocusScope.of(context).requestFocus(focusNode1);
-      //cerramos los demas focos
-      focusNode2.unfocus();
-      focusNode3.unfocus();
-      focusNode4.unfocus();
-      focusNode5.unfocus();
-      focusNode6.unfocus();
-    }
-    if (batchBloc.locationIsOk && //true
-        !batchBloc.productIsOk && //false
-        !batchBloc.quantityIsOk && //false
-        !batchBloc.locationDestIsOk) //false
-    {
+    } else if (batchBloc.locationIsOk &&
+        !batchBloc.productIsOk &&
+        !batchBloc.quantityIsOk &&
+        !batchBloc.locationDestIsOk) {
       debugPrint("🚼 product");
       FocusScope.of(context).requestFocus(focusNode2);
-      //cerramos los demas focos
-      focusNode1.unfocus();
-      focusNode3.unfocus();
-      focusNode4.unfocus();
-      focusNode5.unfocus();
-      focusNode6.unfocus();
-    }
-    if (batchBloc.locationIsOk && //true
-        batchBloc.productIsOk && //true
-        batchBloc.quantityIsOk && //true
-        !batchBloc.locationDestIsOk && //false
-        !batchBloc.viewQuantity) //false
-    {
+    } else if (batchBloc.locationIsOk &&
+        batchBloc.productIsOk &&
+        batchBloc.quantityIsOk &&
+        !batchBloc.locationDestIsOk &&
+        !batchBloc.viewQuantity) {
       debugPrint("🚼 quantity");
       FocusScope.of(context).requestFocus(focusNode3);
-      //cerramos los demas focos
-      focusNode1.unfocus();
-      focusNode2.unfocus();
-      focusNode4.unfocus();
-      focusNode5.unfocus();
-      focusNode6.unfocus();
-    }
-    if (batchBloc.locationIsOk &&
+    } else if (batchBloc.locationIsOk &&
         batchBloc.productIsOk &&
         !batchBloc.quantityIsOk &&
         !batchBloc.locationDestIsOk) {
       debugPrint("🚼 muelle");
       FocusScope.of(context).requestFocus(focusNode5);
-      //cerramos los demas focos
-      focusNode1.unfocus();
-      focusNode2.unfocus();
-      focusNode3.unfocus();
-      focusNode4.unfocus();
-      focusNode6.unfocus();
     }
-    // Sin setState: el foco no es estado de este widget, y reconstruir toda
-    // la pantalla en cada didChangeDependencies (teclado, MediaQuery, volver
-    // del background) la hacía parpadear.
   }
 
   @override
@@ -338,10 +304,8 @@ class _ScanProductPickScreenState extends State<ScanProductPickScreen>
             false,
           ),
         );
+        return true;
       }
-      _vibrationService.vibrate();
-      _audioService.playErrorSound();
-      return false;
     }
     _vibrationService.vibrate();
     _audioService.playErrorSound();

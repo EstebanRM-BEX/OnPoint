@@ -91,7 +91,10 @@ class _LocationScannerWidgetState extends State<LocationScannerWidget> {
                   height: 1,
                   margin: const EdgeInsets.only(bottom: 5),
                   child: TextFormField(
-                    autofocus: true,
+                    autofocus: !widget.locationIsOk &&
+                        !widget.productIsOk &&
+                        !widget.quantityIsOk &&
+                        !widget.locationDestIsOk,
                     showCursor: false,
                     controller: widget.controller,
                     enabled: !widget.locationIsOk &&
