@@ -31,8 +31,9 @@ import 'package:wms_app/core/utils/performance/jank_monitor.dart';
 /// y [pilaDeGrupo]. Las salidas intencionales (`exit(0)`) se marcan con
 /// [markIntentionalExit] y no se reportan.
 ///
-/// Además, cada minuto actualiza las custom keys `rss_mb` y `screen` para que
-/// cualquier crash llegue con la memoria y la pantalla del momento, y avisa
+/// Además, cada minuto actualiza las custom keys `rss_mb`, `rss_pico_mb` y
+/// `screen` para que cualquier crash llegue con la memoria (actual y pico de
+/// la sesión) y la pantalla del momento, y avisa
 /// una vez por sesión si la memoria pasa de [umbralMemoriaAltaMb]
 /// (`ExitDiagnostics.memoria_alta`), antes de que el sistema mate la app.
 ///
@@ -55,9 +56,12 @@ class ExitDiagnostics {
   static bool _started = false;
 
   /// RSS a partir de la cual se avisa (una vez por sesión) antes de que el
-  /// sistema mate la app: los cierres por OOM de Conteo llegaron con 250–340
-  /// MB (docs/plan_fix_oom_catalogo_productos.md).
-  static const umbralMemoriaAltaMb = 300;
+  /// sistema mate la app. Era 300 MB por los cierres de Conteo (250–340 MB),
+  /// pero esos eran OOM del heap Java (catálogo en un solo buffer, ver
+  /// docs/plan_fix_oom_catalogo_productos.md), no de RSS. En 1.7.7, sin esos
+  /// cierres, la DT50 pasa de 300 MB en uso normal (Home 312–400 MB): con
+  /// 450 MB el aviso queda para consumos fuera de lo común.
+  static const umbralMemoriaAltaMb = 450;
   static bool _memoriaAltaReportada = false;
 
   static Future<void> start() async {
@@ -114,13 +118,18 @@ class ExitDiagnostics {
 
   static double get _rssMb => ProcessInfo.currentRss / (1024 * 1024);
 
+  /// Pico de RSS del proceso en la sesión (lo lleva el sistema).
+  static double get _rssPicoMb => ProcessInfo.maxRss / (1024 * 1024);
+
   static Future<void> _persist(String state) async {
     final prefs = _prefs;
     if (prefs == null) return;
     final screen = JankMonitor().currentScreen;
     final rss = _rssMb.round();
+    final pico = _rssPicoMb.round();
     FirebaseCrashlytics.instance
       ..setCustomKey('rss_mb', rss)
+      ..setCustomKey('rss_pico_mb', pico)
       ..setCustomKey('screen', screen);
     final ui = RouteStackTracker.instance.snapshot();
     if (rss >= umbralMemoriaAltaMb && !_memoriaAltaReportada) {
@@ -129,8 +138,13 @@ class ExitDiagnostics {
         FirebaseCrashlytics.instance.recordError(
           Exception('Memoria alta: $rss MB (umbral $umbralMemoriaAltaMb MB)'),
           pilaDeGrupo('memoria_alta'),
-          reason: 'screen=$screen rss_mb=$rss ui=[$ui]',
-          information: ['screen: $screen', 'rss_mb: $rss', 'ui: $ui'],
+          reason: 'screen=$screen rss_mb=$rss pico_mb=$pico ui=[$ui]',
+          information: [
+            'screen: $screen',
+            'rss_mb: $rss',
+            'rss_pico_mb: $pico',
+            'ui: $ui',
+          ],
           fatal: false,
         ),
       );

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show ProcessInfo;
 import 'dart:ui' show FrameTiming;
 
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -75,8 +76,15 @@ class JankMonitor {
     _startTrace(name);
   }
 
+  /// RSS del proceso en MB: métricas `rss_inicio_mb`/`rss_fin_mb` de cada
+  /// visita, para ver qué pantallas hacen crecer la memoria (el aviso
+  /// `memoria_alta` de Crashlytics solo dice dónde se cruzó el umbral).
+  static int get _rssMb => ProcessInfo.currentRss >> 20;
+  int _rssInicioMb = 0;
+
   void _startTrace(String screen) {
     _framesTotal = _framesSlow = _framesFrozen = _frameMaxMs = 0;
+    _rssInicioMb = _rssMb;
     final trace = FirebasePerformance.instance.newTrace(_traceName(screen));
     _trace = trace;
     unawaited(trace.start());
@@ -92,7 +100,9 @@ class JankMonitor {
       ..setMetric('frames_total', _framesTotal)
       ..setMetric('frames_slow', _framesSlow)
       ..setMetric('frames_frozen', _framesFrozen)
-      ..setMetric('frame_max_ms', _frameMaxMs);
+      ..setMetric('frame_max_ms', _frameMaxMs)
+      ..setMetric('rss_inicio_mb', _rssInicioMb)
+      ..setMetric('rss_fin_mb', _rssMb);
     unawaited(trace.stop());
   }
 
