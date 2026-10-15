@@ -83,6 +83,10 @@ class ConfigurationsTable {
   static const String columnHideValidateItemExpedition =
       'hide_validate_item_expedition';
 
+//allow_validate_receipt_multi (v72)
+  static const String columnAllowValidateReceiptMulti =
+      'allow_validate_receipt_multi';
+
   // access_stock_info_* (v66)
   static const String columnAccessStockInfoPicking = 'access_stock_info_picking';
   static const String columnAccessStockInfoPacking = 'access_stock_info_packing';
@@ -155,6 +159,7 @@ class ConfigurationsTable {
         $columnShowButtonValidateClusterPicking INTEGER,
         $columnAllowValidateMultiple INTEGER,
         $columnHideValidateItemExpedition INTEGER,
+        $columnAllowValidateReceiptMulti INTEGER,
         $columnAccessStockInfoPicking INTEGER,
         $columnAccessStockInfoPacking INTEGER,
         $columnAccessStockInfoReception INTEGER,

@@ -28,6 +28,12 @@ class RecepcionSessionModel extends RecepcionSession {
     super.temperatura,
     super.manejoPropietario,
     super.propietario,
+    super.validatorId,
+    super.validatorName,
+    super.linesAssigned,
+    super.currentUserCanBeValidator,
+    super.currentUserIsValidator,
+    super.canValidateDocument,
   });
 
   /// Un elemento de `result.data` de POST /api/receipt/sessions.
@@ -57,6 +63,14 @@ class RecepcionSessionModel extends RecepcionSession {
       temperatura: dynamicToDouble(json['temperatura']),
       manejoPropietario: dynamicToBool(json['manejo_propietario']),
       propietario: dynamicToString(json['propietario']),
+      validatorId: dynamicToInt(json['validator_id']),
+      validatorName: dynamicToString(json['validator_name']),
+      linesAssigned: dynamicToInt(json['lines_assigned']),
+      currentUserCanBeValidator: dynamicToBool(
+        json['current_user_can_be_validator'],
+      ),
+      currentUserIsValidator: dynamicToBool(json['current_user_is_validator']),
+      canValidateDocument: dynamicToBool(json['can_validate_document']),
     );
   }
 

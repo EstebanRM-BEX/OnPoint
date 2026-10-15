@@ -9,6 +9,7 @@ import 'package:wms_app/features/recepcion_multiusuario/domain/entities/lote_pro
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_claim.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_pool_item.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
+import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_validacion.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/repositories/recepcion_multiusuario_repository.dart';
 
 @LazySingleton(as: RecepcionMultiusuarioRepository)
@@ -297,6 +298,54 @@ class RecepcionMultiusuarioRepositoryImpl
       return Left(
         ServerFailure('Error al obtener el detalle de la recepción: $e'),
       );
+    }
+  }
+
+  @override
+  Future<Either<Failure, RecepcionValidacion>> validarRecepcion({
+    required int sessionId,
+    required bool crearBackorder,
+    bool? confirmarCaducados,
+  }) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No hay conexión a Internet'));
+    }
+
+    try {
+      final validacion = await remoteDataSource.validarRecepcion(
+        sessionId: sessionId,
+        crearBackorder: crearBackorder,
+        confirmarCaducados: confirmarCaducados,
+      );
+      return Right(validacion);
+    } on ConfirmationRequiredException catch (e) {
+      return Left(ConfirmationRequiredFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Error al validar la recepción: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, RecepcionSession>> asignarValidador({
+    required int sessionId,
+    required int userId,
+  }) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure('No hay conexión a Internet'));
+    }
+
+    try {
+      final session = await remoteDataSource.asignarValidador(
+        sessionId: sessionId,
+        userId: userId,
+      );
+      return Right(session);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Error al asignar el validador: $e'));
     }
   }
 }

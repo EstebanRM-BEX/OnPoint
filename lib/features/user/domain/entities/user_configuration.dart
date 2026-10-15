@@ -75,6 +75,8 @@ class UserProfile {
   // hide_validate_item_expedition: oculta la acción de validar un paquete o
   // producto suelto individual dentro de la expedición.
   final bool? hideValidateItemExpedition;
+  // allow_validate_receipt_multi: permite validar la recepción multiusuario.
+  final bool? allowValidateReceiptMulti;
   // access_stock_info_*: muestra el ícono de ubicaciones (POST
   // /api/product/stock_info) en el scan de producto de cada módulo.
   final bool? accessStockInfoPicking;
@@ -135,6 +137,7 @@ class UserProfile {
     this.showButtonValidateClusterPicking,
     this.allowValidateMultiple,
     this.hideValidateItemExpedition,
+    this.allowValidateReceiptMulti,
     this.accessStockInfoPicking,
     this.accessStockInfoPacking,
     this.accessStockInfoReception,
@@ -192,6 +195,7 @@ class UserProfile {
         showButtonValidateClusterPicking,
         allowValidateMultiple,
         hideValidateItemExpedition,
+        allowValidateReceiptMulti,
         accessStockInfoPicking,
         accessStockInfoPacking,
         accessStockInfoReception,

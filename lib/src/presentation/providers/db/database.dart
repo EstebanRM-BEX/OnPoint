@@ -110,7 +110,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 71,
+      version: 72,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -1406,6 +1406,17 @@ class DataBaseSqlite {
       // Índices de las consultas acotadas de ubicaciones (barcode sin
       // distinguir mayúsculas y almacén). IF NOT EXISTS.
       await crearIndices(db);
+    }
+
+    if (oldVersion < 72) {
+      // /api/configurations: allow_validate_receipt_multi.
+      try {
+        await db.execute(
+          'ALTER TABLE ${ConfigurationsTable.tableName} ADD COLUMN ${ConfigurationsTable.columnAllowValidateReceiptMulti} INTEGER',
+        );
+      } catch (e) {
+        debugPrint("Error actualizando a v72 (tblconfigurations): $e");
+      }
     }
   }
 

@@ -111,6 +111,8 @@ class UserProfileModel extends UserProfile {
     super.allowValidateMultiple,
     // hide_validate_item_expedition
     super.hideValidateItemExpedition,
+    // allow_validate_receipt_multi
+    super.allowValidateReceiptMulti,
     // access_stock_info_*
     super.accessStockInfoPicking,
     super.accessStockInfoPacking,
@@ -185,6 +187,8 @@ class UserProfileModel extends UserProfile {
       allowValidateMultiple: _asBool(json['allow_validate_multiple']),
       hideValidateItemExpedition:
           _asBool(json['hide_validate_item_expedition']),
+      allowValidateReceiptMulti:
+          _asBool(json['allow_validate_receipt_multi']),
       accessStockInfoPicking: _asBool(json['access_stock_info_picking']),
       accessStockInfoPacking: _asBool(json['access_stock_info_packing']),
       accessStockInfoReception: _asBool(json['access_stock_info_reception']),
@@ -248,6 +252,7 @@ class UserProfileModel extends UserProfile {
       "show_button_validate_cluster_picking": showButtonValidateClusterPicking,
       "allow_validate_multiple": allowValidateMultiple,
       "hide_validate_item_expedition": hideValidateItemExpedition,
+      "allow_validate_receipt_multi": allowValidateReceiptMulti,
       "access_stock_info_picking": accessStockInfoPicking,
       "access_stock_info_packing": accessStockInfoPacking,
       "access_stock_info_reception": accessStockInfoReception,

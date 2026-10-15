@@ -259,6 +259,13 @@ class PermissionSection {
           infoTitle: 'Ocultar accion de validar recepcion',
           infoBody: 'Ocultar accion de validar recepcion en la aplicacion',
         ),
+        PermissionItem(
+          label: 'Validar recepcion multiusuario',
+          value: p.allowValidateReceiptMulti ?? false,
+          infoTitle: 'Validar recepcion multiusuario',
+          infoBody:
+              'Permite validar la recepcion en el proceso multiusuario',
+        ),
       ],
     ),
     PermissionSection(

@@ -6,6 +6,7 @@ import 'package:wms_app/features/recepcion_multiusuario/data/models/lote_product
 import 'package:wms_app/features/recepcion_multiusuario/data/models/recepcion_claim_model.dart';
 import 'package:wms_app/features/recepcion_multiusuario/data/models/recepcion_pool_item_model.dart';
 import 'package:wms_app/features/recepcion_multiusuario/data/models/recepcion_session_model.dart';
+import 'package:wms_app/features/recepcion_multiusuario/data/models/recepcion_validacion_model.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
 
 abstract class RecepcionMultiusuarioRemoteDataSource {
@@ -102,6 +103,24 @@ abstract class RecepcionMultiusuarioRemoteDataSource {
   Future<RecepcionSessionModel> fetchSessionDetail({
     required int pickingId,
     required bool isLoadinDialog,
+  });
+
+  /// POST /api/receipt/session/{sessionId}/validate: cierra la sesión multi
+  /// y valida el picking. Si Odoo responde que hay lotes vencidos lanza
+  /// [ConfirmationRequiredException] para reintentar con
+  /// [confirmarCaducados]; cualquier otro rechazo, [ServerException].
+  Future<RecepcionValidacionModel> validarRecepcion({
+    required int sessionId,
+    required bool crearBackorder,
+    bool? confirmarCaducados,
+  });
+
+  /// POST /api/receipt/session/{sessionId}/assign_validator: asigna
+  /// [userId] (uid del login) como validador del documento. Devuelve la
+  /// cabecera de la sesión con `validator_id` actualizado.
+  Future<RecepcionSessionModel> asignarValidador({
+    required int sessionId,
+    required int userId,
   });
 }
 
@@ -434,6 +453,84 @@ class RecepcionMultiusuarioRemoteDataSourceImpl
     if (result == null || result['status'] != 'success') {
       throw ServerException(
         result?['message'] ?? 'Error al obtener el detalle de la recepción',
+      );
+    }
+
+    return RecepcionSessionModel.fromJson(
+      result['data'] as Map<String, dynamic>? ?? {},
+    );
+  }
+
+  @override
+  Future<RecepcionValidacionModel> validarRecepcion({
+    required int sessionId,
+    required bool crearBackorder,
+    bool? confirmarCaducados,
+  }) async {
+    final response = await ApiRequestService().postPacking(
+      endpoint: 'receipt/session/$sessionId/validate',
+      body: {
+        "jsonrpc": "2.0",
+        "method": "call",
+        "params": {
+          "crear_backorder": crearBackorder,
+          if (confirmarCaducados != null)
+            "confirmar_caducados": confirmarCaducados,
+        },
+      },
+      isLoadinDialog: false,
+    );
+
+    if (response.statusCode >= 400) {
+      throw ServerException('Error de conexión (${response.statusCode})');
+    }
+
+    final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+    final result = jsonResponse['result'] as Map<String, dynamic>?;
+    final message = result?['message']?.toString();
+
+    if (result == null || result['status'] != 'success') {
+      final texto = (message?.isNotEmpty ?? false)
+          ? message!
+          : 'No se pudo validar la recepción';
+      if (confirmarCaducados == null &&
+          texto.toLowerCase().contains('vencid')) {
+        throw ConfirmationRequiredException(texto);
+      }
+      throw ServerException(texto);
+    }
+
+    return RecepcionValidacionModel.fromJson(
+      result['data'] as Map<String, dynamic>? ?? {},
+      message: message,
+    );
+  }
+
+  @override
+  Future<RecepcionSessionModel> asignarValidador({
+    required int sessionId,
+    required int userId,
+  }) async {
+    final response = await ApiRequestService().postPacking(
+      endpoint: 'receipt/session/$sessionId/assign_validator',
+      body: {
+        "jsonrpc": "2.0",
+        "method": "call",
+        "params": {"user_id": userId},
+      },
+      isLoadinDialog: false,
+    );
+
+    if (response.statusCode >= 400) {
+      throw ServerException('Error de conexión (${response.statusCode})');
+    }
+
+    final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+    final result = jsonResponse['result'] as Map<String, dynamic>?;
+
+    if (result == null || result['status'] != 'success') {
+      throw ServerException(
+        result?['message'] ?? 'No se pudo asignar el validador',
       );
     }
 

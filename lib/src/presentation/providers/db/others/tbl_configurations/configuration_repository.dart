@@ -216,6 +216,8 @@ class ConfigurationsRepository {
           _boolToInt(res?.allowValidateMultiple),
       ConfigurationsTable.columnHideValidateItemExpedition:
           _boolToInt(res?.hideValidateItemExpedition),
+      ConfigurationsTable.columnAllowValidateReceiptMulti:
+          _boolToInt(res?.allowValidateReceiptMulti),
       ConfigurationsTable.columnAccessStockInfoPicking:
           _boolToInt(res?.accessStockInfoPicking),
       ConfigurationsTable.columnAccessStockInfoPacking:
@@ -332,6 +334,8 @@ class ConfigurationsRepository {
               map[ConfigurationsTable.columnAllowValidateMultiple]),
           hideValidateItemExpedition: _intToBool(
               map[ConfigurationsTable.columnHideValidateItemExpedition]),
+          allowValidateReceiptMulti: _intToBool(
+              map[ConfigurationsTable.columnAllowValidateReceiptMulti]),
           accessStockInfoPicking: _intToBool(
               map[ConfigurationsTable.columnAccessStockInfoPicking]),
           accessStockInfoPacking: _intToBool(

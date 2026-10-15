@@ -4,6 +4,7 @@ import 'package:wms_app/features/recepcion_multiusuario/domain/entities/lote_pro
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_claim.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_pool_item.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
+import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_validacion.dart';
 
 abstract class RecepcionMultiusuarioRepository {
   /// Trae las sesiones desde el backend (POST /api/receipt/sessions) y las
@@ -90,5 +91,23 @@ abstract class RecepcionMultiusuarioRepository {
   Future<Either<Failure, RecepcionSession>> fetchSessionDetail({
     required int pickingId,
     required bool isLoadinDialog,
+  });
+
+  /// Cierra la sesión multi y valida el picking
+  /// (POST /api/receipt/session/{sessionId}/validate). Solo el validador
+  /// asignado. Si hay lotes vencidos llega [ConfirmationRequiredFailure] para
+  /// que la UI pregunte y reintente con [confirmarCaducados].
+  Future<Either<Failure, RecepcionValidacion>> validarRecepcion({
+    required int sessionId,
+    required bool crearBackorder,
+    bool? confirmarCaducados,
+  });
+
+  /// Asigna [userId] como validador de [sessionId]
+  /// (POST /api/receipt/session/{sessionId}/assign_validator). No toma
+  /// líneas. Devuelve la cabecera de la sesión actualizada.
+  Future<Either<Failure, RecepcionSession>> asignarValidador({
+    required int sessionId,
+    required int userId,
   });
 }

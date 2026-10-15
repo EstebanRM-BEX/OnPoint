@@ -24,6 +24,17 @@ class RecepcionSession {
   final bool? manejoPropietario;
   final String? propietario;
 
+  // Validación del documento (stock_receipt_validator). Solo vienen del
+  // backend, no se guardan en SQLite: se leen frescos antes de validar.
+  /// 0 si nadie está asignado como validador.
+  final int? validatorId;
+  final String? validatorName;
+  /// Claims `in_progress`: con más de 0 no se puede validar.
+  final int? linesAssigned;
+  final bool? currentUserCanBeValidator;
+  final bool? currentUserIsValidator;
+  final bool? canValidateDocument;
+
   const RecepcionSession({
     this.sessionId,
     this.name,
@@ -49,5 +60,11 @@ class RecepcionSession {
     this.temperatura,
     this.manejoPropietario,
     this.propietario,
+    this.validatorId,
+    this.validatorName,
+    this.linesAssigned,
+    this.currentUserCanBeValidator,
+    this.currentUserIsValidator,
+    this.canValidateDocument,
   });
 }

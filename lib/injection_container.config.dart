@@ -428,6 +428,8 @@ import 'features/recepcion_multiusuario/data/repositories/recepcion_multiusuario
     as _i107;
 import 'features/recepcion_multiusuario/domain/repositories/recepcion_multiusuario_repository.dart'
     as _i300;
+import 'features/recepcion_multiusuario/domain/usecases/asignar_validador_recepcion_usecase.dart'
+    as _i324;
 import 'features/recepcion_multiusuario/domain/usecases/claim_recepcion_product_usecase.dart'
     as _i985;
 import 'features/recepcion_multiusuario/domain/usecases/create_lote_usecase.dart'
@@ -452,6 +454,8 @@ import 'features/recepcion_multiusuario/domain/usecases/release_claim_usecase.da
     as _i950;
 import 'features/recepcion_multiusuario/domain/usecases/undo_claim_usecase.dart'
     as _i442;
+import 'features/recepcion_multiusuario/domain/usecases/validar_recepcion_multi_usecase.dart'
+    as _i739;
 import 'features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_my_claims_bloc.dart'
     as _i91;
 import 'features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_pool_bloc.dart'
@@ -1081,6 +1085,11 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i7.ValidarPedidoPackUseCase>(
       () => _i7.ValidarPedidoPackUseCase(gh<_i820.PackingPedidoRepository>()),
     );
+    gh.lazySingleton<_i324.AsignarValidadorRecepcionUseCase>(
+      () => _i324.AsignarValidadorRecepcionUseCase(
+        gh<_i300.RecepcionMultiusuarioRepository>(),
+      ),
+    );
     gh.lazySingleton<_i985.ClaimRecepcionProductUseCase>(
       () => _i985.ClaimRecepcionProductUseCase(
         gh<_i300.RecepcionMultiusuarioRepository>(),
@@ -1136,6 +1145,11 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i442.UndoClaimUseCase>(
       () => _i442.UndoClaimUseCase(gh<_i300.RecepcionMultiusuarioRepository>()),
+    );
+    gh.lazySingleton<_i739.ValidarRecepcionMultiUseCase>(
+      () => _i739.ValidarRecepcionMultiUseCase(
+        gh<_i300.RecepcionMultiusuarioRepository>(),
+      ),
     );
     gh.lazySingleton<_i777.ExpeditionRepository>(
       () => _i838.ExpeditionRepositoryImpl(
