@@ -40,17 +40,33 @@ void main() {
     });
   });
 
-  test('validator_id/name se guardan y se leen de SQLite', () {
+  test('los campos del validador se guardan y se leen de SQLite', () {
+    // Respuesta real de /api/receipt/sessions.
     final s = RecepcionSessionModel.fromJson({
       'id': 15,
-      'validator_id': 42,
-      'validator_name': 'Ana Validador',
-      'can_validate_document': true,
+      'validator_id': 25,
+      'validator_name': 'Camilo Mesa',
+      'picking_validator_id': 25,
+      'lines_assigned': 1,
+      'current_user_can_be_validator': true,
+      'current_user_is_validator': true,
+      'can_validate_document': false,
     });
     final local = RecepcionSessionModel.fromMap(s.toMap());
-    expect(local.validatorId, 42);
-    expect(local.validatorName, 'Ana Validador');
-    // El resto de los flags no se persiste: se lee fresco del backend.
+    expect(local.validatorId, 25);
+    expect(local.validatorName, 'Camilo Mesa');
+    expect(local.pickingValidatorId, 25);
+    expect(local.linesAssigned, 1);
+    expect(local.currentUserCanBeValidator, isTrue);
+    expect(local.currentUserIsValidator, isTrue);
+    expect(local.canValidateDocument, isFalse);
+  });
+
+  test('sin campos del validador: siguen en null tras SQLite', () {
+    final local = RecepcionSessionModel.fromMap(
+      RecepcionSessionModel.fromJson({'id': 15}).toMap(),
+    );
+    expect(local.currentUserIsValidator, isNull);
     expect(local.canValidateDocument, isNull);
   });
 

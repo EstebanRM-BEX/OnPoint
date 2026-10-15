@@ -27,6 +27,13 @@ class RecepcionSessionsTable {
   static const String columnPropietario = 'propietario';
   static const String columnValidatorId = 'validator_id';
   static const String columnValidatorName = 'validator_name';
+  static const String columnPickingValidatorId = 'picking_validator_id';
+  static const String columnLinesAssigned = 'lines_assigned';
+  static const String columnCurrentUserCanBeValidator =
+      'current_user_can_be_validator';
+  static const String columnCurrentUserIsValidator =
+      'current_user_is_validator';
+  static const String columnCanValidateDocument = 'can_validate_document';
 
   /// Columnas agregadas cuando la sesión trajo mucha más info que el id/
   /// nombre/picking iniciales. Se usa tanto en createTable() (instalación
@@ -51,6 +58,16 @@ class RecepcionSessionsTable {
     '$columnPropietario TEXT',
     '$columnValidatorId INTEGER',
     '$columnValidatorName TEXT',
+    ...validatorFlagsColumnsDdl,
+  ];
+
+  /// Resto de los campos del validador, agregados en v74.
+  static const List<String> validatorFlagsColumnsDdl = [
+    '$columnPickingValidatorId INTEGER',
+    '$columnLinesAssigned INTEGER',
+    '$columnCurrentUserCanBeValidator INTEGER',
+    '$columnCurrentUserIsValidator INTEGER',
+    '$columnCanValidateDocument INTEGER',
   ];
 
   /// Columnas del validador agregadas en v73.

@@ -24,12 +24,13 @@ class RecepcionSession {
   final bool? manejoPropietario;
   final String? propietario;
 
-  // Validación del documento (stock_receipt_validator). Solo validatorId y
-  // validatorName se guardan en SQLite (para la lista); el resto se lee
-  // fresco del backend antes de validar.
+  // Validación del documento (stock_receipt_validator). Llegan en
+  // /api/receipt/sessions y se guardan en SQLite; antes de validar se
+  // vuelven a leer del backend.
   /// 0 si nadie está asignado como validador.
   final int? validatorId;
   final String? validatorName;
+  final int? pickingValidatorId;
   /// Claims `in_progress`: con más de 0 no se puede validar.
   final int? linesAssigned;
   final bool? currentUserCanBeValidator;
@@ -63,6 +64,7 @@ class RecepcionSession {
     this.propietario,
     this.validatorId,
     this.validatorName,
+    this.pickingValidatorId,
     this.linesAssigned,
     this.currentUserCanBeValidator,
     this.currentUserIsValidator,

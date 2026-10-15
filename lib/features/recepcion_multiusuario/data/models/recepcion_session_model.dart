@@ -30,6 +30,7 @@ class RecepcionSessionModel extends RecepcionSession {
     super.propietario,
     super.validatorId,
     super.validatorName,
+    super.pickingValidatorId,
     super.linesAssigned,
     super.currentUserCanBeValidator,
     super.currentUserIsValidator,
@@ -65,6 +66,7 @@ class RecepcionSessionModel extends RecepcionSession {
       propietario: dynamicToString(json['propietario']),
       validatorId: dynamicToInt(json['validator_id']),
       validatorName: dynamicToString(json['validator_name']),
+      pickingValidatorId: dynamicToInt(json['picking_validator_id']),
       linesAssigned: dynamicToInt(json['lines_assigned']),
       currentUserCanBeValidator: dynamicToBool(
         json['current_user_can_be_validator'],
@@ -111,6 +113,18 @@ class RecepcionSessionModel extends RecepcionSession {
       propietario: map[RecepcionSessionsTable.columnPropietario] as String?,
       validatorId: map[RecepcionSessionsTable.columnValidatorId] as int?,
       validatorName: map[RecepcionSessionsTable.columnValidatorName] as String?,
+      pickingValidatorId:
+          map[RecepcionSessionsTable.columnPickingValidatorId] as int?,
+      linesAssigned: map[RecepcionSessionsTable.columnLinesAssigned] as int?,
+      currentUserCanBeValidator: _intToBool(
+        map[RecepcionSessionsTable.columnCurrentUserCanBeValidator],
+      ),
+      currentUserIsValidator: _intToBool(
+        map[RecepcionSessionsTable.columnCurrentUserIsValidator],
+      ),
+      canValidateDocument: _intToBool(
+        map[RecepcionSessionsTable.columnCanValidateDocument],
+      ),
     );
   }
 
@@ -149,6 +163,23 @@ class RecepcionSessionModel extends RecepcionSession {
       RecepcionSessionsTable.columnPropietario: propietario,
       RecepcionSessionsTable.columnValidatorId: validatorId,
       RecepcionSessionsTable.columnValidatorName: validatorName,
+      RecepcionSessionsTable.columnPickingValidatorId: pickingValidatorId,
+      RecepcionSessionsTable.columnLinesAssigned: linesAssigned,
+      RecepcionSessionsTable.columnCurrentUserCanBeValidator: _boolToInt(
+        currentUserCanBeValidator,
+      ),
+      RecepcionSessionsTable.columnCurrentUserIsValidator: _boolToInt(
+        currentUserIsValidator,
+      ),
+      RecepcionSessionsTable.columnCanValidateDocument: _boolToInt(
+        canValidateDocument,
+      ),
     };
   }
+
+  /// null se conserva: "no vino del backend" no es lo mismo que false.
+  static bool? _intToBool(Object? value) => value == null ? null : value == 1;
+
+  static int? _boolToInt(bool? value) =>
+      value == null ? null : (value ? 1 : 0);
 }
