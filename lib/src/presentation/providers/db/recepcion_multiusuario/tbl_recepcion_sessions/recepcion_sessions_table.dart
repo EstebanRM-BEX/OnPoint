@@ -25,6 +25,8 @@ class RecepcionSessionsTable {
   static const String columnTemperatura = 'temperatura';
   static const String columnManejoPropietario = 'manejo_propietario';
   static const String columnPropietario = 'propietario';
+  static const String columnValidatorId = 'validator_id';
+  static const String columnValidatorName = 'validator_name';
 
   /// Columnas agregadas cuando la sesión trajo mucha más info que el id/
   /// nombre/picking iniciales. Se usa tanto en createTable() (instalación
@@ -47,6 +49,14 @@ class RecepcionSessionsTable {
     '$columnTemperatura REAL',
     '$columnManejoPropietario INTEGER',
     '$columnPropietario TEXT',
+    '$columnValidatorId INTEGER',
+    '$columnValidatorName TEXT',
+  ];
+
+  /// Columnas del validador agregadas en v73.
+  static const List<String> validatorColumnsDdl = [
+    '$columnValidatorId INTEGER',
+    '$columnValidatorName TEXT',
   ];
 
   static List<String> get extraColumnsAlterStatements => _extraColumnsDdl

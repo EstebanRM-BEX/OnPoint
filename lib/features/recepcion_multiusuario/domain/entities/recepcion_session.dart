@@ -24,8 +24,9 @@ class RecepcionSession {
   final bool? manejoPropietario;
   final String? propietario;
 
-  // Validación del documento (stock_receipt_validator). Solo vienen del
-  // backend, no se guardan en SQLite: se leen frescos antes de validar.
+  // Validación del documento (stock_receipt_validator). Solo validatorId y
+  // validatorName se guardan en SQLite (para la lista); el resto se lee
+  // fresco del backend antes de validar.
   /// 0 si nadie está asignado como validador.
   final int? validatorId;
   final String? validatorName;

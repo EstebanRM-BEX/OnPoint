@@ -109,6 +109,8 @@ class RecepcionSessionModel extends RecepcionSession {
       manejoPropietario:
           (map[RecepcionSessionsTable.columnManejoPropietario] as int?) == 1,
       propietario: map[RecepcionSessionsTable.columnPropietario] as String?,
+      validatorId: map[RecepcionSessionsTable.columnValidatorId] as int?,
+      validatorName: map[RecepcionSessionsTable.columnValidatorName] as String?,
     );
   }
 
@@ -145,6 +147,8 @@ class RecepcionSessionModel extends RecepcionSession {
           ? null
           : (manejoPropietario! ? 1 : 0),
       RecepcionSessionsTable.columnPropietario: propietario,
+      RecepcionSessionsTable.columnValidatorId: validatorId,
+      RecepcionSessionsTable.columnValidatorName: validatorName,
     };
   }
 }

@@ -40,6 +40,20 @@ void main() {
     });
   });
 
+  test('validator_id/name se guardan y se leen de SQLite', () {
+    final s = RecepcionSessionModel.fromJson({
+      'id': 15,
+      'validator_id': 42,
+      'validator_name': 'Ana Validador',
+      'can_validate_document': true,
+    });
+    final local = RecepcionSessionModel.fromMap(s.toMap());
+    expect(local.validatorId, 42);
+    expect(local.validatorName, 'Ana Validador');
+    // El resto de los flags no se persiste: se lee fresco del backend.
+    expect(local.canValidateDocument, isNull);
+  });
+
   group('RecepcionValidacionModel', () {
     test('completada con backorder', () {
       final v = RecepcionValidacionModel.fromJson({

@@ -11,9 +11,13 @@ class RecepcionSessionCardWidget extends StatelessWidget {
 
   final RecepcionSession session;
 
-  /// Muestra quién es el validador asignado (solo en el tab Detalle, donde la
-  /// sesión viene fresca del backend).
+  /// El validador asignado se muestra siempre que exista; con true también
+  /// se muestra "sin asignar" (tab Detalle).
   final bool mostrarValidador;
+
+  bool get _tieneValidador =>
+      (session.validatorId ?? 0) > 0 &&
+      (session.validatorName?.isNotEmpty ?? false);
 
   String _estadoLabel(String? state) {
     switch (state) {
@@ -130,7 +134,7 @@ class RecepcionSessionCardWidget extends StatelessWidget {
                   ),
                 ),
               const Divider(),
-              if (mostrarValidador)
+              if (_tieneValidador || mostrarValidador)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Row(
@@ -143,14 +147,12 @@ class RecepcionSessionCardWidget extends StatelessWidget {
                       const SizedBox(width: 5),
                       Expanded(
                         child: Text(
-                          (session.validatorId ?? 0) > 0
-                              ? 'Validador: ${session.validatorName ?? '-'}'
+                          _tieneValidador
+                              ? 'Validador: ${session.validatorName}'
                               : 'Validador: sin asignar',
                           style: TextStyle(
                             fontSize: 12,
-                            color: (session.validatorId ?? 0) > 0
-                                ? black
-                                : grey,
+                            color: _tieneValidador ? black : grey,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

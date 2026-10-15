@@ -110,7 +110,7 @@ class DataBaseSqlite {
 
     _database = await openDatabase(
       'wmsapp.db',
-      version: 72,
+      version: 73,
       onConfigure: (db) async {
         try {
           // ✅ CORRECCIÓN: Usamos rawQuery porque este PRAGMA devuelve el valor "wal"
@@ -1416,6 +1416,19 @@ class DataBaseSqlite {
         );
       } catch (e) {
         debugPrint("Error actualizando a v72 (tblconfigurations): $e");
+      }
+    }
+
+    if (oldVersion < 73) {
+      // /api/receipt/sessions: validador asignado, para mostrarlo en la lista.
+      for (final col in RecepcionSessionsTable.validatorColumnsDdl) {
+        try {
+          await db.execute(
+            'ALTER TABLE ${RecepcionSessionsTable.tableName} ADD COLUMN $col',
+          );
+        } catch (e) {
+          debugPrint("Error actualizando a v73 ($col): $e");
+        }
       }
     }
   }
