@@ -245,7 +245,10 @@ class _RecepcionMultiusuarioDetailTabDetalleState
                   ),
                 ),
               ),
-            RecepcionSessionCardWidget(session: _session),
+            RecepcionSessionCardWidget(
+              session: _session,
+              mostrarValidador: true,
+            ),
             if (_mostrarValidar)
               RecepcionValidarButtonWidget(
                 session: _session,

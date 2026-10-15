@@ -3,9 +3,17 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
 
 class RecepcionSessionCardWidget extends StatelessWidget {
-  const RecepcionSessionCardWidget({super.key, required this.session});
+  const RecepcionSessionCardWidget({
+    super.key,
+    required this.session,
+    this.mostrarValidador = false,
+  });
 
   final RecepcionSession session;
+
+  /// Muestra quién es el validador asignado (solo en el tab Detalle, donde la
+  /// sesión viene fresca del backend).
+  final bool mostrarValidador;
 
   String _estadoLabel(String? state) {
     switch (state) {
@@ -122,6 +130,35 @@ class RecepcionSessionCardWidget extends StatelessWidget {
                   ),
                 ),
               const Divider(),
+              if (mostrarValidador)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.verified_user_outlined,
+                        size: 14,
+                        color: primaryColorApp,
+                      ),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          (session.validatorId ?? 0) > 0
+                              ? 'Validador: ${session.validatorName ?? '-'}'
+                              : 'Validador: sin asignar',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: (session.validatorId ?? 0) > 0
+                                ? black
+                                : grey,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               Row(
                 children: [
                   const Icon(Icons.person, size: 14, color: primaryColorApp),

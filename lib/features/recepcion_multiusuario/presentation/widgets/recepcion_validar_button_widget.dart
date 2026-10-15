@@ -7,7 +7,7 @@ import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcio
 /// - sin validador asignado → "Asignarme como validador";
 /// - el usuario es el validador → "Validar recepción", habilitado con
 ///   can_validate_document y sin líneas en progreso;
-/// - otro usuario es el validador → solo su nombre.
+/// - otro usuario es el validador → nada (su nombre ya está en la card).
 class RecepcionValidarButtonWidget extends StatelessWidget {
   const RecepcionValidarButtonWidget({
     super.key,
@@ -29,12 +29,7 @@ class RecepcionValidarButtonWidget extends StatelessWidget {
     final esValidador = session.currentUserIsValidator == true;
     final sinValidador = (session.validatorId ?? 0) == 0;
 
-    if (!esValidador && !sinValidador) {
-      return _Aviso(
-        icon: Icons.verified_user_outlined,
-        texto: 'Validador: ${session.validatorName ?? '-'}',
-      );
-    }
+    if (!esValidador && !sinValidador) return const SizedBox.shrink();
 
     if (sinValidador) {
       return _Accion(
@@ -128,32 +123,6 @@ class _Accion extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Aviso extends StatelessWidget {
-  const _Aviso({required this.icon, required this.texto});
-
-  final IconData icon;
-  final String texto;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: primaryColorApp),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              texto,
-              style: const TextStyle(fontSize: 13, color: black),
             ),
           ),
         ],
