@@ -3,12 +3,13 @@ import 'package:wms_app/core/error/failures.dart';
 import 'package:wms_app/features/picking_cluster/domain/entities/lote_producto.dart';
 import '../entities/batch_product.dart';
 import '../entities/picking_batch.dart';
+import '../entities/picking_cluster_fetch_result.dart';
 
 /// Contrato del repositorio de la feature picking_cluster.
 /// Todas las operaciones devuelven [Either] con [Failure] o el dato esperado.
 abstract class IPickingClusterRepository {
   // ─── Remote ──────────────────────────────────────────────────────────────
-  Future<Either<Failure, List<PickingBatch>>> getPickingBatches();
+  Future<Either<Failure, PickingClusterFetchResult>> getPickingBatches();
 
   /// Asigna al usuario todas las zonas del batch (POST picking_batchs), guarda
   /// las zonas actualizadas en SQLite y devuelve el batch.

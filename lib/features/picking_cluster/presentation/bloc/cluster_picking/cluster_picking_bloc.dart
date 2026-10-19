@@ -1054,8 +1054,8 @@ class ClusterPickingBloc
 
       result.fold(
         (failure) => emit(RefreshPedidosValidateError(failure.message)),
-        (batches) {
-          final match = batches.where((b) => b.id == event.batchId);
+        (fetch) {
+          final match = fetch.batches.where((b) => b.id == event.batchId);
           if (match.isEmpty) {
             emit(RefreshPedidosValidateError(
                 'No se encontró el batch al refrescar los pedidos a validar'));

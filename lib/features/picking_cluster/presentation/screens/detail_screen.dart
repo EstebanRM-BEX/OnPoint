@@ -17,6 +17,8 @@ import 'package:wms_app/features/picking_cluster/presentation/utils/pedidos_read
 import 'package:wms_app/features/picking_cluster/presentation/widgets/cluster_action_footer.dart';
 import 'package:wms_app/features/picking_cluster/presentation/widgets/cluster_palette.dart';
 import 'package:wms_app/features/picking_cluster/presentation/widgets/detail/detail_batch_header.dart';
+import 'package:wms_app/features/picking_cluster/presentation/widgets/detail/detail_batch_summary_card.dart';
+import 'package:wms_app/features/picking_cluster/presentation/bloc/picking_cluster_list/picking_cluster_list_bloc.dart';
 import 'package:wms_app/features/picking_cluster/presentation/widgets/detail/detail_product_card.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/detail_cluster/detail_cluster_bloc.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
@@ -145,6 +147,13 @@ class _DetailClusterScreenState extends State<DetailClusterScreen>
                     ),
                     onProgressInfo: _showProgressInfo,
                   ),
+                  if (bloc.currentBatch != null)
+                    DetailBatchSummaryCard(
+                      batch: bloc.currentBatch!,
+                      secuencia:
+                          context.read<PickingClusterListBloc>().secuencia,
+                      placa: context.read<PickingClusterListBloc>().placa,
+                    ),
                   Expanded(
                     child: products.isEmpty
                         ? const _EmptyProducts()

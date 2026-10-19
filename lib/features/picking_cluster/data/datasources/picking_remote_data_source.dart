@@ -2,12 +2,15 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:wms_app/core/network/wms_headers.dart';
 import '../../../../src/api/api_request_service.dart';
 import '../models/picking_cluster_model.dart';
 import '../models/lote_producto_model.dart';
 
 abstract class PickingClusterRemoteDataSource {
-  Future<List<ResultElementModel>> getPickingBatches();
+  /// GET api/cluster/picking_batchs. `headers` trae secuencia_wms/placa_wms.
+  Future<({List<ResultElementModel> batches, WmsHeaders headers})>
+      getPickingBatches();
 
   /// POST api/cluster/picking_batchs: asigna al usuario las zonas del batch y
   /// devuelve ese batch (mismo formato del GET, pero un solo elemento).
@@ -43,7 +46,8 @@ class PickingClusterRemoteDataSourceImpl
   PickingClusterRemoteDataSourceImpl(this.apiRequestService);
 
   @override
-  Future<List<ResultElementModel>> getPickingBatches() async {
+  Future<({List<ResultElementModel> batches, WmsHeaders headers})>
+      getPickingBatches() async {
     final response = await apiRequestService.get(
       endpoint: 'api/cluster/picking_batchs',
       isLoadinDialog: false,
@@ -52,7 +56,10 @@ class PickingClusterRemoteDataSourceImpl
 
     if (response.statusCode == 200) {
       final model = PickingClusterModel.fromJson(json.decode(response.body));
-      return model.result?.result ?? [];
+      return (
+        batches: model.result?.result ?? <ResultElementModel>[],
+        headers: WmsHeaders.fromResponse(response),
+      );
     } else {
       throw Exception('Failed to load picking batches: ${response.statusCode}');
     }

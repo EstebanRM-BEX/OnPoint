@@ -21,6 +21,10 @@ class PickingClusterListBloc
   final AssignBatchZonasUseCase assignBatchZonasUseCase;
   final ClusterPickingBloc clusterPickingBloc;
 
+  // Encabezados secuencia_wms / placa_wms de la última respuesta del servidor.
+  String secuencia = '';
+  String placa = '';
+
   PickingClusterListBloc({
     required this.getPickingClusterData,
     required this.getLocalPickingClusterData,
@@ -47,7 +51,11 @@ class PickingClusterListBloc
           emit(ClustersErrorState(failure.message));
         }
       },
-      (_) => add(LoadLocalClustersEvent(silent: event.silent)),
+      (fetch) {
+        secuencia = fetch.secuencia;
+        placa = fetch.placa;
+        add(LoadLocalClustersEvent(silent: event.silent));
+      },
     );
   }
 

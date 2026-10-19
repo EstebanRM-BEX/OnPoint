@@ -9,6 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/features/picking_cluster/presentation/bloc/cluster_picking/cluster_picking_bloc.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/shared/widgets/wms_headers_banner.dart';
 import 'package:wms_app/features/picking_cluster/presentation/widgets/cluster_palette.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/cluster_search_dock.dart';
 import 'package:wms_app/features/picking_cluster/presentation/screens/picking_cluster/widgets/cluster_sort_menu.dart';
@@ -395,6 +396,11 @@ class _PickingClusterScreenState extends State<PickingClusterScreen> {
                     onChanged: (value) => setState(() => _searchQuery = value),
                     onCleared: _clearSearch,
                     onActivateScanner: () => focusNodeBuscar.requestFocus(),
+                  ),
+                  WmsHeadersBanner(
+                    secuencia: context.read<PickingClusterListBloc>().secuencia,
+                    placa: context.read<PickingClusterListBloc>().placa,
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                   ),
                   Expanded(child: _buildList(state, visible)),
                 ],

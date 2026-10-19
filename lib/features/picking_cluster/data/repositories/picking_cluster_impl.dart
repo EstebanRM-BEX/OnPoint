@@ -5,6 +5,7 @@ import 'package:wms_app/core/error/failures.dart';
 import '../../domain/entities/batch_product.dart';
 import '../../domain/entities/lote_producto.dart';
 import '../../domain/entities/picking_batch.dart';
+import '../../domain/entities/picking_cluster_fetch_result.dart';
 import '../../domain/repositories/picking_cluster_repository.dart';
 import '../datasources/picking_cluster_local_data_source.dart';
 import '../datasources/picking_remote_data_source.dart';
@@ -17,15 +18,20 @@ class PickingClusterRepositoryImpl implements IPickingClusterRepository {
   PickingClusterRepositoryImpl(this.remoteDataSource, this.localDataSource);
 
   @override
-  Future<Either<Failure, List<PickingBatch>>> getPickingBatches() async {
+  Future<Either<Failure, PickingClusterFetchResult>> getPickingBatches() async {
     try {
-      final models = await remoteDataSource.getPickingBatches();
-      final entities = models.map((model) => model.toEntity()).toList();
+      final response = await remoteDataSource.getPickingBatches();
+      final entities =
+          response.batches.map((model) => model.toEntity()).toList();
 
       // Cache the fetched batches transparently
       await localDataSource.cachePickingBatches(entities);
 
-      return Right(entities);
+      return Right(PickingClusterFetchResult(
+        batches: entities,
+        secuencia: response.headers.secuencia,
+        placa: response.headers.placa,
+      ));
     } catch (e, s) {
       log('❌ Error en getPickingBatches: $e',
           stackTrace: s, name: 'PickingClusterRepo');
