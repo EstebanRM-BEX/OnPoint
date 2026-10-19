@@ -26,8 +26,15 @@ import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
 /// bloquear el cierre.
 class ExpedicionDetailTabDetalles extends StatefulWidget {
   final ExpedicionDetail detail;
+  final String secuencia;
+  final String placa;
 
-  const ExpedicionDetailTabDetalles({super.key, required this.detail});
+  const ExpedicionDetailTabDetalles({
+    super.key,
+    required this.detail,
+    this.secuencia = '',
+    this.placa = '',
+  });
 
   @override
   State<ExpedicionDetailTabDetalles> createState() =>
@@ -247,6 +254,44 @@ class _ExpedicionDetailTabDetallesState
                   color: primaryColorApp,
                   fontWeight: FontWeight.bold),
             ),
+            // Banner con secuencia y placa WMS si existen
+            if (widget.secuencia.isNotEmpty || widget.placa.isNotEmpty)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F9FF),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFF0EA5E9)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (widget.secuencia.isNotEmpty)
+                      Text(
+                        'Secuencia WMS: ${widget.secuencia}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF0369A1),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    if (widget.placa.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'Placa WMS: ${widget.placa}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF0369A1),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             if (pedido.zonaEntrega != null && pedido.zonaEntrega!.isNotEmpty)
               row('Zona de entrega: ', pedido.zonaEntrega!),
             Visibility(

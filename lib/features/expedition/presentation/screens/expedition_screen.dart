@@ -6,6 +6,7 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/features/expedition/data/services/expedition_sync_coordinator.dart';
 import 'package:wms_app/features/expedition/presentation/bloc/detail/expedicion_detail_bloc.dart';
+import 'package:wms_app/features/expedition/presentation/bloc/list/expedition_list_bloc.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/features/expedition/presentation/widgets/expedicion_detail_header_widget.dart';
 import 'package:wms_app/features/expedition/presentation/widgets/expedicion_detail_tab_detalles.dart';
@@ -122,10 +123,23 @@ class _ExpedicionDetailScreenState extends State<ExpedicionDetailScreen>
                                 );
                               }
 
+                              final listState =
+                                  context.watch<ExpedicionListBloc>().state;
+                              final secuencia = listState is ExpedicionesLoaded
+                                  ? listState.secuencia
+                                  : '';
+                              final placa = listState is ExpedicionesLoaded
+                                  ? listState.placa
+                                  : '';
+
                               return TabBarView(
                                 controller: _tabController,
                                 children: [
-                                  ExpedicionDetailTabDetalles(detail: detail!),
+                                  ExpedicionDetailTabDetalles(
+                                    detail: detail!,
+                                    secuencia: secuencia,
+                                    placa: placa,
+                                  ),
                                   ExpedicionDetailTabPorHacer(detail: detail),
                                   ExpedicionDetailTabListo(detail: detail),
                                 ],
