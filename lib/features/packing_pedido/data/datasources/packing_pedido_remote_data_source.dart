@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/error/exceptions.dart';
+import 'package:wms_app/core/network/wms_headers.dart';
 import 'package:wms_app/features/packing_pedido/data/models/odoo_parse.dart';
 import 'package:wms_app/features/packing_pedido/data/models/packing_api_models.dart';
 import 'package:wms_app/features/packing_pedido/domain/entities/packing_catalogos.dart';
@@ -25,10 +26,14 @@ class PesoPaqueteApi {
 class PedidosPackApiResult {
   final List<PedidoPackApi> pedidos;
   final bool updateVersion;
+  final String secuencia;
+  final String placa;
 
   const PedidosPackApiResult({
     required this.pedidos,
     this.updateVersion = false,
+    this.secuencia = '',
+    this.placa = '',
   });
 }
 
@@ -312,11 +317,14 @@ class PackingPedidoRemoteDataSourceImpl
       isLoadinDialog: isLoadingDialog,
     );
     final r = result(decode(response));
+    final headers = WmsHeaders.fromResponse(response);
     return PedidosPackApiResult(
       pedidos: [
         for (final p in OdooParse.maps(r['result'])) PedidoPackApi.fromMap(p),
       ],
       updateVersion: OdooParse.boolean(r['update_version']),
+      secuencia: headers.secuencia,
+      placa: headers.placa,
     );
   }
 

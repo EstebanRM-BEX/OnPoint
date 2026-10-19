@@ -1,3 +1,4 @@
+import 'package:wms_app/core/network/wms_headers.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -52,6 +53,8 @@ class PickingPickRepository {
                   batches.map((data) => ResultPick.fromMap(data)).toList();
               return ResponsePickResult(
                 code: 200,
+                secuencia: WmsHeaders.fromResponse(response).secuencia,
+                placa: WmsHeaders.fromResponse(response).placa,
                 result: products,
                 updateVersion:
                     jsonResponse['result']['update_version'] ?? false,

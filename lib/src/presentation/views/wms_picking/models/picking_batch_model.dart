@@ -35,8 +35,17 @@ class DataBatch {
   final String? msg;
   final bool? updateVersion;
   final List<BatchsModel>? result;
+  final String secuencia;
+  final String placa;
 
-  DataBatch({this.code, this.msg, this.updateVersion, this.result});
+  DataBatch({
+    this.code,
+    this.msg,
+    this.updateVersion,
+    this.result,
+    this.secuencia = '',
+    this.placa = '',
+  });
 
   factory DataBatch.fromJson(String str) => DataBatch.fromMap(json.decode(str));
 

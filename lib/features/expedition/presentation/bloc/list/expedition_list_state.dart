@@ -21,10 +21,17 @@ final class ExpedicionListDbLoading extends ExpedicionListState {
 
 final class ExpedicionesLoaded extends ExpedicionListState {
   final List<ExpedicionPedido> expediciones;
-  const ExpedicionesLoaded(this.expediciones);
+  final String secuencia;
+  final String placa;
+
+  const ExpedicionesLoaded(
+    this.expediciones, {
+    this.secuencia = '',
+    this.placa = '',
+  });
 
   @override
-  List<Object> get props => [expediciones, Object()];
+  List<Object> get props => [expediciones, secuencia, placa, Object()];
 }
 
 final class ExpedicionListError extends ExpedicionListState {

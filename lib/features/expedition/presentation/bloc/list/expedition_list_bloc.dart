@@ -23,6 +23,8 @@ class ExpedicionListBloc
   List<ExpedicionPedido> _todasLasExpediciones = [];
   List<ExpedicionPedido> _expedicionesFiltradas = [];
   String currentFilterKey = 'fecha_desc';
+  String _secuencia = '';
+  String _placa = '';
 
   /// Lista completa sin filtrar por búsqueda — usada por el escaneo de
   /// ListExpeditionScreen para matchear aunque haya un texto de búsqueda
@@ -54,10 +56,16 @@ class ExpedicionListBloc
       (fetchResult) {
         _todasLasExpediciones = fetchResult.expediciones;
         _expedicionesFiltradas = List.from(_todasLasExpediciones);
+        _secuencia = fetchResult.secuencia;
+        _placa = fetchResult.placa;
         if (fetchResult.needsUpdate) {
           emit(const NeedUpdateVersionExpedicionState());
         }
-        emit(ExpedicionesLoaded(_expedicionesFiltradas));
+        emit(ExpedicionesLoaded(
+          _expedicionesFiltradas,
+          secuencia: _secuencia,
+          placa: _placa,
+        ));
       },
     );
   }
@@ -75,7 +83,11 @@ class ExpedicionListBloc
       (expediciones) {
         _todasLasExpediciones = expediciones;
         _expedicionesFiltradas = List.from(_todasLasExpediciones);
-        emit(ExpedicionesLoaded(_expedicionesFiltradas));
+        emit(ExpedicionesLoaded(
+          _expedicionesFiltradas,
+          secuencia: _secuencia,
+          placa: _placa,
+        ));
       },
     );
   }
@@ -102,7 +114,11 @@ class ExpedicionListBloc
       }).toList();
     }
 
-    emit(ExpedicionesLoaded(_expedicionesFiltradas));
+    emit(ExpedicionesLoaded(
+      _expedicionesFiltradas,
+      secuencia: _secuencia,
+      placa: _placa,
+    ));
   }
 
   void _onSortExpedicionList(
@@ -149,7 +165,11 @@ class ExpedicionListBloc
     });
 
     _expedicionesFiltradas = sortedList;
-    emit(ExpedicionesLoaded(_expedicionesFiltradas));
+    emit(ExpedicionesLoaded(
+      _expedicionesFiltradas,
+      secuencia: _secuencia,
+      placa: _placa,
+    ));
   }
 
   String _mapFailureMessage(Failure failure) {

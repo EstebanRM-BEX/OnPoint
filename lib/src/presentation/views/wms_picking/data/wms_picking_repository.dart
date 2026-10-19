@@ -1,3 +1,4 @@
+import 'package:wms_app/core/network/wms_headers.dart';
 // // ignore_for_file: avoid_print
 
 // ignore_for_file: unrelated_type_equality_checks, avoid_print,
@@ -64,6 +65,8 @@ class WmsPickingRepository {
                   batches.map((data) => BatchsModel.fromMap(data)).toList();
               return DataBatch(
                   code: 200,
+                  secuencia: WmsHeaders.fromResponse(response).secuencia,
+                  placa: WmsHeaders.fromResponse(response).placa,
                   msg: jsonResponse['result']['msg'] ?? 'Success',
                   updateVersion:
                       jsonResponse['result']['update_version'] ?? false,
@@ -181,6 +184,8 @@ class WmsPickingRepository {
                   batches.map((data) => BatchsModel.fromMap(data)).toList();
               return DataBatch(
                   code: 200,
+                  secuencia: WmsHeaders.fromResponse(response).secuencia,
+                  placa: WmsHeaders.fromResponse(response).placa,
                   msg: jsonResponse['result']['msg'] ?? 'Success',
                   updateVersion:
                       jsonResponse['result']['update_version'] ?? false,

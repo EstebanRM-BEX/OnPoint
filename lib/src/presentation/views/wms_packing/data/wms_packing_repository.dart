@@ -1,3 +1,4 @@
+import 'package:wms_app/core/network/wms_headers.dart';
 // ignore_for_file: avoid_print, unrelated_type_equality_checks, use_build_context_synchronously
 
 import 'dart:convert';
@@ -72,6 +73,8 @@ class WmsPackingRepository {
 
             return PackingModelResponseResult(
               code: 200,
+              secuencia: WmsHeaders.fromResponse(response).secuencia,
+              placa: WmsHeaders.fromResponse(response).placa,
               result: batchs,
               msg: 'Batches obtenidos correctamente',
               updateVersion: jsonResponse['result']['update_version'] ?? false,
@@ -198,6 +201,8 @@ class WmsPackingRepository {
 
             return PackingModelResponseResult(
               code: 200,
+              secuencia: WmsHeaders.fromResponse(response).secuencia,
+              placa: WmsHeaders.fromResponse(response).placa,
               result: batchs,
               msg: 'Batches obtenidos correctamente',
               updateVersion: jsonResponse['result']['update_version'] ?? false,
@@ -322,6 +327,8 @@ class WmsPackingRepository {
 
             return PackingPedidoResult(
               code: 200,
+              secuencia: WmsHeaders.fromResponse(response).secuencia,
+              placa: WmsHeaders.fromResponse(response).placa,
               msg: 'Pedidos obtenidos correctamente',
               result: pedidos,
               updateVersion: jsonResponse['result']['update_version'] ?? false,

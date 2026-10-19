@@ -21,7 +21,14 @@ import 'package:wms_app/shared/utils/app_navigation.dart';
 /// ni tiempos de inicio — una sesión puede ser trabajada por 1 o más usuarios
 /// a la vez.
 class ListRecepcionMultiusuarioScreen extends StatefulWidget {
-  const ListRecepcionMultiusuarioScreen({super.key});
+  const ListRecepcionMultiusuarioScreen({
+    super.key,
+    this.refrescarDelServidor = false,
+  });
+
+  /// true al volver de validar una recepción: la lista local quedó vieja
+  /// (la sesión validada sigue en SQLite), se pide de nuevo al backend.
+  final bool refrescarDelServidor;
 
   @override
   State<ListRecepcionMultiusuarioScreen> createState() =>
@@ -44,9 +51,11 @@ class _ListRecepcionMultiusuarioScreenState
     super.initState();
     // Offline-first: primero lo que ya hay en SQLite, el refresh manual trae
     // lo nuevo del backend.
-    context.read<RecepcionMultiusuarioListBloc>().add(
-      const FetchRecepcionSessionsFromDbEvent(),
-    );
+    final bloc = context.read<RecepcionMultiusuarioListBloc>();
+    bloc.add(const FetchRecepcionSessionsFromDbEvent());
+    if (widget.refrescarDelServidor) {
+      bloc.add(const FetchRecepcionSessionsEvent(isLoadinDialog: false));
+    }
   }
 
   @override
@@ -120,7 +129,7 @@ class _ListRecepcionMultiusuarioScreenState
         body: Column(
           children: [
             ExpedicionListHeaderWidget(
-              title: 'RECEPCIÓN MULTIUSUARIO',
+              title: 'RECEP. MULTIUSUARIO',
               onBack: () => goHome(context),
               onRefresh: _refresh,
             ),

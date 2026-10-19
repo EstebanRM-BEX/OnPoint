@@ -1,3 +1,5 @@
+import 'package:wms_app/core/network/wms_headers.dart';
+
 import 'package:wms_app/features/expedition/data/models/expedicion_pedido_model.dart';
 
 /// Envuelve la respuesta cruda de `/api/transferencias/out`:
@@ -7,15 +9,22 @@ class ExpedicionResponseModel {
   final bool? updateVersion;
   final String? msg;
   final List<ExpedicionPedidoModel> result;
+  final String secuencia;
+  final String placa;
 
   const ExpedicionResponseModel({
     this.code,
     this.updateVersion,
     this.msg,
     this.result = const [],
+    this.secuencia = '',
+    this.placa = '',
   });
 
-  factory ExpedicionResponseModel.fromJson(Map<String, dynamic> json) {
+  factory ExpedicionResponseModel.fromJson(
+    Map<String, dynamic> json, {
+    WmsHeaders headers = WmsHeaders.empty,
+  }) {
     final Map<String, dynamic>? result =
         json['result'] as Map<String, dynamic>?;
 
@@ -32,6 +41,8 @@ class ExpedicionResponseModel {
       result: rawList
           .map((x) => ExpedicionPedidoModel.fromJson(x as Map<String, dynamic>))
           .toList(),
+      secuencia: headers.secuencia,
+      placa: headers.placa,
     );
   }
 }

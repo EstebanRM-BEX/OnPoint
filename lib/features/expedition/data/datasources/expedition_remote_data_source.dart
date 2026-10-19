@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:injectable/injectable.dart';
 import 'package:wms_app/core/error/exceptions.dart';
+import 'package:wms_app/core/network/wms_headers.dart';
 import 'package:wms_app/core/utils/prefs/pref_utils.dart';
 import 'package:wms_app/features/expedition/data/models/expedicion_response_model.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
@@ -71,7 +72,10 @@ class ExpeditionRemoteDataSourceImpl implements ExpeditionRemoteDataSource {
     }
 
     final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-    final parsed = ExpedicionResponseModel.fromJson(jsonResponse);
+    final parsed = ExpedicionResponseModel.fromJson(
+      jsonResponse,
+      headers: WmsHeaders.fromResponse(response),
+    );
 
     if (parsed.code != 200) {
       throw ServerException(parsed.msg ?? 'Error desconocido al obtener expediciones');

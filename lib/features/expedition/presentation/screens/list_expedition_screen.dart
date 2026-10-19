@@ -303,6 +303,17 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen>
                         ? state.expediciones
                         : <ExpedicionPedido>[];
 
+                    final secuencia = state is ExpedicionesLoaded
+                        ? state.secuencia
+                        : '';
+
+                    final placa = state is ExpedicionesLoaded
+                        ? state.placa
+                        : '';
+
+                    final mostrarBanner =
+                        (secuencia.isNotEmpty || placa.isNotEmpty);
+
                     final listToShow = expediciones
                         .where(
                           (e) =>
@@ -313,22 +324,112 @@ class _ListExpeditionScreenState extends State<ListExpeditionScreen>
                         .toList();
 
                     if (listToShow.isEmpty) {
-                      return const Center(
+                      return Center(
                         child: Padding(
-                          padding: EdgeInsets.all(24),
-                          child: Text(
-                            'No se encontraron resultados.\nIntenta con otra búsqueda.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: grey, fontSize: 14),
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (mostrarBanner)
+                                Container(
+                                  width: double.infinity,
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF0F9FF),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: const Color(0xFF0EA5E9),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      if (secuencia.isNotEmpty)
+                                        Text(
+                                          'Secuencia WMS: $secuencia',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF0369A1),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      if (placa.isNotEmpty)
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 4),
+                                          child: Text(
+                                            'Placa WMS: $placa',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Color(0xFF0369A1),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              const Text(
+                                'No se encontraron resultados.\nIntenta con otra búsqueda.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: grey, fontSize: 14),
+                              ),
+                            ],
                           ),
                         ),
                       );
                     }
 
                     return ListView.builder(
-                      itemCount: listToShow.length,
+                      itemCount: listToShow.length + (mostrarBanner ? 1 : 0),
                       itemBuilder: (context, index) {
-                        final expedicion = listToShow[index];
+                        // Banner al inicio si hay datos
+                        if (mostrarBanner && index == 0) {
+                          return Container(
+                            margin: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0F9FF),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: const Color(0xFF0EA5E9),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (secuencia.isNotEmpty)
+                                  Text(
+                                    'Secuencia WMS: $secuencia',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF0369A1),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                if (placa.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      'Placa WMS: $placa',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF0369A1),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        // Índice ajustado para expediciones
+                        final expedicionIndex =
+                            mostrarBanner ? index - 1 : index;
+                        final expedicion = listToShow[expedicionIndex];
                         return InkWell(
                           onTap: () =>
                               _handleExpedicionTap(context, expedicion),

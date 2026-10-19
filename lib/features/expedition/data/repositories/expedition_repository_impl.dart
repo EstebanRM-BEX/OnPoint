@@ -104,6 +104,8 @@ class ExpeditionRepositoryImpl implements ExpeditionRepository {
       return Right(ExpedicionFetchResult(
         expediciones: localPedidos,
         needsUpdate: response.updateVersion ?? false,
+        secuencia: response.secuencia,
+        placa: response.placa,
       ));
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

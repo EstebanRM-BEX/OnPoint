@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/routes/app_router.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcion_session.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_my_claims_bloc.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/bloc/detail/recepcion_multiusuario_pool_bloc.dart';
@@ -143,6 +144,19 @@ class _RecepcionMultiusuarioDetailScreenState
           widget.session.name ?? 'RECEPCIÓN',
           style: const TextStyle(color: Colors.white, fontSize: 16),
         ),
+        actions: [
+          if (widget.session.pickingId != null)
+            IconButton(
+              tooltip: 'Imprimir',
+              icon: const Icon(Icons.print, color: Colors.white),
+              // Mismo selector de impresoras que recepción individual.
+              onPressed: () => ModalPrintersList.show(
+                context,
+                resIds: [widget.session.pickingId],
+                companyId: widget.session.warehouseId ?? 1,
+              ),
+            ),
+        ],
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
         ),

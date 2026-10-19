@@ -9,11 +9,13 @@ import 'package:wms_app/features/recepcion_multiusuario/domain/entities/recepcio
 import 'package:wms_app/features/recepcion_multiusuario/domain/usecases/asignar_validador_recepcion_usecase.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/usecases/fetch_recepcion_session_detail_usecase.dart';
 import 'package:wms_app/features/recepcion_multiusuario/domain/usecases/validar_recepcion_multi_usecase.dart';
+import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/dialogs_validar_recepcion_widget.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/recepcion_session_card_widget.dart';
 import 'package:wms_app/features/recepcion_multiusuario/presentation/widgets/recepcion_validar_button_widget.dart';
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/widgets/loading_dialog_mixin.dart';
+import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 
 /// Tab 1 — información de la recepción: la misma card que se ve en
 /// ListRecepcionMultiusuarioScreen, pero con el detalle refrescado vía
@@ -132,19 +134,25 @@ class _RecepcionMultiusuarioDetailTabDetalleState
         return; // El botón ya muestra el motivo.
       }
 
-      final crearBackorder = await showDialog<bool>(
+      final completa = (_session.progressPercent ?? 0) >= 100;
+      final opcion = await showDialog<OpcionConfirmarRecepcion>(
         context: context,
-        builder: (_) => const DialogBackorderRecepcionWidget(),
+        builder: (_) =>
+            DialogConfirmarRecepcionMultiWidget(recepcionCompleta: completa),
       );
-      if (!mounted || crearBackorder == null) return;
-      if (!crearBackorder) {
-        final confirmado = await showDialog<bool>(
-          context: context,
-          builder: (_) => const DialogDescartarPendienteWidget(),
+      if (!mounted || opcion == null) return;
+
+      if (opcion == OpcionConfirmarRecepcion.imprimir) {
+        // Igual que recepción individual: imprime el picking y no valida.
+        ModalPrintersList.show(
+          context,
+          resIds: [_session.pickingId],
+          companyId: _session.warehouseId ?? 1,
         );
-        if (!mounted || confirmado != true) return;
+        return;
       }
 
+      final crearBackorder = opcion == OpcionConfirmarRecepcion.conBackorder;
       await _enviarValidacion(sessionId, crearBackorder, null);
     } finally {
       if (mounted) setState(() => _ocupado = false);
@@ -195,20 +203,15 @@ class _RecepcionMultiusuarioDetailTabDetalleState
         Navigator.pushReplacementNamed(
           context,
           AppRoutes.listRecepcionMultiusuario,
+          arguments: [true], // refrescar la lista desde el backend
         );
       },
     );
   }
 
-  void _mostrarError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        duration: const Duration(seconds: 4),
-        content: Text(message),
-        backgroundColor: Colors.red[200],
-      ),
-    );
-  }
+  /// Errores de asignar/validar: diálogo de errores de la app (el mensaje
+  /// de Odoo puede ser largo y un snackbar se pierde).
+  void _mostrarError(String message) => showScrollableErrorDialog(message);
 
   void _mostrarExito(RecepcionValidacion validacion) {
     final picking = validacion.pickingName ?? _session.pickingName ?? '';

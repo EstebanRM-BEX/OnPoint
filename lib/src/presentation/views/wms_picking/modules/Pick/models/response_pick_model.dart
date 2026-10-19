@@ -42,12 +42,16 @@ class ResponsePickResult {
   List<ResultPick>? result;
   bool? updateVersion;
   String? msg;
+  String secuencia;
+  String placa;
 
   ResponsePickResult({
     this.code,
     this.result,
     this.updateVersion,
     this.msg,
+    this.secuencia = '',
+    this.placa = '',
   });
 
   factory ResponsePickResult.fromMap(Map<String, dynamic> json) =>

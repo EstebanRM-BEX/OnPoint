@@ -408,9 +408,12 @@ class AppRoutes {
       // crea una instancia nueva por cada getIt<>(), así que al entrar de
       // nuevo a cualquiera de estas pantallas se arranca en limpio, y al
       // salir (pop) el BlocProvider libera la instancia sola.
-      listRecepcionMultiusuario: (_) => BlocProvider(
+      listRecepcionMultiusuario: (context) => BlocProvider(
         create: (_) => getIt<RecepcionMultiusuarioListBloc>(),
-        child: const ListRecepcionMultiusuarioScreen(),
+        child: ListRecepcionMultiusuarioScreen(
+          // [true]: viene de validar una recepción, pedir la lista al backend.
+          refrescarDelServidor: _arg<bool>(_args(context), 0) ?? false,
+        ),
       ),
       recepcionMultiusuarioDetail: (context) {
         final args = _args(context);

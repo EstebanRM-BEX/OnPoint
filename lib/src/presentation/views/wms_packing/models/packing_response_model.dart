@@ -40,12 +40,16 @@ class PackingModelResponseResult {
   final String? msg;
   final bool? updateVersion;
   final List<BatchPackingModel>? result;
+  final String secuencia;
+  final String placa;
 
   PackingModelResponseResult({
     this.code,
     this.result,
     this.msg,
     this.updateVersion,
+    this.secuencia = '',
+    this.placa = '',
   });
 
   factory PackingModelResponseResult.fromJson(String str) =>

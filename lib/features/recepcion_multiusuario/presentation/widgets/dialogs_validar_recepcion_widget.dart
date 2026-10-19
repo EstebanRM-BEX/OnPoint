@@ -1,86 +1,106 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/shared/widgets/selection_dialog.dart';
 
-/// Qué hacer con lo no recibido al validar la recepción multi. Devuelve
-/// `true` (crear backorder), `false` (descartar pendiente) o `null`
-/// (cancelar).
-class DialogBackorderRecepcionWidget extends StatelessWidget {
-  const DialogBackorderRecepcionWidget({super.key});
+/// Opción elegida en [DialogConfirmarRecepcionMultiWidget].
+enum OpcionConfirmarRecepcion { imprimir, conBackorder, sinBackorder }
+
+/// Confirmación al validar la recepción multi, mismo diseño que el de
+/// recepción individual (tab1.dart): Imprimir, Confirmar y Crear un
+/// Backorder (solo si falta recibir), Confirmar Recepcion y Cancelar.
+/// Devuelve la opción elegida o `null` (cancelar).
+class DialogConfirmarRecepcionMultiWidget extends StatelessWidget {
+  const DialogConfirmarRecepcionMultiWidget({
+    super.key,
+    required this.recepcionCompleta,
+  });
+
+  /// progress_percent >= 100: no hay nada pendiente para un backorder.
+  final bool recepcionCompleta;
 
   @override
   Widget build(BuildContext context) {
-    return SelectionDialog(
-      icon: Icons.fact_check_outlined,
-      title: 'Validar recepción',
-      message: '¿Qué hacer con las cantidades que no se recibieron?',
-      options: [
-        SelectionOption(
-          title: 'Crear backorder',
-          tag: 'Recomendado',
-          description: 'Lo no recibido queda pendiente en otro documento',
-          icon: Icons.call_split,
-          onTap: () => Navigator.pop(context, true),
-        ),
-        SelectionOption(
-          title: 'Descartar pendiente',
-          description: 'Lo no recibido se elimina del documento',
-          icon: Icons.delete_outline,
-          onTap: () => Navigator.pop(context, false),
-        ),
-      ],
-    );
-  }
-}
+    final size = MediaQuery.sizeOf(context);
 
-/// Segunda confirmación antes de validar sin backorder. Devuelve `true` si
-/// el usuario confirma.
-class DialogDescartarPendienteWidget extends StatelessWidget {
-  const DialogDescartarPendienteWidget({super.key});
+    Widget boton(
+      String texto,
+      OpcionConfirmarRecepcion? opcion, {
+      IconData? icon,
+      Color color = primaryColorApp,
+    }) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: ElevatedButton(
+          onPressed: () => Navigator.pop(context, opcion),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color,
+            minimumSize: Size(size.width * 0.9, 40),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, color: white),
+                const SizedBox(width: 5),
+              ],
+              Text(texto, style: const TextStyle(color: white, fontSize: 12)),
+            ],
+          ),
+        ),
+      );
+    }
 
-  @override
-  Widget build(BuildContext context) {
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
       child: AlertDialog(
-        actionsPadding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+        backgroundColor: Colors.white,
         actionsAlignment: MainAxisAlignment.center,
-        title: Center(
-          child: Text(
-            'Descartar pendiente',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: primaryColorApp, fontSize: 18),
-          ),
-        ),
-        content: Text(
-          'Lo que no se recibió se eliminará y no quedará pendiente en '
-          'ningún documento. ¿Desea continuar?',
+        title: Text(
+          'Confirmar Recepcion',
+          style: TextStyle(color: primaryColorApp, fontSize: 16),
           textAlign: TextAlign.center,
-          style: TextStyle(color: black, fontSize: 14),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: 100,
+              width: 200,
+              child: SvgPicture.asset(
+                'assets/images/icono.svg',
+                height: 150,
+                width: 50,
+                fit: BoxFit.cover,
+              ),
+            ),
+            Text(
+              recepcionCompleta
+                  ? '¿Estás seguro de confirmar la recepción y dejarla lista para ser enviada?'
+                  : 'Usted ha procesado cantidades de productos menores que los requeridos en el movimiento original.',
+              style: TextStyle(color: black, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
         actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, false),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: grey,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text('Cancelar', style: TextStyle(color: white)),
+          boton(
+            'Imprimir',
+            OpcionConfirmarRecepcion.imprimir,
+            icon: Icons.print,
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: red,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+          if (!recepcionCompleta)
+            boton(
+              'Confirmar y Crear un Backorder',
+              OpcionConfirmarRecepcion.conBackorder,
             ),
-            child: const Text('Descartar', style: TextStyle(color: white)),
-          ),
+          boton('Confirmar Recepcion', OpcionConfirmarRecepcion.sinBackorder),
+          boton('Cancelar', null, color: grey),
         ],
       ),
     );

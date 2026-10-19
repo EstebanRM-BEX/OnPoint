@@ -39,12 +39,16 @@ class PackingPedidoResult {
   final String? msg;
   final bool? updateVersion;
   final List<PedidoPackingResult>? result;
+  final String secuencia;
+  final String placa;
 
   PackingPedidoResult({
     this.code,
     this.msg,
     this.updateVersion,
     this.result,
+    this.secuencia = '',
+    this.placa = '',
   });
 
   factory PackingPedidoResult.fromJson(String str) =>

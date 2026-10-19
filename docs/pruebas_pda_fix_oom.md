@@ -53,8 +53,8 @@ En cada pantalla: buscar por nombre y barcode, bajar (carga la siguiente página
 
 ## 4. Devoluciones — terceros
 
-- [ ] Abrir crear devolución: sin diálogo largo de "cargando terceros".
-- [ ] Buscar tercero (con y sin coincidencias), bajar para cargar más.
+- [✅] Abrir crear devolución: sin diálogo largo de "cargando terceros".
+- [✅] Buscar tercero (con y sin coincidencias), bajar para cargar más.
 - [ ] Salir y volver a entrar: no reinicializa todo de nuevo.
 
 ## 5. Memoria y estabilidad
