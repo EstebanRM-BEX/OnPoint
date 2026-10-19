@@ -119,6 +119,8 @@ class PackingPedidoListBloc
           status: ListaPackStatus.listo,
           pedidos: res.pedidos,
           needUpdateVersion: res.needUpdateVersion,
+          secuencia: res.secuencia,
+          placa: res.placa,
           operacion: state.operacion.exito('sincronizar'),
         ),
       ),

@@ -11,13 +11,19 @@ class SyncPedidosPackResult extends Equatable {
   /// El backend pide actualizar la versión de la app.
   final bool needUpdateVersion;
 
+  /// Encabezados secuencia_wms / placa_wms de la respuesta ('' si no llegan).
+  final String secuencia;
+  final String placa;
+
   const SyncPedidosPackResult({
     required this.pedidos,
     this.needUpdateVersion = false,
+    this.secuencia = '',
+    this.placa = '',
   });
 
   @override
-  List<Object?> get props => [pedidos, needUpdateVersion];
+  List<Object?> get props => [pedidos, needUpdateVersion, secuencia, placa];
 }
 
 /// Pedido con todo lo necesario para la pantalla de detalle, ya repartido

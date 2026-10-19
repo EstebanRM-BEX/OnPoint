@@ -18,6 +18,7 @@ import 'package:wms_app/features/picking_cluster/presentation/widgets/cluster_pa
 import 'package:wms_app/injection_container.dart';
 import 'package:wms_app/shared/utils/app_navigation.dart';
 import 'package:wms_app/shared/widgets/barcode_scanner_widget.dart';
+import 'package:wms_app/shared/widgets/wms_headers_banner.dart';
 import 'package:wms_app/src/presentation/views/recepcion/modules/individual/screens/widgets/others/dialog_start_picking_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_start_picking_widget.dart';
 
@@ -120,7 +121,11 @@ class _PackingPedidoListViewState extends State<_PackingPedidoListView> {
     _bloc.add(const BusquedaPedidoPackCambiada(''));
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => PackingPedidoDetailPage(pedidoId: pedido.id),
+        builder: (_) => PackingPedidoDetailPage(
+          pedidoId: pedido.id,
+          secuencia: _bloc.state.secuencia,
+          placa: _bloc.state.placa,
+        ),
       ),
     );
     if (!mounted) return;
@@ -217,6 +222,11 @@ class _PackingPedidoListViewState extends State<_PackingPedidoListView> {
                     onActivateScanner: () => _scanFocus.requestFocus(),
                   ),
                   if (state.sincronizando) const LinearProgressIndicator(),
+                  WmsHeadersBanner(
+                    secuencia: state.secuencia,
+                    placa: state.placa,
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                  ),
                   Expanded(
                     child: RefreshIndicator(
                       onRefresh: () async =>

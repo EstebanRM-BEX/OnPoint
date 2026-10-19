@@ -67,6 +67,8 @@ class PackingPedidoRepositoryImpl implements PackingPedidoRepository {
     return SyncPedidosPackResult(
       pedidos: await local.getPedidos(),
       needUpdateVersion: api.updateVersion,
+      secuencia: api.secuencia,
+      placa: api.placa,
     );
   }, requiereRed: true);
 

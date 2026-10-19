@@ -20,6 +20,10 @@ class PackingPedidoListState extends Equatable {
   final bool needUpdateVersion;
   final ConfigPackingUsuario config;
 
+  /// Encabezados secuencia_wms / placa_wms de la última sincronización.
+  final String secuencia;
+  final String placa;
+
   /// Pedido listo para abrir (asignado o con el inicio registrado): la UI
   /// navega al detalle cuando la operación 'abrir' termina en éxito.
   final PedidoPack? pedidoAbierto;
@@ -36,6 +40,8 @@ class PackingPedidoListState extends Equatable {
     this.sincronizando = false,
     this.needUpdateVersion = false,
     this.config = const ConfigPackingUsuario(),
+    this.secuencia = '',
+    this.placa = '',
     this.pedidoAbierto,
     this.operacion = PackingOperacion.ninguna,
   });
@@ -105,6 +111,8 @@ class PackingPedidoListState extends Equatable {
     bool? sincronizando,
     bool? needUpdateVersion,
     ConfigPackingUsuario? config,
+    String? secuencia,
+    String? placa,
     PedidoPack? pedidoAbierto,
     PackingOperacion? operacion,
   }) {
@@ -121,6 +129,8 @@ class PackingPedidoListState extends Equatable {
       sincronizando: sincronizando ?? this.sincronizando,
       needUpdateVersion: needUpdateVersion ?? this.needUpdateVersion,
       config: config ?? this.config,
+      secuencia: secuencia ?? this.secuencia,
+      placa: placa ?? this.placa,
       pedidoAbierto: pedidoAbierto ?? this.pedidoAbierto,
       operacion: operacion ?? this.operacion,
     );
@@ -138,6 +148,8 @@ class PackingPedidoListState extends Equatable {
     sincronizando,
     needUpdateVersion,
     config,
+    secuencia,
+    placa,
     pedidoAbierto,
     operacion,
   ];

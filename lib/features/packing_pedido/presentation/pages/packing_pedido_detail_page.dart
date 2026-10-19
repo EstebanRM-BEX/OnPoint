@@ -30,10 +30,16 @@ class PackingPedidoDetailPage extends StatelessWidget {
   final int pedidoId;
   final int tabInicial;
 
+  /// Encabezados secuencia_wms / placa_wms de la lista ('' = no se muestran).
+  final String secuencia;
+  final String placa;
+
   const PackingPedidoDetailPage({
     super.key,
     required this.pedidoId,
     this.tabInicial = 0,
+    this.secuencia = '',
+    this.placa = '',
   });
 
   @override
@@ -48,14 +54,24 @@ class PackingPedidoDetailPage extends StatelessWidget {
         BlocProvider(create: (_) => getIt<PackingPackagesBloc>()),
         BlocProvider(create: (_) => getIt<PackingConfirmBloc>()),
       ],
-      child: _DetailView(tabInicial: tabInicial),
+      child: _DetailView(
+        tabInicial: tabInicial,
+        secuencia: secuencia,
+        placa: placa,
+      ),
     );
   }
 }
 
 class _DetailView extends StatefulWidget {
   final int tabInicial;
-  const _DetailView({required this.tabInicial});
+  final String secuencia;
+  final String placa;
+  const _DetailView({
+    required this.tabInicial,
+    this.secuencia = '',
+    this.placa = '',
+  });
 
   @override
   State<_DetailView> createState() => _DetailViewState();
@@ -408,6 +424,8 @@ class _DetailViewState extends State<_DetailView>
                     children: [
                       DetallePedidoTab(
                         detalle: detalle,
+                        secuencia: widget.secuencia,
+                        placa: widget.placa,
                         onConfirmar:
                             editable && !state.config.hideValidatePacking
                             ? _confirmarPedido

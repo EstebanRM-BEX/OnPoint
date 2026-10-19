@@ -14,10 +14,16 @@ class DetallePedidoTab extends StatelessWidget {
   /// null = botón oculto (sin permiso o pedido terminado).
   final VoidCallback? onConfirmar;
 
+  /// Encabezados secuencia_wms / placa_wms; vacíos no se muestran.
+  final String secuencia;
+  final String placa;
+
   const DetallePedidoTab({
     super.key,
     required this.detalle,
     required this.onConfirmar,
+    this.secuencia = '',
+    this.placa = '',
   });
 
   @override
@@ -36,6 +42,20 @@ class DetallePedidoTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
+        if (secuencia.isNotEmpty)
+          InfoLineaPack(
+            etiqueta: 'Secuencia WMS',
+            valor: secuencia,
+            negrita: true,
+            colorValor: primaryColorApp,
+          ),
+        if (placa.isNotEmpty)
+          InfoLineaPack(
+            etiqueta: 'Placa WMS',
+            valor: placa,
+            negrita: true,
+            colorValor: primaryColorApp,
+          ),
         InfoLineaPack(
           etiqueta: 'Prioridad',
           valor: p.esPrioritario ? 'Alta' : 'Normal',
