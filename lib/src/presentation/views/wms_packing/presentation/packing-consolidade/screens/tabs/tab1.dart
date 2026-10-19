@@ -3,6 +3,7 @@
 import 'package:wms_app/src/presentation/views/wms_packing/presentation/packing-consolidade/screens/widgets/show_packing_consolidate_dialog.dart';
 import 'dart:ui';
 
+import 'package:wms_app/shared/widgets/wms_headers_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
@@ -145,6 +146,14 @@ class Tab1Screen extends StatelessWidget {
                                   iconSize: 24,
                                 ),
                               ],
+                            ),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: WmsHeadersInline(
+                                secuencia: context.read<PackingConsolidateBloc>().secuencia,
+                                placa: context.read<PackingConsolidateBloc>().placa,
+                                labelColor: primaryColorApp,
+                              ),
                             ),
 
                             // Contenido colapsable

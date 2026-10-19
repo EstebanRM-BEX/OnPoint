@@ -39,6 +39,9 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
 
   //*lista de batchs para packing
   List<BatchPackingModel> listOfBatchs = [];
+  // Encabezados secuencia_wms / placa_wms de la última respuesta de batch_packing.
+  String secuencia = '';
+  String placa = '';
   List<BatchPackingModel> listOfBatchsDB = [];
 
   TemperatureIa resultTemperature = TemperatureIa();
@@ -1528,6 +1531,8 @@ class WmsPackingBloc extends Bloc<WmsPackingEvent, WmsPackingState> {
     try {
       final response =
           await wmsPackingRepository.resBatchsPacking(event.isLoadinDialog);
+      secuencia = response.secuencia;
+      placa = response.placa;
 
       if (response.result != null && response.result is List) {
         listOfBatchs.clear();

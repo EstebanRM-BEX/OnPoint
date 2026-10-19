@@ -3,6 +3,7 @@ import 'package:wms_app/core/interfaces/i_audio_service.dart';
 import 'package:wms_app/injection_container.dart';
 // ignore_for_file: use_super_parameters, unrelated_type_equality_checks, use_build_context_synchronously
 
+import 'package:wms_app/shared/widgets/wms_headers_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -268,6 +269,15 @@ class _PakingListScreenState extends State<PakingListScreen>
                                                       fontWeight:
                                                           FontWeight.bold),
                                                 )),
+                                            WmsHeadersInline(
+                                                  secuencia: context
+                                                      .read<WmsPackingBloc>()
+                                                      .secuencia,
+                                                  placa: context
+                                                      .read<WmsPackingBloc>()
+                                                      .placa,
+                                                  labelColor: primaryColorApp,
+                                                ),
                                             Row(
                                               children: [
                                                 const Align(
@@ -629,6 +639,14 @@ class _PakingListScreenState extends State<PakingListScreen>
                                                                               black)),
                                                                 ),
                                                               ],
+                                                            ),
+                                                            WmsHeadersInline(
+                                                              secuencia: packingBloc
+                                                                  .secuencia,
+                                                              placa: packingBloc
+                                                                  .placa,
+                                                              labelColor:
+                                                                  primaryColorApp,
                                                             ),
                                                             Row(
                                                               children: [

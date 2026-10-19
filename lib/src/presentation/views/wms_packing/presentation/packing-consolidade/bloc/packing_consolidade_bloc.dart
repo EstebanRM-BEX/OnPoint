@@ -112,6 +112,9 @@ class PackingConsolidateBloc
 
   //*lista de batchs para packing
   List<BatchPackingModel> listOfBatchs = [];
+  // Encabezados secuencia_wms / placa_wms de la última respuesta de batch_packing_unificado.
+  String secuencia = '';
+  String placa = '';
   List<BatchPackingModel> listOfBatchsDB = [];
 
   //*listad de pedido de un batch
@@ -1843,6 +1846,8 @@ class PackingConsolidateBloc
 
       final response =
           await wmsPackingRepository.resBatchsPackingConsolidate(true);
+      secuencia = response.secuencia;
+      placa = response.placa;
 
       if (response.result != null && response.result is List) {
         listOfBatchs.clear();

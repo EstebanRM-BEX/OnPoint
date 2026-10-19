@@ -7,6 +7,7 @@ import 'package:wms_app/injection_container.dart';
 import 'dart:ui';
 
 import 'package:animated_notch_bottom_bar/animated_notch_bottom_bar/animated_notch_bottom_bar.dart';
+import 'package:wms_app/shared/widgets/wms_headers_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
@@ -796,6 +797,11 @@ class _ListPackingConsolidadeScreenState
                                                   style: const TextStyle(
                                                       fontSize: 12,
                                                       color: black)),
+                                            ),
+                                            WmsHeadersInline(
+                                              secuencia: context.read<PackingConsolidateBloc>().secuencia,
+                                              placa: context.read<PackingConsolidateBloc>().placa,
+                                              labelColor: primaryColorApp,
                                             ),
                                               Visibility(
                                                     visible: batch.manejoPropietario == 1 ||  batch.manejoPropietario == true,

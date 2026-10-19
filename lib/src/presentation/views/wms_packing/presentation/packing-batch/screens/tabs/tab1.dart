@@ -2,6 +2,7 @@
 
 import 'dart:ui';
 
+import 'package:wms_app/shared/widgets/wms_headers_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
@@ -142,6 +143,15 @@ class Tab1Screen extends StatelessWidget {
                                   iconSize: 24,
                                 ),
                               ],
+                            ),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: WmsHeadersInline(
+                                secuencia:
+                                    context.read<WmsPackingBloc>().secuencia,
+                                placa: context.read<WmsPackingBloc>().placa,
+                                labelColor: primaryColorApp,
+                              ),
                             ),
 
                             // Contenido colapsable
