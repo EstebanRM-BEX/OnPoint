@@ -7,7 +7,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/get_colors_utils.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/shared/widgets/dialog_confirm_product_load_widget.dart';
@@ -18,6 +17,7 @@ import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/batch_details_expandable_card_widget.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/screens/widgets/others/dialog_edit_product_widget.dart';
 import 'package:wms_app/src/presentation/widgets/dialog_error_widget.dart';
 import 'package:wms_app/src/presentation/widgets/expiredate_widget.dart';
@@ -220,175 +220,61 @@ class _BatchDetailScreenState extends State<BatchDetailScreen>
                       ),
 
                       const SizedBox(height: 5),
-                      SizedBox(
-                        width: size.width,
-                        height: context
-                                    .read<BatchBloc>()
-                                    .batchWithProducts
-                                    .batch
-                                    ?.isSeparate ==
-                                1
-                            ? 140
-                            : context.read<BatchBloc>().isSearch == false
-                                ? 70
-                                : 100,
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children: [
-                              Card(
-                                color: white,
-                                elevation: 2,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      width: size.width * 0.6,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 5),
-                                      child: Center(
-                                        child: Row(
-                                          children: [
-                                            Text(
-                                              "Unidades separadas: ${(context.read<BatchBloc>().calcularProgresoReal())}%",
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: getColorForPercentage(
-                                                    double.tryParse(context
-                                                            .read<BatchBloc>()
-                                                            .calcularProgresoReal()) ??
-                                                        0.0), // Convertir a double
-                                              ),
-                                            ),
-                                            const Spacer(),
-                                            //icono de ayuda
-                                            GestureDetector(
-                                                onTap: () {
-                                                  showDialog(
-                                                    context: context,
-                                                    builder: (context) {
-                                                      return BackdropFilter(
-                                                        filter:
-                                                            ImageFilter.blur(
-                                                                sigmaX: 5,
-                                                                sigmaY: 5),
-                                                        child: AlertDialog(
-                                                          actionsAlignment:
-                                                              MainAxisAlignment
-                                                                  .center,
-                                                          title: Center(
-                                                            child: Text(
-                                                                "Información",
-                                                                style: TextStyle(
-                                                                    color:
-                                                                        primaryColorApp,
-                                                                    fontSize:
-                                                                        20)),
-                                                          ),
-                                                          content: const Column(
-                                                            mainAxisSize:
-                                                                MainAxisSize
-                                                                    .min,
-                                                            children: [
-                                                              Text(
-                                                                  "El porcentaje de unidades separadas se calcula de la siguiente manera:"),
-                                                              SizedBox(
-                                                                  height: 5),
-                                                              Text(
-                                                                  "Porcentaje de unidades separadas = (Unidades separadas / Unidades totales) * 100"),
-                                                            ],
-                                                          ),
-                                                          actions: [
-                                                            ElevatedButton(
-                                                                style: ElevatedButton
-                                                                    .styleFrom(
-                                                                  backgroundColor:
-                                                                      grey,
-                                                                  shape: RoundedRectangleBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                              10)),
-                                                                ),
-                                                                onPressed: () {
-                                                                  Navigator.of(
-                                                                          context)
-                                                                      .pop();
-                                                                },
-                                                                child: const Text(
-                                                                    "Cerrar",
-                                                                    style: TextStyle(
-                                                                        color:
-                                                                            white))),
-                                                          ],
-                                                        ),
-                                                      );
-                                                    },
-                                                  );
-                                                },
-                                                child: Icon(Icons.help,
-                                                    color: primaryColorApp,
-                                                    size: 15)),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                      if (context.read<BatchBloc>().batchWithProducts.batch != null)
+                      BatchDetailsExpandableCard(
+                        batch: context.read<BatchBloc>().batchWithProducts.batch!,
+                        porcentajeSeparadas:
+                            context.read<BatchBloc>().calcularProgresoReal(),
+                        secuencia: context.read<WMSPickingBloc>().secuencia,
+                        placa: context.read<WMSPickingBloc>().placa,
+                      ),
+                      Visibility(
+                        visible: context.read<BatchBloc>().isSearch,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                          ),
+                          child: Card(
+                            color: Colors.white,
+                            elevation: 2,
+                            child: TextFormField(
+                              focusNode: _searchFocusNode,
+                              textAlignVertical:
+                                  TextAlignVertical.center,
+                              onChanged: (value) {
+                                context.read<BatchBloc>().add(
+                                    SearchProductsBatchEvent(
+                                        value,
+                                        context
+                                            .read<BatchBloc>()
+                                            .typePicking));
+                              },
+                              controller: context
+                                  .read<BatchBloc>()
+                                  .searchController,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.search,
+                                    color: grey),
+                                suffixIcon: IconButton(
+                                    onPressed: () {
+                                      context.read<BatchBloc>().add(
+                                          ClearSearchProudctsBatchEvent(
+                                              context
+                                                  .read<BatchBloc>()
+                                                  .typePicking));
+                                      //cerramo el teclado
+                                      FocusScope.of(context).unfocus();
+                                    },
+                                    icon: const Icon(Icons.close,
+                                        color: grey)),
+                                disabledBorder:
+                                    const OutlineInputBorder(),
+                                hintText: "Buscar productos",
+                                hintStyle: const TextStyle(
+                                    color: Colors.grey, fontSize: 12),
+                                border: InputBorder.none,
                               ),
-
-                              // //*widget de busqueda
-
-                              Visibility(
-                                visible: context.read<BatchBloc>().isSearch,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                  ),
-                                  child: Card(
-                                    color: Colors.white,
-                                    elevation: 2,
-                                    child: TextFormField(
-                                      focusNode: _searchFocusNode,
-                                      textAlignVertical:
-                                          TextAlignVertical.center,
-                                      onChanged: (value) {
-                                        context.read<BatchBloc>().add(
-                                            SearchProductsBatchEvent(
-                                                value,
-                                                context
-                                                    .read<BatchBloc>()
-                                                    .typePicking));
-                                      },
-                                      controller: context
-                                          .read<BatchBloc>()
-                                          .searchController,
-                                      decoration: InputDecoration(
-                                        prefixIcon: const Icon(Icons.search,
-                                            color: grey),
-                                        suffixIcon: IconButton(
-                                            onPressed: () {
-                                              context.read<BatchBloc>().add(
-                                                  ClearSearchProudctsBatchEvent(
-                                                      context
-                                                          .read<BatchBloc>()
-                                                          .typePicking));
-                                              //cerramo el teclado
-                                              FocusScope.of(context).unfocus();
-                                            },
-                                            icon: const Icon(Icons.close,
-                                                color: grey)),
-                                        disabledBorder:
-                                            const OutlineInputBorder(),
-                                        hintText: "Buscar productos",
-                                        hintStyle: const TextStyle(
-                                            color: Colors.grey, fontSize: 12),
-                                        border: InputBorder.none,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ),

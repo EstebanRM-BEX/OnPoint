@@ -23,6 +23,9 @@ part 'wms_picking_state.dart';
 class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
   //*batchs
   List<BatchsModel> listOfBatchs = [];
+  // Encabezados secuencia_wms / placa_wms de la última respuesta de /batchs.
+  String secuencia = '';
+  String placa = '';
   List<BatchsModel> filteredBatchs = []; // Lista para los productos filtrados
   List<BatchsModel> listOfBatchsByComponents = [];
   List<BatchsModel> filteredBatchsByComponents =
@@ -156,6 +159,8 @@ class WMSPickingBloc extends Bloc<PickingEvent, PickingState> {
       final response = await wmsPickingRepository.resBatchs(
         event.isLoadinDialog,
       );
+      secuencia = response.secuencia;
+      placa = response.placa;
 
       listOfBatchs.clear();
       filteredBatchs.clear();

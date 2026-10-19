@@ -15,6 +15,7 @@ import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/src/presentation/providers/db/database.dart';
 import 'package:wms_app/features/home/presentation/widgets/Dialog_ProductsNotSends.dart';
 import 'package:wms_app/features/user/presentation/widgets/dialog_info_widget.dart';
+import 'package:wms_app/shared/widgets/wms_headers_banner.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/bloc/wms_picking_bloc.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/models/picking_batch_model.dart';
 import 'package:wms_app/src/presentation/views/wms_picking/modules/Batchs/blocs/batch_bloc/batch_bloc.dart';
@@ -541,15 +542,29 @@ class _PickingPageState extends State<WMSPickingPage> {
                                       .toList(),
                                 );
 
+                                final pickingBloc =
+                                    context.read<WMSPickingBloc>();
+                                final hasWmsHeaders =
+                                    pickingBloc.secuencia.isNotEmpty ||
+                                        pickingBloc.placa.isNotEmpty;
+
                                 return listToShow.isNotEmpty
                                 ? ListView.builder(
                                     padding: EdgeInsets.only(
                                         top: 10, bottom: size.height * 0.15),
                                     physics:
                                         const AlwaysScrollableScrollPhysics(),
-                                    itemCount: listToShow.length,
+                                    itemCount: listToShow.length +
+                                        (hasWmsHeaders ? 1 : 0),
                                     itemBuilder: (contextBuilder, index) {
-                                      final batch = listToShow[index];
+                                      if (hasWmsHeaders && index == 0) {
+                                        return WmsHeadersBanner(
+                                          secuencia: pickingBloc.secuencia,
+                                          placa: pickingBloc.placa,
+                                        );
+                                      }
+                                      final batch = listToShow[
+                                          hasWmsHeaders ? index - 1 : index];
                                       //convertimos la fecha
 
                                       return Padding(
