@@ -200,186 +200,54 @@ class _PickDetailScreenState extends State<PickDetailScreen>
                     ),
 
                     const SizedBox(height: 5),
-                    SizedBox(
-                      width: size.width,
-                      height: bloc.pickWithProducts.pick?.isSeparate == 1
-                          ? 140
-                          : bloc.isSearch == false
-                          ? 70
-                          : 100,
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Card(
-                                  color: white,
-                                  elevation: 2,
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        width: size.width * 0.6,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 5,
-                                        ),
-                                        child: Center(
-                                          child: Row(
-                                            children: [
-                                              Text(
-                                                "Unidades separadas: ${bloc.calcularUnidadesSeparadas()}%",
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: getColorForPercentage(
-                                                    bloc.calcularUnidadesSeparadas(),
-                                                  ), // Convertir a double
-                                                ),
-                                              ),
-                                              const Spacer(),
-                                              //icono de ayuda
-                                              GestureDetector(
-                                                onTap: () {
-                                                  showDialog(
-                                                    context: context,
-                                                    builder: (context) {
-                                                      return BackdropFilter(
-                                                        filter:
-                                                            ImageFilter.blur(
-                                                              sigmaX: 5,
-                                                              sigmaY: 5,
-                                                            ),
-                                                        child: AlertDialog(
-                                                          actionsAlignment:
-                                                              MainAxisAlignment
-                                                                  .center,
-                                                          title: Center(
-                                                            child: Text(
-                                                              "Información",
-                                                              style: TextStyle(
-                                                                color:
-                                                                    primaryColorApp,
-                                                                fontSize: 20,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          content: const Column(
-                                                            mainAxisSize:
-                                                                MainAxisSize
-                                                                    .min,
-                                                            children: [
-                                                              Text(
-                                                                "El porcentaje de unidades separadas se calcula de la siguiente manera:",
-                                                              ),
-                                                              SizedBox(
-                                                                height: 5,
-                                                              ),
-                                                              Text(
-                                                                "Porcentaje de unidades separadas = (Unidades separadas / Unidades totales) * 100",
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          actions: [
-                                                            ElevatedButton(
-                                                              style: ElevatedButton.styleFrom(
-                                                                backgroundColor:
-                                                                    grey,
-                                                                shape: RoundedRectangleBorder(
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        10,
-                                                                      ),
-                                                                ),
-                                                              ),
-                                                              onPressed: () {
-                                                                Navigator.of(
-                                                                  context,
-                                                                ).pop();
-                                                              },
-                                                              child: const Text(
-                                                                "Cerrar",
-                                                                style:
-                                                                    TextStyle(
-                                                                      color:
-                                                                          white,
-                                                                    ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      );
-                                                    },
-                                                  );
-                                                },
-                                                child: Icon(
-                                                  Icons.help,
-                                                  color: primaryColorApp,
-                                                  size: 15,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            // //*widget de busqueda
-                            Visibility(
-                              visible: bloc.isSearch,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                ),
-                                child: Card(
-                                  color: Colors.white,
-                                  elevation: 2,
-                                  child: TextFormField(
-                                    focusNode: _searchFocusNode,
-                                    showCursor: true,
-                                    textAlignVertical: TextAlignVertical.center,
-                                    onChanged: (value) {
-                                      bloc.add(SearchProductsPickEvent(value));
-                                    },
-                                    controller: bloc.searchController,
-                                    decoration: InputDecoration(
-                                      prefixIcon: const Icon(
-                                        Icons.search,
-                                        color: grey,
-                                      ),
-                                      suffixIcon: IconButton(
-                                        onPressed: () {
-                                          bloc.add(
-                                            ClearSearchProudctsPickEvent(),
-                                          );
-                                          //cerramo el teclado
-                                          FocusScope.of(context).unfocus();
-                                        },
-                                        icon: const Icon(
-                                          Icons.close,
-                                          color: grey,
-                                        ),
-                                      ),
-                                      disabledBorder:
-                                          const OutlineInputBorder(),
-                                      hintText: "Buscar productos",
-                                      hintStyle: const TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 12,
-                                      ),
-                                      border: InputBorder.none,
-                                    ),
-                                  ),
+                    _buildPickDetailsCard(context, bloc, size),
+                    // //*widget de busqueda
+                    Visibility(
+                      visible: bloc.isSearch,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        child: Card(
+                          color: Colors.white,
+                          elevation: 2,
+                          child: TextFormField(
+                            focusNode: _searchFocusNode,
+                            showCursor: true,
+                            textAlignVertical: TextAlignVertical.center,
+                            onChanged: (value) {
+                              bloc.add(SearchProductsPickEvent(value));
+                            },
+                            controller: bloc.searchController,
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(
+                                Icons.search,
+                                color: grey,
+                              ),
+                              suffixIcon: IconButton(
+                                onPressed: () {
+                                  bloc.add(
+                                    ClearSearchProudctsPickEvent(),
+                                  );
+                                  //cerramo el teclado
+                                  FocusScope.of(context).unfocus();
+                                },
+                                icon: const Icon(
+                                  Icons.close,
+                                  color: grey,
                                 ),
                               ),
+                              disabledBorder:
+                                  const OutlineInputBorder(),
+                              hintText: "Buscar productos",
+                              hintStyle: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                              border: InputBorder.none,
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
@@ -1345,6 +1213,283 @@ class DialogoConfirmateProductLoad extends StatelessWidget {
       ),
     );
   }
+}
+
+  // 🔧 Función para construir el card expandible de detalles del pick
+  Widget _buildPickDetailsCard(
+    BuildContext context,
+    PickingPickBloc bloc,
+    Size size,
+  ) {
+    final pick = bloc.pickWithProducts.pick;
+    if (pick == null) return const SizedBox.shrink();
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        final isExpanded = ValueNotifier<bool>(false);
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          child: ValueListenableBuilder<bool>(
+            valueListenable: isExpanded,
+            builder: (context, expanded, _) {
+              return Card(
+                color: white,
+                elevation: 2,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: primaryColorApp.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      // Header comprimido (siempre visible)
+                      InkWell(
+                        onTap: () =>
+                            isExpanded.value = !isExpanded.value,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      pick.name ?? 'Sin nombre',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: primaryColorApp,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if (pick.zonaEntrega != null &&
+                                        pick.zonaEntrega!.isNotEmpty)
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(top: 4),
+                                        child: Text(
+                                          'Zona: ${pick.zonaEntrega}',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: black,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                expanded
+                                    ? Icons.expand_less
+                                    : Icons.expand_more,
+                                color: primaryColorApp,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Detalles expandidos
+                      if (expanded) ...[
+                        const Divider(height: 1),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
+                              // Secuencia y placa si existen
+                              if (bloc.secuencia.isNotEmpty)
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.only(bottom: 8),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        'Secuencia WMS: ',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: primaryColorApp,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      Text(
+                                        bloc.secuencia,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: black,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              if (bloc.placa.isNotEmpty)
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.only(bottom: 8),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        'Placa WMS: ',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: primaryColorApp,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      Text(
+                                        bloc.placa,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: black,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              // Operación
+                              Padding(
+                                padding:
+                                    const EdgeInsets.only(bottom: 8),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      'Operación: ',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: primaryColorApp,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        pick.pickingType ?? 'Sin tipo',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: black,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Propietario
+                              if (pick.propietario != null &&
+                                  pick.propietario!.isNotEmpty)
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.only(bottom: 8),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        'Propietario: ',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: primaryColorApp,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          pick.propietario!,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: black,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              // Observación
+                              if (pick.observacion != null &&
+                                  pick.observacion!.isNotEmpty)
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.only(bottom: 8),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Observación: ',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: primaryColorApp,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(top: 4),
+                                        child: Text(
+                                          pick.observacion!,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: black,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              // Porcentaje separadas
+                              Padding(
+                                padding:
+                                    const EdgeInsets.only(top: 8),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: primaryColorApp
+                                        .withOpacity(0.05),
+                                    borderRadius:
+                                        BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        'Unidades separadas: ${bloc.calcularUnidadesSeparadas()}%',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: primaryColorApp,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        }
+      );
+    }
 }
 
 // 🔧 Función auxiliar para mostrar errores
