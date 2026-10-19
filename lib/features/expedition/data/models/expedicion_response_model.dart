@@ -23,7 +23,7 @@ class ExpedicionResponseModel {
 
   factory ExpedicionResponseModel.fromJson(
     Map<String, dynamic> json, {
-    WmsHeaders headers = WmsHeaders.empty,
+    WmsHeaders? headers,
   }) {
     final Map<String, dynamic>? result =
         json['result'] as Map<String, dynamic>?;
@@ -33,6 +33,7 @@ class ExpedicionResponseModel {
     }
 
     final List<dynamic> rawList = result['result'] as List<dynamic>? ?? [];
+    final safeHeaders = headers ?? WmsHeaders.empty;
 
     return ExpedicionResponseModel(
       code: result['code'] as int?,
@@ -41,8 +42,8 @@ class ExpedicionResponseModel {
       result: rawList
           .map((x) => ExpedicionPedidoModel.fromJson(x as Map<String, dynamic>))
           .toList(),
-      secuencia: headers.secuencia,
-      placa: headers.placa,
+      secuencia: safeHeaders.secuencia,
+      placa: safeHeaders.placa,
     );
   }
 }

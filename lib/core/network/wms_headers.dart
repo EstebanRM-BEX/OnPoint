@@ -9,9 +9,12 @@ class WmsHeaders {
   final String secuencia;
   final String placa;
 
-  const WmsHeaders({this.secuencia = '', this.placa = ''});
+  const WmsHeaders({
+    this.secuencia = '',
+    this.placa = '',
+  });
 
-  static const empty = WmsHeaders();
+  static const WmsHeaders empty = WmsHeaders();
 
   factory WmsHeaders.fromResponse(http.Response response) {
     String read(String name) {
