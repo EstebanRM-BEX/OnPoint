@@ -1019,9 +1019,62 @@ class _IndexListPickScreenState extends State<IndexListPickScreen>
                                 bottom: size.height * 0.15,
                               ),
                               physics: const AlwaysScrollableScrollPhysics(),
-                              itemCount: listToShow.length,
+                              itemCount: listToShow.length +
+                                  (bloc.secuencia.isNotEmpty || bloc.placa.isNotEmpty ? 1 : 0),
                               itemBuilder: (contextBuilder, index) {
-                                final batch = listToShow[index];
+                                // Banner con secuencia y placa al inicio
+                                if ((bloc.secuencia.isNotEmpty || bloc.placa.isNotEmpty) && index == 0) {
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 5,
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF0F9FF),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: const Color(0xFF0EA5E9),
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (bloc.secuencia.isNotEmpty)
+                                            Text(
+                                              'Secuencia WMS: ${bloc.secuencia}',
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Color(0xFF0369A1),
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          if (bloc.placa.isNotEmpty)
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.only(top: 4),
+                                              child: Text(
+                                                'Placa WMS: ${bloc.placa}',
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Color(0xFF0369A1),
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }
+
+                                // Índice ajustado para picks
+                                final pickIndex = (bloc.secuencia.isNotEmpty || bloc.placa.isNotEmpty)
+                                    ? index - 1
+                                    : index;
+                                final batch = listToShow[pickIndex];
                                 //convertimos la fecha
 
                                 return Padding(

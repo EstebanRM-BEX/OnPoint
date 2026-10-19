@@ -40,6 +40,9 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
   List<ResultPick> historyPicks = [];
   List<ResultPick> filtersHistoryPicks = [];
 
+  String secuencia = '';
+  String placa = '';
+
   RespondePickDoneId historyPickId = RespondePickDoneId();
 
   ///listado de pickos por componenetes
@@ -2582,6 +2585,10 @@ class PickingPickBloc extends Bloc<PickingPickEvent, PickingPickState> {
 
       // Aquí llamas a tu repositorio para obtener los datos
       final result = await pickingPickRepository.resPicks(event.isLoadinDialog);
+
+      // Guardar secuencia y placa de los encabezados
+      secuencia = result.secuencia;
+      placa = result.placa;
 
       //validacion de la version de la app
       if ((result.updateVersion ?? false) == true) {
