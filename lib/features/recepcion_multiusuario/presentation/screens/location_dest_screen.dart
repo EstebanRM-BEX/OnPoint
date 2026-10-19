@@ -367,10 +367,11 @@ class _RecepcionMultiusuarioLocationDestScreenState
                         if (state is! RecepcionMultiusuarioLocationDestLoaded) {
                           return;
                         }
-                        if (_selectedIndex! >= state.ubicaciones.length) return;
-                        _returnToScan(
-                          ubicacion: state.ubicaciones[_selectedIndex!],
-                        );
+                        final index = _selectedIndex;
+                        if (index == null || index >= state.ubicaciones.length) {
+                          return;
+                        }
+                        _returnToScan(ubicacion: state.ubicaciones[index]);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColorApp,

@@ -1312,7 +1312,18 @@ class _ScanProductClusterState extends State<ScanProductCluster>
                     },
                     onManualQuantitySubmitted: (value) {
                       if (value.isNotEmpty) {
-                        final intValue = int.parse(value);
+                        final intValue = int.tryParse(value.trim());
+                        if (intValue == null) {
+                          _controllerCantidad.clear();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              duration: const Duration(seconds: 1),
+                              content: const Text('Cantidad incorrecta'),
+                              backgroundColor: Colors.red[200],
+                            ),
+                          );
+                          return;
+                        }
                         if (intValue > (bloc.currentProduct?.quantity ?? 0)) {
                           bloc.add(ValidateFieldsEvent(
                               field: "quantity", isOk: false));
