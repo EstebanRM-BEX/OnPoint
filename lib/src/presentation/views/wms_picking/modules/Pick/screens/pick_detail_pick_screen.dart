@@ -1,12 +1,12 @@
 // ignore_for_file: unrelated_type_equality_checks, avoid_print, use_build_context_synchronously
 
+import 'package:wms_app/src/presentation/views/wms_picking/modules/Pick/widgets/others/pick_details_expandable_card_widget.dart';
 import 'dart:ui';
 import 'package:wms_app/shared/utils/app_navigation.dart';
 
 import 'package:flutter_svg/svg.dart';
 import 'package:wms_app/core/constants/colors.dart';
 import 'package:wms_app/core/network/network_info.dart';
-import 'package:wms_app/core/utils/get_colors_utils.dart';
 import 'package:wms_app/features/printing/presentation/widgets/modal_printers_list.dart';
 import 'package:wms_app/presentation/global/blocs/network/connection_status_cubit.dart';
 import 'package:wms_app/src/presentation/providers/network/cubit/warning_widget_cubit.dart';
@@ -36,8 +36,10 @@ class _PickDetailScreenState extends State<PickDetailScreen>
   final FocusNode _searchFocusNode = FocusNode();
   // Watchdog: reabre el teclado si el IME del PDA (Zebra/Urovo/Chainway) lo
   // cierra solo mientras el buscador conserva el foco.
-  late final KeyboardWatchdog _kbWatchdog =
-      KeyboardWatchdog(state: this, focusNode: _searchFocusNode);
+  late final KeyboardWatchdog _kbWatchdog = KeyboardWatchdog(
+    state: this,
+    focusNode: _searchFocusNode,
+  );
 
   @override
   void initState() {
@@ -200,7 +202,7 @@ class _PickDetailScreenState extends State<PickDetailScreen>
                     ),
 
                     const SizedBox(height: 5),
-                    _buildPickDetailsCard(context, bloc, size),
+                    _buildPickDetailsCard(bloc),
                     // //*widget de busqueda
                     Visibility(
                       visible: bloc.isSearch,
@@ -221,25 +223,16 @@ class _PickDetailScreenState extends State<PickDetailScreen>
                             },
                             controller: bloc.searchController,
                             decoration: InputDecoration(
-                              prefixIcon: const Icon(
-                                Icons.search,
-                                color: grey,
-                              ),
+                              prefixIcon: const Icon(Icons.search, color: grey),
                               suffixIcon: IconButton(
                                 onPressed: () {
-                                  bloc.add(
-                                    ClearSearchProudctsPickEvent(),
-                                  );
+                                  bloc.add(ClearSearchProudctsPickEvent());
                                   //cerramo el teclado
                                   FocusScope.of(context).unfocus();
                                 },
-                                icon: const Icon(
-                                  Icons.close,
-                                  color: grey,
-                                ),
+                                icon: const Icon(Icons.close, color: grey),
                               ),
-                              disabledBorder:
-                                  const OutlineInputBorder(),
+                              disabledBorder: const OutlineInputBorder(),
                               hintText: "Buscar productos",
                               hintStyle: const TextStyle(
                                 color: Colors.grey,
@@ -1125,6 +1118,17 @@ class _PickDetailScreenState extends State<PickDetailScreen>
       },
     );
   }
+
+  Widget _buildPickDetailsCard(PickingPickBloc bloc) {
+    final pick = bloc.pickWithProducts.pick;
+    if (pick == null) return const SizedBox.shrink();
+    return PickDetailsExpandableCard(
+      pick: pick,
+      secuencia: bloc.secuencia,
+      placa: bloc.placa,
+      porcentajeSeparadas: bloc.calcularUnidadesSeparadas(),
+    );
+  }
 }
 
 class DialogoConfirmateProductLoad extends StatelessWidget {
@@ -1213,283 +1217,6 @@ class DialogoConfirmateProductLoad extends StatelessWidget {
       ),
     );
   }
-}
-
-  // 🔧 Función para construir el card expandible de detalles del pick
-  Widget _buildPickDetailsCard(
-    BuildContext context,
-    PickingPickBloc bloc,
-    Size size,
-  ) {
-    final pick = bloc.pickWithProducts.pick;
-    if (pick == null) return const SizedBox.shrink();
-
-    return StatefulBuilder(
-      builder: (context, setState) {
-        final isExpanded = ValueNotifier<bool>(false);
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          child: ValueListenableBuilder<bool>(
-            valueListenable: isExpanded,
-            builder: (context, expanded, _) {
-              return Card(
-                color: white,
-                elevation: 2,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: primaryColorApp.withOpacity(0.2),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      // Header comprimido (siempre visible)
-                      InkWell(
-                        onTap: () =>
-                            isExpanded.value = !isExpanded.value,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      pick.name ?? 'Sin nombre',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                        color: primaryColorApp,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    if (pick.zonaEntrega != null &&
-                                        pick.zonaEntrega!.isNotEmpty)
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(top: 4),
-                                        child: Text(
-                                          'Zona: ${pick.zonaEntrega}',
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: black,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              Icon(
-                                expanded
-                                    ? Icons.expand_less
-                                    : Icons.expand_more,
-                                color: primaryColorApp,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // Detalles expandidos
-                      if (expanded) ...[
-                        const Divider(height: 1),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                            children: [
-                              // Secuencia y placa si existen
-                              if (bloc.secuencia.isNotEmpty)
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.only(bottom: 8),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        'Secuencia WMS: ',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: primaryColorApp,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      Text(
-                                        bloc.secuencia,
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: black,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              if (bloc.placa.isNotEmpty)
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.only(bottom: 8),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        'Placa WMS: ',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: primaryColorApp,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      Text(
-                                        bloc.placa,
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: black,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              // Operación
-                              Padding(
-                                padding:
-                                    const EdgeInsets.only(bottom: 8),
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      'Operación: ',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: primaryColorApp,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        pick.pickingType ?? 'Sin tipo',
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: black,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              // Propietario
-                              if (pick.propietario != null &&
-                                  pick.propietario!.isNotEmpty)
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.only(bottom: 8),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        'Propietario: ',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: primaryColorApp,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: Text(
-                                          pick.propietario!,
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: black,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              // Observación
-                              if (pick.observacion != null &&
-                                  pick.observacion!.isNotEmpty)
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.only(bottom: 8),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Observación: ',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: primaryColorApp,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(top: 4),
-                                        child: Text(
-                                          pick.observacion!,
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: black,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              // Porcentaje separadas
-                              Padding(
-                                padding:
-                                    const EdgeInsets.only(top: 8),
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: primaryColorApp
-                                        .withOpacity(0.05),
-                                    borderRadius:
-                                        BorderRadius.circular(6),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        'Unidades separadas: ${bloc.calcularUnidadesSeparadas()}%',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: primaryColorApp,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        }
-      );
-    }
 }
 
 // 🔧 Función auxiliar para mostrar errores
