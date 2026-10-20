@@ -28,7 +28,10 @@ import 'package:wms_app/core/routes/app_router.dart';
 import 'package:wms_app/core/routes/empty_stack_guard.dart';
 import 'package:wms_app/src/api/api_request_service.dart';
 import 'package:wms_app/src/api/http_response_handler.dart';
+import 'package:wms_app/core/services/preload_status.dart';
+import 'package:wms_app/core/services/productos_sync_service.dart';
 import 'package:wms_app/core/services/session_manager.dart';
+import 'package:wms_app/core/services/terceros_download_service.dart';
 import 'package:wms_app/core/utils/performance/jank_monitor.dart';
 import 'package:wms_app/core/utils/widgets/app_restart_widget.dart';
 import 'package:wms_app/core/utils/widgets/error_widget.dart';
@@ -141,6 +144,12 @@ void main() {
       // Traza de fluidez por pantalla en Firebase Performance (frames lentos
       // y congelados), con la pantalla actual vía JankRouteObserver
       // (navigatorObservers de GetMaterialApp, abajo). No corre en debug.
+      // Para separar los frames lentos que coinciden con una descarga de
+      // datos (docs/plan_performance_pantallas.md, fase 0).
+      JankMonitor().sincronizando = () =>
+          PreloadStatus.instance.hayPendientes ||
+          ProductosSyncService.instance.isLoading ||
+          TercerosDownloadService.isRunning;
       JankMonitor().start();
 
       // Diagnóstico de cierres que Crashlytics no ve (OOM, kill del sistema,

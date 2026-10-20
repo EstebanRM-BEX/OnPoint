@@ -110,11 +110,7 @@ class _NewLoteScreenState extends State<NewLoteInventarioScreen>
               showLoadingDialog("Creando lote espere un momento...");
             } else if (state is CreateLoteProductSuccess) {
               hideLoadingDialog();
-              Navigator.pushReplacementNamed(
-                context,
-                'inventario',
-                arguments: [context.read<InventarioBloc>()],
-              );
+              Navigator.pop(context);
             } else if (state is CreateLoteProductFailure) {
               hideLoadingDialog();
               if (state.code == 400) {
@@ -259,11 +255,7 @@ class _NewLoteScreenState extends State<NewLoteInventarioScreen>
                           final selectedLote =
                               bloc.listLotesProductFilters[selectedIndex!];
                           bloc.add(SelectecLoteEvent(selectedLote));
-                          Navigator.pushReplacementNamed(
-                            context,
-                            'inventario',
-                            arguments: [context.read<InventarioBloc>()],
-                          );
+                          Navigator.pop(context);
                           Get.snackbar(
                             'Lote Seleccionado',
                             'Has seleccionado el lote: ${selectedLote.name}',
@@ -813,11 +805,7 @@ class _AppBarInfo extends StatelessWidget {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: white),
-                    onPressed: () => Navigator.pushReplacementNamed(
-                      context,
-                      'inventario',
-                      arguments: [context.read<InventarioBloc>()],
-                    ),
+                    onPressed: () => Navigator.pop(context),
                   ),
                   Padding(
                     padding: EdgeInsets.only(left: size.width * 0.2),

@@ -53,9 +53,9 @@ class LocationCardButton extends StatelessWidget {
                         radius: 10,
                       );
                     } else {
-                      Navigator.pushReplacementNamed(
- context,
- routeName,
+                      Navigator.pushNamed(
+                        context,
+                        routeName,
  arguments: [context.read<InventarioBloc>()],
  );
                     }

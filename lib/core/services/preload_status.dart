@@ -18,6 +18,10 @@ class PreloadStatus extends ChangeNotifier {
 
   bool isPending(String key) => _pending.contains(key);
 
+  /// Queda alguna precarga en curso (la usa `JankMonitor` para separar los
+  /// frames lentos que coinciden con la sincronización).
+  bool get hayPendientes => _pending.isNotEmpty;
+
   /// Marca todas como pendientes al arrancar la secuencia de precargas.
   void start(Iterable<String> keys) {
     _pending

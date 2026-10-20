@@ -6,6 +6,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:wms_app/core/utils/performance/frame_stats.dart';
 
 /// Mide la fluidez de cada pantalla y la envía a Firebase Performance.
 ///
@@ -14,6 +15,14 @@ import 'package:flutter/material.dart';
 /// - `frames_slow`: build o raster por encima del presupuesto de 16 ms.
 /// - `frames_frozen`: frames de más de 700 ms (la app se ve congelada).
 /// - `frame_max_ms`: el peor frame de la visita.
+/// - `frames_build_heavy`: frames cuyo build (reconstrucción de widgets)
+///   pasó los 16 ms.
+/// - `frames_sync` / `frames_slow_sync`: frames (y frames lentos) durante una
+///   sincronización de datos; atributo `sync_activo` = `si`/`no`.
+/// - `rss_inicio_mb` / `rss_fin_mb`: memoria del proceso al abrir y al cerrar
+///   la visita.
+///
+/// Ver [FrameStats] y docs/plan_performance_pantallas.md (fase 0).
 ///
 /// En la consola de Performance (Personalizado → trazas `screen_*`) se ve el
 /// % de jank por pantalla, filtrable por versión, dispositivo y país.
@@ -28,9 +37,6 @@ class JankMonitor {
   factory JankMonitor() => _instance;
   JankMonitor._internal();
 
-  static const _slowFrameBudget = Duration(microseconds: 16667);
-  static const _frozenFrameMs = 700;
-
   bool _isMonitoring = false;
   AppLifecycleListener? _lifecycle;
   String _currentScreen = 'inicio';
@@ -39,10 +45,11 @@ class JankMonitor {
   String get currentScreen => _currentScreen;
 
   Trace? _trace;
-  int _framesTotal = 0;
-  int _framesSlow = 0;
-  int _framesFrozen = 0;
-  int _frameMaxMs = 0;
+  final FrameStats _stats = FrameStats();
+
+  /// Hay una sincronización de datos en curso. Lo configura `main.dart` (este
+  /// monitor no depende de los servicios de sincronización).
+  bool Function() sincronizando = () => false;
 
   void start() {
     // En debug todos los frames son lentos (JIT, asserts): solo ensucia datos.
@@ -83,7 +90,7 @@ class JankMonitor {
   int _rssInicioMb = 0;
 
   void _startTrace(String screen) {
-    _framesTotal = _framesSlow = _framesFrozen = _frameMaxMs = 0;
+    _stats.reset();
     _rssInicioMb = _rssMb;
     final trace = FirebasePerformance.instance.newTrace(_traceName(screen));
     _trace = trace;
@@ -95,32 +102,35 @@ class JankMonitor {
     _trace = null;
     if (trace == null) return;
     // Visitas sin frames (rutas que se reemplazan al instante) no aportan.
-    if (_framesTotal == 0) return;
+    if (_stats.total == 0) return;
+    _stats.metricas.forEach(trace.setMetric);
     trace
-      ..setMetric('frames_total', _framesTotal)
-      ..setMetric('frames_slow', _framesSlow)
-      ..setMetric('frames_frozen', _framesFrozen)
-      ..setMetric('frame_max_ms', _frameMaxMs)
       ..setMetric('rss_inicio_mb', _rssInicioMb)
-      ..setMetric('rss_fin_mb', _rssMb);
+      ..setMetric('rss_fin_mb', _rssMb)
+      ..putAttribute('sync_activo', _stats.syncActivo);
     unawaited(trace.stop());
   }
 
   void _onTimings(List<FrameTiming> timings) {
+    // Una consulta por lote de frames (el callback llega cada ~100 ms).
+    var sync = false;
+    try {
+      sync = sincronizando();
+    } catch (_) {}
     for (final timing in timings) {
       final totalMs = timing.totalSpan.inMilliseconds;
-      _framesTotal++;
-      if (totalMs > _frameMaxMs) _frameMaxMs = totalMs;
-      if (timing.buildDuration > _slowFrameBudget ||
-          timing.rasterDuration > _slowFrameBudget) {
-        _framesSlow++;
-      }
-      if (totalMs > _frozenFrameMs) {
-        _framesFrozen++;
+      _stats.registrar(
+        totalMs: totalMs,
+        buildUs: timing.buildDuration.inMicroseconds,
+        rasterUs: timing.rasterDuration.inMicroseconds,
+        sincronizando: sync,
+      );
+      if (totalMs > FrameStats.congeladoMs) {
         FirebaseCrashlytics.instance.log(
           'FROZEN FRAME | Screen: $_currentScreen | Total: ${totalMs}ms | '
           'Build: ${timing.buildDuration.inMilliseconds}ms | '
-          'Raster: ${timing.rasterDuration.inMilliseconds}ms',
+          'Raster: ${timing.rasterDuration.inMilliseconds}ms | '
+          'Sync: ${sync ? 'si' : 'no'}',
         );
       }
     }
